@@ -14,8 +14,8 @@ Parameters::Parameters(std::istream &input) {
     // First we are looking for parameters from [general sections]
     auto config = Config::parse(input, '=', true);
     for (const auto &key : config.getKeys()) {
-        if (key == "initialBoxSize")
-            this->initialBoxSize = config.getDouble("initialBoxSize");
+        if (key == "initialVolume")
+            this->initialVolume = config.getDouble("initialVolume");
         else if (key == "numOfParticles")
             this->numOfParticles = config.getUnsignedLong("numOfParticles");
         else if (key == "temperature")
@@ -30,6 +30,8 @@ Parameters::Parameters(std::istream &input) {
             this->thermalisationSteps = config.getUnsignedLong("thermalisationSteps");
         else if (key == "averagingSteps")
             this->averagingSteps = config.getUnsignedLong("averagingSteps");
+        else if (key == "seed")
+            this->seed = config.getUnsignedLong("seed");
         else
             throw ParametersParseException("Unknown parameter " + key);
     }
@@ -37,7 +39,7 @@ Parameters::Parameters(std::istream &input) {
 }
 
 void Parameters::autocompleteAndValidate() {
-    Validate(this->initialBoxSize > 0);
+    Validate(this->initialVolume > 0);
     Validate(this->numOfParticles > 0);
     Validate(this->temperature > 0);
     Validate(this->pressure > 0);
@@ -48,7 +50,7 @@ void Parameters::autocompleteAndValidate() {
 }
 
 void Parameters::print(Logger &logger) const {
-    logger.info() << "initialBoxSize      : " << this->initialBoxSize << std::endl;
+    logger.info() << "initialVolume       : " << this->initialVolume << std::endl;
     logger.info() << "numOfParticles      : " << this->numOfParticles << std::endl;
     logger.info() << "temperature         : " << this->temperature << std::endl;
     logger.info() << "pressure            : " << this->pressure << std::endl;
@@ -56,4 +58,5 @@ void Parameters::print(Logger &logger) const {
     logger.info() << "volumeStepSize      : " << this->pressure << std::endl;
     logger.info() << "thermalisationSteps : " << this->thermalisationSteps << std::endl;
     logger.info() << "averagingSteps      : " << this->averagingSteps << std::endl;
+    logger.info() << "seed                : " << this->seed << std::endl;
 }

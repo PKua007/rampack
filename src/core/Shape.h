@@ -6,6 +6,7 @@
 #define RAMPACK_SHAPE_H
 
 #include <array>
+#include <memory>
 
 #include "BoundaryConditions.h"
 
@@ -19,7 +20,8 @@ public:
     virtual ~Shape() = default;
 
     void translate(const std::array<double, 3> &translation, const BoundaryConditions &bc);
-    virtual bool overlap(const Shape &other, double scaleFactor, const BoundaryConditions &bc) = 0;
+    [[nodiscard]] virtual bool overlap(const Shape &other, double scaleFactor, const BoundaryConditions &bc) const = 0;
+    [[nodiscard]] virtual std::unique_ptr<Shape> clone() const = 0;
 };
 
 

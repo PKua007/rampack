@@ -107,7 +107,7 @@ int Frontend::casino(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-int Frontend::analyze(int argc, char **argv) {
+int Frontend::analyze([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
     return EXIT_SUCCESS;
 }
 
