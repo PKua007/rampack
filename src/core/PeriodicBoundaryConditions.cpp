@@ -14,7 +14,7 @@ std::array<double, 3> PeriodicBoundaryConditions::getCorrection(const std::array
     for (std::size_t i{}; i < 3; i++) {
         while (position[i] + correction[i] < 0)
             correction[i] += this->linearSize;
-        while (position[i] - correction[i] > this->linearSize)
+        while (position[i] + correction[i] > this->linearSize)
             correction[i] -= this->linearSize;
     }
     return correction;

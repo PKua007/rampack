@@ -8,7 +8,7 @@
 
 std::unique_ptr<Shape> ShapeFactory::createShape(const std::string &shapeName, const std::string &shapeAttributes) {
     if (shapeName == "Sphere")
-        return std::make_unique<Sphere>(std::stoul(shapeAttributes));
+        return std::make_unique<Sphere>(std::stod(shapeAttributes));
     else
         throw ValidationException("Unknown particle name: " + shapeName);
 }
