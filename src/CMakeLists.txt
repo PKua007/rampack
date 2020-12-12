@@ -1,0 +1,9 @@
+project(rampack_app)
+
+add_library(rampack_src STATIC Simulation.cpp)
+
+target_include_directories(rampack_src PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(rampack_src PUBLIC stdc++fs)
+
+add_executable(rampack Main.cpp)
+target_link_libraries(rampack PRIVATE rampack_src)
