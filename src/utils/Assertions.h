@@ -58,7 +58,7 @@ struct PostconditionException : public std::logic_error {
  * @brief An exception thrown by Validate and ValidateMsg macros.
  */
 struct AssertionException : public std::logic_error {
-    explicit AssertionException(const std::string &msg) : std::runtime_error{msg} { }
+    explicit AssertionException(const std::string &msg) : std::logic_error{msg} { }
 };
 
 #endif //RAMPACK_ASSERTIONS_H
