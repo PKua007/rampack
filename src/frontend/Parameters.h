@@ -31,7 +31,14 @@ private:
 
 public:
     /* All of these are described in input.ini */
-    double boxSize{};
+    double initialBoxSize{};
+    std::size_t numOfParticles{};
+    double temperature{};
+    double pressure{};
+    double positionStepSize{};
+    double volumeStepSize{};
+    std::size_t thermalisationSteps{};
+    std::size_t averagingSteps{};
 
     Parameters() = default;
 

@@ -2,8 +2,6 @@
 // Created by Piotr Kubala on 12/12/2020.
 //
 
-#include "Parameters.h"
-
 #include <string>
 #include <ostream>
 
@@ -16,8 +14,22 @@ Parameters::Parameters(std::istream &input) {
     // First we are looking for parameters from [general sections]
     auto config = Config::parse(input, '=', true);
     for (const auto &key : config.getKeys()) {
-        if (key == "boxSize")
-            this->boxSize = config.getDouble("boxSize");
+        if (key == "initialBoxSize")
+            this->initialBoxSize = config.getDouble("initialBoxSize");
+        else if (key == "numOfParticles")
+            this->numOfParticles = config.getUnsignedLong("numOfParticles");
+        else if (key == "temperature")
+            this->temperature = config.getDouble("temperature");
+        else if (key == "pressure")
+            this->pressure = config.getDouble("pressure");
+        else if (key == "positionStepSize")
+            this->positionStepSize = config.getDouble("positionStepSize");
+        else if (key == "volumeStepSize")
+            this->volumeStepSize = config.getDouble("volumeStepSize");
+        else if (key == "thermalisationSteps")
+            this->thermalisationSteps = config.getUnsignedLong("thermalisationSteps");
+        else if (key == "averagingSteps")
+            this->averagingSteps = config.getUnsignedLong("averagingSteps");
         else
             throw ParametersParseException("Unknown parameter " + key);
     }
@@ -25,9 +37,23 @@ Parameters::Parameters(std::istream &input) {
 }
 
 void Parameters::autocompleteAndValidate() {
-    Validate(this->boxSize > 0);
+    Validate(this->initialBoxSize > 0);
+    Validate(this->numOfParticles > 0);
+    Validate(this->temperature > 0);
+    Validate(this->pressure > 0);
+    Validate(this->positionStepSize > 0);
+    Validate(this->volumeStepSize > 0);
+    Validate(this->thermalisationSteps > 0);
+    Validate(this->averagingSteps > 0);
 }
 
 void Parameters::print(Logger &logger) const {
-    logger.info() << "boxSize : " << this->boxSize << std::endl;
+    logger.info() << "initialBoxSize      : " << this->initialBoxSize << std::endl;
+    logger.info() << "numOfParticles      : " << this->numOfParticles << std::endl;
+    logger.info() << "temperature         : " << this->temperature << std::endl;
+    logger.info() << "pressure            : " << this->pressure << std::endl;
+    logger.info() << "positionStepSize    : " << this->pressure << std::endl;
+    logger.info() << "volumeStepSize      : " << this->pressure << std::endl;
+    logger.info() << "thermalisationSteps : " << this->thermalisationSteps << std::endl;
+    logger.info() << "averagingSteps      : " << this->averagingSteps << std::endl;
 }

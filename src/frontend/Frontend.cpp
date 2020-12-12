@@ -74,8 +74,8 @@ int Frontend::casino(int argc, char **argv) {
             ("h,help", "prints help for this mode")
             ("i,input", "an INI file with parameters. See input.ini for parameters description",
              cxxopts::value<std::string>(inputFilename))
-            ("P,set_param", "overrides the value of the parameter loaded as --input. More precisely, doing "
-                            "-P N=1 (-PN=1 does not work) acts as one would append N=1 to the input file",
+            ("P,set_param", "overrides the value of the parameter loaded from --input parameter set. More precisely, "
+                            "doing -P N=1 (-PN=1 does not work) acts as one would append N=1 to the input file",
              cxxopts::value<std::vector<std::string>>(overridenParams))
             ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
                             "error, warn, info, verbose, debug",
