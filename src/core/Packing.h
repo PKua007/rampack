@@ -25,12 +25,7 @@ public:
     using iterator = decltype(shapes)::iterator;
     using const_iterator = decltype(shapes)::const_iterator;
 
-    enum class ArrangementModel {
-        LATTICE_ARRANGEMENT
-    };
-
-    Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, ArrangementModel arrangementModel,
-            std::unique_ptr<BoundaryConditions> bc);
+    Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, std::unique_ptr<BoundaryConditions> bc);
 
     bool tryTranslation(std::size_t particleIdx, std::array<double, 3> translation);
     bool tryScaling(double scaleFactor);

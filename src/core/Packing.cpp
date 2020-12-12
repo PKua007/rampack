@@ -7,32 +7,12 @@
 #include "Packing.h"
 #include "utils/Assertions.h"
 
-Packing::Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes,
-                 Packing::ArrangementModel arrangementModel, std::unique_ptr<BoundaryConditions> bc)
+Packing::Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes,  std::unique_ptr<BoundaryConditions> bc)
         : shapes{std::move(shapes)}, linearSize{linearSize}, bc{std::move(bc)}
 {
     Expects(linearSize > 0);
     Expects(!this->shapes.empty());
-
-    if (arrangementModel == ArrangementModel::LATTICE_ARRANGEMENT) {
-        auto shapesInLine = static_cast<std::size_t>(std::ceil(std::cbrt(this->size())));
-        double factor = 1. / shapesInLine;
-        std::size_t shapeIdx{};
-        for (std::size_t i{}; i < shapesInLine; i++) {
-            for (std::size_t j{}; j < shapesInLine; j++) {
-                for (std::size_t k{}; k < shapesInLine; k++) {
-                    if (shapeIdx >= this->size())
-                        return;
-
-                    std::array<double, 3> translation{(i+0.5) * factor, (j+0.5) * factor, (k+0.5) * factor};
-                    this->shapes[shapeIdx]->translate(translation, *this->bc);
-                    shapeIdx++;
-                }
-            }
-        }
-    }
-
-    Ensures(!this->areAnyParticlesOverlapping());
+    Expects(!this->areAnyParticlesOverlapping());
 }
 
 bool Packing::tryTranslation(std::size_t particleIdx, std::array<double, 3> translation) {
