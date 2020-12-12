@@ -14,6 +14,9 @@ private:
 public:
     Sphere() : radius{1} { }
     explicit Sphere(double radius);
+    ~Sphere() {
+
+    }
 
     [[nodiscard]] bool overlap(const Shape &other, double scaleFactor, const BoundaryConditions &bc) const override;
     [[nodiscard]] std::unique_ptr<Shape> clone() const override;

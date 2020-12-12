@@ -32,6 +32,10 @@ Parameters::Parameters(std::istream &input) {
             this->averagingSteps = config.getUnsignedLong("averagingSteps");
         else if (key == "seed")
             this->seed = config.getUnsignedLong("seed");
+        else if (key == "shapeName")
+            this->shapeName = config.getString("shapeName");
+        else if (key == "shapeAttributes")
+            this->shapeAttributes = config.getString("shapeAttributes");
         else
             throw ParametersParseException("Unknown parameter " + key);
     }
@@ -59,4 +63,6 @@ void Parameters::print(Logger &logger) const {
     logger.info() << "thermalisationSteps : " << this->thermalisationSteps << std::endl;
     logger.info() << "averagingSteps      : " << this->averagingSteps << std::endl;
     logger.info() << "seed                : " << this->seed << std::endl;
+    logger.info() << "shapeName           : " << this->shapeName << std::endl;
+    logger.info() << "shapeAttributes     : " << this->shapeAttributes << std::endl;
 }

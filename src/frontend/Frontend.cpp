@@ -11,6 +11,11 @@
 #include "Parameters.h"
 #include "utils/Fold.h"
 #include "utils/Utils.h"
+#include "core/ShapeFactory.h"
+#include "core/Simulation.h"
+#include "core/PeriodicBoundaryConditions.h"
+#include "core/LatticeArrangingModel.h"
+#include "core/Packing.h"
 
 Parameters Frontend::loadParameters(const std::string &inputFilename, const std::vector<std::string> &overridenParams) {
     std::ifstream paramsFile(inputFilename);
@@ -103,6 +108,21 @@ int Frontend::casino(int argc, char **argv) {
     Parameters params = this->loadParameters(inputFilename, overridenParams);
     params.print(this->logger);
     this->logger << std::endl;
+
+    // Prepare simulation
+    auto shape = ShapeFactory::createShape(params.shapeName, params.shapeAttributes);
+    auto bc = std::make_unique<PeriodicBoundaryConditions>();
+    double linearSize = std::cbrt(params.initialVolume);
+    LatticeArrangingModel latticeArrangingModel;
+    auto shapes = latticeArrangingModel.arrange(*shape, params.numOfParticles, 1, *bc);
+    auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(bc));
+    Simulation simulation(std::move(packing), params.temperature, params.pressure, params.positionStepSize,
+                          params.volumeStepSize, params.thermalisationSteps, params.averagingSteps, params.seed);
+
+    simulation.perform(logger);
+    logger.info() << "Average density: " << simulation.getAverageDensity() << std::endl;
+    logger.info() << "Thermalisation acceptance rate: " << simulation.getThermalisationAcceptanceRate() << std::endl;
+    logger.info() << "Averaging acceptance rate: " << simulation.getAveragingAcceptanceRate() << std::endl;
 
     return EXIT_SUCCESS;
 }

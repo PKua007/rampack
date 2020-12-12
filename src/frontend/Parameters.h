@@ -9,6 +9,7 @@
 #include <iosfwd>
 #include <exception>
 #include <map>
+#include <string>
 
 #include "utils/Config.h"
 #include "utils/Logger.h"
@@ -40,6 +41,8 @@ public:
     std::size_t thermalisationSteps{};
     std::size_t averagingSteps{};
     unsigned long seed{};
+    std::string shapeName{};
+    std::string shapeAttributes{};
 
     Parameters() = default;
 

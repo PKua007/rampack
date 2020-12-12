@@ -25,22 +25,28 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double temperature, dou
     Expects(averagingSteps > 0);
 }
 
-void Simulation::perform() {
+void Simulation::perform(Logger &logger) {
     this->acceptedThermalisationSteps = 0;
     this->acceptedAveragingSteps = 0;
     this->densitySum = 0;
 
     // Thermalisation
+    logger.info() << "Starting thermalisation..." << std::endl;
     for (std::size_t i{}; i < this->thermalisationSteps; i++) {
         if (this->performStep())
             this->acceptedThermalisationSteps++;
+        if ((i + 1) % 10000 == 0)
+            logger.info() << "Performed " << (i + 1) << " steps" << std::endl;
     }
 
     // Averaging
+    logger.info() << "Starting averaging..." << std::endl;
     for(std::size_t i{}; i < this->averagingSteps; i++) {
         if (this->performStep())
             this->acceptedAveragingSteps++;
         this->densitySum += this->packing->size() / std::pow(this->packing->getLinearSize(), 3);
+        if ((i + 1) % 10000 == 0)
+            logger.info() << "Performed " << (i + 1) << " steps" << std::endl;
     }
 }
 
