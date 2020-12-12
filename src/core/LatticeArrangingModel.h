@@ -15,6 +15,7 @@ class LatticeArrangingModel {
 public:
     [[nodiscard]] std::vector<std::unique_ptr<Shape>> arrange(std::unique_ptr<Shape> particleMother,
                                                               std::size_t numOfParticles,
+                                                              double linearSize,
                                                               const BoundaryConditions &bc) const;
 };
 
