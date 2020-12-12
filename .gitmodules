@@ -4,3 +4,6 @@
 [submodule "extern/trompeloeil"]
 	path = extern/trompeloeil
 	url = https://github.com/rollbear/trompeloeil.git
+[submodule "extern/cxxopts"]
+	path = extern/cxxopts
+	url = https://github.com/jarro2783/cxxopts.git
