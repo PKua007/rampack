@@ -12,6 +12,7 @@ std::vector<std::unique_ptr<Shape>> LatticeArrangingModel::arrange(const Shape &
                                                                    const BoundaryConditions &bc) const
 {
     Expects(linearSize > 0);
+    Expects((particleMother.getPosition() == std::array<double, 3>{0, 0, 0}));
 
     std::vector<std::unique_ptr<Shape>> result;
     result.reserve(numOfParticles);
