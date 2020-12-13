@@ -26,8 +26,10 @@ private:
 
     std::unique_ptr<Packing> packing;
     double densitySum{};
-    std::size_t acceptedThermalisationSteps{};
-    std::size_t acceptedAveragingSteps{};
+    std::size_t translationMoves{};
+    std::size_t acceptedTranslations{};
+    std::size_t scalingMoves{};
+    std::size_t acceptedScalings{};
 
     bool performStep();
 
@@ -37,12 +39,12 @@ public:
 
     void perform(Logger &logger);
     [[nodiscard]] double getAverageDensity() const { return this->densitySum / this->averagingSteps; };
-    [[nodiscard]] double getThermalisationAcceptanceRate() const {
-        return static_cast<double>(this->acceptedThermalisationSteps) / this->thermalisationSteps;
+    [[nodiscard]] double getTranlationAcceptanceRate() const {
+        return static_cast<double>(this->acceptedTranslations) / static_cast<double>(translationMoves);
     }
 
-    [[nodiscard]] double getAveragingAcceptanceRate() const {
-        return static_cast<double>(this->acceptedAveragingSteps) / this->averagingSteps;
+    [[nodiscard]] double getScalingAcceptanceRate() const {
+        return static_cast<double>(this->acceptedScalings) / static_cast<double>(scalingMoves);
     }
 };
 

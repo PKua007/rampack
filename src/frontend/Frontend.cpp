@@ -121,8 +121,8 @@ int Frontend::casino(int argc, char **argv) {
 
     simulation.perform(logger);
     logger.info() << "Average density: " << simulation.getAverageDensity() << std::endl;
-    logger.info() << "Thermalisation acceptance rate: " << simulation.getThermalisationAcceptanceRate() << std::endl;
-    logger.info() << "Averaging acceptance rate: " << simulation.getAveragingAcceptanceRate() << std::endl;
+    logger.info() << "Translation acceptance rate: " << simulation.getTranlationAcceptanceRate() << std::endl;
+    logger.info() << "Scaling acceptance rate: " << simulation.getScalingAcceptanceRate() << std::endl;
 
     return EXIT_SUCCESS;
 }
