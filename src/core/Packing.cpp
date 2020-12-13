@@ -7,7 +7,7 @@
 #include "Packing.h"
 #include "utils/Assertions.h"
 
-Packing::Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes,  std::unique_ptr<BoundaryConditions> bc)
+Packing::Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, std::unique_ptr<BoundaryConditions> bc)
         : shapes{std::move(shapes)}, linearSize{linearSize}, bc{std::move(bc)}
 {
     Expects(linearSize > 0);
