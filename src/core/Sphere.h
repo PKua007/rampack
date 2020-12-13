@@ -17,6 +17,8 @@ public:
 
     [[nodiscard]] bool overlap(const Shape &other, double scaleFactor, const BoundaryConditions &bc) const override;
     [[nodiscard]] std::unique_ptr<Shape> clone() const override;
+
+    [[nodiscard]] double getRadius() const { return this->radius; }
 };
 
 
