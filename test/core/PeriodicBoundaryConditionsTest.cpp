@@ -72,3 +72,12 @@ TEST_CASE("PeriodicBoundaryConditions: getTranslation and getDiscance2") {
         CHECK(distance2 == Approx(0.5));
     }
 }
+
+TEST_CASE("PeriodicBoundaryConditions: default size should be 1") {
+    PeriodicBoundaryConditions pbc;
+    std::array<double, 3> position{0.5, -0.5, 1.5};
+
+    auto corr = pbc.getCorrection(position);
+
+    CHECK(corr == std::array<double, 3>{0, 1, -1});
+}
