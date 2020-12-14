@@ -116,10 +116,10 @@ int Frontend::casino(int argc, char **argv) {
     LatticeArrangingModel latticeArrangingModel;
     auto shapes = latticeArrangingModel.arrange(*shape, params.numOfParticles, 1, *bc);
     auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(bc));
-    Simulation simulation(std::move(packing), params.temperature, params.pressure, params.positionStepSize,
-                          params.volumeStepSize, params.thermalisationSteps, params.averagingSteps, params.seed);
+    Simulation simulation(params.temperature, params.pressure, params.positionStepSize, params.volumeStepSize,
+                          params.thermalisationSteps, params.averagingSteps, params.seed);
 
-    simulation.perform(logger);
+    simulation.perform(std::move(packing), logger);
     logger.info() << "Average density: " << simulation.getAverageDensity() << std::endl;
     logger.info() << "Translation acceptance rate: " << simulation.getTranlationAcceptanceRate() << std::endl;
     logger.info() << "Scaling acceptance rate: " << simulation.getScalingAcceptanceRate() << std::endl;

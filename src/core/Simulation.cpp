@@ -7,15 +7,12 @@
 #include "Simulation.h"
 #include "utils/Assertions.h"
 
-Simulation::Simulation(std::unique_ptr<Packing> packing, double temperature, double pressure, double positionStepSize,
-                       double volumeStepSize, std::size_t thermalisationsSteps, std::size_t averagingSteps,
-                       unsigned long seed)
+Simulation::Simulation(double temperature, double pressure, double positionStepSize, double volumeStepSize,
+                       std::size_t thermalisationsSteps, std::size_t averagingSteps, unsigned long seed)
         : temperature{temperature}, pressure{pressure}, thermalisationSteps{thermalisationsSteps},
           averagingSteps{averagingSteps}, mt(seed), translationDistribution(-positionStepSize, positionStepSize),
-          scalingDistribution(-volumeStepSize, volumeStepSize), moveTypeDistribution(0, packing->size()),
-          particleIdxDistribution(0, packing->size() - 1), packing{std::move(packing)}
+          scalingDistribution(-volumeStepSize, volumeStepSize)
 {
-    Expects(!this->packing->empty());
     Expects(temperature > 0);
     Expects(pressure > 0);
     Expects(positionStepSize > 0);
@@ -24,15 +21,13 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double temperature, dou
     Expects(averagingSteps > 0);
 }
 
-void Simulation::perform(Logger &logger) {
-    this->translationMoves = 0;
-    this->translationMovesSinceEval = 0;
-    this->acceptedTranslations = 0;
-    this->acceptedTranslationsSinceEval = 0;
-    this->scalingMoves = 0;
-    this->scalingMovesSinceEval = 0;
-    this->acceptedScalings = 0;
-    this->acceptedScalingsSinceEval = 0;
+void Simulation::perform(std::unique_ptr<Packing> packing_, Logger &logger) {
+    Expects(!packing_->empty());
+    this->moveTypeDistribution = std::uniform_int_distribution<int>(0, packing_->size());
+    this->particleIdxDistribution = std::uniform_int_distribution<int>(0, packing_->size() - 1);
+    this->packing = std::move(packing_);
+    this->translationCounter.reset();
+    this->scalingCounter.reset();
     this->densitySum = 0;
 
     // Thermalisation
@@ -53,70 +48,94 @@ void Simulation::perform(Logger &logger) {
     }
 }
 
-bool Simulation::performStep(Logger &logger) {
+void Simulation::performStep(Logger &logger) {
     if (this->moveTypeDistribution(this->mt) == 0) {
-        this->scalingMoves++;
-        this->scalingMovesSinceEval++;
-
-        double deltaV = this->scalingDistribution(this->mt);
-        double currentV = std::pow(this->packing->getLinearSize(), 3);
-        double factor = (deltaV + currentV) / currentV;
-        Assert(factor > 0);
-
-        double N = this->packing->size();
-        double exponent = N * std::log(factor) - this->pressure * deltaV / this->temperature;
-        bool wasScaled = true;
-        if (exponent < 0)
-            if (this->unitIntervalDistribution(this->mt) < std::exp(exponent))
-                wasScaled = false;
-
-        if (wasScaled)
-            wasScaled = this->packing->tryScaling(factor);
-        if (wasScaled) {
-            this->acceptedScalings++;
-            this->acceptedScalingsSinceEval++;
-        }
-        if (this->scalingMovesSinceEval == this->evaluateScalingEvery) {
-            double rate = static_cast<double>(this->acceptedScalingsSinceEval) / this->scalingMovesSinceEval;
-            double dV = this->scalingDistribution.param().b();
-            if (rate < this->minAcceptanceRatio) {
-                logger << "Scaling acceptance rate: " << rate << ", adjusting: " << dV << " -> " << dV / 1.1 << std::endl;
-                this->scalingDistribution = std::uniform_real_distribution<double>(-dV / 1.1, dV / 1.1);
-            } else if (rate > this->maxAcceptanceRatio) {
-                logger << "Scaling acceptance rate: " << rate << ", adjusting: " << dV << " -> " << dV * 1.1 << std::endl;
-                this->scalingDistribution = std::uniform_real_distribution<double>(-dV * 1.1, dV * 1.1);
-            }
-            this->scalingMovesSinceEval = 0;
-            this->acceptedScalingsSinceEval = 0;
-        }
-
-        return wasScaled;
+       bool wasScaled = this->tryScaling();
+       this->scalingCounter.increment(wasScaled);
     } else {
-        this->translationMoves++;
-        this->translationMovesSinceEval++;
-
-        std::array<double, 3> translation{this->translationDistribution(this->mt),
-                                          this->translationDistribution(this->mt),
-                                          this->translationDistribution(this->mt)};
-
-        bool wasTranslated = this->packing->tryTranslation(this->particleIdxDistribution(this->mt), translation);
-        if (wasTranslated) {
-            this->acceptedTranslations++;
-            this->acceptedTranslationsSinceEval++;
-        }
-        if (this->translationMovesSinceEval == this->evaluateTranslationEvery) {
-            double rate = static_cast<double>(this->acceptedTranslationsSinceEval) / this->translationMovesSinceEval;
-            double dx = this->translationDistribution.param().b();
-            if (rate < this->minAcceptanceRatio) {
-                logger << "Translation acceptance rate: " << rate << ", adjusting: " << dx << " -> " << dx / 1.1 << std::endl;
-                this->translationDistribution = std::uniform_real_distribution<double>(-dx / 1.1, dx / 1.1);
-            } else if (rate > this->maxAcceptanceRatio) {
-                logger << "Translation acceptance rate: " << rate << ", adjusting: " << dx << " -> " << dx * 1.1 << std::endl;
-                this->translationDistribution = std::uniform_real_distribution<double>(-dx * 1.1, dx * 1.1);
-            }
-            this->translationMovesSinceEval = 0;
-            this->acceptedTranslationsSinceEval = 0;
-        }
-        return wasTranslated;
+        bool wasTranslated = tryTranslation();
+        this->translationCounter.increment(wasTranslated);
     }
+
+    this->evaluateCounters(logger);
+}
+
+bool Simulation::tryTranslation() {
+    std::array<double, 3> translation{this->translationDistribution(this->mt),
+                                      this->translationDistribution(this->mt),
+                                      this->translationDistribution(this->mt)};
+
+    return this->packing->tryTranslation(this->particleIdxDistribution(this->mt), translation);
+}
+
+bool Simulation::tryScaling() {
+    double deltaV = this->scalingDistribution(this->mt);
+    double currentV = std::pow(this->packing->getLinearSize(), 3);
+    double factor = (deltaV + currentV) / currentV;
+    Assert(factor > 0);
+
+    double N = this->packing->size();
+    double exponent = N * log(factor) - this->pressure * deltaV / this->temperature;
+    if (exponent < 0)
+        if (this->unitIntervalDistribution(this->mt) < exp(exponent))
+            return false;
+
+    return this->packing->tryScaling(factor);
+}
+
+void Simulation::evaluateCounters(Logger &logger) {
+    if (this->translationCounter.movesSinceEvaluation >= 1000) {
+        double dx = this->translationDistribution.b();
+        double rate = this->translationCounter.getCurrentRate();
+        this->translationCounter.resetCurrent();
+        if (rate > 0.5) {
+            dx *= 1.1;
+            if (dx <= this->packing->getLinearSize()) {
+                this->translationDistribution = std::uniform_real_distribution<double>(-dx, dx);
+                logger.verbose();
+                logger << "Translation rate: " << rate << ", adjusting: "  << (dx / 1.1) << " -> " << dx << std::endl;
+            }
+        } else if (rate < 0.3) {
+            dx /= 1.1;
+            this->translationDistribution = std::uniform_real_distribution<double>(-dx, dx);
+            logger.verbose();
+            logger << "Translation rate: " << rate << ", adjusting: " << (dx * 1.1) << " -> " << dx << std::endl;
+        }
+    }
+
+    if (this->scalingCounter.movesSinceEvaluation >= 100) {
+        double dV = this->scalingDistribution.b();
+        double rate = this->scalingCounter.getCurrentRate();
+        this->scalingCounter.resetCurrent();
+        if (rate > 0.5) {
+            dV *= 1.1;
+            this->scalingDistribution = std::uniform_real_distribution<double>(-dV, dV);
+            logger.verbose() << "Scaling rate: " << rate << ", adjusting: " << (dV / 1.1) << " -> " << dV << std::endl;
+        } else if (rate < 0.3) {
+            dV /= 1.1;
+            this->scalingDistribution = std::uniform_real_distribution<double>(-dV, dV);
+            logger.verbose() << "Scaling rate: " << rate << ", adjusting: " << (dV * 1.1) << " -> " << dV << std::endl;
+        }
+    }
+}
+
+void Simulation::Counter::increment(bool accepted) {
+    this->moves++;
+    this->movesSinceEvaluation++;
+    if (accepted) {
+        this->acceptedMoves++;
+        this->acceptedMovesSinceEvaluation++;
+    }
+}
+
+void Simulation::Counter::reset() {
+    this->acceptedMoves = 0;
+    this->moves = 0;
+    this->acceptedMovesSinceEvaluation = 0;
+    this->movesSinceEvaluation = 0;
+}
+
+void Simulation::Counter::resetCurrent() {
+    this->acceptedMovesSinceEvaluation = 0;
+    this->movesSinceEvaluation = 0;
 }
