@@ -16,6 +16,10 @@ private:
     double pressure{};
     std::size_t thermalisationSteps{};
     std::size_t averagingSteps{};
+    std::size_t evaluateTranslationEvery = 1000;
+    std::size_t evaluateScalingEvery = 100;
+    double minAcceptanceRatio = 0.3;
+    double maxAcceptanceRatio = 0.6;
 
     std::mt19937 mt;
     std::uniform_real_distribution<double> translationDistribution;
@@ -27,11 +31,15 @@ private:
     std::unique_ptr<Packing> packing;
     double densitySum{};
     std::size_t translationMoves{};
+    std::size_t translationMovesSinceEval{};
     std::size_t acceptedTranslations{};
+    std::size_t acceptedTranslationsSinceEval{};
     std::size_t scalingMoves{};
+    std::size_t scalingMovesSinceEval{};
     std::size_t acceptedScalings{};
+    std::size_t acceptedScalingsSinceEval{};
 
-    bool performStep();
+    bool performStep(Logger &logger);
 
 public:
     Simulation(std::unique_ptr<Packing> packing, double temperature, double pressure, double positionStepSize,
@@ -46,6 +54,8 @@ public:
     [[nodiscard]] double getScalingAcceptanceRate() const {
         return static_cast<double>(this->acceptedScalings) / static_cast<double>(scalingMoves);
     }
+
+    [[nodiscard]] const Packing &getPacking() const { return *this->packing; }
 };
 
 
