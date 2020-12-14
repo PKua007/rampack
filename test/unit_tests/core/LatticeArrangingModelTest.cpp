@@ -54,5 +54,5 @@ TEST_CASE("LatticeArrangingModel: fully filled lattice") {
     CHECK(shapes[4]->getPosition() == std::array<double, 3>{1.5, 0.5, 0.5});
     CHECK(shapes[5]->getPosition() == std::array<double, 3>{1.5, 0.5, 1.5});
     CHECK(shapes[6]->getPosition() == std::array<double, 3>{1.5, 1.5, 0.5});
-    CHECK(shapes[6]->getPosition() == std::array<double, 3>{1.5, 1.5, 1.5});
+    CHECK(shapes[7]->getPosition() == std::array<double, 3>{1.5, 1.5, 1.5});
 }
