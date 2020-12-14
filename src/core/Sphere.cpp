@@ -3,6 +3,7 @@
 //
 
 #include <cmath>
+#include <sstream>
 
 #include "Sphere.h"
 #include "utils/Assertions.h"
@@ -19,4 +20,12 @@ std::unique_ptr<Shape> Sphere::clone() const {
 
 Sphere::Sphere(double radius) : radius{radius} {
     Expects(radius > 0);
+}
+
+std::string Sphere::toWolfram(double scaleFactor) const {
+    std::ostringstream out;
+    auto position = this->getPosition();
+    out << "Sphere[{" << (position[0]*scaleFactor) << "," << (position[1]*scaleFactor) << ",";
+    out << (position[2]*scaleFactor) << "}," << this->radius << "]";
+    return out.str();
 }

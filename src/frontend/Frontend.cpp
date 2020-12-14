@@ -11,6 +11,7 @@
 #include "Parameters.h"
 #include "utils/Fold.h"
 #include "utils/Utils.h"
+#include "utils/Assertions.h"
 #include "core/ShapeFactory.h"
 #include "core/Simulation.h"
 #include "core/PeriodicBoundaryConditions.h"
@@ -123,6 +124,13 @@ int Frontend::casino(int argc, char **argv) {
     logger.info() << "Average density: " << simulation.getAverageDensity() << std::endl;
     logger.info() << "Translation acceptance rate: " << simulation.getTranlationAcceptanceRate() << std::endl;
     logger.info() << "Scaling acceptance rate: " << simulation.getScalingAcceptanceRate() << std::endl;
+
+    if (!params.wolframFilename.empty()) {
+        std::ofstream out(params.wolframFilename);
+        ValidateMsg(out, "Could not open " + params.wolframFilename + " to store packing!");
+        simulation.getPacking().toWolfram(out);
+        logger.info() << "Packing stored to " + params.wolframFilename << std::endl;
+    }
 
     return EXIT_SUCCESS;
 }

@@ -36,6 +36,8 @@ Parameters::Parameters(std::istream &input) {
             this->shapeName = config.getString("shapeName");
         else if (key == "shapeAttributes")
             this->shapeAttributes = config.getString("shapeAttributes");
+        else if (key == "wolframFilename")
+            this->wolframFilename = config.getString("wolframFilename");
         else
             throw ParametersParseException("Unknown parameter " + key);
     }

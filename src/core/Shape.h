@@ -7,6 +7,7 @@
 
 #include <array>
 #include <memory>
+#include <iosfwd>
 
 #include "BoundaryConditions.h"
 
@@ -23,6 +24,7 @@ public:
     [[nodiscard]] std::array<double, 3> getPosition() const { return this->position; }
     [[nodiscard]] virtual bool overlap(const Shape &other, double scaleFactor, const BoundaryConditions &bc) const = 0;
     [[nodiscard]] virtual std::unique_ptr<Shape> clone() const = 0;
+    [[nodiscard]] virtual std::string toWolfram(double scaleFactor) const = 0;
 };
 
 

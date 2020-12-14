@@ -19,6 +19,8 @@ namespace {
         [[nodiscard]] std::unique_ptr<Shape> clone() const override {
             return std::make_unique<DummyShape>(*this);
         }
+
+        [[nodiscard]] std::string toWolfram([[maybe_unused]] double scaleFactor) const override { return ""; }
     };
 }
 

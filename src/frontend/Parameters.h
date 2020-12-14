@@ -43,6 +43,7 @@ public:
     unsigned long seed{};
     std::string shapeName{};
     std::string shapeAttributes{};
+    std::string wolframFilename{};
 
     Parameters() = default;
 

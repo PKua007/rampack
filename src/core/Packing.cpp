@@ -3,6 +3,7 @@
 //
 
 #include <cmath>
+#include <ostream>
 
 #include "Packing.h"
 #include "utils/Assertions.h"
@@ -59,4 +60,15 @@ bool Packing::isAnyParticleCollidingWith(std::size_t i) const {
         if (i != j && this->shapes[i]->overlap(*this->shapes[j], this->linearSize, *this->bc))
             return true;
     return false;
+}
+
+void Packing::toWolfram(std::ostream &out) const {
+    out << "Graphics3D[{" << std::endl;
+    for (std::size_t i{}; i < this->shapes.size(); i++) {
+        const auto &shape = shapes[i];
+        out << shape->toWolfram(this->linearSize);
+        if (i != this->shapes.size() - 1)
+            out << "," << std::endl;
+    }
+    out << "}]";
 }

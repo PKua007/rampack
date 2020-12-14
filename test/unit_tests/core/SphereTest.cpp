@@ -39,3 +39,11 @@ TEST_CASE("Sphere: overlap") {
         CHECK_FALSE(sphere2.overlap(sphere1, 1.001, pbc));
     }
 }
+
+TEST_CASE("Sphere: toWolfram") {
+    Sphere sphere(2);
+    PeriodicBoundaryConditions pbc(10);
+    sphere.translate({1, 2, 3}, pbc);
+
+    CHECK(sphere.toWolfram(2) == "Sphere[{2,4,6},2]");
+}
