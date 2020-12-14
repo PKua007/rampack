@@ -35,7 +35,7 @@ bool Packing::tryScaling(double scaleFactor) {
     Expects(scaleFactor > 0);
     double linearSizeSaved = this->linearSize;
     this->linearSize *= std::cbrt(scaleFactor);
-    if (this->areAnyParticlesOverlapping()) {
+    if (scaleFactor < 1 && this->areAnyParticlesOverlapping()) {
         this->linearSize = linearSizeSaved;
         return false;
     }
