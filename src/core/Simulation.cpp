@@ -32,6 +32,7 @@ void Simulation::perform(std::unique_ptr<Packing> packing_, Logger &logger) {
     this->cycleLength = this->packing->size() + 1;  // size() translations + 1 scaling
 
     // Thermalisation
+    this->shouldAdjustStepSize = true;
     logger.setAdditionalText("thermalisation");
     logger.info() << "Starting thermalisation..." << std::endl;
     for (std::size_t i{}; i < this->thermalisationCycles * this->cycleLength; i++) {
@@ -41,6 +42,7 @@ void Simulation::perform(std::unique_ptr<Packing> packing_, Logger &logger) {
     }
 
     // Averaging
+    this->shouldAdjustStepSize = false;
     logger.setAdditionalText("averaging");
     logger.info() << "Starting averaging..." << std::endl;
     for(std::size_t i{}; i < this->averagingCycles * this->cycleLength; i++) {
@@ -62,7 +64,8 @@ void Simulation::performStep(Logger &logger) {
         this->translationCounter.increment(wasTranslated);
     }
 
-    this->evaluateCounters(logger);
+    if (this->shouldAdjustStepSize)
+        this->evaluateCounters(logger);
 }
 
 bool Simulation::tryTranslation() {

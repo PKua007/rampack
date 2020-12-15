@@ -36,6 +36,7 @@ private:
     std::size_t thermalisationCycles{};
     std::size_t averagingCycles{};
     std::size_t cycleLength{};
+    bool shouldAdjustStepSize{};
 
     std::mt19937 mt;
     std::uniform_real_distribution<double> translationDistribution;
