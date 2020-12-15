@@ -21,6 +21,7 @@ namespace {
         }
 
         [[nodiscard]] std::string toWolfram([[maybe_unused]] double scaleFactor) const override { return ""; }
+        [[nodiscard]] double getVolume() const override { return 1; }
     };
 }
 

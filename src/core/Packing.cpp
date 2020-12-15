@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <ostream>
+#include <numeric>
 
 #include "Packing.h"
 #include "utils/Assertions.h"
@@ -71,4 +72,10 @@ void Packing::toWolfram(std::ostream &out) const {
             out << "," << std::endl;
     }
     out << "}]";
+}
+
+double Packing::getPackingFraction() const {
+    double particlesVolume = std::accumulate(this->shapes.begin(), this->shapes.end(), 0.,
+                                             [](double sum, const auto &shape) { return sum + shape->getVolume(); });
+    return particlesVolume / std::pow(this->linearSize, 3);
 }

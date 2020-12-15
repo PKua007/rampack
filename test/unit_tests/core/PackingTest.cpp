@@ -58,4 +58,8 @@ TEST_CASE("Packing") {
         REQUIRE_FALSE(packing.tryTranslation(2, {2, 2.505, -3.5}));
         CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.5, 0.5, 0.8}}, 1e-9));
     }
+
+    SECTION("packing fraction") {
+        CHECK(packing.getPackingFraction() == Approx(0.001570796326794897));
+    }
 }

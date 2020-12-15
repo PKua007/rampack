@@ -39,6 +39,7 @@ public:
     [[nodiscard]] const Shape &operator[](std::size_t i);
 
     void toWolfram(std::ostream &out) const;
+    [[nodiscard]] double getPackingFraction() const;
 };
 
 

@@ -44,6 +44,7 @@ public:
     std::string shapeName{};
     std::string shapeAttributes{};
     std::string wolframFilename{};
+    std::string compressibilityFilename{};
 
     Parameters() = default;
 

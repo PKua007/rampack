@@ -29,3 +29,7 @@ std::string Sphere::toWolfram(double scaleFactor) const {
     out << (position[2]*scaleFactor) << "}," << this->radius << "]";
     return out.str();
 }
+
+double Sphere::getVolume() const {
+    return 4./3 * M_PI * std::pow(this->radius, 3);
+}

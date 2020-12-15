@@ -4,6 +4,7 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <limits>
 
 #include <cxxopts.hpp>
 
@@ -121,15 +122,26 @@ int Frontend::casino(int argc, char **argv) {
                           params.thermalisationSteps, params.averagingSteps, params.seed);
 
     simulation.perform(std::move(packing), logger);
-    logger.info() << "Average density: " << simulation.getAverageDensity() << std::endl;
-    logger.info() << "Translation acceptance rate: " << simulation.getTranlationAcceptanceRate() << std::endl;
-    logger.info() << "Scaling acceptance rate: " << simulation.getScalingAcceptanceRate() << std::endl;
+    this->logger.info() << "Average density: " << simulation.getAverageDensity() << std::endl;
+    this->logger.info() << "Translation acceptance rate: " << simulation.getTranlationAcceptanceRate() << std::endl;
+    this->logger.info() << "Scaling acceptance rate: " << simulation.getScalingAcceptanceRate() << std::endl;
 
     if (!params.wolframFilename.empty()) {
         std::ofstream out(params.wolframFilename);
         ValidateMsg(out, "Could not open " + params.wolframFilename + " to store packing!");
         simulation.getPacking().toWolfram(out);
-        logger.info() << "Packing stored to " + params.wolframFilename << std::endl;
+        this->logger.info() << "Packing stored to " + params.wolframFilename << std::endl;
+    }
+
+    if (!params.compressibilityFilename.empty()) {
+        std::ofstream out(params.compressibilityFilename, std::ios_base::app);
+        ValidateMsg(out, "Could not open " + params.compressibilityFilename + " to store compressibility factor!");
+        double rho = simulation.getAverageDensity();
+        double theta = rho * shape->getVolume();
+        double Z = params.pressure / params.temperature / rho;
+        out.precision(std::numeric_limits<double>::max_digits10);
+        out << rho << " " << theta << " " << Z << std::endl;
+        this->logger.info() << "Compressibility factor stored to " + params.compressibilityFilename << std::endl;
     }
 
     return EXIT_SUCCESS;
