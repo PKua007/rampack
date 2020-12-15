@@ -33,8 +33,9 @@ private:
 
     double temperature{};
     double pressure{};
-    std::size_t thermalisationSteps{};
-    std::size_t averagingSteps{};
+    std::size_t thermalisationCycles{};
+    std::size_t averagingCycles{};
+    std::size_t cycleLength{};
 
     std::mt19937 mt;
     std::uniform_real_distribution<double> translationDistribution;
@@ -55,10 +56,10 @@ private:
 
 public:
     Simulation(double temperature, double pressure, double positionStepSize, double volumeStepSize,
-               std::size_t thermalisationsSteps, std::size_t averagingSteps, unsigned long seed);
+               std::size_t thermalisationCycles, std::size_t averagingCycles, unsigned long seed);
 
     void perform(std::unique_ptr<Packing> packing_, Logger &logger);
-    [[nodiscard]] double getAverageDensity() const { return this->densitySum / this->averagingSteps; };
+    [[nodiscard]] double getAverageDensity() const;
     [[nodiscard]] double getTranlationAcceptanceRate() const { return this->translationCounter.getRate(); }
     [[nodiscard]] double getScalingAcceptanceRate() const { return this->scalingCounter.getRate(); }
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }

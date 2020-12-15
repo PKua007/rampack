@@ -38,8 +38,8 @@ public:
     double pressure{};
     double positionStepSize{};
     double volumeStepSize{};
-    std::size_t thermalisationSteps{};
-    std::size_t averagingSteps{};
+    std::size_t thermalisationCycles{};
+    std::size_t averagingCycles{};
     unsigned long seed{};
     std::string shapeName{};
     std::string shapeAttributes{};

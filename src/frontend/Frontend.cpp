@@ -119,7 +119,7 @@ int Frontend::casino(int argc, char **argv) {
     auto shapes = latticeArrangingModel.arrange(*shape, params.numOfParticles, 1, *bc);
     auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(bc));
     Simulation simulation(params.temperature, params.pressure, params.positionStepSize, params.volumeStepSize,
-                          params.thermalisationSteps, params.averagingSteps, params.seed);
+                          params.thermalisationCycles, params.averagingCycles, params.seed);
 
     simulation.perform(std::move(packing), logger);
     this->logger.info() << "Average density: " << simulation.getAverageDensity() << std::endl;

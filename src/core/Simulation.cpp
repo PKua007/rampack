@@ -8,17 +8,17 @@
 #include "utils/Assertions.h"
 
 Simulation::Simulation(double temperature, double pressure, double positionStepSize, double volumeStepSize,
-                       std::size_t thermalisationsSteps, std::size_t averagingSteps, unsigned long seed)
-        : temperature{temperature}, pressure{pressure}, thermalisationSteps{thermalisationsSteps},
-          averagingSteps{averagingSteps}, mt(seed), translationDistribution(-positionStepSize, positionStepSize),
+                       std::size_t thermalisationCycles, std::size_t averagingCycles, unsigned long seed)
+        : temperature{temperature}, pressure{pressure}, thermalisationCycles{thermalisationCycles},
+          averagingCycles{averagingCycles}, mt(seed), translationDistribution(-positionStepSize, positionStepSize),
           scalingDistribution(-volumeStepSize, volumeStepSize)
 {
     Expects(temperature > 0);
     Expects(pressure > 0);
     Expects(positionStepSize > 0);
     Expects(volumeStepSize > 0);
-    Expects(thermalisationsSteps > 0);
-    Expects(averagingSteps > 0);
+    Expects(thermalisationCycles > 0);
+    Expects(averagingCycles > 0);
 }
 
 void Simulation::perform(std::unique_ptr<Packing> packing_, Logger &logger) {
@@ -29,23 +29,28 @@ void Simulation::perform(std::unique_ptr<Packing> packing_, Logger &logger) {
     this->translationCounter.reset();
     this->scalingCounter.reset();
     this->densitySum = 0;
+    this->cycleLength = this->packing->size() + 1;  // size() translations + 1 scaling
 
     // Thermalisation
+    logger.setAdditionalText("thermalisation");
     logger.info() << "Starting thermalisation..." << std::endl;
-    for (std::size_t i{}; i < this->thermalisationSteps; i++) {
+    for (std::size_t i{}; i < this->thermalisationCycles * this->cycleLength; i++) {
         this->performStep(logger);
-        if ((i + 1) % 10000 == 0)
-            logger.info() << "Performed " << (i + 1) << " steps" << std::endl;
+        if ((i + 1) % (this->cycleLength * 100) == 0)
+            logger.info() << "Performed " << ((i + 1)/this->cycleLength) << " cycles" << std::endl;
     }
 
     // Averaging
+    logger.setAdditionalText("averaging");
     logger.info() << "Starting averaging..." << std::endl;
-    for(std::size_t i{}; i < this->averagingSteps; i++) {
+    for(std::size_t i{}; i < this->averagingCycles * this->cycleLength; i++) {
         this->performStep(logger);
         this->densitySum += this->packing->size() / std::pow(this->packing->getLinearSize(), 3);
-        if ((i + 1) % 10000 == 0)
-            logger.info() << "Performed " << (i + 1) << " steps" << std::endl;
+        if ((i + 1) % (this->cycleLength * 100) == 0)
+            logger.info() << "Performed " << ((i + 1)/this->cycleLength) << " cycles" << std::endl;
     }
+
+    logger.setAdditionalText("");
 }
 
 void Simulation::performStep(Logger &logger) {
@@ -84,7 +89,7 @@ bool Simulation::tryScaling() {
 }
 
 void Simulation::evaluateCounters(Logger &logger) {
-    if (this->translationCounter.movesSinceEvaluation >= 1000) {
+    if (this->translationCounter.movesSinceEvaluation >= 100*this->cycleLength) {
         double dx = this->translationDistribution.b();
         double rate = this->translationCounter.getCurrentRate();
         this->translationCounter.resetCurrent();
@@ -117,6 +122,10 @@ void Simulation::evaluateCounters(Logger &logger) {
             logger.verbose() << "Scaling rate: " << rate << ", adjusting: " << (dV * 1.1) << " -> " << dV << std::endl;
         }
     }
+}
+
+double Simulation::getAverageDensity() const {
+    return this->densitySum / this->averagingCycles / this->cycleLength;
 }
 
 void Simulation::Counter::increment(bool accepted) {
