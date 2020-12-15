@@ -6,12 +6,21 @@
 #define RAMPACK_SIMULATION_H
 
 #include <random>
+#include <iosfwd>
 
 #include "Packing.h"
 #include "utils/Logger.h"
 #include "utils/Quantity.h"
 
 class Simulation {
+public:
+    struct ScalarSnapshot {
+        std::size_t cycleCount{};
+        double value{};
+
+        friend std::ostream &operator<<(std::ostream &out, const Simulation::ScalarSnapshot &snapshot);
+    };
+
 private:
     struct Counter {
         std::size_t movesSinceEvaluation{};
@@ -48,7 +57,8 @@ private:
     std::uniform_int_distribution<int> particleIdxDistribution;
 
     std::unique_ptr<Packing> packing;
-    std::vector<double> densityShaphots;
+    std::vector<double> averagedDensities;
+    std::vector<ScalarSnapshot> densityThermalisationSnapshots;
     Counter translationCounter;
     Counter scalingCounter;
 
@@ -64,6 +74,9 @@ public:
 
     void perform(std::unique_ptr<Packing> packing_, Logger &logger);
     [[nodiscard]] Quantity getAverageDensity() const;
+    [[nodiscard]] std::vector<ScalarSnapshot> getDensityThermalisationSnapshots() const {
+        return this->densityThermalisationSnapshots;
+    }
     [[nodiscard]] double getTranlationAcceptanceRate() const { return this->translationCounter.getRate(); }
     [[nodiscard]] double getScalingAcceptanceRate() const { return this->scalingCounter.getRate(); }
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }

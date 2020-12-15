@@ -79,3 +79,7 @@ double Packing::getPackingFraction() const {
                                              [](double sum, const auto &shape) { return sum + shape->getVolume(); });
     return particlesVolume / std::pow(this->linearSize, 3);
 }
+
+double Packing::getNumberDensity() const {
+    return this->shapes.size() / std::pow(this->linearSize, 3);
+}

@@ -62,4 +62,8 @@ TEST_CASE("Packing") {
     SECTION("packing fraction") {
         CHECK(packing.getPackingFraction() == Approx(0.001570796326794897));
     }
+
+    SECTION("number density") {
+        CHECK(packing.getNumberDensity() == Approx(0.024));
+    }
 }

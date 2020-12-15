@@ -42,6 +42,8 @@ Parameters::Parameters(std::istream &input) {
             this->wolframFilename = config.getString("wolframFilename");
         else if (key == "compressibilityFilename")
             this->compressibilityFilename = config.getString("compressibilityFilename");
+        else if (key == "densitySnapshotFilename")
+            this->densitySnapshotFilename = config.getString("densitySnapshotFilename");
         else
             throw ParametersParseException("Unknown parameter " + key);
     }

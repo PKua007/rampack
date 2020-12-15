@@ -46,6 +46,7 @@ public:
     std::string shapeAttributes{};
     std::string wolframFilename{};
     std::string compressibilityFilename{};
+    std::string densitySnapshotFilename{};
 
     Parameters() = default;
 

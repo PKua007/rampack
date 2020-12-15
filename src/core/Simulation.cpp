@@ -3,6 +3,7 @@
 //
 
 #include <cmath>
+#include <ostream>
 
 #include "Simulation.h"
 #include "utils/Assertions.h"
@@ -31,27 +32,30 @@ void Simulation::perform(std::unique_ptr<Packing> packing_, Logger &logger) {
     this->packing = std::move(packing_);
     this->translationCounter.reset();
     this->scalingCounter.reset();
-    this->densityShaphots.clear();
+    this->averagedDensities.clear();
+    this->densityThermalisationSnapshots.clear();
     this->cycleLength = this->packing->size() + 1;  // size() translations + 1 scaling
 
-    // Thermalisation
     this->shouldAdjustStepSize = true;
     logger.setAdditionalText("thermalisation");
     logger.info() << "Starting thermalisation..." << std::endl;
     for (std::size_t i{}; i < this->thermalisationCycles * this->cycleLength; i++) {
         this->performStep(logger);
+        if ((i + 1) % (this->cycleLength * this->averagingEvery) == 0) {
+            this->densityThermalisationSnapshots.push_back({(i + 1) / this->cycleLength,
+                                                            this->packing->getNumberDensity()});
+        }
         if ((i + 1) % (this->cycleLength * 100) == 0)
             logger.info() << "Performed " << ((i + 1)/this->cycleLength) << " cycles" << std::endl;
     }
 
-    // Averaging
     this->shouldAdjustStepSize = false;
     logger.setAdditionalText("averaging");
     logger.info() << "Starting averaging..." << std::endl;
     for(std::size_t i{}; i < this->averagingCycles * this->cycleLength; i++) {
         this->performStep(logger);
         if ((i + 1) % (this->cycleLength * this->averagingEvery) == 0)
-            this->densityShaphots.push_back(this->packing->size() / std::pow(this->packing->getLinearSize(), 3));
+            this->averagedDensities.push_back(this->packing->getNumberDensity());
         if ((i + 1) % (this->cycleLength * 100) == 0)
             logger.info() << "Performed " << ((i + 1)/this->cycleLength) << " cycles" << std::endl;
     }
@@ -134,7 +138,7 @@ void Simulation::evaluateCounters(Logger &logger) {
 Quantity Simulation::getAverageDensity() const {
     Quantity density;
     density.separator = Quantity::PLUS_MINUS;
-    density.calculateFromSamples(this->densityShaphots);
+    density.calculateFromSamples(this->averagedDensities);
     return density;
 }
 
@@ -157,4 +161,8 @@ void Simulation::Counter::reset() {
 void Simulation::Counter::resetCurrent() {
     this->acceptedMovesSinceEvaluation = 0;
     this->movesSinceEvaluation = 0;
+}
+
+std::ostream &operator<<(std::ostream &out, const Simulation::ScalarSnapshot &snapshot) {
+    return out << snapshot.cycleCount << " " << snapshot.value;
 }

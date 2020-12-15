@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <fstream>
 #include <limits>
+#include <iterator>
+#include <algorithm>
 
 #include <cxxopts.hpp>
 
@@ -18,6 +20,7 @@
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/LatticeArrangingModel.h"
 #include "core/Packing.h"
+
 
 Parameters Frontend::loadParameters(const std::string &inputFilename, const std::vector<std::string> &overridenParams) {
     std::ifstream paramsFile(inputFilename);
@@ -142,6 +145,16 @@ int Frontend::casino(int argc, char **argv) {
         out.precision(std::numeric_limits<double>::max_digits10);
         out << rho << " " << theta << " " << Z << std::endl;
         this->logger.info() << "Compressibility factor stored to " + params.compressibilityFilename << std::endl;
+    }
+
+    if (!params.densitySnapshotFilename.empty()) {
+        std::ofstream out(params.densitySnapshotFilename);
+        ValidateMsg(out, "Could not open " + params.densitySnapshotFilename + " to store density snapshots!");
+        auto snapshots = simulation.getDensityThermalisationSnapshots();
+        out.precision(std::numeric_limits<double>::max_digits10);
+        std::copy(snapshots.begin(), snapshots.end(),
+                  std::ostream_iterator<Simulation::ScalarSnapshot>(out, "\n"));
+        this->logger.info() << "Density snapshots stored to " + params.densitySnapshotFilename << std::endl;
     }
 
     return EXIT_SUCCESS;

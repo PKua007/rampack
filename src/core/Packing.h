@@ -40,6 +40,7 @@ public:
 
     void toWolfram(std::ostream &out) const;
     [[nodiscard]] double getPackingFraction() const;
+    [[nodiscard]] double getNumberDensity() const;
 };
 
 
