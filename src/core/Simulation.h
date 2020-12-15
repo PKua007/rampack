@@ -9,6 +9,7 @@
 
 #include "Packing.h"
 #include "utils/Logger.h"
+#include "utils/Quantity.h"
 
 class Simulation {
 private:
@@ -35,6 +36,7 @@ private:
     double pressure{};
     std::size_t thermalisationCycles{};
     std::size_t averagingCycles{};
+    std::size_t averagingEvery{};
     std::size_t cycleLength{};
     bool shouldAdjustStepSize{};
 
@@ -46,7 +48,7 @@ private:
     std::uniform_int_distribution<int> particleIdxDistribution;
 
     std::unique_ptr<Packing> packing;
-    double densitySum{};
+    std::vector<double> densityShaphots;
     Counter translationCounter;
     Counter scalingCounter;
 
@@ -57,10 +59,11 @@ private:
 
 public:
     Simulation(double temperature, double pressure, double positionStepSize, double volumeStepSize,
-               std::size_t thermalisationCycles, std::size_t averagingCycles, unsigned long seed);
+               std::size_t thermalisationCycles, std::size_t averagingCycles, std::size_t averagingEvery,
+               unsigned long seed);
 
     void perform(std::unique_ptr<Packing> packing_, Logger &logger);
-    [[nodiscard]] double getAverageDensity() const;
+    [[nodiscard]] Quantity getAverageDensity() const;
     [[nodiscard]] double getTranlationAcceptanceRate() const { return this->translationCounter.getRate(); }
     [[nodiscard]] double getScalingAcceptanceRate() const { return this->scalingCounter.getRate(); }
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }

@@ -8,9 +8,11 @@
 #include "utils/Assertions.h"
 
 Simulation::Simulation(double temperature, double pressure, double positionStepSize, double volumeStepSize,
-                       std::size_t thermalisationCycles, std::size_t averagingCycles, unsigned long seed)
+                       std::size_t thermalisationCycles, std::size_t averagingCycles, std::size_t averagingEvery,
+                       unsigned long seed)
         : temperature{temperature}, pressure{pressure}, thermalisationCycles{thermalisationCycles},
-          averagingCycles{averagingCycles}, mt(seed), translationDistribution(-positionStepSize, positionStepSize),
+          averagingCycles{averagingCycles}, averagingEvery{averagingEvery}, mt(seed),
+          translationDistribution(-positionStepSize, positionStepSize),
           scalingDistribution(-volumeStepSize, volumeStepSize)
 {
     Expects(temperature > 0);
@@ -19,6 +21,7 @@ Simulation::Simulation(double temperature, double pressure, double positionStepS
     Expects(volumeStepSize > 0);
     Expects(thermalisationCycles > 0);
     Expects(averagingCycles > 0);
+    Expects(averagingEvery > 0 && averagingEvery < averagingCycles);
 }
 
 void Simulation::perform(std::unique_ptr<Packing> packing_, Logger &logger) {
@@ -28,7 +31,7 @@ void Simulation::perform(std::unique_ptr<Packing> packing_, Logger &logger) {
     this->packing = std::move(packing_);
     this->translationCounter.reset();
     this->scalingCounter.reset();
-    this->densitySum = 0;
+    this->densityShaphots.clear();
     this->cycleLength = this->packing->size() + 1;  // size() translations + 1 scaling
 
     // Thermalisation
@@ -47,7 +50,8 @@ void Simulation::perform(std::unique_ptr<Packing> packing_, Logger &logger) {
     logger.info() << "Starting averaging..." << std::endl;
     for(std::size_t i{}; i < this->averagingCycles * this->cycleLength; i++) {
         this->performStep(logger);
-        this->densitySum += this->packing->size() / std::pow(this->packing->getLinearSize(), 3);
+        if ((i + 1) % (this->cycleLength * this->averagingEvery) == 0)
+            this->densityShaphots.push_back(this->packing->size() / std::pow(this->packing->getLinearSize(), 3));
         if ((i + 1) % (this->cycleLength * 100) == 0)
             logger.info() << "Performed " << ((i + 1)/this->cycleLength) << " cycles" << std::endl;
     }
@@ -127,8 +131,11 @@ void Simulation::evaluateCounters(Logger &logger) {
     }
 }
 
-double Simulation::getAverageDensity() const {
-    return this->densitySum / this->averagingCycles / this->cycleLength;
+Quantity Simulation::getAverageDensity() const {
+    Quantity density;
+    density.separator = Quantity::PLUS_MINUS;
+    density.calculateFromSamples(this->densityShaphots);
+    return density;
 }
 
 void Simulation::Counter::increment(bool accepted) {

@@ -30,6 +30,8 @@ Parameters::Parameters(std::istream &input) {
             this->thermalisationCycles = config.getUnsignedLong("thermalisationCycles");
         else if (key == "averagingCycles")
             this->averagingCycles = config.getUnsignedLong("averagingCycles");
+        else if (key == "averagingEvery")
+            this->averagingEvery = config.getUnsignedLong("averagingEvery");
         else if (key == "seed")
             this->seed = config.getUnsignedLong("seed");
         else if (key == "shapeName")
@@ -55,6 +57,7 @@ void Parameters::autocompleteAndValidate() {
     Validate(this->volumeStepSize > 0);
     Validate(this->thermalisationCycles > 0);
     Validate(this->averagingCycles > 0);
+    Validate(this->averagingEvery > 0);
 }
 
 void Parameters::print(Logger &logger) const {
@@ -66,6 +69,7 @@ void Parameters::print(Logger &logger) const {
     logger.info() << "volumeStepSize       : " << this->volumeStepSize << std::endl;
     logger.info() << "thermalisationCycles : " << this->thermalisationCycles << std::endl;
     logger.info() << "averagingCycles      : " << this->averagingCycles << std::endl;
+    logger.info() << "averagingEvery       : " << this->averagingEvery << std::endl;
     logger.info() << "seed                 : " << this->seed << std::endl;
     logger.info() << "shapeName            : " << this->shapeName << std::endl;
     logger.info() << "shapeAttributes      : " << this->shapeAttributes << std::endl;

@@ -40,6 +40,7 @@ public:
     double volumeStepSize{};
     std::size_t thermalisationCycles{};
     std::size_t averagingCycles{};
+    std::size_t averagingEvery{};
     unsigned long seed{};
     std::string shapeName{};
     std::string shapeAttributes{};

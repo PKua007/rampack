@@ -119,7 +119,7 @@ int Frontend::casino(int argc, char **argv) {
     auto shapes = latticeArrangingModel.arrange(*shape, params.numOfParticles, 1, *bc);
     auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(bc));
     Simulation simulation(params.temperature, params.pressure, params.positionStepSize, params.volumeStepSize,
-                          params.thermalisationCycles, params.averagingCycles, params.seed);
+                          params.thermalisationCycles, params.averagingCycles, params.averagingEvery, params.seed);
 
     simulation.perform(std::move(packing), logger);
     this->logger.info() << "Average density: " << simulation.getAverageDensity() << std::endl;
@@ -136,9 +136,9 @@ int Frontend::casino(int argc, char **argv) {
     if (!params.compressibilityFilename.empty()) {
         std::ofstream out(params.compressibilityFilename, std::ios_base::app);
         ValidateMsg(out, "Could not open " + params.compressibilityFilename + " to store compressibility factor!");
-        double rho = simulation.getAverageDensity();
-        double theta = rho * shape->getVolume();
-        double Z = params.pressure / params.temperature / rho;
+        Quantity rho = simulation.getAverageDensity();
+        double theta = rho.value * shape->getVolume();
+        double Z = params.pressure / params.temperature / rho.value;
         out.precision(std::numeric_limits<double>::max_digits10);
         out << rho << " " << theta << " " << Z << std::endl;
         this->logger.info() << "Compressibility factor stored to " + params.compressibilityFilename << std::endl;
