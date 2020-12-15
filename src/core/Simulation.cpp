@@ -77,7 +77,7 @@ bool Simulation::tryScaling() {
     double N = this->packing->size();
     double exponent = N * log(factor) - this->pressure * deltaV / this->temperature;
     if (exponent < 0)
-        if (this->unitIntervalDistribution(this->mt) < exp(exponent))
+        if (this->unitIntervalDistribution(this->mt) > exp(exponent))
             return false;
 
     return this->packing->tryScaling(factor);
