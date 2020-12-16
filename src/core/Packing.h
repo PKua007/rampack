@@ -37,7 +37,9 @@ public:
     [[nodiscard]] bool empty() const { return this->shapes.empty(); }
     [[nodiscard]] const_iterator begin() const { return this->shapes.begin(); }
     [[nodiscard]] const_iterator end() const { return this->shapes.end(); }
-    [[nodiscard]] const Shape &operator[](std::size_t i);
+    [[nodiscard]] const Shape &operator[](std::size_t i) const;
+    [[nodiscard]] const Shape &front() const;
+    [[nodiscard]] const Shape &back() const;
 
     void toWolfram(std::ostream &out) const;
     [[nodiscard]] double getPackingFraction() const;

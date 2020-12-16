@@ -50,9 +50,19 @@ bool Packing::tryScaling(double scaleFactor) {
     return true;
 }
 
-const Shape &Packing::operator[](std::size_t i) {
+const Shape &Packing::operator[](std::size_t i) const {
     Expects(i < this->size());
     return *this->shapes[i];
+}
+
+const Shape &Packing::front() const {
+    Expects(!this->empty());
+    return *this->shapes.front();
+}
+
+const Shape &Packing::back() const {
+    Expects(!this->empty());
+    return *this->shapes.back();
 }
 
 bool Packing::areAnyParticlesOverlapping() const {
