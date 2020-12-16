@@ -28,6 +28,7 @@ public:
     Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, std::unique_ptr<BoundaryConditions> bc);
 
     bool tryTranslation(std::size_t particleIdx, Vector<3> translation);
+    bool tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation);
     bool tryScaling(double scaleFactor);
 
     [[nodiscard]] double getLinearSize() const { return linearSize; }

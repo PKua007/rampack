@@ -431,6 +431,22 @@ Matrix<ROWS, COLS, E>::rotation(double _ax, double _ay, double _az)
 
 
 template <std::size_t ROWS, std::size_t COLS, typename E>
+template <std::size_t _ROWS, std::size_t _COLS, typename _E>
+typename std::enable_if<_ROWS == 3 && _COLS == 3 && std::is_same<_E, double>::value, Matrix<ROWS, COLS, E>>::type
+Matrix<ROWS, COLS, E>::rotation(const Vector<3, E> &axis, double angle)
+{
+    double sina = std::sin(angle);
+    double cosa = std::cos(angle);
+    Matrix<3, 3> K = {{      0 , -axis[2],  axis[1],
+                        axis[2],        0, -axis[0],
+                       -axis[1],  axis[0],        0}};
+
+    // Rodrigues' rotation formula
+    return Matrix<3, 3>::identity() + K*sina + (1 - cosa)*K*K;
+}
+
+
+template <std::size_t ROWS, std::size_t COLS, typename E>
 std::string Matrix<ROWS, COLS, E>::toString() const
 {
     std::stringstream sstream;

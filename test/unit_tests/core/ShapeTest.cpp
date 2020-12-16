@@ -11,7 +11,10 @@ namespace {
     class DummyShape : public Shape {
     public:
         DummyShape() = default;
-        explicit DummyShape(const std::array<double, 3> &position) : Shape(position) { }
+        explicit DummyShape(const Vector<3> &position) : Shape(position) { }
+        explicit DummyShape(const Vector<3> &position, const Matrix<3, 3> &orientation)
+                : Shape(position, orientation)
+        { }
 
         [[nodiscard]] bool overlap([[maybe_unused]] const Shape &other, [[maybe_unused]] double scaleFactor,
                                    [[maybe_unused]] const BoundaryConditions &bc) const override
@@ -33,12 +36,26 @@ TEST_CASE("Shape: construction") {
         DummyShape shape;
 
         REQUIRE(shape.getPosition() == Vector<3>{0, 0, 0});
+        REQUIRE(shape.getOrientation() == Matrix<3, 3>::identity());
     }
 
-    SECTION("specific") {
+    SECTION("specific position") {
         DummyShape shape({1, 2, 3});
 
         REQUIRE(shape.getPosition() == Vector<3>{1, 2, 3});
+        REQUIRE(shape.getOrientation() == Matrix<3, 3>::identity());
+    }
+
+    SECTION("specific position and orientation") {
+        DummyShape shape({1, 2, 3},
+                         {-1,  0, 0,
+                           0, -1, 0,
+                           0,  0, 1});
+
+        REQUIRE(shape.getPosition() == Vector<3>{1, 2, 3});
+        REQUIRE(shape.getOrientation() == Matrix<3, 3>{-1,  0, 0,
+                                                        0, -1, 0,
+                                                        0,  0, 1});
     }
 }
 
@@ -49,4 +66,16 @@ TEST_CASE("Shape: translation with pbc") {
     shape.translate({2, -1, 7}, pbc);
 
     REQUIRE(shape.getPosition() == Vector<3>{3, 1, 2});
+}
+
+TEST_CASE("Shape: orientation") {
+    DummyShape shape{};
+
+    shape.rotate({1,  0,  0,
+                  0, -1,  0,
+                  0,  0, -1});
+
+    REQUIRE(shape.getOrientation() == Matrix<3, 3>{1,  0,  0,
+                                                   0, -1,  0,
+                                                   0,  0, -1});
 }

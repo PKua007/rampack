@@ -29,6 +29,16 @@ bool Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation) {
     return true;
 }
 
+bool Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation) {
+    Expects(particleIdx < this->size());
+    this->shapes[particleIdx]->rotate(rotation);
+    if (this->isAnyParticleCollidingWith(particleIdx)) {
+        this->shapes[particleIdx]->rotate(rotation.transpose());
+        return false;
+    }
+    return true;
+}
+
 bool Packing::tryScaling(double scaleFactor) {
     Expects(scaleFactor > 0);
     double linearSizeSaved = this->linearSize;

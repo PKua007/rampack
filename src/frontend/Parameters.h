@@ -37,6 +37,7 @@ public:
     double temperature{};
     double pressure{};
     double positionStepSize{};
+    double rotationStepSize{};
     double volumeStepSize{};
     std::size_t thermalisationCycles{};
     std::size_t averagingCycles{};

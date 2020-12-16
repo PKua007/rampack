@@ -24,6 +24,8 @@ Parameters::Parameters(std::istream &input) {
             this->pressure = config.getDouble("pressure");
         else if (key == "positionStepSize")
             this->positionStepSize = config.getDouble("positionStepSize");
+        else if (key == "rotationStepSize")
+            this->rotationStepSize = config.getDouble("rotationStepSize");
         else if (key == "volumeStepSize")
             this->volumeStepSize = config.getDouble("volumeStepSize");
         else if (key == "thermalisationCycles")
@@ -56,6 +58,7 @@ void Parameters::autocompleteAndValidate() {
     Validate(this->temperature > 0);
     Validate(this->pressure > 0);
     Validate(this->positionStepSize > 0);
+    Validate(this->rotationStepSize > 0);
     Validate(this->volumeStepSize > 0);
     Validate(this->thermalisationCycles > 0);
     Validate(this->averagingCycles > 0);
@@ -68,6 +71,7 @@ void Parameters::print(Logger &logger) const {
     logger.info() << "temperature          : " << this->temperature << std::endl;
     logger.info() << "pressure             : " << this->pressure << std::endl;
     logger.info() << "positionStepSize     : " << this->positionStepSize << std::endl;
+    logger.info() << "rotationStepSize     : " << this->rotationStepSize << std::endl;
     logger.info() << "volumeStepSize       : " << this->volumeStepSize << std::endl;
     logger.info() << "thermalisationCycles : " << this->thermalisationCycles << std::endl;
     logger.info() << "averagingCycles      : " << this->averagingCycles << std::endl;

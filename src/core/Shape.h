@@ -10,18 +10,23 @@
 
 #include "BoundaryConditions.h"
 #include "geometry/Vector.h"
+#include "geometry/Matrix.h"
 
 class Shape {
 private:
     Vector<3> position{};
+    Matrix<3, 3> orientation{};
 
 public:
-    Shape() = default;
-    explicit Shape(const Vector<3> &position) : position{position} { }
+    Shape() : orientation{Matrix<3, 3>::identity()} { }
+    explicit Shape(const Vector<3> &position) : position{position}, orientation{Matrix<3, 3>::identity()} { }
+    Shape(const Vector<3> &position, const Matrix<3, 3> &orientation) : position{position}, orientation{orientation} { }
     virtual ~Shape() = default;
 
     void translate(const Vector<3> &translation, const BoundaryConditions &bc);
+    void rotate(const Matrix<3, 3> &rotation);
     [[nodiscard]] const Vector<3> &getPosition() const { return this->position; }
+    [[nodiscard]] const Matrix<3, 3> &getOrientation() const { return this->orientation; }
     [[nodiscard]] virtual bool overlap(const Shape &other, double scaleFactor, const BoundaryConditions &bc) const = 0;
     [[nodiscard]] virtual std::unique_ptr<Shape> clone() const = 0;
     [[nodiscard]] virtual double getVolume() const = 0;

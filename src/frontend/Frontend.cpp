@@ -121,12 +121,14 @@ int Frontend::casino(int argc, char **argv) {
     LatticeArrangingModel latticeArrangingModel;
     auto shapes = latticeArrangingModel.arrange(*shape, params.numOfParticles, 1, *bc);
     auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(bc));
-    Simulation simulation(params.temperature, params.pressure, params.positionStepSize, params.volumeStepSize,
-                          params.thermalisationCycles, params.averagingCycles, params.averagingEvery, params.seed);
+    Simulation simulation(params.temperature, params.pressure, params.positionStepSize, params.rotationStepSize,
+                          params.volumeStepSize, params.thermalisationCycles, params.averagingCycles,
+                          params.averagingEvery, params.seed);
 
     simulation.perform(std::move(packing), logger);
     this->logger.info() << "Average density: " << simulation.getAverageDensity() << std::endl;
     this->logger.info() << "Translation acceptance rate: " << simulation.getTranlationAcceptanceRate() << std::endl;
+    this->logger.info() << "Rotation acceptance rate: " << simulation.getRotationAcceptanceRate() << std::endl;
     this->logger.info() << "Scaling acceptance rate: " << simulation.getScalingAcceptanceRate() << std::endl;
 
     if (!params.wolframFilename.empty()) {

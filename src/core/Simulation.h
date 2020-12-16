@@ -43,15 +43,20 @@ private:
 
     double temperature{};
     double pressure{};
+    double initialTranslationStep{};
+    double initialRotationStep{};
+    double initialScalingStep{};
     std::size_t thermalisationCycles{};
     std::size_t averagingCycles{};
     std::size_t averagingEvery{};
     std::size_t cycleLength{};
+
+    double translationStep{};
+    double rotationStep{};
+    double scalingStep{};
     bool shouldAdjustStepSize{};
 
     std::mt19937 mt;
-    std::uniform_real_distribution<double> translationDistribution;
-    std::uniform_real_distribution<double> scalingDistribution;
     std::uniform_int_distribution<int> moveTypeDistribution;
     std::uniform_real_distribution<double> unitIntervalDistribution;
     std::uniform_int_distribution<int> particleIdxDistribution;
@@ -60,17 +65,19 @@ private:
     std::vector<double> averagedDensities;
     std::vector<ScalarSnapshot> densityThermalisationSnapshots;
     Counter translationCounter;
+    Counter rotationCounter;
     Counter scalingCounter;
 
     void performStep(Logger &logger);
-    bool tryScaling();
     bool tryTranslation();
+    bool tryRotation();
+    bool tryScaling();
     void evaluateCounters(Logger &logger);
 
 public:
-    Simulation(double temperature, double pressure, double positionStepSize, double volumeStepSize,
-               std::size_t thermalisationCycles, std::size_t averagingCycles, std::size_t averagingEvery,
-               unsigned long seed);
+    Simulation(double temperature, double pressure, double positionStepSize, double rotationStepSize,
+               double volumeStepSize, std::size_t thermalisationCycles, std::size_t averagingCycles,
+               std::size_t averagingEvery, unsigned long seed);
 
     void perform(std::unique_ptr<Packing> packing_, Logger &logger);
     [[nodiscard]] Quantity getAverageDensity() const;
@@ -78,6 +85,7 @@ public:
         return this->densityThermalisationSnapshots;
     }
     [[nodiscard]] double getTranlationAcceptanceRate() const { return this->translationCounter.getRate(); }
+    [[nodiscard]] double getRotationAcceptanceRate() const { return this->rotationCounter.getRate(); }
     [[nodiscard]] double getScalingAcceptanceRate() const { return this->scalingCounter.getRate(); }
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }
 };

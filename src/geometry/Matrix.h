@@ -498,6 +498,16 @@ public:
     static typename std::enable_if<_ROWS == 3 && _COLS == 3 && std::is_same<_E, double>::value, Matrix<ROWS, COLS, E>>::type
     rotation(double _ax, double _ay, double _az);
 
+    /**
+     * @brief Generates 3x3 rotation matrix for given axis and angle.
+     * @param axis axit of rotation - unit Vector<3>
+     * @param angle - angle of rotation
+     * @return 3x3 rotation matrix
+     */
+    template <std::size_t _ROWS = ROWS, std::size_t _COLS = COLS, typename _E = E>
+    static typename std::enable_if<_ROWS == 3 && _COLS == 3 && std::is_same<_E, double>::value, Matrix<ROWS, COLS, E>>::type
+    rotation(const Vector<3, E> &axis, double angle);
+
     // Access
     //----------------------------------------------------------------------------------------
 

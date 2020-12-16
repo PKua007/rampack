@@ -19,7 +19,7 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas") {
     double linearSize = std::cbrt(V);
     auto shapes = LatticeArrangingModel{}.arrange(sphere, 50, linearSize, *pbc);
     auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(pbc));
-    Simulation simulation(10, 1, 1, 1, 10000, 10000, 100, 1234);
+    Simulation simulation(10, 1, 1, 0.1, 1, 10000, 10000, 100, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
