@@ -3,7 +3,7 @@
 //
 
 #include "Spherocylinder.h"
-#include "FreeBoundaryConditions.h"
+#include "core/FreeBoundaryConditions.h"
 
 
 Vector<3> Spherocylinder::getEnd(short beginOrEnd, double scale) const {

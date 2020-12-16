@@ -15,7 +15,7 @@
 #include "utils/Fold.h"
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
-#include "core/ShapeFactory.h"
+#include "ShapeFactory.h"
 #include "core/Simulation.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/LatticeArrangingModel.h"

@@ -5,7 +5,7 @@
 #ifndef RAMPACK_SPHERE_H
 #define RAMPACK_SPHERE_H
 
-#include "Shape.h"
+#include "core/Shape.h"
 
 class Sphere : public Shape {
 private:

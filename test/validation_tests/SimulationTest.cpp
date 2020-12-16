@@ -7,7 +7,7 @@
 
 #include "core/Simulation.h"
 #include "core/LatticeArrangingModel.h"
-#include "core/Sphere.h"
+#include "core/shapes/Sphere.h"
 #include "core/PeriodicBoundaryConditions.h"
 
 TEST_CASE("Simulation: equilibration for dilute hard sphere gas") {

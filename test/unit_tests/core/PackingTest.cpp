@@ -7,7 +7,7 @@
 #include "matchers/PackingApproxPositionsCatchMatcher.h"
 
 #include "core/Packing.h"
-#include "core/Sphere.h"
+#include "core/shapes/Sphere.h"
 #include "core/PeriodicBoundaryConditions.h"
 
 TEST_CASE("Packing") {

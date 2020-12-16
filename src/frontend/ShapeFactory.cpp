@@ -6,8 +6,8 @@
 
 #include "ShapeFactory.h"
 #include "utils/Assertions.h"
-#include "Sphere.h"
-#include "Spherocylinder.h"
+#include "core/shapes/Sphere.h"
+#include "core/shapes/Spherocylinder.h"
 
 std::unique_ptr<Shape> ShapeFactory::createShape(const std::string &shapeName, const std::string &shapeAttributes) {
     std::istringstream attributesStream(shapeAttributes);

@@ -8,7 +8,7 @@
 #include <memory>
 #include <string>
 
-#include "Shape.h"
+#include "core/Shape.h"
 
 class ShapeFactory {
 public:

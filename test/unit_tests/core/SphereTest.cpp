@@ -4,7 +4,7 @@
 
 #include <catch2/catch.hpp>
 
-#include "core/Sphere.h"
+#include "core/shapes/Sphere.h"
 #include "core/PeriodicBoundaryConditions.h"
 
 TEST_CASE("Sphere: construction") {

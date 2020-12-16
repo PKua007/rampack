@@ -4,8 +4,8 @@
 
 #include <catch2/catch.hpp>
 
-#include "core/ShapeFactory.h"
-#include "core/Sphere.h"
+#include "frontend/ShapeFactory.h"
+#include "core/shapes/Sphere.h"
 
 TEST_CASE("ShapeFactory: Sphere") {
     SECTION("valid") {

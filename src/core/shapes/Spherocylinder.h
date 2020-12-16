@@ -5,7 +5,7 @@
 #ifndef RAMPACK_SPHEROCYLINDER_H
 #define RAMPACK_SPHEROCYLINDER_H
 
-#include "Shape.h"
+#include "core/Shape.h"
 
 class Spherocylinder : public Shape {
 private:
