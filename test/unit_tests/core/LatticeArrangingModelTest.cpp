@@ -33,13 +33,13 @@ TEST_CASE("LatticeArrangingModel: not fully filled lattice") {
     auto shapes = model.arrange(dummyShape, 7, 2, fbc);
 
     REQUIRE(shapes.size() == 7);
-    CHECK(shapes[0]->getPosition() == std::array<double, 3>{0.5, 0.5, 0.5});
-    CHECK(shapes[1]->getPosition() == std::array<double, 3>{0.5, 0.5, 1.5});
-    CHECK(shapes[2]->getPosition() == std::array<double, 3>{0.5, 1.5, 0.5});
-    CHECK(shapes[3]->getPosition() == std::array<double, 3>{0.5, 1.5, 1.5});
-    CHECK(shapes[4]->getPosition() == std::array<double, 3>{1.5, 0.5, 0.5});
-    CHECK(shapes[5]->getPosition() == std::array<double, 3>{1.5, 0.5, 1.5});
-    CHECK(shapes[6]->getPosition() == std::array<double, 3>{1.5, 1.5, 0.5});
+    CHECK(shapes[0]->getPosition() == Vector<3>{0.5, 0.5, 0.5});
+    CHECK(shapes[1]->getPosition() == Vector<3>{0.5, 0.5, 1.5});
+    CHECK(shapes[2]->getPosition() == Vector<3>{0.5, 1.5, 0.5});
+    CHECK(shapes[3]->getPosition() == Vector<3>{0.5, 1.5, 1.5});
+    CHECK(shapes[4]->getPosition() == Vector<3>{1.5, 0.5, 0.5});
+    CHECK(shapes[5]->getPosition() == Vector<3>{1.5, 0.5, 1.5});
+    CHECK(shapes[6]->getPosition() == Vector<3>{1.5, 1.5, 0.5});
 }
 
 TEST_CASE("LatticeArrangingModel: fully filled lattice") {
@@ -50,12 +50,12 @@ TEST_CASE("LatticeArrangingModel: fully filled lattice") {
     auto shapes = model.arrange(dummyShape, 8, 2, fbc);
 
     REQUIRE(shapes.size() == 8);
-    CHECK(shapes[0]->getPosition() == std::array<double, 3>{0.5, 0.5, 0.5});
-    CHECK(shapes[1]->getPosition() == std::array<double, 3>{0.5, 0.5, 1.5});
-    CHECK(shapes[2]->getPosition() == std::array<double, 3>{0.5, 1.5, 0.5});
-    CHECK(shapes[3]->getPosition() == std::array<double, 3>{0.5, 1.5, 1.5});
-    CHECK(shapes[4]->getPosition() == std::array<double, 3>{1.5, 0.5, 0.5});
-    CHECK(shapes[5]->getPosition() == std::array<double, 3>{1.5, 0.5, 1.5});
-    CHECK(shapes[6]->getPosition() == std::array<double, 3>{1.5, 1.5, 0.5});
-    CHECK(shapes[7]->getPosition() == std::array<double, 3>{1.5, 1.5, 1.5});
+    CHECK(shapes[0]->getPosition() == Vector<3>{0.5, 0.5, 0.5});
+    CHECK(shapes[1]->getPosition() == Vector<3>{0.5, 0.5, 1.5});
+    CHECK(shapes[2]->getPosition() == Vector<3>{0.5, 1.5, 0.5});
+    CHECK(shapes[3]->getPosition() == Vector<3>{0.5, 1.5, 1.5});
+    CHECK(shapes[4]->getPosition() == Vector<3>{1.5, 0.5, 0.5});
+    CHECK(shapes[5]->getPosition() == Vector<3>{1.5, 0.5, 1.5});
+    CHECK(shapes[6]->getPosition() == Vector<3>{1.5, 1.5, 0.5});
+    CHECK(shapes[7]->getPosition() == Vector<3>{1.5, 1.5, 1.5});
 }

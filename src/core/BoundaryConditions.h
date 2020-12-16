@@ -5,17 +5,15 @@
 #ifndef RAMPACK_BOUNDARYCONDITIONS_H
 #define RAMPACK_BOUNDARYCONDITIONS_H
 
-#include <array>
+#include "geometry/Vector.h"
 
 class BoundaryConditions {
 public:
     virtual ~BoundaryConditions() = default;
 
-    [[nodiscard]] virtual std::array<double, 3> getCorrection(const std::array<double, 3> &position) const = 0;
-    [[nodiscard]] virtual std::array<double, 3> getTranslation(const std::array<double, 3> &position1,
-                                                               const std::array<double, 3> &position2) const = 0;
-    [[nodiscard]] virtual double getDistance2(const std::array<double, 3> &position1,
-                                              const std::array<double, 3> &position2) const = 0;
+    [[nodiscard]] virtual Vector<3> getCorrection(const Vector<3> &position) const = 0;
+    [[nodiscard]] virtual Vector<3> getTranslation(const Vector<3> &position1, const Vector<3> &position2) const = 0;
+    [[nodiscard]] virtual double getDistance2(const Vector<3> &position1, const Vector<3> &position2) const = 0;
 };
 
 #endif //RAMPACK_BOUNDARYCONDITIONS_H

@@ -77,9 +77,9 @@ void Simulation::performStep(Logger &logger) {
 }
 
 bool Simulation::tryTranslation() {
-    std::array<double, 3> translation{this->translationDistribution(this->mt),
-                                      this->translationDistribution(this->mt),
-                                      this->translationDistribution(this->mt)};
+    Vector<3> translation{{this->translationDistribution(this->mt),
+                           this->translationDistribution(this->mt),
+                           this->translationDistribution(this->mt)}};
 
     return this->packing->tryTranslation(this->particleIdxDistribution(this->mt), translation);
 }

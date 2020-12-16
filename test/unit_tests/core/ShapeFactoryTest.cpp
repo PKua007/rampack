@@ -13,7 +13,7 @@ TEST_CASE("ShapeFactory: Sphere") {
         auto sphere = dynamic_cast<Sphere*>(shape.get());
         REQUIRE(sphere != nullptr);
         CHECK(sphere->getRadius() == Approx(2));
-        CHECK(sphere->getPosition() == std::array<double, 3>{0, 0, 0});
+        CHECK(sphere->getPosition() == Vector<3>{0, 0, 0});
     }
 
     SECTION("invalid") {

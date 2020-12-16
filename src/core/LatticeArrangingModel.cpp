@@ -12,7 +12,7 @@ std::vector<std::unique_ptr<Shape>> LatticeArrangingModel::arrange(const Shape &
                                                                    const BoundaryConditions &bc) const
 {
     Expects(linearSize > 0);
-    Expects((particleMother.getPosition() == std::array<double, 3>{0, 0, 0}));
+    Expects((particleMother.getPosition() == Vector<3>{{0, 0, 0}}));
 
     std::vector<std::unique_ptr<Shape>> result;
     result.reserve(numOfParticles);
@@ -26,7 +26,7 @@ std::vector<std::unique_ptr<Shape>> LatticeArrangingModel::arrange(const Shape &
                 if (shapeIdx >= numOfParticles)
                     return result;
 
-                std::array<double, 3> translation{(i+0.5) * factor, (j+0.5) * factor, (k+0.5) * factor};
+                auto translation = Vector<3>{i+0.5, j+0.5, k+0.5} * factor;
                 auto particle = particleMother.clone();
                 particle->translate(translation, bc);
                 result.push_back(std::move(particle));

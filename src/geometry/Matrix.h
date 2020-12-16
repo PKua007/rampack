@@ -209,6 +209,12 @@ public:
      */
     Matrix(const std::array<E, ROWS * COLS> & _arr);
 
+    /**
+     * @brief Constructs a matrix from std::initializer_list.
+     * @param _arr array to construct from
+     */
+    Matrix(std::initializer_list<E> _arr);
+
     // Operators
     //----------------------------------------------------------------------------------------
 

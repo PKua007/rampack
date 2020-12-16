@@ -8,18 +8,18 @@
 #include <catch2/catch.hpp>
 #include <sstream>
 #include <vector>
-#include <array>
 #include <iterator>
 
 #include "core/Packing.h"
+#include "geometry/Vector.h"
 
 class PackingApproxPositionsCatchMatcher : public Catch::MatcherBase<Packing> {
 private:
-    std::vector<std::array<double, 3>> expected;
+    std::vector<Vector<3>> expected;
     double epsilon;
 
 public:
-    PackingApproxPositionsCatchMatcher(std::vector<std::array<double, 3>> expected, double epsilon)
+    PackingApproxPositionsCatchMatcher(std::vector<Vector<3>> expected, double epsilon)
             : expected(std::move(expected)), epsilon(epsilon)
     { }
 
@@ -45,7 +45,7 @@ public:
 };
 
 inline PackingApproxPositionsCatchMatcher
-HasParticlesWithApproxPositions(const std::vector<std::array<double, 3>> &expected, double epsilon)
+HasParticlesWithApproxPositions(const std::vector<Vector<3>> &expected, double epsilon)
 {
     return PackingApproxPositionsCatchMatcher(expected, epsilon);
 }

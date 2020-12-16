@@ -32,13 +32,13 @@ TEST_CASE("Shape: construction") {
     SECTION("default") {
         DummyShape shape;
 
-        REQUIRE(shape.getPosition() == std::array<double, 3>{0, 0, 0});
+        REQUIRE(shape.getPosition() == Vector<3>{0, 0, 0});
     }
 
     SECTION("specific") {
         DummyShape shape({1, 2, 3});
 
-        REQUIRE(shape.getPosition() == std::array<double, 3>{1, 2, 3});
+        REQUIRE(shape.getPosition() == Vector<3>{1, 2, 3});
     }
 }
 
@@ -48,5 +48,5 @@ TEST_CASE("Shape: translation with pbc") {
 
     shape.translate({2, -1, 7}, pbc);
 
-    REQUIRE(shape.getPosition() == std::array<double, 3>{3, 1, 2});
+    REQUIRE(shape.getPosition() == Vector<3>{3, 1, 2});
 }

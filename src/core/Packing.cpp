@@ -17,16 +17,13 @@ Packing::Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, 
     Expects(!this->areAnyParticlesOverlapping());
 }
 
-bool Packing::tryTranslation(std::size_t particleIdx, std::array<double, 3> translation) {
+bool Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation) {
     Expects(particleIdx < this->size());
-    for (auto &coord : translation)
-        coord /= this->linearSize;
+    translation /= this->linearSize;
 
     this->shapes[particleIdx]->translate(translation, *this->bc);
     if (this->isAnyParticleCollidingWith(particleIdx)) {
-        for (auto &coord : translation)
-            coord = -coord;
-        this->shapes[particleIdx]->translate(translation, *this->bc);
+        this->shapes[particleIdx]->translate(-translation, *this->bc);
         return false;
     }
     return true;

@@ -104,6 +104,9 @@ public:
     Vector(std::array<E, DIM> _coords) : v(Matrix<DIM, 1, E>(_coords))      // std::array initialization
     { }
 
+    Vector(std::initializer_list<E> _coords) : v(Matrix<DIM, 1, E>(_coords))      // std::initializer_lisy
+    { }
+
     explicit Vector(const E *_arr) : v(Matrix<DIM, 1, E>(_arr))       // C array initialization
     { }
 

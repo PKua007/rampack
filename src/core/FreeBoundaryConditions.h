@@ -9,13 +9,21 @@
 
 class FreeBoundaryConditions : public BoundaryConditions {
 public:
-    [[nodiscard]] std::array<double, 3> getCorrection(const std::array<double, 3> &position) const override;
+    [[nodiscard]] Vector<3> getCorrection([[maybe_unused]] const Vector<3> &position) const override {
+        return Vector<3>{};
+    }
 
-    [[nodiscard]] std::array<double, 3> getTranslation(const std::array<double, 3> &position1,
-                                                       const std::array<double, 3> &position2) const override;
+    [[nodiscard]] Vector<3> getTranslation([[maybe_unused]] const Vector<3> &position1,
+                                           [[maybe_unused]] const Vector<3> &position2) const override
+    {
+        return Vector<3>{};
+    }
 
-    [[nodiscard]] double getDistance2(const std::array<double, 3> &position1,
-                                      const std::array<double, 3> &position2) const override;
+    [[nodiscard]] double getDistance2([[maybe_unused]] const Vector<3> &position1,
+                                      [[maybe_unused]] const Vector<3> &position2) const override
+    {
+        return (position2 - position1).norm2();
+    }
 };
 
 #endif //RAMPACK_FREEBOUNDARYCONDITIONS_H

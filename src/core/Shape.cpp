@@ -7,10 +7,7 @@
 
 #include "Shape.h"
 
-void Shape::translate(const std::array<double, 3> &translation, const BoundaryConditions &bc) {
-    std::transform(this->position.begin(), this->position.end(), translation.begin(), this->position.begin(),
-                   std::plus<>{});
-    auto bcCorrection = bc.getCorrection(this->position);
-    std::transform(this->position.begin(), this->position.end(), bcCorrection.begin(), this->position.begin(),
-                   std::plus<>{});
+void Shape::translate(const Vector<3> &translation, const BoundaryConditions &bc) {
+    this->position += translation;
+    this->position += bc.getCorrection(this->position);
 }

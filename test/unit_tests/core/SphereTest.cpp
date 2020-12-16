@@ -45,5 +45,5 @@ TEST_CASE("Sphere: toWolfram") {
     PeriodicBoundaryConditions pbc(10);
     sphere.translate({1, 2, 3}, pbc);
 
-    CHECK(sphere.toWolfram(2) == "Sphere[{2,4,6},2]");
+    CHECK(sphere.toWolfram(2) == "Sphere[{2, 4, 6},2]");
 }

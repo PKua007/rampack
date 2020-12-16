@@ -47,6 +47,15 @@ Matrix<ROWS, COLS, E>::Matrix(const std::array<E, ROWS * COLS> & _arr)
 
 
 template <std::size_t ROWS, std::size_t COLS, typename E>
+Matrix<ROWS, COLS, E>::Matrix(std::initializer_list<E> _arr)
+{
+    if (_arr.size() != ROWS*COLS)
+        throw std::runtime_error("Incorrect size of the initialized list!");
+    std::copy(_arr.begin(), _arr.end(), arr);
+}
+
+
+template <std::size_t ROWS, std::size_t COLS, typename E>
 inline Matrix<ROWS, COLS, E> operator+(Matrix<ROWS, COLS, E> matrix1, const Matrix<ROWS, COLS, E> & matrix2)
 {
     return (matrix1 += matrix2);

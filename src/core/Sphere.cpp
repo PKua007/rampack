@@ -24,9 +24,7 @@ Sphere::Sphere(double radius) : radius{radius} {
 
 std::string Sphere::toWolfram(double scaleFactor) const {
     std::ostringstream out;
-    auto position = this->getPosition();
-    out << "Sphere[{" << (position[0]*scaleFactor) << "," << (position[1]*scaleFactor) << ",";
-    out << (position[2]*scaleFactor) << "}," << this->radius << "]";
+    out << "Sphere[" << (this->getPosition() * scaleFactor) << "," << this->radius << "]";
     return out.str();
 }
 
