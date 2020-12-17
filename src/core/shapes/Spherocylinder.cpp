@@ -88,6 +88,12 @@ double Spherocylinder::distanceFrom(const Spherocylinder &s, double scale) const
 bool Spherocylinder::overlap(const Shape &other, double scaleFactor, const BoundaryConditions &bc) const {
     Spherocylinder otherSc = dynamic_cast<const Spherocylinder &>(other);
     this->applyBCTranslation(bc, otherSc);
+    double distance2 = (otherSc.getPosition() - this->getPosition()).norm2() * scaleFactor * scaleFactor;
+    if (distance2 < 4 * this->radius * this->radius)
+        return true;
+    else if (distance2 >= std::pow(2 * this->radius + this->length, 2))
+        return false;
+
     return this->distanceFrom(otherSc, scaleFactor) < 4 * this->radius * this->radius;
 }
 
@@ -96,7 +102,7 @@ std::unique_ptr<Shape> Spherocylinder::clone() const {
 }
 
 double Spherocylinder::getVolume() const {
-    return 2*M_PI*this->radius*this->length + 4./3*M_PI*std::pow(this->radius, 3);
+    return M_PI*this->radius*this->radius*this->length + 4./3*M_PI*std::pow(this->radius, 3);
 }
 
 std::string Spherocylinder::toWolfram(double scaleFactor) const {
@@ -104,6 +110,6 @@ std::string Spherocylinder::toWolfram(double scaleFactor) const {
     out << std::fixed;
     Vector<3> beg = this->getCapCentre(-1, scaleFactor);
     Vector<3> end = this->getCapCentre(1, scaleFactor);
-    out << "CapsuleShape[{" << beg << ", " << end << "}, " << this->radius << "]";
+    out << "CapsuleShape[{" << beg << "," << end << "}," << this->radius << "]";
     return out.str();
 }
