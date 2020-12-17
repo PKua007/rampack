@@ -3,13 +3,11 @@
 //
 
 #include "Spherocylinder.h"
-#include "core/FreeBoundaryConditions.h"
 
 
-Vector<3> Spherocylinder::getEnd(short beginOrEnd, double scale) const {
-    Vector<3> result;
-    result[0] = 1.0;
-    return scale * this->getPosition() + (this->getOrientation() * result) * (0.5 * beginOrEnd * this->length);
+Vector<3> Spherocylinder::getCapCentre(short beginOrEnd, double scale) const {
+    Vector<3> alignedCentre{1, 0, 0};
+    return scale * this->getPosition() + (this->getOrientation() * alignedCentre) * (0.5 * beginOrEnd * this->length);
 }
 
 // Based on
@@ -20,10 +18,10 @@ Vector<3> Spherocylinder::getEnd(short beginOrEnd, double scale) const {
 // liable for any real or imagined damage resulting from its use.
 // Users of this code must verify correctness for their application.
 double Spherocylinder::distanceFrom(const Spherocylinder &s, double scale) const{
-    Vector<3> t1 = this->getEnd(-1, scale);
-    Vector<3> t2 = this->getEnd(1, scale);
-    Vector<3> s1 = s.getEnd(-1, scale);
-    Vector<3> s2 = s.getEnd(1, scale);
+    Vector<3> t1 = this->getCapCentre(-1, scale);
+    Vector<3> t2 = this->getCapCentre(1, scale);
+    Vector<3> s1 = s.getCapCentre(-1, scale);
+    Vector<3> s2 = s.getCapCentre(1, scale);
 
     Vector<3> u = t2 - t1;
     Vector<3> v = s2 - s1;
@@ -84,14 +82,13 @@ double Spherocylinder::distanceFrom(const Spherocylinder &s, double scale) const
     // get the difference of the two closest points
     Vector<3> dP = w + (sc * u) - (tc * v);  // =  S1(sc) - S2(tc)
 
-    return dP.norm();   // return the closest distance
+    return dP.norm2();   // return the closest distance
 }
 
 bool Spherocylinder::overlap(const Shape &other, double scaleFactor, const BoundaryConditions &bc) const {
     Spherocylinder otherSc = dynamic_cast<const Spherocylinder &>(other);
-    FreeBoundaryConditions fbc;
-    otherSc.translate(bc.getTranslation(this->getPosition(), otherSc.getPosition()), fbc);
-    return this->distanceFrom(otherSc, scaleFactor) < 2 * this->radius;
+    this->applyBCTranslation(bc, otherSc);
+    return this->distanceFrom(otherSc, scaleFactor) < 4 * this->radius * this->radius;
 }
 
 std::unique_ptr<Shape> Spherocylinder::clone() const {
@@ -105,8 +102,8 @@ double Spherocylinder::getVolume() const {
 std::string Spherocylinder::toWolfram(double scaleFactor) const {
     std::stringstream out;
     out << std::fixed;
-    Vector<3> beg = this->getEnd(-1, scaleFactor);
-    Vector<3> end = this->getEnd(1, scaleFactor);
+    Vector<3> beg = this->getCapCentre(-1, scaleFactor);
+    Vector<3> end = this->getCapCentre(1, scaleFactor);
     out << "CapsuleShape[{" << beg << ", " << end << "}, " << this->radius << "]";
     return out.str();
 }

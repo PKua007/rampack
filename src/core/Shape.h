@@ -17,6 +17,9 @@ private:
     Vector<3> position{};
     Matrix<3, 3> orientation{};
 
+protected:
+    void applyBCTranslation(const BoundaryConditions &bc, Shape &other) const;
+
 public:
     Shape() : orientation{Matrix<3, 3>::identity()} { }
     explicit Shape(const Vector<3> &position) : position{position}, orientation{Matrix<3, 3>::identity()} { }

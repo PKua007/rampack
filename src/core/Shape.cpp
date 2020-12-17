@@ -15,3 +15,8 @@ void Shape::translate(const Vector<3> &translation, const BoundaryConditions &bc
 void Shape::rotate(const Matrix<3, 3> &rotation) {
     this->orientation = rotation * this->orientation;
 }
+
+void Shape::applyBCTranslation(const BoundaryConditions &bc, Shape &other) const {
+    other.position += bc.getTranslation(this->position, other.position);
+}
+

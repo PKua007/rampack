@@ -14,7 +14,7 @@ private:
 
     static constexpr double EPSILON = 0.0000000001;
 
-    [[nodiscard]] Vector<3> getEnd(short beginOrEnd, double scale) const;
+    [[nodiscard]] Vector<3> getCapCentre(short beginOrEnd, double scale) const;
     [[nodiscard]] double distanceFrom(const Spherocylinder &s, double scale) const;
 
 public:
