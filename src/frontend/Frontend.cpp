@@ -145,7 +145,7 @@ int Frontend::casino(int argc, char **argv) {
         double theta = rho.value * shape->getVolume();
         double Z = params.pressure / params.temperature / rho.value;
         out.precision(std::numeric_limits<double>::max_digits10);
-        out << rho << " " << theta << " " << Z << std::endl;
+        out << rho.value << " " << theta << " " << Z << std::endl;
         this->logger.info() << "Compressibility factor stored to " + params.compressibilityFilename << std::endl;
     }
 
