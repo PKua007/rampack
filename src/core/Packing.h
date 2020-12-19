@@ -11,6 +11,7 @@
 
 #include "Shape.h"
 #include "BoundaryConditions.h"
+#include "Interaction.h"
 
 class Packing {
 private:
@@ -18,8 +19,14 @@ private:
     double linearSize{};
     std::unique_ptr<BoundaryConditions> bc;
 
+    std::size_t lastAlteredParticleIdx{};
+    Vector<3> lastTranslation;
+    Matrix<3, 3> lastRotation;
+    double lastScalingFactor{};
+
     [[nodiscard]] bool areAnyParticlesOverlapping() const;
     [[nodiscard]] bool isAnyParticleCollidingWith(std::size_t i) const;
+    [[nodiscard]] bool overlapBetween(std::size_t i, std::size_t j) const;
 
 public:
     using iterator = decltype(shapes)::iterator;
@@ -27,9 +34,14 @@ public:
 
     Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, std::unique_ptr<BoundaryConditions> bc);
 
-    bool tryTranslation(std::size_t particleIdx, Vector<3> translation);
-    bool tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation);
-    bool tryScaling(double scaleFactor);
+    double tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction);
+    double tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction);
+    double tryScaling(double scaleFactor, const Interaction &interaction);
+    void revertTranslation();
+    void revertRotation();
+    void revertScaling();
+    [[nodiscard]] double getParticleEnergy(std::size_t particleIdx, const Interaction &interaction) const;
+    [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;
 
     [[nodiscard]] double getLinearSize() const { return linearSize; }
 

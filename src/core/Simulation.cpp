@@ -26,12 +26,13 @@ Simulation::Simulation(double temperature, double pressure, double positionStepS
     Expects(averagingEvery > 0 && averagingEvery < averagingCycles);
 }
 
-void Simulation::perform(std::unique_ptr<Packing> packing_, Logger &logger) {
+void Simulation::perform(std::unique_ptr<Packing> packing_, std::unique_ptr<Interaction> interaction_, Logger &logger) {
     Expects(!packing_->empty());
     this->moveTypeDistribution = std::uniform_int_distribution<int>(0, 2 * packing_->size());
     this->particleIdxDistribution = std::uniform_int_distribution<int>(0, packing_->size() - 1);
 
     this->packing = std::move(packing_);
+    this->interaction = std::move(interaction_);
     this->translationStep = this->initialTranslationStep;
     this->rotationStep = this->initialRotationStep;
     this->scalingStep = this->initialScalingStep;
@@ -92,7 +93,13 @@ bool Simulation::tryTranslation() {
                           2*this->unitIntervalDistribution(this->mt) - 1};
     translation *= this->translationStep;
 
-    return this->packing->tryTranslation(this->particleIdxDistribution(this->mt), translation);
+    double dE = this->packing->tryTranslation(this->particleIdxDistribution(this->mt), translation, *this->interaction);
+    if (this->unitIntervalDistribution(this->mt) <= std::exp(-this->temperature * dE)) {
+        return true;
+    } else {
+        this->packing->revertTranslation();
+        return false;
+    }
 }
 
 bool Simulation::tryRotation() {
@@ -105,7 +112,13 @@ bool Simulation::tryRotation() {
     double angle = (2*this->unitIntervalDistribution(this->mt) - 1) * this->rotationStep;
     auto rotation = Matrix<3, 3>::rotation(axis.normalized(), angle);
 
-    return this->packing->tryRotation(this->particleIdxDistribution(this->mt), rotation);
+    double dE = this->packing->tryRotation(this->particleIdxDistribution(this->mt), rotation, *this->interaction);
+    if (this->unitIntervalDistribution(this->mt) <= std::exp(-this->temperature * dE)) {
+        return true;
+    } else {
+        this->packing->revertRotation();
+        return false;
+    }
 }
 
 bool Simulation::tryScaling() {
@@ -115,12 +128,14 @@ bool Simulation::tryScaling() {
     Assert(factor > 0);
 
     double N = this->packing->size();
-    double exponent = N * log(factor) - this->pressure * deltaV / this->temperature;
-    if (exponent < 0)
-        if (this->unitIntervalDistribution(this->mt) > exp(exponent))
-            return false;
-
-    return this->packing->tryScaling(factor);
+    double dE = this->packing->tryScaling(factor, *this->interaction);
+    double exponent = N * log(factor) - this->temperature * dE - this->pressure * deltaV / this->temperature;
+    if (this->unitIntervalDistribution(this->mt) <= std::exp(exponent)) {
+        return true;
+    } else {
+        this->packing->revertScaling();
+        return false;
+    }
 }
 
 void Simulation::evaluateCounters(Logger &logger) {

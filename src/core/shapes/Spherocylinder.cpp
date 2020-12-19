@@ -85,7 +85,7 @@ double Spherocylinder::distanceFrom(const Spherocylinder &s, double scale) const
     return dP.norm2();   // return the closest distance
 }
 
-bool Spherocylinder::overlap(const Shape &other, double scaleFactor, const BoundaryConditions &bc) const {
+bool Spherocylinder::overlap(const HardShape &other, double scaleFactor, const BoundaryConditions &bc) const {
     Spherocylinder otherSc = dynamic_cast<const Spherocylinder &>(other);
     this->applyBCTranslation(bc, otherSc);
     double distance2 = (otherSc.getPosition() - this->getPosition()).norm2() * scaleFactor * scaleFactor;

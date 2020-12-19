@@ -8,9 +8,9 @@
 #include "Sphere.h"
 #include "utils/Assertions.h"
 
-bool Sphere::overlap(const Shape &other, double scaleFactor, const BoundaryConditions &bc) const {
+bool Sphere::overlap(const HardShape &other, double scaleFactor, const BoundaryConditions &bc) const {
     const auto &otherSphere = dynamic_cast<const Sphere &>(other);
-    return bc.getDistance2(this->getPosition(), other.getPosition())
+    return bc.getDistance2(this->getPosition(), otherSphere.getPosition())
            < std::pow((this->radius + otherSphere.radius) / scaleFactor, 2);
 }
 

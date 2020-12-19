@@ -10,6 +10,7 @@
 #include "core/shapes/Sphere.h"
 #include "core/shapes/Spherocylinder.h"
 #include "core/PeriodicBoundaryConditions.h"
+#include "core/HardCoreInteraction.h"
 
 TEST_CASE("Simulation: equilibration for dilute hard sphere gas") {
     // We choose temperature 10 and pressure 1. For particles of radius 0.05 we should obtain number density 0.0999791
@@ -24,7 +25,7 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(std::move(packing), logger);
+    simulation.perform(std::move(packing), std::make_unique<HardCoreInteraction>(), logger);
 
     Quantity density = simulation.getAverageDensity();
     double expected = 0.0999791;
@@ -47,7 +48,7 @@ TEST_CASE("Simulation: degenerate hard sphere gas") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(std::move(packing), logger);
+    simulation.perform(std::move(packing), std::make_unique<HardCoreInteraction>(), logger);
 
     Quantity density = simulation.getAverageDensity();
     double expected = 0.398574;
@@ -70,7 +71,7 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(std::move(packing), logger);
+    simulation.perform(std::move(packing), std::make_unique<HardCoreInteraction>(), logger);
 
     Quantity density = simulation.getAverageDensity();
     double expected = 0.0956448;

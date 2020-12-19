@@ -20,6 +20,7 @@
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/LatticeArrangingModel.h"
 #include "core/Packing.h"
+#include "core/HardCoreInteraction.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename, const std::vector<std::string> &overridenParams) {
@@ -125,7 +126,7 @@ int Frontend::casino(int argc, char **argv) {
                           params.volumeStepSize, params.thermalisationCycles, params.averagingCycles,
                           params.averagingEvery, params.seed);
 
-    simulation.perform(std::move(packing), logger);
+    simulation.perform(std::move(packing), std::make_unique<HardCoreInteraction>(), logger);
     this->logger.info() << "Average density: " << simulation.getAverageDensity() << std::endl;
     this->logger.info() << "Translation acceptance rate: " << simulation.getTranlationAcceptanceRate() << std::endl;
     this->logger.info() << "Rotation acceptance rate: " << simulation.getRotationAcceptanceRate() << std::endl;

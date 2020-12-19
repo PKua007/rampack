@@ -6,8 +6,9 @@
 #define RAMPACK_SPHEROCYLINDER_H
 
 #include "core/Shape.h"
+#include "core/HardShape.h"
 
-class Spherocylinder : public Shape {
+class Spherocylinder : public Shape, public HardShape {
 private:
     double length{};    // distance between two spherical caps centres
     double radius{};    // radius of spherical caps
@@ -21,7 +22,7 @@ public:
     Spherocylinder() : length{1}, radius{1} { }
     Spherocylinder(double length, double radius) : length(length), radius(radius) { }
 
-    [[nodiscard]] bool overlap(const Shape &other, double scaleFactor, const BoundaryConditions &bc) const override;
+    [[nodiscard]] bool overlap(const HardShape &other, double scaleFactor, const BoundaryConditions &bc) const override;
     [[nodiscard]] std::unique_ptr<Shape> clone() const override;
     [[nodiscard]] double getVolume() const override;
     [[nodiscard]] std::string toWolfram(double scaleFactor) const override;

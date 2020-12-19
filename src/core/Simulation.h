@@ -11,6 +11,7 @@
 #include "Packing.h"
 #include "utils/Logger.h"
 #include "utils/Quantity.h"
+#include "Interaction.h"
 
 class Simulation {
 public:
@@ -62,6 +63,7 @@ private:
     std::uniform_int_distribution<int> particleIdxDistribution;
 
     std::unique_ptr<Packing> packing;
+    std::unique_ptr<Interaction> interaction;
     std::vector<double> averagedDensities;
     std::vector<ScalarSnapshot> densityThermalisationSnapshots;
     Counter translationCounter;
@@ -79,7 +81,7 @@ public:
                double volumeStepSize, std::size_t thermalisationCycles, std::size_t averagingCycles,
                std::size_t averagingEvery, unsigned long seed);
 
-    void perform(std::unique_ptr<Packing> packing_, Logger &logger);
+    void perform(std::unique_ptr<Packing> packing_, std::unique_ptr<Interaction> interaction_, Logger &logger);
     [[nodiscard]] Quantity getAverageDensity() const;
     [[nodiscard]] std::vector<ScalarSnapshot> getDensityThermalisationSnapshots() const {
         return this->densityThermalisationSnapshots;

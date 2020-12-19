@@ -8,6 +8,7 @@
 
 #include "Packing.h"
 #include "utils/Assertions.h"
+#include "HardShape.h"
 
 Packing::Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, std::unique_ptr<BoundaryConditions> bc)
         : shapes{std::move(shapes)}, linearSize{linearSize}, bc{std::move(bc)}
@@ -17,37 +18,49 @@ Packing::Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, 
     Expects(!this->areAnyParticlesOverlapping());
 }
 
-bool Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation) {
+double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction) {
     Expects(particleIdx < this->size());
     translation /= this->linearSize;
+    this->lastAlteredParticleIdx = particleIdx;
+    this->lastTranslation = translation;
+
+    double initialEnergy = (interaction.hasSoftPart() ? this->getParticleEnergy(particleIdx, interaction) : 0);
 
     this->shapes[particleIdx]->translate(translation, *this->bc);
-    if (this->isAnyParticleCollidingWith(particleIdx)) {
-        this->shapes[particleIdx]->translate(-translation, *this->bc);
-        return false;
-    }
-    return true;
+    if (interaction.hasHardPart() && this->isAnyParticleCollidingWith(particleIdx))
+        return std::numeric_limits<double>::infinity();
+
+    double finalEnergy = (interaction.hasSoftPart() ? this->getParticleEnergy(particleIdx, interaction) : 0);
+    return finalEnergy - initialEnergy;
 }
 
-bool Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation) {
+double Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction) {
     Expects(particleIdx < this->size());
+    this->lastAlteredParticleIdx = particleIdx;
+    this->lastRotation = rotation;
+
+    double initialEnergy = (interaction.hasSoftPart() ? this->getParticleEnergy(particleIdx, interaction) : 0);
+
     this->shapes[particleIdx]->rotate(rotation);
-    if (this->isAnyParticleCollidingWith(particleIdx)) {
-        this->shapes[particleIdx]->rotate(rotation.transpose());
-        return false;
-    }
-    return true;
+    if (interaction.hasHardPart() && this->isAnyParticleCollidingWith(particleIdx))
+        return std::numeric_limits<double>::infinity();
+
+    double finalEnergy = (interaction.hasSoftPart() ? this->getParticleEnergy(particleIdx, interaction) : 0);
+    return finalEnergy - initialEnergy;
 }
 
-bool Packing::tryScaling(double scaleFactor) {
+double Packing::tryScaling(double scaleFactor, const Interaction &interaction) {
     Expects(scaleFactor > 0);
-    double linearSizeSaved = this->linearSize;
+    this->lastScalingFactor = std::cbrt(scaleFactor);
+
+    double initialEnergy = (interaction.hasSoftPart() ? this->getTotalEnergy(interaction) : 0);
+
     this->linearSize *= std::cbrt(scaleFactor);
-    if (scaleFactor < 1 && this->areAnyParticlesOverlapping()) {
-        this->linearSize = linearSizeSaved;
-        return false;
-    }
-    return true;
+    if (interaction.hasHardPart() && this->areAnyParticlesOverlapping())
+        return std::numeric_limits<double>::infinity();
+
+    double finalEnergy = (interaction.hasSoftPart() ? this->getTotalEnergy(interaction) : 0);
+    return finalEnergy - initialEnergy;
 }
 
 const Shape &Packing::operator[](std::size_t i) const {
@@ -68,14 +81,14 @@ const Shape &Packing::back() const {
 bool Packing::areAnyParticlesOverlapping() const {
     for (std::size_t i{}; i < this->size(); i++)
         for (std::size_t j = i + 1; j < this->size(); j++)
-            if (this->shapes[i]->overlap(*this->shapes[j], this->linearSize, *this->bc))
+            if (this->overlapBetween(i, j))
                 return true;
     return false;
 }
 
 bool Packing::isAnyParticleCollidingWith(std::size_t i) const {
     for (std::size_t j{}; j < this->size(); j++)
-        if (i != j && this->shapes[i]->overlap(*this->shapes[j], this->linearSize, *this->bc))
+        if (i != j && this->overlapBetween(i, j))
             return true;
     return false;
 }
@@ -99,4 +112,42 @@ double Packing::getPackingFraction() const {
 
 double Packing::getNumberDensity() const {
     return this->shapes.size() / std::pow(this->linearSize, 3);
+}
+
+bool Packing::overlapBetween(std::size_t i, std::size_t j) const {
+    const auto &hardShape1 = dynamic_cast<const HardShape &>(*this->shapes[i]);
+    const auto &hardShape2 = dynamic_cast<const HardShape &>(*this->shapes[j]);
+    return hardShape1.overlap(hardShape2, this->linearSize, *this->bc);
+}
+
+void Packing::revertTranslation() {
+    this->shapes[this->lastAlteredParticleIdx]->translate(-this->lastTranslation, *this->bc);
+}
+
+void Packing::revertRotation() {
+    this->shapes[this->lastAlteredParticleIdx]->rotate(this->lastRotation.transpose());
+}
+
+void Packing::revertScaling() {
+    this->linearSize /= this->lastScalingFactor;
+}
+
+double Packing::getParticleEnergy(std::size_t particleIdx, const Interaction &interaction) const {
+    Expects(particleIdx < this->size());
+
+    double energy{};
+    for (std::size_t i{}; i < this->size(); i++) {
+        if (particleIdx == i)
+            continue;
+        energy += interaction.calculateEnergyBetween(*this->shapes[particleIdx], *this->shapes[i], *this->bc);
+    }
+    return energy;
+}
+
+double Packing::getTotalEnergy(const Interaction &interaction) const {
+    double energy{};
+    for (std::size_t i{}; i < this->size(); i++)
+        for (std::size_t j = i + 1; j < this->size(); j++)
+            energy += interaction.calculateEnergyBetween(*this->shapes[i], *this->shapes[j], *this->bc);
+    return energy;
 }
