@@ -94,6 +94,13 @@ bool Simulation::tryTranslation() {
     translation *= this->translationStep;
 
     double dE = this->packing->tryTranslation(this->particleIdxDistribution(this->mt), translation, *this->interaction);
+    if (dE == 0)
+        return true;
+    else if (dE == std::numeric_limits<double>::infinity()) {
+        this->packing->revertTranslation();
+        return false;
+    }
+
     if (this->unitIntervalDistribution(this->mt) <= std::exp(-this->temperature * dE)) {
         return true;
     } else {
@@ -113,6 +120,13 @@ bool Simulation::tryRotation() {
     auto rotation = Matrix<3, 3>::rotation(axis.normalized(), angle);
 
     double dE = this->packing->tryRotation(this->particleIdxDistribution(this->mt), rotation, *this->interaction);
+    if (dE == 0)
+        return true;
+    else if (dE == std::numeric_limits<double>::infinity()) {
+        this->packing->revertRotation();
+        return false;
+    }
+
     if (this->unitIntervalDistribution(this->mt) <= std::exp(-this->temperature * dE)) {
         return true;
     } else {
@@ -128,13 +142,27 @@ bool Simulation::tryScaling() {
     Assert(factor > 0);
 
     double N = this->packing->size();
-    double dE = this->packing->tryScaling(factor, *this->interaction);
-    double exponent = N * log(factor) - this->temperature * dE - this->pressure * deltaV / this->temperature;
-    if (this->unitIntervalDistribution(this->mt) <= std::exp(exponent)) {
-        return true;
+    if (this->interaction->hasSoftPart()) {
+        double dE = this->packing->tryScaling(factor, *this->interaction);
+        double exponent = N * log(factor) - this->temperature * dE - this->pressure * deltaV / this->temperature;
+        if (this->unitIntervalDistribution(this->mt) <= std::exp(exponent)) {
+            return true;
+        } else {
+            this->packing->revertScaling();
+            return false;
+        }
     } else {
-        this->packing->revertScaling();
-        return false;
+        double exponent = N * log(factor) - this->pressure * deltaV / this->temperature;
+        if (exponent < 0)
+            if (this->unitIntervalDistribution(this->mt) > exp(exponent))
+                return false;
+
+       if (this->packing->tryScaling(factor, *this->interaction) != std::numeric_limits<double>::infinity()) {
+           return true;
+       } else {
+           this->packing->revertScaling();
+           return false;
+       }
     }
 }
 
