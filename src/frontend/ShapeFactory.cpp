@@ -9,9 +9,10 @@
 #include "core/shapes/SphereTraits.h"
 #include "core/shapes/SpherocylinderTraits.h"
 
-std::unique_ptr<ShapeTraits> shapeTraitsFor(const std::string &shapeName, const std::string &shapeAttributes,
-                                            [[maybe_unused]] const std::string &interactionName,
-                                            [[maybe_unused]] const std::string &interactionAttributes)
+std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &shapeName,
+                                                          const std::string &shapeAttributes,
+                                                          [[maybe_unused]] const std::string &interactionName,
+                                                          [[maybe_unused]] const std::string &interactionAttributes)
 {
     std::istringstream attributesStream(shapeAttributes);
     if (shapeName == "Sphere") {

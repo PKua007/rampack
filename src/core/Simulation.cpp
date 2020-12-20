@@ -93,13 +93,6 @@ bool Simulation::tryTranslation(const Interaction &interaction) {
     translation *= this->translationStep;
 
     double dE = this->packing->tryTranslation(this->particleIdxDistribution(this->mt), translation, interaction);
-    if (dE == 0)
-        return true;
-    else if (dE == std::numeric_limits<double>::infinity()) {
-        this->packing->revertTranslation();
-        return false;
-    }
-
     if (this->unitIntervalDistribution(this->mt) <= std::exp(-this->temperature * dE)) {
         return true;
     } else {
@@ -119,13 +112,6 @@ bool Simulation::tryRotation(const Interaction &interaction) {
     auto rotation = Matrix<3, 3>::rotation(axis.normalized(), angle);
 
     double dE = this->packing->tryRotation(this->particleIdxDistribution(this->mt), rotation, interaction);
-    if (dE == 0)
-        return true;
-    else if (dE == std::numeric_limits<double>::infinity()) {
-        this->packing->revertRotation();
-        return false;
-    }
-
     if (this->unitIntervalDistribution(this->mt) <= std::exp(-this->temperature * dE)) {
         return true;
     } else {
@@ -141,27 +127,13 @@ bool Simulation::tryScaling(const Interaction &interaction) {
     Assert(factor > 0);
 
     double N = this->packing->size();
-    if (interaction.hasSoftPart()) {
-        double dE = this->packing->tryScaling(factor, interaction);
-        double exponent = N * log(factor) - this->temperature * dE - this->pressure * deltaV / this->temperature;
-        if (this->unitIntervalDistribution(this->mt) <= std::exp(exponent)) {
-            return true;
-        } else {
-            this->packing->revertScaling();
-            return false;
-        }
+    double dE = this->packing->tryScaling(factor, interaction);
+    double exponent = N * log(factor) - this->temperature * dE - this->pressure * deltaV / this->temperature;
+    if (this->unitIntervalDistribution(this->mt) <= std::exp(exponent)) {
+        return true;
     } else {
-        double exponent = N * log(factor) - this->pressure * deltaV / this->temperature;
-        if (exponent < 0)
-            if (this->unitIntervalDistribution(this->mt) > exp(exponent))
-                return false;
-
-       if (this->packing->tryScaling(factor, interaction) != std::numeric_limits<double>::infinity()) {
-           return true;
-       } else {
-           this->packing->revertScaling();
-           return false;
-       }
+        this->packing->revertScaling();
+        return false;
     }
 }
 
