@@ -45,6 +45,7 @@ public:
     unsigned long seed{};
     std::string shapeName{};
     std::string shapeAttributes{};
+    std::string interaction{};
     std::string wolframFilename{};
     std::string compressibilityFilename{};
     std::string densitySnapshotFilename{};

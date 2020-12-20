@@ -13,8 +13,7 @@
 class ShapeFactory {
 public:
     static std::unique_ptr<ShapeTraits> shapeTraitsFor(const std::string &shapeName, const std::string &shapeAttributes,
-                                                       const std::string &interactionName,
-                                                       const std::string &interactionAttributes);
+                                                       const std::string &interaction);
 };
 
 

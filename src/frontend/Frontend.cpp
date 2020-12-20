@@ -124,7 +124,7 @@ int Frontend::casino(int argc, char **argv) {
                           params.volumeStepSize, params.thermalisationCycles, params.averagingCycles,
                           params.averagingEvery, params.seed);
 
-    auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, "", "");
+    auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
     simulation.perform(std::move(packing), shapeTraits->getInteraction(), logger);
     this->logger.info() << "Average density: " << simulation.getAverageDensity() << std::endl;
     this->logger.info() << "Translation acceptance rate: " << simulation.getTranlationAcceptanceRate() << std::endl;

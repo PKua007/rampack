@@ -11,22 +11,36 @@
 
 std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &shapeName,
                                                           const std::string &shapeAttributes,
-                                                          [[maybe_unused]] const std::string &interactionName,
-                                                          [[maybe_unused]] const std::string &interactionAttributes)
+                                                          const std::string &interaction)
 {
-    std::istringstream attributesStream(shapeAttributes);
+    std::istringstream shapeAttrStream(shapeAttributes);
+    std::istringstream interactionAttrStream(interaction);
+    std::string interactionName;
+    interactionAttrStream >> interactionName;
     if (shapeName == "Sphere") {
         double r;
-        attributesStream >> r;
-        ValidateMsg(attributesStream, "Malformed Sphere attributes; expected: [radius]");
+        shapeAttrStream >> r;
+        ValidateMsg(shapeAttrStream, "Malformed Sphere attributes; expected: [radius]");
         Validate(r > 0);
-        return std::make_unique<SphereTraits>(r);
+        if (interactionName.empty() || interactionName == "hard") {
+            return std::make_unique<SphereTraits>(r, SphereTraits::HardInteraction{});
+        } else if (interactionName == "lj") {
+            double epsilon, sigma;
+            interactionAttrStream >> epsilon >> sigma;
+            ValidateMsg(interactionAttrStream, "Malformed Lennard Jones attributes. Usage: lj [epsilon] [sigma]");
+            Validate(epsilon > 0);
+            Validate(sigma > 0);
+            return std::make_unique<SphereTraits>(r, SphereTraits::LennardJonesInteraction(epsilon, sigma));
+        } else {
+            throw ValidationException("Sphere support interactions: hard, lj (Lennard Jones)");
+        }
     } else if (shapeName == "Spherocylinder") {
         double r, length;
-        attributesStream >> length >> r;
-        ValidateMsg(attributesStream, "Malformed Spherocylinder attributes; expected: [length] [radius]");
+        shapeAttrStream >> length >> r;
+        ValidateMsg(shapeAttrStream, "Malformed Spherocylinder attributes; expected: [length] [radius]");
         Validate(r > 0);
         Validate(length >= 0);
+        ValidateMsg(interactionName.empty(), "Spherocylinder supports only hard interactions");
         return std::make_unique<SpherocylinderTraits>(length, r);
     } else {
         throw ValidationException("Unknown particle name: " + shapeName);

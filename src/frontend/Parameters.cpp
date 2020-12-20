@@ -40,6 +40,8 @@ Parameters::Parameters(std::istream &input) {
             this->shapeName = config.getString("shapeName");
         else if (key == "shapeAttributes")
             this->shapeAttributes = config.getString("shapeAttributes");
+        else if (key == "interaction")
+            this->interaction = config.getString("interaction");
         else if (key == "wolframFilename")
             this->wolframFilename = config.getString("wolframFilename");
         else if (key == "compressibilityFilename")
@@ -79,4 +81,5 @@ void Parameters::print(Logger &logger) const {
     logger.info() << "seed                 : " << this->seed << std::endl;
     logger.info() << "shapeName            : " << this->shapeName << std::endl;
     logger.info() << "shapeAttributes      : " << this->shapeAttributes << std::endl;
+    logger.info() << "interaction          : " << this->interaction << std::endl;
 }
