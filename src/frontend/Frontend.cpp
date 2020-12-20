@@ -20,7 +20,6 @@
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/LatticeArrangingModel.h"
 #include "core/Packing.h"
-#include "core/HardCoreInteraction.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename, const std::vector<std::string> &overridenParams) {
@@ -116,17 +115,17 @@ int Frontend::casino(int argc, char **argv) {
     this->logger << std::endl;
 
     // Prepare simulation
-    auto shape = ShapeFactory::createShape(params.shapeName, params.shapeAttributes);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     double linearSize = std::cbrt(params.initialVolume);
     LatticeArrangingModel latticeArrangingModel;
-    auto shapes = latticeArrangingModel.arrange(*shape, params.numOfParticles, 1, *bc);
+    auto shapes = latticeArrangingModel.arrange(params.numOfParticles, 1);
     auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(bc));
     Simulation simulation(params.temperature, params.pressure, params.positionStepSize, params.rotationStepSize,
                           params.volumeStepSize, params.thermalisationCycles, params.averagingCycles,
                           params.averagingEvery, params.seed);
 
-    simulation.perform(std::move(packing), std::make_unique<HardCoreInteraction>(), logger);
+    auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, "", "");
+    simulation.perform(std::move(packing), shapeTraits->getInteraction(), logger);
     this->logger.info() << "Average density: " << simulation.getAverageDensity() << std::endl;
     this->logger.info() << "Translation acceptance rate: " << simulation.getTranlationAcceptanceRate() << std::endl;
     this->logger.info() << "Rotation acceptance rate: " << simulation.getRotationAcceptanceRate() << std::endl;
@@ -135,7 +134,7 @@ int Frontend::casino(int argc, char **argv) {
     if (!params.wolframFilename.empty()) {
         std::ofstream out(params.wolframFilename);
         ValidateMsg(out, "Could not open " + params.wolframFilename + " to store packing!");
-        simulation.getPacking().toWolfram(out);
+        simulation.getPacking().toWolfram(out, shapeTraits->getPrinter());
         this->logger.info() << "Packing stored to " + params.wolframFilename << std::endl;
     }
 
@@ -143,7 +142,7 @@ int Frontend::casino(int argc, char **argv) {
         std::ofstream out(params.compressibilityFilename, std::ios_base::app);
         ValidateMsg(out, "Could not open " + params.compressibilityFilename + " to store compressibility factor!");
         Quantity rho = simulation.getAverageDensity();
-        double theta = rho.value * shape->getVolume();
+        double theta = rho.value * shapeTraits->getVolume();
         double Z = params.pressure / params.temperature / rho.value;
         out.precision(std::numeric_limits<double>::max_digits10);
         out << rho.value << " " << theta << " " << Z << std::endl;

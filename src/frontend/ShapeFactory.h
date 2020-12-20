@@ -8,11 +8,13 @@
 #include <memory>
 #include <string>
 
-#include "core/Shape.h"
+#include "core/ShapeTraits.h"
 
 class ShapeFactory {
 public:
-    static std::unique_ptr<Shape> createShape(const std::string &shapeName, const std::string &shapeAttributes);
+    static std::unique_ptr<ShapeTraits> shapeTraitsFor(const std::string &shapeName, const std::string &shapeAttributes,
+                                                       const std::string &interactionName,
+                                                       const std::string &interactionAttributes);
 };
 
 

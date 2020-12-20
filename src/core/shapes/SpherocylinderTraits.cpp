@@ -1,13 +1,18 @@
 //
-// Created by Piotr Kubala on 16/12/2020.
+// Created by Piotr Kubala on 20/12/2020.
 //
 
-#include "Spherocylinder.h"
+#include "SpherocylinderTraits.h"
+#include "utils/Assertions.h"
 
+SpherocylinderTraits::SpherocylinderTraits(double length, double radius) : length(length), radius(radius) {
+    Expects(length >= 0);
+    Expects(radius > 0);
+}
 
-Vector<3> Spherocylinder::getCapCentre(short beginOrEnd, double scale) const {
+Vector<3> SpherocylinderTraits::getCapCentre(short beginOrEnd, const Shape &shape, double scale) const {
     Vector<3> alignedCentre{1, 0, 0};
-    return scale * this->getPosition() + (this->getOrientation() * alignedCentre) * (0.5 * beginOrEnd * this->length);
+    return scale * shape.getPosition() + (shape.getOrientation() * alignedCentre) * (0.5 * beginOrEnd * this->length);
 }
 
 // Based on
@@ -17,11 +22,11 @@ Vector<3> Spherocylinder::getCapCentre(short beginOrEnd, double scale) const {
 // SoftSurfer makes no warranty for this code, and cannot be held
 // liable for any real or imagined damage resulting from its use.
 // Users of this code must verify correctness for their application.
-double Spherocylinder::distanceFrom(const Spherocylinder &s, double scale) const{
-    Vector<3> t1 = this->getCapCentre(-1, scale);
-    Vector<3> t2 = this->getCapCentre(1, scale);
-    Vector<3> s1 = s.getCapCentre(-1, scale);
-    Vector<3> s2 = s.getCapCentre(1, scale);
+double SpherocylinderTraits::distanceBetween(const Shape &shape1, const Shape &shape2, double scale) const{
+    Vector<3> t1 = this->getCapCentre(-1, shape1, scale);
+    Vector<3> t2 = this->getCapCentre(1, shape1, scale);
+    Vector<3> s1 = this->getCapCentre(-1, shape2, scale);
+    Vector<3> s2 = this->getCapCentre(1, shape2, scale);
 
     Vector<3> u = t2 - t1;
     Vector<3> v = s2 - s1;
@@ -85,31 +90,29 @@ double Spherocylinder::distanceFrom(const Spherocylinder &s, double scale) const
     return dP.norm2();   // return the closest distance
 }
 
-bool Spherocylinder::overlap(const HardShape &other, double scaleFactor, const BoundaryConditions &bc) const {
-    Spherocylinder otherSc = dynamic_cast<const Spherocylinder &>(other);
-    this->applyBCTranslation(bc, otherSc);
-    double distance2 = (otherSc.getPosition() - this->getPosition()).norm2() * scaleFactor * scaleFactor;
+bool SpherocylinderTraits::overlapBetween(const Shape &shape1, const Shape &shape2, double scaleFactor,
+                                          const BoundaryConditions &bc) const
+{
+    Shape shape2Copy(shape2);
+    shape1.applyBCTranslation(bc, shape2Copy);
+    double distance2 = (shape2Copy.getPosition() - shape1.getPosition()).norm2() * scaleFactor * scaleFactor;
     if (distance2 < 4 * this->radius * this->radius)
         return true;
     else if (distance2 >= std::pow(2 * this->radius + this->length, 2))
         return false;
 
-    return this->distanceFrom(otherSc, scaleFactor) < 4 * this->radius * this->radius;
+    return this->distanceBetween(shape1, shape2, scaleFactor) < 4 * this->radius * this->radius;
 }
 
-std::unique_ptr<Shape> Spherocylinder::clone() const {
-    return std::make_unique<Spherocylinder>(*this);
-}
-
-double Spherocylinder::getVolume() const {
+double SpherocylinderTraits::getVolume() const {
     return M_PI*this->radius*this->radius*this->length + 4./3*M_PI*std::pow(this->radius, 3);
 }
 
-std::string Spherocylinder::toWolfram(double scaleFactor) const {
+std::string SpherocylinderTraits::toWolfram(const Shape &shape, double scaleFactor) const {
     std::stringstream out;
     out << std::fixed;
-    Vector<3> beg = this->getCapCentre(-1, scaleFactor);
-    Vector<3> end = this->getCapCentre(1, scaleFactor);
+    Vector<3> beg = this->getCapCentre(-1, shape, scaleFactor);
+    Vector<3> end = this->getCapCentre(1, shape, scaleFactor);
     out << "CapsuleShape[{" << beg << "," << end << "}," << this->radius << "]";
     return out.str();
 }

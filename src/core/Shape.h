@@ -17,9 +17,6 @@ private:
     Vector<3> position{};
     Matrix<3, 3> orientation{};
 
-protected:
-    void applyBCTranslation(const BoundaryConditions &bc, Shape &other) const;
-
 public:
     Shape() : orientation{Matrix<3, 3>::identity()} { }
     explicit Shape(const Vector<3> &position) : position{position}, orientation{Matrix<3, 3>::identity()} { }
@@ -28,11 +25,9 @@ public:
 
     void translate(const Vector<3> &translation, const BoundaryConditions &bc);
     void rotate(const Matrix<3, 3> &rotation);
+    void applyBCTranslation(const BoundaryConditions &bc, Shape &other) const;
     [[nodiscard]] const Vector<3> &getPosition() const { return this->position; }
     [[nodiscard]] const Matrix<3, 3> &getOrientation() const { return this->orientation; }
-    [[nodiscard]] virtual std::unique_ptr<Shape> clone() const = 0;
-    [[nodiscard]] virtual double getVolume() const = 0;
-    [[nodiscard]] virtual std::string toWolfram(double scaleFactor) const = 0;
 };
 
 

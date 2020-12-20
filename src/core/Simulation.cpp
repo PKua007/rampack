@@ -26,13 +26,12 @@ Simulation::Simulation(double temperature, double pressure, double positionStepS
     Expects(averagingEvery > 0 && averagingEvery < averagingCycles);
 }
 
-void Simulation::perform(std::unique_ptr<Packing> packing_, std::unique_ptr<Interaction> interaction_, Logger &logger) {
+void Simulation::perform(std::unique_ptr<Packing> packing_, const Interaction &interaction, Logger &logger) {
     Expects(!packing_->empty());
     this->moveTypeDistribution = std::uniform_int_distribution<int>(0, 2 * packing_->size());
     this->particleIdxDistribution = std::uniform_int_distribution<int>(0, packing_->size() - 1);
 
     this->packing = std::move(packing_);
-    this->interaction = std::move(interaction_);
     this->translationStep = this->initialTranslationStep;
     this->rotationStep = this->initialRotationStep;
     this->scalingStep = this->initialScalingStep;
@@ -47,7 +46,7 @@ void Simulation::perform(std::unique_ptr<Packing> packing_, std::unique_ptr<Inte
     logger.setAdditionalText("thermalisation");
     logger.info() << "Starting thermalisation..." << std::endl;
     for (std::size_t i{}; i < this->thermalisationCycles * this->cycleLength; i++) {
-        this->performStep(logger);
+        this->performStep(logger, interaction);
         if ((i + 1) % (this->cycleLength * this->averagingEvery) == 0) {
             this->densityThermalisationSnapshots.push_back({(i + 1) / this->cycleLength,
                                                             this->packing->getNumberDensity()});
@@ -60,7 +59,7 @@ void Simulation::perform(std::unique_ptr<Packing> packing_, std::unique_ptr<Inte
     logger.setAdditionalText("averaging");
     logger.info() << "Starting averaging..." << std::endl;
     for(std::size_t i{}; i < this->averagingCycles * this->cycleLength; i++) {
-        this->performStep(logger);
+        this->performStep(logger, interaction);
         if ((i + 1) % (this->cycleLength * this->averagingEvery) == 0)
             this->averagedDensities.push_back(this->packing->getNumberDensity());
         if ((i + 1) % (this->cycleLength * 100) == 0)
@@ -70,16 +69,16 @@ void Simulation::perform(std::unique_ptr<Packing> packing_, std::unique_ptr<Inte
     logger.setAdditionalText("");
 }
 
-void Simulation::performStep(Logger &logger) {
+void Simulation::performStep(Logger &logger, const Interaction &interaction) {
     std::size_t moveType = this->moveTypeDistribution(this->mt);
     if (moveType == 0) {
-       bool wasScaled = this->tryScaling();
+       bool wasScaled = this->tryScaling(interaction);
        this->scalingCounter.increment(wasScaled);
     } else if (moveType <= this->packing->size()) {
-        bool wasTranslated = this->tryTranslation();
+        bool wasTranslated = this->tryTranslation(interaction);
         this->translationCounter.increment(wasTranslated);
     } else {
-        bool wasRotated = this->tryRotation();
+        bool wasRotated = this->tryRotation(interaction);
         this->rotationCounter.increment(wasRotated);
     }
 
@@ -87,13 +86,13 @@ void Simulation::performStep(Logger &logger) {
         this->evaluateCounters(logger);
 }
 
-bool Simulation::tryTranslation() {
+bool Simulation::tryTranslation(const Interaction &interaction) {
     Vector<3> translation{2*this->unitIntervalDistribution(this->mt) - 1,
                           2*this->unitIntervalDistribution(this->mt) - 1,
                           2*this->unitIntervalDistribution(this->mt) - 1};
     translation *= this->translationStep;
 
-    double dE = this->packing->tryTranslation(this->particleIdxDistribution(this->mt), translation, *this->interaction);
+    double dE = this->packing->tryTranslation(this->particleIdxDistribution(this->mt), translation, interaction);
     if (dE == 0)
         return true;
     else if (dE == std::numeric_limits<double>::infinity()) {
@@ -109,7 +108,7 @@ bool Simulation::tryTranslation() {
     }
 }
 
-bool Simulation::tryRotation() {
+bool Simulation::tryRotation(const Interaction &interaction) {
     Vector<3> axis;
     do {
         axis[0] = 2*this->unitIntervalDistribution(this->mt) - 1;
@@ -119,7 +118,7 @@ bool Simulation::tryRotation() {
     double angle = (2*this->unitIntervalDistribution(this->mt) - 1) * this->rotationStep;
     auto rotation = Matrix<3, 3>::rotation(axis.normalized(), angle);
 
-    double dE = this->packing->tryRotation(this->particleIdxDistribution(this->mt), rotation, *this->interaction);
+    double dE = this->packing->tryRotation(this->particleIdxDistribution(this->mt), rotation, interaction);
     if (dE == 0)
         return true;
     else if (dE == std::numeric_limits<double>::infinity()) {
@@ -135,15 +134,15 @@ bool Simulation::tryRotation() {
     }
 }
 
-bool Simulation::tryScaling() {
+bool Simulation::tryScaling(const Interaction &interaction) {
     double deltaV = (2*this->unitIntervalDistribution(this->mt) - 1) * this->scalingStep;
     double currentV = std::pow(this->packing->getLinearSize(), 3);
     double factor = (deltaV + currentV) / currentV;
     Assert(factor > 0);
 
     double N = this->packing->size();
-    if (this->interaction->hasSoftPart()) {
-        double dE = this->packing->tryScaling(factor, *this->interaction);
+    if (interaction.hasSoftPart()) {
+        double dE = this->packing->tryScaling(factor, interaction);
         double exponent = N * log(factor) - this->temperature * dE - this->pressure * deltaV / this->temperature;
         if (this->unitIntervalDistribution(this->mt) <= std::exp(exponent)) {
             return true;
@@ -157,7 +156,7 @@ bool Simulation::tryScaling() {
             if (this->unitIntervalDistribution(this->mt) > exp(exponent))
                 return false;
 
-       if (this->packing->tryScaling(factor, *this->interaction) != std::numeric_limits<double>::infinity()) {
+       if (this->packing->tryScaling(factor, interaction) != std::numeric_limits<double>::infinity()) {
            return true;
        } else {
            this->packing->revertScaling();

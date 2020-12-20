@@ -6,24 +6,27 @@
 
 #include "ShapeFactory.h"
 #include "utils/Assertions.h"
-#include "core/shapes/Sphere.h"
-#include "core/shapes/Spherocylinder.h"
+#include "core/shapes/SphereTraits.h"
+#include "core/shapes/SpherocylinderTraits.h"
 
-std::unique_ptr<Shape> ShapeFactory::createShape(const std::string &shapeName, const std::string &shapeAttributes) {
+std::unique_ptr<ShapeTraits> shapeTraitsFor(const std::string &shapeName, const std::string &shapeAttributes,
+                                            [[maybe_unused]] const std::string &interactionName,
+                                            [[maybe_unused]] const std::string &interactionAttributes)
+{
     std::istringstream attributesStream(shapeAttributes);
     if (shapeName == "Sphere") {
         double r;
         attributesStream >> r;
         ValidateMsg(attributesStream, "Malformed Sphere attributes; expected: [radius]");
         Validate(r > 0);
-        return std::make_unique<Sphere>(r);
+        return std::make_unique<SphereTraits>(r);
     } else if (shapeName == "Spherocylinder") {
         double r, length;
         attributesStream >> length >> r;
         ValidateMsg(attributesStream, "Malformed Spherocylinder attributes; expected: [length] [radius]");
         Validate(r > 0);
         Validate(length >= 0);
-        return std::make_unique<Spherocylinder>(length, r);
+        return std::make_unique<SpherocylinderTraits>(length, r);
     } else {
         throw ValidationException("Unknown particle name: " + shapeName);
     }

@@ -63,17 +63,16 @@ private:
     std::uniform_int_distribution<int> particleIdxDistribution;
 
     std::unique_ptr<Packing> packing;
-    std::unique_ptr<Interaction> interaction;
     std::vector<double> averagedDensities;
     std::vector<ScalarSnapshot> densityThermalisationSnapshots;
     Counter translationCounter;
     Counter rotationCounter;
     Counter scalingCounter;
 
-    void performStep(Logger &logger);
-    bool tryTranslation();
-    bool tryRotation();
-    bool tryScaling();
+    void performStep(Logger &logger, const Interaction &interaction);
+    bool tryTranslation(const Interaction &interaction);
+    bool tryRotation(const Interaction &interaction);
+    bool tryScaling(const Interaction &interaction);
     void evaluateCounters(Logger &logger);
 
 public:
@@ -81,7 +80,7 @@ public:
                double volumeStepSize, std::size_t thermalisationCycles, std::size_t averagingCycles,
                std::size_t averagingEvery, unsigned long seed);
 
-    void perform(std::unique_ptr<Packing> packing_, std::unique_ptr<Interaction> interaction_, Logger &logger);
+    void perform(std::unique_ptr<Packing> packing_, const Interaction &interaction, Logger &logger);
     [[nodiscard]] Quantity getAverageDensity() const;
     [[nodiscard]] std::vector<ScalarSnapshot> getDensityThermalisationSnapshots() const {
         return this->densityThermalisationSnapshots;

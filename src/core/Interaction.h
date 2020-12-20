@@ -14,8 +14,10 @@ public:
 
     [[nodiscard]] virtual bool hasHardPart() const = 0;
     [[nodiscard]] virtual bool hasSoftPart() const = 0;
-    [[nodiscard]] virtual double calculateEnergyBetween(const Shape &shape1, const Shape &shape2,
+    [[nodiscard]] virtual double calculateEnergyBetween(const Shape &shape1, const Shape &shape2, double scale,
                                                         const BoundaryConditions &bc) const = 0;
+    [[nodiscard]] virtual bool overlapBetween(const Shape &shape1, const Shape &shape2, double scale,
+                                              const BoundaryConditions &bc) const = 0;
 };
 
 
