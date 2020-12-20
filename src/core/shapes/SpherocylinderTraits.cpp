@@ -101,7 +101,7 @@ bool SpherocylinderTraits::overlapBetween(const Shape &shape1, const Shape &shap
     else if (distance2 >= std::pow(2 * this->radius + this->length, 2))
         return false;
 
-    return this->distanceBetween(shape1, shape2, scaleFactor) < 4 * this->radius * this->radius;
+    return this->distanceBetween(shape1, shape2Copy, scaleFactor) < 4 * this->radius * this->radius;
 }
 
 double SpherocylinderTraits::getVolume() const {

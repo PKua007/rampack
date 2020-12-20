@@ -32,6 +32,8 @@ public:
 
     [[nodiscard]] double getVolume() const override;
     [[nodiscard]] std::string toWolfram(const Shape &shape, double scale) const override;
+
+    [[nodiscard]] double getRadius() const { return this->radius; }
 };
 
 

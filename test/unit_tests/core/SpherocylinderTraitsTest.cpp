@@ -4,13 +4,14 @@
 
 #include <catch2/catch.hpp>
 
-#include "core/shapes/Spherocylinder.h"
+#include "core/shapes/SpherocylinderTraits.h"
 #include "core/FreeBoundaryConditions.h"
 #include "core/PeriodicBoundaryConditions.h"
 
 TEST_CASE("Spherocylinder: overlap") {
     FreeBoundaryConditions fbc;
-    Spherocylinder sc1(3, 2), sc2(3, 2);
+    SpherocylinderTraits traits(3, 2);
+    Shape sc1{}, sc2{};
 
     // Cases are found visually using Mathematica. See wolfram/spheroc_test.nb
     SECTION("sphere-sphere") {
@@ -23,10 +24,10 @@ TEST_CASE("Spherocylinder: overlap") {
                     0.5191108031629524,   0.845122866944617,  0.127637431056981,
                     -0.848633322046771,  0.4918711011645504, 0.1946389081120092});
 
-        CHECK(sc1.overlap(sc2, 0.95, fbc));
-        CHECK(sc2.overlap(sc1, 0.95, fbc));
-        CHECK_FALSE(sc1.overlap(sc2, 1.05, fbc));
-        CHECK_FALSE(sc2.overlap(sc1, 1.05, fbc));
+        CHECK(traits.overlapBetween(sc1, sc2, 0.95, fbc));
+        CHECK(traits.overlapBetween(sc2, sc1, 0.95, fbc));
+        CHECK_FALSE(traits.overlapBetween(sc1, sc2, 1.05, fbc));
+        CHECK_FALSE(traits.overlapBetween(sc2, sc1, 1.05, fbc));
     }
 
     SECTION("sphere-cylinder") {
@@ -39,10 +40,10 @@ TEST_CASE("Spherocylinder: overlap") {
                     -0.2008438095940726,  0.915521563787973,  0.348542723904781,
                       0.976417683550607, 0.1583278933673811, 0.1467677942585273});
 
-        CHECK(sc1.overlap(sc2, 0.95, fbc));
-        CHECK(sc2.overlap(sc1, 0.95, fbc));
-        CHECK_FALSE(sc1.overlap(sc2, 1.05, fbc));
-        CHECK_FALSE(sc2.overlap(sc1, 1.05, fbc));
+        CHECK(traits.overlapBetween(sc1, sc2, 0.95, fbc));
+        CHECK(traits.overlapBetween(sc2, sc1, 0.95, fbc));
+        CHECK_FALSE(traits.overlapBetween(sc1, sc2, 1.05, fbc));
+        CHECK_FALSE(traits.overlapBetween(sc2, sc1, 1.05, fbc));
     }
 
     SECTION("cylinder-cylinder") {
@@ -55,10 +56,10 @@ TEST_CASE("Spherocylinder: overlap") {
                      -0.902545539870646, 0.1570999152673587, -0.4009129145869377,
                     -0.1104493116652922,  0.815453939865286,  0.5681864320017205});
 
-        CHECK(sc1.overlap(sc2, 0.95, fbc));
-        CHECK(sc2.overlap(sc1, 0.95, fbc));
-        CHECK_FALSE(sc1.overlap(sc2, 1.05, fbc));
-        CHECK_FALSE(sc2.overlap(sc1, 1.05, fbc));
+        CHECK(traits.overlapBetween(sc1, sc2, 0.95, fbc));
+        CHECK(traits.overlapBetween(sc2, sc1, 0.95, fbc));
+        CHECK_FALSE(traits.overlapBetween(sc1, sc2, 1.05, fbc));
+        CHECK_FALSE(traits.overlapBetween(sc2, sc1, 1.05, fbc));
     }
 
     SECTION("boundary conditions") {
@@ -66,24 +67,24 @@ TEST_CASE("Spherocylinder: overlap") {
         sc1.translate({96.5, 50, 50}, pbc);
         sc2.translate({3.5, 50, 50}, pbc);
 
-        CHECK(sc1.overlap(sc2, 0.95, pbc));
-        CHECK(sc2.overlap(sc1, 0.95, pbc));
-        CHECK_FALSE(sc1.overlap(sc2, 1.05, pbc));
-        CHECK_FALSE(sc2.overlap(sc1, 1.05, pbc));
+        CHECK(traits.overlapBetween(sc1, sc2, 0.95, pbc));
+        CHECK(traits.overlapBetween(sc2, sc1, 0.95, pbc));
+        CHECK_FALSE(traits.overlapBetween(sc1, sc2, 1.05, pbc));
+        CHECK_FALSE(traits.overlapBetween(sc2, sc1, 1.05, pbc));
     }
 }
 
 TEST_CASE("Spherocylinder: getVolume") {
-    Spherocylinder sc(3, 2);
+    SpherocylinderTraits traits(3, 2);
 
-    CHECK(sc.getVolume() == Approx(68*M_PI/3));
+    CHECK(traits.getVolume() == Approx(68 * M_PI / 3));
 }
 
 TEST_CASE("Spherocylinder: toWolfram") {
     FreeBoundaryConditions fbc;
-    Spherocylinder sc(3, 2);
-    sc.translate({1, 2, 3}, fbc);
-    sc.rotate(Matrix<3, 3>::rotation(0, M_PI/2, 0));    // spherocylinder parallel to z axis
+    SpherocylinderTraits traits(3, 2);
+    Shape shape({1, 2, 3}, Matrix<3, 3>::rotation(0, M_PI/2, 0));    // spherocylinder parallel to z axis
 
-    CHECK(sc.toWolfram(2) == "CapsuleShape[{{2.000000, 4.000000, 7.500000},{2.000000, 4.000000, 4.500000}},2.000000]");
+    CHECK(traits.toWolfram(shape, 2) == "CapsuleShape[{{2.000000, 4.000000, 7.500000},"
+                                        "{2.000000, 4.000000, 4.500000}},2.000000]");
 }

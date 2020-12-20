@@ -5,32 +5,11 @@
 #include <catch2/catch.hpp>
 
 #include "core/LatticeArrangingModel.h"
-#include "core/FreeBoundaryConditions.h"
-
-namespace {
-    class DummyShape : public Shape {
-    public:
-        [[nodiscard]] bool overlap([[maybe_unused]] const Shape &other, [[maybe_unused]] double scaleFactor,
-                                   [[maybe_unused]] const BoundaryConditions &bc) const override
-        {
-            return false;
-        }
-
-        [[nodiscard]] std::unique_ptr<Shape> clone() const override {
-            return std::make_unique<DummyShape>(*this);
-        }
-
-        [[nodiscard]] std::string toWolfram([[maybe_unused]] double scaleFactor) const override { return ""; }
-        [[nodiscard]] double getVolume() const override { return 1; }
-    };
-}
 
 TEST_CASE("LatticeArrangingModel: not fully filled lattice") {
     LatticeArrangingModel model;
-    DummyShape dummyShape;
-    FreeBoundaryConditions fbc;
 
-    auto shapes = model.arrange(dummyShape, 7, 2, fbc);
+    auto shapes = model.arrange(7, 2);
 
     REQUIRE(shapes.size() == 7);
     CHECK(shapes[0]->getPosition() == Vector<3>{0.5, 0.5, 0.5});
@@ -44,10 +23,8 @@ TEST_CASE("LatticeArrangingModel: not fully filled lattice") {
 
 TEST_CASE("LatticeArrangingModel: fully filled lattice") {
     LatticeArrangingModel model;
-    DummyShape dummyShape;
-    FreeBoundaryConditions fbc;
 
-    auto shapes = model.arrange(dummyShape, 8, 2, fbc);
+    auto shapes = model.arrange(8, 2);
 
     REQUIRE(shapes.size() == 8);
     CHECK(shapes[0]->getPosition() == Vector<3>{0.5, 0.5, 0.5});
