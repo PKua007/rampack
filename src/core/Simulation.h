@@ -44,6 +44,7 @@ private:
 
     double temperature{};
     double pressure{};
+
     double initialTranslationStep{};
     double initialRotationStep{};
     double initialScalingStep{};
@@ -55,6 +56,9 @@ private:
     double translationStep{};
     double rotationStep{};
     double scalingStep{};
+    Counter translationCounter;
+    Counter rotationCounter;
+    Counter scalingCounter;
     bool shouldAdjustStepSize{};
 
     std::mt19937 mt;
@@ -64,10 +68,9 @@ private:
 
     std::unique_ptr<Packing> packing;
     std::vector<double> averagedDensities;
+    std::vector<double> averagedEnergy;
+    std::vector<double> averagedEnergyFluctuations;
     std::vector<ScalarSnapshot> densityThermalisationSnapshots;
-    Counter translationCounter;
-    Counter rotationCounter;
-    Counter scalingCounter;
 
     void performStep(Logger &logger, const Interaction &interaction);
     bool tryTranslation(const Interaction &interaction);
@@ -83,6 +86,8 @@ public:
 
     void perform(std::unique_ptr<Packing> packing_, const Interaction &interaction, Logger &logger);
     [[nodiscard]] Quantity getAverageDensity() const;
+    [[nodiscard]] Quantity getAverageEnergy() const;
+    [[nodiscard]] Quantity getAverageEnergyFluctuations() const;
     [[nodiscard]] std::vector<ScalarSnapshot> getDensityThermalisationSnapshots() const {
         return this->densityThermalisationSnapshots;
     }

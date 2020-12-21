@@ -49,8 +49,11 @@ void Simulation::perform(std::unique_ptr<Packing> packing_, const Interaction &i
     logger.info() << "Starting averaging..." << std::endl;
     for(std::size_t i{}; i < this->averagingCycles * this->cycleLength; i++) {
         this->performStep(logger, interaction);
-        if ((i + 1) % (this->cycleLength * this->averagingEvery) == 0)
+        if ((i + 1) % (this->cycleLength * this->averagingEvery) == 0) {
             this->averagedDensities.push_back(this->packing->getNumberDensity());
+            this->averagedEnergy.push_back(this->packing->getTotalEnergy(interaction));
+            this->averagedEnergyFluctuations.push_back(this->packing->getParticleEnergyFluctuations(interaction));
+        }
         if ((i + 1) % (this->cycleLength * 100) == 0)
             logger.info() << "Performed " << ((i + 1)/this->cycleLength) << " cycles" << std::endl;
     }
@@ -195,6 +198,20 @@ Quantity Simulation::getAverageDensity() const {
     density.separator = Quantity::PLUS_MINUS;
     density.calculateFromSamples(this->averagedDensities);
     return density;
+}
+
+Quantity Simulation::getAverageEnergy() const {
+    Quantity energy;
+    energy.separator = Quantity::PLUS_MINUS;
+    energy.calculateFromSamples(this->averagedEnergy);
+    return energy;
+}
+
+Quantity Simulation::getAverageEnergyFluctuations() const {
+    Quantity energyFluctuations;
+    energyFluctuations.separator = Quantity::PLUS_MINUS;
+    energyFluctuations.calculateFromSamples(this->averagedEnergyFluctuations);
+    return energyFluctuations;
 }
 
 void Simulation::Counter::increment(bool accepted) {

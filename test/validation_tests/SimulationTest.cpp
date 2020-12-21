@@ -82,7 +82,7 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas") {
 }
 
 TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas") {
-    // For parameters chosen compressibility factor should be around 1.1 and equation of state should be well
+    // For parameters chosen compressibility factor should be around 1.2 and equation of state seem to be well
     // approximated by the second virial coefficient known analytically
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 200;

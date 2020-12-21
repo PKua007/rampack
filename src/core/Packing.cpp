@@ -22,13 +22,13 @@ double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, c
     this->lastAlteredParticleIdx = particleIdx;
     this->lastTranslation = translation;
 
-    double initialEnergy = (interaction.hasSoftPart() ? this->getParticleEnergy(particleIdx, interaction) : 0);
+    double initialEnergy = this->getParticleEnergy(particleIdx, interaction);
 
     this->shapes[particleIdx]->translate(translation, *this->bc);
     if (interaction.hasHardPart() && this->isAnyParticleCollidingWith(particleIdx, interaction))
         return std::numeric_limits<double>::infinity();
 
-    double finalEnergy = (interaction.hasSoftPart() ? this->getParticleEnergy(particleIdx, interaction) : 0);
+    double finalEnergy = this->getParticleEnergy(particleIdx, interaction);
     return finalEnergy - initialEnergy;
 }
 
@@ -37,13 +37,13 @@ double Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotatio
     this->lastAlteredParticleIdx = particleIdx;
     this->lastRotation = rotation;
 
-    double initialEnergy = (interaction.hasSoftPart() ? this->getParticleEnergy(particleIdx, interaction) : 0);
+    double initialEnergy = this->getParticleEnergy(particleIdx, interaction);
 
     this->shapes[particleIdx]->rotate(rotation);
     if (interaction.hasHardPart() && this->isAnyParticleCollidingWith(particleIdx, interaction))
         return std::numeric_limits<double>::infinity();
 
-    double finalEnergy = (interaction.hasSoftPart() ? this->getParticleEnergy(particleIdx, interaction) : 0);
+    double finalEnergy = this->getParticleEnergy(particleIdx, interaction);
     return finalEnergy - initialEnergy;
 }
 
@@ -51,13 +51,13 @@ double Packing::tryScaling(double scaleFactor, const Interaction &interaction) {
     Expects(scaleFactor > 0);
     this->lastScalingFactor = std::cbrt(scaleFactor);
 
-    double initialEnergy = (interaction.hasSoftPart() ? this->getTotalEnergy(interaction) : 0);
+    double initialEnergy = this->getTotalEnergy(interaction);
 
     this->linearSize *= std::cbrt(scaleFactor);
     if (interaction.hasHardPart() && scaleFactor < 1 && this->areAnyParticlesOverlapping(interaction))
         return std::numeric_limits<double>::infinity();
 
-    double finalEnergy = (interaction.hasSoftPart() ? this->getTotalEnergy(interaction) : 0);
+    double finalEnergy = this->getTotalEnergy(interaction);
     return finalEnergy - initialEnergy;
 }
 
@@ -125,6 +125,8 @@ void Packing::revertScaling() {
 
 double Packing::getParticleEnergy(std::size_t particleIdx, const Interaction &interaction) const {
     Expects(particleIdx < this->size());
+    if (!interaction.hasSoftPart())
+        return 0;
 
     double energy{};
     for (std::size_t i{}; i < this->size(); i++) {
@@ -137,10 +139,29 @@ double Packing::getParticleEnergy(std::size_t particleIdx, const Interaction &in
 }
 
 double Packing::getTotalEnergy(const Interaction &interaction) const {
+    if (!interaction.hasSoftPart())
+        return 0;
+
     double energy{};
     for (std::size_t i{}; i < this->size(); i++)
         for (std::size_t j = i + 1; j < this->size(); j++)
             energy += interaction.calculateEnergyBetween(*this->shapes[i], *this->shapes[j], this->linearSize,
                                                          *this->bc);
     return energy;
+}
+
+double Packing::getParticleEnergyFluctuations(const Interaction &interaction) const {
+    if (!interaction.hasSoftPart())
+        return 0;
+
+    double energySum{};
+    double energySum2{};
+    for (std::size_t i{}; i < this->size(); i++) {
+        double energy = this->getParticleEnergy(i, interaction);
+        energySum += energy;
+        energySum2 += energy*energy;
+    }
+
+    double N = this->size();
+    return std::sqrt(energySum2/(N-1) - std::pow(energySum, 2)/N/(N - 1));
 }

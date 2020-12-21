@@ -74,6 +74,7 @@ void Frontend::setVerbosityLevel(const std::string &verbosityLevelName) const {
 }
 
 int Frontend::casino(int argc, char **argv) {
+    // Prepare and parse options
     cxxopts::Options options(argv[0], "Hard particle Monte Carlo.");
 
     std::string inputFilename;
@@ -108,7 +109,7 @@ int Frontend::casino(int argc, char **argv) {
     if (!parsedOptions.count("input"))
         die("Input file must be specified with option -i [input file name]", this->logger);
 
-    // Prepare parameters
+    // Load parameters (both from file and inline)
     this->logger.info() << "Simulation parameters:" << std::endl;
     Parameters params = this->loadParameters(inputFilename, overridenParams);
     params.print(this->logger);
@@ -120,17 +121,22 @@ int Frontend::casino(int argc, char **argv) {
     LatticeArrangingModel latticeArrangingModel;
     auto shapes = latticeArrangingModel.arrange(params.numOfParticles, 1);
     auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(bc));
+    auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
     Simulation simulation(params.temperature, params.pressure, params.positionStepSize, params.rotationStepSize,
                           params.volumeStepSize, params.thermalisationCycles, params.averagingCycles,
                           params.averagingEvery, params.seed);
 
-    auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
+    // Perform simulations
     simulation.perform(std::move(packing), shapeTraits->getInteraction(), logger);
+    this->logger << "----------------------------" << std::endl;
     this->logger.info() << "Average density: " << simulation.getAverageDensity() << std::endl;
-    this->logger.info() << "Translation acceptance rate: " << simulation.getTranlationAcceptanceRate() << std::endl;
-    this->logger.info() << "Rotation acceptance rate: " << simulation.getRotationAcceptanceRate() << std::endl;
-    this->logger.info() << "Scaling acceptance rate: " << simulation.getScalingAcceptanceRate() << std::endl;
+    this->logger << "----------------------------" << std::endl;
+    this->logger << "Translation acceptance rate: " << simulation.getTranlationAcceptanceRate() << std::endl;
+    this->logger << "Rotation acceptance rate: " << simulation.getRotationAcceptanceRate() << std::endl;
+    this->logger << "Scaling acceptance rate: " << simulation.getScalingAcceptanceRate() << std::endl;
+    this->logger << "----------------------------" << std::endl;
 
+    // Store packing (if desired)
     if (!params.wolframFilename.empty()) {
         std::ofstream out(params.wolframFilename);
         ValidateMsg(out, "Could not open " + params.wolframFilename + " to store packing!");
@@ -138,17 +144,22 @@ int Frontend::casino(int argc, char **argv) {
         this->logger.info() << "Packing stored to " + params.wolframFilename << std::endl;
     }
 
-    if (!params.compressibilityFilename.empty()) {
-        std::ofstream out(params.compressibilityFilename, std::ios_base::app);
-        ValidateMsg(out, "Could not open " + params.compressibilityFilename + " to store compressibility factor!");
+    // Store density, energy, etc. (if desired)
+    if (!params.outputFilename.empty()) {
+        std::ofstream out(params.outputFilename, std::ios_base::app);
+        ValidateMsg(out, "Could not open " + params.outputFilename + " to store output!");
         Quantity rho = simulation.getAverageDensity();
+        Quantity E = simulation.getAverageEnergy();
+        Quantity Efluct = simulation.getAverageEnergyFluctuations();
         double theta = rho.value * shapeTraits->getVolume();
         double Z = params.pressure / params.temperature / rho.value;
         out.precision(std::numeric_limits<double>::max_digits10);
-        out << rho.value << " " << theta << " " << Z << std::endl;
-        this->logger.info() << "Compressibility factor stored to " + params.compressibilityFilename << std::endl;
+        out << params.temperature << " " << params.pressure << " " << rho.value << " " << theta << " " << Z << " ";
+        out << (E.value / params.numOfParticles) << " " << Efluct.value << std::endl;
+        this->logger.info() << "Output factor stored to " + params.outputFilename << std::endl;
     }
 
+    // Store density snapshots during thermalisation phase
     if (!params.densitySnapshotFilename.empty()) {
         std::ofstream out(params.densitySnapshotFilename);
         ValidateMsg(out, "Could not open " + params.densitySnapshotFilename + " to store density snapshots!");

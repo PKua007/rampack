@@ -148,4 +148,22 @@ TEST_CASE("Packing") {
     SECTION("number density") {
         CHECK(packing.getNumberDensity() == Approx(0.024));
     }
+
+    SECTION("total energy") {
+        double scale1E = (2 + 2*std::sqrt(41))/10;
+        double E = scale1E * 5;
+        CHECK(packing.getTotalEnergy(distanceInteraction) == Approx(E));
+    }
+
+    SECTION("energy fluctuations") {
+        double scale1Efluct = (std::sqrt(41) - 2)/(10 * sqrt(3));
+        double Efluct = scale1Efluct * 5;
+        CHECK(packing.getParticleEnergyFluctuations(distanceInteraction) == Approx(Efluct));
+    }
+
+    SECTION("particle energy") {
+        CHECK(packing.getParticleEnergy(0, distanceInteraction) == Approx((2 + std::sqrt(41))/10 * 5));
+        CHECK(packing.getParticleEnergy(1, distanceInteraction) == Approx((2 + std::sqrt(41))/10 * 5));
+        CHECK(packing.getParticleEnergy(2, distanceInteraction) == Approx(2*std::sqrt(41)/10 * 5));
+    }
 }

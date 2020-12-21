@@ -28,7 +28,7 @@ public:
  */
 class Parameters {
 private:
-    void autocompleteAndValidate();
+    void validate() const;
 
 public:
     /* All of these are described in input.ini */
@@ -47,7 +47,7 @@ public:
     std::string shapeAttributes{};
     std::string interaction{};
     std::string wolframFilename{};
-    std::string compressibilityFilename{};
+    std::string outputFilename{};
     std::string densitySnapshotFilename{};
 
     Parameters() = default;

@@ -44,17 +44,17 @@ Parameters::Parameters(std::istream &input) {
             this->interaction = config.getString("interaction");
         else if (key == "wolframFilename")
             this->wolframFilename = config.getString("wolframFilename");
-        else if (key == "compressibilityFilename")
-            this->compressibilityFilename = config.getString("compressibilityFilename");
+        else if (key == "outputFilename")
+            this->outputFilename = config.getString("outputFilename");
         else if (key == "densitySnapshotFilename")
             this->densitySnapshotFilename = config.getString("densitySnapshotFilename");
         else
             throw ParametersParseException("Unknown parameter " + key);
     }
-    this->autocompleteAndValidate();
+    this->validate();
 }
 
-void Parameters::autocompleteAndValidate() {
+void Parameters::validate() const {
     Validate(this->initialVolume > 0);
     Validate(this->numOfParticles > 0);
     Validate(this->temperature > 0);
@@ -68,18 +68,21 @@ void Parameters::autocompleteAndValidate() {
 }
 
 void Parameters::print(Logger &logger) const {
-    logger.info() << "initialVolume        : " << this->initialVolume << std::endl;
-    logger.info() << "numOfParticles       : " << this->numOfParticles << std::endl;
-    logger.info() << "temperature          : " << this->temperature << std::endl;
-    logger.info() << "pressure             : " << this->pressure << std::endl;
-    logger.info() << "positionStepSize     : " << this->positionStepSize << std::endl;
-    logger.info() << "rotationStepSize     : " << this->rotationStepSize << std::endl;
-    logger.info() << "volumeStepSize       : " << this->volumeStepSize << std::endl;
-    logger.info() << "thermalisationCycles : " << this->thermalisationCycles << std::endl;
-    logger.info() << "averagingCycles      : " << this->averagingCycles << std::endl;
-    logger.info() << "averagingEvery       : " << this->averagingEvery << std::endl;
-    logger.info() << "seed                 : " << this->seed << std::endl;
-    logger.info() << "shapeName            : " << this->shapeName << std::endl;
-    logger.info() << "shapeAttributes      : " << this->shapeAttributes << std::endl;
-    logger.info() << "interaction          : " << this->interaction << std::endl;
+    logger.info() << "initialVolume           : " << this->initialVolume << std::endl;
+    logger.info() << "numOfParticles          : " << this->numOfParticles << std::endl;
+    logger.info() << "temperature             : " << this->temperature << std::endl;
+    logger.info() << "pressure                : " << this->pressure << std::endl;
+    logger.info() << "positionStepSize        : " << this->positionStepSize << std::endl;
+    logger.info() << "rotationStepSize        : " << this->rotationStepSize << std::endl;
+    logger.info() << "volumeStepSize          : " << this->volumeStepSize << std::endl;
+    logger.info() << "thermalisationCycles    : " << this->thermalisationCycles << std::endl;
+    logger.info() << "averagingCycles         : " << this->averagingCycles << std::endl;
+    logger.info() << "averagingEvery          : " << this->averagingEvery << std::endl;
+    logger.info() << "seed                    : " << this->seed << std::endl;
+    logger.info() << "shapeName               : " << this->shapeName << std::endl;
+    logger.info() << "shapeAttributes         : " << this->shapeAttributes << std::endl;
+    logger.info() << "interaction             : " << this->interaction << std::endl;
+    logger.info() << "wolframFilename         : " << this->wolframFilename << std::endl;
+    logger.info() << "outputFilename          : " << this->outputFilename << std::endl;
+    logger.info() << "densitySnapshotFilename : " << this->densitySnapshotFilename << std::endl;
 }

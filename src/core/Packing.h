@@ -41,6 +41,7 @@ public:
     void revertRotation();
     void revertScaling();
     [[nodiscard]] double getParticleEnergy(std::size_t particleIdx, const Interaction &interaction) const;
+    [[nodiscard]] double getParticleEnergyFluctuations(const Interaction &interaction) const;
     [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;
 
     [[nodiscard]] double getLinearSize() const { return linearSize; }
