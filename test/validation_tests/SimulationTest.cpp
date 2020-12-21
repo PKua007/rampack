@@ -80,3 +80,27 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas") {
     CHECK(density.value == Approx(expected).margin(density.error * 3)); // 3 sigma tolerance
     CHECK(density.error / density.value < 0.03); // up to 3%
 }
+
+TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas") {
+    // For parameters chosen compressibility factor should be around 1.1 and equation of state should be well
+    // approximated by the second virial coefficient known analytically
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    double V = 200;
+    double linearSize = std::cbrt(V);
+    auto shapes = LatticeArrangingModel{}.arrange(50, 1);
+    auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(pbc));
+    SphereTraits sphereTraits(0.5, SphereTraits::LennardJonesInteraction(1, 0.5));
+    // More frequent averaging here to preserver short times (particles displace
+    Simulation simulation(100, 200, 1, 0.1, 10, 1000, 1000, 10, 1234);
+    std::ostringstream loggerStream;
+    Logger logger(loggerStream);
+
+    simulation.perform(std::move(packing), sphereTraits, logger);
+
+    Quantity density = simulation.getAverageDensity();
+    double expected = 1.6637139014398628;
+    INFO("1-st order virial density: " << expected);
+    INFO("Monte Carlo density: " << density);
+    CHECK(density.value == Approx(expected).margin(density.error * 3)); // 3 sigma tolerance
+    CHECK(density.error / density.value < 0.03); // up to 3%
+}
