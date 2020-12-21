@@ -93,7 +93,7 @@ bool Simulation::tryTranslation(const Interaction &interaction) {
     translation *= this->translationStep;
 
     double dE = this->packing->tryTranslation(this->particleIdxDistribution(this->mt), translation, interaction);
-    if (this->unitIntervalDistribution(this->mt) <= std::exp(-this->temperature * dE)) {
+    if (this->unitIntervalDistribution(this->mt) <= std::exp(-dE / this->temperature)) {
         return true;
     } else {
         this->packing->revertTranslation();
@@ -112,7 +112,7 @@ bool Simulation::tryRotation(const Interaction &interaction) {
     auto rotation = Matrix<3, 3>::rotation(axis.normalized(), angle);
 
     double dE = this->packing->tryRotation(this->particleIdxDistribution(this->mt), rotation, interaction);
-    if (this->unitIntervalDistribution(this->mt) <= std::exp(-this->temperature * dE)) {
+    if (this->unitIntervalDistribution(this->mt) <= std::exp(-dE / this->temperature)) {
         return true;
     } else {
         this->packing->revertRotation();
@@ -128,7 +128,7 @@ bool Simulation::tryScaling(const Interaction &interaction) {
 
     double N = this->packing->size();
     double dE = this->packing->tryScaling(factor, interaction);
-    double exponent = N * log(factor) - this->temperature * dE - this->pressure * deltaV / this->temperature;
+    double exponent = N * log(factor) - dE / this->temperature - this->pressure * deltaV / this->temperature;
     if (this->unitIntervalDistribution(this->mt) <= std::exp(exponent)) {
         return true;
     } else {
