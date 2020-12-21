@@ -28,19 +28,8 @@ Simulation::Simulation(double temperature, double pressure, double positionStepS
 
 void Simulation::perform(std::unique_ptr<Packing> packing_, const Interaction &interaction, Logger &logger) {
     Expects(!packing_->empty());
-    this->moveTypeDistribution = std::uniform_int_distribution<int>(0, 2 * packing_->size());
-    this->particleIdxDistribution = std::uniform_int_distribution<int>(0, packing_->size() - 1);
-
     this->packing = std::move(packing_);
-    this->translationStep = this->initialTranslationStep;
-    this->rotationStep = this->initialRotationStep;
-    this->scalingStep = this->initialScalingStep;
-    this->translationCounter.reset();
-    this->rotationCounter.reset();
-    this->scalingCounter.reset();
-    this->averagedDensities.clear();
-    this->densityThermalisationSnapshots.clear();
-    this->cycleLength = 2 * this->packing->size() + 1;  // size() translations, size() rotations and 1 scaling
+    this->reset();
 
     this->shouldAdjustStepSize = true;
     logger.setAdditionalText("thermalisation");
@@ -67,6 +56,21 @@ void Simulation::perform(std::unique_ptr<Packing> packing_, const Interaction &i
     }
 
     logger.setAdditionalText("");
+}
+
+void Simulation::reset() {
+    this->moveTypeDistribution = std::uniform_int_distribution<int>(0, 2 * this->packing->size());
+    this->particleIdxDistribution = std::uniform_int_distribution<int>(0, this->packing->size() - 1);
+    this->translationStep = this->initialTranslationStep;
+    this->rotationStep = this->initialRotationStep;
+    this->scalingStep = this->initialScalingStep;
+    this->translationCounter.reset();
+    this->rotationCounter.reset();
+    this->scalingCounter.reset();
+    this->averagedDensities.clear();
+    this->densityThermalisationSnapshots.clear();
+    this->cycleLength = 2 * this->packing->size() + 1;  // size() translations, size() rotations and 1 scaling
+
 }
 
 void Simulation::performStep(Logger &logger, const Interaction &interaction) {

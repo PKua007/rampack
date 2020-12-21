@@ -74,6 +74,7 @@ private:
     bool tryRotation(const Interaction &interaction);
     bool tryScaling(const Interaction &interaction);
     void evaluateCounters(Logger &logger);
+    void reset();
 
 public:
     Simulation(double temperature, double pressure, double positionStepSize, double rotationStepSize,
