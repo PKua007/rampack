@@ -35,12 +35,32 @@ namespace {
             return bc.getDistance2(shape1.getPosition(), shape2.getPosition()) < std::pow(2*this->radius/scale, 2);
         }
     };
+
+    class SphereDistanceInteraction : public Interaction {
+    public:
+        [[nodiscard]] bool hasHardPart() const override { return false; }
+        [[nodiscard]] bool hasSoftPart() const override { return true; }
+
+        [[nodiscard]] double calculateEnergyBetween(const Shape &shape1,const Shape &shape2, double scale,
+                                                    const BoundaryConditions &bc) const override
+        {
+            return std::sqrt(bc.getDistance2(shape1.getPosition(), shape2.getPosition())) * scale;
+        }
+
+        [[nodiscard]] bool overlapBetween([[maybe_unused]] const Shape &shape1, [[maybe_unused]] const Shape &shape2,
+                                          [[maybe_unused]] double scale, [[maybe_unused]]
+                                          const BoundaryConditions &bc) const override
+        {
+            return false;
+        }
+    };
 }
 
 TEST_CASE("Packing") {
     // Packing has linear scale of 5, so all coordinates in translate are multiplied by 3 (before scaling of course)
     double radius = 0.25;
-    SphereHardCoreInteraction interaction(radius);
+    SphereHardCoreInteraction hardCore(radius);
+    SphereDistanceInteraction distanceInteraction{};
     auto pbc = std::make_unique<PeriodicBoundaryConditions>(1);
     std::vector<std::unique_ptr<Shape>> shapes;
     shapes.push_back(std::make_unique<Shape>(Vector<3>{0.1, 0.1, 0.1}));
@@ -52,41 +72,72 @@ TEST_CASE("Packing") {
 
     constexpr double inf = std::numeric_limits<double>::infinity();
 
-    SECTION("scaling upwards") {
-        REQUIRE(packing.tryScaling(std::pow(1.1, 3), interaction) == 0);
-        CHECK(packing.getLinearSize() == Approx(5.5));
-        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.5, 0.5, 0.8}}, 1e-9));
+    SECTION ("scaling") {
+        SECTION("hard core upwards") {
+            CHECK(packing.tryScaling(std::pow(1.1, 3), hardCore) == 0);
+            CHECK(packing.getLinearSize() == Approx(5.5));
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.5, 0.5, 0.8}}, 1e-9));
+        }
+
+        SECTION("hard core downward without overlapping") {
+            // For scale 0.5 => linear size = 5*0.5 = 2.5 spheres 0 and 1 are touching (through pbc).
+            // So a little bit more should prevent any overlaps
+            CHECK(packing.tryScaling(std::pow(0.501, 3), hardCore) == 0);
+            CHECK(packing.getLinearSize() == Approx(2.505));
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.5, 0.5, 0.8}}, 1e-9));
+        }
+
+        SECTION("hard core downward with overlapping") {
+            // Same as above, but a litte bit more gives an overlap
+            REQUIRE(packing.tryScaling(std::pow(0.499, 3), hardCore) == inf);
+            CHECK(packing.getLinearSize() == Approx(2.495));
+
+            SECTION("reverting the move") {
+                packing.revertScaling();
+                CHECK(packing.getLinearSize() == Approx(5));
+                CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.5, 0.5, 0.8}}, 1e-9));
+            }
+        }
+
+        SECTION("distance interaction") {
+            // 1 <-> 2: d = 2/10
+            // 1 <-> 3: d = sqrt(0.4^2 + 0.4^2 + 0.3^2) = sqrt(41)/10
+            // 2 <-> 3: d = sqrt(0.4^2 + 0.4^2 + 0.3^2) = sqrt(41)/10
+            // We scale downward from 5 to 2.5
+            double scale1dE = (2 + 2*std::sqrt(41))/10;
+            double dE = scale1dE * (2.5 - 5);
+            CHECK(packing.tryScaling(0.125, distanceInteraction) == Approx(dE));
+        }
     }
 
-    SECTION("scaling downward without overlapping") {
-        // For scale 0.5 => linear size = 5*0.5 = 2.5 spheres 0 and 1 are touching (through pbc).
-        // So a little bit more should prevent any overlaps
-        REQUIRE(packing.tryScaling(std::pow(0.501, 3), interaction) == 0);
-        CHECK(packing.getLinearSize() == Approx(2.505));
-        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.5, 0.5, 0.8}}, 1e-9));
-    }
+    SECTION("translating") {
+        SECTION("non-overlapping") {
+            // For scale 5, translation {2, 2.5, -3.5} places particle 2 at {4.5, 5, 0.5}, while particle 1 is at
+            // {4.5, 0.5, 0.5} - they touch through pbc on y coordinate. Do a little bit less prevents overlap
+            CHECK(packing.tryTranslation(2, {2, 2.495, -3.5}, hardCore) == 0);
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.9, 0.999, 0.1}}, 1e-9));
+        }
 
-    SECTION("scaling downward with overlapping") {
-        // Same as above, but a litte bit more gives an overlap
+        SECTION("overlapping") {
+            // Same as above, but we do more instead of less
+            CHECK(packing.tryTranslation(2, {2, 2.505, -3.5}, hardCore) == inf);
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.9, 0.001, 0.1}}, 1e-9));
+            SECTION("reverting the move") {
+                packing.revertTranslation();
+                CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.5, 0.5, 0.8}}, 1e-9));
+            }
+        }
 
-        REQUIRE(packing.tryScaling(std::pow(0.499, 3), interaction) == inf);
-        packing.revertScaling();
-        CHECK(packing.getLinearSize() == Approx(5));
-        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.5, 0.5, 0.8}}, 1e-9));
-    }
-
-    SECTION("non-overlapping translation") {
-        // For scale 5, translation {2, 2.5, -3.5} places particle 2 at {4.5, 5, 0.5}, while particle 1 is at
-        // {4.5, 0.5, 0.5} - they touch through pbc on y coordinate. Do a little bit less prevents overlap
-        REQUIRE(packing.tryTranslation(2, {2, 2.495, -3.5}, interaction) == 0);
-        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.9, 0.999, 0.1}}, 1e-9));
-    }
-
-    SECTION("overlapping translation") {
-        // Same as above, but we do more instead of less
-        REQUIRE(packing.tryTranslation(2, {2, 2.505, -3.5}, interaction) == inf);
-        packing.revertTranslation();
-        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.5, 0.5, 0.8}}, 1e-9));
+        SECTION("distance interaction") {
+            // first particle moved to {0.1, 0.1, 0.8}, so after (for before, look at scaling SECTION)
+            // 1 <-> 2: d = sqrt(0.2^2 + 0.3^2) = sqrt(13)/10
+            // 1 <-> 3: d = sqrt(0.4^2 + 0.4^2) = sqrt(32)/10
+            // 2 <-> 3: d = sqrt(0.4^2 + 0.4^2 + 0.3^2) = sqrt(41)/10
+            double scale1E0 = (2 + 2*std::sqrt(41))/10;
+            double scale1E1 = (std::sqrt(13) + std::sqrt(32) + std::sqrt(41))/10;
+            double dE = 5 * (scale1E1 - scale1E0);
+            CHECK(packing.tryTranslation(0, {0, 0, 3.5}, distanceInteraction) == Approx(dE));
+        }
     }
 
     SECTION("packing fraction") {

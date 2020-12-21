@@ -22,7 +22,7 @@ Vector<3> SpherocylinderTraits::getCapCentre(short beginOrEnd, const Shape &shap
 // SoftSurfer makes no warranty for this code, and cannot be held
 // liable for any real or imagined damage resulting from its use.
 // Users of this code must verify correctness for their application.
-double SpherocylinderTraits::distanceBetween(const Shape &shape1, const Shape &shape2, double scale) const{
+double SpherocylinderTraits::distance2Between(const Shape &shape1, const Shape &shape2, double scale) const{
     Vector<3> t1 = this->getCapCentre(-1, shape1, scale);
     Vector<3> t2 = this->getCapCentre(1, shape1, scale);
     Vector<3> s1 = this->getCapCentre(-1, shape2, scale);
@@ -101,7 +101,7 @@ bool SpherocylinderTraits::overlapBetween(const Shape &shape1, const Shape &shap
     else if (distance2 >= std::pow(2 * this->radius + this->length, 2))
         return false;
 
-    return this->distanceBetween(shape1, shape2Copy, scaleFactor) < 4 * this->radius * this->radius;
+    return this->distance2Between(shape1, shape2Copy, scaleFactor) < 4 * this->radius * this->radius;
 }
 
 double SpherocylinderTraits::getVolume() const {

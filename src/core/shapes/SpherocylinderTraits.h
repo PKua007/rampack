@@ -15,7 +15,7 @@ private:
     static constexpr double EPSILON = 0.0000000001;
 
     [[nodiscard]] Vector<3> getCapCentre(short beginOrEnd, const Shape &shape, double scale) const;
-    [[nodiscard]] double distanceBetween(const Shape &shape1, const Shape &shape2, double scale) const;
+    [[nodiscard]] double distance2Between(const Shape &shape1, const Shape &shape2, double scale) const;
 
 public:
     SpherocylinderTraits() : length{1}, radius{1} { }
