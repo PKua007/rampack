@@ -21,7 +21,6 @@ public:
     Shape() : orientation{Matrix<3, 3>::identity()} { }
     explicit Shape(const Vector<3> &position) : position{position}, orientation{Matrix<3, 3>::identity()} { }
     Shape(const Vector<3> &position, const Matrix<3, 3> &orientation) : position{position}, orientation{orientation} { }
-    virtual ~Shape() = default;
 
     void translate(const Vector<3> &translation, const BoundaryConditions &bc);
     void rotate(const Matrix<3, 3> &rotation);
