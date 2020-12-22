@@ -35,6 +35,6 @@ int main(int argc, char **argv) {
     else if (mode == "analyze")
         return frontend.analyze(argc, argv);
 
-    logger.error() << "Unknown mode " << std::endl;
+    logger.error() << "Unknown mode " << mode << std::endl;
     return EXIT_FAILURE;
 }

@@ -54,7 +54,7 @@ double Packing::tryScaling(double scaleFactor, const Interaction &interaction) {
     double initialEnergy = this->getTotalEnergy(interaction);
 
     this->linearSize *= std::cbrt(scaleFactor);
-    if (interaction.hasHardPart() && scaleFactor < 1 && this->areAnyParticlesOverlapping(interaction))
+    if (interaction.hasHardPart() /*&& scaleFactor < 1*/ && this->areAnyParticlesOverlapping(interaction))
         return std::numeric_limits<double>::infinity();
 
     double finalEnergy = this->getTotalEnergy(interaction);
