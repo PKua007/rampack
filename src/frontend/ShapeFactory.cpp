@@ -8,6 +8,8 @@
 #include "utils/Assertions.h"
 #include "core/shapes/SphereTraits.h"
 #include "core/shapes/SpherocylinderTraits.h"
+#include "core/LennardJonesInteraction.h"
+#include "core/RepulsiveLennardJonesInteraction.h"
 
 std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &shapeName,
                                                           const std::string &shapeAttributes,
@@ -23,14 +25,24 @@ std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         ValidateMsg(shapeAttrStream, "Malformed Sphere attributes; expected: [radius]");
         Validate(r > 0);
         if (interactionName.empty() || interactionName == "hard") {
-            return std::make_unique<SphereTraits>(r, SphereTraits::HardInteraction{});
+            return std::make_unique<SphereTraits>(r);
         } else if (interactionName == "lj") {
             double epsilon, sigma;
             interactionAttrStream >> epsilon >> sigma;
             ValidateMsg(interactionAttrStream, "Malformed Lennard Jones attributes. Usage: lj [epsilon] [sigma]");
             Validate(epsilon > 0);
             Validate(sigma > 0);
-            return std::make_unique<SphereTraits>(r, SphereTraits::LennardJonesInteraction(epsilon, sigma));
+            return std::make_unique<SphereTraits>(r, std::make_unique<LennardJonesInteraction>(epsilon, sigma));
+        } else if (interactionName == "repulsive_lj") {
+            double epsilon, sigma;
+            interactionAttrStream >> epsilon >> sigma;
+            ValidateMsg(interactionAttrStream, "Malformed repulsive Lennard Jones attributes. Usage: lj_repulsive "
+                                               "[epsilon] [sigma]");
+            Validate(epsilon > 0);
+            Validate(sigma > 0);
+            return std::make_unique<SphereTraits>(
+                r, std::make_unique<RepulsiveLennardJonesInteraction>(epsilon, sigma)
+            );
         } else {
             throw ValidationException("Sphere support interactions: hard, lj (Lennard Jones)");
         }

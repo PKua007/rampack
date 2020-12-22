@@ -10,6 +10,7 @@
 #include "core/shapes/SphereTraits.h"
 #include "core/shapes/SpherocylinderTraits.h"
 #include "core/PeriodicBoundaryConditions.h"
+#include "core/LennardJonesInteraction.h"
 
 TEST_CASE("Simulation: equilibration for dilute hard sphere gas") {
     // We choose temperature 10 and pressure 1. For particles of radius 0.05 we should obtain number density 0.0999791
@@ -47,7 +48,7 @@ TEST_CASE("Simulation: degenerate hard sphere gas") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(std::move(packing), sphereTraits, logger);
+    simulation.perform(std::move(packing), sphereTraits.getInteraction(), logger);
 
     Quantity density = simulation.getAverageDensity();
     double expected = 0.398574;
@@ -71,7 +72,7 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(std::move(packing), spherocylinderTraits, logger);
+    simulation.perform(std::move(packing), spherocylinderTraits.getInteraction(), logger);
 
     Quantity density = simulation.getAverageDensity();
     double expected = 0.0956448;
@@ -89,13 +90,13 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas") {
     double linearSize = std::cbrt(V);
     auto shapes = LatticeArrangingModel{}.arrange(50, 1);
     auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(pbc));
-    SphereTraits sphereTraits(0.5, SphereTraits::LennardJonesInteraction(1, 0.5));
-    // More frequent averaging here to preserver short times (particles displace
+    SphereTraits sphereTraits(0.5, std::make_unique<LennardJonesInteraction>(1, 0.5));
+    // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
     Simulation simulation(100, 200, 1, 0.1, 10, 1000, 1000, 10, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(std::move(packing), sphereTraits, logger);
+    simulation.perform(std::move(packing), sphereTraits.getInteraction(), logger);
 
     Quantity density = simulation.getAverageDensity();
     double expected = 1.6637139014398628;
