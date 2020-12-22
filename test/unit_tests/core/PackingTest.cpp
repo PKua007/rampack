@@ -22,13 +22,6 @@ namespace {
         [[nodiscard]] bool hasHardPart() const override { return true; }
         [[nodiscard]] bool hasSoftPart() const override { return false; }
 
-        [[nodiscard]] double calculateEnergyBetween([[maybe_unused]] const Shape &shape1,
-                                                    [[maybe_unused]] const Shape &shape2, [[maybe_unused]] double scale,
-                                                    [[maybe_unused]] const BoundaryConditions &bc) const override
-        {
-            return 0;
-        }
-
         [[nodiscard]] bool overlapBetween(const Shape &shape1, const Shape &shape2, double scale,
                                           const BoundaryConditions &bc) const override
         {
@@ -45,13 +38,6 @@ namespace {
                                                     const BoundaryConditions &bc) const override
         {
             return std::sqrt(bc.getDistance2(shape1.getPosition(), shape2.getPosition())) * scale;
-        }
-
-        [[nodiscard]] bool overlapBetween([[maybe_unused]] const Shape &shape1, [[maybe_unused]] const Shape &shape2,
-                                          [[maybe_unused]] double scale, [[maybe_unused]]
-                                          const BoundaryConditions &bc) const override
-        {
-            return false;
         }
     };
 }

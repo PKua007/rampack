@@ -26,13 +26,6 @@ public:
 
     [[nodiscard]] bool hasHardPart() const override { return true; }
     [[nodiscard]] bool hasSoftPart() const override { return false; }
-    [[nodiscard]] double calculateEnergyBetween([[maybe_unused]] const Shape &shape1,
-                                                [[maybe_unused]] const Shape &shape2, [[maybe_unused]] double scale,
-                                                [[maybe_unused]] const BoundaryConditions &bc) const override
-    {
-        return 0;
-    }
-
     [[nodiscard]] bool overlapBetween(const Shape &shape1, const Shape &shape2, double scale,
                                       const BoundaryConditions &bc) const override;
 

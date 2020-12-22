@@ -10,34 +10,31 @@
 #include "core/ShapeTraits.h"
 #include "core/CentralInteraction.h"
 
-class SphereTraits : public ShapeTraits, public ShapePrinter, public Interaction {
-public:
-    class HardInteraction { };
-
+class SphereTraits : public ShapeTraits, public ShapePrinter {
 private:
+    class HardInteraction : public Interaction {
+    private:
+        double radius{};
+
+    public:
+        explicit HardInteraction(double radius) : radius(radius) { }
+
+        [[nodiscard]] bool hasHardPart() const override { return true; }
+        [[nodiscard]] bool hasSoftPart() const override { return false; }
+        [[nodiscard]] bool overlapBetween(const Shape &shape1, const Shape &shape2, double scale,
+                                          const BoundaryConditions &bc) const override;
+    };
+
     double radius{};
-    std::unique_ptr<CentralInteraction> interaction{};
+    std::unique_ptr<Interaction> interaction{};
 
 public:
     explicit SphereTraits(double radius = 1);
     SphereTraits(double radius, std::unique_ptr<CentralInteraction> centralInteraction);
 
-    [[nodiscard]] const Interaction &getInteraction() const override;
+    [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; };
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
     [[nodiscard]] double getVolume() const override;
-
-    [[nodiscard]] bool hasHardPart() const override { return true; }
-    [[nodiscard]] bool hasSoftPart() const override { return false; }
-
-    [[nodiscard]] double calculateEnergyBetween([[maybe_unused]] const Shape &shape1,
-                                                [[maybe_unused]] const Shape &shape2, [[maybe_unused]] double scale,
-                                                [[maybe_unused]] const BoundaryConditions &bc) const override
-    {
-        return 0;
-    }
-
-    [[nodiscard]] bool overlapBetween(const Shape &shape1, const Shape &shape2, double scale,
-                                      const BoundaryConditions &bc) const override;
 
     [[nodiscard]] std::string toWolfram(const Shape &shape, double scale) const override;
 

@@ -8,15 +8,16 @@
 #include "SphereTraits.h"
 #include "utils/Assertions.h"
 
-SphereTraits::SphereTraits(double radius) : radius{radius} {
+SphereTraits::SphereTraits(double radius) : radius{radius}, interaction{std::make_unique<HardInteraction>(radius)} {
     Expects(radius > 0);
 }
 
 SphereTraits::SphereTraits(double radius, std::unique_ptr<CentralInteraction> centralInteraction)
-        : radius{radius}, interaction{std::move(centralInteraction)}
+        : radius{radius}
 {
     Expects(radius > 0);
-    this->interaction->installOnSphere();
+    centralInteraction->installOnSphere();
+    this->interaction = std::move(centralInteraction);
 }
 
 std::string SphereTraits::toWolfram(const Shape &shape, double scale) const {
@@ -29,15 +30,8 @@ double SphereTraits::getVolume() const {
     return 4./3 * M_PI * std::pow(this->radius, 3);
 }
 
-bool SphereTraits::overlapBetween(const Shape &shape1, const Shape &shape2, double scale,
-                                  const BoundaryConditions &bc) const
+bool SphereTraits::HardInteraction::overlapBetween(const Shape &shape1, const Shape &shape2, double scale,
+                                                   const BoundaryConditions &bc) const
 {
     return bc.getDistance2(shape1.getPosition(), shape2.getPosition()) < std::pow(2 * this->radius / scale, 2);
-}
-
-const Interaction &SphereTraits::getInteraction() const {
-    if (this->interaction != nullptr)
-        return *this->interaction;
-    else
-        return *this;
 }

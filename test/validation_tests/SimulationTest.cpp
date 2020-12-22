@@ -25,7 +25,7 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(std::move(packing), sphereTraits, logger);
+    simulation.perform(std::move(packing), sphereTraits.getInteraction(), logger);
 
     Quantity density = simulation.getAverageDensity();
     double expected = 0.0999791;
