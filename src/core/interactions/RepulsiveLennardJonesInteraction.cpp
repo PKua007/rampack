@@ -8,8 +8,13 @@
 double RepulsiveLennardJonesInteraction::calculateEnergyForDistance(double distance) const {
     if (distance >= this->sigmaTimesTwoToOneSixth)
         return 0;
-    return 4 * this->epsilon * (std::pow(this->sigma / distance, 12) - std::pow(this->sigma / distance, 6))
-           + this->epsilon;
+
+    double x = this->sigma / distance;
+    double x2 = x*x;
+    double x3 = x2*x;
+    double x6 = x3*x3;
+    double x12 = x6*x6;
+    return 4 * this->epsilon * (x12 - x6) + this->epsilon;
 }
 
 RepulsiveLennardJonesInteraction::RepulsiveLennardJonesInteraction(double epsilon, double sigma)

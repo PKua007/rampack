@@ -8,7 +8,7 @@
 #include <variant>
 
 #include "core/ShapeTraits.h"
-#include "core/CentralInteraction.h"
+#include "core/interactions/CentralInteraction.h"
 
 class SphereTraits : public ShapeTraits, public ShapePrinter {
 private:

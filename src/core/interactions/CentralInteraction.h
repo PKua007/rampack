@@ -8,7 +8,7 @@
 #include <utility>
 #include <vector>
 
-#include "Interaction.h"
+#include "core/Interaction.h"
 
 class CentralInteraction : public Interaction {
 private:

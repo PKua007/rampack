@@ -8,8 +8,8 @@
 #include "utils/Assertions.h"
 #include "core/shapes/SphereTraits.h"
 #include "core/shapes/SpherocylinderTraits.h"
-#include "core/LennardJonesInteraction.h"
-#include "core/RepulsiveLennardJonesInteraction.h"
+#include "core/interactions/LennardJonesInteraction.h"
+#include "core/interactions/RepulsiveLennardJonesInteraction.h"
 
 std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &shapeName,
                                                           const std::string &shapeAttributes,

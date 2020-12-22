@@ -10,7 +10,7 @@
 #include "core/shapes/SphereTraits.h"
 #include "core/shapes/SpherocylinderTraits.h"
 #include "core/PeriodicBoundaryConditions.h"
-#include "core/LennardJonesInteraction.h"
+#include "core/interactions/LennardJonesInteraction.h"
 
 TEST_CASE("Simulation: equilibration for dilute hard sphere gas") {
     // We choose temperature 10 and pressure 1. For particles of radius 0.05 we should obtain number density 0.0999791
