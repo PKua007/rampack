@@ -18,6 +18,7 @@ double PolysphereTraits::getVolume() const {
 
 std::string PolysphereTraits::toWolfram(const Shape &shape, double scale) const {
     std::ostringstream out;
+    out << std::fixed;
     out << "{";
     for (std::size_t i{}; i < this->sphereData.size() - 1; i++) {
         const auto &data = this->sphereData[i];
@@ -33,7 +34,7 @@ PolysphereTraits::PolysphereTraits(std::vector<SphereData> sphereData,
                                    std::unique_ptr<CentralInteraction> centralInteraction)
         : sphereData{std::move(sphereData)}
 {
-    Expects(!sphereData.empty());
+    Expects(!this->sphereData.empty());
     std::vector<Vector<3>> centres;
     centres.reserve(this->sphereData.size());
     std::transform(this->sphereData.begin(), this->sphereData.end(), std::back_inserter(centres),

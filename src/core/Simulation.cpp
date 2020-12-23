@@ -131,7 +131,8 @@ bool Simulation::tryScaling(const Interaction &interaction) {
     double deltaV = (2*this->unitIntervalDistribution(this->mt) - 1) * this->scalingStep;
     double currentV = std::pow(this->packing->getLinearSize(), 3);
     double factor = (deltaV + currentV) / currentV;
-    Assert(factor > 0);
+    if (factor < 0)
+        return false;
 
     double N = this->packing->size();
     double dE = this->packing->tryScaling(factor, interaction);

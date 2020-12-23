@@ -27,10 +27,11 @@ public:
     void installOnSphere() { this->potentialCentres = {}; };
     void installOnCentres(const std::vector<Vector<3>> &centres) { this->potentialCentres = centres; }
 
-    [[nodiscard]] bool hasHardPart() const override { return false; }
-    [[nodiscard]] bool hasSoftPart() const override { return true; }
+    [[nodiscard]] bool hasHardPart() const final { return false; }
+    [[nodiscard]] bool hasSoftPart() const final { return true; }
     [[nodiscard]] double calculateEnergyBetween(const Shape &shape1, const Shape &shape2, double scale,
-                                                const BoundaryConditions &bc) const override;
+                                                const BoundaryConditions &bc) const final;
+    [[nodiscard]] const std::vector<Vector<3>> &getPotentialCentres() const { return this->potentialCentres; };
 };
 
 

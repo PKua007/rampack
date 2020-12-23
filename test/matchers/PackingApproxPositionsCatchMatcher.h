@@ -28,16 +28,16 @@ public:
             return false;
         return std::equal(actual.begin(), actual.end(), this->expected.begin(),
                           [this](const auto &shape, const auto &position) {
-                              return shape->getPosition()[0] == Approx(position[0])
-                                     && shape->getPosition()[1] == Approx(position[1])
-                                     && shape->getPosition()[2] == Approx(position[2]);
+                              return shape->getPosition()[0] == Approx(position[0]).epsilon(this->epsilon)
+                                     && shape->getPosition()[1] == Approx(position[1]).epsilon(this->epsilon)
+                                     && shape->getPosition()[2] == Approx(position[2]).epsilon(this->epsilon);
                           });
     }
 
     [[nodiscard]] std::string describe() const override {
         std::ostringstream ss;
-        ss << "is, within " << epsilon << " tolerance threshold, equal to" << std::endl;
-        for (const auto &position : expected) {
+        ss << "is, within " << this->epsilon << " tolerance threshold, equal to" << std::endl;
+        for (const auto &position : this->expected) {
             ss << "{" << position[0] << ", " << position[1] << ", " << position[2] << "}, ";
         }
         return ss.str();

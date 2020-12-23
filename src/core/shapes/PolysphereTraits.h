@@ -48,6 +48,8 @@ public:
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
 
     [[nodiscard]] std::string toWolfram(const Shape &shape, double scale) const override;
+
+    [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->sphereData; }
 };
 
 
