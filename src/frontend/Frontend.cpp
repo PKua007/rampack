@@ -117,7 +117,7 @@ int Frontend::casino(int argc, char **argv) {
 
     // Prepare simulation
     double linearSize = std::cbrt(params.initialVolume);
-    auto bc = std::make_unique<PeriodicBoundaryConditions>(linearSize);
+    auto bc = std::make_unique<PeriodicBoundaryConditions>();
     LatticeArrangingModel latticeArrangingModel;
     auto shapes = latticeArrangingModel.arrange(params.numOfParticles, linearSize);
     auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(bc));

@@ -32,19 +32,19 @@ TEST_CASE("CentralInteraction: multiple points") {
 
     DummyInteraction interaction;
     interaction.installOnCentres({{0, 0, 0}, {2, 0, 0}});
-    Shape shape1({0.1, 0.5, 0.5}, Matrix<3, 3>::identity());
-    Shape shape2({0.9, 0.5, 0.5}, Matrix<3, 3>::rotation(0, M_PI, 0));
-    PeriodicBoundaryConditions pbc;
+    Shape shape1({1, 5, 5}, Matrix<3, 3>::identity());
+    Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0));
+    PeriodicBoundaryConditions pbc(10);
 
-    CHECK(interaction.calculateEnergyBetween(shape1, shape2, 10, pbc) == Approx(14));
+    CHECK(interaction.calculateEnergyBetween(shape1, shape2, pbc) == Approx(14));
 }
 
 TEST_CASE("CentralInteraction: sphere case") {
     DummyInteraction interaction;
     interaction.installOnSphere();
-    Shape shape1({0.1, 0.5, 0.5});
-    Shape shape2({0.9, 0.5, 0.5});
-    PeriodicBoundaryConditions pbc;
+    Shape shape1({1, 5, 5});
+    Shape shape2({9, 5, 5});
+    PeriodicBoundaryConditions pbc(10);
 
-    CHECK(interaction.calculateEnergyBetween(shape1, shape2, 10, pbc) == Approx(2));
+    CHECK(interaction.calculateEnergyBetween(shape1, shape2, pbc) == Approx(2));
 }

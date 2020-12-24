@@ -14,6 +14,8 @@ Packing::Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, 
 {
     Expects(linearSize > 0);
     Expects(!this->shapes.empty());
+
+    this->bc->setLinearSize(this->linearSize);
 }
 
 double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction) {

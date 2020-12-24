@@ -27,24 +27,26 @@ TEST_CASE("Sphere: overlap") {
     SphereTraits sphereTraits(2.5);
     const Interaction &interaction = sphereTraits.getInteraction();
     PeriodicBoundaryConditions pbc(20);
-    Shape sphere1({1, 19, 10});
-    Shape sphere2({5, 2, 10});
 
-    SECTION("overlapping scale") {
-        CHECK(interaction.overlapBetween(sphere1, sphere2, 0.999, pbc));
-        CHECK(interaction.overlapBetween(sphere2, sphere1, 0.999, pbc));
+    SECTION("overlapping") {
+        Shape sphere1({1, 19.1, 10});
+        Shape sphere2({5, 2, 10});
+        CHECK(interaction.overlapBetween(sphere1, sphere2, pbc));
+        CHECK(interaction.overlapBetween(sphere2, sphere1, pbc));
     }
 
-    SECTION("non-overlapping scale") {
-        CHECK_FALSE(interaction.overlapBetween(sphere1, sphere2, 1.001, pbc));
-        CHECK_FALSE(interaction.overlapBetween(sphere2, sphere1, 1.001, pbc));
+    SECTION("non-overlapping") {
+        Shape sphere1({1, 18.9, 10});
+        Shape sphere2({5, 2, 10});
+        CHECK_FALSE(interaction.overlapBetween(sphere1, sphere2, pbc));
+        CHECK_FALSE(interaction.overlapBetween(sphere2, sphere1, pbc));
     }
 }
 
 TEST_CASE("Sphere: toWolfram") {
     SphereTraits sphereTraits(2);
     PeriodicBoundaryConditions pbc(10);
-    Shape sphere({1, 2, 3});
+    Shape sphere({2, 4, 6});
 
-    CHECK(sphereTraits.getPrinter().toWolfram(sphere, 2) == "Sphere[{2, 4, 6},2]");
+    CHECK(sphereTraits.getPrinter().toWolfram(sphere) == "Sphere[{2, 4, 6},2]");
 }

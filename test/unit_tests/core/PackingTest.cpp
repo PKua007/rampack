@@ -22,10 +22,10 @@ namespace {
         [[nodiscard]] bool hasHardPart() const override { return true; }
         [[nodiscard]] bool hasSoftPart() const override { return false; }
 
-        [[nodiscard]] bool overlapBetween(const Shape &shape1, const Shape &shape2, double scale,
+        [[nodiscard]] bool overlapBetween(const Shape &shape1, const Shape &shape2,
                                           const BoundaryConditions &bc) const override
         {
-            return bc.getDistance2(shape1.getPosition(), shape2.getPosition()) < std::pow(2*this->radius/scale, 2);
+            return bc.getDistance2(shape1.getPosition(), shape2.getPosition()) < std::pow(2*this->radius, 2);
         }
     };
 
@@ -34,10 +34,10 @@ namespace {
         [[nodiscard]] bool hasHardPart() const override { return false; }
         [[nodiscard]] bool hasSoftPart() const override { return true; }
 
-        [[nodiscard]] double calculateEnergyBetween(const Shape &shape1,const Shape &shape2, double scale,
+        [[nodiscard]] double calculateEnergyBetween(const Shape &shape1,const Shape &shape2,
                                                     const BoundaryConditions &bc) const override
         {
-            return std::sqrt(bc.getDistance2(shape1.getPosition(), shape2.getPosition())) * scale;
+            return std::sqrt(bc.getDistance2(shape1.getPosition(), shape2.getPosition()));
         }
     };
 }
@@ -47,11 +47,11 @@ TEST_CASE("Packing") {
     double radius = 0.25;
     SphereHardCoreInteraction hardCore(radius);
     SphereDistanceInteraction distanceInteraction{};
-    auto pbc = std::make_unique<PeriodicBoundaryConditions>(1);
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     std::vector<std::unique_ptr<Shape>> shapes;
-    shapes.push_back(std::make_unique<Shape>(Vector<3>{0.1, 0.1, 0.1}));
-    shapes.push_back(std::make_unique<Shape>(Vector<3>{0.9, 0.1, 0.1}));
-    shapes.push_back(std::make_unique<Shape>(Vector<3>{0.5, 0.5, 0.8}));
+    shapes.push_back(std::make_unique<Shape>(Vector<3>{0.5, 0.5, 0.5}));
+    shapes.push_back(std::make_unique<Shape>(Vector<3>{4.5, 0.5, 0.5}));
+    shapes.push_back(std::make_unique<Shape>(Vector<3>{2.5, 2.5, 4.0}));
     Packing packing(5, std::move(shapes), std::move(pbc));
 
     REQUIRE(packing.getLinearSize() == 5);
@@ -62,26 +62,28 @@ TEST_CASE("Packing") {
         SECTION("hard core upwards") {
             CHECK(packing.tryScaling(std::pow(1.1, 3), hardCore) == 0);
             CHECK(packing.getLinearSize() == Approx(5.5));
-            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.5, 0.5, 0.8}}, 1e-9));
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.55, 0.55, 0.55}, {4.95, 0.55, 0.55},
+                                                                 {2.75, 2.75, 4.4}}, 1e-9));
         }
 
         SECTION("hard core downward without overlapping") {
             // For scale 0.5 => linear size = 5*0.5 = 2.5 spheres 0 and 1 are touching (through pbc).
             // So a little bit more should prevent any overlaps
-            CHECK(packing.tryScaling(std::pow(0.501, 3), hardCore) == 0);
-            CHECK(packing.getLinearSize() == Approx(2.505));
-            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.5, 0.5, 0.8}}, 1e-9));
+            CHECK(packing.tryScaling(std::pow(0.51, 3), hardCore) == 0);
+            CHECK(packing.getLinearSize() == Approx(2.55));
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.255, 0.255, 0.255}, {2.295, 0.255, 0.255},
+                                                                 {1.275, 1.275, 2.04}}, 1e-9));
         }
 
         SECTION("hard core downward with overlapping") {
             // Same as above, but a litte bit more gives an overlap
-            REQUIRE(packing.tryScaling(std::pow(0.499, 3), hardCore) == inf);
-            CHECK(packing.getLinearSize() == Approx(2.495));
+            REQUIRE(packing.tryScaling(std::pow(0.49, 3), hardCore) == inf);
+            CHECK(packing.getLinearSize() == Approx(2.45));
 
             SECTION("reverting the move") {
                 packing.revertScaling();
                 CHECK(packing.getLinearSize() == Approx(5));
-                CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.5, 0.5, 0.8}}, 1e-9));
+                CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {4.5, 0.5, 0.5}, {2.5, 2.5, 4.0}}, 1e-9));
             }
         }
 
@@ -100,17 +102,17 @@ TEST_CASE("Packing") {
         SECTION("non-overlapping") {
             // For scale 5, translation {2, 2.5, -3.5} places particle 2 at {4.5, 5, 0.5}, while particle 1 is at
             // {4.5, 0.5, 0.5} - they touch through pbc on y coordinate. Do a little bit less prevents overlap
-            CHECK(packing.tryTranslation(2, {2, 2.495, -3.5}, hardCore) == 0);
-            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.9, 0.999, 0.1}}, 1e-9));
+            CHECK(packing.tryTranslation(2, {2, 2.45, -3.5}, hardCore) == 0);
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {4.5, 0.5, 0.5}, {4.5, 4.95, 0.5}}, 1e-9));
         }
 
         SECTION("overlapping") {
             // Same as above, but we do more instead of less
-            CHECK(packing.tryTranslation(2, {2, 2.505, -3.5}, hardCore) == inf);
-            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.9, 0.001, 0.1}}, 1e-9));
+            CHECK(packing.tryTranslation(2, {2, 2.55, -3.5}, hardCore) == inf);
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {4.5, 0.5, 0.5}, {4.5, 0.05, 0.5}}, 1e-9));
             SECTION("reverting the move") {
                 packing.revertTranslation();
-                CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.9, 0.1, 0.1}, {0.5, 0.5, 0.8}}, 1e-9));
+                CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {4.5, 0.5, 0.5}, {2.5, 2.5, 4.0}}, 1e-9));
             }
         }
 

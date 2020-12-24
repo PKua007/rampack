@@ -27,22 +27,30 @@ TEST_CASE("PolysphereTraits: hard interactions") {
         // simultaneously, than they are no longer tangent
 
         const Interaction &interaction = traits.getInteraction();
-        Shape shape1({0.1, 0.5, 0.5}, Matrix<3, 3>::identity());
-        Shape shape2({0.9, 0.5, 0.5}, Matrix<3, 3>::rotation(0, M_PI, 0));
-        PeriodicBoundaryConditions pbc;
+        PeriodicBoundaryConditions pbc(10);
 
         CHECK(interaction.hasHardPart());
         CHECK_FALSE(interaction.hasSoftPart());
-        CHECK(interaction.overlapBetween(shape1, shape2, 9.99, pbc));
-        CHECK_FALSE(interaction.overlapBetween(shape1, shape2, 10.01, pbc));
+
+        SECTION("overlap") {
+            Shape shape1({1.01, 5, 5}, Matrix<3, 3>::identity());
+            Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0));
+            CHECK(interaction.overlapBetween(shape1, shape2, pbc));
+        }
+
+        SECTION("no overlap") {
+            Shape shape1({0.99, 5, 5}, Matrix<3, 3>::identity());
+            Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0));
+            CHECK_FALSE(interaction.overlapBetween(shape1, shape2, pbc));
+        }
     }
 
     SECTION("toWolfram") {
-        Shape shape({0.9, 0.5, 0.5}, Matrix<3, 3>::rotation(0, M_PI, 0));
+        Shape shape({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0));
 
         std::string expected = "{Sphere[{9.000000, 5.000000, 5.000000},0.500000],"
                                "Sphere[{6.000000, 5.000000, 5.000000},1.000000]}";
-        CHECK(traits.getPrinter().toWolfram(shape, 10) == expected);
+        CHECK(traits.getPrinter().toWolfram(shape) == expected);
     }
 
     SECTION("getVolume") {

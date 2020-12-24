@@ -12,5 +12,5 @@ TEST_CASE("LennardJonesInteraction") {
     Shape shape1({1, 0, 0}), shape2({5, 0, 0});
     FreeBoundaryConditions fbc;
 
-    CHECK(interaction.calculateEnergyBetween(shape1, shape2, 1, fbc) == Approx(-0.1845703125000000));
+    CHECK(interaction.calculateEnergyBetween(shape1, shape2, fbc) == Approx(-0.1845703125000000));
 }
