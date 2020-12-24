@@ -116,10 +116,10 @@ int Frontend::casino(int argc, char **argv) {
     this->logger << std::endl;
 
     // Prepare simulation
-    auto bc = std::make_unique<PeriodicBoundaryConditions>();
     double linearSize = std::cbrt(params.initialVolume);
+    auto bc = std::make_unique<PeriodicBoundaryConditions>(linearSize);
     LatticeArrangingModel latticeArrangingModel;
-    auto shapes = latticeArrangingModel.arrange(params.numOfParticles, 1);
+    auto shapes = latticeArrangingModel.arrange(params.numOfParticles, linearSize);
     auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(bc));
     auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
     Simulation simulation(params.temperature, params.pressure, params.positionStepSize, params.rotationStepSize,

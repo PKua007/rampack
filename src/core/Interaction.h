@@ -16,14 +16,13 @@ public:
     [[nodiscard]] virtual bool hasSoftPart() const = 0;
     [[nodiscard]] virtual double calculateEnergyBetween([[maybe_unused]] const Shape &shape1,
                                                         [[maybe_unused]] const Shape &shape2,
-                                                        [[maybe_unused]] double scale,
                                                         [[maybe_unused]] const BoundaryConditions &bc) const
     {
         return 0;
     }
 
     [[nodiscard]] virtual bool overlapBetween([[maybe_unused]] const Shape &shape1,
-                                              [[maybe_unused]] const Shape &shape2, [[maybe_unused]] double scale,
+                                              [[maybe_unused]] const Shape &shape2,
                                               [[maybe_unused]] const BoundaryConditions &bc) const
     {
         return false;

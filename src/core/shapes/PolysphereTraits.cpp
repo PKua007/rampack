@@ -16,16 +16,16 @@ double PolysphereTraits::getVolume() const {
     return std::accumulate(this->sphereData.begin(), this->sphereData.end(), 0., volumeAccumulator);
 }
 
-std::string PolysphereTraits::toWolfram(const Shape &shape, double scale) const {
+std::string PolysphereTraits::toWolfram(const Shape &shape) const {
     std::ostringstream out;
     out << std::fixed;
     out << "{";
     for (std::size_t i{}; i < this->sphereData.size() - 1; i++) {
         const auto &data = this->sphereData[i];
-        data.toWolfram(out, shape, scale);
+        data.toWolfram(out, shape);
         out << ",";
     }
-    this->sphereData.back().toWolfram(out, shape, scale);
+    this->sphereData.back().toWolfram(out, shape);
     out << "}";
     return out.str();
 }
@@ -55,21 +55,20 @@ PolysphereTraits::SphereData::SphereData(const Vector<3> &position, double radiu
     Expects(radius > 0);
 }
 
-void PolysphereTraits::SphereData::toWolfram(std::ostream &out, const Shape &shape, double scale) const {
-    out << "Sphere[" << this->centreForShape(shape, scale) << "," << this->radius << "]";
+void PolysphereTraits::SphereData::toWolfram(std::ostream &out, const Shape &shape) const {
+    out << "Sphere[" << this->centreForShape(shape) << "," << this->radius << "]";
 }
 
-Vector<3> PolysphereTraits::SphereData::centreForShape(const Shape &shape, double scale) const {
-    return shape.getPosition() * scale + shape.getOrientation() * this->position;
+Vector<3> PolysphereTraits::SphereData::centreForShape(const Shape &shape) const {
+    return shape.getPosition() + shape.getOrientation() * this->position;
 }
 
-bool PolysphereTraits::HardInteraction::overlapBetween(const Shape &shape1, const Shape &shape2, double scale,
+bool PolysphereTraits::HardInteraction::overlapBetween(const Shape &shape1, const Shape &shape2,
                                                        const BoundaryConditions &bc) const
 {
     for (const auto &data1 : this->sphereData) {
         for (const auto &data2 : this->sphereData) {
-            if (bc.getDistance2(data1.centreForShape(shape1, scale) / scale,
-                                data2.centreForShape(shape2, scale) / scale) * scale * scale
+            if (bc.getDistance2(data1.centreForShape(shape1), data2.centreForShape(shape2))
                 < (data1.radius + data2.radius) * (data1.radius + data2.radius))
             {
                return true;

@@ -15,6 +15,7 @@ public:
     PeriodicBoundaryConditions() : linearSize{1} { }
     explicit PeriodicBoundaryConditions(double linearSize);
 
+    void setLinearSize(double size) override;
     [[nodiscard]] Vector<3> getCorrection(const Vector<3> &position) const override;
     [[nodiscard]] Vector<3> getTranslation(const Vector<3> &position1, const Vector<3> &position2) const override;
     [[nodiscard]] double getDistance2(const Vector<3> &position1, const Vector<3> &position2) const override;

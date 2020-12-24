@@ -17,3 +17,7 @@ void Shape::applyBCTranslation(const BoundaryConditions &bc, Shape &other) const
     other.position += bc.getTranslation(this->position, other.position);
 }
 
+void Shape::scale(double factor) {
+    this->position *= factor;
+}
+

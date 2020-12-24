@@ -18,7 +18,6 @@ Packing::Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, 
 
 double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction) {
     Expects(particleIdx < this->size());
-    translation /= this->linearSize;
     this->lastAlteredParticleIdx = particleIdx;
     this->lastTranslation = translation;
 
@@ -53,7 +52,10 @@ double Packing::tryScaling(double scaleFactor, const Interaction &interaction) {
 
     double initialEnergy = this->getTotalEnergy(interaction);
 
-    this->linearSize *= std::cbrt(scaleFactor);
+    this->linearSize *= this->lastScalingFactor;
+    this->bc->setLinearSize(this->linearSize);
+    for (auto &shape : this->shapes)
+        shape->scale(this->lastScalingFactor);
     if (interaction.hasHardPart() /*&& scaleFactor < 1*/ && this->areAnyParticlesOverlapping(interaction))
         return std::numeric_limits<double>::infinity();
 
@@ -79,14 +81,14 @@ const Shape &Packing::back() const {
 bool Packing::areAnyParticlesOverlapping(const Interaction &interaction) const {
     for (std::size_t i{}; i < this->size(); i++)
         for (std::size_t j = i + 1; j < this->size(); j++)
-            if (interaction.overlapBetween(*this->shapes[i], *this->shapes[j], this->linearSize, *this->bc))
+            if (interaction.overlapBetween(*this->shapes[i], *this->shapes[j], *this->bc))
                 return true;
     return false;
 }
 
 bool Packing::isAnyParticleCollidingWith(std::size_t i, const Interaction &interaction) const {
     for (std::size_t j{}; j < this->size(); j++)
-        if (i != j && interaction.overlapBetween(*this->shapes[i], *this->shapes[j], this->linearSize, *this->bc))
+        if (i != j && interaction.overlapBetween(*this->shapes[i], *this->shapes[j], *this->bc))
             return true;
     return false;
 }
@@ -95,7 +97,7 @@ void Packing::toWolfram(std::ostream &out, const ShapePrinter &shapePrinter) con
     out << "Graphics3D[{" << std::endl;
     for (std::size_t i{}; i < this->shapes.size(); i++) {
         const auto &shape = shapes[i];
-        out << shapePrinter.toWolfram(*shape, this->linearSize);
+        out << shapePrinter.toWolfram(*shape);
         if (i != this->shapes.size() - 1)
             out << "," << std::endl;
     }
@@ -121,6 +123,10 @@ void Packing::revertRotation() {
 
 void Packing::revertScaling() {
     this->linearSize /= this->lastScalingFactor;
+    this->bc->setLinearSize(this->linearSize);
+    double reverseFactor = 1 / this->lastScalingFactor;
+    for (auto &shape : this->shapes)
+        shape->scale(reverseFactor);
 }
 
 double Packing::getParticleEnergy(std::size_t particleIdx, const Interaction &interaction) const {
@@ -132,8 +138,7 @@ double Packing::getParticleEnergy(std::size_t particleIdx, const Interaction &in
     for (std::size_t i{}; i < this->size(); i++) {
         if (particleIdx == i)
             continue;
-        energy += interaction.calculateEnergyBetween(*this->shapes[particleIdx], *this->shapes[i], this->linearSize,
-                                                     *this->bc);
+        energy += interaction.calculateEnergyBetween(*this->shapes[particleIdx], *this->shapes[i], *this->bc);
     }
     return energy;
 }
@@ -145,8 +150,7 @@ double Packing::getTotalEnergy(const Interaction &interaction) const {
     double energy{};
     for (std::size_t i{}; i < this->size(); i++)
         for (std::size_t j = i + 1; j < this->size(); j++)
-            energy += interaction.calculateEnergyBetween(*this->shapes[i], *this->shapes[j], this->linearSize,
-                                                         *this->bc);
+            energy += interaction.calculateEnergyBetween(*this->shapes[i], *this->shapes[j], *this->bc);
     return energy;
 }
 

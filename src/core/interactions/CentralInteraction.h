@@ -29,7 +29,7 @@ public:
 
     [[nodiscard]] bool hasHardPart() const final { return false; }
     [[nodiscard]] bool hasSoftPart() const final { return true; }
-    [[nodiscard]] double calculateEnergyBetween(const Shape &shape1, const Shape &shape2, double scale,
+    [[nodiscard]] double calculateEnergyBetween(const Shape &shape1, const Shape &shape2,
                                                 const BoundaryConditions &bc) const final;
     [[nodiscard]] const std::vector<Vector<3>> &getPotentialCentres() const { return this->potentialCentres; };
 };

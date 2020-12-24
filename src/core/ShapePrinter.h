@@ -13,7 +13,7 @@ class ShapePrinter {
 public:
     virtual ~ShapePrinter() = default;
 
-    [[nodiscard]] virtual std::string toWolfram(const Shape &shape, double scale) const = 0;
+    [[nodiscard]] virtual std::string toWolfram(const Shape &shape) const = 0;
 };
 
 #endif //RAMPACK_SHAPEPRINTER_H

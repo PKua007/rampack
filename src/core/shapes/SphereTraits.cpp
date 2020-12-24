@@ -20,9 +20,9 @@ SphereTraits::SphereTraits(double radius, std::unique_ptr<CentralInteraction> ce
     this->interaction = std::move(centralInteraction);
 }
 
-std::string SphereTraits::toWolfram(const Shape &shape, double scale) const {
+std::string SphereTraits::toWolfram(const Shape &shape) const {
     std::ostringstream out;
-    out << "Sphere[" << (shape.getPosition() * scale) << "," << this->radius << "]";
+    out << "Sphere[" << (shape.getPosition()) << "," << this->radius << "]";
     return out.str();
 }
 
@@ -30,8 +30,8 @@ double SphereTraits::getVolume() const {
     return 4./3 * M_PI * std::pow(this->radius, 3);
 }
 
-bool SphereTraits::HardInteraction::overlapBetween(const Shape &shape1, const Shape &shape2, double scale,
+bool SphereTraits::HardInteraction::overlapBetween(const Shape &shape1, const Shape &shape2,
                                                    const BoundaryConditions &bc) const
 {
-    return bc.getDistance2(shape1.getPosition(), shape2.getPosition()) < std::pow(2 * this->radius / scale, 2);
+    return bc.getDistance2(shape1.getPosition(), shape2.getPosition()) < std::pow(2 * this->radius, 2);
 }

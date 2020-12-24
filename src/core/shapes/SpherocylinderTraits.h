@@ -14,8 +14,8 @@ private:
 
     static constexpr double EPSILON = 0.0000000001;
 
-    [[nodiscard]] Vector<3> getCapCentre(short beginOrEnd, const Shape &shape, double scale) const;
-    [[nodiscard]] double distance2Between(const Shape &shape1, const Shape &shape2, double scale) const;
+    [[nodiscard]] Vector<3> getCapCentre(short beginOrEnd, const Shape &shape) const;
+    [[nodiscard]] double distance2Between(const Shape &shape1, const Shape &shape2) const;
 
 public:
     SpherocylinderTraits() : length{1}, radius{1} { }
@@ -26,11 +26,11 @@ public:
 
     [[nodiscard]] bool hasHardPart() const override { return true; }
     [[nodiscard]] bool hasSoftPart() const override { return false; }
-    [[nodiscard]] bool overlapBetween(const Shape &shape1, const Shape &shape2, double scale,
+    [[nodiscard]] bool overlapBetween(const Shape &shape1, const Shape &shape2,
                                       const BoundaryConditions &bc) const override;
 
     [[nodiscard]] double getVolume() const override;
-    [[nodiscard]] std::string toWolfram(const Shape &shape, double scale) const override;
+    [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
 };
 
 

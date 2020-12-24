@@ -18,8 +18,8 @@ public:
 
         SphereData(const Vector<3> &position, double radius);
 
-        [[nodiscard]] Vector<3> centreForShape(const Shape &shape, double scale) const;
-        void toWolfram(std::ostream &out, const Shape &shape, double scale) const;
+        [[nodiscard]] Vector<3> centreForShape(const Shape &shape) const;
+        void toWolfram(std::ostream &out, const Shape &shape) const;
     };
 
 private:
@@ -32,7 +32,7 @@ private:
 
         [[nodiscard]] bool hasHardPart() const override { return true; }
         [[nodiscard]] bool hasSoftPart() const override { return false; }
-        [[nodiscard]] bool overlapBetween(const Shape &shape1, const Shape &shape2, double scale,
+        [[nodiscard]] bool overlapBetween(const Shape &shape1, const Shape &shape,
                                           const BoundaryConditions &bc) const override;
     };
 
@@ -47,7 +47,7 @@ public:
     [[nodiscard]] double getVolume() const override;
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
 
-    [[nodiscard]] std::string toWolfram(const Shape &shape, double scale) const override;
+    [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
 
     [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->sphereData; }
 };

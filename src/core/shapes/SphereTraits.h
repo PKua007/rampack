@@ -21,7 +21,7 @@ private:
 
         [[nodiscard]] bool hasHardPart() const override { return true; }
         [[nodiscard]] bool hasSoftPart() const override { return false; }
-        [[nodiscard]] bool overlapBetween(const Shape &shape1, const Shape &shape2, double scale,
+        [[nodiscard]] bool overlapBetween(const Shape &shape1, const Shape &shape2,
                                           const BoundaryConditions &bc) const override;
     };
 
@@ -36,7 +36,7 @@ public:
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
     [[nodiscard]] double getVolume() const override;
 
-    [[nodiscard]] std::string toWolfram(const Shape &shape, double scale) const override;
+    [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
 
     [[nodiscard]] double getRadius() const { return this->radius; }
 };

@@ -39,3 +39,8 @@ double PeriodicBoundaryConditions::getDistance2(const Vector<3> &position1, cons
 PeriodicBoundaryConditions::PeriodicBoundaryConditions(double linearSize) : linearSize{linearSize} {
     Expects(linearSize > 0);
 }
+
+void PeriodicBoundaryConditions::setLinearSize(double size) {
+    Expects(size > 0);
+    this->linearSize = size;
+}
