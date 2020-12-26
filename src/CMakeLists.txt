@@ -7,7 +7,7 @@ add_library(rampack_src STATIC core/Simulation.cpp utils/Assertions.h utils/Conf
             geometry/Vector.h geometry/Vector.tpp core/Interaction.h core/ShapePrinter.h core/shapes/SphereTraits.cpp
             core/shapes/SpherocylinderTraits.cpp core/interactions/CentralInteraction.cpp
             core/interactions/LennardJonesInteraction.cpp  core/interactions/RepulsiveLennardJonesInteraction.cpp
-            core/shapes/PolysphereTraits.cpp core/shapes/PolysphereBananaTraits.cpp)
+            core/shapes/PolysphereTraits.cpp core/shapes/PolysphereBananaTraits.cpp core/NeighbourGrid.cpp)
 
 target_include_directories(rampack_src PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(rampack_src PUBLIC cxxopts stdc++fs)
