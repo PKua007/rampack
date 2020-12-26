@@ -30,7 +30,7 @@ private:
     /*
      * @brief Returns true if @a cellNo is the reflection of a real cell due to periodic boundary conditions
      */
-    [[nodiscard]] bool isReflectedCell(std::size_t cellNo) const;
+    [[nodiscard]] bool isCellReflected(std::size_t cellNo) const;
 
     /*
      * @brief If @a cellNo is the reflection of a real cell due to periodic boundary conditions the method returns
@@ -52,6 +52,8 @@ public:
     void clear();
     [[nodiscard]] const std::vector<std::size_t> &getCell(const Vector<3> &position) const;
     [[nodiscard]] std::vector<std::size_t> getNeighbours(const Vector<3> &position) const;
+
+    void allocateCellLists();
 };
 
 
