@@ -87,15 +87,20 @@ const Shape &Packing::back() const {
 }
 
 bool Packing::areAnyParticlesOverlapping(const Interaction &interaction) const {
-    for (std::size_t i{}; i < this->size(); i++)
+    /*for (std::size_t i{}; i < this->size(); i++)
         for (std::size_t j = i + 1; j < this->size(); j++)
             if (interaction.overlapBetween(*this->shapes[i], *this->shapes[j], *this->bc))
-                return true;
+                return true;*/
+    for (std::size_t i{}; i < this->size(); i++)
+        if (this->isAnyParticleCollidingWith(i, interaction))
+            return true;
     return false;
 }
 
 bool Packing::isAnyParticleCollidingWith(std::size_t i, const Interaction &interaction) const {
-    for (std::size_t j{}; j < this->size(); j++)
+    Assert(neighbourGrid.has_value());
+    auto neigh = this->neighbourGrid->getNeighbours(this->shapes[i]->getPosition());
+    for (auto j : neigh)
         if (i != j && interaction.overlapBetween(*this->shapes[i], *this->shapes[j], *this->bc))
             return true;
     return false;
@@ -188,7 +193,10 @@ void Packing::rebuildNeighbourGrid(const Interaction &interaction) {
     if (range * 3 > this->linearSize) {
         this->neighbourGrid = std::nullopt;
     } else {
-        this->neighbourGrid = NeighbourGrid(this->linearSize, range);
+        if (!this->neighbourGrid.has_value())
+            this->neighbourGrid = NeighbourGrid(this->linearSize * 2, range);
+        //this->neighbourGrid = NeighbourGrid(this->linearSize, range);
+        this->neighbourGrid->clear();
         for (std::size_t i{}; i < this->shapes.size(); i++)
             this->neighbourGrid->add(i, this->shapes[i]->getPosition());
     }
