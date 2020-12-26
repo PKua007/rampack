@@ -7,18 +7,20 @@
 
 #include <vector>
 #include <memory>
-#include <array>
+#include <optional>
 
 #include "Shape.h"
 #include "BoundaryConditions.h"
 #include "Interaction.h"
 #include "ShapePrinter.h"
+#include "NeighbourGrid.h"
 
 class Packing {
 private:
     std::vector<std::unique_ptr<Shape>> shapes;
     double linearSize{};
     std::unique_ptr<BoundaryConditions> bc;
+    std::optional<NeighbourGrid> neighbourGrid;
 
     std::size_t lastAlteredParticleIdx{};
     Vector<3> lastTranslation;
@@ -39,12 +41,14 @@ public:
     double tryScaling(double scaleFactor, const Interaction &interaction);
     void revertTranslation();
     void revertRotation();
-    void revertScaling();
+    void revertScaling(const Interaction &interaction);
     [[nodiscard]] double getParticleEnergy(std::size_t particleIdx, const Interaction &interaction) const;
     [[nodiscard]] double getParticleEnergyFluctuations(const Interaction &interaction) const;
     [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;
 
     [[nodiscard]] double getLinearSize() const { return linearSize; }
+
+    void rebuildNeighbourGrid(const Interaction &interaction);
 
     [[nodiscard]] std::size_t size() const { return this->shapes.size(); }
     [[nodiscard]] bool empty() const { return this->shapes.empty(); }

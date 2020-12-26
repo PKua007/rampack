@@ -27,6 +27,8 @@ public:
     {
         return false;
     }
+
+    [[nodiscard]] virtual double getRangeRadius() const { return std::numeric_limits<double>::infinity(); }
 };
 
 

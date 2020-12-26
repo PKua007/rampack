@@ -25,7 +25,12 @@ double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, c
 
     double initialEnergy = this->getParticleEnergy(particleIdx, interaction);
 
+    if (this->neighbourGrid.has_value())
+        this->neighbourGrid->remove(particleIdx, this->shapes[particleIdx]->getPosition());
     this->shapes[particleIdx]->translate(translation, *this->bc);
+    if (this->neighbourGrid.has_value())
+        this->neighbourGrid->add(particleIdx, this->shapes[particleIdx]->getPosition());
+
     if (interaction.hasHardPart() && this->isAnyParticleCollidingWith(particleIdx, interaction))
         return std::numeric_limits<double>::infinity();
 
@@ -58,6 +63,7 @@ double Packing::tryScaling(double scaleFactor, const Interaction &interaction) {
     this->bc->setLinearSize(this->linearSize);
     for (auto &shape : this->shapes)
         shape->scale(this->lastScalingFactor);
+    this->rebuildNeighbourGrid(interaction);
     if (interaction.hasHardPart() /*&& scaleFactor < 1*/ && this->areAnyParticlesOverlapping(interaction))
         return std::numeric_limits<double>::infinity();
 
@@ -116,19 +122,24 @@ double Packing::getNumberDensity() const {
 }
 
 void Packing::revertTranslation() {
+    if (this->neighbourGrid.has_value())
+        this->neighbourGrid->remove(lastAlteredParticleIdx, this->shapes[lastAlteredParticleIdx]->getPosition());
     this->shapes[this->lastAlteredParticleIdx]->translate(-this->lastTranslation, *this->bc);
+    if (this->neighbourGrid.has_value())
+        this->neighbourGrid->add(lastAlteredParticleIdx, this->shapes[lastAlteredParticleIdx]->getPosition());
 }
 
 void Packing::revertRotation() {
     this->shapes[this->lastAlteredParticleIdx]->rotate(this->lastRotation.transpose());
 }
 
-void Packing::revertScaling() {
+void Packing::revertScaling(const Interaction &interaction) {
     this->linearSize /= this->lastScalingFactor;
     this->bc->setLinearSize(this->linearSize);
     double reverseFactor = 1 / this->lastScalingFactor;
     for (auto &shape : this->shapes)
         shape->scale(reverseFactor);
+    this->rebuildNeighbourGrid(interaction);
 }
 
 double Packing::getParticleEnergy(std::size_t particleIdx, const Interaction &interaction) const {
@@ -170,4 +181,15 @@ double Packing::getParticleEnergyFluctuations(const Interaction &interaction) co
 
     double N = this->size();
     return std::sqrt(energySum2/(N-1) - std::pow(energySum, 2)/N/(N - 1));
+}
+
+void Packing::rebuildNeighbourGrid(const Interaction &interaction) {
+    double range = interaction.getRangeRadius();
+    if (range * 3 > this->linearSize) {
+        this->neighbourGrid = std::nullopt;
+    } else {
+        this->neighbourGrid = NeighbourGrid(this->linearSize, range);
+        for (std::size_t i{}; i < this->shapes.size(); i++)
+            this->neighbourGrid->add(i, this->shapes[i]->getPosition());
+    }
 }

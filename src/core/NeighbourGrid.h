@@ -44,7 +44,9 @@ private:
 public:
     NeighbourGrid(double linearSize, double cellSize);
     NeighbourGrid(const NeighbourGrid &other) = delete;
+    NeighbourGrid(NeighbourGrid &&other) noexcept = default;
     NeighbourGrid &operator=(const NeighbourGrid &other) = delete;
+    NeighbourGrid &operator=(NeighbourGrid &&other) noexcept;
     ~NeighbourGrid();
 
     void add(std::size_t idx, const Vector<3> &position);

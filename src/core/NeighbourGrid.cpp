@@ -126,7 +126,7 @@ void NeighbourGrid::allocateCellLists() {
     for (std::size_t i{}; i < this->cells.size(); i++) {
         if (isCellReflected(i))
             continue;
-        cells[i] = new std::__debug::vector<std::size_t>;
+        cells[i] = new std::vector<std::size_t>;
     }
 
     // Aliasing "reflected" cell lists to real ones
@@ -172,4 +172,18 @@ std::vector<std::size_t> NeighbourGrid::getNeighbours(const Vector<3> &position)
         result.insert(result.end(), cellVector->begin(), cellVector->end());
     }
     return result;
+}
+
+NeighbourGrid &NeighbourGrid::operator=(NeighbourGrid &&other) noexcept {
+    for (std::size_t i{}; i < this->cells.size(); i++)
+        if (!this->isCellReflected(i))
+            delete this->cells[i];
+
+    this->linearSize = other.linearSize;
+    this->numOfRealCells = other.numOfRealCells;
+    this->cellSize = other.cellSize;
+    this->cells = std::move(other.cells);
+    this->neighbouringCellsOffsets = std::move(other.neighbouringCellsOffsets);
+
+    return *this;
 }
