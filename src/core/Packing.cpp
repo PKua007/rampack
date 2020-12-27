@@ -194,9 +194,10 @@ void Packing::rebuildNeighbourGrid(const Interaction &interaction) {
         this->neighbourGrid = std::nullopt;
     } else {
         if (!this->neighbourGrid.has_value())
-            this->neighbourGrid = NeighbourGrid(this->linearSize * 2, range);
-        //this->neighbourGrid = NeighbourGrid(this->linearSize, range);
-        this->neighbourGrid->clear();
+            this->neighbourGrid = NeighbourGrid(this->linearSize, range);
+        else
+            this->neighbourGrid->resize(this->linearSize, range);
+
         for (std::size_t i{}; i < this->shapes.size(); i++)
             this->neighbourGrid->add(i, this->shapes[i]->getPosition());
     }
