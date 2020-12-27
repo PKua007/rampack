@@ -13,7 +13,7 @@ std::size_t NeighbourGrid::positionToCellNo(const Vector<3> &position) const {
 
         // +1, since first row of cells on each edges is "reflected", not "real"
         std::size_t coord = static_cast<int>(position[i] / this->cellSize) + 1;
-        result = this->numOfRealCells * result + coord;
+        result = this->numCellsInLine * result + coord;
     }
     return result;
 }
@@ -21,8 +21,8 @@ std::size_t NeighbourGrid::positionToCellNo(const Vector<3> &position) const {
 std::array<std::size_t, 3> NeighbourGrid::cellNoToCoordinates(std::size_t cellNo) const {
     std::array<std::size_t, 3> result{};
     for (std::size_t i{}; i < 3; i++) {
-        result[i] = cellNo % this->numOfRealCells;
-        cellNo /= this->numOfRealCells;
+        result[i] = cellNo % this->numCellsInLine;
+        cellNo /= this->numCellsInLine;
     }
     return result;
 }
@@ -30,7 +30,7 @@ std::array<std::size_t, 3> NeighbourGrid::cellNoToCoordinates(std::size_t cellNo
 std::size_t NeighbourGrid::coordinatesToCellNo(const std::array<std::size_t, 3> &coords) const {
     std::size_t result{};
     for (int i = 2; i >= 0; i--)
-        result = this->numOfRealCells * result + coords[i];
+        result = this->numCellsInLine * result + coords[i];
     return result;
 }
 
@@ -41,8 +41,8 @@ std::size_t NeighbourGrid::cellNeighbourToCellNo(const std::array<std::size_t, 3
     for (int i = 2; i >= 0; i--) {
         // -1, because neighbour array goes from 0 to 2, and real offsets are from -1 to 1
         std::size_t ix = coordinates[i] + neighbour[i] - 1;
-        Assert(ix < this->numOfRealCells);
-        result = this->numOfRealCells * result + ix;
+        Assert(ix < this->numCellsInLine);
+        result = this->numCellsInLine * result + ix;
     }
     return result;
 }
@@ -50,7 +50,7 @@ std::size_t NeighbourGrid::cellNeighbourToCellNo(const std::array<std::size_t, 3
 bool NeighbourGrid::isCellReflected(std::size_t cellNo) const {
     std::array<std::size_t, 3> coords = this->cellNoToCoordinates(cellNo);
     return std::any_of(coords.begin(), coords.end(), [this](auto coord) {
-        return coord == 0 || coord == this->numOfRealCells - 1;
+        return coord == 0 || coord == this->numCellsInLine - 1;
     });
 }
 
@@ -61,8 +61,8 @@ int NeighbourGrid::getReflectedCellVector(std::size_t cellNo) const {
     std::array<std::size_t, 3> coords = this->cellNoToCoordinates(cellNo);
     for (auto &coord : coords) {
         if (coord == 0)
-            coord = this->numOfRealCells - 2;
-        if (coord == this->numOfRealCells - 1)
+            coord = this->numCellsInLine - 2;
+        if (coord == this->numCellsInLine - 1)
             coord = 1;
     }
     return this->coordinatesToCellNo(coords);
@@ -81,13 +81,14 @@ bool NeighbourGrid::increment(std::array<int, 3> &in) {
 
 void NeighbourGrid::fillNeighbouringCellsOffsets() {
     // 3 x 3 neighbours
+    this->neighbouringCellsOffsets.clear();
     this->neighbouringCellsOffsets.reserve(27);
 
     // We are taking the cell somewhere in the middle and computing offsets in cell list to all of its neighbours
     std::array<int, 3> neighbour{};
     std::array<std::size_t, 3> testCellCoords{};
     neighbour.fill(0);
-    testCellCoords.fill(this->numOfRealCells / 2);
+    testCellCoords.fill(this->numCellsInLine / 2);
     std::size_t testCellNo = this->coordinatesToCellNo(testCellCoords);
     do {
         std::size_t neigbourNo = this->cellNeighbourToCellNo(testCellCoords, neighbour);
@@ -106,15 +107,15 @@ NeighbourGrid::NeighbourGrid(double linearSize, double cellSize) : linearSize{li
     Expects(cellSize > 0);
 
     // 2 cells on both edges - "reflected" cells - are used by periodic boundary conditions
-    this->numOfRealCells = static_cast<std::size_t>(std::floor(linearSize / cellSize)) + 2;
-    ExpectsMsg(this->numOfRealCells >= 3, "Neighbour grid cell too big");
-    this->cellSize = this->linearSize / static_cast<double>(this->numOfRealCells - 2);
-    auto numCells = static_cast<std::size_t>(std::round(std::pow(this->numOfRealCells, 3)));
-    this->cells.resize(numCells);
-    this->reflectedCell.resize(numCells, -1);
+    this->numCellsInLine = static_cast<std::size_t>(std::floor(linearSize / cellSize)) + 2;
+    ExpectsMsg(this->numCellsInLine >= 3, "Neighbour grid cell too big");
+    this->cellSize = this->linearSize / static_cast<double>(this->numCellsInLine - 2);
+    this->numCells = static_cast<std::size_t>(std::round(std::pow(this->numCellsInLine, 3)));
+    this->cells.resize(this->numCells);
+    this->reflectedCell.resize(this->numCells, -1);
 
     // Aliasing "reflected" cell lists to real ones
-    for (std::size_t i{}; i < this->cells.size(); i++)
+    for (std::size_t i{}; i < this->numCells; i++)
         if (this->isCellReflected(i))
             this->reflectedCell[i] = this->getReflectedCellVector(i);
 
@@ -135,8 +136,8 @@ void NeighbourGrid::remove(std::size_t idx, const Vector<3> &position) {
 }
 
 void NeighbourGrid::clear() {
-    for (auto &cell : this->cells)
-        cell.clear();
+    for (std::size_t i{}; i < this->numCells; i++)
+        this->cells[i].clear();
 }
 
 const std::vector<std::size_t> &NeighbourGrid::getCell(const Vector<3> &position) const {
@@ -167,4 +168,36 @@ const std::vector<std::size_t> &NeighbourGrid::getCellVector(std::size_t cellNo)
         return this->cells[cellNo];
     else
         return this->cells[this->reflectedCell[cellNo]];
+}
+
+void NeighbourGrid::resize(double linearSize_, double cellSize_) {
+    Expects(linearSize_ > 0);
+    Expects(cellSize_ > 0);
+
+    // 2 cells on both edges - "reflected" cells - are used by periodic boundary conditions
+    std::size_t numCellsInLine_ = static_cast<std::size_t>(std::floor(linearSize_ / cellSize_)) + 2;
+    ExpectsMsg(numCellsInLine_ >= 3, "Neighbour grid cell too big");
+
+    this->linearSize = linearSize_;
+    this->cellSize = linearSize_ / static_cast<double>(numCellsInLine_ - 2);
+
+    if (this->numCellsInLine == numCellsInLine_) {
+        this->clear();
+        return;
+    }
+
+    this->numCellsInLine = numCellsInLine_;
+    double numCellsOld = this->numCells;
+    this->numCells = static_cast<std::size_t>(std::round(std::pow(this->numCellsInLine, 3)));
+
+    if (numCellsOld < this->numCells) {
+        this->cells.resize(this->numCells);
+        this->reflectedCell.resize(this->numCells);
+    }
+
+    for (std::size_t i{}; i < this->numCells; i++)
+        this->reflectedCell[i] = this->getReflectedCellVector(i);
+
+    this->clear();
+    this->fillNeighbouringCellsOffsets();
 }

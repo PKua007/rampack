@@ -16,10 +16,11 @@
 class NeighbourGrid {
 private:
     double linearSize;
-    std::size_t numOfRealCells;
+    std::size_t numCellsInLine;
     double cellSize;
     std::vector<std::vector<std::size_t>> cells;
     std::vector<int> reflectedCell;
+    std::size_t numCells{};
     std::vector<long> neighbouringCellsOffsets;
 
     [[nodiscard]] std::size_t positionToCellNo(const Vector<3> &position) const;
@@ -51,6 +52,7 @@ public:
     void add(std::size_t idx, const Vector<3> &position);
     void remove(std::size_t idx, const Vector<3> &position);
     void clear();
+    void resize(double linearSize_, double cellSize_);
     [[nodiscard]] const std::vector<std::size_t> &getCell(const Vector<3> &position) const;
     [[nodiscard]] std::vector<std::size_t> getNeighbours(const Vector<3> &position) const;
 };
