@@ -18,7 +18,8 @@ private:
     double linearSize;
     std::size_t numOfRealCells;
     double cellSize;
-    std::vector<std::vector<std::size_t> *> cells;
+    std::vector<std::vector<std::size_t>> cells;
+    std::vector<int> reflectedCell;
     std::vector<long> neighbouringCellsOffsets;
 
     [[nodiscard]] std::size_t positionToCellNo(const Vector<3> &position) const;
@@ -36,26 +37,22 @@ private:
      * @brief If @a cellNo is the reflection of a real cell due to periodic boundary conditions the method returns
      * pointer to the vector in the real cell. Otherwise @a nullptr is returned.
      */
-    [[nodiscard]] std::vector<std::size_t> *getReflectedCellVector(std::size_t cellNo) const;
+    [[nodiscard]] int getReflectedCellVector(std::size_t cellNo) const;
 
     static bool increment(std::array<int, 3> &in);
     void fillNeighbouringCellsOffsets();
 
+    std::vector<std::size_t> &getCellVector(std::size_t cellNo);
+    [[nodiscard]] const std::vector<std::size_t> &getCellVector(std::size_t cellNo) const;
+
 public:
     NeighbourGrid(double linearSize, double cellSize);
-    NeighbourGrid(const NeighbourGrid &other) = delete;
-    NeighbourGrid(NeighbourGrid &&other) noexcept = default;
-    NeighbourGrid &operator=(const NeighbourGrid &other) = delete;
-    NeighbourGrid &operator=(NeighbourGrid &&other) noexcept;
-    ~NeighbourGrid();
 
     void add(std::size_t idx, const Vector<3> &position);
     void remove(std::size_t idx, const Vector<3> &position);
     void clear();
     [[nodiscard]] const std::vector<std::size_t> &getCell(const Vector<3> &position) const;
     [[nodiscard]] std::vector<std::size_t> getNeighbours(const Vector<3> &position) const;
-
-    void allocateCellLists();
 };
 
 

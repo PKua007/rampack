@@ -54,9 +54,9 @@ bool NeighbourGrid::isCellReflected(std::size_t cellNo) const {
     });
 }
 
-std::vector<std::size_t> *NeighbourGrid::getReflectedCellVector(std::size_t cellNo) const {
+int NeighbourGrid::getReflectedCellVector(std::size_t cellNo) const {
     if (!this->isCellReflected(cellNo))
-        return nullptr;
+        return -1;
 
     std::array<std::size_t, 3> coords = this->cellNoToCoordinates(cellNo);
     for (auto &coord : coords) {
@@ -65,7 +65,7 @@ std::vector<std::size_t> *NeighbourGrid::getReflectedCellVector(std::size_t cell
         if (coord == this->numOfRealCells - 1)
             coord = 1;
     }
-    return this->cells[this->coordinatesToCellNo(coords)];
+    return this->coordinatesToCellNo(coords);
 }
 
 bool NeighbourGrid::increment(std::array<int, 3> &in) {
@@ -110,57 +110,38 @@ NeighbourGrid::NeighbourGrid(double linearSize, double cellSize) : linearSize{li
     ExpectsMsg(this->numOfRealCells >= 3, "Neighbour grid cell too big");
     this->cellSize = this->linearSize / static_cast<double>(this->numOfRealCells - 2);
     auto numCells = static_cast<std::size_t>(std::round(std::pow(this->numOfRealCells, 3)));
-    this->cells = std::vector<std::vector<std::size_t> *>(numCells);
+    this->cells.resize(numCells);
+    this->reflectedCell.resize(numCells, -1);
 
-    this->allocateCellLists();
-
-    // Sanity check - all cells should have lists
-    for (std::size_t i{}; i < numCells; i++)
-        Assert(this->cells[i] != nullptr);
+    // Aliasing "reflected" cell lists to real ones
+    for (std::size_t i{}; i < this->cells.size(); i++)
+        if (this->isCellReflected(i))
+            this->reflectedCell[i] = this->getReflectedCellVector(i);
 
     this->fillNeighbouringCellsOffsets();
 }
 
-void NeighbourGrid::allocateCellLists() {
-    // Allocating "real" cell lists
-    for (std::size_t i{}; i < this->cells.size(); i++) {
-        if (isCellReflected(i))
-            continue;
-        cells[i] = new std::vector<std::size_t>;
-    }
-
-    // Aliasing "reflected" cell lists to real ones
-    for (std::size_t i{}; i < this->cells.size(); i++)
-        if (isCellReflected(i))
-            cells[i] = getReflectedCellVector(i);
-}
-
-NeighbourGrid::~NeighbourGrid() {
-    for (std::size_t i{}; i < this->cells.size(); i++)
-        if (!this->isCellReflected(i))
-            delete this->cells[i];
-}
-
 void NeighbourGrid::add(std::size_t idx, const Vector<3> &position) {
     int i = this->positionToCellNo(position);
-    this->cells[i]->push_back(idx);
+    this->getCellVector(i).push_back(idx);
 }
 
 void NeighbourGrid::remove(std::size_t idx, const Vector<3> &position) {
     int i = this->positionToCellNo(position);
-    auto it = std::find(this->cells[i]->begin(), this->cells[i]->end(), idx);
-    if (it != this->cells[i]->end())
-        this->cells[i]->erase(it);
+    auto &cell = this->getCellVector(i);
+    auto it = std::find(cell.begin(), cell.end(), idx);
+    if (it != cell.end())
+        cell.erase(it);
 }
 
 void NeighbourGrid::clear() {
-    for (auto cell : this->cells)
-        cell->clear();
+    for (auto &cell : this->cells)
+        cell.clear();
 }
 
 const std::vector<std::size_t> &NeighbourGrid::getCell(const Vector<3> &position) const {
     int i = this->positionToCellNo(position);
-    return *(this->cells[i]);
+    return this->getCellVector(i);
 }
 
 std::vector<std::size_t> NeighbourGrid::getNeighbours(const Vector<3> &position) const {
@@ -168,22 +149,22 @@ std::vector<std::size_t> NeighbourGrid::getNeighbours(const Vector<3> &position)
 
     int cellNo = this->positionToCellNo(position);
     for (int cellOffset : this->neighbouringCellsOffsets) {
-        auto cellVector = this->cells[cellNo + cellOffset];
-        result.insert(result.end(), cellVector->begin(), cellVector->end());
+        const auto &cellVector = this->getCellVector(cellNo + cellOffset);
+        result.insert(result.end(), cellVector.begin(), cellVector.end());
     }
     return result;
 }
 
-NeighbourGrid &NeighbourGrid::operator=(NeighbourGrid &&other) noexcept {
-    for (std::size_t i{}; i < this->cells.size(); i++)
-        if (!this->isCellReflected(i))
-            delete this->cells[i];
+std::vector<std::size_t> &NeighbourGrid::getCellVector(std::size_t cellNo) {
+    if (this->reflectedCell[cellNo] == -1)
+        return this->cells[cellNo];
+    else
+        return this->cells[this->reflectedCell[cellNo]];
+}
 
-    this->linearSize = other.linearSize;
-    this->numOfRealCells = other.numOfRealCells;
-    this->cellSize = other.cellSize;
-    this->cells = std::move(other.cells);
-    this->neighbouringCellsOffsets = std::move(other.neighbouringCellsOffsets);
-
-    return *this;
+const std::vector<std::size_t> &NeighbourGrid::getCellVector(std::size_t cellNo) const {
+    if (this->reflectedCell[cellNo] == -1)
+        return this->cells[cellNo];
+    else
+        return this->cells[this->reflectedCell[cellNo]];
 }
