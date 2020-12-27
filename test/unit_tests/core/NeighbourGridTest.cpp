@@ -23,7 +23,8 @@ TEST_CASE("NeighbourGrid") {
     // |       |       |       |       |
     // +-------+-------+-------+-------+
 
-    // At the same time we test resizing neighbour grid from smaller, the same and bigger size
+    // We will test the same neighbour list, but with 4 scenarious: without resizing, resizing down, up and to the same
+    // size
     std::string testMode = GENERATE("without resizing", "from 7.5 up", "the same size", "from 12.5 down");
     double linearSize{};
     if (testMode == "without resizing")     linearSize = 10;
@@ -32,6 +33,7 @@ TEST_CASE("NeighbourGrid") {
     else if (testMode == "from 12.5 down")  linearSize = 12.5;
     else FAIL("test error");
 
+    // Cell size 2.4 is not a "divisor" of 10, so it should be corrected to 2.5
     NeighbourGrid neighbourGrid(linearSize, 2.4);
 
     DYNAMIC_SECTION(testMode) {

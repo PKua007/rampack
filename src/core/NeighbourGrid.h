@@ -15,11 +15,11 @@
 
 class NeighbourGrid {
 private:
-    double linearSize;
-    std::size_t numCellsInLine;
-    double cellSize;
+    double linearSize{};
+    std::size_t numCellsInLine{};
+    double cellSize{};
     std::vector<std::vector<std::size_t>> cells;
-    std::vector<int> reflectedCell;
+    std::vector<int> reflectedCells;
     std::size_t numCells{};
     std::vector<long> neighbouringCellsOffsets;
 
@@ -38,13 +38,14 @@ private:
      * @brief If @a cellNo is the reflection of a real cell due to periodic boundary conditions the method returns
      * pointer to the vector in the real cell. Otherwise @a nullptr is returned.
      */
-    [[nodiscard]] int getReflectedCellVector(std::size_t cellNo) const;
+    [[nodiscard]] int getReflectedCellNo(std::size_t cellNo) const;
 
     static bool increment(std::array<int, 3> &in);
     void fillNeighbouringCellsOffsets();
 
     std::vector<std::size_t> &getCellVector(std::size_t cellNo);
     [[nodiscard]] const std::vector<std::size_t> &getCellVector(std::size_t cellNo) const;
+    void setupSizes(double newLinearSize, double newCellSize);
 
 public:
     NeighbourGrid(double linearSize, double cellSize);
@@ -52,7 +53,7 @@ public:
     void add(std::size_t idx, const Vector<3> &position);
     void remove(std::size_t idx, const Vector<3> &position);
     void clear();
-    void resize(double linearSize_, double cellSize_);
+    void resize(double newLinearSize, double newCellSize);
     [[nodiscard]] const std::vector<std::size_t> &getCell(const Vector<3> &position) const;
     [[nodiscard]] std::vector<std::size_t> getNeighbours(const Vector<3> &position) const;
 };

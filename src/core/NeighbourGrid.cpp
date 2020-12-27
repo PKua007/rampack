@@ -54,7 +54,7 @@ bool NeighbourGrid::isCellReflected(std::size_t cellNo) const {
     });
 }
 
-int NeighbourGrid::getReflectedCellVector(std::size_t cellNo) const {
+int NeighbourGrid::getReflectedCellNo(std::size_t cellNo) const {
     if (!this->isCellReflected(cellNo))
         return -1;
 
@@ -102,24 +102,30 @@ void NeighbourGrid::fillNeighbouringCellsOffsets() {
                                          this->neighbouringCellsOffsets.end());
 }
 
-NeighbourGrid::NeighbourGrid(double linearSize, double cellSize) : linearSize{linearSize} {
-    Expects(linearSize > 0);
-    Expects(cellSize > 0);
-
-    // 2 cells on both edges - "reflected" cells - are used by periodic boundary conditions
-    this->numCellsInLine = static_cast<std::size_t>(std::floor(linearSize / cellSize)) + 2;
-    ExpectsMsg(this->numCellsInLine >= 3, "Neighbour grid cell too big");
-    this->cellSize = this->linearSize / static_cast<double>(this->numCellsInLine - 2);
-    this->numCells = static_cast<std::size_t>(std::round(std::pow(this->numCellsInLine, 3)));
+NeighbourGrid::NeighbourGrid(double linearSize, double cellSize) {
+    this->setupSizes(linearSize, cellSize);
     this->cells.resize(this->numCells);
-    this->reflectedCell.resize(this->numCells, -1);
+    this->reflectedCells.resize(this->numCells);
 
     // Aliasing "reflected" cell lists to real ones
     for (std::size_t i{}; i < this->numCells; i++)
-        if (this->isCellReflected(i))
-            this->reflectedCell[i] = this->getReflectedCellVector(i);
+        this->reflectedCells[i] = this->getReflectedCellNo(i);
 
     this->fillNeighbouringCellsOffsets();
+}
+
+void NeighbourGrid::setupSizes(double newLinearSize, double newCellSize) {
+    Expects(newLinearSize > 0);
+    Expects(newCellSize > 0);
+
+    // 2 additional cells on both edges - "reflected" cells - are used by periodic boundary conditions
+    std::size_t numCellsInLine_ = static_cast<std::size_t>(floor(newLinearSize / newCellSize)) + 2;
+    ExpectsMsg(numCellsInLine_ >= 3, "Neighbour grid cell too big");
+
+    this->linearSize = newLinearSize;
+    this->numCellsInLine = numCellsInLine_;
+    this->cellSize = this->linearSize / static_cast<double>(this->numCellsInLine - 2);
+    this->numCells = static_cast<std::size_t>(std::round(std::pow(this->numCellsInLine, 3)));
 }
 
 void NeighbourGrid::add(std::size_t idx, const Vector<3> &position) {
@@ -157,47 +163,39 @@ std::vector<std::size_t> NeighbourGrid::getNeighbours(const Vector<3> &position)
 }
 
 std::vector<std::size_t> &NeighbourGrid::getCellVector(std::size_t cellNo) {
-    if (this->reflectedCell[cellNo] == -1)
+    if (this->reflectedCells[cellNo] == -1)
         return this->cells[cellNo];
     else
-        return this->cells[this->reflectedCell[cellNo]];
+        return this->cells[this->reflectedCells[cellNo]];
 }
 
 const std::vector<std::size_t> &NeighbourGrid::getCellVector(std::size_t cellNo) const {
-    if (this->reflectedCell[cellNo] == -1)
+    if (this->reflectedCells[cellNo] == -1)
         return this->cells[cellNo];
     else
-        return this->cells[this->reflectedCell[cellNo]];
+        return this->cells[this->reflectedCells[cellNo]];
 }
 
-void NeighbourGrid::resize(double linearSize_, double cellSize_) {
-    Expects(linearSize_ > 0);
-    Expects(cellSize_ > 0);
+void NeighbourGrid::resize(double newLinearSize, double newCellSize) {
+    double oldNumCellsInLine = this->numCellsInLine;
+    double oldNumCells = this->numCells;
+    this->setupSizes(newLinearSize, newCellSize);
 
-    // 2 cells on both edges - "reflected" cells - are used by periodic boundary conditions
-    std::size_t numCellsInLine_ = static_cast<std::size_t>(std::floor(linearSize_ / cellSize_)) + 2;
-    ExpectsMsg(numCellsInLine_ >= 3, "Neighbour grid cell too big");
-
-    this->linearSize = linearSize_;
-    this->cellSize = linearSize_ / static_cast<double>(numCellsInLine_ - 2);
-
-    if (this->numCellsInLine == numCellsInLine_) {
+    // Early exit - if number of cells in line did not change we do not need to rebuild the structure, only clear
+    if (this->numCellsInLine == oldNumCellsInLine) {
         this->clear();
         return;
     }
 
-    this->numCellsInLine = numCellsInLine_;
-    double numCellsOld = this->numCells;
-    this->numCells = static_cast<std::size_t>(std::round(std::pow(this->numCellsInLine, 3)));
-
-    if (numCellsOld < this->numCells) {
+    // The resize is needed only if number of cells is to big for allocated memory - otherwise reuse the old structure
+    if (oldNumCells < this->numCells) {
         this->cells.resize(this->numCells);
-        this->reflectedCell.resize(this->numCells);
+        this->reflectedCells.resize(this->numCells);
     }
 
     for (std::size_t i{}; i < this->numCells; i++)
-        this->reflectedCell[i] = this->getReflectedCellVector(i);
+        this->reflectedCells[i] = this->getReflectedCellNo(i);
 
-    this->clear();
     this->fillNeighbouringCellsOffsets();
+    this->clear();
 }
