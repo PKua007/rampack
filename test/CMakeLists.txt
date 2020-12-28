@@ -1,17 +1,14 @@
-project(rampack_test)
+project(rampack_lib)
 
-add_executable(unit_tests TestMain.cpp unit_tests/core/PeriodicBoundaryConditionsTest.cpp
-        unit_tests/core/LatticeArrangingModelTest.cpp unit_tests/core/PackingTest.cpp
-        matchers/PackingApproxPositionsCatchMatcher.h unit_tests/core/ShapeTest.cpp
-        unit_tests/core/ShapeFactoryTest.cpp unit_tests/core/SphereTraitsTest.cpp unit_tests/geometry/MatrixTest.cpp
-        unit_tests/geometry/VectorTest.cpp unit_tests/core/SpherocylinderTraitsTest.cpp
-        unit_tests/core/CentralInteractionTest.cpp unit_tests/core/PolysphereTraitsTest.cpp
-        unit_tests/core/PolysphereBananaTraitsTest.cpp matchers/VectorApproxMatcher.h
-        unit_tests/core/LennardJonesInteractionTest.cpp unit_tests/core/RepulsiveLennardJonesInteractionTest.cpp
-        unit_tests/core/NeighbourGridTest.cpp)
-target_link_libraries(unit_tests PRIVATE rampack_src Catch2::Catch2 trompeloeil)
+file(GLOB_RECURSE unit_tests_sources CONFIGURE_DEPENDS "unit_test/*.cpp" "unit_test/*.h" "matchers/*.cpp"
+        "matchers/*.h")
+
+file(GLOB_RECURSE valid_tests_sources CONFIGURE_DEPENDS "validation_tests/*.cpp" "validation_tests/*.h")
+
+add_executable(unit_tests TestMain.cpp ${unit_tests_sources})
+target_link_libraries(unit_tests PRIVATE rampack_lib Catch2::Catch2 trompeloeil)
 target_include_directories(unit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(valid_tests TestMain.cpp validation_tests/SimulationTest.cpp)
-target_link_libraries(valid_tests PRIVATE rampack_src Catch2::Catch2 trompeloeil)
+add_executable(valid_tests TestMain.cpp ${valid_tests_sources})
+target_link_libraries(valid_tests PRIVATE rampack_lib Catch2::Catch2 trompeloeil)
 target_include_directories(valid_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
