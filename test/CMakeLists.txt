@@ -1,6 +1,6 @@
 project(rampack_lib)
 
-file(GLOB_RECURSE unit_tests_sources CONFIGURE_DEPENDS "unit_test/*.cpp" "unit_test/*.h" "matchers/*.cpp"
+file(GLOB_RECURSE unit_tests_sources CONFIGURE_DEPENDS "unit_tests/*.cpp" "unit_tests/*.h" "matchers/*.cpp"
         "matchers/*.h")
 
 file(GLOB_RECURSE valid_tests_sources CONFIGURE_DEPENDS "validation_tests/*.cpp" "validation_tests/*.h")

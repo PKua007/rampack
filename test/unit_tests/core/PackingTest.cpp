@@ -151,7 +151,7 @@ TEST_CASE("Packing") {
         }
 
         SECTION("energy fluctuations") {
-            double scale1Efluct = (std::sqrt(41) - 2) / (10 * sqrt(3));
+            double scale1Efluct = (std::sqrt(41) - 2) / (20 * sqrt(3));
             double Efluct = scale1Efluct * 5;
             CHECK(packing.getParticleEnergyFluctuations(distanceInteraction) == Approx(Efluct));
         }
