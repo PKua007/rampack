@@ -191,7 +191,7 @@ double Packing::getTotalEnergy(const Interaction &interaction) const {
     double energy{};
     if (this->neighbourGrid.has_value()) {
         for (std::size_t i{}; i < this->size(); i++)
-            energy += this->getParticleEnergy(i, interaction) / 2;
+            energy += this->getParticleEnergy(i, interaction) / 2;  // Each interaction counted twice
     } else {
         for (std::size_t i{}; i < this->size(); i++)
             for (std::size_t j = i + 1; j < this->size(); j++)
@@ -213,26 +213,30 @@ double Packing::getParticleEnergyFluctuations(const Interaction &interaction) co
     }
 
     double N = this->size();
-    return std::sqrt(energySum2/(N-1) - std::pow(energySum, 2)/N/(N - 1));
+    double doubleEnergy = std::sqrt(energySum2/(N-1) - std::pow(energySum, 2)/N/(N - 1));
+    return doubleEnergy / 2;    // We divide by 2, because each interaction was counted twice
 }
 
 void Packing::rebuildNeighbourGrid() {
-    if (this->interactionRange * 3 > this->linearSize) {
+    double cellSize = this->interactionRange;
+    // linearSize/cbrt(size()) gives 1 cell per particle, factor 1/5 empirically gives best times
+    double minCellSize = this->linearSize / std::cbrt(this->size()) / 5;
+    if (this->interactionRange < minCellSize)
+        cellSize = minCellSize;
+
+    // Less than 4 cells in line is redundant, because everything always would be neighbour
+    if (cellSize * 4 > this->linearSize) {
         this->neighbourGrid = std::nullopt;
-    } else {
-        // linearSize/cbrt(size()) gives 1 cell per particle, factor 1/5 empirically gives best times
-        double minCellSize = this->linearSize / std::cbrt(this->size()) / 5;
-        if (this->interactionRange < minCellSize)
-            this->interactionRange = minCellSize;
-
-        if (!this->neighbourGrid.has_value())
-            this->neighbourGrid = NeighbourGrid(this->linearSize, this->interactionRange);
-        else
-            this->neighbourGrid->resize(this->linearSize, this->interactionRange);
-
-        for (std::size_t i{}; i < this->shapes.size(); i++)
-            this->neighbourGrid->add(i, this->shapes[i]->getPosition());
+        return;
     }
+
+    if (!this->neighbourGrid.has_value())
+        this->neighbourGrid = NeighbourGrid(this->linearSize, cellSize);
+    else
+        this->neighbourGrid->resize(this->linearSize, cellSize);
+
+    for (std::size_t i{}; i < this->shapes.size(); i++)
+        this->neighbourGrid->add(i, this->shapes[i]->getPosition());
 }
 
 void Packing::changeInteractionRange(double newRange) {
