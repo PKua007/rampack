@@ -27,6 +27,8 @@ namespace {
         {
             return bc.getDistance2(shape1.getPosition(), shape2.getPosition()) < std::pow(2*this->radius, 2);
         }
+
+        [[nodiscard]] double getRangeRadius() const override { return 2*this->radius; }
     };
 
     class SphereDistanceInteraction : public Interaction {
@@ -52,7 +54,7 @@ TEST_CASE("Packing") {
     shapes.push_back(std::make_unique<Shape>(Vector<3>{0.5, 0.5, 0.5}));
     shapes.push_back(std::make_unique<Shape>(Vector<3>{4.5, 0.5, 0.5}));
     shapes.push_back(std::make_unique<Shape>(Vector<3>{2.5, 2.5, 4.0}));
-    Packing packing(5, std::move(shapes), std::move(pbc));
+    Packing packing(5, std::move(shapes), std::move(pbc), hardCore.getRangeRadius());
 
     REQUIRE(packing.getLinearSize() == 5);
 
@@ -76,7 +78,7 @@ TEST_CASE("Packing") {
         }
 
         SECTION("hard core downward with overlapping") {
-            // Same as above, but a litte bit more gives an overlap
+            // Same as above, but a little bit more gives an overlap
             REQUIRE(packing.tryScaling(std::pow(0.49, 3), hardCore) == inf);
             CHECK(packing.getLinearSize() == Approx(2.45));
 
@@ -88,6 +90,7 @@ TEST_CASE("Packing") {
         }
 
         SECTION("distance interaction") {
+            packing.changeInteractionRange(distanceInteraction.getRangeRadius());
             // 1 <-> 2: d = 2/10
             // 1 <-> 3: d = sqrt(0.4^2 + 0.4^2 + 0.3^2) = sqrt(41)/10
             // 2 <-> 3: d = sqrt(0.4^2 + 0.4^2 + 0.3^2) = sqrt(41)/10
@@ -117,6 +120,7 @@ TEST_CASE("Packing") {
         }
 
         SECTION("distance interaction") {
+            packing.changeInteractionRange(distanceInteraction.getRangeRadius());
             // first particle moved to {0.1, 0.1, 0.8}, so after (for before, look at scaling SECTION)
             // 1 <-> 2: d = sqrt(0.2^2 + 0.3^2) = sqrt(13)/10
             // 1 <-> 3: d = sqrt(0.4^2 + 0.4^2) = sqrt(32)/10
@@ -137,21 +141,25 @@ TEST_CASE("Packing") {
         CHECK(packing.getNumberDensity() == Approx(0.024));
     }
 
-    SECTION("total energy") {
-        double scale1E = (2 + 2*std::sqrt(41))/10;
-        double E = scale1E * 5;
-        CHECK(packing.getTotalEnergy(distanceInteraction) == Approx(E));
-    }
+    SECTION("interaction energy") {
+        packing.changeInteractionRange(distanceInteraction.getRangeRadius());
 
-    SECTION("energy fluctuations") {
-        double scale1Efluct = (std::sqrt(41) - 2)/(10 * sqrt(3));
-        double Efluct = scale1Efluct * 5;
-        CHECK(packing.getParticleEnergyFluctuations(distanceInteraction) == Approx(Efluct));
-    }
+        SECTION("total energy") {
+            double scale1E = (2 + 2 * std::sqrt(41)) / 10;
+            double E = scale1E * 5;
+            CHECK(packing.getTotalEnergy(distanceInteraction) == Approx(E));
+        }
 
-    SECTION("particle energy") {
-        CHECK(packing.getParticleEnergy(0, distanceInteraction) == Approx((2 + std::sqrt(41))/10 * 5));
-        CHECK(packing.getParticleEnergy(1, distanceInteraction) == Approx((2 + std::sqrt(41))/10 * 5));
-        CHECK(packing.getParticleEnergy(2, distanceInteraction) == Approx(2*std::sqrt(41)/10 * 5));
+        SECTION("energy fluctuations") {
+            double scale1Efluct = (std::sqrt(41) - 2) / (10 * sqrt(3));
+            double Efluct = scale1Efluct * 5;
+            CHECK(packing.getParticleEnergyFluctuations(distanceInteraction) == Approx(Efluct));
+        }
+
+        SECTION("particle energy") {
+            CHECK(packing.getParticleEnergy(0, distanceInteraction) == Approx((2 + std::sqrt(41)) / 10 * 5));
+            CHECK(packing.getParticleEnergy(1, distanceInteraction) == Approx((2 + std::sqrt(41)) / 10 * 5));
+            CHECK(packing.getParticleEnergy(2, distanceInteraction) == Approx(2 * std::sqrt(41) / 10 * 5));
+        }
     }
 }

@@ -9,17 +9,21 @@
 #include "Packing.h"
 #include "utils/Assertions.h"
 
-Packing::Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, std::unique_ptr<BoundaryConditions> bc)
-        : shapes{std::move(shapes)}, linearSize{linearSize}, bc{std::move(bc)}
+Packing::Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, std::unique_ptr<BoundaryConditions> bc,
+                 double interactionRange)
+        : shapes{std::move(shapes)}, linearSize{linearSize}, bc{std::move(bc)}, interactionRange{interactionRange}
 {
     Expects(linearSize > 0);
+    Expects(interactionRange > 0);
     Expects(!this->shapes.empty());
 
     this->bc->setLinearSize(this->linearSize);
+    this->rebuildNeighbourGrid();
 }
 
 double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction) {
     Expects(particleIdx < this->size());
+    Expects(interaction.getRangeRadius() <= this->interactionRange);
     this->lastAlteredParticleIdx = particleIdx;
     this->lastTranslation = translation;
 
@@ -40,6 +44,7 @@ double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, c
 
 double Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction) {
     Expects(particleIdx < this->size());
+    Expects(interaction.getRangeRadius() <= this->interactionRange);
     this->lastAlteredParticleIdx = particleIdx;
     this->lastRotation = rotation;
 
@@ -55,6 +60,7 @@ double Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotatio
 
 double Packing::tryScaling(double scaleFactor, const Interaction &interaction) {
     Expects(scaleFactor > 0);
+    Expects(interaction.getRangeRadius() <= this->interactionRange);
     this->lastScalingFactor = std::cbrt(scaleFactor);
 
     double initialEnergy = this->getTotalEnergy(interaction);
@@ -63,7 +69,7 @@ double Packing::tryScaling(double scaleFactor, const Interaction &interaction) {
     this->bc->setLinearSize(this->linearSize);
     for (auto &shape : this->shapes)
         shape->scale(this->lastScalingFactor);
-    this->rebuildNeighbourGrid(interaction);
+    this->rebuildNeighbourGrid();
     if (interaction.hasHardPart() /*&& scaleFactor < 1*/ && this->areAnyParticlesOverlapping(interaction))
         return std::numeric_limits<double>::infinity();
 
@@ -146,13 +152,13 @@ void Packing::revertRotation() {
     this->shapes[this->lastAlteredParticleIdx]->rotate(this->lastRotation.transpose());
 }
 
-void Packing::revertScaling(const Interaction &interaction) {
+void Packing::revertScaling() {
     this->linearSize /= this->lastScalingFactor;
     this->bc->setLinearSize(this->linearSize);
     double reverseFactor = 1 / this->lastScalingFactor;
     for (auto &shape : this->shapes)
         shape->scale(reverseFactor);
-    this->rebuildNeighbourGrid(interaction);
+    this->rebuildNeighbourGrid();
 }
 
 double Packing::getParticleEnergy(std::size_t particleIdx, const Interaction &interaction) const {
@@ -210,22 +216,27 @@ double Packing::getParticleEnergyFluctuations(const Interaction &interaction) co
     return std::sqrt(energySum2/(N-1) - std::pow(energySum, 2)/N/(N - 1));
 }
 
-void Packing::rebuildNeighbourGrid(const Interaction &interaction) {
-    double range = interaction.getRangeRadius();
-    if (range * 3 > this->linearSize) {
+void Packing::rebuildNeighbourGrid() {
+    if (this->interactionRange * 3 > this->linearSize) {
         this->neighbourGrid = std::nullopt;
     } else {
         // linearSize/cbrt(size()) gives 1 cell per particle, factor 1/5 empirically gives best times
         double minCellSize = this->linearSize / std::cbrt(this->size()) / 5;
-        if (range < minCellSize)
-            range = minCellSize;
+        if (this->interactionRange < minCellSize)
+            this->interactionRange = minCellSize;
 
         if (!this->neighbourGrid.has_value())
-            this->neighbourGrid = NeighbourGrid(this->linearSize, range);
+            this->neighbourGrid = NeighbourGrid(this->linearSize, this->interactionRange);
         else
-            this->neighbourGrid->resize(this->linearSize, range);
+            this->neighbourGrid->resize(this->linearSize, this->interactionRange);
 
         for (std::size_t i{}; i < this->shapes.size(); i++)
             this->neighbourGrid->add(i, this->shapes[i]->getPosition());
     }
+}
+
+void Packing::changeInteractionRange(double newRange) {
+    Expects(newRange > 0);
+    this->interactionRange = newRange;
+    this->rebuildNeighbourGrid();
 }

@@ -21,6 +21,7 @@ private:
     double linearSize{};
     std::unique_ptr<BoundaryConditions> bc;
     std::optional<NeighbourGrid> neighbourGrid;
+    double interactionRange{};
 
     std::size_t lastAlteredParticleIdx{};
     Vector<3> lastTranslation;
@@ -29,26 +30,28 @@ private:
 
     [[nodiscard]] bool areAnyParticlesOverlapping(const Interaction &interaction) const;
     [[nodiscard]] bool isAnyParticleCollidingWith(std::size_t i, const Interaction &interaction) const;
+    void rebuildNeighbourGrid();
 
 public:
     using iterator = decltype(shapes)::iterator;
     using const_iterator = decltype(shapes)::const_iterator;
 
-    Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, std::unique_ptr<BoundaryConditions> bc);
+    Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, std::unique_ptr<BoundaryConditions> bc,
+            double interactionRange = std::numeric_limits<double>::infinity());
 
     double tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction);
     double tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction);
     double tryScaling(double scaleFactor, const Interaction &interaction);
     void revertTranslation();
     void revertRotation();
-    void revertScaling(const Interaction &interaction);
+    void revertScaling();
     [[nodiscard]] double getParticleEnergy(std::size_t particleIdx, const Interaction &interaction) const;
     [[nodiscard]] double getParticleEnergyFluctuations(const Interaction &interaction) const;
     [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;
 
     [[nodiscard]] double getLinearSize() const { return linearSize; }
 
-    void rebuildNeighbourGrid(const Interaction &interaction);
+    void changeInteractionRange(double newRange);
 
     [[nodiscard]] std::size_t size() const { return this->shapes.size(); }
     [[nodiscard]] bool empty() const { return this->shapes.empty(); }

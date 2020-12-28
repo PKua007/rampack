@@ -29,7 +29,7 @@ Simulation::Simulation(double temperature, double pressure, double positionStepS
 void Simulation::perform(std::unique_ptr<Packing> packing_, const Interaction &interaction, Logger &logger) {
     Expects(!packing_->empty());
     this->packing = std::move(packing_);
-    this->packing->rebuildNeighbourGrid(interaction);
+    this->packing->changeInteractionRange(interaction.getRangeRadius());
     this->reset();
 
     this->shouldAdjustStepSize = true;
@@ -141,7 +141,7 @@ bool Simulation::tryScaling(const Interaction &interaction) {
     if (this->unitIntervalDistribution(this->mt) <= std::exp(exponent)) {
         return true;
     } else {
-        this->packing->revertScaling(interaction);
+        this->packing->revertScaling();
         return false;
     }
 }
