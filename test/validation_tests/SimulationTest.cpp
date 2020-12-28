@@ -18,7 +18,7 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas") {
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 5000;
     double linearSize = std::cbrt(V);
-    auto shapes = LatticeArrangingModel{}.arrange(50, 1);
+    auto shapes = LatticeArrangingModel{}.arrange(50, std::cbrt(V));
     auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(pbc));
     SphereTraits sphereTraits(0.05);
     Simulation simulation(10, 1, 1, 0.1, 1, 5000, 10000, 100, 1234);
@@ -41,7 +41,7 @@ TEST_CASE("Simulation: degenerate hard sphere gas") {
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 200;
     double linearSize = std::cbrt(V);
-    auto shapes = LatticeArrangingModel{}.arrange(50, 1);
+    auto shapes = LatticeArrangingModel{}.arrange(50, std::cbrt(V));
     auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(pbc));
     SphereTraits sphereTraits(0.5);
     Simulation simulation(1, 1, 1, 0.1, 1, 5000, 10000, 100, 1234);
@@ -65,7 +65,7 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas") {
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 200;
     double linearSize = std::cbrt(V);
-    auto shapes = LatticeArrangingModel{}.arrange(50, 1);
+    auto shapes = LatticeArrangingModel{}.arrange(50, std::cbrt(V));
     auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(pbc));
     SpherocylinderTraits spherocylinderTraits(0.5, 0.2);
     Simulation simulation(10, 1, 1, 0.1, 1, 5000, 10000, 100, 1234);
@@ -88,7 +88,7 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas") {
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 200;
     double linearSize = std::cbrt(V);
-    auto shapes = LatticeArrangingModel{}.arrange(50, 1);
+    auto shapes = LatticeArrangingModel{}.arrange(50, std::cbrt(V));
     auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(pbc));
     SphereTraits sphereTraits(0.5, std::make_unique<LennardJonesInteraction>(1, 0.5));
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
