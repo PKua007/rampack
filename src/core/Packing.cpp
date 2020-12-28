@@ -87,22 +87,30 @@ const Shape &Packing::back() const {
 }
 
 bool Packing::areAnyParticlesOverlapping(const Interaction &interaction) const {
-    /*for (std::size_t i{}; i < this->size(); i++)
-        for (std::size_t j = i + 1; j < this->size(); j++)
-            if (interaction.overlapBetween(*this->shapes[i], *this->shapes[j], *this->bc))
-                return true;*/
-    for (std::size_t i{}; i < this->size(); i++)
-        if (this->isAnyParticleCollidingWith(i, interaction))
-            return true;
+    if (this->neighbourGrid.has_value()) {
+        for (std::size_t i{}; i < this->size(); i++)
+            if (this->isAnyParticleCollidingWith(i, interaction))
+                return true;
+    } else {
+        for (std::size_t i{}; i < this->size(); i++)
+            for (std::size_t j = i + 1; j < this->size(); j++)
+                if (interaction.overlapBetween(*this->shapes[i], *this->shapes[j], *this->bc))
+                    return true;
+    }
     return false;
 }
 
 bool Packing::isAnyParticleCollidingWith(std::size_t i, const Interaction &interaction) const {
-    Assert(neighbourGrid.has_value());
-    auto neigh = this->neighbourGrid->getNeighbours(this->shapes[i]->getPosition());
-    for (auto j : neigh)
-        if (i != j && interaction.overlapBetween(*this->shapes[i], *this->shapes[j], *this->bc))
-            return true;
+    if (this->neighbourGrid.has_value()) {
+        auto neigh = this->neighbourGrid->getNeighbours(this->shapes[i]->getPosition());
+        for (auto j : neigh)
+            if (i != j && interaction.overlapBetween(*this->shapes[i], *this->shapes[j], *this->bc))
+                return true;
+    } else {
+        for (std::size_t j{}; j < this->shapes.size(); j++)
+            if (i != j && interaction.overlapBetween(*this->shapes[i], *this->shapes[j], *this->bc))
+                return true;
+    }
     return false;
 }
 
@@ -153,10 +161,19 @@ double Packing::getParticleEnergy(std::size_t particleIdx, const Interaction &in
         return 0;
 
     double energy{};
-    for (std::size_t i{}; i < this->size(); i++) {
-        if (particleIdx == i)
-            continue;
-        energy += interaction.calculateEnergyBetween(*this->shapes[particleIdx], *this->shapes[i], *this->bc);
+    if (this->neighbourGrid.has_value()) {
+        auto neigh = this->neighbourGrid->getNeighbours(this->shapes[particleIdx]->getPosition());
+        for (auto i : neigh) {
+            if (particleIdx == i)
+                continue;
+            energy += interaction.calculateEnergyBetween(*this->shapes[particleIdx], *this->shapes[i], *this->bc);
+        }
+    } else {
+        for (std::size_t i{}; i < this->size(); i++) {
+            if (particleIdx == i)
+                continue;
+            energy += interaction.calculateEnergyBetween(*this->shapes[particleIdx], *this->shapes[i], *this->bc);
+        }
     }
     return energy;
 }
@@ -166,9 +183,14 @@ double Packing::getTotalEnergy(const Interaction &interaction) const {
         return 0;
 
     double energy{};
-    for (std::size_t i{}; i < this->size(); i++)
-        for (std::size_t j = i + 1; j < this->size(); j++)
-            energy += interaction.calculateEnergyBetween(*this->shapes[i], *this->shapes[j], *this->bc);
+    if (this->neighbourGrid.has_value()) {
+        for (std::size_t i{}; i < this->size(); i++)
+            energy += this->getParticleEnergy(i, interaction) / 2;
+    } else {
+        for (std::size_t i{}; i < this->size(); i++)
+            for (std::size_t j = i + 1; j < this->size(); j++)
+                energy += interaction.calculateEnergyBetween(*this->shapes[i], *this->shapes[j], *this->bc);
+    }
     return energy;
 }
 
@@ -193,6 +215,11 @@ void Packing::rebuildNeighbourGrid(const Interaction &interaction) {
     if (range * 3 > this->linearSize) {
         this->neighbourGrid = std::nullopt;
     } else {
+        // linearSize/cbrt(size()) gives 1 cell per particle, factor 1/5 empirically gives best times
+        double minCellSize = this->linearSize / std::cbrt(this->size()) / 5;
+        if (range < minCellSize)
+            range = minCellSize;
+
         if (!this->neighbourGrid.has_value())
             this->neighbourGrid = NeighbourGrid(this->linearSize, range);
         else
