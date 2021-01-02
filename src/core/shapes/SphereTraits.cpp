@@ -30,8 +30,8 @@ double SphereTraits::getVolume() const {
     return 4./3 * M_PI * std::pow(this->radius, 3);
 }
 
-bool SphereTraits::HardInteraction::overlapBetween(const Shape &shape1, const Shape &shape2,
+bool SphereTraits::HardInteraction::overlapBetween(const Vector<3> &shape1, const Vector<3> &shape2,
                                                    const BoundaryConditions &bc) const
 {
-    return bc.getDistance2(shape1.getPosition(), shape2.getPosition()) < std::pow(2 * this->radius, 2);
+    return bc.getDistance2(shape1, shape2) < std::pow(2 * this->radius, 2);
 }

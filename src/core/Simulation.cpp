@@ -29,7 +29,7 @@ Simulation::Simulation(double temperature, double pressure, double positionStepS
 void Simulation::perform(std::unique_ptr<Packing> packing_, const Interaction &interaction, Logger &logger) {
     Expects(!packing_->empty());
     this->packing = std::move(packing_);
-    this->packing->changeInteractionRange(interaction.getRangeRadius());
+    //this->packing->changeInteractionRange(interaction.getRangeRadius());
     this->reset();
 
     this->shouldAdjustStepSize = true;

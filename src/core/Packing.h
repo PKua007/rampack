@@ -18,10 +18,12 @@
 class Packing {
 private:
     std::vector<std::unique_ptr<Shape>> shapes;
+    std::vector<Vector<3>> interactionCentres;
     double linearSize{};
     std::unique_ptr<BoundaryConditions> bc;
     std::optional<NeighbourGrid> neighbourGrid;
     double interactionRange{};
+    std::size_t numInteractionCentres{};
 
     std::size_t lastAlteredParticleIdx{};
     Vector<3> lastTranslation;
@@ -37,7 +39,7 @@ public:
     using const_iterator = decltype(shapes)::const_iterator;
 
     Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, std::unique_ptr<BoundaryConditions> bc,
-            double interactionRange = std::numeric_limits<double>::infinity());
+            const Interaction &interaction);
 
     double tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction);
     double tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction);

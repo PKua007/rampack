@@ -7,10 +7,10 @@
 
 #include "CentralInteraction.h"
 
-double CentralInteraction::calculateEnergyBetween(const Shape &shape1, const Shape &shape2,
-                                                  const BoundaryConditions &bc) const
+double CentralInteraction::calculateEnergyBetween([[maybe_unused]] const Vector<3> &shape1, [[maybe_unused]] const Vector<3> &shape2,
+                                                  [[maybe_unused]] const BoundaryConditions &bc) const
 {
-    if (this->potentialCentres.empty())
+    /*if (this->potentialCentres.empty())
         return this->calculateEnergyForDistance(std::sqrt(bc.getDistance2(shape1.getPosition(), shape2.getPosition())));
 
     std::vector<Vector<3>> centres1, centres2;
@@ -29,5 +29,6 @@ double CentralInteraction::calculateEnergyBetween(const Shape &shape1, const Sha
     for (const auto &centre1 : centres1)
         for (const auto &centre2 : centres2)
             energy += this->calculateEnergyForDistance(std::sqrt(bc.getDistance2(centre1, centre2)));
-    return energy;
+    return energy;*/
+    return 0;
 }

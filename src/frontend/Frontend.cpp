@@ -121,7 +121,7 @@ int Frontend::casino(int argc, char **argv) {
     LatticeArrangingModel latticeArrangingModel;
     auto shapes = latticeArrangingModel.arrange(params.numOfParticles, linearSize);
     auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
-    auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(bc));
+    auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(bc), shapeTraits->getInteraction());
     Simulation simulation(params.temperature, params.pressure, params.positionStepSize, params.rotationStepSize,
                           params.volumeStepSize, params.thermalisationCycles, params.averagingCycles,
                           params.averagingEvery, params.seed);

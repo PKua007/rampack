@@ -26,7 +26,7 @@ public:
 
     [[nodiscard]] bool hasHardPart() const override { return true; }
     [[nodiscard]] bool hasSoftPart() const override { return false; }
-    [[nodiscard]] bool overlapBetween(const Shape &shape1, const Shape &shape2,
+    [[nodiscard]] bool overlapBetween(const Vector<3> &shape1, const Vector<3> &shape2,
                                       const BoundaryConditions &bc) const override;
     [[nodiscard]] double getRangeRadius() const override { return 2*this->radius + this->length; };
 
