@@ -9,6 +9,7 @@
 #include "core/shapes/SphereTraits.h"
 #include "core/shapes/SpherocylinderTraits.h"
 #include "core/shapes/PolysphereBananaTraits.h"
+#include "core/shapes/KMerTraits.h"
 #include "core/interactions/LennardJonesInteraction.h"
 #include "core/interactions/RepulsiveLennardJonesInteraction.h"
 
@@ -67,8 +68,8 @@ std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
             Validate(epsilon > 0);
             Validate(sigma > 0);
             return std::make_unique<PolysphereBananaTraits>(
-                    arcRadius, arcAngle, sphereNum, sphereRadius,
-                    std::make_unique<LennardJonesInteraction>(epsilon, sigma)
+                arcRadius, arcAngle, sphereNum, sphereRadius,
+                std::make_unique<LennardJonesInteraction>(epsilon, sigma)
             );
         } else if (interactionName == "repulsive_lj") {
             double epsilon, sigma;
@@ -78,11 +79,45 @@ std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
             Validate(epsilon > 0);
             Validate(sigma > 0);
             return std::make_unique<PolysphereBananaTraits>(
-                    arcRadius, arcAngle, sphereNum, sphereRadius,
-                    std::make_unique<RepulsiveLennardJonesInteraction>(epsilon, sigma)
+                arcRadius, arcAngle, sphereNum, sphereRadius,
+                std::make_unique<RepulsiveLennardJonesInteraction>(epsilon, sigma)
             );
         } else {
-            throw ValidationException("PolysphereBana support interactions: hard, lj (Lennard Jones), "
+            throw ValidationException("PolysphereBanana support interactions: hard, lj (Lennard Jones), "
+                                      "repulsive_lj (Lennard Jones cut at the minimum)");
+        }
+    } else if (shapeName == "KMer") {
+        double sphereRadius, distance;
+        std::size_t sphereNum;
+        shapeAttrStream >> sphereNum >> sphereRadius >> distance;
+        ValidateMsg(shapeAttrStream, "Malformed KMer attributes; expected: "
+                                     "[number of spheres] [sphere radius] [distance between spheres]");
+        Validate(sphereNum >= 2);
+        Validate(sphereRadius > 0);
+        Validate(distance > 0);
+        if (interactionName.empty() || interactionName == "hard") {
+            return std::make_unique<KMerTraits>(sphereNum, sphereRadius, distance);
+        } else if (interactionName == "lj") {
+            double epsilon, sigma;
+            interactionAttrStream >> epsilon >> sigma;
+            ValidateMsg(interactionAttrStream, "Malformed Lennard Jones attributes. Usage: lj [epsilon] [sigma]");
+            Validate(epsilon > 0);
+            Validate(sigma > 0);
+            return std::make_unique<KMerTraits>(
+                sphereNum, sphereRadius, distance, std::make_unique<LennardJonesInteraction>(epsilon, sigma)
+            );
+        } else if (interactionName == "repulsive_lj") {
+            double epsilon, sigma;
+            interactionAttrStream >> epsilon >> sigma;
+            ValidateMsg(interactionAttrStream, "Malformed repulsive Lennard Jones attributes. Usage: lj_repulsive "
+                                               "[epsilon] [sigma]");
+            Validate(epsilon > 0);
+            Validate(sigma > 0);
+            return std::make_unique<KMerTraits>(
+                sphereNum, sphereRadius, distance, std::make_unique<RepulsiveLennardJonesInteraction>(epsilon, sigma)
+            );
+        } else {
+            throw ValidationException("KMer support interactions: hard, lj (Lennard Jones), "
                                       "repulsive_lj (Lennard Jones cut at the minimum)");
         }
     } else if (shapeName == "Spherocylinder") {
