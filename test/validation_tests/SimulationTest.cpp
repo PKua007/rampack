@@ -83,7 +83,7 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas") {
 }
 
 TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas") {
-    /*// For parameters chosen compressibility factor should be around 1.2 and equation of state seem to be well
+    // For parameters chosen compressibility factor should be around 1.2 and equation of state seem to be well
     // approximated by the second virial coefficient known analytically
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 200;
@@ -103,5 +103,5 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas") {
     INFO("1-st order virial density: " << expected);
     INFO("Monte Carlo density: " << density);
     CHECK(density.value == Approx(expected).margin(density.error * 3)); // 3 sigma tolerance
-    CHECK(density.error / density.value < 0.03); // up to 3%*/
+    CHECK(density.error / density.value < 0.03); // up to 3%
 }

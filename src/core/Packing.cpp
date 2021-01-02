@@ -194,7 +194,6 @@ bool Packing::isAnyParticleCollidingWith(std::size_t i, const Interaction &inter
                     if (sIdx == i)
                         continue;
                     auto pos2 = this->shapes[sIdx]->getPosition() + this->interactionCentres[neigh];
-                    //pos2 += this->bc->getCorrection(pos2);
                     if (interaction.overlapBetween(pos, pos2, *this->bc))
                         return true;
                 }
@@ -310,32 +309,58 @@ void Packing::revertScaling() {
     this->rebuildNeighbourGrid();
 }
 
-double Packing::getParticleEnergy([[maybe_unused]] std::size_t particleIdx, [[maybe_unused]] const Interaction &interaction) const {
-    /*Expects(particleIdx < this->size());
+double Packing::getParticleEnergy(std::size_t particleIdx, const Interaction &interaction) const {
+    Expects(particleIdx < this->size());
     if (!interaction.hasSoftPart())
         return 0;
 
     double energy{};
     if (this->neighbourGrid.has_value()) {
-        auto neigh = this->neighbourGrid->getNeighbours(this->shapes[particleIdx]->getPosition());
-        for (auto i : neigh) {
-            if (particleIdx == i)
-                continue;
-            energy += interaction.calculateEnergyBetween(*this->shapes[particleIdx], *this->shapes[i], *this->bc);
+        if (this->numInteractionCentres == 0) {
+            auto neigh = this->neighbourGrid->getNeighbours(this->shapes[particleIdx]->getPosition());
+            for (auto i : neigh) {
+                if (particleIdx == i)
+                    continue;
+                energy += interaction.calculateEnergyBetween(this->shapes[particleIdx]->getPosition(),
+                                                             this->shapes[i]->getPosition(), *this->bc);
+            }
+        } else {
+            for (std::size_t j{}; j < this->numInteractionCentres; j++) {
+                std::size_t idx = particleIdx*this->numInteractionCentres + j;
+                auto pos = this->shapes[particleIdx]->getPosition() + this->interactionCentres[idx];
+                pos += this->bc->getCorrection(pos);
+                auto neighbours = this->neighbourGrid->getNeighbours(pos);
+                for (auto neigh : neighbours) {
+                    std::size_t sIdx = neigh / this->numInteractionCentres;
+                    if (sIdx == particleIdx)
+                        continue;
+                    auto pos2 = this->shapes[sIdx]->getPosition() + this->interactionCentres[neigh];
+                    energy += interaction.overlapBetween(pos, pos2, *this->bc);
+                }
+            }
         }
     } else {
-        for (std::size_t i{}; i < this->size(); i++) {
-            if (particleIdx == i)
+        for (std::size_t j{}; j < this->shapes.size(); j++) {
+            if (particleIdx == j)
                 continue;
-            energy += interaction.calculateEnergyBetween(*this->shapes[particleIdx], *this->shapes[i], *this->bc);
+            if (this->numInteractionCentres == 0) {
+                energy += interaction.calculateEnergyBetween(this->shapes[particleIdx]->getPosition(), this->shapes[j]->getPosition(), *this->bc);
+            } else {
+                for (std::size_t k{}; k < this->numInteractionCentres; k++) {
+                    for (std::size_t l{}; l < this->numInteractionCentres; l++) {
+                        auto pos1 = this->shapes[particleIdx]->getPosition() + this->interactionCentres[particleIdx*this->numInteractionCentres + k];
+                        auto pos2 = this->shapes[j]->getPosition() + this->interactionCentres[j*this->numInteractionCentres + l];
+                        energy += interaction.calculateEnergyBetween(pos1, pos2, *this->bc);
+                    }
+                }
+            }
         }
     }
-    return energy;*/
-    return 0;
+    return energy;
 }
 
-double Packing::getTotalEnergy([[maybe_unused]] const Interaction &interaction) const {
-    /*if (!interaction.hasSoftPart())
+double Packing::getTotalEnergy(const Interaction &interaction) const {
+    if (!interaction.hasSoftPart())
         return 0;
 
     double energy{};
@@ -343,12 +368,24 @@ double Packing::getTotalEnergy([[maybe_unused]] const Interaction &interaction) 
         for (std::size_t i{}; i < this->size(); i++)
             energy += this->getParticleEnergy(i, interaction) / 2;  // Each interaction counted twice
     } else {
-        for (std::size_t i{}; i < this->size(); i++)
-            for (std::size_t j = i + 1; j < this->size(); j++)
-                energy += interaction.calculateEnergyBetween(*this->shapes[i], *this->shapes[j], *this->bc);
+        for (std::size_t i{}; i < this->size(); i++) {
+            for (std::size_t j = i + 1; j < this->size(); j++) {
+                if (this->numInteractionCentres == 0) {
+                    energy += interaction.calculateEnergyBetween(this->shapes[i]->getPosition(),
+                                                                 this->shapes[j]->getPosition(), *this->bc);
+                } else {
+                    for (std::size_t k{}; k < this->numInteractionCentres; k++) {
+                        for (std::size_t l{}; l < this->numInteractionCentres; l++) {
+                            auto pos1 = this->shapes[i]->getPosition() + this->interactionCentres[i*this->numInteractionCentres + k];
+                            auto pos2 = this->shapes[j]->getPosition() + this->interactionCentres[j*this->numInteractionCentres + l];
+                            energy += interaction.calculateEnergyBetween(pos1, pos2, *this->bc);
+                        }
+                    }
+                }
+            }
+        }
     }
-    return energy;*/
-    return 0;
+    return energy;
 }
 
 double Packing::getParticleEnergyFluctuations(const Interaction &interaction) const {

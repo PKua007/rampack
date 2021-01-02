@@ -14,10 +14,12 @@ private:
     double sigmaTimesTwoToOneSixth{};
 
 protected:
-    [[nodiscard]] double calculateEnergyForDistance(double distance) const override;
+    [[nodiscard]] double calculateEnergyForDistance2(double distance2) const override;
 
 public:
     RepulsiveLennardJonesInteraction(double epsilon, double sigma);
+
+    [[nodiscard]] double getRangeRadius() const override { return this->sigmaTimesTwoToOneSixth; }
 };
 
 

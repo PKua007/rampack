@@ -13,7 +13,7 @@ private:
     double sigma{};
 
 protected:
-    [[nodiscard]] double calculateEnergyForDistance(double distance) const override;
+    [[nodiscard]] double calculateEnergyForDistance2(double distance2) const override;
 
 public:
     LennardJonesInteraction(double epsilon, double sigma);

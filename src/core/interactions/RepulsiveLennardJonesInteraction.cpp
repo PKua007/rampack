@@ -5,14 +5,12 @@
 #include "RepulsiveLennardJonesInteraction.h"
 #include "utils/Assertions.h"
 
-double RepulsiveLennardJonesInteraction::calculateEnergyForDistance(double distance) const {
-    if (distance >= this->sigmaTimesTwoToOneSixth)
+double RepulsiveLennardJonesInteraction::calculateEnergyForDistance2(double distance2) const {
+    if (distance2 >= this->sigmaTimesTwoToOneSixth * this->sigmaTimesTwoToOneSixth)
         return 0;
 
-    double x = this->sigma / distance;
-    double x2 = x*x;
-    double x3 = x2*x;
-    double x6 = x3*x3;
+    double x2 = this->sigma * this->sigma / distance2;
+    double x6 = x2*x2*x2;
     double x12 = x6*x6;
     return 4 * this->epsilon * (x12 - x6) + this->epsilon;
 }

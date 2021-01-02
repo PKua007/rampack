@@ -10,7 +10,7 @@
 namespace {
     class DummyInteraction : public CentralInteraction {
     protected:
-        [[nodiscard]] double calculateEnergyForDistance(double distance) const override { return distance; }
+        [[nodiscard]] double calculateEnergyForDistance2(double distance) const override { return distance; }
     };
 }
 

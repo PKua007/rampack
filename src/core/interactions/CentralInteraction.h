@@ -15,7 +15,7 @@ private:
     std::vector<Vector<3>> potentialCentres;
 
 protected:
-    [[nodiscard]] virtual double calculateEnergyForDistance(double distance) const = 0;
+    [[nodiscard]] virtual double calculateEnergyForDistance2(double distance2) const = 0;
 
 public:
     CentralInteraction() = default;
@@ -29,10 +29,14 @@ public:
 
     [[nodiscard]] bool hasHardPart() const final { return false; }
     [[nodiscard]] bool hasSoftPart() const final { return true; }
-    [[nodiscard]] double calculateEnergyBetween(const Vector<3> &shape1, const Vector<3> &shape2,
-                                                const BoundaryConditions &bc) const final;
-    [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return this->potentialCentres; };
 
+    [[nodiscard]] double calculateEnergyBetween(const Vector<3> &shape1, const Vector<3> &shape2,
+                                                const BoundaryConditions &bc) const final
+    {
+        return this->calculateEnergyForDistance2(bc.getDistance2(shape1, shape2));
+    }
+
+    [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const final { return this->potentialCentres; }
 };
 
 

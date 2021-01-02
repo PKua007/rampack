@@ -5,11 +5,9 @@
 #include "LennardJonesInteraction.h"
 #include "utils/Assertions.h"
 
-double LennardJonesInteraction::calculateEnergyForDistance(double distance) const {
-    double x = this->sigma / distance;
-    double x2 = x*x;
-    double x3 = x2*x;
-    double x6 = x3*x3;
+double LennardJonesInteraction::calculateEnergyForDistance2(double distance2) const {
+    double x2 = this->sigma * this->sigma / distance2;
+    double x6 = x2*x2*x2;
     double x12 = x6*x6;
     return 4 * this->epsilon * (x12 - x6);
 }
