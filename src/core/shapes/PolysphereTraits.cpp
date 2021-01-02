@@ -83,5 +83,8 @@ std::vector<Vector<3>> PolysphereTraits::HardInteraction::getInteractionCentres(
 }
 
 double PolysphereTraits::HardInteraction::getRangeRadius() const {
-    return 2 * this->sphereData.front().radius;
+    auto comparator = [](const SphereData &sd1, const SphereData &sd2) {
+        return sd1.radius < sd2.radius;
+    };
+    return 2 * std::max_element(this->sphereData.begin(), this->sphereData.end(), comparator)->radius;
 }
