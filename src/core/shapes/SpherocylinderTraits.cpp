@@ -90,19 +90,19 @@ double SpherocylinderTraits::distance2Between(const Shape &shape1, const Shape &
     return dP.norm2();   // return the closest distance
 }
 
-bool SpherocylinderTraits::overlapBetween([[maybe_unused]] const Vector<3> &shape1, [[maybe_unused]] const Vector<3> &shape2,
-                                          [[maybe_unused]] const BoundaryConditions &bc) const
+bool SpherocylinderTraits::overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1,
+                                          [[maybe_unused]] std::size_t idx1, const Vector<3> &pos2,
+                                          const Matrix<3, 3> &orientation2, [[maybe_unused]] std::size_t idx2,
+                                          const BoundaryConditions &bc) const
 {
-    /*Shape shape2Copy(shape2);
-    shape1.applyBCTranslation(bc, shape2Copy);
-    double distance2 = (shape2Copy.getPosition() - shape1.getPosition()).norm2();
+    Vector<3> pos2bc = pos2 + bc.getTranslation(pos1, pos2);
+    double distance2 = (pos2bc - pos1).norm2();
     if (distance2 < 4 * this->radius * this->radius)
         return true;
     else if (distance2 >= std::pow(2 * this->radius + this->length, 2))
         return false;
 
-    return this->distance2Between(shape1, shape2Copy) < 4 * this->radius * this->radius;*/
-    return false;
+    return this->distance2Between(Shape(pos1, orientation1), Shape(pos2bc, orientation2)) < 4 * this->radius * this->radius;
 }
 
 double SpherocylinderTraits::getVolume() const {

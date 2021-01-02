@@ -59,7 +59,7 @@ TEST_CASE("Simulation: degenerate hard sphere gas") {
 }
 
 TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas") {
-    /*// We choose temperature 10 and pressure 1. For particles of radius 0.05 we should obtain number density 0.0999791
+    // We choose temperature 10 and pressure 1. For particles of radius 0.05 we should obtain number density 0.0999791
     // We start with density 0.01 and too small step ranges. The program should adjust and equilibrate correctly
 
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
@@ -79,7 +79,7 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas") {
     INFO("Boublik density: " << expected);
     INFO("Monte Carlo density: " << density);
     CHECK(density.value == Approx(expected).margin(density.error * 3)); // 3 sigma tolerance
-    CHECK(density.error / density.value < 0.03); // up to 3%*/
+    CHECK(density.error / density.value < 0.03); // up to 3%
 }
 
 TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas") {

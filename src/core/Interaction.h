@@ -16,15 +16,23 @@ public:
 
     [[nodiscard]] virtual bool hasHardPart() const = 0;
     [[nodiscard]] virtual bool hasSoftPart() const = 0;
-    [[nodiscard]] virtual double calculateEnergyBetween([[maybe_unused]] const Vector<3> &shape1,
-                                                        [[maybe_unused]] const Vector<3> &shape2,
+    [[nodiscard]] virtual double calculateEnergyBetween([[maybe_unused]] const Vector<3> &pos1,
+                                                        [[maybe_unused]] const Matrix<3, 3> &orientation1,
+                                                        [[maybe_unused]] std::size_t idx1,
+                                                        [[maybe_unused]] const Vector<3> &pos2,
+                                                        [[maybe_unused]] const Matrix<3, 3> &orientation2,
+                                                        [[maybe_unused]] std::size_t idx2,
                                                         [[maybe_unused]] const BoundaryConditions &bc) const
     {
         return 0;
     }
 
-    [[nodiscard]] virtual bool overlapBetween([[maybe_unused]] const Vector<3> &shape1,
-                                              [[maybe_unused]] const Vector<3> &shape2,
+    [[nodiscard]] virtual bool overlapBetween([[maybe_unused]] const Vector<3> &pos1,
+                                              [[maybe_unused]] const Matrix<3, 3> &orientation1,
+                                              [[maybe_unused]] std::size_t idx1,
+                                              [[maybe_unused]] const Vector<3> &pos2,
+                                              [[maybe_unused]] const Matrix<3, 3> &orientation2,
+                                              [[maybe_unused]] std::size_t idx2,
                                               [[maybe_unused]] const BoundaryConditions &bc) const
     {
         return false;

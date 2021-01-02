@@ -63,21 +63,15 @@ Vector<3> PolysphereTraits::SphereData::centreForShape(const Shape &shape) const
     return shape.getPosition() + shape.getOrientation() * this->position;
 }
 
-bool PolysphereTraits::HardInteraction::overlapBetween(const Vector<3> &shape1, const Vector<3> &shape2,
-                                                       const BoundaryConditions &bc) const
+bool PolysphereTraits::HardInteraction::overlapBetween(const Vector<3> &pos1,
+                                                       [[maybe_unused]] const Matrix<3, 3> &orientation1,
+                                                       std::size_t idx1,
+                                                       const Vector<3> &pos2,
+                                                       [[maybe_unused]] const Matrix<3, 3> &orientation2,
+                                                       std::size_t idx2, const BoundaryConditions &bc) const
 {
-    /*for (const auto &data1 : this->sphereData) {
-        for (const auto &data2 : this->sphereData) {
-            if (bc.getDistance2(data1.centreForShape(shape1), data2.centreForShape(shape2))
-                < (data1.radius + data2.radius) * (data1.radius + data2.radius))
-            {
-               return true;
-            }
-        }
-    }*/
-
-    double r = this->sphereData.front().radius;
-    return bc.getDistance2(shape1, shape2) < 4 * r * r;
+    double r = this->sphereData[idx1].radius + this->sphereData[idx2].radius;
+    return bc.getDistance2(pos1, pos2) < r * r;
 }
 
 std::vector<Vector<3>> PolysphereTraits::HardInteraction::getInteractionCentres() const {

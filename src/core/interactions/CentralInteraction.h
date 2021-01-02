@@ -30,10 +30,15 @@ public:
     [[nodiscard]] bool hasHardPart() const final { return false; }
     [[nodiscard]] bool hasSoftPart() const final { return true; }
 
-    [[nodiscard]] double calculateEnergyBetween(const Vector<3> &shape1, const Vector<3> &shape2,
+    [[nodiscard]] double calculateEnergyBetween(const Vector<3> &pos1,
+                                                [[maybe_unused]] const Matrix<3, 3> &orientation1,
+                                                [[maybe_unused]] std::size_t idx1,
+                                                const Vector<3> &pos2,
+                                                [[maybe_unused]] const Matrix<3, 3> &orientation2,
+                                                [[maybe_unused]] std::size_t idx2,
                                                 const BoundaryConditions &bc) const final
     {
-        return this->calculateEnergyForDistance2(bc.getDistance2(shape1, shape2));
+        return this->calculateEnergyForDistance2(bc.getDistance2(pos1, pos2));
     }
 
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const final { return this->potentialCentres; }

@@ -32,12 +32,13 @@ private:
 
         [[nodiscard]] bool hasHardPart() const override { return true; }
         [[nodiscard]] bool hasSoftPart() const override { return false; }
-        [[nodiscard]] bool overlapBetween(const Vector<3> &shape1, const Vector<3> &shape2,
+        [[nodiscard]] bool overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1, std::size_t idx1,
+                                          const Vector<3> &pos2, const Matrix<3, 3> &orientation2, std::size_t idx2,
                                           const BoundaryConditions &bc) const override;
 
         [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override;
 
-        double getRangeRadius() const override;
+        [[nodiscard]] double getRangeRadius() const override;
     };
 
     std::vector<SphereData> sphereData;
