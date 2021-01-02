@@ -102,7 +102,7 @@ double Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotatio
             std::size_t idx = particleIdx * this->numInteractionCentres + i;
             auto pos = this->shapes[particleIdx]->getPosition() + this->interactionCentres[idx];
             pos += this->bc->getCorrection(pos);
-            this->neighbourGrid->remove(idx, pos);
+            this->neighbourGrid->add(idx, pos);
         }
     }
 
