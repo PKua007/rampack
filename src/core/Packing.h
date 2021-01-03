@@ -66,6 +66,12 @@ public:
     void toWolfram(std::ostream &out, const ShapePrinter &printer) const;
     [[nodiscard]] double getPackingFraction(double shapeVolume) const;
     [[nodiscard]] double getNumberDensity() const;
+
+    void removeInteractionCentresFromNeighbourGrid(size_t particleIdx);
+
+    void addInteractionCentresToNeighbourGrid(size_t particleIdx);
+
+    void rotateInteractionCentres(size_t particleIdx, const Matrix<3, 3> &rotation);
 };
 
 
