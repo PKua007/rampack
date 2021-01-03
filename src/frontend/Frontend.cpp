@@ -128,13 +128,31 @@ int Frontend::casino(int argc, char **argv) {
 
     // Perform simulations
     simulation.perform(std::move(packing), shapeTraits->getInteraction(), logger);
-    this->logger << "----------------------------" << std::endl;
-    this->logger.info() << "Average density: " << simulation.getAverageDensity() << std::endl;
-    this->logger << "----------------------------" << std::endl;
-    this->logger << "Translation acceptance rate: " << simulation.getTranlationAcceptanceRate() << std::endl;
-    this->logger << "Rotation acceptance rate: " << simulation.getRotationAcceptanceRate() << std::endl;
-    this->logger << "Scaling acceptance rate: " << simulation.getScalingAcceptanceRate() << std::endl;
-    this->logger << "----------------------------" << std::endl;
+
+    // Print info
+    Quantity rho = simulation.getAverageDensity();
+    Quantity E = simulation.getAverageEnergy();
+    E.value = E.value / params.numOfParticles;
+    E.error = E.error / params.numOfParticles;
+    Quantity Efluct = simulation.getAverageEnergyFluctuations();
+    Quantity theta(rho.value * shapeTraits->getVolume(), rho.error * shapeTraits->getVolume());
+    theta.separator = Quantity::PLUS_MINUS;
+    Quantity Z(params.pressure / params.temperature / rho.value,
+               params.pressure / params.temperature * rho.error / rho.value / rho.value);
+    Z.separator = Quantity::PLUS_MINUS;
+
+    this->logger.info();
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+    this->logger << "Average density                          : " << rho << std::endl;
+    this->logger << "Average packing fraction                 : " << theta << std::endl;
+    this->logger << "Average compressibility factor           : " << Z << std::endl;
+    this->logger << "Average energy per particle              : " << E << std::endl;
+    this->logger << "Average energy fluctuations per particle : " << Efluct << std::endl;
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+    this->logger << "Translation acceptance rate : " << simulation.getTranlationAcceptanceRate() << std::endl;
+    this->logger << "Rotation acceptance rate    : " << simulation.getRotationAcceptanceRate() << std::endl;
+    this->logger << "Scaling acceptance rate     : " << simulation.getScalingAcceptanceRate() << std::endl;
+    this->logger << "--------------------------------------------------------------------" << std::endl;
 
     // Store packing (if desired)
     if (!params.wolframFilename.empty()) {
@@ -148,14 +166,9 @@ int Frontend::casino(int argc, char **argv) {
     if (!params.outputFilename.empty()) {
         std::ofstream out(params.outputFilename, std::ios_base::app);
         ValidateMsg(out, "Could not open " + params.outputFilename + " to store output!");
-        Quantity rho = simulation.getAverageDensity();
-        Quantity E = simulation.getAverageEnergy();
-        Quantity Efluct = simulation.getAverageEnergyFluctuations();
-        double theta = rho.value * shapeTraits->getVolume();
-        double Z = params.pressure / params.temperature / rho.value;
         out.precision(std::numeric_limits<double>::max_digits10);
-        out << params.temperature << " " << params.pressure << " " << rho.value << " " << theta << " " << Z << " ";
-        out << (E.value / params.numOfParticles) << " " << Efluct.value << std::endl;
+        out << params.temperature << " " << params.pressure << " " << rho.value << " " << theta.value << " ";
+        out << Z.value << " " << E.value << " " << Efluct.value << std::endl;
         this->logger.info() << "Output factor stored to " + params.outputFilename << std::endl;
     }
 
