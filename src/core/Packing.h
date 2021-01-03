@@ -18,7 +18,7 @@
 class Packing {
 private:
     std::vector<std::unique_ptr<Shape>> shapes;
-    std::vector<Shape> interactionCentres;
+    std::vector<Vector<3>> interactionCentres;
     double linearSize{};
     std::unique_ptr<BoundaryConditions> bc;
     std::optional<NeighbourGrid> neighbourGrid;
