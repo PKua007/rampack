@@ -31,8 +31,13 @@ private:
     double lastScalingFactor{};
 
     [[nodiscard]] bool areAnyParticlesOverlapping(const Interaction &interaction) const;
-    [[nodiscard]] bool isAnyParticleCollidingWith(std::size_t i, const Interaction &interaction) const;
+    [[nodiscard]] bool isParticleOverlappingAnything(std::size_t i, const Interaction &interaction) const;
     void rebuildNeighbourGrid();
+    void removeInteractionCentresFromNeighbourGrid(size_t particleIdx);
+    void addInteractionCentresToNeighbourGrid(size_t particleIdx);
+    void rotateInteractionCentres(size_t particleIdx, const Matrix<3, 3> &rotation);
+    bool overlapBetween(std::size_t particleIdx1, std::size_t particleIdx2, const Interaction &interaction) const;
+    double calculateEnergyBetween(const Interaction &interaction, size_t i, size_t j) const;
 
 public:
     using iterator = decltype(shapes)::iterator;
@@ -66,12 +71,6 @@ public:
     void toWolfram(std::ostream &out, const ShapePrinter &printer) const;
     [[nodiscard]] double getPackingFraction(double shapeVolume) const;
     [[nodiscard]] double getNumberDensity() const;
-
-    void removeInteractionCentresFromNeighbourGrid(size_t particleIdx);
-
-    void addInteractionCentresToNeighbourGrid(size_t particleIdx);
-
-    void rotateInteractionCentres(size_t particleIdx, const Matrix<3, 3> &rotation);
 };
 
 
