@@ -26,16 +26,16 @@ TEST_CASE("Spherocylinder: overlap") {
             sc1.translate(Vector<3>{1, 2, 3} * 0.95, fbc);
             sc2.translate(Vector<3>{-3.5, 2.9, -0.5} * 0.95, fbc);
 
-            CHECK(traits.overlapBetween(sc1, sc2, fbc));
-            CHECK(traits.overlapBetween(sc2, sc1, fbc));
+            CHECK(traits.overlapBetweenShapes(sc1, sc2, fbc));
+            CHECK(traits.overlapBetweenShapes(sc2, sc1, fbc));
         }
 
         SECTION("no overlap") {
             sc1.translate(Vector<3>{1, 2, 3} * 1.05, fbc);
             sc2.translate(Vector<3>{-3.5, 2.9, -0.5} * 1.05, fbc);
 
-            CHECK_FALSE(traits.overlapBetween(sc1, sc2, fbc));
-            CHECK_FALSE(traits.overlapBetween(sc2, sc1, fbc));
+            CHECK_FALSE(traits.overlapBetweenShapes(sc1, sc2, fbc));
+            CHECK_FALSE(traits.overlapBetweenShapes(sc2, sc1, fbc));
         }
     }
 
@@ -51,16 +51,16 @@ TEST_CASE("Spherocylinder: overlap") {
             sc1.translate(Vector<3>{1, 2, 3} * 0.95, fbc);
             sc2.translate(Vector<3>{-0.5, 4, -2} * 0.95, fbc);
 
-            CHECK(traits.overlapBetween(sc1, sc2, fbc));
-            CHECK(traits.overlapBetween(sc2, sc1, fbc));
+            CHECK(traits.overlapBetweenShapes(sc1, sc2, fbc));
+            CHECK(traits.overlapBetweenShapes(sc2, sc1, fbc));
         }
 
         SECTION("no overlap") {
             sc1.translate(Vector<3>{1, 2, 3} * 1.05, fbc);
             sc2.translate(Vector<3>{-0.5, 4, -2} * 1.05, fbc);
 
-            CHECK_FALSE(traits.overlapBetween(sc1, sc2, fbc));
-            CHECK_FALSE(traits.overlapBetween(sc2, sc1, fbc));
+            CHECK_FALSE(traits.overlapBetweenShapes(sc1, sc2, fbc));
+            CHECK_FALSE(traits.overlapBetweenShapes(sc2, sc1, fbc));
         }
     }
 
@@ -76,16 +76,16 @@ TEST_CASE("Spherocylinder: overlap") {
             sc1.translate(Vector<3>{1, 2, 3} * 0.95, fbc);
             sc2.translate(Vector<3>{-0.5, 1.7, -0.8} * 0.95, fbc);
 
-            CHECK(traits.overlapBetween(sc1, sc2, fbc));
-            CHECK(traits.overlapBetween(sc2, sc1, fbc));
+            CHECK(traits.overlapBetweenShapes(sc1, sc2, fbc));
+            CHECK(traits.overlapBetweenShapes(sc2, sc1, fbc));
         }
 
         SECTION("no overlap") {
             sc1.translate(Vector<3>{1, 2, 3} * 1.05, fbc);
             sc2.translate(Vector<3>{-0.5, 1.7, -0.8} * 1.05, fbc);
 
-            CHECK_FALSE(traits.overlapBetween(sc1, sc2, fbc));
-            CHECK_FALSE(traits.overlapBetween(sc2, sc1, fbc));
+            CHECK_FALSE(traits.overlapBetweenShapes(sc1, sc2, fbc));
+            CHECK_FALSE(traits.overlapBetweenShapes(sc2, sc1, fbc));
         }
     }
 
@@ -96,16 +96,16 @@ TEST_CASE("Spherocylinder: overlap") {
             sc1.translate({96.6, 50, 50}, pbc);
             sc2.translate({3.5, 50, 50}, pbc);
 
-            CHECK(traits.overlapBetween(sc1, sc2, pbc));
-            CHECK(traits.overlapBetween(sc2, sc1, pbc));
+            CHECK(traits.overlapBetweenShapes(sc1, sc2, pbc));
+            CHECK(traits.overlapBetweenShapes(sc2, sc1, pbc));
         }
 
         SECTION("no overlap") {
             sc1.translate({96.4, 50, 50}, pbc);
             sc2.translate({3.5, 50, 50}, pbc);
 
-            CHECK_FALSE(traits.overlapBetween(sc1, sc2, pbc));
-            CHECK_FALSE(traits.overlapBetween(sc2, sc1, pbc));
+            CHECK_FALSE(traits.overlapBetweenShapes(sc1, sc2, pbc));
+            CHECK_FALSE(traits.overlapBetweenShapes(sc2, sc1, pbc));
         }
     }
 }

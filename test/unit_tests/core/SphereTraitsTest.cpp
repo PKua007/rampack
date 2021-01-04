@@ -31,15 +31,15 @@ TEST_CASE("Sphere: overlap") {
     SECTION("overlapping") {
         Shape sphere1({1, 19.1, 10});
         Shape sphere2({5, 2, 10});
-        CHECK(interaction.overlapBetween(sphere1, sphere2, pbc));
-        CHECK(interaction.overlapBetween(sphere2, sphere1, pbc));
+        CHECK(interaction.overlapBetweenShapes(sphere1, sphere2, pbc));
+        CHECK(interaction.overlapBetweenShapes(sphere2, sphere1, pbc));
     }
 
     SECTION("non-overlapping") {
         Shape sphere1({1, 18.9, 10});
         Shape sphere2({5, 2, 10});
-        CHECK_FALSE(interaction.overlapBetween(sphere1, sphere2, pbc));
-        CHECK_FALSE(interaction.overlapBetween(sphere2, sphere1, pbc));
+        CHECK_FALSE(interaction.overlapBetweenShapes(sphere1, sphere2, pbc));
+        CHECK_FALSE(interaction.overlapBetweenShapes(sphere2, sphere1, pbc));
     }
 }
 

@@ -11,6 +11,9 @@
 #include "BoundaryConditions.h"
 
 class Interaction {
+private:
+    [[nodiscard]] static Vector<3> getCentrePositionForShape(const Shape &shape, const Vector<3> &centre);
+
 public:
     virtual ~Interaction() = default;
 
@@ -41,6 +44,12 @@ public:
     [[nodiscard]] virtual double getRangeRadius() const { return std::numeric_limits<double>::infinity(); }
 
     [[nodiscard]] virtual std::vector<Vector<3>> getInteractionCentres() const { return {}; }
+
+    [[nodiscard]] double calculateEnergyBetweenShapes(const Shape &shape1, const Shape &shape2,
+                                                      const BoundaryConditions &bc) const;
+
+    [[nodiscard]] double overlapBetweenShapes(const Shape &shape1, const Shape &shape2,
+                                              const BoundaryConditions &bc) const;
 };
 
 

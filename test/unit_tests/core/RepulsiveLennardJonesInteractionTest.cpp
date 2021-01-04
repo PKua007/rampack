@@ -14,12 +14,12 @@ TEST_CASE("RepulsiveLennardJonesInteraction") {
     SECTION("repulsive part") {
         Shape shape1({1, 0, 0}), shape2({3, 0, 0});
 
-        CHECK(interaction.calculateEnergyBetween(shape1, shape2, fbc) == Approx(3));
+        CHECK(interaction.calculateEnergyBetweenShapes(shape1, shape2, fbc) == Approx(3));
     }
 
     SECTION("free part") {
         Shape shape1({1, 0, 0}), shape2({5, 0, 0});
 
-        CHECK(interaction.calculateEnergyBetween(shape1, shape2, fbc) == Approx(0).margin(1e-12));
+        CHECK(interaction.calculateEnergyBetweenShapes(shape1, shape2, fbc) == Approx(0).margin(1e-12));
     }
 }

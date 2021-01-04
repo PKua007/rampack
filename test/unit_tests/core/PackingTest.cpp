@@ -22,10 +22,15 @@ namespace {
         [[nodiscard]] bool hasHardPart() const override { return true; }
         [[nodiscard]] bool hasSoftPart() const override { return false; }
 
-        [[nodiscard]] bool overlapBetween(const Shape &shape1, const Shape &shape2,
+        [[nodiscard]] bool overlapBetween(const Vector<3> &pos1,
+                                          [[maybe_unused]] const Matrix<3, 3> &orientaton1,
+                                          [[maybe_unused]] std::size_t idx1,
+                                          const Vector<3> &pos2,
+                                          [[maybe_unused]] const Matrix<3, 3> &orientaton2,
+                                          [[maybe_unused]] std::size_t idx2,
                                           const BoundaryConditions &bc) const override
         {
-            return bc.getDistance2(shape1.getPosition(), shape2.getPosition()) < std::pow(2*this->radius, 2);
+            return bc.getDistance2(pos1, pos2) < std::pow(2*this->radius, 2);
         }
 
         [[nodiscard]] double getRangeRadius() const override { return 2*this->radius; }
@@ -36,10 +41,15 @@ namespace {
         [[nodiscard]] bool hasHardPart() const override { return false; }
         [[nodiscard]] bool hasSoftPart() const override { return true; }
 
-        [[nodiscard]] double calculateEnergyBetween(const Shape &shape1,const Shape &shape2,
+        [[nodiscard]] double calculateEnergyBetween(const Vector<3> &pos1,
+                                                    [[maybe_unused]] const Matrix<3, 3> &orientaton1,
+                                                    [[maybe_unused]] std::size_t idx1,
+                                                    const Vector<3> &pos2,
+                                                    [[maybe_unused]] const Matrix<3, 3> &orientaton2,
+                                                    [[maybe_unused]] std::size_t idx2,
                                                     const BoundaryConditions &bc) const override
         {
-            return std::sqrt(bc.getDistance2(shape1.getPosition(), shape2.getPosition()));
+            return std::sqrt(bc.getDistance2(pos1, pos2));
         }
     };
 }
@@ -54,7 +64,7 @@ TEST_CASE("Packing") {
     shapes.push_back(std::make_unique<Shape>(Vector<3>{0.5, 0.5, 0.5}));
     shapes.push_back(std::make_unique<Shape>(Vector<3>{4.5, 0.5, 0.5}));
     shapes.push_back(std::make_unique<Shape>(Vector<3>{2.5, 2.5, 4.0}));
-    Packing packing(5, std::move(shapes), std::move(pbc), hardCore.getRangeRadius());
+    Packing packing(5, std::move(shapes), std::move(pbc), hardCore);
 
     REQUIRE(packing.getLinearSize() == 5);
 
@@ -90,7 +100,7 @@ TEST_CASE("Packing") {
         }
 
         SECTION("distance interaction") {
-            packing.changeInteractionRange(distanceInteraction.getRangeRadius());
+            packing.setupForInteraction(distanceInteraction);
             // 1 <-> 2: d = 2/10
             // 1 <-> 3: d = sqrt(0.4^2 + 0.4^2 + 0.3^2) = sqrt(41)/10
             // 2 <-> 3: d = sqrt(0.4^2 + 0.4^2 + 0.3^2) = sqrt(41)/10
@@ -120,7 +130,7 @@ TEST_CASE("Packing") {
         }
 
         SECTION("distance interaction") {
-            packing.changeInteractionRange(distanceInteraction.getRangeRadius());
+            packing.setupForInteraction(distanceInteraction);
             // first particle moved to {0.1, 0.1, 0.8}, so after (for before, look at scaling SECTION)
             // 1 <-> 2: d = sqrt(0.2^2 + 0.3^2) = sqrt(13)/10
             // 1 <-> 3: d = sqrt(0.4^2 + 0.4^2) = sqrt(32)/10
@@ -142,7 +152,7 @@ TEST_CASE("Packing") {
     }
 
     SECTION("interaction energy") {
-        packing.changeInteractionRange(distanceInteraction.getRangeRadius());
+        packing.setupForInteraction(distanceInteraction);
 
         SECTION("total energy") {
             double scale1E = (2 + 2 * std::sqrt(41)) / 10;

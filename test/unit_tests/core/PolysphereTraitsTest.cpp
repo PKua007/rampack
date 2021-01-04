@@ -35,13 +35,13 @@ TEST_CASE("PolysphereTraits: hard interactions") {
         SECTION("overlap") {
             Shape shape1({1.01, 5, 5}, Matrix<3, 3>::identity());
             Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0));
-            CHECK(interaction.overlapBetween(shape1, shape2, pbc));
+            CHECK(interaction.overlapBetweenShapes(shape1, shape2, pbc));
         }
 
         SECTION("no overlap") {
             Shape shape1({0.99, 5, 5}, Matrix<3, 3>::identity());
             Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0));
-            CHECK_FALSE(interaction.overlapBetween(shape1, shape2, pbc));
+            CHECK_FALSE(interaction.overlapBetweenShapes(shape1, shape2, pbc));
         }
     }
 
@@ -63,5 +63,5 @@ TEST_CASE("PolysphereTraits: soft interactions") {
                             std::make_unique<DummyInteraction>());
     const auto &interaction = dynamic_cast<const CentralInteraction &>(traits.getInteraction());
 
-    CHECK(interaction.getPotentialCentres() == std::vector<Vector<3>>{{0, 0, 0}, {3, 0, 0}});
+    CHECK(interaction.getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}, {3, 0, 0}});
 }

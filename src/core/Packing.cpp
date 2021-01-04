@@ -18,15 +18,7 @@ Packing::Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, 
     Expects(!this->shapes.empty());
 
     this->bc->setLinearSize(this->linearSize);
-    this->numInteractionCentres = interaction.getInteractionCentres().size();
-    if (this->numInteractionCentres > 0) {
-        this->interactionCentres.reserve(this->size() * this->numInteractionCentres);
-        auto centres = interaction.getInteractionCentres();
-        for (const auto &shape : this->shapes)
-            for (const auto &centre : centres)
-                this->interactionCentres.emplace_back(shape->getOrientation() * centre);
-    }
-    this->rebuildNeighbourGrid();
+    this->setupForInteraction(interaction);
 }
 
 double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction) {
@@ -282,7 +274,7 @@ bool Packing::isInteractionCentreOverlappingAnything(std::size_t particleIdx, st
     const auto &orientation1 = this->shapes[particleIdx]->getOrientation();
     pos1 += this->bc->getCorrection(pos1);
     auto neighbours = this->neighbourGrid->getNeighbours(pos1);
-    for (auto centreIdx2 : neighbours) {
+    for (auto centreIdx2 : neighbours) { // NOLINT(readability-use-anyofallof)
         std::size_t j = centreIdx2 / this->numInteractionCentres;
         if (j == particleIdx)
             continue;
@@ -438,8 +430,16 @@ void Packing::rebuildNeighbourGrid() {
     }
 }
 
-void Packing::changeInteractionRange(double newRange) {
-    Expects(newRange > 0);
-    this->interactionRange = newRange;
+void Packing::setupForInteraction(const Interaction &interaction) {
+    this->interactionRange = interaction.getRangeRadius();
+    this->numInteractionCentres = interaction.getInteractionCentres().size();
+    this->interactionCentres.clear();
+    if (this->numInteractionCentres > 0) {
+        this->interactionCentres.reserve(this->size() * this->numInteractionCentres);
+        auto centres = interaction.getInteractionCentres();
+        for (const auto &shape : this->shapes)
+            for (const auto &centre : centres)
+                this->interactionCentres.emplace_back(shape->getOrientation() * centre);
+    }
     this->rebuildNeighbourGrid();
 }

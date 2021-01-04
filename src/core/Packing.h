@@ -64,7 +64,7 @@ public:
 
     [[nodiscard]] double getLinearSize() const { return linearSize; }
 
-    void changeInteractionRange(double newRange);
+    void setupForInteraction(const Interaction &interaction);
 
     [[nodiscard]] std::size_t size() const { return this->shapes.size(); }
     [[nodiscard]] bool empty() const { return this->shapes.empty(); }

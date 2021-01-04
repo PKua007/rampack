@@ -10,7 +10,9 @@
 namespace {
     class DummyInteraction : public CentralInteraction {
     protected:
-        [[nodiscard]] double calculateEnergyForDistance2(double distance) const override { return distance; }
+        [[nodiscard]] double calculateEnergyForDistance2(double distance2) const override {
+            return std::sqrt(distance2);
+        }
     };
 }
 
@@ -21,30 +23,30 @@ TEST_CASE("CentralInteraction: basics") {
     CHECK_FALSE(interaction.hasHardPart());
 }
 
-TEST_CASE("CentralInteraction: multiple points") {
-    // Particles look and are placed like this (x - central particle, o - second one):
-    //
-    //        2   4   6   8
-    //   ||   x-->o   o<--x  ||
-    //
-    // Distances through BC: d(2, 6) = 4, d(2, 8) = 4, d(4, 6) = 2, d(4, 8) = 4
-    // Each particle is reflected separately!
+TEST_CASE("CentralInteraction: point installation") {
+    SECTION("installOnCentres") {
+        DummyInteraction interaction;
 
-    DummyInteraction interaction;
-    interaction.installOnCentres({{0, 0, 0}, {2, 0, 0}});
-    Shape shape1({1, 5, 5}, Matrix<3, 3>::identity());
-    Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0));
-    PeriodicBoundaryConditions pbc(10);
+        interaction.installOnCentres({{0, 0, 0}, {2, 0, 0}});
 
-    CHECK(interaction.calculateEnergyBetween(shape1, shape2, pbc) == Approx(14));
+        REQUIRE(interaction.getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}, {2, 0, 0}});
+    }
+
+    SECTION("installOnSphere") {
+        DummyInteraction interaction;
+
+        interaction.installOnSphere();
+
+        REQUIRE(interaction.getInteractionCentres().empty());
+    }
 }
 
-TEST_CASE("CentralInteraction: sphere case") {
+TEST_CASE("CentralInteraction: calculating energy") {
     DummyInteraction interaction;
     interaction.installOnSphere();
     Shape shape1({1, 5, 5});
     Shape shape2({9, 5, 5});
     PeriodicBoundaryConditions pbc(10);
 
-    CHECK(interaction.calculateEnergyBetween(shape1, shape2, pbc) == Approx(2));
+    CHECK(interaction.calculateEnergyBetweenShapes(shape1, shape2, pbc) == Approx(2));
 }
