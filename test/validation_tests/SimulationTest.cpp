@@ -118,7 +118,7 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
     KMerTraits kmerTraits(2, 0.5, 1);
     auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(pbc), kmerTraits.getInteraction());
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
-    Simulation simulation(1, 2, 10, 1, 10, 5000, 5000, 100, 1234);
+    Simulation simulation(1, 2, 10, 1, 10, 10000, 5000, 100, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
