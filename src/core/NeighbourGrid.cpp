@@ -155,6 +155,13 @@ std::vector<std::size_t> NeighbourGrid::getNeighbours(const Vector<3> &position)
     std::vector<std::size_t> result;
 
     int cellNo = this->positionToCellNo(position);
+
+    // Pre-counting vector capacity gives huge performance boost
+    std::size_t capacity{};
+    for (int cellOffset : this->neighbouringCellsOffsets)
+        capacity += this->getCellVector(cellNo + cellOffset).size();
+    result.reserve(capacity);
+
     for (int cellOffset : this->neighbouringCellsOffsets) {
         const auto &cellVector = this->getCellVector(cellNo + cellOffset);
         result.insert(result.end(), cellVector.begin(), cellVector.end());
