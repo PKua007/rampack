@@ -9,7 +9,7 @@
 TEST_CASE("LatticeArrangingModel: not fully filled lattice") {
     LatticeArrangingModel model;
 
-    auto shapes = model.arrange(7, 2);
+    auto shapes = model.arrange(7, {2, 2, 2});
 
     REQUIRE(shapes.size() == 7);
     CHECK(shapes[0]->getPosition() == Vector<3>{0.5, 0.5, 0.5});
@@ -24,7 +24,7 @@ TEST_CASE("LatticeArrangingModel: not fully filled lattice") {
 TEST_CASE("LatticeArrangingModel: fully filled lattice") {
     LatticeArrangingModel model;
 
-    auto shapes = model.arrange(8, 2);
+    auto shapes = model.arrange(8, {2, 2, 2});
 
     REQUIRE(shapes.size() == 8);
     CHECK(shapes[0]->getPosition() == Vector<3>{0.5, 0.5, 0.5});

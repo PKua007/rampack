@@ -64,16 +64,18 @@ TEST_CASE("Packing") {
     shapes.push_back(std::make_unique<Shape>(Vector<3>{0.5, 0.5, 0.5}));
     shapes.push_back(std::make_unique<Shape>(Vector<3>{4.5, 0.5, 0.5}));
     shapes.push_back(std::make_unique<Shape>(Vector<3>{2.5, 2.5, 4.0}));
-    Packing packing(5, std::move(shapes), std::move(pbc), hardCore);
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
 
-    REQUIRE(packing.getDimensions() == 5);
+    REQUIRE(packing.getDimensions() == std::array<double, 3>{5, 5, 5});
 
     constexpr double inf = std::numeric_limits<double>::infinity();
 
     SECTION ("scaling") {
         SECTION("hard core upwards") {
             CHECK(packing.tryScaling(std::pow(1.1, 3), hardCore) == 0);
-            CHECK(packing.getDimensions() == Approx(5.5));
+            CHECK(packing.getDimensions()[0] == Approx(5.5));
+            CHECK(packing.getDimensions()[1] == Approx(5.5));
+            CHECK(packing.getDimensions()[2] == Approx(5.5));
             CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.55, 0.55, 0.55}, {4.95, 0.55, 0.55},
                                                                  {2.75, 2.75, 4.4}}, 1e-9));
         }
@@ -82,7 +84,9 @@ TEST_CASE("Packing") {
             // For scale 0.5 => linear size = 5*0.5 = 2.5 spheres 0 and 1 are touching (through pbc).
             // So a little bit more should prevent any overlaps
             CHECK(packing.tryScaling(std::pow(0.51, 3), hardCore) == 0);
-            CHECK(packing.getDimensions() == Approx(2.55));
+            CHECK(packing.getDimensions()[0] == Approx(2.55));
+            CHECK(packing.getDimensions()[1] == Approx(2.55));
+            CHECK(packing.getDimensions()[2] == Approx(2.55));
             CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.255, 0.255, 0.255}, {2.295, 0.255, 0.255},
                                                                  {1.275, 1.275, 2.04}}, 1e-9));
         }
@@ -90,11 +94,15 @@ TEST_CASE("Packing") {
         SECTION("hard core downward with overlapping") {
             // Same as above, but a little bit more gives an overlap
             REQUIRE(packing.tryScaling(std::pow(0.49, 3), hardCore) == inf);
-            CHECK(packing.getDimensions() == Approx(2.45));
+            CHECK(packing.getDimensions()[0] == Approx(2.45));
+            CHECK(packing.getDimensions()[1] == Approx(2.45));
+            CHECK(packing.getDimensions()[2] == Approx(2.45));
 
             SECTION("reverting the move") {
                 packing.revertScaling();
-                CHECK(packing.getDimensions() == Approx(5));
+                CHECK(packing.getDimensions()[0] == Approx(5));
+                CHECK(packing.getDimensions()[1] == Approx(5));
+                CHECK(packing.getDimensions()[2] == Approx(5));
                 CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {4.5, 0.5, 0.5}, {2.5, 2.5, 4.0}}, 1e-9));
             }
         }
