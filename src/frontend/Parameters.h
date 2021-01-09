@@ -33,6 +33,7 @@ private:
 public:
     /* All of these are described in input.ini */
     std::string initialDimensions{};
+    std::string initialArrangement{};
     std::size_t numOfParticles{};
     double temperature{};
     double pressure{};

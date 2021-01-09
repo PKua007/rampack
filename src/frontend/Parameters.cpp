@@ -18,6 +18,8 @@ Parameters::Parameters(std::istream &input) {
             this->initialDimensions = config.getString("initialDimensions");
         else if (key == "numOfParticles")
             this->numOfParticles = config.getUnsignedLong("numOfParticles");
+        else if (key == "initialArrangement")
+            this->initialArrangement = config.getString("initialArrangement");
         else if (key == "temperature")
             this->temperature = config.getDouble("temperature");
         else if (key == "pressure")
@@ -68,6 +70,7 @@ void Parameters::validate() const {
 
 void Parameters::print(Logger &logger) const {
     logger.info() << "initialDimensions       : " << this->initialDimensions << std::endl;
+    logger.info() << "initialArangement       : " << this->initialArrangement << std::endl;
     logger.info() << "numOfParticles          : " << this->numOfParticles << std::endl;
     logger.info() << "temperature             : " << this->temperature << std::endl;
     logger.info() << "pressure                : " << this->pressure << std::endl;

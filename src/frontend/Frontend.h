@@ -5,8 +5,12 @@
 #ifndef RAMPACK_FRONTEND_H
 #define RAMPACK_FRONTEND_H
 
+#include <memory>
+#include <vector>
+
 #include "utils/Logger.h"
 #include "Parameters.h"
+#include "core/Shape.h"
 
 /**
  * @brief Class responsible for the communication between the user and the simulation backend.
@@ -26,6 +30,10 @@ public:
     int analyze(int argc, char **argv);
 
     int printGeneralHelp(const std::string &cmd);
+
+    std::vector<std::unique_ptr<Shape>> arrangePacking(std::size_t numOfParticles,
+                                                       const std::array<double, 3> &boxDimensions,
+                                                       const std::string &arrangementString);
 };
 
 

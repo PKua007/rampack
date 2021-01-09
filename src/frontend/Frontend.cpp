@@ -122,8 +122,7 @@ int Frontend::casino(int argc, char **argv) {
     ValidateMsg(dimensionsStream, "Invalid packing dimensions format. Expected: [dim x] [dim y] [dim z]");
     Validate(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
-    LatticeArrangingModel latticeArrangingModel;
-    auto shapes = latticeArrangingModel.arrange(params.numOfParticles, dimensions);
+    auto shapes = this->arrangePacking(params.numOfParticles, dimensions, params.initialArrangement);
     auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(bc), shapeTraits->getInteraction());
     Simulation simulation(params.temperature, params.pressure, params.positionStepSize, params.rotationStepSize,
@@ -211,4 +210,40 @@ int Frontend::printGeneralHelp(const std::string &cmd) {
     rawOut << "Type " + cmd + " [mode] --help to get help on the specific mode." << std::endl;
 
     return EXIT_SUCCESS;
+}
+
+std::vector<std::unique_ptr<Shape>> Frontend::arrangePacking(std::size_t numOfParticles,
+                                                             const std::array<double, 3> &boxDimensions,
+                                                             const std::string &arrangementString)
+{
+    std::istringstream arrangementStream(arrangementString);
+    std::string type;
+    arrangementStream >> type;
+    ValidateMsg(arrangementStream, "Malformed arrangement. Usage: [type: now only lattice] "
+                                   "(type dependent parameters)");
+    if (type == "lattice") {
+        LatticeArrangingModel model;
+        if (arrangementStream.str().find("default") != std::string::npos) {
+            std::string defaultStr;
+            arrangementStream >> defaultStr;
+            ValidateMsg(arrangementStream && defaultStr == "default",
+                        "Malformed latice arrangement. Usage: lattice {default|[cell size x] [... y] [... z] "
+                        "[number of particles in line x] [... y] [... z]}");
+            return model.arrange(numOfParticles, boxDimensions);
+        } else {
+            std::array<double, 3> cellDimensions{};
+            std::array<std::size_t, 3> particlesInLine{};
+            arrangementStream >> cellDimensions[0] >> cellDimensions[1] >> cellDimensions[2];
+            arrangementStream >> particlesInLine[0] >> particlesInLine[1] >> particlesInLine[2];
+            ValidateMsg(arrangementStream,
+                        "Malformed latice arrangement. Usage: lattice {default|[cell size x] [... y] [... z] "
+                        "[number particles in line x] [... y] [... z]}");
+            Validate(std::all_of(cellDimensions.begin(), cellDimensions.end(), [](double d) { return d; }));
+            Validate(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
+                     >= numOfParticles);
+            return model.arrange(numOfParticles, particlesInLine, cellDimensions, boxDimensions);
+        }
+    }
+
+    throw ValidationException("Unknown arrangement type: " + type + ". Available: now only lattice");
 }
