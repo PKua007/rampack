@@ -32,7 +32,7 @@ private:
 
 public:
     /* All of these are described in input.ini */
-    double initialVolume{};
+    std::string initialDimensions{};
     std::size_t numOfParticles{};
     double temperature{};
     double pressure{};

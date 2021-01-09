@@ -9,7 +9,7 @@
 
 class FreeBoundaryConditions : public BoundaryConditions {
 public:
-    void setLinearSize([[maybe_unused]] double size) override { }
+    void setLinearSize([[maybe_unused]] const std::array<double, 3> &size) override { }
 
     [[nodiscard]] Vector<3> getCorrection([[maybe_unused]] const Vector<3> &position) const override {
         return Vector<3>{};

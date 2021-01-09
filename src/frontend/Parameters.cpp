@@ -14,8 +14,8 @@ Parameters::Parameters(std::istream &input) {
     // First we are looking for parameters from [general sections]
     auto config = Config::parse(input, '=', true);
     for (const auto &key : config.getKeys()) {
-        if (key == "initialVolume")
-            this->initialVolume = config.getDouble("initialVolume");
+        if (key == "initialDimensions")
+            this->initialDimensions = config.getString("initialDimensions");
         else if (key == "numOfParticles")
             this->numOfParticles = config.getUnsignedLong("numOfParticles");
         else if (key == "temperature")
@@ -55,7 +55,6 @@ Parameters::Parameters(std::istream &input) {
 }
 
 void Parameters::validate() const {
-    Validate(this->initialVolume > 0);
     Validate(this->numOfParticles > 0);
     Validate(this->temperature > 0);
     Validate(this->pressure > 0);
@@ -68,7 +67,7 @@ void Parameters::validate() const {
 }
 
 void Parameters::print(Logger &logger) const {
-    logger.info() << "initialVolume           : " << this->initialVolume << std::endl;
+    logger.info() << "initialDimensions       : " << this->initialDimensions << std::endl;
     logger.info() << "numOfParticles          : " << this->numOfParticles << std::endl;
     logger.info() << "temperature             : " << this->temperature << std::endl;
     logger.info() << "pressure                : " << this->pressure << std::endl;

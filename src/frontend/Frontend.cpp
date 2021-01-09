@@ -116,12 +116,16 @@ int Frontend::casino(int argc, char **argv) {
     this->logger << std::endl;
 
     // Prepare simulation
-    double linearSize = std::cbrt(params.initialVolume);
+    std::istringstream dimensionsStream(params.initialDimensions);
+    std::array<double, 3> dimensions{};
+    dimensionsStream >> dimensions[0] >> dimensions[1] >> dimensions[2];
+    ValidateMsg(dimensionsStream, "Invalid packing dimensions format. Expected: [dim x] [dim y] [dim z]");
+    Validate(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     LatticeArrangingModel latticeArrangingModel;
-    auto shapes = latticeArrangingModel.arrange(params.numOfParticles, linearSize);
+    auto shapes = latticeArrangingModel.arrange(params.numOfParticles, dimensions);
     auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
-    auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(bc), shapeTraits->getInteraction());
+    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(bc), shapeTraits->getInteraction());
     Simulation simulation(params.temperature, params.pressure, params.positionStepSize, params.rotationStepSize,
                           params.volumeStepSize, params.thermalisationCycles, params.averagingCycles,
                           params.averagingEvery, params.seed);

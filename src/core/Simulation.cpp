@@ -129,7 +129,7 @@ bool Simulation::tryRotation(const Interaction &interaction) {
 
 bool Simulation::tryScaling(const Interaction &interaction) {
     double deltaV = (2*this->unitIntervalDistribution(this->mt) - 1) * this->scalingStep;
-    double currentV = std::pow(this->packing->getLinearSize(), 3);
+    double currentV = this->packing->getVolume();
     double factor = (deltaV + currentV) / currentV;
     if (factor < 0)
         return false;
@@ -151,7 +151,9 @@ void Simulation::evaluateCounters(Logger &logger) {
         double rate = this->translationCounter.getCurrentRate();
         this->translationCounter.resetCurrent();
         if (rate > 0.5) {
-            if (this->translationStep * 1.1 <= this->packing->getLinearSize()) {
+            const auto &dimensions = this->packing->getDimensions();
+            double minDimension = *std::min_element(dimensions.begin(), dimensions.end());
+            if (this->translationStep * 1.1 <= minDimension) {
                 this->translationStep *= 1.1;
                 logger.verbose() << "Translation rate: " << rate << ", adjusting: "  << (this->translationStep / 1.1);
                 logger << " -> " << this->translationStep << std::endl;

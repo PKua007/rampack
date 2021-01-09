@@ -19,7 +19,7 @@ class Packing {
 private:
     std::vector<std::unique_ptr<Shape>> shapes;
     std::vector<Vector<3>> interactionCentres;
-    double linearSize{};
+    std::array<double, 3> dimensions{};
     std::unique_ptr<BoundaryConditions> bc;
     std::optional<NeighbourGrid> neighbourGrid;
     double interactionRange{};
@@ -49,8 +49,8 @@ public:
     using iterator = decltype(shapes)::iterator;
     using const_iterator = decltype(shapes)::const_iterator;
 
-    Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, std::unique_ptr<BoundaryConditions> bc,
-            const Interaction &interaction);
+    Packing(const std::array<double, 3> &dimensions, std::vector<std::unique_ptr<Shape>> shapes,
+            std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction);
 
     double tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction);
     double tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction);
@@ -62,7 +62,8 @@ public:
     [[nodiscard]] double getParticleEnergyFluctuations(const Interaction &interaction) const;
     [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;
 
-    [[nodiscard]] double getLinearSize() const { return linearSize; }
+    [[nodiscard]] const std::array<double, 3> &getDimensions() const { return this->dimensions; }
+    [[nodiscard]] double getVolume() const;
 
     void setupForInteraction(const Interaction &interaction);
 

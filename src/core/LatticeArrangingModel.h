@@ -7,13 +7,15 @@
 
 #include <vector>
 #include <memory>
+#include <array>
 
 #include "Shape.h"
 #include "BoundaryConditions.h"
 
 class LatticeArrangingModel {
 public:
-    [[nodiscard]] std::vector<std::unique_ptr<Shape>> arrange(std::size_t numOfParticles, double linearSize) const;
+    [[nodiscard]] std::vector<std::unique_ptr<Shape>> arrange(std::size_t numOfParticles,
+                                                              const std::array<double, 3> &dimensions) const;
 };
 
 

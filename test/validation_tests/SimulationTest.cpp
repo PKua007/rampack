@@ -20,9 +20,10 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 5000;
     double linearSize = std::cbrt(V);
-    auto shapes = LatticeArrangingModel{}.arrange(50, std::cbrt(V));
+    std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
+    auto shapes = LatticeArrangingModel{}.arrange(50, dimensions);
     SphereTraits sphereTraits(0.05);
-    auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
+    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
     Simulation simulation(10, 1, 1, 0.1, 1, 5000, 10000, 100, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
@@ -43,9 +44,10 @@ TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 200;
     double linearSize = std::cbrt(V);
-    auto shapes = LatticeArrangingModel{}.arrange(50, std::cbrt(V));
+    std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
+    auto shapes = LatticeArrangingModel{}.arrange(50, dimensions);
     SphereTraits sphereTraits(0.5);
-    auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
+    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
     Simulation simulation(1, 1, 1, 0.1, 1, 5000, 10000, 100, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
@@ -67,9 +69,10 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 200;
     double linearSize = std::cbrt(V);
-    auto shapes = LatticeArrangingModel{}.arrange(50, std::cbrt(V));
+    std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
+    auto shapes = LatticeArrangingModel{}.arrange(50, dimensions);
     SpherocylinderTraits spherocylinderTraits(0.5, 0.2);
-    auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(pbc), spherocylinderTraits.getInteraction());
+    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), spherocylinderTraits.getInteraction());
     Simulation simulation(10, 1, 1, 0.1, 1, 5000, 10000, 100, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
@@ -90,9 +93,10 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 200;
     double linearSize = std::cbrt(V);
-    auto shapes = LatticeArrangingModel{}.arrange(50, std::cbrt(V));
+    std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
+    auto shapes = LatticeArrangingModel{}.arrange(50, dimensions);
     SphereTraits sphereTraits(0.5, std::make_unique<LennardJonesInteraction>(1, 0.5));
-    auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
+    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
     Simulation simulation(100, 200, 1, 0.1, 10, 1000, 1000, 10, 1234);
     std::ostringstream loggerStream;
@@ -114,9 +118,10 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 500;
     double linearSize = std::cbrt(V);
-    auto shapes = LatticeArrangingModel{}.arrange(50, std::cbrt(V));
+    std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
+    auto shapes = LatticeArrangingModel{}.arrange(50, dimensions);
     KMerTraits kmerTraits(2, 0.5, 1);
-    auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(pbc), kmerTraits.getInteraction());
+    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), kmerTraits.getInteraction());
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
     Simulation simulation(1, 2, 10, 1, 10, 10000, 5000, 100, 1234);
     std::ostringstream loggerStream;
@@ -138,10 +143,11 @@ TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 500;
     double linearSize = std::cbrt(V);
-    auto shapes = LatticeArrangingModel{}.arrange(50, std::cbrt(V));
+    std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
+    auto shapes = LatticeArrangingModel{}.arrange(50, dimensions);
     auto interaction = std::make_unique<RepulsiveLennardJonesInteraction>(1, 1);
     KMerTraits kmerTraits(2, 0.5, 1, std::move(interaction));
-    auto packing = std::make_unique<Packing>(linearSize, std::move(shapes), std::move(pbc), kmerTraits.getInteraction());
+    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), kmerTraits.getInteraction());
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
     Simulation simulation(1, 7.5, 10, 1, 10, 5000, 5000, 100, 1234);
     std::ostringstream loggerStream;

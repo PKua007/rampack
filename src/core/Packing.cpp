@@ -5,19 +5,21 @@
 #include <cmath>
 #include <ostream>
 #include <numeric>
+#include <algorithm>
 
 #include "Packing.h"
 #include "utils/Assertions.h"
 
-Packing::Packing(double linearSize, std::vector<std::unique_ptr<Shape>> shapes, std::unique_ptr<BoundaryConditions> bc,
-                 const Interaction &interaction)
-        : shapes{std::move(shapes)}, linearSize{linearSize}, bc{std::move(bc)}, interactionRange{interaction.getRangeRadius()}
+Packing::Packing(const std::array<double, 3> &dimensions, std::vector<std::unique_ptr<Shape>> shapes,
+                 std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction)
+        : shapes{std::move(shapes)}, dimensions{dimensions}, bc{std::move(bc)},
+          interactionRange{interaction.getRangeRadius()}
 {
-    Expects(linearSize > 0);
+    Expects(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
     Expects(interactionRange > 0);
     Expects(!this->shapes.empty());
 
-    this->bc->setLinearSize(this->linearSize);
+    this->bc->setLinearSize(this->dimensions);
     this->setupForInteraction(interaction);
 }
 
@@ -109,8 +111,9 @@ double Packing::tryScaling(double scaleFactor, const Interaction &interaction) {
 
     double initialEnergy = this->getTotalEnergy(interaction);
 
-    this->linearSize *= this->lastScalingFactor;
-    this->bc->setLinearSize(this->linearSize);
+    for (double &size : this->dimensions)
+        size *= this->lastScalingFactor;
+    this->bc->setLinearSize(this->dimensions);
     for (auto &shape : this->shapes)
         shape->scale(this->lastScalingFactor);
     this->rebuildNeighbourGrid();
@@ -153,7 +156,7 @@ double Packing::getPackingFraction(double shapeVolume) const {
 }
 
 double Packing::getNumberDensity() const {
-    return this->shapes.size() / std::pow(this->linearSize, 3);
+    return this->shapes.size() / this->getVolume();
 }
 
 void Packing::revertTranslation() {
@@ -188,8 +191,9 @@ void Packing::revertRotation() {
 }
 
 void Packing::revertScaling() {
-    this->linearSize /= this->lastScalingFactor;
-    this->bc->setLinearSize(this->linearSize);
+    for (double &length : this->dimensions)
+        length /= this->lastScalingFactor;
+    this->bc->setLinearSize(this->dimensions);
     double reverseFactor = 1 / this->lastScalingFactor;
     for (auto &shape : this->shapes)
         shape->scale(reverseFactor);
@@ -407,20 +411,20 @@ double Packing::getParticleEnergyFluctuations(const Interaction &interaction) co
 void Packing::rebuildNeighbourGrid() {
     double cellSize = this->interactionRange;
     // linearSize/cbrt(size()) gives 1 cell per particle, factor 1/5 empirically gives best times
-    double minCellSize = this->linearSize / std::cbrt(this->size()) / 5;
+    double minCellSize = std::cbrt(this->getVolume() / this->size()) / 5;
     if (this->interactionRange < minCellSize)
         cellSize = minCellSize;
 
     // Less than 4 cells in line is redundant, because everything always would be neighbour
-    if (cellSize * 4 > this->linearSize) {
+    if (cellSize * 4 > *std::min_element(this->dimensions.begin(), this->dimensions.end())) {
         this->neighbourGrid = std::nullopt;
         return;
     }
 
     if (!this->neighbourGrid.has_value())
-        this->neighbourGrid = NeighbourGrid(this->linearSize, cellSize);
+        this->neighbourGrid = NeighbourGrid(this->dimensions, cellSize);
     else
-        this->neighbourGrid->resize(this->linearSize, cellSize);
+        this->neighbourGrid->resize(this->dimensions, cellSize);
 
     for (std::size_t i{}; i < this->shapes.size(); i++) {
         if (this->numInteractionCentres == 0)
@@ -442,4 +446,8 @@ void Packing::setupForInteraction(const Interaction &interaction) {
                 this->interactionCentres.emplace_back(shape->getOrientation() * centre);
     }
     this->rebuildNeighbourGrid();
+}
+
+double Packing::getVolume() const {
+    return std::accumulate(this->dimensions.begin(), this->dimensions.end(), 1., std::multiplies<>{});
 }
