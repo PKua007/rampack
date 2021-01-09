@@ -15,9 +15,9 @@
 
 class NeighbourGrid {
 private:
-    double linearSize{};
-    std::size_t numCellsInLine{};
-    double cellSize{};
+    std::array<double, 3> linearSize{};
+    std::array<std::size_t, 3> numCellsInLine{};
+    std::array<double, 3> cellSize{};
     std::vector<std::vector<std::size_t>> cells;
     std::vector<int> reflectedCells;
     std::size_t numCells{};
@@ -45,15 +45,17 @@ private:
 
     std::vector<std::size_t> &getCellVector(std::size_t cellNo);
     [[nodiscard]] const std::vector<std::size_t> &getCellVector(std::size_t cellNo) const;
-    void setupSizes(double newLinearSize, double newCellSize);
+    void setupSizes(const std::array<double, 3> &newLinearSize, double newCellSize);
 
 public:
     NeighbourGrid(double linearSize, double cellSize);
+    NeighbourGrid(const std::array<double, 3> &linearSize, double cellSize);
 
     void add(std::size_t idx, const Vector<3> &position);
     void remove(std::size_t idx, const Vector<3> &position);
     void clear();
     void resize(double newLinearSize, double newCellSize);
+    void resize(const std::array<double, 3> &newLinearSize, double newCellSize);
     [[nodiscard]] const std::vector<std::size_t> &getCell(const Vector<3> &position) const;
     [[nodiscard]] std::vector<std::size_t> getNeighbours(const Vector<3> &position) const;
 };
