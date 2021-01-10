@@ -40,8 +40,10 @@ void Simulation::perform(std::unique_ptr<Packing> packing_, const Interaction &i
             this->densityThermalisationSnapshots.push_back({(i + 1) / this->cycleLength,
                                                             this->packing->getNumberDensity()});
         }
-        if ((i + 1) % (this->cycleLength * 100) == 0)
-            logger.info() << "Performed " << ((i + 1)/this->cycleLength) << " cycles" << std::endl;
+        if ((i + 1) % (this->cycleLength * 100) == 0) {
+            logger.info() << "Performed " << ((i + 1) / this->cycleLength) << " cycles. ";
+            logger << "Number density: " << this->packing->getNumberDensity() << std::endl;
+        }
     }
 
     this->shouldAdjustStepSize = false;
