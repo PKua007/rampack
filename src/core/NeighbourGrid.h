@@ -9,6 +9,7 @@
 #include <vector>
 #include <algorithm>
 #include <array>
+#include <iterator>
 
 #include "geometry/Vector.h"
 #include "utils/Assertions.h"
@@ -47,7 +48,69 @@ private:
     [[nodiscard]] const std::vector<std::size_t> &getCellVector(std::size_t cellNo) const;
     void setupSizes(const std::array<double, 3> &newLinearSize, double newCellSize);
 
+    friend class NeighboursView;
+    friend class NeighboursViewIterator;
+
 public:
+    class NeighboursViewIterator : public std::iterator<std::input_iterator_tag, std::vector<std::size_t>,
+                                                        std::ptrdiff_t,
+                                                        const std::vector<std::size_t>*,
+                                                        const std::vector<std::size_t> &>
+    {
+    private:
+        const NeighbourGrid &grid;
+        std::size_t cellNo{};
+        std::size_t offset{};
+
+    public:
+        NeighboursViewIterator(const NeighbourGrid &grid, std::size_t cellNo, std::size_t offset)
+                : grid{grid}, cellNo{cellNo}, offset{offset}
+        { }
+
+        NeighboursViewIterator& operator++() {
+            this->offset++;
+            return *this;
+        }
+
+        NeighboursViewIterator operator++(int) {
+            NeighboursViewIterator retval = *this;
+            ++(*this);
+            return retval;
+        }
+
+        bool operator==(NeighboursViewIterator other) const {
+            return this->offset == other.offset;
+        }
+
+        bool operator!=(NeighboursViewIterator other) const {
+            return !(*this == other);
+        }
+
+        reference operator*() const {
+            return this->grid.getCellVector(this->cellNo + this->grid.neighbouringCellsOffsets[this->offset]);
+        }
+    };
+
+    class NeighboursView {
+    private:
+        const NeighbourGrid &grid;
+        std::size_t cellNo{};
+        std::size_t numOfOffsets{};
+
+    public:
+        explicit NeighboursView(const NeighbourGrid &grid, std::size_t cellNo)
+                : grid{grid}, cellNo{cellNo}, numOfOffsets{grid.neighbouringCellsOffsets.size()}
+        { }
+
+        [[nodiscard]] NeighboursViewIterator begin() const {
+            return NeighboursViewIterator(this->grid, this->cellNo, 0);
+        }
+
+        [[nodiscard]] NeighboursViewIterator end() const {
+            return NeighboursViewIterator(this->grid, this->cellNo, this->numOfOffsets);
+        }
+    };
+
     NeighbourGrid(double linearSize, double cellSize);
     NeighbourGrid(const std::array<double, 3> &linearSize, double cellSize);
 
@@ -58,7 +121,7 @@ public:
     void resize(const std::array<double, 3> &newLinearSize, double newCellSize);
     [[nodiscard]] const std::vector<std::size_t> &getCell(const Vector<3> &position) const;
     [[nodiscard]] std::vector<std::size_t> getNeighbours(const Vector<3> &position) const;
+    [[nodiscard]] NeighboursView getNeighbouringCells(const Vector<3> &position) const;
 };
-
 
 #endif //RAMPACK_NEIGHBOURGRID_H

@@ -55,20 +55,20 @@ double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, c
 }
 
 void Packing::addInteractionCentresToNeighbourGrid(std::size_t particleIdx) {
-    for (size_t i{}; i < numInteractionCentres; i++) {
-        std::size_t centreIdx = particleIdx * numInteractionCentres + i;
-        auto centrePos = shapes[particleIdx]->getPosition() + interactionCentres[centreIdx];
-        centrePos += bc->getCorrection(centrePos);
-        neighbourGrid->add(centreIdx, centrePos);
+    for (size_t i{}; i < this->numInteractionCentres; i++) {
+        std::size_t centreIdx = particleIdx * this->numInteractionCentres + i;
+        auto centrePos = this->shapes[particleIdx]->getPosition() + this->interactionCentres[centreIdx];
+        centrePos += this->bc->getCorrection(centrePos);
+        this->neighbourGrid->add(centreIdx, centrePos);
     }
 }
 
 void Packing::removeInteractionCentresFromNeighbourGrid(std::size_t particleIdx) {
-    for (size_t i{}; i < numInteractionCentres; i++) {
-        std::size_t centreIdx = particleIdx * numInteractionCentres + i;
-        auto centrePos = shapes[particleIdx]->getPosition() + interactionCentres[centreIdx];
-        centrePos += bc->getCorrection(centrePos);
-        neighbourGrid->remove(centreIdx, centrePos);
+    for (size_t i{}; i < this->numInteractionCentres; i++) {
+        std::size_t centreIdx = particleIdx * this->numInteractionCentres + i;
+        auto centrePos = this->shapes[particleIdx]->getPosition() + this->interactionCentres[centreIdx];
+        centrePos += this->bc->getCorrection(centrePos);
+        this->neighbourGrid->remove(centreIdx, centrePos);
     }
 }
 
@@ -203,10 +203,10 @@ void Packing::revertScaling() {
 bool Packing::isParticleOverlappingAnything(std::size_t particleIdx, const Interaction &interaction) const {
     if (this->neighbourGrid.has_value()) {
         if (this->numInteractionCentres == 0) {
-            auto neighbours = this->neighbourGrid->getNeighbours(this->shapes[particleIdx]->getPosition());
-            for (auto j : neighbours)
-                if (particleIdx != j && this->overlapBetweenParticles(particleIdx, j, interaction))
-                    return true;
+            for (const auto &cell : this->neighbourGrid->getNeighbouringCells(this->shapes[particleIdx]->getPosition()))
+                for (auto j : cell)
+                    if (particleIdx != j && this->overlapBetweenParticles(particleIdx, j, interaction))
+                        return true;
         } else {
             for (std::size_t centre1{}; centre1 < this->numInteractionCentres; centre1++)
                 if (this->isInteractionCentreOverlappingAnything(particleIdx, centre1, interaction))
@@ -277,16 +277,17 @@ bool Packing::isInteractionCentreOverlappingAnything(std::size_t particleIdx, st
     auto pos1 = this->shapes[particleIdx]->getPosition() + this->interactionCentres[centreIdx1];
     const auto &orientation1 = this->shapes[particleIdx]->getOrientation();
     pos1 += this->bc->getCorrection(pos1);
-    auto neighbours = this->neighbourGrid->getNeighbours(pos1);
-    for (auto centreIdx2 : neighbours) { // NOLINT(readability-use-anyofallof)
-        std::size_t j = centreIdx2 / this->numInteractionCentres;
-        if (j == particleIdx)
-            continue;
-        std::size_t centre2 = centreIdx2 % this->numInteractionCentres;
-        auto pos2 = this->shapes[j]->getPosition() + this->interactionCentres[centreIdx2];
-        const auto &orientation2 = this->shapes[j]->getOrientation();
-        if (interaction.overlapBetween(pos1, orientation1, centre, pos2, orientation2, centre2, *this->bc))
-            return true;
+    for (const auto &cell : this->neighbourGrid->getNeighbouringCells(pos1)) {
+        for (auto centreIdx2 : cell) { // NOLINT(readability-use-anyofallof)
+            std::size_t j = centreIdx2 / this->numInteractionCentres;
+            if (j == particleIdx)
+                continue;
+            std::size_t centre2 = centreIdx2 % this->numInteractionCentres;
+            auto pos2 = this->shapes[j]->getPosition() + this->interactionCentres[centreIdx2];
+            const auto &orientation2 = this->shapes[j]->getOrientation();
+            if (interaction.overlapBetween(pos1, orientation1, centre, pos2, orientation2, centre2, *this->bc))
+                return true;
+        }
     }
 
     return false;
@@ -300,11 +301,13 @@ double Packing::getParticleEnergy(std::size_t particleIdx, const Interaction &in
     double energy{};
     if (this->neighbourGrid.has_value()) {
         if (this->numInteractionCentres == 0) {
-            auto neigh = this->neighbourGrid->getNeighbours(this->shapes[particleIdx]->getPosition());
-            for (auto j : neigh) {
-                if (particleIdx == j)
-                    continue;
-                energy += this->calculateEnergyBetweenParticles(particleIdx, j, interaction);
+            const auto &pos = this->shapes[particleIdx]->getPosition();
+            for (const auto &cell : this->neighbourGrid->getNeighbouringCells(pos)) {
+                for (auto j : cell) {
+                    if (particleIdx == j)
+                        continue;
+                    energy += this->calculateEnergyBetweenParticles(particleIdx, j, interaction);
+                }
             }
         } else {
             for (std::size_t centre1{}; centre1 < this->numInteractionCentres; centre1++)
@@ -376,18 +379,18 @@ double Packing::calculateInteractionCentreEnergy(size_t particleIdx, std::size_t
     auto pos1 = this->shapes[particleIdx]->getPosition() + this->interactionCentres[centreIdx1];
     pos1 += this->bc->getCorrection(pos1);
     const auto &orientation1 = this->shapes[particleIdx]->getOrientation();
-    auto neighbours = this->neighbourGrid->getNeighbours(pos1);
-    for (auto centreIdx2 : neighbours) {
-        size_t j = centreIdx2 / this->numInteractionCentres;
-        if (j == particleIdx)
-            continue;
-        size_t centre2 = centreIdx2 % this->numInteractionCentres;
-        auto pos2 = this->shapes[j]->getPosition() + this->interactionCentres[centreIdx2];
-        const auto &orientation2 = this->shapes[j]->getOrientation();
-        energy += interaction.calculateEnergyBetween(pos1, orientation1, centre, pos2, orientation2, centre2,
-                                                     *this->bc);
+    for (const auto &cell : this->neighbourGrid->getNeighbouringCells(pos1)) {
+        for (auto centreIdx2 : cell) {
+            size_t j = centreIdx2 / this->numInteractionCentres;
+            if (j == particleIdx)
+                continue;
+            size_t centre2 = centreIdx2 % this->numInteractionCentres;
+            auto pos2 = this->shapes[j]->getPosition() + this->interactionCentres[centreIdx2];
+            const auto &orientation2 = this->shapes[j]->getOrientation();
+            energy += interaction.calculateEnergyBetween(pos1, orientation1, centre, pos2, orientation2, centre2,
+                                                         *this->bc);
+        }
     }
-
     return energy;
 }
 

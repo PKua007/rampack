@@ -227,3 +227,7 @@ void NeighbourGrid::resize(const std::array<double, 3> &newLinearSize, double ne
 void NeighbourGrid::resize(double newLinearSize, double newCellSize) {
     this->resize({newLinearSize, newLinearSize, newLinearSize}, newCellSize);
 }
+
+NeighbourGrid::NeighboursView NeighbourGrid::getNeighbouringCells(const Vector<3> &position) const {
+    return NeighboursView(*this, this->positionToCellNo(position));
+}
