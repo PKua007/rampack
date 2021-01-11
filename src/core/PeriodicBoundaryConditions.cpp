@@ -33,8 +33,15 @@ Vector<3> PeriodicBoundaryConditions::getTranslation(const Vector<3> &position1,
 }
 
 double PeriodicBoundaryConditions::getDistance2(const Vector<3> &position1, const Vector<3> &position2) const {
-    auto translation = this->getTranslation(position1, position2);
-    return (position2 + translation - position1).norm2();
+    double distance2{};
+
+    for (std::size_t i{}; i < 3; i++) {
+        double coordDistance = std::abs(position2[i] - position1[i]);
+        while (coordDistance > this->size[i] / 2)
+            coordDistance -= this->size[i] / 2;
+        distance2 += coordDistance * coordDistance;
+    }
+    return distance2;
 }
 
 PeriodicBoundaryConditions::PeriodicBoundaryConditions(double linearSize)
