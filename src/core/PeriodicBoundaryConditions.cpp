@@ -38,7 +38,7 @@ double PeriodicBoundaryConditions::getDistance2(const Vector<3> &position1, cons
     for (std::size_t i{}; i < 3; i++) {
         double coordDistance = std::abs(position2[i] - position1[i]);
         while (coordDistance > this->size[i] / 2)
-            coordDistance -= this->size[i] / 2;
+            coordDistance -= this->size[i];
         distance2 += coordDistance * coordDistance;
     }
     return distance2;
