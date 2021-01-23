@@ -56,8 +56,10 @@ void Simulation::perform(std::unique_ptr<Packing> packing_, const Interaction &i
             this->averagedEnergy.push_back(this->packing->getTotalEnergy(interaction));
             this->averagedEnergyFluctuations.push_back(this->packing->getParticleEnergyFluctuations(interaction));
         }
-        if ((i + 1) % (this->cycleLength * 100) == 0)
-            logger.info() << "Performed " << ((i + 1)/this->cycleLength) << " cycles" << std::endl;
+        if ((i + 1) % (this->cycleLength * 100) == 0) {
+            logger.info() << "Performed " << ((i + 1) / this->cycleLength) << " cycles. ";
+            logger << "Number density: " << this->packing->getNumberDensity() << std::endl;
+        }
     }
 
     logger.setAdditionalText("");
@@ -157,12 +159,12 @@ void Simulation::evaluateCounters(Logger &logger) {
             double minDimension = *std::min_element(dimensions.begin(), dimensions.end());
             if (this->translationStep * 1.1 <= minDimension) {
                 this->translationStep *= 1.1;
-                logger.verbose() << "Translation rate: " << rate << ", adjusting: "  << (this->translationStep / 1.1);
+                logger.info() << "Translation rate: " << rate << ", adjusting: "  << (this->translationStep / 1.1);
                 logger << " -> " << this->translationStep << std::endl;
             }
         } else if (rate < 0.3) {
             this->translationStep /= 1.1;
-            logger.verbose() << "Translation rate: " << rate << ", adjusting: " << (this->translationStep * 1.1);
+            logger.info() << "Translation rate: " << rate << ", adjusting: " << (this->translationStep * 1.1);
             logger << " -> " << (this->translationStep) << std::endl;
         }
     }
@@ -173,12 +175,12 @@ void Simulation::evaluateCounters(Logger &logger) {
         if (rate > 0.5) {
             if (this->rotationStep * 1.1 <= M_PI) {
                 this->rotationStep *= 1.1;
-                logger.verbose() << "Rotation rate: " << rate << ", adjusting: "  << (this->rotationStep / 1.1);
+                logger.info() << "Rotation rate: " << rate << ", adjusting: "  << (this->rotationStep / 1.1);
                 logger << " -> " << this->rotationStep << std::endl;
             }
         } else if (rate < 0.3) {
             this->rotationStep /= 1.1;
-            logger.verbose() << "Rotation rate: " << rate << ", adjusting: " << (this->rotationStep * 1.1);
+            logger.info() << "Rotation rate: " << rate << ", adjusting: " << (this->rotationStep * 1.1);
             logger << " -> " << (this->rotationStep) << std::endl;
         }
     }
@@ -188,11 +190,11 @@ void Simulation::evaluateCounters(Logger &logger) {
         this->scalingCounter.resetCurrent();
         if (rate > 0.5) {
             this->scalingStep *= 1.1;
-            logger.verbose() << "Scaling rate: " << rate << ", adjusting: " << (this->scalingStep / 1.1);
+            logger.info() << "Scaling rate: " << rate << ", adjusting: " << (this->scalingStep / 1.1);
             logger << " -> " << this->scalingStep << std::endl;
         } else if (rate < 0.3) {
             this->scalingStep /= 1.1;
-            logger.verbose() << "Scaling rate: " << rate << ", adjusting: " << (this->scalingStep * 1.1);
+            logger.info() << "Scaling rate: " << rate << ", adjusting: " << (this->scalingStep * 1.1);
             logger << " -> " << this->scalingStep << std::endl;
         }
     }
