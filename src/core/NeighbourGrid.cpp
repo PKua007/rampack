@@ -11,11 +11,20 @@
 std::size_t NeighbourGrid::positionToCellNo(const Vector<3> &position) const {
     std::size_t result{};
     for (int i = 2; i >= 0; i--) {
-        Expects(position[i] >= 0);
-        Expects(position[i] < this->linearSize[i]);
+        // Fix numerical accuracy problems, but only up to some EPSILON, bigger discrepancies are treated as
+        // preconditions miss
+        constexpr double EPSILON = std::numeric_limits<double>::epsilon() * 10;
+        double posI = position[i];
+        if (posI < 0) {
+            Expects(posI > -EPSILON);
+            posI = 0;
+        } else if (posI >= this->linearSize[i]) {
+            Expects(posI < this->linearSize[i] + EPSILON);
+            posI = this->linearSize[i] - EPSILON;
+        }
 
         // +1, since first row of cells on each edges is "reflected", not "real"
-        std::size_t coord = static_cast<int>(position[i] / this->cellSize[i]) + 1;
+        std::size_t coord = static_cast<int>(posI / this->cellSize[i]) + 1;
         result = this->numCellsInLine[i] * result + coord;
     }
     return result;

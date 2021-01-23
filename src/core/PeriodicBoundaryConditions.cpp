@@ -14,7 +14,7 @@ Vector<3> PeriodicBoundaryConditions::getCorrection(const Vector<3> &position) c
     for (std::size_t i{}; i < 3; i++) {
         while (position[i] + correction[i] < 0)
             correction[i] += this->size[i];
-        while (position[i] + correction[i] > this->size[i])
+        while (position[i] + correction[i] >= this->size[i])
             correction[i] -= this->size[i];
     }
     return correction;
