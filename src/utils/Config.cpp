@@ -135,13 +135,16 @@ void Config::buildRootSections() {
     std::set<std::string> sectionsSet;
     for (const auto &key : this->keys) {
         std::size_t pos = key.find('.');
+        std::string sectionName;
         if (pos == std::string::npos)
-            sectionsSet.insert("");
+            sectionName = "";
         else
-            sectionsSet.insert(key.substr(0, pos));
+            sectionName = key.substr(0, pos);
+        if (sectionsSet.find(sectionName) == sectionsSet.end()) {
+            sectionsSet.insert(sectionName);
+            this->rootSections.push_back(sectionName);
+        }
     }
-    this->rootSections.resize(sectionsSet.size());
-    std::copy(sectionsSet.begin(), sectionsSet.end(), this->rootSections.begin());
 }
 
 Config Config::fetchSubconfig(const std::string &rootSection) const {
