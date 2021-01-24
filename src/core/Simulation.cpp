@@ -8,27 +8,32 @@
 #include "Simulation.h"
 #include "utils/Assertions.h"
 
-Simulation::Simulation(double temperature, double pressure, double positionStepSize, double rotationStepSize,
-                       double volumeStepSize, std::size_t thermalisationCycles, std::size_t averagingCycles,
-                       std::size_t averagingEvery, unsigned long seed)
-        : temperature{temperature}, pressure{pressure}, initialTranslationStep{positionStepSize},
-          initialRotationStep{rotationStepSize}, initialScalingStep{volumeStepSize},
-          thermalisationCycles{thermalisationCycles}, averagingCycles{averagingCycles}, averagingEvery{averagingEvery},
-          mt(seed)
+Simulation::Simulation(std::unique_ptr<Packing> packing, double positionStepSize, double rotationStepSize,
+                       double volumeStepSize, unsigned long seed)
+        : initialTranslationStep{positionStepSize}, initialRotationStep{rotationStepSize},
+          initialScalingStep{volumeStepSize}, mt(seed), packing{std::move(packing)}
 {
-    Expects(temperature > 0);
-    Expects(pressure > 0);
+    Expects(!this->packing->empty());
     Expects(positionStepSize > 0);
     Expects(rotationStepSize > 0);
     Expects(volumeStepSize > 0);
-    Expects(thermalisationCycles > 0);
-    Expects(averagingCycles > 0);
-    Expects(averagingEvery > 0 && averagingEvery < averagingCycles);
 }
 
-void Simulation::perform(std::unique_ptr<Packing> packing_, const Interaction &interaction, Logger &logger) {
-    Expects(!packing_->empty());
-    this->packing = std::move(packing_);
+void Simulation::perform(double temperature_, double pressure_, std::size_t thermalisationCycles_,
+                         std::size_t averagingCycles_, std::size_t averagingEvery_, const Interaction &interaction,
+                         Logger &logger)
+{
+    Expects(temperature_ > 0);
+    Expects(pressure_ > 0);
+    Expects(thermalisationCycles_ > 0);
+    Expects(averagingCycles_ > 0);
+    Expects(averagingEvery_ > 0 && averagingEvery_ < averagingCycles_);
+
+    this->temperature = temperature_;
+    this->pressure = pressure_;
+    this->thermalisationCycles = thermalisationCycles_;
+    this->averagingCycles = averagingCycles_;
+    this->averagingEvery = averagingEvery_;
     this->reset();
 
     this->shouldAdjustStepSize = true;
@@ -77,7 +82,6 @@ void Simulation::reset() {
     this->averagedDensities.clear();
     this->densityThermalisationSnapshots.clear();
     this->cycleLength = 2 * this->packing->size() + 1;  // size() translations, size() rotations and 1 scaling
-
 }
 
 void Simulation::performStep(Logger &logger, const Interaction &interaction) {

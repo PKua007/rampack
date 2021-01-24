@@ -80,11 +80,11 @@ private:
     void reset();
 
 public:
-    Simulation(double temperature, double pressure, double positionStepSize, double rotationStepSize,
-               double volumeStepSize, std::size_t thermalisationCycles, std::size_t averagingCycles,
-               std::size_t averagingEvery, unsigned long seed);
+    Simulation(std::unique_ptr<Packing> packing, double positionStepSize, double rotationStepSize,
+               double volumeStepSize, unsigned long seed);
 
-    void perform(std::unique_ptr<Packing> packing_, const Interaction &interaction, Logger &logger);
+    void perform(double temperature_, double pressure_, std::size_t thermalisationCycles_, std::size_t averagingCycles_,
+                 std::size_t averagingEvery_, const Interaction &interaction, Logger &logger);
     [[nodiscard]] Quantity getAverageDensity() const;
     [[nodiscard]] Quantity getAverageEnergy() const;
     [[nodiscard]] Quantity getAverageEnergyFluctuations() const;

@@ -31,25 +31,40 @@ private:
     void validate() const;
 
 public:
+    class RunParameters {
+    private:
+        void validate() const;
+
+    public:
+        RunParameters() = default;
+        RunParameters(const std::string &runName, const Config &runConfig);
+
+        std::string runName{};
+        double temperature{};
+        double pressure{};
+        std::size_t thermalisationCycles{};
+        std::size_t averagingCycles{};
+        std::size_t averagingEvery{};
+        std::string wolframFilename{};
+        std::string outputFilename{};
+        std::string densitySnapshotFilename{};
+
+        void print(Logger &logger) const;
+    };
+
     /* All of these are described in input.ini */
     std::string initialDimensions{};
     std::string initialArrangement{};
     std::size_t numOfParticles{};
-    double temperature{};
-    double pressure{};
     double positionStepSize{};
     double rotationStepSize{};
     double volumeStepSize{};
-    std::size_t thermalisationCycles{};
-    std::size_t averagingCycles{};
-    std::size_t averagingEvery{};
     unsigned long seed{};
     std::string shapeName{};
     std::string shapeAttributes{};
     std::string interaction{};
-    std::string wolframFilename{};
-    std::string outputFilename{};
-    std::string densitySnapshotFilename{};
+
+    std::vector<RunParameters> runsParameters;
 
     Parameters() = default;
 
