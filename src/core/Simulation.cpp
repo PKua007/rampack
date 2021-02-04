@@ -8,15 +8,15 @@
 #include "Simulation.h"
 #include "utils/Assertions.h"
 
-Simulation::Simulation(std::unique_ptr<Packing> packing, double positionStepSize, double rotationStepSize,
-                       double volumeStepSize, unsigned long seed)
-        : initialTranslationStep{positionStepSize}, initialRotationStep{rotationStepSize},
-          initialScalingStep{volumeStepSize}, mt(seed), packing{std::move(packing)}
+Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep,
+                       double scalingStep, unsigned long seed)
+        : translationStep{translationStep}, rotationStep{rotationStep}, scalingStep{scalingStep}, mt(seed),
+          packing{std::move(packing)}
 {
     Expects(!this->packing->empty());
-    Expects(positionStepSize > 0);
-    Expects(rotationStepSize > 0);
-    Expects(volumeStepSize > 0);
+    Expects(translationStep > 0);
+    Expects(rotationStep > 0);
+    Expects(scalingStep > 0);
 }
 
 void Simulation::perform(double temperature_, double pressure_, std::size_t thermalisationCycles_,
@@ -73,9 +73,6 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
 void Simulation::reset() {
     this->moveTypeDistribution = std::uniform_int_distribution<int>(0, 2 * this->packing->size());
     this->particleIdxDistribution = std::uniform_int_distribution<int>(0, this->packing->size() - 1);
-    this->translationStep = this->initialTranslationStep;
-    this->rotationStep = this->initialRotationStep;
-    this->scalingStep = this->initialScalingStep;
     this->translationCounter.reset();
     this->rotationCounter.reset();
     this->scalingCounter.reset();

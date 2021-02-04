@@ -42,16 +42,13 @@ private:
         }
     };
 
-    double temperature{};
-    double pressure{};
-
-    double initialTranslationStep{};
-    double initialRotationStep{};
-    double initialScalingStep{};
     std::size_t thermalisationCycles{};
     std::size_t averagingCycles{};
     std::size_t averagingEvery{};
     std::size_t cycleLength{};
+
+    double temperature{};
+    double pressure{};
 
     double translationStep{};
     double rotationStep{};
@@ -80,8 +77,8 @@ private:
     void reset();
 
 public:
-    Simulation(std::unique_ptr<Packing> packing, double positionStepSize, double rotationStepSize,
-               double volumeStepSize, unsigned long seed);
+    Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep,
+               double scalingStep, unsigned long seed);
 
     void perform(double temperature_, double pressure_, std::size_t thermalisationCycles_, std::size_t averagingCycles_,
                  std::size_t averagingEvery_, const Interaction &interaction, Logger &logger);
