@@ -45,6 +45,7 @@ public:
         std::size_t thermalisationCycles{};
         std::size_t averagingCycles{};
         std::size_t averagingEvery{};
+        std::string packingFilename{};
         std::string wolframFilename{};
         std::string outputFilename{};
         std::string densitySnapshotFilename{};

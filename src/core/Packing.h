@@ -17,7 +17,7 @@
 
 class Packing {
 private:
-    std::vector<std::unique_ptr<Shape>> shapes;
+    std::vector<Shape> shapes;
     std::vector<Vector<3>> interactionCentres;
     std::array<double, 3> dimensions{};
     std::unique_ptr<BoundaryConditions> bc;
@@ -49,8 +49,8 @@ public:
     using iterator = decltype(shapes)::iterator;
     using const_iterator = decltype(shapes)::const_iterator;
 
-    Packing(const std::array<double, 3> &dimensions, std::vector<std::unique_ptr<Shape>> shapes,
-            std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction);
+    Packing(const std::array<double, 3> &dimensions, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
+            const Interaction &interaction);
 
     double tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction);
     double tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction);
@@ -78,6 +78,9 @@ public:
     void toWolfram(std::ostream &out, const ShapePrinter &printer) const;
     [[nodiscard]] double getPackingFraction(double shapeVolume) const;
     [[nodiscard]] double getNumberDensity() const;
+
+    void store(std::ostream &out) const;
+    void restore(std::istream &in, const Interaction &interaction);
 };
 
 

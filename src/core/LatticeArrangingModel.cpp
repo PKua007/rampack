@@ -8,8 +8,8 @@
 #include "LatticeArrangingModel.h"
 #include "utils/Assertions.h"
 
-std::vector<std::unique_ptr<Shape>> LatticeArrangingModel::arrange(std::size_t numOfParticles,
-                                                                   const std::array<double, 3> &dimensions) const
+std::vector<Shape> LatticeArrangingModel::arrange(std::size_t numOfParticles,
+                                                  const std::array<double, 3> &dimensions) const
 {
     Expects(numOfParticles > 0);
     Expects(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
@@ -21,10 +21,10 @@ std::vector<std::unique_ptr<Shape>> LatticeArrangingModel::arrange(std::size_t n
     return this->arrange(numOfParticles, particlesInLineArray, cellDimensions, dimensions);
 }
 
-std::vector<std::unique_ptr<Shape>>
-LatticeArrangingModel::arrange(std::size_t numOfParticles, const std::array<std::size_t, 3> &particlesInLine,
-                               const std::array<double, 3> &cellDimensions,
-                               const std::array<double, 3> &boxDimensions) const
+std::vector<Shape> LatticeArrangingModel::arrange(std::size_t numOfParticles,
+                                                  const std::array<std::size_t, 3> &particlesInLine,
+                                                  const std::array<double, 3> &cellDimensions,
+                                                  const std::array<double, 3> &boxDimensions) const
 {
     Expects(numOfParticles > 0);
     Expects(std::all_of(particlesInLine.begin(), particlesInLine.end(), [](double d) { return d > 0; }));
@@ -37,7 +37,7 @@ LatticeArrangingModel::arrange(std::size_t numOfParticles, const std::array<std:
         Expects(offset[i] > 0);
     }
 
-    std::vector<std::unique_ptr<Shape>> result;
+    std::vector<Shape> result;
     result.reserve(numOfParticles);
 
     std::size_t shapeIdx{};
@@ -50,8 +50,7 @@ LatticeArrangingModel::arrange(std::size_t numOfParticles, const std::array<std:
                 auto translation = Vector<3>{i * cellDimensions[0] + offset[0],
                                              j * cellDimensions[1] + offset[1],
                                              k * cellDimensions[2] + offset[2]};
-                auto particle = std::make_unique<Shape>(translation);
-                result.push_back(std::move(particle));
+                result.emplace_back(translation);
                 shapeIdx++;
             }
         }

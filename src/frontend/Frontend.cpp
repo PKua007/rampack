@@ -169,11 +169,19 @@ int Frontend::casino(int argc, char **argv) {
         this->logger << "--------------------------------------------------------------------" << std::endl;
 
         // Store packing (if desired)
+        if (!runParams.packingFilename.empty()) {
+            std::ofstream out(runParams.packingFilename);
+            ValidateMsg(out, "Could not open " + runParams.packingFilename + " to store packing!");
+            simulation.getPacking().store(out);
+            this->logger.info() << "Packing stored to " + runParams.packingFilename << std::endl;
+        }
+
+        // Store Mathematica packing (if desired)
         if (!runParams.wolframFilename.empty()) {
             std::ofstream out(runParams.wolframFilename);
-            ValidateMsg(out, "Could not open " + runParams.wolframFilename + " to store packing!");
+            ValidateMsg(out, "Could not open " + runParams.wolframFilename + " to store Wolfram packing!");
             simulation.getPacking().toWolfram(out, shapeTraits->getPrinter());
-            this->logger.info() << "Packing stored to " + runParams.wolframFilename << std::endl;
+            this->logger.info() << "Wolfram packing stored to " + runParams.wolframFilename << std::endl;
         }
 
         // Store density, energy, etc. (if desired)
@@ -224,9 +232,8 @@ int Frontend::printGeneralHelp(const std::string &cmd) {
     return EXIT_SUCCESS;
 }
 
-std::vector<std::unique_ptr<Shape>> Frontend::arrangePacking(std::size_t numOfParticles,
-                                                             const std::array<double, 3> &boxDimensions,
-                                                             const std::string &arrangementString)
+std::vector<Shape> Frontend::arrangePacking(std::size_t numOfParticles, const std::array<double, 3> &boxDimensions,
+                                            const std::string &arrangementString)
 {
     std::istringstream arrangementStream(arrangementString);
     std::string type;

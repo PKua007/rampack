@@ -60,6 +60,8 @@ Parameters::RunParameters::RunParameters(const std::string &runName, const Confi
             this->averagingEvery = runConfig.getUnsignedLong("averagingEvery");
         else if (key == "wolframFilename")
             this->wolframFilename = runConfig.getString("wolframFilename");
+        else if (key == "packingFilename")
+            this->packingFilename = runConfig.getString("packingFilename");
         else if (key == "outputFilename")
             this->outputFilename = runConfig.getString("outputFilename");
         else if (key == "densitySnapshotFilename")
@@ -104,6 +106,7 @@ void Parameters::RunParameters::print(Logger &logger) const {
     logger.info() << "thermalisationCycles    : " << this->thermalisationCycles << std::endl;
     logger.info() << "averagingCycles         : " << this->averagingCycles << std::endl;
     logger.info() << "averagingEvery          : " << this->averagingEvery << std::endl;
+    logger.info() << "packingFilename         : " << this->packingFilename << std::endl;
     logger.info() << "wolframFilename         : " << this->wolframFilename << std::endl;
     logger.info() << "outputFilename          : " << this->outputFilename << std::endl;
     logger.info() << "densitySnapshotFilename : " << this->densitySnapshotFilename << std::endl;
