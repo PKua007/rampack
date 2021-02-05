@@ -80,6 +80,7 @@ int Frontend::casino(int argc, char **argv) {
     std::string inputFilename;
     std::vector<std::string> overridenParams;
     std::string verbosity;
+    std::string startFrom;
 
     options.add_options()
             ("h,help", "prints help for this mode")
@@ -90,7 +91,11 @@ int Frontend::casino(int argc, char **argv) {
              cxxopts::value<std::vector<std::string>>(overridenParams))
             ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
                             "error, warn, info, verbose, debug",
-             cxxopts::value<std::string>(verbosity)->default_value("info"));
+             cxxopts::value<std::string>(verbosity)->default_value("info"))
+            ("s,start_from", "when specified, the simulation will be started at the specified run from "
+                             "the input file. The packing will be restorer from the file specified by the preceding "
+                             "run.",
+             cxxopts::value<std::string>(startFrom));
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
@@ -118,21 +123,51 @@ int Frontend::casino(int argc, char **argv) {
     params.print(this->logger);
     this->logger << std::endl;
 
-    // Prepare simulation
-    std::istringstream dimensionsStream(params.initialDimensions);
-    std::array<double, 3> dimensions{};
-    dimensionsStream >> dimensions[0] >> dimensions[1] >> dimensions[2];
-    ValidateMsg(dimensionsStream, "Invalid packing dimensions format. Expected: [dim x] [dim y] [dim z]");
-    Validate(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
-    auto shapes = this->arrangePacking(params.numOfParticles, dimensions, params.initialArrangement);
     auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
-    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(bc), shapeTraits->getInteraction());
+
+    std::unique_ptr<Packing> packing;
+    std::size_t startRunIndex{};
+    if (parsedOptions.count("start_from")) {
+        auto runsParameters = params.runsParameters;
+        auto nameMatchesStartFrom = [startFrom](const Parameters::RunParameters &params) {
+            return params.runName == startFrom;
+        };
+        auto it = std::find_if(runsParameters.begin(), runsParameters.end(), nameMatchesStartFrom);
+
+        ValidateMsg(it != runsParameters.end(), "Invalid run name to start from");
+        startRunIndex = it - runsParameters.begin();
+
+        if (startRunIndex != 0) {
+            packing = std::make_unique<Packing>(std::move(bc));
+            std::string previousPackingFilename = runsParameters[startRunIndex - 1].packingFilename;
+            std::ifstream packingFile(previousPackingFilename);
+            ValidateMsg(packingFile, "Cannot open file " + previousPackingFilename + " to restore previous state");
+            packing->restore(packingFile, shapeTraits->getInteraction());
+
+            std::string previousRunName = runsParameters[startRunIndex - 1].runName;
+            logger.info() << "Loaded packing from the preceding run '" << previousRunName << "' as a starting point.";
+            logger << std::endl;
+        }
+    }
+
+    if (packing == nullptr) {
+        std::istringstream dimensionsStream(params.initialDimensions);
+        std::array<double, 3> dimensions{};
+        dimensionsStream >> dimensions[0] >> dimensions[1] >> dimensions[2];
+        ValidateMsg(dimensionsStream, "Invalid packing dimensions format. Expected: [dim x] [dim y] [dim z]");
+        Validate(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
+        auto shapes = this->arrangePacking(params.numOfParticles, dimensions, params.initialArrangement);
+        packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(bc), shapeTraits->getInteraction());
+    }
+
+    // Perform simulations
     Simulation simulation(std::move(packing), params.positionStepSize, params.rotationStepSize, params.volumeStepSize,
                           params.seed);
 
-    // Perform simulations
-    for (const auto &runParams : params.runsParameters) {
+    for (std::size_t i = startRunIndex; i < params.runsParameters.size(); i++) {
+        auto runParams = params.runsParameters[i];
+
         this->logger.info() << std::endl;
         this->logger << "--------------------------------------------------------------------" << std::endl;
         this->logger << "Starting run '" << runParams.runName << "'" << std::endl;

@@ -17,21 +17,21 @@
 
 // Preconditions check (argument validation)
 #define Expects(cond) if (!(cond)) throw PreconditionException(__WHERE__ ": Precondition (" #cond ") failed")
-#define ExpectsMsg(cond, msg) if (!(cond)) throw PreconditionException(__WHERE__ msg)
+#define ExpectsMsg(cond, msg) if (!(cond)) throw PreconditionException(__WHERE__ ": " msg)
 
 // Postconditions check (results assertion)
 #define Ensures(cond) if (!(cond)) throw PostconditionException(__WHERE__ ": Postcondition (" #cond ") failed")
-#define EnsuresMsg(cond, msg) if (!(cond)) throw PostconditionException(__WHERE__ msg)
+#define EnsuresMsg(cond, msg) if (!(cond)) throw PostconditionException(__WHERE__ ": " msg)
 
 // Runtime assertion. Why duplicate assert from cassert? Because we don't want to disable is in release mode and
 // be more C++ and throw exception
 #define Assert(cond) if (!(cond)) throw AssertionException(__WHERE__ ": Assertion (" #cond ") failed")
-#define AssertMsg(cond, msg) if (!(cond)) throw AssertionException(__WHERE__ msg)
+#define AssertMsg(cond, msg) if (!(cond)) throw AssertionException(__WHERE__ ": " msg)
 
 // Additional macros for validating things like input from file - wrong input shouldn't be considered as assertion
 // fail, because it is not the programmer's fault ;)
 #define Validate(cond) if (!(cond)) throw ValidationException(__WHERE__ ": Validation (" #cond ") failed")
-#define ValidateMsg(cond, msg) if (!(cond)) throw ValidationException(__WHERE__ msg)
+#define ValidateMsg(cond, msg) if (!(cond)) throw ValidationException(__WHERE__ ": " msg)
 
 /**
  * @brief An exception thrown by Validate and ValidateMsg macros.

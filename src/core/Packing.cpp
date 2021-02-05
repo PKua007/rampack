@@ -10,6 +10,7 @@
 #include "Packing.h"
 #include "utils/Assertions.h"
 
+
 Packing::Packing(const std::array<double, 3> &dimensions, std::vector<Shape> shapes,
                  std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction)
         : shapes{std::move(shapes)}, dimensions{dimensions}, bc{std::move(bc)},
@@ -457,7 +458,7 @@ double Packing::getVolume() const {
 
 void Packing::store(std::ostream &out) const {
     out.precision(std::numeric_limits<double>::max_digits10);
-    out << this->dimensions[0] << " " << this->dimensions[1] << this->dimensions[2] << std::endl;
+    out << this->dimensions[0] << " " << this->dimensions[1] << " " << this->dimensions[2] << std::endl;
     out << this->shapes.size() << std::endl;
     for (const auto &shape : this->shapes) {
         Vector<3> position = shape.getPosition();

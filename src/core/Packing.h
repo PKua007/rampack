@@ -49,6 +49,7 @@ public:
     using iterator = decltype(shapes)::iterator;
     using const_iterator = decltype(shapes)::const_iterator;
 
+    explicit Packing(std::unique_ptr<BoundaryConditions> bc) : bc{std::move(bc)} { }
     Packing(const std::array<double, 3> &dimensions, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
             const Interaction &interaction);
 
