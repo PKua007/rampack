@@ -60,10 +60,10 @@ TEST_CASE("Packing") {
     SphereHardCoreInteraction hardCore(radius);
     SphereDistanceInteraction distanceInteraction{};
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    std::vector<std::unique_ptr<Shape>> shapes;
-    shapes.push_back(std::make_unique<Shape>(Vector<3>{0.5, 0.5, 0.5}));
-    shapes.push_back(std::make_unique<Shape>(Vector<3>{4.5, 0.5, 0.5}));
-    shapes.push_back(std::make_unique<Shape>(Vector<3>{2.5, 2.5, 4.0}));
+    std::vector<Shape> shapes;
+    shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5});
+    shapes.emplace_back(Vector<3>{4.5, 0.5, 0.5});
+    shapes.emplace_back(Vector<3>{2.5, 2.5, 4.0});
     Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
 
     REQUIRE(packing.getDimensions() == std::array<double, 3>{5, 5, 5});

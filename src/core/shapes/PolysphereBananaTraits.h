@@ -13,14 +13,17 @@ private:
                                                       double sphereRadius);
 
 public:
-    PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius)
-            : PolysphereTraits(generateSphereData(arcRadius, arcAngle, sphereNum, sphereRadius))
+    PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
+                           bool shouldNormalizeMassCentre = true)
+            : PolysphereTraits(generateSphereData(arcRadius, arcAngle, sphereNum, sphereRadius),
+                               shouldNormalizeMassCentre)
     { }
 
     PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
-                           std::unique_ptr<CentralInteraction> centralInteraction)
+                           std::unique_ptr<CentralInteraction> centralInteraction,
+                           bool shouldNosmalizeMassCentre = true)
             : PolysphereTraits(generateSphereData(arcRadius, arcAngle, sphereNum, sphereRadius),
-                               std::move(centralInteraction))
+                               std::move(centralInteraction), shouldNosmalizeMassCentre)
     { }
 };
 

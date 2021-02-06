@@ -31,10 +31,15 @@ std::string PolysphereTraits::toWolfram(const Shape &shape) const {
 }
 
 PolysphereTraits::PolysphereTraits(std::vector<SphereData> sphereData,
-                                   std::unique_ptr<CentralInteraction> centralInteraction)
+                                   std::unique_ptr<CentralInteraction> centralInteraction,
+                                   bool shouldNormalizeMassCentre)
         : sphereData{std::move(sphereData)}
 {
     Expects(!this->sphereData.empty());
+
+    if (shouldNormalizeMassCentre)
+        this->normalizeMassCentre();
+
     std::vector<Vector<3>> centres;
     centres.reserve(this->sphereData.size());
     std::transform(this->sphereData.begin(), this->sphereData.end(), std::back_inserter(centres),
@@ -43,10 +48,40 @@ PolysphereTraits::PolysphereTraits(std::vector<SphereData> sphereData,
     this->interaction = std::move(centralInteraction);
 }
 
-PolysphereTraits::PolysphereTraits(const std::vector<SphereData> &sphereData)
-        : sphereData{sphereData}, interaction{std::make_unique<HardInteraction>(sphereData)}
+PolysphereTraits::PolysphereTraits(const std::vector<SphereData> &sphereData, bool shouldNormalizeMassCentre)
+        : sphereData{sphereData}
 {
     Expects(!sphereData.empty());
+    if (shouldNormalizeMassCentre)
+        this->normalizeMassCentre();
+    this->interaction = std::make_unique<HardInteraction>(this->sphereData);
+}
+
+void PolysphereTraits::normalizeMassCentre() {
+    auto massCentreAccumulator = [](const Vector<3> &sum, const SphereData &data) {
+        double r = data.radius;
+        return sum + (r*r*r) * data.position;
+    };
+
+    auto weightAccumulator = [](double sum, const SphereData &data) {
+        double r = data.radius;
+        return sum + r*r*r;
+    };
+
+    Vector<3> massCentre = std::accumulate(this->sphereData.begin(), this->sphereData.end(), Vector<3>{},
+                                           massCentreAccumulator);
+    double weightSum = std::accumulate(this->sphereData.begin(), this->sphereData.end(), 0., weightAccumulator);
+    massCentre /= weightSum;
+
+    auto massCentreShifter = [massCentre](const SphereData &data) {
+        return SphereData(data.position - massCentre, data.radius);
+    };
+
+    std::vector<SphereData> newSphereData;
+    newSphereData.reserve(this->sphereData.size());
+    std::transform(this->sphereData.begin(), this->sphereData.end(), std::back_inserter(newSphereData),
+                   massCentreShifter);
+    this->sphereData = std::move(newSphereData);
 }
 
 PolysphereTraits::SphereData::SphereData(const Vector<3> &position, double radius)
@@ -87,4 +122,10 @@ double PolysphereTraits::HardInteraction::getRangeRadius() const {
         return sd1.radius < sd2.radius;
     };
     return 2 * std::max_element(this->sphereData.begin(), this->sphereData.end(), comparator)->radius;
+}
+
+PolysphereTraits::HardInteraction::HardInteraction(std::vector<SphereData> sphereData)
+        : sphereData{std::move(sphereData)}
+{
+    Expects(!this->sphereData.empty());
 }

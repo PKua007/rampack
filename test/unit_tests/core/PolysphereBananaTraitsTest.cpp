@@ -10,7 +10,7 @@
 
 TEST_CASE("PolysphereBananaTraits") {
     SECTION("odd number of spheres") {
-        PolysphereBananaTraits traits(2, M_PI/2, 3, 1);
+        PolysphereBananaTraits traits(2, M_PI/2, 3, 1, false);
 
         const auto &data = traits.getSphereData();
         REQUIRE(data.size() == 3);
@@ -23,7 +23,7 @@ TEST_CASE("PolysphereBananaTraits") {
     }
 
     SECTION("even number of spheres") {
-        PolysphereBananaTraits traits(2, 3*M_PI/4, 4, 1);
+        PolysphereBananaTraits traits(2, 3*M_PI/4, 4, 1, false);
 
         const auto &data = traits.getSphereData();
         REQUIRE(data.size() == 4);

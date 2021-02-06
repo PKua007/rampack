@@ -6,6 +6,7 @@
 #define RAMPACK_POLYSPHERETRAITS_H
 
 #include <utility>
+#include <ostream>
 
 #include "core/ShapeTraits.h"
 #include "core/interactions/CentralInteraction.h"
@@ -20,6 +21,14 @@ public:
 
         [[nodiscard]] Vector<3> centreForShape(const Shape &shape) const;
         void toWolfram(std::ostream &out, const Shape &shape) const;
+
+        friend bool operator==(const SphereData &lhs, const SphereData &rhs) {
+            return std::tie(lhs.position, lhs.radius) == std::tie(rhs.position, rhs.radius);
+        }
+
+        friend std::ostream &operator<<(std::ostream &os, const SphereData &data) {
+            return os << "{" << data.position << ", " << data.radius << "}";
+        }
     };
 
 private:
@@ -28,7 +37,7 @@ private:
         std::vector<SphereData> sphereData;
 
     public:
-        explicit HardInteraction(std::vector<SphereData> sphereData) : sphereData{std::move(sphereData)} { }
+        explicit HardInteraction(std::vector<SphereData> sphereData);
 
         [[nodiscard]] bool hasHardPart() const override { return true; }
         [[nodiscard]] bool hasSoftPart() const override { return false; }
@@ -44,9 +53,12 @@ private:
     std::vector<SphereData> sphereData;
     std::unique_ptr<Interaction> interaction{};
 
+    void normalizeMassCentre();
+
 public:
-    explicit PolysphereTraits(const std::vector<SphereData> &sphereData);
-    PolysphereTraits(std::vector<SphereData> sphereData, std::unique_ptr<CentralInteraction> centralInteraction);
+    explicit PolysphereTraits(const std::vector<SphereData> &sphereData, bool shouldNormalizeMassCentre);
+    PolysphereTraits(std::vector<SphereData> sphereData, std::unique_ptr<CentralInteraction> centralInteraction,
+                     bool shouldNormalizeMassCentre);
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; }
     [[nodiscard]] double getVolume() const override;

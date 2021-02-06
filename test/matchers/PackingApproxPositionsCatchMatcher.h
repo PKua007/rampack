@@ -28,9 +28,9 @@ public:
             return false;
         return std::equal(actual.begin(), actual.end(), this->expected.begin(),
                           [this](const auto &shape, const auto &position) {
-                              return shape->getPosition()[0] == Approx(position[0]).epsilon(this->epsilon)
-                                     && shape->getPosition()[1] == Approx(position[1]).epsilon(this->epsilon)
-                                     && shape->getPosition()[2] == Approx(position[2]).epsilon(this->epsilon);
+                              return shape.getPosition()[0] == Approx(position[0]).epsilon(this->epsilon)
+                                     && shape.getPosition()[1] == Approx(position[1]).epsilon(this->epsilon)
+                                     && shape.getPosition()[2] == Approx(position[2]).epsilon(this->epsilon);
                           });
     }
 

@@ -12,14 +12,14 @@ private:
     static std::vector<SphereData> generateSphereData(std::size_t sphereNum, double sphereRadius, double distance);
 
 public:
-    KMerTraits(std::size_t sphereNum, double sphereRadius, double distance)
-            : PolysphereTraits(generateSphereData(sphereNum, sphereRadius, distance))
+    KMerTraits(std::size_t sphereNum, double sphereRadius, double distance, bool shouldNormalizeMassCentre = true)
+            : PolysphereTraits(generateSphereData(sphereNum, sphereRadius, distance), shouldNormalizeMassCentre)
     { }
 
     KMerTraits(std::size_t sphereNum, double sphereRadius, double distance,
-               std::unique_ptr<CentralInteraction> centralInteraction)
+               std::unique_ptr<CentralInteraction> centralInteraction, bool shouldNormalizeMassCentre = true)
             : PolysphereTraits(generateSphereData(sphereNum, sphereRadius, distance),
-                               std::move(centralInteraction))
+                               std::move(centralInteraction), shouldNormalizeMassCentre)
     { }
 };
 

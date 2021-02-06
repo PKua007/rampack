@@ -15,7 +15,7 @@ namespace {
 }
 
 TEST_CASE("PolysphereTraits: hard interactions") {
-    PolysphereTraits traits({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}});
+    PolysphereTraits traits({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}}, false);
 
     SECTION("hard interactions") {
         // Particles look and are placed like this (x - central particle, o - second one):
@@ -59,9 +59,15 @@ TEST_CASE("PolysphereTraits: hard interactions") {
 }
 
 TEST_CASE("PolysphereTraits: soft interactions") {
-    PolysphereTraits traits({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}},
-                            std::make_unique<DummyInteraction>());
+    PolysphereTraits traits({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}}, std::make_unique<DummyInteraction>(), false);
     const auto &interaction = dynamic_cast<const CentralInteraction &>(traits.getInteraction());
 
     CHECK(interaction.getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}, {3, 0, 0}});
+}
+
+TEST_CASE("PolysphereTraits: mass centre normalization") {
+    PolysphereTraits traits{{{{0, 0, 0}, 1}, {{1, 0, 0}, std::cbrt(3)}}, true};
+
+    CHECK(traits.getSphereData()
+          == std::vector<PolysphereTraits::SphereData>{{{-0.75, 0, 0}, 1}, {{0.25, 0, 0}, std::cbrt(3)}});
 }
