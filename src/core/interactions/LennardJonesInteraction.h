@@ -17,6 +17,8 @@ protected:
 
 public:
     LennardJonesInteraction(double epsilon, double sigma);
+
+    double getRangeRadius() const override { return 3 * this->sigma; }
 };
 
 
