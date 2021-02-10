@@ -81,21 +81,26 @@ int Frontend::casino(int argc, char **argv) {
     std::vector<std::string> overridenParams;
     std::string verbosity;
     std::string startFrom;
+    std::size_t continuationCycles;
 
     options.add_options()
             ("h,help", "prints help for this mode")
             ("i,input", "an INI file with parameters. See input.ini for parameters description",
              cxxopts::value<std::string>(inputFilename))
-            ("P,set_param", "overrides the value of the parameter loaded from --input parameter set. More precisely, "
+            ("P,set-param", "overrides the value of the parameter loaded from --input parameter set. More precisely, "
                             "doing -P N=1 (-PN=1 does not work) acts as one would append N=1 to the input file",
              cxxopts::value<std::vector<std::string>>(overridenParams))
             ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
                             "error, warn, info, verbose, debug",
              cxxopts::value<std::string>(verbosity)->default_value("info"))
-            ("s,start_from", "when specified, the simulation will be started at the specified run from "
-                             "the input file. The packing will be restorer from the file specified by the preceding "
-                             "run.",
-             cxxopts::value<std::string>(startFrom));
+            ("s,start-from", "when specified, the simulation will be started at the specified run from "
+                             "the input file. The packing will be restored from the file specified by the preceding "
+                             "run, or from the previous run of this step if used together with --continue option.",
+             cxxopts::value<std::string>(startFrom))
+            ("c,continue", "when specified, the previously generated packing will be loaded and continued "
+                           "for as many more cycles as specified. It can be used together with --start-from. The "
+                           "of continuation cycles overrides both the value from input file and --set-param.",
+             cxxopts::value<std::size_t>(continuationCycles));
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
@@ -125,10 +130,11 @@ int Frontend::casino(int argc, char **argv) {
 
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
-
     std::unique_ptr<Packing> packing;
+
+    // Find starting run index if specified
     std::size_t startRunIndex{};
-    if (parsedOptions.count("start_from")) {
+    if (parsedOptions.count("start-from")) {
         auto runsParameters = params.runsParameters;
         auto nameMatchesStartFrom = [startFrom](const Parameters::RunParameters &params) {
             return params.runName == startFrom;
@@ -137,20 +143,39 @@ int Frontend::casino(int argc, char **argv) {
 
         ValidateMsg(it != runsParameters.end(), "Invalid run name to start from");
         startRunIndex = it - runsParameters.begin();
-
-        if (startRunIndex != 0) {
-            packing = std::make_unique<Packing>(std::move(bc));
-            std::string previousPackingFilename = runsParameters[startRunIndex - 1].packingFilename;
-            std::ifstream packingFile(previousPackingFilename);
-            ValidateMsg(packingFile, "Cannot open file " + previousPackingFilename + " to restore previous state");
-            packing->restore(packingFile, shapeTraits->getInteraction());
-
-            std::string previousRunName = runsParameters[startRunIndex - 1].runName;
-            logger.info() << "Loaded packing from the preceding run '" << previousRunName << "' as a starting point.";
-            logger << std::endl;
-        }
     }
 
+    // Override thermalization cycles if this is continuation run
+    if (parsedOptions.count("continue")) {
+        Validate(continuationCycles > 0);
+        auto &startingRun = params.runsParameters[startRunIndex];
+        startingRun.thermalisationCycles = continuationCycles;
+        this->logger.info() << "Thermalisation from the finished run '" << startingRun.runName << "' will be ";
+        this->logger << "continued for " << continuationCycles << " more cycles" << std::endl;
+    }
+
+    // Load starting state from a previous or current run packing depending on --start-from and --continue
+    // options combination
+    if ((parsedOptions.count("start-from") && startRunIndex != 0) || parsedOptions.count("continue")) {
+        packing = std::make_unique<Packing>(std::move(bc));
+        auto runsParameters = params.runsParameters;
+        Parameters::RunParameters startingRunParams;
+        if (parsedOptions.count("continue"))
+            startingRunParams = runsParameters[startRunIndex];
+        else
+            startingRunParams = runsParameters[startRunIndex - 1];
+
+        std::string previousPackingFilename = startingRunParams.packingFilename;
+        std::ifstream packingFile(previousPackingFilename);
+        ValidateMsg(packingFile, "Cannot open file " + previousPackingFilename + " to restore starting state");
+        packing->restore(packingFile, shapeTraits->getInteraction());
+
+        std::string previousRunName = startingRunParams.runName;
+        this->logger.info() << "Loaded packing from the run '" << previousRunName << "' as a starting point.";
+        this->logger << std::endl;
+    }
+
+    // If packing was not loaded from file, arrange it as given in config file
     if (packing == nullptr) {
         std::istringstream dimensionsStream(params.initialDimensions);
         std::array<double, 3> dimensions{};
@@ -161,7 +186,7 @@ int Frontend::casino(int argc, char **argv) {
         packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(bc), shapeTraits->getInteraction());
     }
 
-    // Perform simulations
+    // Perform simulations starting from initial run
     Simulation simulation(std::move(packing), params.positionStepSize, params.rotationStepSize, params.volumeStepSize,
                           params.seed);
 
