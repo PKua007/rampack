@@ -22,23 +22,30 @@ private:
     std::array<double, 3> dimensions{};
     std::unique_ptr<BoundaryConditions> bc;
     std::optional<NeighbourGrid> neighbourGrid;
+    std::optional<NeighbourGrid> tempNeighbourGrid;
     double interactionRange{};
     std::size_t numInteractionCentres{};
 
     std::size_t lastAlteredParticleIdx{};
-    Vector<3> lastTranslation;
-    Matrix<3, 3> lastRotation;
+    Shape lastShape;
+    std::vector<Vector<3>> lastInteractionCentres;
     double lastScalingFactor{};
 
     [[nodiscard]] bool areAnyParticlesOverlapping(const Interaction &interaction) const;
     [[nodiscard]] bool isParticleOverlappingAnything(std::size_t particleIdx, const Interaction &interaction) const;
+    [[nodiscard]] bool isTempParticleOverlappingAnything(std::size_t particleIdx, const Interaction &interaction) const;
     void rebuildNeighbourGrid();
     void removeInteractionCentresFromNeighbourGrid(size_t particleIdx);
     void addInteractionCentresToNeighbourGrid(size_t particleIdx);
     void rotateInteractionCentres(size_t particleIdx, const Matrix<3, 3> &rotation);
+    void acceptTempInteractionCentres();
     [[nodiscard]] bool overlapBetweenParticles(std::size_t particleIdx1, std::size_t particleIdx2,
                                                const Interaction &interaction) const;
+    [[nodiscard]] bool overlapBetweenTempParticleAndOther(std::size_t particleIdx1, std::size_t particleIdx2,
+                                               const Interaction &interaction) const;
     [[nodiscard]] bool isInteractionCentreOverlappingAnything(std::size_t particleIdx, std::size_t centre,
+                                                              const Interaction &interaction) const;
+    [[nodiscard]] bool isTempInteractionCentreOverlappingAnything(std::size_t particleIdx, std::size_t centre,
                                                               const Interaction &interaction) const;
     [[nodiscard]] double calculateEnergyBetweenParticles(std::size_t particleIdx1, std::size_t particleIdx2,
                                                          const Interaction &interaction) const;
@@ -56,8 +63,9 @@ public:
     double tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction);
     double tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction);
     double tryScaling(double scaleFactor, const Interaction &interaction);
-    void revertTranslation();
-    void revertRotation();
+    void acceptTranslation();
+    void acceptRotation();
+    void acceptScaling() { };
     void revertScaling();
     [[nodiscard]] double getParticleEnergy(std::size_t particleIdx, const Interaction &interaction) const;
     [[nodiscard]] double getParticleEnergyFluctuations(const Interaction &interaction) const;
@@ -82,6 +90,8 @@ public:
 
     void store(std::ostream &out) const;
     void restore(std::istream &in, const Interaction &interaction);
+
+    void prepareTempInteractionCentres(std::size_t particleIdx, const Matrix<3, 3> &rotation);
 };
 
 

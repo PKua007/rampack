@@ -23,8 +23,10 @@ public:
     Shape(const Vector<3> &position, const Matrix<3, 3> &orientation) : position{position}, orientation{orientation} { }
 
     void translate(const Vector<3> &translation, const BoundaryConditions &bc);
+    void setPosition(const Vector<3> &position_);
     void scale(double factor);
     void rotate(const Matrix<3, 3> &rotation);
+    void setOrientation(const Matrix<3, 3> &orientation_);
     void applyBCTranslation(const BoundaryConditions &bc, Shape &other) const;
     [[nodiscard]] const Vector<3> &getPosition() const { return this->position; }
     [[nodiscard]] const Matrix<3, 3> &getOrientation() const { return this->orientation; }

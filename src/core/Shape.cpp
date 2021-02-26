@@ -21,3 +21,11 @@ void Shape::scale(double factor) {
     this->position *= factor;
 }
 
+void Shape::setPosition(const Vector<3> &position_) {
+    this->position = position_;
+}
+
+void Shape::setOrientation(const Matrix<3, 3> &orientation_) {
+    this->orientation = orientation_;
+}
+
