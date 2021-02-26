@@ -155,7 +155,7 @@ void Simulation::evaluateCounters(Logger &logger) {
     if (this->translationCounter.movesSinceEvaluation >= 100*this->packing->size()) {
         double rate = this->translationCounter.getCurrentRate();
         this->translationCounter.resetCurrent();
-        if (rate > 0.5) {
+        if (rate > 0.2) {
             const auto &dimensions = this->packing->getDimensions();
             double minDimension = *std::min_element(dimensions.begin(), dimensions.end());
             if (this->translationStep * 1.1 <= minDimension) {
@@ -163,7 +163,7 @@ void Simulation::evaluateCounters(Logger &logger) {
                 logger.info() << "Translation rate: " << rate << ", adjusting: "  << (this->translationStep / 1.1);
                 logger << " -> " << this->translationStep << std::endl;
             }
-        } else if (rate < 0.3) {
+        } else if (rate < 0.1) {
             this->translationStep /= 1.1;
             logger.info() << "Translation rate: " << rate << ", adjusting: " << (this->translationStep * 1.1);
             logger << " -> " << (this->translationStep) << std::endl;
@@ -173,13 +173,13 @@ void Simulation::evaluateCounters(Logger &logger) {
     if (this->rotationCounter.movesSinceEvaluation >= 100*this->packing->size()) {
         double rate = this->rotationCounter.getCurrentRate();
         this->rotationCounter.resetCurrent();
-        if (rate > 0.5) {
+        if (rate > 0.2) {
             if (this->rotationStep * 1.1 <= M_PI) {
                 this->rotationStep *= 1.1;
                 logger.info() << "Rotation rate: " << rate << ", adjusting: "  << (this->rotationStep / 1.1);
                 logger << " -> " << this->rotationStep << std::endl;
             }
-        } else if (rate < 0.3) {
+        } else if (rate < 0.1) {
             this->rotationStep /= 1.1;
             logger.info() << "Rotation rate: " << rate << ", adjusting: " << (this->rotationStep * 1.1);
             logger << " -> " << (this->rotationStep) << std::endl;
@@ -189,11 +189,11 @@ void Simulation::evaluateCounters(Logger &logger) {
     if (this->scalingCounter.movesSinceEvaluation >= 100) {
         double rate = this->scalingCounter.getCurrentRate();
         this->scalingCounter.resetCurrent();
-        if (rate > 0.5) {
+        if (rate > 0.2) {
             this->scalingStep *= 1.1;
             logger.info() << "Scaling rate: " << rate << ", adjusting: " << (this->scalingStep / 1.1);
             logger << " -> " << this->scalingStep << std::endl;
-        } else if (rate < 0.3) {
+        } else if (rate < 0.1) {
             this->scalingStep /= 1.1;
             logger.info() << "Scaling rate: " << rate << ", adjusting: " << (this->scalingStep * 1.1);
             logger << " -> " << this->scalingStep << std::endl;
