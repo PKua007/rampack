@@ -240,3 +240,15 @@ void NeighbourGrid::resize(double newLinearSize, double newCellSize) {
 NeighbourGrid::NeighboursView NeighbourGrid::getNeighbouringCells(const Vector<3> &position) const {
     return NeighboursView(*this, this->positionToCellNo(position));
 }
+
+void swap(NeighbourGrid &ng1, NeighbourGrid &ng2) {
+    using std::swap;
+
+    std::swap(ng1.linearSize, ng2.linearSize);
+    std::swap(ng1.numCellsInLine, ng2.numCellsInLine);
+    std::swap(ng1.cellSize, ng2.cellSize);
+    std::swap(ng1.cells, ng2.cells);
+    std::swap(ng1.reflectedCells, ng2.reflectedCells);
+    std::swap(ng1.numCells, ng2.numCells);
+    std::swap(ng1.neighbouringCellsOffsets, ng2.neighbouringCellsOffsets);
+}

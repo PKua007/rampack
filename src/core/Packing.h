@@ -65,7 +65,6 @@ public:
     double tryScaling(double scaleFactor, const Interaction &interaction);
     void acceptTranslation();
     void acceptRotation();
-    void acceptScaling() { };
     void revertScaling();
     [[nodiscard]] double getParticleEnergy(std::size_t particleIdx, const Interaction &interaction) const;
     [[nodiscard]] double getParticleEnergyFluctuations(const Interaction &interaction) const;

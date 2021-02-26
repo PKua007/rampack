@@ -143,7 +143,6 @@ bool Simulation::tryScaling(const Interaction &interaction) {
     double dE = this->packing->tryScaling(factor, interaction);
     double exponent = N * log(factor) - dE / this->temperature - this->pressure * deltaV / this->temperature;
     if (this->unitIntervalDistribution(this->mt) <= std::exp(exponent)) {
-        this->packing->acceptScaling();
         return true;
     } else {
         this->packing->revertScaling();

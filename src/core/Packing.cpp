@@ -101,6 +101,7 @@ double Packing::tryScaling(double scaleFactor, const Interaction &interaction) {
     this->bc->setLinearSize(this->dimensions);
     for (auto &shape : this->shapes)
         shape.scale(this->lastScalingFactor);
+    std::swap(this->neighbourGrid, this->tempNeighbourGrid);
     this->rebuildNeighbourGrid();
     if (interaction.hasHardPart() /*&& scaleFactor < 1*/ && this->areAnyParticlesOverlapping(interaction))
         return std::numeric_limits<double>::infinity();
@@ -193,7 +194,7 @@ void Packing::revertScaling() {
     double reverseFactor = 1 / this->lastScalingFactor;
     for (auto &shape : this->shapes)
         shape.scale(reverseFactor);
-    this->rebuildNeighbourGrid();
+    std::swap(this->neighbourGrid, this->tempNeighbourGrid);
 }
 
 bool Packing::isParticleOverlappingAnything(std::size_t particleIdx, const Interaction &interaction) const {

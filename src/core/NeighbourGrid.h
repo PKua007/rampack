@@ -122,6 +122,8 @@ public:
     [[nodiscard]] const std::vector<std::size_t> &getCell(const Vector<3> &position) const;
     [[nodiscard]] std::vector<std::size_t> getNeighbours(const Vector<3> &position) const;
     [[nodiscard]] NeighboursView getNeighbouringCells(const Vector<3> &position) const;
+
+    friend void swap(NeighbourGrid &ng1, NeighbourGrid &ng2);
 };
 
 #endif //RAMPACK_NEIGHBOURGRID_H
