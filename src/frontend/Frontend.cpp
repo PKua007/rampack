@@ -223,9 +223,8 @@ int Frontend::casino(int argc, char **argv) {
         this->logger << "Average energy per particle              : " << E << std::endl;
         this->logger << "Average energy fluctuations per particle : " << Efluct << std::endl;
         this->logger << "--------------------------------------------------------------------" << std::endl;
-        this->logger << "Translation acceptance rate : " << simulation.getTranlationAcceptanceRate() << std::endl;
-        this->logger << "Rotation acceptance rate    : " << simulation.getRotationAcceptanceRate() << std::endl;
-        this->logger << "Scaling acceptance rate     : " << simulation.getScalingAcceptanceRate() << std::endl;
+        this->logger << "Move acceptance rate    : " << simulation.getMoveAcceptanceRate() << std::endl;
+        this->logger << "Scaling acceptance rate : " << simulation.getScalingAcceptanceRate() << std::endl;
         this->logger << "--------------------------------------------------------------------" << std::endl;
 
         // Store packing (if desired)

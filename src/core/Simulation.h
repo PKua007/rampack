@@ -53,8 +53,7 @@ private:
     double translationStep{};
     double rotationStep{};
     double scalingStep{};
-    Counter translationCounter;
-    Counter rotationCounter;
+    Counter moveCounter;
     Counter scalingCounter;
     bool shouldAdjustStepSize{};
 
@@ -89,8 +88,7 @@ public:
     [[nodiscard]] std::vector<ScalarSnapshot> getDensityThermalisationSnapshots() const {
         return this->densityThermalisationSnapshots;
     }
-    [[nodiscard]] double getTranlationAcceptanceRate() const { return this->translationCounter.getRate(); }
-    [[nodiscard]] double getRotationAcceptanceRate() const { return this->rotationCounter.getRate(); }
+    [[nodiscard]] double getMoveAcceptanceRate() const { return this->moveCounter.getRate(); }
     [[nodiscard]] double getScalingAcceptanceRate() const { return this->scalingCounter.getRate(); }
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }
 };
