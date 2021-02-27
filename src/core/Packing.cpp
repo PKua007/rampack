@@ -28,12 +28,12 @@ double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, c
     Expects(particleIdx < this->size());
     Expects(interaction.getRangeRadius() <= this->interactionRange);
     this->lastAlteredParticleIdx = particleIdx;
-    this->lastShape = this->shapes[particleIdx];
-    this->lastShape.translate(translation, *this->bc);
+    this->tempShape = this->shapes[particleIdx];
+    this->tempShape.translate(translation, *this->bc);
     if (this->numInteractionCentres != 0) {
         std::size_t idxOrigin = particleIdx * this->numInteractionCentres;
         for (std::size_t i{}; i < this->numInteractionCentres; i++)
-            this->lastInteractionCentres[i] = this->interactionCentres[idxOrigin + i];
+            this->tempInteractionCentres[i] = this->interactionCentres[idxOrigin + i];
     }
 
     double initialEnergy = this->getParticleEnergy(particleIdx, interaction);
@@ -66,8 +66,8 @@ double Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotatio
     Expects(particleIdx < this->size());
     Expects(interaction.getRangeRadius() <= this->interactionRange);
     this->lastAlteredParticleIdx = particleIdx;
-    this->lastShape = this->shapes[particleIdx];
-    this->lastShape.rotate(rotation);
+    this->tempShape = this->shapes[particleIdx];
+    this->tempShape.rotate(rotation);
 
     double initialEnergy = this->getParticleEnergy(particleIdx, interaction);
     if (this->numInteractionCentres != 0)
@@ -84,9 +84,9 @@ double Packing::tryMove(std::size_t particleIdx, const Vector<3> &translation, c
     Expects(particleIdx < this->size());
     Expects(interaction.getRangeRadius() <= this->interactionRange);
     this->lastAlteredParticleIdx = particleIdx;
-    this->lastShape = this->shapes[particleIdx];
-    this->lastShape.rotate(rotation);
-    this->lastShape.translate(translation, *this->bc);
+    this->tempShape = this->shapes[particleIdx];
+    this->tempShape.rotate(rotation);
+    this->tempShape.translate(translation, *this->bc);
 
     double initialEnergy = this->getParticleEnergy(particleIdx, interaction);
     if (this->numInteractionCentres != 0)
@@ -97,13 +97,6 @@ double Packing::tryMove(std::size_t particleIdx, const Vector<3> &translation, c
 
     double finalEnergy = this->getTempParticleEnergy(particleIdx, interaction);
     return finalEnergy - initialEnergy;
-}
-
-void Packing::rotateInteractionCentres(std::size_t particleIdx, const Matrix<3, 3> &rotation) {
-    for (size_t i{}; i < this->numInteractionCentres; i++) {
-        size_t idx = particleIdx * this->numInteractionCentres + i;
-        this->interactionCentres[idx] = rotation * this->interactionCentres[idx];
-    }
 }
 
 double Packing::tryScaling(double scaleFactor, const Interaction &interaction) {
@@ -120,6 +113,7 @@ double Packing::tryScaling(double scaleFactor, const Interaction &interaction) {
         shape.scale(this->lastScalingFactor);
     std::swap(this->neighbourGrid, this->tempNeighbourGrid);
     this->rebuildNeighbourGrid();
+
     if (interaction.hasHardPart() /*&& scaleFactor < 1*/ && this->areAnyParticlesOverlapping(interaction))
         return std::numeric_limits<double>::infinity();
 
@@ -170,7 +164,7 @@ void Packing::acceptTranslation() {
             this->removeInteractionCentresFromNeighbourGrid(this->lastAlteredParticleIdx);
     }
 
-    this->shapes[this->lastAlteredParticleIdx].setPosition(this->lastShape.getPosition());
+    this->shapes[this->lastAlteredParticleIdx].setPosition(this->tempShape.getPosition());
 
     if (this->neighbourGrid.has_value()) {
         if (this->numInteractionCentres == 0)
@@ -184,7 +178,7 @@ void Packing::acceptRotation() {
     if (this->neighbourGrid.has_value() && this->numInteractionCentres != 0)
         this->removeInteractionCentresFromNeighbourGrid(this->lastAlteredParticleIdx);
 
-    this->shapes[this->lastAlteredParticleIdx].setOrientation(this->lastShape.getOrientation());
+    this->shapes[this->lastAlteredParticleIdx].setOrientation(this->tempShape.getOrientation());
     if (this->numInteractionCentres != 0)
         this->acceptTempInteractionCentres();
 
@@ -200,7 +194,7 @@ void Packing::acceptMove() {
             this->removeInteractionCentresFromNeighbourGrid(this->lastAlteredParticleIdx);
     }
 
-    this->shapes[this->lastAlteredParticleIdx] = this->lastShape;
+    this->shapes[this->lastAlteredParticleIdx] = this->tempShape;
     if (this->numInteractionCentres != 0)
         this->acceptTempInteractionCentres();
 
@@ -215,13 +209,13 @@ void Packing::acceptMove() {
 void Packing::acceptTempInteractionCentres() {
     std::size_t idxOrigin = this->lastAlteredParticleIdx * this->numInteractionCentres;
     for (std::size_t i{}; i < this->numInteractionCentres; i++)
-        this->interactionCentres[idxOrigin + i] = this->lastInteractionCentres[i];
+        this->interactionCentres[idxOrigin + i] = this->tempInteractionCentres[i];
 }
 
 void Packing::prepareTempInteractionCentres(std::size_t particleIdx, const Matrix<3, 3> &rotation) {
     std::size_t idxOrigin = particleIdx * this->numInteractionCentres;
     for (std::size_t i{}; i < this->numInteractionCentres; i++)
-        this->lastInteractionCentres[i] = rotation * this->interactionCentres[idxOrigin + i];
+        this->tempInteractionCentres[i] = rotation * this->interactionCentres[idxOrigin + i];
 }
 
 void Packing::revertScaling() {
@@ -257,23 +251,23 @@ bool Packing::isParticleOverlappingAnything(std::size_t particleIdx, const Inter
     return false;
 }
 
-bool Packing::isTempParticleOverlappingAnything(std::size_t particleIdx, const Interaction &interaction) const {
+bool Packing::isTempParticleOverlappingAnything(std::size_t originalParticleIdx, const Interaction &interaction) const {
     if (this->neighbourGrid.has_value()) {
         if (this->numInteractionCentres == 0) {
-            for (const auto &cell : this->neighbourGrid->getNeighbouringCells(this->lastShape.getPosition()))
+            for (const auto &cell : this->neighbourGrid->getNeighbouringCells(this->tempShape.getPosition()))
                 for (auto j : cell)
-                    if (particleIdx != j && this->overlapBetweenTempParticleAndOther(particleIdx, j, interaction))
+                    if (originalParticleIdx != j && this->overlapBetweenTempParticleAndAnother(j, interaction))
                         return true;
         } else {
             for (std::size_t centre1{}; centre1 < this->numInteractionCentres; centre1++)
-                if (this->isTempInteractionCentreOverlappingAnything(particleIdx, centre1, interaction))
+                if (this->isTempInteractionCentreOverlappingAnything(originalParticleIdx, centre1, interaction))
                     return true;
         }
     } else {
         for (std::size_t j{}; j < this->shapes.size(); j++) {
-            if (particleIdx == j)
+            if (originalParticleIdx == j)
                 continue;
-            if (this->overlapBetweenTempParticleAndOther(particleIdx, j, interaction))
+            if (this->overlapBetweenTempParticleAndAnother(j, interaction))
                 return true;
         }
     }
@@ -325,15 +319,14 @@ bool Packing::overlapBetweenParticles(std::size_t particleIdx1, std::size_t part
     return false;
 }
 
-bool Packing::overlapBetweenTempParticleAndOther(std::size_t particleIdx1, std::size_t particleIdx2,
-                                      const Interaction &interaction) const
+bool Packing::overlapBetweenTempParticleAndAnother(std::size_t anotherParticleIdx, const Interaction &interaction) const
 {
     if (this->numInteractionCentres == 0) {
-        if (interaction.overlapBetween(this->lastShape.getPosition(),
-                                       this->lastShape.getOrientation(),
+        if (interaction.overlapBetween(this->tempShape.getPosition(),
+                                       this->tempShape.getOrientation(),
                                        0,
-                                       this->shapes[particleIdx2].getPosition(),
-                                       this->shapes[particleIdx2].getOrientation(),
+                                       this->shapes[anotherParticleIdx].getPosition(),
+                                       this->shapes[anotherParticleIdx].getOrientation(),
                                        0,
                                        *this->bc))
         {
@@ -342,11 +335,11 @@ bool Packing::overlapBetweenTempParticleAndOther(std::size_t particleIdx1, std::
     } else {
         for (std::size_t centre1{}; centre1 < this->numInteractionCentres; centre1++) {
             for (std::size_t centre2{}; centre2 < this->numInteractionCentres; centre2++) {
-                auto pos1 = this->lastShape.getPosition() + this->lastInteractionCentres[centre1];
-                const auto &orientation1 = this->lastShape.getOrientation();
-                std::size_t centreIdx2 = particleIdx2 * this->numInteractionCentres + centre2;
-                auto pos2 = this->shapes[particleIdx2].getPosition() + this->interactionCentres[centreIdx2];
-                const auto &orientation2 = this->shapes[particleIdx2].getOrientation();
+                auto pos1 = this->tempShape.getPosition() + this->tempInteractionCentres[centre1];
+                const auto &orientation1 = this->tempShape.getOrientation();
+                std::size_t centreIdx2 = anotherParticleIdx * this->numInteractionCentres + centre2;
+                auto pos2 = this->shapes[anotherParticleIdx].getPosition() + this->interactionCentres[centreIdx2];
+                const auto &orientation2 = this->shapes[anotherParticleIdx].getOrientation();
                 if (interaction.overlapBetween(pos1, orientation1, centre1, pos2, orientation2, centre2, *this->bc))
                     return true;
             }
@@ -380,18 +373,18 @@ bool Packing::isInteractionCentreOverlappingAnything(std::size_t particleIdx, st
     return false;
 }
 
-bool Packing::isTempInteractionCentreOverlappingAnything(std::size_t particleIdx, std::size_t centre,
-                                                     const Interaction &interaction) const
+bool Packing::isTempInteractionCentreOverlappingAnything(std::size_t originalParticleIdx, std::size_t centre,
+                                                         const Interaction &interaction) const
 {
     Expects(this->neighbourGrid.has_value());
 
-    auto pos1 = this->lastShape.getPosition() + this->lastInteractionCentres[centre];
-    const auto &orientation1 = this->lastShape.getOrientation();
+    auto pos1 = this->tempShape.getPosition() + this->tempInteractionCentres[centre];
+    const auto &orientation1 = this->tempShape.getOrientation();
     pos1 += this->bc->getCorrection(pos1);
     for (const auto &cell : this->neighbourGrid->getNeighbouringCells(pos1)) {
         for (auto centreIdx2 : cell) { // NOLINT(readability-use-anyofallof)
             std::size_t j = centreIdx2 / this->numInteractionCentres;
-            if (j == particleIdx)
+            if (j == originalParticleIdx)
                 continue;
             std::size_t centre2 = centreIdx2 % this->numInteractionCentres;
             auto pos2 = this->shapes[j].getPosition() + this->interactionCentres[centreIdx2];
@@ -434,31 +427,31 @@ double Packing::getParticleEnergy(std::size_t particleIdx, const Interaction &in
     return energy;
 }
 
-double Packing::getTempParticleEnergy(std::size_t particleIdx, const Interaction &interaction) const {
-    Expects(particleIdx < this->size());
+double Packing::getTempParticleEnergy(std::size_t originalParticleIdx, const Interaction &interaction) const {
+    Expects(originalParticleIdx < this->size());
     if (!interaction.hasSoftPart())
         return 0;
 
     double energy{};
     if (this->neighbourGrid.has_value()) {
         if (this->numInteractionCentres == 0) {
-            const auto &pos = this->lastShape.getPosition();
+            const auto &pos = this->tempShape.getPosition();
             for (const auto &cell : this->neighbourGrid->getNeighbouringCells(pos)) {
                 for (auto j : cell) {
-                    if (particleIdx == j)
+                    if (originalParticleIdx == j)
                         continue;
-                    energy += this->calculateEnergyBetweenTempParticleAndOther(particleIdx, j, interaction);
+                    energy += this->calculateEnergyBetweenTempParticleAndAnother(j, interaction);
                 }
             }
         } else {
             for (std::size_t centre1{}; centre1 < this->numInteractionCentres; centre1++)
-                energy += this->calculateTempInteractionCentreEnergy(particleIdx, centre1, interaction);
+                energy += this->calculateTempInteractionCentreEnergy(originalParticleIdx, centre1, interaction);
         }
     } else {
         for (std::size_t j{}; j < this->shapes.size(); j++) {
-            if (particleIdx == j)
+            if (originalParticleIdx == j)
                 continue;
-            energy += this->calculateEnergyBetweenTempParticleAndOther(particleIdx, j, interaction);
+            energy += this->calculateEnergyBetweenTempParticleAndAnother(j, interaction);
         }
     }
     return energy;
@@ -509,26 +502,26 @@ double Packing::calculateEnergyBetweenParticles(std::size_t particleIdx1, std::s
     return energy;
 }
 
-double Packing::calculateEnergyBetweenTempParticleAndOther(std::size_t particleIdx1, std::size_t particleIdx2,
-                                                const Interaction &interaction) const
+double Packing::calculateEnergyBetweenTempParticleAndAnother(std::size_t anotherParticleIdx,
+                                                             const Interaction &interaction) const
 {
     double energy = 0;
     if (this->numInteractionCentres == 0) {
-        energy += interaction.calculateEnergyBetween(this->lastShape.getPosition(),
-                                                     this->lastShape.getOrientation(),
+        energy += interaction.calculateEnergyBetween(this->tempShape.getPosition(),
+                                                     this->tempShape.getOrientation(),
                                                      0,
-                                                     this->shapes[particleIdx2].getPosition(),
-                                                     this->shapes[particleIdx2].getOrientation(),
+                                                     this->shapes[anotherParticleIdx].getPosition(),
+                                                     this->shapes[anotherParticleIdx].getOrientation(),
                                                      0,
                                                      *this->bc);
     } else {
         for (size_t centre1{}; centre1 < this->numInteractionCentres; centre1++) {
             for (size_t centre2{}; centre2 < this->numInteractionCentres; centre2++) {
-                auto pos1 = this->lastShape.getPosition() + this->lastInteractionCentres[centre1];
-                const auto &orientation1 = this->lastShape.getOrientation();
-                size_t centreIdx2 = particleIdx2 * this->numInteractionCentres + centre2;
-                auto pos2 = this->shapes[particleIdx2].getPosition() + this->interactionCentres[centreIdx2];
-                const auto &orientation2 =  this->shapes[particleIdx2].getOrientation();
+                auto pos1 = this->tempShape.getPosition() + this->tempInteractionCentres[centre1];
+                const auto &orientation1 = this->tempShape.getOrientation();
+                size_t centreIdx2 = anotherParticleIdx * this->numInteractionCentres + centre2;
+                auto pos2 = this->shapes[anotherParticleIdx].getPosition() + this->interactionCentres[centreIdx2];
+                const auto &orientation2 =  this->shapes[anotherParticleIdx].getOrientation();
                 energy += interaction.calculateEnergyBetween(pos1, orientation1, centre1, pos2, orientation2, centre2,
                                                              *this->bc);
             }
@@ -563,20 +556,20 @@ double Packing::calculateInteractionCentreEnergy(size_t particleIdx, std::size_t
     return energy;
 }
 
-double Packing::calculateTempInteractionCentreEnergy(size_t particleIdx, std::size_t centre,
-                                                 const Interaction &interaction) const
+double Packing::calculateTempInteractionCentreEnergy(size_t originalParticleIdx, std::size_t centre,
+                                                     const Interaction &interaction) const
 {
     Expects(this->neighbourGrid.has_value());
 
     double energy{};
 
-    auto pos1 = this->lastShape.getPosition() + this->lastInteractionCentres[centre];
+    auto pos1 = this->tempShape.getPosition() + this->tempInteractionCentres[centre];
     pos1 += this->bc->getCorrection(pos1);
-    const auto &orientation1 = this->lastShape.getOrientation();
+    const auto &orientation1 = this->tempShape.getOrientation();
     for (const auto &cell : this->neighbourGrid->getNeighbouringCells(pos1)) {
         for (auto centreIdx2 : cell) {
             size_t j = centreIdx2 / this->numInteractionCentres;
-            if (j == particleIdx)
+            if (j == originalParticleIdx)
                 continue;
             size_t centre2 = centreIdx2 % this->numInteractionCentres;
             auto pos2 = this->shapes[j].getPosition() + this->interactionCentres[centreIdx2];
@@ -635,7 +628,7 @@ void Packing::setupForInteraction(const Interaction &interaction) {
     this->interactionRange = interaction.getRangeRadius();
     this->numInteractionCentres = interaction.getInteractionCentres().size();
     this->interactionCentres.clear();
-    this->lastInteractionCentres.resize(this->numInteractionCentres);
+    this->tempInteractionCentres.resize(this->numInteractionCentres);
     if (this->numInteractionCentres > 0) {
         this->interactionCentres.reserve(this->size() * this->numInteractionCentres);
         auto centres = interaction.getInteractionCentres();
