@@ -62,9 +62,11 @@ public:
 
     double tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction);
     double tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction);
+    double tryMove(std::size_t particleIdx, const Vector<3> &translation, const Matrix<3, 3> &rotation, const Interaction &interaction);
     double tryScaling(double scaleFactor, const Interaction &interaction);
     void acceptTranslation();
     void acceptRotation();
+    void acceptMove();
     void revertScaling();
     [[nodiscard]] double getParticleEnergy(std::size_t particleIdx, const Interaction &interaction) const;
     [[nodiscard]] double getParticleEnergyFluctuations(const Interaction &interaction) const;

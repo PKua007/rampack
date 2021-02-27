@@ -72,6 +72,7 @@ private:
     void performStep(Logger &logger, const Interaction &interaction);
     bool tryTranslation(const Interaction &interaction);
     bool tryRotation(const Interaction &interaction);
+    bool tryMove(const Interaction &interaction);
     bool tryScaling(const Interaction &interaction);
     void evaluateCounters(Logger &logger);
     void reset();

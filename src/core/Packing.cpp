@@ -82,6 +82,26 @@ double Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotatio
     return 0;
 }
 
+double Packing::tryMove(std::size_t particleIdx, const Vector<3> &translation, const Matrix<3, 3> &rotation, const Interaction &interaction) {
+    Expects(particleIdx < this->size());
+    Expects(interaction.getRangeRadius() <= this->interactionRange);
+    this->lastAlteredParticleIdx = particleIdx;
+    this->lastShape = this->shapes[particleIdx];
+    this->lastShape.rotate(rotation);
+    this->lastShape.translate(translation, *this->bc);
+
+    //double initialEnergy = this->getParticleEnergy(particleIdx, interaction, false);
+    if (this->numInteractionCentres != 0)
+        this->prepareTempInteractionCentres(particleIdx, rotation);
+
+    if (interaction.hasHardPart() && this->isTempParticleOverlappingAnything(particleIdx, interaction))
+        return std::numeric_limits<double>::infinity();
+
+    //double finalEnergy = this->getParticleEnergy(particleIdx, interaction, true);
+    //return finalEnergy - initialEnergy;
+    return 0;
+}
+
 void Packing::rotateInteractionCentres(std::size_t particleIdx, const Matrix<3, 3> &rotation) {
     for (size_t i{}; i < this->numInteractionCentres; i++) {
         size_t idx = particleIdx * this->numInteractionCentres + i;
@@ -173,6 +193,26 @@ void Packing::acceptRotation() {
 
     if (this->neighbourGrid.has_value() && this->numInteractionCentres != 0)
         this->addInteractionCentresToNeighbourGrid(this->lastAlteredParticleIdx);
+}
+
+void Packing::acceptMove() {
+    if (this->neighbourGrid.has_value()) {
+        if (this->numInteractionCentres == 0)
+            this->neighbourGrid->remove(lastAlteredParticleIdx, this->shapes[lastAlteredParticleIdx].getPosition());
+        else
+            this->removeInteractionCentresFromNeighbourGrid(this->lastAlteredParticleIdx);
+    }
+
+    this->shapes[this->lastAlteredParticleIdx] = this->lastShape;
+    if (this->numInteractionCentres != 0)
+        this->acceptTempInteractionCentres();
+
+    if (this->neighbourGrid.has_value()) {
+        if (this->numInteractionCentres == 0)
+            this->neighbourGrid->add(lastAlteredParticleIdx, this->shapes[lastAlteredParticleIdx].getPosition());
+        else
+            this->addInteractionCentresToNeighbourGrid(this->lastAlteredParticleIdx);
+    }
 }
 
 void Packing::acceptTempInteractionCentres() {
