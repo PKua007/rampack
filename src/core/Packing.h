@@ -47,10 +47,17 @@ private:
                                                               const Interaction &interaction) const;
     [[nodiscard]] bool isTempInteractionCentreOverlappingAnything(std::size_t particleIdx, std::size_t centre,
                                                               const Interaction &interaction) const;
+    [[nodiscard]] double getTempParticleEnergy(std::size_t particleIdx, const Interaction &interaction) const;
     [[nodiscard]] double calculateEnergyBetweenParticles(std::size_t particleIdx1, std::size_t particleIdx2,
+                                                         const Interaction &interaction) const;
+    [[nodiscard]] double calculateEnergyBetweenTempParticleAndOther(std::size_t particleIdx1, std::size_t particleIdx2,
                                                          const Interaction &interaction) const;
     [[nodiscard]] double calculateInteractionCentreEnergy(size_t particleIdx, size_t centre,
                                                           const Interaction &interaction) const;
+    [[nodiscard]] double calculateTempInteractionCentreEnergy(size_t particleIdx, size_t centre,
+                                                          const Interaction &interaction) const;
+
+    void prepareTempInteractionCentres(std::size_t particleIdx, const Matrix<3, 3> &rotation);
 
 public:
     using iterator = decltype(shapes)::iterator;
@@ -91,8 +98,6 @@ public:
 
     void store(std::ostream &out) const;
     void restore(std::istream &in, const Interaction &interaction);
-
-    void prepareTempInteractionCentres(std::size_t particleIdx, const Matrix<3, 3> &rotation);
 };
 
 
