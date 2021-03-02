@@ -124,17 +124,17 @@ TEST_CASE("Packing") {
             // For scale 5, translation {2, 2.5, -3.5} places particle 2 at {4.5, 5, 0.5}, while particle 1 is at
             // {4.5, 0.5, 0.5} - they touch through pbc on y coordinate. Do a little bit less prevents overlap
             CHECK(packing.tryTranslation(2, {2, 2.45, -3.5}, hardCore) == 0);
-            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {4.5, 0.5, 0.5}, {4.5, 4.95, 0.5}}, 1e-9));
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {4.5, 0.5, 0.5}, {2.5, 2.5, 4.0}}, 1e-9));
+            SECTION("accepting the move") {
+                packing.acceptTranslation();
+                CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {4.5, 0.5, 0.5}, {4.5, 4.95, 0.5}}, 1e-9));
+            }
         }
 
         SECTION("overlapping") {
             // Same as above, but we do more instead of less
             CHECK(packing.tryTranslation(2, {2, 2.55, -3.5}, hardCore) == inf);
-            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {4.5, 0.5, 0.5}, {4.5, 0.05, 0.5}}, 1e-9));
-            SECTION("reverting the move") {
-                packing.revertTranslation();
-                CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {4.5, 0.5, 0.5}, {2.5, 2.5, 4.0}}, 1e-9));
-            }
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {4.5, 0.5, 0.5}, {2.5, 2.5, 4.0}}, 1e-9));
         }
 
         SECTION("distance interaction") {
@@ -174,10 +174,12 @@ TEST_CASE("Packing") {
             CHECK(packing.getParticleEnergyFluctuations(distanceInteraction) == Approx(Efluct));
         }
 
-        SECTION("particle energy") {
-            CHECK(packing.getParticleEnergy(0, distanceInteraction) == Approx((2 + std::sqrt(41)) / 10 * 5));
-            CHECK(packing.getParticleEnergy(1, distanceInteraction) == Approx((2 + std::sqrt(41)) / 10 * 5));
-            CHECK(packing.getParticleEnergy(2, distanceInteraction) == Approx(2 * std::sqrt(41) / 10 * 5));
-        }
+        // A method temporarily retired
+
+        /*SECTION("particle energy") {
+            CHECK(packing.calculateParticleEnergy(0, distanceInteraction) == Approx((2 + std::sqrt(41)) / 10 * 5));
+            CHECK(packing.calculateParticleEnergy(1, distanceInteraction) == Approx((2 + std::sqrt(41)) / 10 * 5));
+            CHECK(packing.calculateParticleEnergy(2, distanceInteraction) == Approx(2 * std::sqrt(41) / 10 * 5));
+        }*/
     }
 }
