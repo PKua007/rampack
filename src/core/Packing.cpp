@@ -9,6 +9,7 @@
 
 #include "Packing.h"
 #include "utils/Assertions.h"
+#include "utils/OMPMacros.h"
 
 
 Packing::Packing(const std::array<double, 3> &dimensions, std::vector<Shape> shapes,
@@ -269,9 +270,16 @@ bool Packing::isParticleOverlappingAnything(std::size_t originalParticleIdx, std
 
 bool Packing::areAnyParticlesOverlapping(const Interaction &interaction) const {
     if (this->neighbourGrid.has_value()) {
-        for (std::size_t i{}; i < this->size(); i++)
+        volatile bool overlapFound = false;
+        #pragma omp parallel for shared(overlapFound)
+        for (std::size_t i = 0; i < this->size(); i++) {
+            if (overlapFound)
+                continue;
             if (this->isParticleOverlappingAnything(i, i, interaction))
-                return true;
+                overlapFound = true;
+        }
+
+        return overlapFound;
     } else {
         for (std::size_t i{}; i < this->size(); i++)
             for (std::size_t j = i + 1; j < this->size(); j++)
@@ -375,8 +383,11 @@ double Packing::getTotalEnergy(const Interaction &interaction) const {
 
     double energy{};
     if (this->neighbourGrid.has_value()) {
-        for (std::size_t i{}; i < this->size(); i++)
-            energy += this->calculateParticleEnergy(i, i, interaction) / 2;  // Each interaction counted twice
+        std::vector<double> threadEnergy(_OMP_MAXTHREADS);
+        _OMP_PARALLEL_FOR
+        for (std::size_t i = 0; i < this->size(); i++)
+            threadEnergy[_OMP_THREAD_ID] += this->calculateParticleEnergy(i, i, interaction)/2;  // Pairs counted twice
+        energy = std::accumulate(threadEnergy.begin(), threadEnergy.end(), 0.);
     } else {
         for (std::size_t i{}; i < this->size(); i++)
             for (std::size_t j = i + 1; j < this->size(); j++)

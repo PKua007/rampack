@@ -13,6 +13,11 @@ if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/Catch2/CMakeLists.txt" OR
     message(FATAL_ERROR "Submodules are not present. Execute: git submodule update --init --recursive")
 endif()
 
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    link_libraries(OpenMP::OpenMP_CXX)
+endif()
+
 # Now we can safely add submodule subdirectories
 add_subdirectory(extern/Catch2)
 add_subdirectory(extern/trompeloeil)
