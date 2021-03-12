@@ -480,6 +480,7 @@ void Packing::rebuildNeighbourGrid() {
     // Less than 4 cells in line is redundant, because everything always would be neighbour
     if (cellSize * 4 > *std::min_element(this->dimensions.begin(), this->dimensions.end())) {
         this->neighbourGrid = std::nullopt;
+        return;
     }
 
     if (!this->neighbourGrid.has_value())
