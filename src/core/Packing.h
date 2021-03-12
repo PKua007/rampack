@@ -29,6 +29,10 @@ private:
     std::size_t lastAlteredParticleIdx{};
     double lastScalingFactor{};
 
+    std::size_t neighbourGridRebuilds{};
+    std::size_t neighbourGridResizes{};
+    double neighbourGridRebuildMicroseconds{};
+
     void rebuildNeighbourGrid();
     void removeInteractionCentresFromNeighbourGrid(size_t particleIdx);
     void addInteractionCentresToNeighbourGrid(size_t particleIdx);
@@ -71,6 +75,21 @@ public:
     Packing(const std::array<double, 3> &dimensions, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
             const Interaction &interaction);
 
+    [[nodiscard]] std::size_t size() const { return this->shapes.size() - 1; }
+    [[nodiscard]] bool empty() const { return this->shapes.size() == 1; }
+    [[nodiscard]] const_iterator begin() const { return this->shapes.begin(); }
+    [[nodiscard]] const_iterator end() const { return this->shapes.end() - 1; }
+    [[nodiscard]] const Shape &operator[](std::size_t i) const;
+    [[nodiscard]] const Shape &front() const;
+    [[nodiscard]] const Shape &back() const;
+
+    [[nodiscard]] const std::array<double, 3> &getDimensions() const { return this->dimensions; }
+    [[nodiscard]] double getVolume() const;
+    [[nodiscard]] double getPackingFraction(double shapeVolume) const;
+    [[nodiscard]] double getNumberDensity() const;
+    [[nodiscard]] double getParticleEnergyFluctuations(const Interaction &interaction) const;
+    [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;
+
     double tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction);
     double tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction);
     double tryMove(std::size_t particleIdx, const Vector<3> &translation, const Matrix<3, 3> &rotation,
@@ -80,26 +99,14 @@ public:
     void acceptRotation();
     void acceptMove();
     void revertScaling();
-    [[nodiscard]] double getParticleEnergyFluctuations(const Interaction &interaction) const;
-    [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;
-
-    [[nodiscard]] const std::array<double, 3> &getDimensions() const { return this->dimensions; }
-    [[nodiscard]] double getVolume() const;
 
     void setupForInteraction(const Interaction &interaction);
-
-    [[nodiscard]] std::size_t size() const { return this->shapes.size() - 1; }
-    [[nodiscard]] bool empty() const { return this->shapes.size() == 1; }
-    [[nodiscard]] const_iterator begin() const { return this->shapes.begin(); }
-    [[nodiscard]] const_iterator end() const { return this->shapes.end() - 1; }
-    [[nodiscard]] const Shape &operator[](std::size_t i) const;
-    [[nodiscard]] const Shape &front() const;
-    [[nodiscard]] const Shape &back() const;
+    void resetCounters();
+    [[nodiscard]] std::size_t getNeighbourGridRebuilds() const { return this->neighbourGridRebuilds; }
+    [[nodiscard]] std::size_t getNeighbourGridResizes() const { return this->neighbourGridResizes; }
+    [[nodiscard]] double getNeighbourGridRebuildMicroseconds() const { return this->neighbourGridRebuildMicroseconds; }
 
     void toWolfram(std::ostream &out, const ShapePrinter &printer) const;
-    [[nodiscard]] double getPackingFraction(double shapeVolume) const;
-    [[nodiscard]] double getNumberDensity() const;
-
     void store(std::ostream &out) const;
     void restore(std::istream &in, const Interaction &interaction);
 };

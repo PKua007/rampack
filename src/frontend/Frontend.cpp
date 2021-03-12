@@ -218,6 +218,10 @@ int Frontend::casino(int argc, char **argv) {
                    runParams.pressure / runParams.temperature * rho.error / rho.value / rho.value);
         Z.separator = Quantity::PLUS_MINUS;
 
+        double ngRebuilds = simulation.getPacking().getNeighbourGridRebuilds();
+        double ngResizes = simulation.getPacking().getNeighbourGridResizes();
+        double ngRebuildSeconds = simulation.getPacking().getNeighbourGridRebuildMicroseconds() / 1e6;
+
         this->logger.info();
         this->logger << "--------------------------------------------------------------------" << std::endl;
         this->logger << "Average density                          : " << rho << std::endl;
@@ -226,8 +230,11 @@ int Frontend::casino(int argc, char **argv) {
         this->logger << "Average energy per particle              : " << E << std::endl;
         this->logger << "Average energy fluctuations per particle : " << Efluct << std::endl;
         this->logger << "--------------------------------------------------------------------" << std::endl;
-        this->logger << "Move acceptance rate    : " << simulation.getMoveAcceptanceRate() << std::endl;
-        this->logger << "Scaling acceptance rate : " << simulation.getScalingAcceptanceRate() << std::endl;
+        this->logger << "Move acceptance rate            : " << simulation.getMoveAcceptanceRate() << std::endl;
+        this->logger << "Scaling acceptance rate         : " << simulation.getScalingAcceptanceRate() << std::endl;
+        this->logger << "Neighbour grid resizes/rebuilds : " << ngResizes << "/" << ngRebuilds << std::endl;
+        this->logger << "--------------------------------------------------------------------" << std::endl;
+        this->logger << "Neighbour grid rebuild time : " << ngRebuildSeconds << "s"<< std::endl;
         this->logger << "--------------------------------------------------------------------" << std::endl;
 
         // Store packing (if desired)

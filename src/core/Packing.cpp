@@ -6,6 +6,7 @@
 #include <ostream>
 #include <numeric>
 #include <algorithm>
+#include <chrono>
 
 #include "Packing.h"
 #include "utils/Assertions.h"
@@ -467,6 +468,9 @@ double Packing::getParticleEnergyFluctuations(const Interaction &interaction) co
 }
 
 void Packing::rebuildNeighbourGrid() {
+    using namespace std::chrono;
+    auto start = high_resolution_clock::now();
+
     double cellSize = this->interactionRange;
     // linearSize/cbrt(size()) gives 1 cell per particle, factor 1/5 empirically gives best times
     double minCellSize = std::cbrt(this->getVolume() / this->size()) / 5;
@@ -476,13 +480,12 @@ void Packing::rebuildNeighbourGrid() {
     // Less than 4 cells in line is redundant, because everything always would be neighbour
     if (cellSize * 4 > *std::min_element(this->dimensions.begin(), this->dimensions.end())) {
         this->neighbourGrid = std::nullopt;
-        return;
     }
 
     if (!this->neighbourGrid.has_value())
         this->neighbourGrid = NeighbourGrid(this->dimensions, cellSize);
     else
-        this->neighbourGrid->resize(this->dimensions, cellSize);
+        this->neighbourGridResizes += this->neighbourGrid->resize(this->dimensions, cellSize);
 
     for (std::size_t i{}; i < this->size(); i++) {
         if (this->numInteractionCentres == 0)
@@ -490,6 +493,10 @@ void Packing::rebuildNeighbourGrid() {
         else
             this->addInteractionCentresToNeighbourGrid(i);
     }
+
+    this->neighbourGridRebuilds++;
+    auto end = high_resolution_clock::now();
+    this->neighbourGridRebuildMicroseconds += duration<double, std::micro>(end - start).count();
 }
 
 void Packing::setupForInteraction(const Interaction &interaction) {
@@ -556,4 +563,10 @@ void Packing::restore(std::istream &in, const Interaction &interaction) {
     this->shapes = shapes_;
     this->bc->setLinearSize(dimensions_);
     this->setupForInteraction(interaction);
+}
+
+void Packing::resetCounters() {
+    this->neighbourGridRebuilds = 0;
+    this->neighbourGridResizes = 0;
+    this->neighbourGridRebuildMicroseconds = 0;
 }

@@ -78,6 +78,7 @@ void Simulation::reset() {
     this->averagedDensities.clear();
     this->densityThermalisationSnapshots.clear();
     this->cycleLength = this->packing->size() + 1;  // size() translations + rotations and 1 scaling
+    this->packing->resetCounters();
 }
 
 void Simulation::performStep(Logger &logger, const Interaction &interaction) {

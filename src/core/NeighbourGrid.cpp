@@ -209,7 +209,7 @@ const std::vector<std::size_t> &NeighbourGrid::getCellVector(std::size_t cellNo)
         return this->cells[this->reflectedCells[cellNo]];
 }
 
-void NeighbourGrid::resize(const std::array<double, 3> &newLinearSize, double newCellSize) {
+bool NeighbourGrid::resize(const std::array<double, 3> &newLinearSize, double newCellSize) {
     std::array<std::size_t, 3> oldNumCellsInLine = this->numCellsInLine;
     double oldNumCells = this->numCells;
     this->setupSizes(newLinearSize, newCellSize);
@@ -217,7 +217,7 @@ void NeighbourGrid::resize(const std::array<double, 3> &newLinearSize, double ne
     // Early exit - if number of cells in line did not change we do not need to rebuild the structure, only clear
     if (this->numCellsInLine == oldNumCellsInLine) {
         this->clear();
-        return;
+        return false;
     }
 
     // The resize is needed only if number of cells is to big for allocated memory - otherwise reuse the old structure
@@ -231,10 +231,11 @@ void NeighbourGrid::resize(const std::array<double, 3> &newLinearSize, double ne
 
     this->fillNeighbouringCellsOffsets();
     this->clear();
+    return true;
 }
 
-void NeighbourGrid::resize(double newLinearSize, double newCellSize) {
-    this->resize({newLinearSize, newLinearSize, newLinearSize}, newCellSize);
+bool NeighbourGrid::resize(double newLinearSize, double newCellSize) {
+    return this->resize({newLinearSize, newLinearSize, newLinearSize}, newCellSize);
 }
 
 NeighbourGrid::NeighboursView NeighbourGrid::getNeighbouringCells(const Vector<3> &position) const {

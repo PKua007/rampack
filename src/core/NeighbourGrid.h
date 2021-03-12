@@ -117,8 +117,8 @@ public:
     void add(std::size_t idx, const Vector<3> &position);
     void remove(std::size_t idx, const Vector<3> &position);
     void clear();
-    void resize(double newLinearSize, double newCellSize);
-    void resize(const std::array<double, 3> &newLinearSize, double newCellSize);
+    bool resize(double newLinearSize, double newCellSize);
+    bool resize(const std::array<double, 3> &newLinearSize, double newCellSize);
     [[nodiscard]] const std::vector<std::size_t> &getCell(const Vector<3> &position) const;
     [[nodiscard]] std::vector<std::size_t> getNeighbours(const Vector<3> &position) const;
     [[nodiscard]] NeighboursView getNeighbouringCells(const Vector<3> &position) const;
