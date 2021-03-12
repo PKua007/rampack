@@ -45,7 +45,6 @@ private:
     std::size_t thermalisationCycles{};
     std::size_t averagingCycles{};
     std::size_t averagingEvery{};
-    std::size_t cycleLength{};
 
     double temperature{};
     double pressure{};
@@ -58,9 +57,11 @@ private:
     bool shouldAdjustStepSize{};
 
     std::mt19937 mt;
-    std::uniform_int_distribution<int> moveTypeDistribution;
     std::uniform_real_distribution<double> unitIntervalDistribution;
     std::uniform_int_distribution<int> particleIdxDistribution;
+
+    double moveMicroseconds{};
+    double scalingMicroseconds{};
 
     std::unique_ptr<Packing> packing;
     std::vector<double> averagedDensities;
@@ -90,6 +91,8 @@ public:
     }
     [[nodiscard]] double getMoveAcceptanceRate() const { return this->moveCounter.getRate(); }
     [[nodiscard]] double getScalingAcceptanceRate() const { return this->scalingCounter.getRate(); }
+    [[nodiscard]] double getMoveMicroseconds() const { return this->moveMicroseconds; }
+    [[nodiscard]] double getScalingMicroseconds() const { return this->scalingMicroseconds; }
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }
 };
 

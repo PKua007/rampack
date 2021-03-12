@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <ostream>
+#include <chrono>
 
 #include "Simulation.h"
 #include "utils/Assertions.h"
@@ -75,16 +76,25 @@ void Simulation::reset() {
     this->averagedDensities.clear();
     this->densityThermalisationSnapshots.clear();
     this->packing->resetCounters();
+    this->moveMicroseconds = 0;
+    this->scalingMicroseconds = 0;
 }
 
 void Simulation::performCycle(Logger &logger, const Interaction &interaction) {
+    using namespace std::chrono;
+    auto start = high_resolution_clock::now();
     for (std::size_t i{}; i < this->packing->size(); i++) {
         bool wasMoved = this->tryMove(interaction);
         this->moveCounter.increment(wasMoved);
     }
+    auto end = high_resolution_clock::now();
+    this->moveMicroseconds += duration<double, std::micro>(end - start).count();
 
+    start = high_resolution_clock::now();
     bool wasScaled = this->tryScaling(interaction);
     this->scalingCounter.increment(wasScaled);
+    end = high_resolution_clock::now();
+    this->scalingMicroseconds += duration<double, std::micro>(end - start).count();
 
     if (this->shouldAdjustStepSize)
         this->evaluateCounters(logger);

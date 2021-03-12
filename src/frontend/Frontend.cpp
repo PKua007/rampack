@@ -218,9 +218,18 @@ int Frontend::casino(int argc, char **argv) {
                    runParams.pressure / runParams.temperature * rho.error / rho.value / rho.value);
         Z.separator = Quantity::PLUS_MINUS;
 
-        double ngRebuilds = simulation.getPacking().getNeighbourGridRebuilds();
-        double ngResizes = simulation.getPacking().getNeighbourGridResizes();
+        std::size_t ngRebuilds = simulation.getPacking().getNeighbourGridRebuilds();
+        std::size_t ngResizes = simulation.getPacking().getNeighbourGridResizes();
         double ngRebuildSeconds = simulation.getPacking().getNeighbourGridRebuildMicroseconds() / 1e6;
+        double moveSeconds = simulation.getMoveMicroseconds() / 1e6;
+        double scalingSeconds = simulation.getScalingMicroseconds() / 1e6;
+        double totalSeconds = moveSeconds + scalingSeconds;
+        double cyclesPerSecond = static_cast<double>(runParams.thermalisationCycles + runParams.averagingCycles)
+                                 / totalSeconds;
+        double ngRebuildTotalPercent = ngRebuildSeconds / totalSeconds * 100;
+        double ngRebuildScalingPercent = ngRebuildSeconds / scalingSeconds * 100;
+        double movePercent = moveSeconds / totalSeconds * 100;
+        double scalingPercent = scalingSeconds / totalSeconds * 100;
 
         this->logger.info();
         this->logger << "--------------------------------------------------------------------" << std::endl;
@@ -234,7 +243,12 @@ int Frontend::casino(int argc, char **argv) {
         this->logger << "Scaling acceptance rate         : " << simulation.getScalingAcceptanceRate() << std::endl;
         this->logger << "Neighbour grid resizes/rebuilds : " << ngResizes << "/" << ngRebuilds << std::endl;
         this->logger << "--------------------------------------------------------------------" << std::endl;
-        this->logger << "Neighbour grid rebuild time : " << ngRebuildSeconds << "s"<< std::endl;
+        this->logger << "Move time         : " << moveSeconds << " s (" << movePercent << "% total)" << std::endl;
+        this->logger << "Scaling time      : " << scalingSeconds << " s (" << scalingPercent << "% total)" << std::endl;
+        this->logger << "NG rebuild time   : " << ngRebuildSeconds << " s (";
+        this->logger << ngRebuildScalingPercent << "% scaling, " << ngRebuildTotalPercent << "% total)" <<  std::endl;
+        this->logger << "Total time        : " << totalSeconds << " s" << std::endl;
+        this->logger << "Cycles per second : " << cyclesPerSecond << std::endl;
         this->logger << "--------------------------------------------------------------------" << std::endl;
 
         // Store packing (if desired)
