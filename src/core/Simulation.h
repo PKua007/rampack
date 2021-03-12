@@ -68,7 +68,7 @@ private:
     std::vector<double> averagedEnergyFluctuations;
     std::vector<ScalarSnapshot> densityThermalisationSnapshots;
 
-    void performStep(Logger &logger, const Interaction &interaction);
+    void performCycle(Logger &logger, const Interaction &interaction);
     bool tryTranslation(const Interaction &interaction);
     bool tryRotation(const Interaction &interaction);
     bool tryMove(const Interaction &interaction);
