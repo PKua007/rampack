@@ -20,6 +20,7 @@
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/LatticeArrangingModel.h"
 #include "core/Packing.h"
+#include "utils/OMPMacros.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename, const std::vector<std::string> &overridenParams) {
@@ -126,6 +127,8 @@ int Frontend::casino(int argc, char **argv) {
     this->logger << "--------------------------------------------------------------------" << std::endl;
     Parameters params = this->loadParameters(inputFilename, overridenParams);
     params.print(this->logger);
+    this->logger << std::endl;
+    this->logger << "Using " << _OMP_MAXTHREADS << " OpenMP threads" << std::endl;
     this->logger << std::endl;
 
     auto bc = std::make_unique<PeriodicBoundaryConditions>();

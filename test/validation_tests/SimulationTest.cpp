@@ -13,6 +13,7 @@
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/interactions/LennardJonesInteraction.h"
 #include "core/interactions/RepulsiveLennardJonesInteraction.h"
+#include "utils/OMPMacros.h"
 
 TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
     // We choose temperature 10 and pressure 1. For particles of radius 0.05 we should obtain number density 0.0999791
@@ -27,6 +28,7 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
     Simulation simulation(std::move(packing), 1, 0.1, 1, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
+    omp_set_num_threads(1);
 
     simulation.perform(10, 1, 5000, 10000, 100, sphereTraits.getInteraction(), logger);
 
@@ -39,8 +41,6 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
 }
 
 TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
-    // We choose temperature 1 and pressure 1. For particles of radius 0.05 we should obtain number density 0.0999791
-    // We start with density 0.01 and too small step ranges. The program should adjust and equilibrate correctly
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 200;
     double linearSize = std::cbrt(V);
@@ -51,6 +51,7 @@ TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
     Simulation simulation(std::move(packing), 1, 0.1, 1, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
+    omp_set_num_threads(1);
 
     simulation.perform(1, 1, 5000, 10000, 100, sphereTraits.getInteraction(), logger);
 
@@ -63,9 +64,6 @@ TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
 }
 
 TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") {
-    // We choose temperature 10 and pressure 1. For particles of radius 0.05 we should obtain number density 0.0999791
-    // We start with density 0.01 and too small step ranges. The program should adjust and equilibrate correctly
-
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 200;
     double linearSize = std::cbrt(V);
@@ -76,6 +74,7 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
     Simulation simulation(std::move(packing), 1, 0.1, 1, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
+    omp_set_num_threads(1);
 
     simulation.perform(10, 1, 5000, 10000, 100, spherocylinderTraits.getInteraction(), logger);
 
@@ -101,6 +100,7 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
     Simulation simulation(std::move(packing), 1, 0.1, 10, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
+    omp_set_num_threads(1);
 
     simulation.perform(100, 200, 2000, 2000, 20, sphereTraits.getInteraction(), logger);
 
@@ -126,6 +126,7 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
     Simulation simulation(std::move(packing), 10, 1, 10, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
+    omp_set_num_threads(1);
 
     simulation.perform(1, 2, 10000, 5000, 100, kmerTraits.getInteraction(), logger);
 
@@ -152,6 +153,7 @@ TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
     Simulation simulation(std::move(packing), 10, 1, 10, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
+    omp_set_num_threads(4);
 
     simulation.perform(1, 7.5, 5000, 5000, 100, kmerTraits.getInteraction(), logger);
 
