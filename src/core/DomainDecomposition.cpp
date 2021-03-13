@@ -2,6 +2,10 @@
 // Created by Piotr Kubala on 13/03/2021.
 //
 
+#include <algorithm>
+#include <numeric>
+#include <iostream>
+
 #include "DomainDecomposition.h"
 #include "utils/Assertions.h"
 
@@ -30,23 +34,29 @@ DomainDecomposition::DomainDecomposition(const Packing &packing, const Interacti
         Expects(ghostLayerWidth < wholeDomainWidth);
 
         this->regionBounds[i].resize(domainDivisions[i]);
-        double previousEnd = -std::numeric_limits<double>::infinity();
+        double previousGhostEnd = -std::numeric_limits<double>::infinity();
         for (std::size_t domainIdx{}; domainIdx < domainDivisions[i]; domainIdx++) {
             double theoreticalMiddle = origin[i] + domainIdx * wholeDomainWidth;
             double realMiddle = ngCellSize * (std::round(theoreticalMiddle/ngCellSize - 0.5) + 0.5);
-            auto &bounds = this->regionBounds[i][domainIdx];
-            bounds.beg = realMiddle - ghostLayerWidth/2, dimensions[i];
-            bounds.end = realMiddle - ghostLayerWidth/2, dimensions[i];
 
-            ExpectsMsg(bounds.beg > previousEnd,
+            std::size_t previousDomainIdx = (domainIdx + domainDivisions[i] - 1) % domainDivisions[i];
+            double &ghostBeg = this->regionBounds[i][previousDomainIdx].end;
+            double &ghostEnd = this->regionBounds[i][domainIdx].beg;
+            ghostBeg = realMiddle - ghostLayerWidth / 2, dimensions[i];
+            ghostEnd = realMiddle + ghostLayerWidth / 2, dimensions[i];
+
+            ExpectsMsg(ghostBeg > previousGhostEnd,
                        "Domain of index " + std::to_string(domainIdx) + " on coord " + std::to_string(i) + " is < 0");
-            previousEnd = bounds.end;
+            previousGhostEnd = ghostEnd;
 
-            bounds.beg = fitPeriodically(bounds.beg, dimensions[i]);
-            bounds.end = fitPeriodically(bounds.end, dimensions[domainIdx]);
+            ghostBeg = fitPeriodically(ghostBeg, dimensions[i]);
+            ghostEnd = fitPeriodically(ghostEnd, dimensions[i]);
         }
     }
 
+    this->particlesInRegions.resize(
+        std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies{})
+    );
     for (std::size_t particleIdx{}; particleIdx < packing.size(); particleIdx++) {
         Vector<3> pos = packing[particleIdx].getPosition();
         std::array<std::size_t, 3> coords{};
@@ -77,8 +87,16 @@ bool DomainDecomposition::isVectorInActiveRegion(const Vector<3> &vector,
         Expects(coord[i] < this->domainDivisions[i]);
         if (this->domainDivisions[i] < 2)
             continue;
-        if (vector[i] <= this->regionBounds[i][coord[i]].beg || vector[i] >= this->regionBounds[i][coord[i]].end)
-            return false;
+
+        double beg = this->regionBounds[i][coord[i]].beg;
+        double end = this->regionBounds[i][coord[i]].end;
+        if (beg < end) {
+            if (vector[i] <= beg || vector[i] >= end)
+                return false;
+        } else {
+            if (vector[i] <= beg && vector[i] >= end)
+                return false;
+        }
     }
     return true;
 }
