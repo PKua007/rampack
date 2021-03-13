@@ -14,6 +14,7 @@
 #include "Interaction.h"
 #include "ShapePrinter.h"
 #include "NeighbourGrid.h"
+#include "utils/OMPMacros.h"
 
 class Packing {
 private:
@@ -25,8 +26,9 @@ private:
     std::optional<NeighbourGrid> tempNeighbourGrid;
     double interactionRange{};
     std::size_t numInteractionCentres{};
+    std::size_t maxThreads = 1;
 
-    std::size_t lastAlteredParticleIdx{};
+    std::vector<std::size_t> lastAlteredParticleIdx{};
     double lastScalingFactor{};
 
     std::size_t neighbourGridRebuilds{};
@@ -66,19 +68,19 @@ private:
     using iterator = decltype(shapes)::iterator;
 
     [[nodiscard]] iterator begin() { return this->shapes.begin(); }
-    [[nodiscard]] iterator end() { return this->shapes.end() - 1; }
+    [[nodiscard]] iterator end() { return this->shapes.end() - this->maxThreads; }
 
 public:
     using const_iterator = decltype(shapes)::const_iterator;
 
     explicit Packing(std::unique_ptr<BoundaryConditions> bc) : bc{std::move(bc)} { }
     Packing(const std::array<double, 3> &dimensions, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
-            const Interaction &interaction);
+            const Interaction &interaction, std::size_t maxThreads = 1);
 
-    [[nodiscard]] std::size_t size() const { return this->shapes.size() - 1; }
-    [[nodiscard]] bool empty() const { return this->shapes.size() == 1; }
+    [[nodiscard]] std::size_t size() const { return this->shapes.size() - this->maxThreads; }
+    [[nodiscard]] bool empty() const { return this->shapes.size() == this->maxThreads; }
     [[nodiscard]] const_iterator begin() const { return this->shapes.begin(); }
-    [[nodiscard]] const_iterator end() const { return this->shapes.end() - 1; }
+    [[nodiscard]] const_iterator end() const { return this->shapes.end() - this->maxThreads; }
     [[nodiscard]] const Shape &operator[](std::size_t i) const;
     [[nodiscard]] const Shape &front() const;
     [[nodiscard]] const Shape &back() const;
