@@ -45,6 +45,8 @@ public:
 
     [[nodiscard]] virtual std::vector<Vector<3>> getInteractionCentres() const { return {}; }
 
+    [[nodiscard]] virtual double getTotalRangeRadius() const;
+
     [[nodiscard]] double calculateEnergyBetweenShapes(const Shape &shape1, const Shape &shape2,
                                                       const BoundaryConditions &bc) const;
 

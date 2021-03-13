@@ -125,15 +125,17 @@ int Frontend::casino(int argc, char **argv) {
     this->logger << "--------------------------------------------------------------------" << std::endl;
     this->logger << "General simulation parameters" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
+
     Parameters params = this->loadParameters(inputFilename, overridenParams);
     params.print(this->logger);
-    this->logger << std::endl;
-    this->logger << "Using " << _OMP_MAXTHREADS << " OpenMP threads" << std::endl;
-    this->logger << std::endl;
 
-    auto bc = std::make_unique<PeriodicBoundaryConditions>();
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+
     auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
-    std::unique_ptr<Packing> packing;
+
+    this->logger << "Interaction centre range : " << shapeTraits->getInteraction().getRangeRadius() << std::endl;
+    this->logger << "Total interaction range  : " << shapeTraits->getInteraction().getTotalRangeRadius() << std::endl;
+    this->logger << "Using " << _OMP_MAXTHREADS << " OpenMP threads" << std::endl;
 
     // Find starting run index if specified
     std::size_t startRunIndex{};
@@ -159,6 +161,9 @@ int Frontend::casino(int argc, char **argv) {
 
     // Load starting state from a previous or current run packing depending on --start-from and --continue
     // options combination
+    auto bc = std::make_unique<PeriodicBoundaryConditions>();
+    std::unique_ptr<Packing> packing;
+
     if ((parsedOptions.count("start-from") && startRunIndex != 0) || parsedOptions.count("continue")) {
         packing = std::make_unique<Packing>(std::move(bc));
         auto runsParameters = params.runsParameters;
