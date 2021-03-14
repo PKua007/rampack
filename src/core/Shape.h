@@ -30,6 +30,14 @@ public:
     void applyBCTranslation(const BoundaryConditions &bc, Shape &other) const;
     [[nodiscard]] const Vector<3> &getPosition() const { return this->position; }
     [[nodiscard]] const Matrix<3, 3> &getOrientation() const { return this->orientation; }
+
+    friend bool operator==(const Shape &lhs, const Shape &rhs) {
+        return std::tie(lhs.position, lhs.orientation) == std::tie(rhs.position, rhs.orientation);
+    }
+
+    friend bool operator!=(const Shape &lhs, const Shape &rhs) {
+        return !(rhs == lhs);
+    }
 };
 
 

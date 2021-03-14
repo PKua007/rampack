@@ -4,6 +4,7 @@
 
 #include <catch2/catch.hpp>
 #include <cmath>
+#include <sstream>
 
 #include "matchers/PackingApproxPositionsCatchMatcher.h"
 
@@ -54,7 +55,7 @@ namespace {
     };
 }
 
-TEST_CASE("Packing") {
+TEST_CASE("Packing: operations") {
     // Packing has linear scale of 5, so all coordinates in translate are multiplied by 3 (before scaling of course)
     double radius = 0.25;
     SphereHardCoreInteraction hardCore(radius);
@@ -181,5 +182,24 @@ TEST_CASE("Packing") {
             CHECK(packing.calculateParticleEnergy(1, distanceInteraction) == Approx((2 + std::sqrt(41)) / 10 * 5));
             CHECK(packing.calculateParticleEnergy(2, distanceInteraction) == Approx(2 * std::sqrt(41) / 10 * 5));
         }*/
+    }
+
+    SECTION("storing and restoring") {
+        std::stringstream inOut;
+        auto pbc2 = std::make_unique<PeriodicBoundaryConditions>();
+        Packing packingRestored(std::move(pbc2));
+
+        packing.store(inOut);
+        packingRestored.restore(inOut, distanceInteraction);
+
+        REQUIRE(packing.size() == packingRestored.size());
+        CHECK(packing[0] == packingRestored[0]);
+        CHECK(packing[1] == packingRestored[1]);
+        CHECK(packing[2] == packingRestored[2]);
+
+        SECTION("fix: lastAlteredParticleIdx not initialized for packingRestored") {
+            // This used to cause SIGSEGV
+            packingRestored.tryTranslation(2, {1, 2, 3}, distanceInteraction);
+        }
     }
 }

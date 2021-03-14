@@ -20,11 +20,20 @@ Packing::Packing(const std::array<double, 3> &dimensions, std::vector<Shape> sha
     Expects(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
     Expects(this->interactionRange > 0);
     Expects(!this->shapes.empty());
+    Expects(maxThreads > 0);
 
     this->shapes.resize(this->shapes.size() + this->maxThreads);    // temp shapes at the back
     this->lastAlteredParticleIdx.resize(this->maxThreads, 0);
     this->bc->setLinearSize(this->dimensions);
     this->setupForInteraction(interaction);
+}
+
+Packing::Packing(std::unique_ptr<BoundaryConditions> bc, std::size_t maxThreads)
+        : bc{std::move(bc)}, maxThreads{maxThreads}
+{
+    Expects(maxThreads > 0);
+
+    this->lastAlteredParticleIdx.resize(this->maxThreads, 0);
 }
 
 double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction) {

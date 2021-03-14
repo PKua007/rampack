@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <numeric>
-#include <iostream>
 
 #include "DomainDecomposition.h"
 #include "utils/Assertions.h"
