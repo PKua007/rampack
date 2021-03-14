@@ -23,23 +23,23 @@ public:
     };
 
 private:
-    struct Counter {
-        std::size_t movesSinceEvaluation{};
-        std::size_t acceptedMovesSinceEvaluation{};
-        std::size_t moves{};
-        std::size_t acceptedMoves{};
+    class Counter {
+    private:
+        std::vector<std::size_t> movesSinceEvaluation{};
+        std::vector<std::size_t> acceptedMovesSinceEvaluation{};
+        std::vector<std::size_t> moves{};
+        std::vector<std::size_t> acceptedMoves{};
 
+        static std::size_t total(const std::vector<std::size_t> &vec);
+
+    public:
         void increment(bool accepted);
         void reset();
         void resetCurrent();
 
-        [[nodiscard]] double getCurrentRate() const {
-            return static_cast<double>(this->acceptedMovesSinceEvaluation) / this->movesSinceEvaluation;
-        }
-
-        [[nodiscard]] double getRate() const {
-            return static_cast<double>(this->acceptedMoves) / this->moves;
-        }
+        [[nodiscard]] std::size_t getMovesSinceEvaluation() const;
+        [[nodiscard]] double getCurrentRate() const;
+        [[nodiscard]] double getRate() const;
     };
 
     std::size_t thermalisationCycles{};

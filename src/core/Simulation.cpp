@@ -177,7 +177,7 @@ bool Simulation::tryScaling(const Interaction &interaction) {
 }
 
 void Simulation::evaluateCounters(Logger &logger) {
-    if (this->moveCounter.movesSinceEvaluation >= 100 * this->packing->size()) {
+    if (this->moveCounter.getMovesSinceEvaluation() >= 100 * this->packing->size()) {
         double rate = this->moveCounter.getCurrentRate();
         this->moveCounter.resetCurrent();
         if (rate > 0.2) {
@@ -204,7 +204,7 @@ void Simulation::evaluateCounters(Logger &logger) {
         }
     }
 
-    if (this->scalingCounter.movesSinceEvaluation >= 100) {
+    if (this->scalingCounter.getMovesSinceEvaluation() >= 100) {
         double rate = this->scalingCounter.getCurrentRate();
         this->scalingCounter.resetCurrent();
         if (rate > 0.2) {
@@ -241,24 +241,47 @@ Quantity Simulation::getAverageEnergyFluctuations() const {
 }
 
 void Simulation::Counter::increment(bool accepted) {
-    this->moves++;
-    this->movesSinceEvaluation++;
+    std::size_t tid = _OMP_THREAD_ID;
+
+    this->moves.resize(tid + 1, 0);
+    this->movesSinceEvaluation.resize(tid + 1, 0);
+    this->acceptedMoves.resize(tid + 1, 0);
+    this->acceptedMovesSinceEvaluation.resize(tid + 1, 0);
+
+    this->moves[tid]++;
+    this->movesSinceEvaluation[tid]++;
     if (accepted) {
-        this->acceptedMoves++;
-        this->acceptedMovesSinceEvaluation++;
+        this->acceptedMoves[tid]++;
+        this->acceptedMovesSinceEvaluation[tid]++;
     }
 }
 
 void Simulation::Counter::reset() {
-    this->acceptedMoves = 0;
-    this->moves = 0;
-    this->acceptedMovesSinceEvaluation = 0;
-    this->movesSinceEvaluation = 0;
+    this->acceptedMoves.clear();
+    this->moves.clear();
+    this->acceptedMovesSinceEvaluation.clear();
+    this->movesSinceEvaluation.clear();
 }
 
 void Simulation::Counter::resetCurrent() {
-    this->acceptedMovesSinceEvaluation = 0;
-    this->movesSinceEvaluation = 0;
+    this->acceptedMovesSinceEvaluation.clear();
+    this->movesSinceEvaluation.clear();
+}
+
+double Simulation::Counter::getCurrentRate() const {
+    return static_cast<double>(total(this->acceptedMovesSinceEvaluation)) / total(this->movesSinceEvaluation);
+}
+
+double Simulation::Counter::getRate() const {
+    return static_cast<double>(total(this->acceptedMoves)) / total(this->moves);
+}
+
+std::size_t Simulation::Counter::total(const std::vector<std::size_t> &vec) {
+    return std::accumulate(vec.begin(), vec.end(), 0., std::plus<>{});
+}
+
+std::size_t Simulation::Counter::getMovesSinceEvaluation() const {
+    return total(this->movesSinceEvaluation);
 }
 
 std::ostream &operator<<(std::ostream &out, const Simulation::ScalarSnapshot &snapshot) {
