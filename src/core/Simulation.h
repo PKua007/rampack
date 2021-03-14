@@ -56,7 +56,7 @@ private:
     Counter scalingCounter;
     bool shouldAdjustStepSize{};
 
-    std::mt19937 mt;
+    std::vector<std::mt19937> mts;
     std::uniform_real_distribution<double> unitIntervalDistribution;
     std::uniform_int_distribution<int> particleIdxDistribution;
 
@@ -64,6 +64,9 @@ private:
     double scalingMicroseconds{};
 
     std::unique_ptr<Packing> packing;
+    std::size_t numDomains{};
+    std::array<std::size_t, 3> domainDivisions;
+
     std::vector<double> averagedDensities;
     std::vector<double> averagedEnergy;
     std::vector<double> averagedEnergyFluctuations;
@@ -79,7 +82,7 @@ private:
 
 public:
     Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep,
-               double scalingStep, unsigned long seed);
+               double scalingStep, unsigned long seed, const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1});
 
     void perform(double temperature_, double pressure_, std::size_t thermalisationCycles_, std::size_t averagingCycles_,
                  std::size_t averagingEvery_, const Interaction &interaction, Logger &logger);

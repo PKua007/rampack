@@ -89,6 +89,8 @@ public:
     [[nodiscard]] const Shape &back() const;
 
     [[nodiscard]] const std::array<double, 3> &getDimensions() const { return this->dimensions; }
+    [[nodiscard]] double getMoveThreads() const { return this->moveThreads; }
+    [[nodiscard]] double getScalingThreads() const { return this->scalingThreads; }
     [[nodiscard]] double getVolume() const;
     [[nodiscard]] double getPackingFraction(double shapeVolume) const;
     [[nodiscard]] double getNumberDensity() const;

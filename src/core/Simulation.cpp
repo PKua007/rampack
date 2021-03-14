@@ -10,14 +10,22 @@
 #include "utils/Assertions.h"
 
 Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep,
-                       double scalingStep, unsigned long seed)
-        : translationStep{translationStep}, rotationStep{rotationStep}, scalingStep{scalingStep}, mt(seed),
-          packing{std::move(packing)}
+                       double scalingStep, unsigned long seed, const std::array<std::size_t, 3> &domainDivisions)
+        : translationStep{translationStep}, rotationStep{rotationStep}, scalingStep{scalingStep},
+          packing{std::move(packing)}, domainDivisions{domainDivisions}
 {
     Expects(!this->packing->empty());
     Expects(translationStep > 0);
     Expects(rotationStep > 0);
     Expects(scalingStep > 0);
+
+    this->numDomains = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies<>{});
+    Expects(this->numDomains > 0);
+    Expects(this->numDomains <= this->packing->getMoveThreads());
+
+    this->mts.reserve(this->numDomains);
+    for (std::size_t i{}; i < this->numDomains; i++)
+        this->mts.emplace_back(seed + i);
 }
 
 void Simulation::perform(double temperature_, double pressure_, std::size_t thermalisationCycles_,
@@ -101,13 +109,15 @@ void Simulation::performCycle(Logger &logger, const Interaction &interaction) {
 }
 
 bool Simulation::tryTranslation(const Interaction &interaction) {
-    Vector<3> translation{2*this->unitIntervalDistribution(this->mt) - 1,
-                          2*this->unitIntervalDistribution(this->mt) - 1,
-                          2*this->unitIntervalDistribution(this->mt) - 1};
+    auto &mt = this->mts[_OMP_THREAD_ID];
+
+    Vector<3> translation{2*this->unitIntervalDistribution(mt) - 1,
+                          2*this->unitIntervalDistribution(mt) - 1,
+                          2*this->unitIntervalDistribution(mt) - 1};
     translation *= this->translationStep;
 
-    double dE = this->packing->tryTranslation(this->particleIdxDistribution(this->mt), translation, interaction);
-    if (this->unitIntervalDistribution(this->mt) <= std::exp(-dE / this->temperature)) {
+    double dE = this->packing->tryTranslation(this->particleIdxDistribution(mt), translation, interaction);
+    if (this->unitIntervalDistribution(mt) <= std::exp(-dE / this->temperature)) {
         this->packing->acceptTranslation();
         return true;
     } else {
@@ -116,17 +126,19 @@ bool Simulation::tryTranslation(const Interaction &interaction) {
 }
 
 bool Simulation::tryRotation(const Interaction &interaction) {
+    auto &mt = this->mts[_OMP_THREAD_ID];
+
     Vector<3> axis;
     do {
-        axis[0] = 2*this->unitIntervalDistribution(this->mt) - 1;
-        axis[1] = 2*this->unitIntervalDistribution(this->mt) - 1;
-        axis[2] = 2*this->unitIntervalDistribution(this->mt) - 1;
+        axis[0] = 2*this->unitIntervalDistribution(mt) - 1;
+        axis[1] = 2*this->unitIntervalDistribution(mt) - 1;
+        axis[2] = 2*this->unitIntervalDistribution(mt) - 1;
     } while (axis.norm2() > 1);
-    double angle = (2*this->unitIntervalDistribution(this->mt) - 1) * this->rotationStep;
+    double angle = (2*this->unitIntervalDistribution(mt) - 1) * this->rotationStep;
     auto rotation = Matrix<3, 3>::rotation(axis.normalized(), angle);
 
-    double dE = this->packing->tryRotation(this->particleIdxDistribution(this->mt), rotation, interaction);
-    if (this->unitIntervalDistribution(this->mt) <= std::exp(-dE / this->temperature)) {
+    double dE = this->packing->tryRotation(this->particleIdxDistribution(mt), rotation, interaction);
+    if (this->unitIntervalDistribution(mt) <= std::exp(-dE / this->temperature)) {
         this->packing->acceptRotation();
         return true;
     } else {
@@ -135,22 +147,24 @@ bool Simulation::tryRotation(const Interaction &interaction) {
 }
 
 bool Simulation::tryMove(const Interaction &interaction) {
-    Vector<3> translation{2*this->unitIntervalDistribution(this->mt) - 1,
-                          2*this->unitIntervalDistribution(this->mt) - 1,
-                          2*this->unitIntervalDistribution(this->mt) - 1};
+    auto &mt = this->mts[_OMP_THREAD_ID];
+    
+    Vector<3> translation{2*this->unitIntervalDistribution(mt) - 1,
+                          2*this->unitIntervalDistribution(mt) - 1,
+                          2*this->unitIntervalDistribution(mt) - 1};
     translation *= this->translationStep;
 
     Vector<3> axis;
     do {
-        axis[0] = 2*this->unitIntervalDistribution(this->mt) - 1;
-        axis[1] = 2*this->unitIntervalDistribution(this->mt) - 1;
-        axis[2] = 2*this->unitIntervalDistribution(this->mt) - 1;
+        axis[0] = 2*this->unitIntervalDistribution(mt) - 1;
+        axis[1] = 2*this->unitIntervalDistribution(mt) - 1;
+        axis[2] = 2*this->unitIntervalDistribution(mt) - 1;
     } while (axis.norm2() > 1);
-    double angle = (2*this->unitIntervalDistribution(this->mt) - 1) * std::min(this->rotationStep, M_PI);
+    double angle = (2*this->unitIntervalDistribution(mt) - 1) * std::min(this->rotationStep, M_PI);
     auto rotation = Matrix<3, 3>::rotation(axis.normalized(), angle);
 
-    double dE = this->packing->tryMove(this->particleIdxDistribution(this->mt), translation, rotation, interaction);
-    if (this->unitIntervalDistribution(this->mt) <= std::exp(-dE / this->temperature)) {
+    double dE = this->packing->tryMove(this->particleIdxDistribution(mt), translation, rotation, interaction);
+    if (this->unitIntervalDistribution(mt) <= std::exp(-dE / this->temperature)) {
         this->packing->acceptMove();
         return true;
     } else {
@@ -159,7 +173,9 @@ bool Simulation::tryMove(const Interaction &interaction) {
 }
 
 bool Simulation::tryScaling(const Interaction &interaction) {
-    double deltaV = (2*this->unitIntervalDistribution(this->mt) - 1) * this->scalingStep;
+    auto &mt = this->mts.front();
+
+    double deltaV = (2*this->unitIntervalDistribution(mt) - 1) * this->scalingStep;
     double currentV = this->packing->getVolume();
     double factor = (deltaV + currentV) / currentV;
     if (factor < 0)
@@ -168,7 +184,7 @@ bool Simulation::tryScaling(const Interaction &interaction) {
     double N = this->packing->size();
     double dE = this->packing->tryScaling(factor, interaction);
     double exponent = N * log(factor) - dE / this->temperature - this->pressure * deltaV / this->temperature;
-    if (this->unitIntervalDistribution(this->mt) <= std::exp(exponent)) {
+    if (this->unitIntervalDistribution(mt) <= std::exp(exponent)) {
         return true;
     } else {
         this->packing->revertScaling();
