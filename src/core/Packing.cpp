@@ -13,27 +13,31 @@
 
 
 Packing::Packing(const std::array<double, 3> &dimensions, std::vector<Shape> shapes,
-                 std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction, std::size_t maxThreads)
+                 std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction, std::size_t moveThreads,
+                 std::size_t scalingThreads)
         : shapes{std::move(shapes)}, dimensions{dimensions}, bc{std::move(bc)},
-          interactionRange{interaction.getRangeRadius()}, maxThreads{maxThreads}
+          interactionRange{interaction.getRangeRadius()}
 {
     Expects(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
     Expects(this->interactionRange > 0);
     Expects(!this->shapes.empty());
-    Expects(maxThreads > 0);
 
-    this->shapes.resize(this->shapes.size() + this->maxThreads);    // temp shapes at the back
-    this->lastAlteredParticleIdx.resize(this->maxThreads, 0);
+    this->moveThreads = (moveThreads == 0 ? _OMP_MAXTHREADS : moveThreads);
+    this->scalingThreads = (scalingThreads == 0 ? _OMP_MAXTHREADS : scalingThreads);
+
+    this->shapes.resize(this->shapes.size() + this->moveThreads);    // temp shapes at the back
+    this->lastAlteredParticleIdx.resize(this->moveThreads, 0);
     this->bc->setLinearSize(this->dimensions);
     this->setupForInteraction(interaction);
 }
 
-Packing::Packing(std::unique_ptr<BoundaryConditions> bc, std::size_t maxThreads)
-        : bc{std::move(bc)}, maxThreads{maxThreads}
+Packing::Packing(std::unique_ptr<BoundaryConditions> bc, std::size_t moveThreads, std::size_t scalingThreads)
+        : bc{std::move(bc)}
 {
-    Expects(maxThreads > 0);
+    this->moveThreads = (moveThreads == 0 ? _OMP_MAXTHREADS : moveThreads);
+    this->scalingThreads = (scalingThreads == 0 ? _OMP_MAXTHREADS : scalingThreads);
 
-    this->lastAlteredParticleIdx.resize(this->maxThreads, 0);
+    this->lastAlteredParticleIdx.resize(this->moveThreads, 0);
 }
 
 double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction) {
@@ -290,7 +294,7 @@ bool Packing::isParticleOverlappingAnything(std::size_t originalParticleIdx, std
 bool Packing::areAnyParticlesOverlapping(const Interaction &interaction) const {
     if (this->neighbourGrid.has_value()) {
         volatile bool overlapFound = false;
-        #pragma omp parallel for default(none) shared(overlapFound, interaction)
+        #pragma omp parallel for default(none) shared(overlapFound, interaction) num_threads(this->scalingThreads)
         for (std::size_t i = 0; i < this->size(); i++) {
             if (overlapFound)
                 continue;
@@ -402,7 +406,7 @@ double Packing::getTotalEnergy(const Interaction &interaction) const {
 
     double energy{};
     if (this->neighbourGrid.has_value()) {
-        #pragma omp parallel for default(none) shared(interaction) reduction(+:energy)
+        #pragma omp parallel for default(none) shared(interaction) reduction(+:energy) num_threads(this->scalingThreads)
         for (std::size_t i = 0; i < this->size(); i++)
             energy += this->calculateParticleEnergy(i, i, interaction)/2;  // Pairs counted twice
     } else {
@@ -564,7 +568,7 @@ void Packing::restore(std::istream &in, const Interaction &interaction) {
     ValidateMsg(in, "Broken packing file: size");
 
     std::vector<Shape> shapes_;
-    shapes_.reserve(size + this->maxThreads);  // temp shapes at the back
+    shapes_.reserve(size + this->moveThreads);  // temp shapes at the back
     for (std::size_t i{}; i < size; i++) {
         Vector<3> position;
         Matrix<3, 3> orientation;
@@ -578,7 +582,7 @@ void Packing::restore(std::istream &in, const Interaction &interaction) {
     }
 
     this->dimensions = dimensions_;
-    shapes_.resize(shapes_.size() + this->maxThreads);     // add temp shapes
+    shapes_.resize(shapes_.size() + this->moveThreads);     // add temp shapes
     this->shapes = shapes_;
     this->bc->setLinearSize(dimensions_);
     this->setupForInteraction(interaction);

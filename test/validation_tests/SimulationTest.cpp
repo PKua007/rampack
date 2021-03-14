@@ -18,6 +18,7 @@
 TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
     // We choose temperature 10 and pressure 1. For particles of radius 0.05 we should obtain number density 0.0999791
     // We start with density 0.01 and too small step ranges. The program should adjust and equilibrate correctly
+    omp_set_num_threads(1);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 5000;
     double linearSize = std::cbrt(V);
@@ -28,7 +29,6 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
     Simulation simulation(std::move(packing), 1, 0.1, 1, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
-    omp_set_num_threads(1);
 
     simulation.perform(10, 1, 5000, 10000, 100, sphereTraits.getInteraction(), logger);
 
@@ -41,6 +41,7 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
 }
 
 TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
+    omp_set_num_threads(1);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 200;
     double linearSize = std::cbrt(V);
@@ -51,7 +52,6 @@ TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
     Simulation simulation(std::move(packing), 1, 0.1, 1, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
-    omp_set_num_threads(1);
 
     simulation.perform(1, 1, 5000, 10000, 100, sphereTraits.getInteraction(), logger);
 
@@ -64,6 +64,7 @@ TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
 }
 
 TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") {
+    omp_set_num_threads(1);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 200;
     double linearSize = std::cbrt(V);
@@ -74,7 +75,6 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
     Simulation simulation(std::move(packing), 1, 0.1, 1, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
-    omp_set_num_threads(1);
 
     simulation.perform(10, 1, 5000, 10000, 100, spherocylinderTraits.getInteraction(), logger);
 
@@ -89,6 +89,7 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
 TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
     // For parameters chosen compressibility factor should be around 1.2 and equation of state seem to be well
     // approximated by the second virial coefficient known analytically
+    omp_set_num_threads(1);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 200;
     double linearSize = std::cbrt(V);
@@ -100,7 +101,6 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
     Simulation simulation(std::move(packing), 1, 0.1, 10, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
-    omp_set_num_threads(1);
 
     simulation.perform(100, 200, 2000, 2000, 20, sphereTraits.getInteraction(), logger);
 
@@ -115,6 +115,7 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
 TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
     // Semi-Theoretical values from "An equation of state for hard dumbell fluids"
     // D.J. Tildesley a & W.B. Streett (1980)
+    omp_set_num_threads(1);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 500;
     double linearSize = std::cbrt(V);
@@ -126,7 +127,6 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
     Simulation simulation(std::move(packing), 10, 1, 10, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
-    omp_set_num_threads(1);
 
     simulation.perform(1, 2, 10000, 5000, 100, kmerTraits.getInteraction(), logger);
 
@@ -141,6 +141,7 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
 TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
     // Value for density remorselessly stolen from
     // https://github.com/glotzerlab/hoomd-blue/blob/master/hoomd/hpmc/validation/wca_dumbbell.py
+    omp_set_num_threads(4);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 500;
     double linearSize = std::cbrt(V);
@@ -153,7 +154,6 @@ TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
     Simulation simulation(std::move(packing), 10, 1, 10, 1234);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
-    omp_set_num_threads(4);
 
     simulation.perform(1, 7.5, 5000, 5000, 100, kmerTraits.getInteraction(), logger);
 
