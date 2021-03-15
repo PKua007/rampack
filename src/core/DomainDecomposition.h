@@ -36,6 +36,8 @@ public:
     }
 
     [[nodiscard]] bool isVectorInActiveRegion(const Vector<3> &vector, const std::array<std::size_t, 3> &coord) const;
+    [[nodiscard]] std::array<std::pair<double, double>, 3>
+    getActiveRegionBoundaries(const std::array<std::size_t, 3> &coord) const;
 };
 
 
