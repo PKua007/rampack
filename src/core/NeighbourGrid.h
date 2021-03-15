@@ -17,7 +17,7 @@
 class NeighbourGrid {
 private:
     std::array<double, 3> linearSize{};
-    std::array<std::size_t, 3> numCellsInLine{};
+    std::array<std::size_t, 3> cellDivisions{};
     std::array<double, 3> cellSize{};
     std::vector<std::vector<std::size_t>> cells;
     std::vector<int> reflectedCells;
@@ -122,6 +122,7 @@ public:
     [[nodiscard]] const std::vector<std::size_t> &getCell(const Vector<3> &position) const;
     [[nodiscard]] std::vector<std::size_t> getNeighbours(const Vector<3> &position) const;
     [[nodiscard]] NeighboursView getNeighbouringCells(const Vector<3> &position) const;
+    [[nodiscard]] const std::array<std::size_t, 3> &getCellDivisions() const { return this->cellDivisions; }
 
     friend void swap(NeighbourGrid &ng1, NeighbourGrid &ng2);
 };

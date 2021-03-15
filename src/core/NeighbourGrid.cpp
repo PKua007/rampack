@@ -25,7 +25,7 @@ std::size_t NeighbourGrid::positionToCellNo(const Vector<3> &position) const {
 
         // +1, since first row of cells on each edges is "reflected", not "real"
         std::size_t coord = static_cast<int>(posI / this->cellSize[i]) + 1;
-        result = this->numCellsInLine[i] * result + coord;
+        result = this->cellDivisions[i] * result + coord;
     }
     return result;
 }
@@ -33,8 +33,8 @@ std::size_t NeighbourGrid::positionToCellNo(const Vector<3> &position) const {
 std::array<std::size_t, 3> NeighbourGrid::cellNoToCoordinates(std::size_t cellNo) const {
     std::array<std::size_t, 3> result{};
     for (std::size_t i{}; i < 3; i++) {
-        result[i] = cellNo % this->numCellsInLine[i];
-        cellNo /= this->numCellsInLine[i];
+        result[i] = cellNo % this->cellDivisions[i];
+        cellNo /= this->cellDivisions[i];
     }
     return result;
 }
@@ -42,7 +42,7 @@ std::array<std::size_t, 3> NeighbourGrid::cellNoToCoordinates(std::size_t cellNo
 std::size_t NeighbourGrid::coordinatesToCellNo(const std::array<std::size_t, 3> &coords) const {
     std::size_t result{};
     for (int i = 2; i >= 0; i--)
-        result = this->numCellsInLine[i] * result + coords[i];
+        result = this->cellDivisions[i] * result + coords[i];
     return result;
 }
 
@@ -53,8 +53,8 @@ std::size_t NeighbourGrid::cellNeighbourToCellNo(const std::array<std::size_t, 3
     for (int i = 2; i >= 0; i--) {
         // -1, because neighbour array goes from 0 to 2, and real offsets are from -1 to 1
         std::size_t ix = coordinates[i] + neighbour[i] - 1;
-        Assert(ix < this->numCellsInLine[i]);
-        result = this->numCellsInLine[i] * result + ix;
+        Assert(ix < this->cellDivisions[i]);
+        result = this->cellDivisions[i] * result + ix;
     }
     return result;
 }
@@ -62,7 +62,7 @@ std::size_t NeighbourGrid::cellNeighbourToCellNo(const std::array<std::size_t, 3
 bool NeighbourGrid::isCellReflected(std::size_t cellNo) const {
     std::array<std::size_t, 3> coords = this->cellNoToCoordinates(cellNo);
     for (std::size_t i{}; i < 3; i++)
-        if (coords[i] == 0 || coords[i] == this->numCellsInLine[i] - 1)
+        if (coords[i] == 0 || coords[i] == this->cellDivisions[i] - 1)
             return true;
     return false;
 }
@@ -75,8 +75,8 @@ int NeighbourGrid::getReflectedCellNo(std::size_t cellNo) const {
     for (std::size_t i{}; i < 3; i++) {
         std::size_t &coord = coords[i];
         if (coord == 0)
-            coord = this->numCellsInLine[i] - 2;
-        if (coord == this->numCellsInLine[i] - 1)
+            coord = this->cellDivisions[i] - 2;
+        if (coord == this->cellDivisions[i] - 1)
             coord = 1;
     }
     return this->coordinatesToCellNo(coords);
@@ -103,7 +103,7 @@ void NeighbourGrid::fillNeighbouringCellsOffsets() {
     std::array<std::size_t, 3> testCellCoords{};
     neighbour.fill(0);
     for (std::size_t i{}; i < 3; i++)
-        testCellCoords[i] = this->numCellsInLine[i] / 2;
+        testCellCoords[i] = this->cellDivisions[i] / 2;
     std::size_t testCellNo = this->coordinatesToCellNo(testCellCoords);
     do {
         std::size_t neigbourNo = this->cellNeighbourToCellNo(testCellCoords, neighbour);
@@ -139,18 +139,18 @@ void NeighbourGrid::setupSizes(const std::array<double, 3> &newLinearSize, doubl
     Expects(newCellSize > 0);
 
     // 2 additional cells on both edges - "reflected" cells - are used by periodic boundary conditions
-    std::array<std::size_t, 3> numCellsInLine_{};
+    std::array<std::size_t, 3> cellDivisions_{};
     for (std::size_t i{}; i < 3; i++) {
-        numCellsInLine_[i] = static_cast<std::size_t>(floor(newLinearSize[i] / newCellSize)) + 2;
-        ExpectsMsg(numCellsInLine_[i] >= 3, "Neighbour grid cell too big");
+        cellDivisions_[i] = static_cast<std::size_t>(floor(newLinearSize[i] / newCellSize)) + 2;
+        ExpectsMsg(cellDivisions_[i] >= 3, "Neighbour grid cell too big");
     }
 
     this->linearSize = newLinearSize;
-    this->numCellsInLine = numCellsInLine_;
+    this->cellDivisions = cellDivisions_;
     for (std::size_t i{}; i < 3; i++)
-        this->cellSize[i] = this->linearSize[i] / static_cast<double>(this->numCellsInLine[i] - 2);
+        this->cellSize[i] = this->linearSize[i] / static_cast<double>(this->cellDivisions[i] - 2);
     this->numCells = static_cast<std::size_t>(
-        std::accumulate(this->numCellsInLine.begin(), this->numCellsInLine.end(), 1., std::multiplies<>{})
+        std::accumulate(this->cellDivisions.begin(), this->cellDivisions.end(), 1., std::multiplies<>{})
     );
 }
 
@@ -210,12 +210,12 @@ const std::vector<std::size_t> &NeighbourGrid::getCellVector(std::size_t cellNo)
 }
 
 bool NeighbourGrid::resize(const std::array<double, 3> &newLinearSize, double newCellSize) {
-    std::array<std::size_t, 3> oldNumCellsInLine = this->numCellsInLine;
+    std::array<std::size_t, 3> oldNumCellsInLine = this->cellDivisions;
     double oldNumCells = this->numCells;
     this->setupSizes(newLinearSize, newCellSize);
 
     // Early exit - if number of cells in line did not change we do not need to rebuild the structure, only clear
-    if (this->numCellsInLine == oldNumCellsInLine) {
+    if (this->cellDivisions == oldNumCellsInLine) {
         this->clear();
         return false;
     }
@@ -246,7 +246,7 @@ void swap(NeighbourGrid &ng1, NeighbourGrid &ng2) {
     using std::swap;
 
     std::swap(ng1.linearSize, ng2.linearSize);
-    std::swap(ng1.numCellsInLine, ng2.numCellsInLine);
+    std::swap(ng1.cellDivisions, ng2.cellDivisions);
     std::swap(ng1.cellSize, ng2.cellSize);
     std::swap(ng1.cells, ng2.cells);
     std::swap(ng1.reflectedCells, ng2.reflectedCells);

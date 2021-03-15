@@ -40,24 +40,41 @@ Packing::Packing(std::unique_ptr<BoundaryConditions> bc, std::size_t moveThreads
     this->lastAlteredParticleIdx.resize(this->moveThreads, 0);
 }
 
-double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction) {
+double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction,
+                               std::optional<std::array<std::pair<double, double>, 3>> boundaries)
+{
     Expects(particleIdx < this->size());
     Expects(interaction.getRangeRadius() <= this->interactionRange);
 
     std::size_t tempParticleIdx = this->size() + _OMP_THREAD_ID;
     this->lastAlteredParticleIdx[_OMP_THREAD_ID] = particleIdx;
     this->shapes[tempParticleIdx] = this->shapes[particleIdx];
-    this->prepareTempInteractionCentres(particleIdx);
-
-    double initialEnergy = this->calculateParticleEnergy(particleIdx, particleIdx, interaction);
-
     this->shapes[tempParticleIdx].translate(translation, *this->bc);
 
+    if (boundaries.has_value() && !liesWithinBounds(*boundaries, this->shapes[tempParticleIdx].getPosition()))
+        return std::numeric_limits<double>::infinity();
+
+    this->prepareTempInteractionCentres(particleIdx);
     if (interaction.hasHardPart() && this->isParticleOverlappingAnything(particleIdx, tempParticleIdx, interaction))
         return std::numeric_limits<double>::infinity();
 
+    double initialEnergy = this->calculateParticleEnergy(particleIdx, particleIdx, interaction);
     double finalEnergy = this->calculateParticleEnergy(particleIdx, tempParticleIdx, interaction);
     return finalEnergy - initialEnergy;
+}
+
+bool Packing::liesWithinBounds(const std::array<std::pair<double, double>, 3> &boundaries, const Vector<3> &position) {
+    for (std::size_t i{}; i < 3; i++) {
+        const auto &boundary = boundaries[i];
+        if (boundary.second > boundary.first) {
+            if (position[i] <= boundary.first || position[i] >= boundary.second)
+                return false;
+        } else {
+            if (position[i] <= boundary.first && position[i] >= boundary.second)
+                return false;
+        }
+    }
+    return true;
 }
 
 double Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction) {
@@ -67,24 +84,23 @@ double Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotatio
     std::size_t tempParticleIdx = this->size() + _OMP_THREAD_ID;
     this->lastAlteredParticleIdx[_OMP_THREAD_ID] = particleIdx;
     this->shapes[tempParticleIdx] = this->shapes[particleIdx];
+
     this->prepareTempInteractionCentres(particleIdx);
-
-    double initialEnergy = this->calculateParticleEnergy(particleIdx, particleIdx, interaction);
-    if (this->numInteractionCentres != 0)
-        this->prepareTempInteractionCentres(particleIdx);
-
     this->shapes[tempParticleIdx].rotate(rotation);
-    this->rotateTempInteractionCentres(rotation);
+    if (this->numInteractionCentres != 0)
+        this->rotateTempInteractionCentres(rotation);
 
     if (interaction.hasHardPart() && this->isParticleOverlappingAnything(particleIdx, tempParticleIdx, interaction))
         return std::numeric_limits<double>::infinity();
 
+    double initialEnergy = this->calculateParticleEnergy(particleIdx, particleIdx, interaction);
     double finalEnergy = this->calculateParticleEnergy(particleIdx, tempParticleIdx, interaction);
     return finalEnergy - initialEnergy;
 }
 
 double Packing::tryMove(std::size_t particleIdx, const Vector<3> &translation, const Matrix<3, 3> &rotation,
-                        const Interaction &interaction)
+                        const Interaction &interaction,
+                        std::optional<std::array<std::pair<double, double>, 3>> boundaries)
 {
     Expects(particleIdx < this->size());
     Expects(interaction.getRangeRadius() <= this->interactionRange);
@@ -92,18 +108,20 @@ double Packing::tryMove(std::size_t particleIdx, const Vector<3> &translation, c
     std::size_t tempParticleIdx = this->size() + _OMP_THREAD_ID;
     this->lastAlteredParticleIdx[_OMP_THREAD_ID] = particleIdx;
     this->shapes[tempParticleIdx] = this->shapes[particleIdx];
-    this->prepareTempInteractionCentres(particleIdx);
-
-    double initialEnergy = this->calculateParticleEnergy(particleIdx, particleIdx, interaction);
-
-    this->shapes[tempParticleIdx].rotate(rotation);
     this->shapes[tempParticleIdx].translate(translation, *this->bc);
+
+    if (boundaries.has_value() && !liesWithinBounds(*boundaries, this->shapes[tempParticleIdx].getPosition()))
+        return std::numeric_limits<double>::infinity();
+
+    this->prepareTempInteractionCentres(particleIdx);
+    this->shapes[tempParticleIdx].rotate(rotation);
     if (this->numInteractionCentres != 0)
         this->rotateTempInteractionCentres(rotation);
 
     if (interaction.hasHardPart() && this->isParticleOverlappingAnything(particleIdx, tempParticleIdx, interaction))
         return std::numeric_limits<double>::infinity();
 
+    double initialEnergy = this->calculateParticleEnergy(particleIdx, particleIdx, interaction);
     double finalEnergy = this->calculateParticleEnergy(particleIdx, tempParticleIdx, interaction);
     return finalEnergy - initialEnergy;
 }

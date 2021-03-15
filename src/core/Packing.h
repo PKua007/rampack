@@ -45,6 +45,8 @@ private:
     void rotateTempInteractionCentres(const Matrix<3, 3> &rotation);
     void acceptTempInteractionCentres();
 
+    static bool liesWithinBounds(const std::array<std::pair<double, double>, 3> &boundaries, const Vector<3> &position);
+
     // In all the methods below, tempParticleIdx means where the position is stored - may be equal to
     // originalParticleIdx or be the last index (temp shape). originalParticleIdx is the actual id of the particle, but
     // the position under it may be not representative at the moment - for example in the process of performing the move
@@ -91,16 +93,21 @@ public:
     [[nodiscard]] const std::array<double, 3> &getDimensions() const { return this->dimensions; }
     [[nodiscard]] double getMoveThreads() const { return this->moveThreads; }
     [[nodiscard]] double getScalingThreads() const { return this->scalingThreads; }
+    [[nodiscard]] const std::array<std::size_t, 3> &getNeighbourGridCellDivisions() const {
+        return this->neighbourGrid->getCellDivisions();
+    }
     [[nodiscard]] double getVolume() const;
     [[nodiscard]] double getPackingFraction(double shapeVolume) const;
     [[nodiscard]] double getNumberDensity() const;
     [[nodiscard]] double getParticleEnergyFluctuations(const Interaction &interaction) const;
     [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;
 
-    double tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction);
+    double tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction,
+                          std::optional<std::array<std::pair<double, double>, 3>> boundaries = std::nullopt);
     double tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction);
     double tryMove(std::size_t particleIdx, const Vector<3> &translation, const Matrix<3, 3> &rotation,
-                   const Interaction &interaction);
+                   const Interaction &interaction,
+                   std::optional<std::array<std::pair<double, double>, 3>> boundaries = std::nullopt);
     double tryScaling(double scaleFactor, const Interaction &interaction);
     void acceptTranslation();
     void acceptRotation();
