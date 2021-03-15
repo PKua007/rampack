@@ -93,7 +93,7 @@ public:
     [[nodiscard]] const std::array<double, 3> &getDimensions() const { return this->dimensions; }
     [[nodiscard]] double getMoveThreads() const { return this->moveThreads; }
     [[nodiscard]] double getScalingThreads() const { return this->scalingThreads; }
-    [[nodiscard]] const std::array<std::size_t, 3> &getNeighbourGridCellDivisions() const {
+    [[nodiscard]] std::array<std::size_t, 3> getNeighbourGridCellDivisions() const {
         return this->neighbourGrid->getCellDivisions();
     }
     [[nodiscard]] double getVolume() const;

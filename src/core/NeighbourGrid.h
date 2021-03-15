@@ -122,7 +122,7 @@ public:
     [[nodiscard]] const std::vector<std::size_t> &getCell(const Vector<3> &position) const;
     [[nodiscard]] std::vector<std::size_t> getNeighbours(const Vector<3> &position) const;
     [[nodiscard]] NeighboursView getNeighbouringCells(const Vector<3> &position) const;
-    [[nodiscard]] const std::array<std::size_t, 3> &getCellDivisions() const { return this->cellDivisions; }
+    [[nodiscard]] std::array<std::size_t, 3> getCellDivisions() const;
 
     friend void swap(NeighbourGrid &ng1, NeighbourGrid &ng2);
 };

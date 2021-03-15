@@ -253,3 +253,7 @@ void swap(NeighbourGrid &ng1, NeighbourGrid &ng2) {
     std::swap(ng1.numCells, ng2.numCells);
     std::swap(ng1.neighbouringCellsOffsets, ng2.neighbouringCellsOffsets);
 }
+
+std::array<std::size_t, 3> NeighbourGrid::getCellDivisions() const {
+    return {this->cellDivisions[0] - 2, this->cellDivisions[1] - 2, this->cellDivisions[2] - 2};
+}
