@@ -24,6 +24,8 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep,
     Expects(this->numDomains > 0);
     Expects(this->numDomains <= this->packing->getMoveThreads());
 
+    this->moveCounter.setNumThreads(this->numDomains);
+
     this->mts.reserve(this->numDomains);
     for (std::size_t i{}; i < this->numDomains; i++)
         this->mts.emplace_back(seed + i);
@@ -303,11 +305,6 @@ Quantity Simulation::getAverageEnergyFluctuations() const {
 void Simulation::Counter::increment(bool accepted) {
     std::size_t tid = _OMP_THREAD_ID;
 
-    this->moves.resize(tid + 1, 0);
-    this->movesSinceEvaluation.resize(tid + 1, 0);
-    this->acceptedMoves.resize(tid + 1, 0);
-    this->acceptedMovesSinceEvaluation.resize(tid + 1, 0);
-
     this->moves[tid]++;
     this->movesSinceEvaluation[tid]++;
     if (accepted) {
@@ -342,6 +339,20 @@ std::size_t Simulation::Counter::total(const std::vector<std::size_t> &vec) {
 
 std::size_t Simulation::Counter::getMovesSinceEvaluation() const {
     return total(this->movesSinceEvaluation);
+}
+
+void Simulation::Counter::setNumThreads(std::size_t numThreads) {
+    Expects(numThreads > 0);
+
+    this->moves.resize(numThreads, 0);
+    this->movesSinceEvaluation.resize(numThreads, 0);
+    this->acceptedMoves.resize(numThreads, 0);
+    this->acceptedMovesSinceEvaluation.resize(numThreads, 0);
+    this->reset();
+}
+
+Simulation::Counter::Counter() {
+    this->setNumThreads(1);
 }
 
 std::ostream &operator<<(std::ostream &out, const Simulation::ScalarSnapshot &snapshot) {
