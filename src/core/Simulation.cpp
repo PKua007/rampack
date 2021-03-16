@@ -314,15 +314,15 @@ void Simulation::Counter::increment(bool accepted) {
 }
 
 void Simulation::Counter::reset() {
-    this->acceptedMoves.clear();
-    this->moves.clear();
-    this->acceptedMovesSinceEvaluation.clear();
-    this->movesSinceEvaluation.clear();
+    std::fill(this->acceptedMoves.begin(), this->acceptedMoves.end(), 0);
+    std::fill(this->moves.begin(), this->moves.end(), 0);
+    std::fill(this->acceptedMovesSinceEvaluation.begin(), this->acceptedMovesSinceEvaluation.end(), 0);
+    std::fill(this->movesSinceEvaluation.begin(), this->movesSinceEvaluation.end(), 0);
 }
 
 void Simulation::Counter::resetCurrent() {
-    this->acceptedMovesSinceEvaluation.clear();
-    this->movesSinceEvaluation.clear();
+    std::fill(this->acceptedMovesSinceEvaluation.begin(), this->acceptedMovesSinceEvaluation.end(), 0);
+    std::fill(this->movesSinceEvaluation.begin(), this->movesSinceEvaluation.end(), 0);
 }
 
 double Simulation::Counter::getCurrentRate() const {
