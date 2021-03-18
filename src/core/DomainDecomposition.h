@@ -22,9 +22,13 @@ private:
     std::array<std::vector<RegionBounds>, 3> regionBounds;
     std::vector<std::vector<std::size_t>> particlesInRegions;
 
-    [[nodiscard]] static double fitPeriodically(double x, double period);
 
-    [[nodiscard]] std::size_t coordToIdx(const std::array<std::size_t, 3> &coord) const;
+    void prepareDomains(const std::array<double, 3> &dimensions,
+                        const std::array<std::size_t, 3> &neighbourGridDivisions, double range, double totalRange,
+                        const Vector<3> &origin);
+    void populateDomains(const Packing &packing, const Vector<3> &origin);
+    [[nodiscard]] static double fitPeriodically(double x, double period);
+    [[nodiscard]] std::size_t coordToIdx(const std::array<std::size_t, 3> &coords) const;
 
 public:
     DomainDecomposition(const Packing &packing, const Interaction &interaction,
@@ -35,9 +39,9 @@ public:
         return this->particlesInRegions[this->coordToIdx(coord)];
     }
 
-    [[nodiscard]] bool isVectorInActiveRegion(const Vector<3> &vector, const std::array<std::size_t, 3> &coord) const;
+    [[nodiscard]] bool isVectorInActiveRegion(const Vector<3> &vector, const std::array<std::size_t, 3> &coords) const;
     [[nodiscard]] std::array<std::pair<double, double>, 3>
-    getActiveRegionBoundaries(const std::array<std::size_t, 3> &coord) const;
+    getActiveRegionBoundaries(const std::array<std::size_t, 3> &coords) const;
 };
 
 

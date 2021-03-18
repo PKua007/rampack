@@ -55,4 +55,21 @@ TEST_CASE("DomainDecomposition") {
         CHECK_FALSE(domainDecomposition.isVectorInActiveRegion({2, 10.1, 3}, {0, 0, 0}));
         CHECK(domainDecomposition.isVectorInActiveRegion({2, 10.1, 3}, {0, 1, 0}));
     }
+
+    SECTION("domain boundaries") {
+        constexpr double inf = std::numeric_limits<double>::infinity();
+        using pair = std::pair<double, double>;
+
+        auto domain0 = domainDecomposition.getActiveRegionBoundaries({0, 0, 0});
+        auto domain1 = domainDecomposition.getActiveRegionBoundaries({0, 1, 0});
+
+        CHECK(domain0[0] == pair{-inf, inf});
+        CHECK(domain0[1].first == Approx(19));
+        CHECK(domain0[1].second == Approx(5));
+        CHECK(domain0[2] == pair{-inf, inf});
+        CHECK(domain1[0] == pair{-inf, inf});
+        CHECK(domain1[1].first == Approx(10));
+        CHECK(domain1[1].second == Approx(14));
+        CHECK(domain1[2] == pair{-inf, inf});
+    }
 }
