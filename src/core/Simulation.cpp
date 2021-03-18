@@ -13,7 +13,7 @@
 Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep,
                        double scalingStep, unsigned long seed, const std::array<std::size_t, 3> &domainDivisions)
         : translationStep{translationStep}, rotationStep{rotationStep}, scalingStep{scalingStep},
-          packing{std::move(packing)}, particles(this->packing->size()), domainDivisions{domainDivisions}
+          packing{std::move(packing)}, allParticleIndices(this->packing->size()), domainDivisions{domainDivisions}
 {
     Expects(!this->packing->empty());
     Expects(translationStep > 0);
@@ -30,7 +30,7 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep,
     for (std::size_t i{}; i < this->numDomains; i++)
         this->mts.emplace_back(seed + i);
 
-    std::iota(this->particles.begin(), this->particles.end(), 0);
+    std::iota(this->allParticleIndices.begin(), this->allParticleIndices.end(), 0);
 }
 
 void Simulation::perform(double temperature_, double pressure_, std::size_t thermalisationCycles_,
@@ -83,7 +83,7 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
 }
 
 void Simulation::reset() {
-    this->particleIdxDistribution = std::uniform_int_distribution<int>(0, this->packing->size() - 1);
+    std::uniform_int_distribution<int>(0, this->packing->size() - 1);
     this->moveCounter.reset();
     this->scalingCounter.reset();
     this->averagedDensities.clear();
@@ -96,42 +96,10 @@ void Simulation::reset() {
 void Simulation::performCycle(Logger &logger, const Interaction &interaction) {
     using namespace std::chrono;
     auto start = high_resolution_clock::now();
-
-    if (this->numDomains == 1) {
-        for (std::size_t i{}; i < this->packing->size(); i++) {
-            bool wasMoved = this->tryMove(interaction, this->particles);
-            this->moveCounter.increment(wasMoved);
-        }
-    } else {
-        const auto &dimensions = this->packing->getDimensions();
-        auto &mt = this->mts[_OMP_THREAD_ID];
-
-        Vector<3> randomOrigin{dimensions[0] * this->unitIntervalDistribution(mt),
-                               dimensions[1] * this->unitIntervalDistribution(mt),
-                               dimensions[2] * this->unitIntervalDistribution(mt)};
-        const auto &neighbourGridCellDivisions = this->packing->getNeighbourGridCellDivisions();
-        DomainDecomposition domainDecomposition(*this->packing, interaction, this->domainDivisions,
-                                                neighbourGridCellDivisions, randomOrigin);
-
-        #pragma omp parallel for shared(domainDecomposition, interaction) default(none) collapse(3) num_threads(this->numDomains)
-        for (std::size_t i = 0; i < this->domainDivisions[0]; i++) {
-            for (std::size_t j = 0; j < this->domainDivisions[1]; j++) {
-                for (std::size_t k = 0; k < this->domainDivisions[2]; k++) {
-                    std::array<std::size_t, 3> coords = {i, j, k};
-
-                    const auto &localParticles = domainDecomposition.getParticlesInRegion(coords);
-                    auto activeDomain = domainDecomposition.getActiveDomainBounds(coords);
-
-                    std::size_t max = this->packing->size() / this->numDomains;
-                    for (std::size_t x{}; x < max; x++) {
-                        bool wasMoved = this->tryMove(interaction, localParticles, activeDomain);
-                        this->moveCounter.increment(wasMoved);
-                    }
-                }
-            }
-        }
-    }
-
+    if (this->numDomains == 1)
+        this->performMovesWithoutDomainDivision(interaction);
+    else
+        this->performMovesWithDomainDivision(interaction);
     auto end = high_resolution_clock::now();
     this->moveMicroseconds += duration<double, std::micro>(end - start).count();
 
@@ -145,7 +113,45 @@ void Simulation::performCycle(Logger &logger, const Interaction &interaction) {
         this->evaluateCounters(logger);
 }
 
-bool Simulation::tryTranslation(const Interaction &interaction, const std::vector<std::size_t> &particles,
+void Simulation::performMovesWithoutDomainDivision(const Interaction &interaction) {
+    for (std::size_t i{}; i < this->packing->size(); i++) {
+        bool wasMoved = tryMove(interaction, this->allParticleIndices);
+        this->moveCounter.increment(wasMoved);
+    }
+}
+
+void Simulation::performMovesWithDomainDivision(const Interaction &interaction) {
+    const auto &packingDimensions = this->packing->getDimensions();
+    auto &mt = this->mts[_OMP_THREAD_ID];
+
+    Vector<3> randomOrigin{packingDimensions[0] * this->unitIntervalDistribution(mt),
+                           packingDimensions[1] * this->unitIntervalDistribution(mt),
+                           packingDimensions[2] * this->unitIntervalDistribution(mt)};
+    const auto &neighbourGridCellDivisions = this->packing->getNeighbourGridCellDivisions();
+    DomainDecomposition domainDecomposition(*this->packing, interaction, this->domainDivisions,
+                                            neighbourGridCellDivisions, randomOrigin);
+
+    #pragma omp parallel for shared(domainDecomposition, interaction) default(none) collapse(3) \
+            num_threads(this->numDomains)
+    for (std::size_t i = 0; i < this->domainDivisions[0]; i++) {
+        for (std::size_t j = 0; j < this->domainDivisions[1]; j++) {
+            for (std::size_t k = 0; k < this->domainDivisions[2]; k++) {
+                std::array<std::size_t, 3> coords = {i, j, k};
+
+                const auto &domainParticleIndices = domainDecomposition.getParticlesInRegion(coords);
+                auto activeDomain = domainDecomposition.getActiveDomainBounds(coords);
+
+                std::size_t numMoves = this->packing->size() / this->numDomains;
+                for (std::size_t x{}; x < numMoves; x++) {
+                    bool wasMoved = tryMove(interaction, domainParticleIndices, activeDomain);
+                    this->moveCounter.increment(wasMoved);
+                }
+            }
+        }
+    }
+}
+
+bool Simulation::tryTranslation(const Interaction &interaction, const std::vector<std::size_t> &particleIndices,
                                 std::optional<ActiveDomain> boundaries)
 {
     auto &mt = this->mts[_OMP_THREAD_ID];
@@ -155,8 +161,8 @@ bool Simulation::tryTranslation(const Interaction &interaction, const std::vecto
                           2*this->unitIntervalDistribution(mt) - 1};
     translation *= this->translationStep;
 
-    std::uniform_int_distribution<std::size_t> particleDistribution(0, particles.size() - 1);
-    double dE = this->packing->tryTranslation(particles[particleDistribution(mt)], translation, interaction,
+    std::uniform_int_distribution<std::size_t> particleDistribution(0, particleIndices.size() - 1);
+    double dE = this->packing->tryTranslation(particleIndices[particleDistribution(mt)], translation, interaction,
                                               boundaries);
     if (this->unitIntervalDistribution(mt) <= std::exp(-dE / this->temperature)) {
         this->packing->acceptTranslation();
@@ -166,7 +172,7 @@ bool Simulation::tryTranslation(const Interaction &interaction, const std::vecto
     }
 }
 
-bool Simulation::tryRotation(const Interaction &interaction, const std::vector<std::size_t> &particles) {
+bool Simulation::tryRotation(const Interaction &interaction, const std::vector<std::size_t> &particleIndices) {
     auto &mt = this->mts[_OMP_THREAD_ID];
 
     Vector<3> axis;
@@ -178,8 +184,8 @@ bool Simulation::tryRotation(const Interaction &interaction, const std::vector<s
     double angle = (2*this->unitIntervalDistribution(mt) - 1) * this->rotationStep;
     auto rotation = Matrix<3, 3>::rotation(axis.normalized(), angle);
 
-    std::uniform_int_distribution<std::size_t> particleDistribution(0, particles.size() - 1);
-    double dE = this->packing->tryRotation(particles[particleDistribution(mt)], rotation, interaction);
+    std::uniform_int_distribution<std::size_t> particleDistribution(0, particleIndices.size() - 1);
+    double dE = this->packing->tryRotation(particleIndices[particleDistribution(mt)], rotation, interaction);
     if (this->unitIntervalDistribution(mt) <= std::exp(-dE / this->temperature)) {
         this->packing->acceptRotation();
         return true;
@@ -188,7 +194,7 @@ bool Simulation::tryRotation(const Interaction &interaction, const std::vector<s
     }
 }
 
-bool Simulation::tryMove(const Interaction &interaction, const std::vector<std::size_t> &particles,
+bool Simulation::tryMove(const Interaction &interaction, const std::vector<std::size_t> &particleIndices,
                          std::optional<ActiveDomain> boundaries)
 {
     auto &mt = this->mts[_OMP_THREAD_ID];
@@ -207,8 +213,8 @@ bool Simulation::tryMove(const Interaction &interaction, const std::vector<std::
     double angle = (2*this->unitIntervalDistribution(mt) - 1) * std::min(this->rotationStep, M_PI);
     auto rotation = Matrix<3, 3>::rotation(axis.normalized(), angle);
 
-    std::uniform_int_distribution<std::size_t> particleDistribution(0, particles.size() - 1);
-    double dE = this->packing->tryMove(particles[particleDistribution(mt)], translation, rotation, interaction,
+    std::uniform_int_distribution<std::size_t> particleDistribution(0, particleIndices.size() - 1);
+    double dE = this->packing->tryMove(particleIndices[particleDistribution(mt)], translation, rotation, interaction,
                                        boundaries);
     if (this->unitIntervalDistribution(mt) <= std::exp(-dE / this->temperature)) {
         this->packing->acceptMove();

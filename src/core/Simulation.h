@@ -58,19 +58,17 @@ private:
     double scalingStep{};
     Counter moveCounter;
     Counter scalingCounter;
+    double moveMicroseconds{};
+    double scalingMicroseconds{};
     bool shouldAdjustStepSize{};
 
     std::vector<std::mt19937> mts;
     std::uniform_real_distribution<double> unitIntervalDistribution;
-    std::uniform_int_distribution<int> particleIdxDistribution;
-
-    double moveMicroseconds{};
-    double scalingMicroseconds{};
 
     std::unique_ptr<Packing> packing;
-    std::vector<std::size_t> particles;
-    std::size_t numDomains{};
+    std::vector<std::size_t> allParticleIndices;
     std::array<std::size_t, 3> domainDivisions;
+    std::size_t numDomains{};
 
     std::vector<double> averagedDensities;
     std::vector<double> averagedEnergy;
@@ -78,10 +76,12 @@ private:
     std::vector<ScalarSnapshot> densityThermalisationSnapshots;
 
     void performCycle(Logger &logger, const Interaction &interaction);
-    bool tryTranslation(const Interaction &interaction, const std::vector<std::size_t> &particles,
+    void performMovesWithDomainDivision(const Interaction &interaction);
+    void performMovesWithoutDomainDivision(const Interaction &interaction);
+    bool tryTranslation(const Interaction &interaction, const std::vector<std::size_t> &particleIndices,
                         std::optional<ActiveDomain> boundaries = std::nullopt);
-    bool tryRotation(const Interaction &interaction, const std::vector<std::size_t> &particles);
-    bool tryMove(const Interaction &interaction, const std::vector<std::size_t> &particles,
+    bool tryRotation(const Interaction &interaction, const std::vector<std::size_t> &particleIndices);
+    bool tryMove(const Interaction &interaction, const std::vector<std::size_t> &particleIndices,
                  std::optional<ActiveDomain> boundaries = std::nullopt);
     bool tryScaling(const Interaction &interaction);
     void evaluateCounters(Logger &logger);
