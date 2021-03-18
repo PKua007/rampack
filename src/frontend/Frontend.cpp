@@ -135,7 +135,37 @@ int Frontend::casino(int argc, char **argv) {
 
     this->logger << "Interaction centre range : " << shapeTraits->getInteraction().getRangeRadius() << std::endl;
     this->logger << "Total interaction range  : " << shapeTraits->getInteraction().getTotalRangeRadius() << std::endl;
-    this->logger << "Using " << _OMP_MAXTHREADS << " OpenMP threads" << std::endl;
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+
+    // Parse number of scaling threads
+    std::size_t scalingThreads{};
+    if (params.scalingThreads == "max")
+        scalingThreads = _OMP_MAXTHREADS;
+    else
+        scalingThreads = std::stoul(params.scalingThreads);
+    Validate(scalingThreads > 0);
+    Validate(scalingThreads <= static_cast<std::size_t>(_OMP_MAXTHREADS));
+
+    // Parse domain divisions
+    std::array<std::size_t, 3> domainDivisions{};
+    std::istringstream domainDivisionsStream(params.domainDivisions);
+    domainDivisionsStream >> domainDivisions[0] >> domainDivisions[1] >> domainDivisions[2];
+    ValidateMsg(domainDivisionsStream, "Malformed domain divisions, usage: x divisions, y div., z div.");
+
+    std::size_t moveThreads = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies<>{});
+    Validate(moveThreads > 0);
+    Validate(moveThreads <= static_cast<std::size_t>(_OMP_MAXTHREADS));
+
+    // Info about threads
+    this->logger << _OMP_MAXTHREADS << " OpenMP threads are available" << std::endl;
+    this->logger << "Using " << scalingThreads << " for scaling" << std::endl;
+    if (moveThreads == 1) {
+        this->logger << "Using 1 thread without domain decomposition for moves" << std::endl;
+    } else {
+        this->logger << "Using " << moveThreads << " threads with " << domainDivisions[0] << " x ";
+        this->logger << domainDivisions[1] << " x " << domainDivisions[2] << " domain division" << std::endl;
+    }
+    this->logger << "--------------------------------------------------------------------" << std::endl;
 
     // Find starting run index if specified
     std::size_t startRunIndex{};
@@ -165,7 +195,7 @@ int Frontend::casino(int argc, char **argv) {
     std::unique_ptr<Packing> packing;
 
     if ((parsedOptions.count("start-from") && startRunIndex != 0) || parsedOptions.count("continue")) {
-        packing = std::make_unique<Packing>(std::move(bc));
+        packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
         auto runsParameters = params.runsParameters;
         Parameters::RunParameters startingRunParams;
         if (parsedOptions.count("continue"))
@@ -191,12 +221,13 @@ int Frontend::casino(int argc, char **argv) {
         ValidateMsg(dimensionsStream, "Invalid packing dimensions format. Expected: [dim x] [dim y] [dim z]");
         Validate(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
         auto shapes = this->arrangePacking(params.numOfParticles, dimensions, params.initialArrangement);
-        packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(bc), shapeTraits->getInteraction());
+        packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(bc), shapeTraits->getInteraction(),
+                                            moveThreads, scalingThreads);
     }
 
     // Perform simulations starting from initial run
     Simulation simulation(std::move(packing), params.positionStepSize, params.rotationStepSize, params.volumeStepSize,
-                          params.seed);
+                          params.seed, domainDivisions);
 
     for (std::size_t i = startRunIndex; i < params.runsParameters.size(); i++) {
         auto runParams = params.runsParameters[i];

@@ -35,6 +35,10 @@ Parameters::Parameters(std::istream &input) {
             this->shapeAttributes = generalConfig.getString("shapeAttributes");
         else if (key == "interaction")
             this->interaction = generalConfig.getString("interaction");
+        else if (key == "scalingThreads")
+            this->scalingThreads = generalConfig.getString("scalingThreads");
+        else if (key == "domainDivisions")
+            this->domainDivisions = generalConfig.getString("domainDivisions");
         else
             throw ParametersParseException("Unknown parameter " + key);
     }
@@ -77,6 +81,8 @@ void Parameters::validate() const {
     Validate(this->positionStepSize > 0);
     Validate(this->rotationStepSize > 0);
     Validate(this->volumeStepSize > 0);
+    Validate(!this->scalingThreads.empty());
+    Validate(!this->domainDivisions.empty());
 }
 
 void Parameters::RunParameters::validate() const {
@@ -88,16 +94,18 @@ void Parameters::RunParameters::validate() const {
 }
 
 void Parameters::print(Logger &logger) const {
-    logger.info() << "initialDimensions       : " << this->initialDimensions << std::endl;
-    logger.info() << "initialArangement       : " << this->initialArrangement << std::endl;
-    logger.info() << "numOfParticles          : " << this->numOfParticles << std::endl;
-    logger.info() << "positionStepSize        : " << this->positionStepSize << std::endl;
-    logger.info() << "rotationStepSize        : " << this->rotationStepSize << std::endl;
-    logger.info() << "volumeStepSize          : " << this->volumeStepSize << std::endl;
-    logger.info() << "seed                    : " << this->seed << std::endl;
-    logger.info() << "shapeName               : " << this->shapeName << std::endl;
-    logger.info() << "shapeAttributes         : " << this->shapeAttributes << std::endl;
-    logger.info() << "interaction             : " << this->interaction << std::endl;
+    logger.info() << "initialDimensions : " << this->initialDimensions << std::endl;
+    logger.info() << "initialArangement : " << this->initialArrangement << std::endl;
+    logger.info() << "numOfParticles    : " << this->numOfParticles << std::endl;
+    logger.info() << "positionStepSize  : " << this->positionStepSize << std::endl;
+    logger.info() << "rotationStepSize  : " << this->rotationStepSize << std::endl;
+    logger.info() << "volumeStepSize    : " << this->volumeStepSize << std::endl;
+    logger.info() << "seed              : " << this->seed << std::endl;
+    logger.info() << "shapeName         : " << this->shapeName << std::endl;
+    logger.info() << "shapeAttributes   : " << this->shapeAttributes << std::endl;
+    logger.info() << "interaction       : " << this->interaction << std::endl;
+    logger.info() << "scalingThreads    : " << this->scalingThreads << std::endl;
+    logger.info() << "domainDivisions   : " << this->domainDivisions << std::endl;
 }
 
 void Parameters::RunParameters::print(Logger &logger) const {

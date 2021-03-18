@@ -64,6 +64,8 @@ public:
     std::string shapeName{};
     std::string shapeAttributes{};
     std::string interaction{};
+    std::string scalingThreads = "1";
+    std::string domainDivisions = "1 1 1";
 
     std::vector<RunParameters> runsParameters;
 
