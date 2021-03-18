@@ -9,15 +9,12 @@
 
 #include "Packing.h"
 #include "Interaction.h"
+#include "ActiveDomain.h"
 
 class DomainDecomposition {
-public:
-    struct RegionBounds {
-        double beg{};
-        double end{};
-    };
-
 private:
+    using RegionBounds = ActiveDomain::RegionBounds;
+
     std::array<std::size_t, 3> domainDivisions{};
     std::array<std::vector<RegionBounds>, 3> regionBounds;
     std::vector<std::vector<std::size_t>> particlesInRegions;
@@ -40,8 +37,7 @@ public:
     }
 
     [[nodiscard]] bool isVectorInActiveRegion(const Vector<3> &vector, const std::array<std::size_t, 3> &coords) const;
-    [[nodiscard]] std::array<std::pair<double, double>, 3>
-    getActiveRegionBoundaries(const std::array<std::size_t, 3> &coords) const;
+    [[nodiscard]] ActiveDomain getActiveDomainBounds(const std::array<std::size_t, 3> &coords) const;
 };
 
 

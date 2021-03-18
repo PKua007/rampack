@@ -120,11 +120,11 @@ void Simulation::performCycle(Logger &logger, const Interaction &interaction) {
                     std::array<std::size_t, 3> coords = {i, j, k};
 
                     const auto &localParticles = domainDecomposition.getParticlesInRegion(coords);
-                    auto boundaries = domainDecomposition.getActiveRegionBoundaries(coords);
+                    auto activeDomain = domainDecomposition.getActiveDomainBounds(coords);
 
                     std::size_t max = this->packing->size() / this->numDomains;
                     for (std::size_t x{}; x < max; x++) {
-                        bool wasMoved = this->tryMove(interaction, localParticles, boundaries);
+                        bool wasMoved = this->tryMove(interaction, localParticles, activeDomain);
                         this->moveCounter.increment(wasMoved);
                     }
                 }
@@ -146,7 +146,7 @@ void Simulation::performCycle(Logger &logger, const Interaction &interaction) {
 }
 
 bool Simulation::tryTranslation(const Interaction &interaction, const std::vector<std::size_t> &particles,
-                                std::optional<std::array<std::pair<double, double>, 3>> boundaries)
+                                std::optional<ActiveDomain> boundaries)
 {
     auto &mt = this->mts[_OMP_THREAD_ID];
 
@@ -189,7 +189,7 @@ bool Simulation::tryRotation(const Interaction &interaction, const std::vector<s
 }
 
 bool Simulation::tryMove(const Interaction &interaction, const std::vector<std::size_t> &particles,
-                         std::optional<std::array<std::pair<double, double>, 3>> boundaries)
+                         std::optional<ActiveDomain> boundaries)
 {
     auto &mt = this->mts[_OMP_THREAD_ID];
 

@@ -79,10 +79,10 @@ private:
 
     void performCycle(Logger &logger, const Interaction &interaction);
     bool tryTranslation(const Interaction &interaction, const std::vector<std::size_t> &particles,
-                        std::optional<std::array<std::pair<double, double>, 3>> boundaries = std::nullopt);
+                        std::optional<ActiveDomain> boundaries = std::nullopt);
     bool tryRotation(const Interaction &interaction, const std::vector<std::size_t> &particles);
     bool tryMove(const Interaction &interaction, const std::vector<std::size_t> &particles,
-                 std::optional<std::array<std::pair<double, double>, 3>> boundaries = std::nullopt);
+                 std::optional<ActiveDomain> boundaries = std::nullopt);
     bool tryScaling(const Interaction &interaction);
     void evaluateCounters(Logger &logger);
     void reset();

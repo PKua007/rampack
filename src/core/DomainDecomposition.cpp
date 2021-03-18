@@ -123,19 +123,17 @@ double DomainDecomposition::fitPeriodically(double x, double period) {
         return x;
 }
 
-std::array<std::pair<double, double>, 3>
-DomainDecomposition::getActiveRegionBoundaries(const std::array<std::size_t, 3> &coords) const
-{
-    std::array<std::pair<double, double>, 3> boundaries;
+ActiveDomain DomainDecomposition::getActiveDomainBounds(const std::array<std::size_t, 3> &coords) const {
+    std::array<RegionBounds, 3> boundaries;
     for (std::size_t i = 0; i < 3; i++) {
         Expects(coords[i] < this->domainDivisions[i]);
         if (this->domainDivisions[i] < 2) {
-            boundaries[i].first = -std::numeric_limits<double>::infinity();
-            boundaries[i].second = std::numeric_limits<double>::infinity();
+            boundaries[i].beg = -std::numeric_limits<double>::infinity();
+            boundaries[i].end = std::numeric_limits<double>::infinity();
         } else {
-            boundaries[i].first = this->regionBounds[i][coords[i]].beg;
-            boundaries[i].second = this->regionBounds[i][coords[i]].end;
+            boundaries[i].beg = this->regionBounds[i][coords[i]].beg;
+            boundaries[i].end = this->regionBounds[i][coords[i]].end;
         }
     }
-    return boundaries;
+    return ActiveDomain(boundaries);
 }

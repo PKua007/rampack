@@ -60,8 +60,8 @@ TEST_CASE("DomainDecomposition") {
         constexpr double inf = std::numeric_limits<double>::infinity();
         using pair = std::pair<double, double>;
 
-        auto domain0 = domainDecomposition.getActiveRegionBoundaries({0, 0, 0});
-        auto domain1 = domainDecomposition.getActiveRegionBoundaries({0, 1, 0});
+        auto domain0 = domainDecomposition.getActiveDomainBounds({0, 0, 0});
+        auto domain1 = domainDecomposition.getActiveDomainBounds({0, 1, 0});
 
         CHECK(domain0[0] == pair{-inf, inf});
         CHECK(domain0[1].first == Approx(19));

@@ -14,6 +14,7 @@
 #include "Interaction.h"
 #include "ShapePrinter.h"
 #include "NeighbourGrid.h"
+#include "ActiveDomain.h"
 #include "utils/OMPMacros.h"
 
 class Packing {
@@ -44,8 +45,6 @@ private:
     void prepareTempInteractionCentres(std::size_t particleIdx);
     void rotateTempInteractionCentres(const Matrix<3, 3> &rotation);
     void acceptTempInteractionCentres();
-
-    static bool liesWithinBounds(const std::array<std::pair<double, double>, 3> &boundaries, const Vector<3> &position);
 
     // In all the methods below, tempParticleIdx means where the position is stored - may be equal to
     // originalParticleIdx or be the last index (temp shape). originalParticleIdx is the actual id of the particle, but
@@ -103,11 +102,10 @@ public:
     [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;
 
     double tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction,
-                          std::optional<std::array<std::pair<double, double>, 3>> boundaries = std::nullopt);
+                          std::optional<ActiveDomain> boundaries = std::nullopt);
     double tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction);
     double tryMove(std::size_t particleIdx, const Vector<3> &translation, const Matrix<3, 3> &rotation,
-                   const Interaction &interaction,
-                   std::optional<std::array<std::pair<double, double>, 3>> boundaries = std::nullopt);
+                   const Interaction &interaction, std::optional<ActiveDomain> boundaries = std::nullopt);
     double tryScaling(double scaleFactor, const Interaction &interaction);
     void acceptTranslation();
     void acceptRotation();
