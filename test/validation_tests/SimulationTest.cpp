@@ -164,3 +164,28 @@ TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
     CHECK(density.value == Approx(expected).margin(density.error * 3)); // 3 sigma tolerance
     CHECK(density.error / density.value < 0.01); // up to 1%
 }
+
+TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
+    omp_set_num_threads(4);
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    double V = 1000;
+    double linearSize = std::cbrt(V);
+    std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
+    auto shapes = LatticeArrangingModel{}.arrange(200, dimensions);
+    SphereTraits sphereTraits(0.5);
+    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc),
+                                             sphereTraits.getInteraction(), 4, 4);
+    Simulation simulation(std::move(packing), 1, 0.1, 1, 1234,
+                          {2, 2, 1});
+    std::ostringstream loggerStream;
+    Logger logger(loggerStream);
+
+    simulation.perform(1, 1, 10000, 15000, 1000, sphereTraits.getInteraction(), logger);
+
+    Quantity density = simulation.getAverageDensity();
+    double expected = 0.398574;
+    INFO("Carnahan-Starling density: " << expected);
+    INFO("Monte Carlo density: " << density);
+    CHECK(density.value == Approx(expected).margin(density.error * 3)); // 3 sigma tolerance
+    CHECK(density.error / density.value < 0.03); // up to 3%
+}
