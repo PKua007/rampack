@@ -158,7 +158,7 @@ int Frontend::casino(int argc, char **argv) {
 
     // Info about threads
     this->logger << _OMP_MAXTHREADS << " OpenMP threads are available" << std::endl;
-    this->logger << "Using " << scalingThreads << " for scaling" << std::endl;
+    this->logger << "Using " << scalingThreads << " threads for scaling" << std::endl;
     if (moveThreads == 1) {
         this->logger << "Using 1 thread without domain decomposition for moves" << std::endl;
     } else {
