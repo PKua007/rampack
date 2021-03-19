@@ -11,9 +11,11 @@
 #include "utils/Assertions.h"
 
 Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep,
-                       double scalingStep, unsigned long seed, const std::array<std::size_t, 3> &domainDivisions)
+                       double scalingStep, unsigned long seed, ScalingType scalingType,
+                       const std::array<std::size_t, 3> &domainDivisions)
         : translationStep{translationStep}, rotationStep{rotationStep}, scalingStep{scalingStep},
-          packing{std::move(packing)}, allParticleIndices(this->packing->size()), domainDivisions{domainDivisions}
+          scalingType{scalingType}, packing{std::move(packing)}, allParticleIndices(this->packing->size()),
+          domainDivisions{domainDivisions}
 {
     Expects(!this->packing->empty());
     Expects(translationStep > 0);
@@ -59,7 +61,9 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
             this->densityThermalisationSnapshots.push_back({i + 1,this->packing->getNumberDensity()});
         if ((i + 1) % 100 == 0) {
             logger.info() << "Performed " << (i + 1) << " cycles. ";
-            logger << "Number density: " << this->packing->getNumberDensity() << std::endl;
+            //logger << "Number density: " << this->packing->getNumberDensity() << std::endl;
+            auto dimensions = this->packing->getDimensions();
+            logger << "Dimensions: " << dimensions[0] << ", " << dimensions[1] << ", " << dimensions[2] << std::endl;
         }
     }
 
@@ -227,14 +231,40 @@ bool Simulation::tryMove(const Interaction &interaction, const std::vector<std::
 bool Simulation::tryScaling(const Interaction &interaction) {
     auto &mt = this->mts.front();
 
-    double deltaV = (2*this->unitIntervalDistribution(mt) - 1) * this->scalingStep;
-    double currentV = this->packing->getVolume();
-    double factor = (deltaV + currentV) / currentV;
-    if (factor < 0)
-        return false;
+    std::array<double, 3> scalingFactor{};
+    scalingFactor.fill((2 * this->unitIntervalDistribution(mt) - 1) * this->scalingStep);
+    switch (this->scalingType) {
+        case ScalingType::ISOTROPIC:
+            break;
+        case ScalingType::ANISOTROPIC_X:
+            scalingFactor[0] = (2 * this->unitIntervalDistribution(mt) - 1) * this->scalingStep;
+            break;
+        case ScalingType::ANISOTROPIC_Y:
+            scalingFactor[1] = (2 * this->unitIntervalDistribution(mt) - 1) * this->scalingStep;
+            break;
+        case ScalingType::ANISOTROPIC_Z:
+            scalingFactor[2] = (2 * this->unitIntervalDistribution(mt) - 1) * this->scalingStep;
+            break;
+        case ScalingType::ANISOTROPIC_XYZ:
+            scalingFactor[1] = (2 * this->unitIntervalDistribution(mt) - 1) * this->scalingStep;
+            scalingFactor[2] = (2 * this->unitIntervalDistribution(mt) - 1) * this->scalingStep;
+            break;
+    }
+
+    for (auto &factor : scalingFactor)
+        factor = std::exp(factor);
+
+    std::array<double, 3> oldDim = this->packing->getDimensions();
+    std::array<double, 3> newDim{};
+    std::transform(oldDim.begin(), oldDim.end(), scalingFactor.begin(), newDim.begin(), std::multiplies<>{});
+
+    double oldV = this->packing->getVolume();
+    double newV = std::accumulate(newDim.begin(), newDim.end(), 1., std::multiplies<>{});
+    double deltaV = newV - oldV;
+    double factor = newV / oldV;
 
     double N = this->packing->size();
-    double dE = this->packing->tryScaling(factor, interaction);
+    double dE = this->packing->tryScaling(scalingFactor, interaction);
     double exponent = N * log(factor) - dE / this->temperature - this->pressure * deltaV / this->temperature;
     if (this->unitIntervalDistribution(mt) <= std::exp(exponent)) {
         return true;
@@ -243,6 +273,60 @@ bool Simulation::tryScaling(const Interaction &interaction) {
         return false;
     }
 }
+
+//bool Simulation::tryScaling(const Interaction &interaction) {
+//    auto &mt = this->mts.front();
+//
+//    std::array<double, 3> deltaDim{};
+//    deltaDim.fill((2 * this->unitIntervalDistribution(mt) - 1) * std::cbrt(this->scalingStep));
+//    switch (this->scalingType) {
+//        case ScalingType::ISOTROPIC:
+//            break;
+//        case ScalingType::ANISOTROPIC_X:
+//            deltaDim[0] = (2 * this->unitIntervalDistribution(mt) - 1) * std::cbrt(this->scalingStep);
+//            break;
+//        case ScalingType::ANISOTROPIC_Y:
+//            deltaDim[1] = (2 * this->unitIntervalDistribution(mt) - 1) * std::cbrt(this->scalingStep);
+//            break;
+//        case ScalingType::ANISOTROPIC_Z:
+//            deltaDim[2] = (2 * this->unitIntervalDistribution(mt) - 1) * std::cbrt(this->scalingStep);
+//            break;
+//        case ScalingType::ANISOTROPIC_XYZ:
+//            deltaDim[1] = (2 * this->unitIntervalDistribution(mt) - 1) * std::cbrt(this->scalingStep);
+//            deltaDim[2] = (2 * this->unitIntervalDistribution(mt) - 1) * std::cbrt(this->scalingStep);
+//            break;
+//    }
+//
+//    std::array<double, 3> oldDim = this->packing->getDimensions();
+//    std::array<double, 3> newDim{};
+//    std::transform(oldDim.begin(), oldDim.end(), deltaDim.begin(), newDim.begin(), std::plus<>{});
+//    std::array<double, 3> scalingFactor{};
+//    std::transform(newDim.begin(), newDim.end(), oldDim.begin(), scalingFactor.begin(), std::divides<>{});
+//    if (std::any_of(scalingFactor.begin(), scalingFactor.end(), [](double d) { return d <= 0; }))
+//        return false;
+//
+//    double oldV = this->packing->getVolume();
+//    double newV = std::accumulate(newDim.begin(), newDim.end(), 1., std::multiplies<>{});
+//    double deltaV = newV - oldV;
+//    double factor = newV / oldV;
+//
+//    std::cout.precision(4);
+//    std::cout << "oD: " << oldDim[0] << ", " << oldDim[1] << ", " << oldDim[2] << ", ";
+//    std::cout << "dD: " << deltaDim[0] << ", " << deltaDim[1] << ", " << deltaDim[2] << ", ";
+//    std::cout << "nD: " << newDim[0] << ", " << newDim[1] << ", " << newDim[2] << ", ";
+//    std::cout << "sF: " << scalingFactor[0] << ", " << scalingFactor[1] << ", " << scalingFactor[2] << ", ";
+//    std::cout << "oV: " << oldV << ", dV: " << deltaV << ", nV: " << newV << ", f: " << factor << std::endl;
+//
+//    double N = this->packing->size();
+//    double dE = this->packing->tryScaling(scalingFactor, interaction);
+//    double exponent = N * log(factor) - dE / this->temperature - this->pressure * deltaV / this->temperature;
+//    if (this->unitIntervalDistribution(mt) <= std::exp(exponent)) {
+//        return true;
+//    } else {
+//        this->packing->revertScaling();
+//        return false;
+//    }
+//}
 
 void Simulation::evaluateCounters(Logger &logger) {
     if (this->moveCounter.getMovesSinceEvaluation() >= 100 * this->packing->size()) {

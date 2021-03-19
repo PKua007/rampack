@@ -25,6 +25,7 @@ public:
     void translate(const Vector<3> &translation, const BoundaryConditions &bc);
     void setPosition(const Vector<3> &position_);
     void scale(double factor);
+    void scale(const std::array<double, 3> &factor);
     void rotate(const Matrix<3, 3> &rotation);
     void setOrientation(const Matrix<3, 3> &orientation_);
     void applyBCTranslation(const BoundaryConditions &bc, Shape &other) const;

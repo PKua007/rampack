@@ -111,18 +111,18 @@ double Packing::tryMove(std::size_t particleIdx, const Vector<3> &translation, c
     return finalEnergy - initialEnergy;
 }
 
-double Packing::tryScaling(double scaleFactor, const Interaction &interaction) {
-    Expects(scaleFactor > 0);
+double Packing::tryScaling(const std::array<double, 3> &scaleFactor, const Interaction &interaction) {
+    Expects(std::all_of(scaleFactor.begin(), scaleFactor.end(), [](double d) { return d > 0; }));
     Expects(interaction.getRangeRadius() <= this->interactionRange);
-    this->lastScalingFactor = std::cbrt(scaleFactor);
+    this->lastScalingFactor = scaleFactor;
 
     double initialEnergy = this->getTotalEnergy(interaction);
 
-    for (double &size : this->dimensions)
-        size *= this->lastScalingFactor;
+    std::transform(this->dimensions.begin(), this->dimensions.end(), scaleFactor.begin(), this->dimensions.begin(),
+                   std::multiplies<>{});
     this->bc->setLinearSize(this->dimensions);
     for (auto &shape : *this)
-        shape.scale(this->lastScalingFactor);
+        shape.scale(scaleFactor);
     std::swap(this->neighbourGrid, this->tempNeighbourGrid);
     this->rebuildNeighbourGrid();
 
@@ -260,17 +260,20 @@ void Packing::rotateTempInteractionCentres(const Matrix<3, 3> &rotation) {
 }
 
 void Packing::revertScaling() {
-    for (double &length : this->dimensions)
-        length /= this->lastScalingFactor;
+    std::transform(this->dimensions.begin(), this->dimensions.end(), this->lastScalingFactor.begin(),
+                   this->dimensions.begin(), std::divides<>{});
     this->bc->setLinearSize(this->dimensions);
-    double reverseFactor = 1 / this->lastScalingFactor;
+    std::array<double, 3> reverseFactor{};
+    for (std::size_t i{}; i < 3; i++)
+        reverseFactor[i] = 1. / this->lastScalingFactor[i];
     for (auto &shape : this->shapes)
         shape.scale(reverseFactor);
     std::swap(this->neighbourGrid, this->tempNeighbourGrid);
 }
 
 bool Packing::isParticleOverlappingAnything(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
-                                            const Interaction &interaction) const {
+                                            const Interaction &interaction) const
+{
     if (this->neighbourGrid.has_value()) {
         if (this->numInteractionCentres == 0) {
             Vector<3> pos = this->shapes[tempParticleIdx].getPosition();

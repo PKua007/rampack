@@ -167,6 +167,21 @@ int Frontend::casino(int argc, char **argv) {
     }
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
+    // Parse scaling type
+    Simulation::ScalingType scalingType;
+    if (params.scalingType == "isotropic")
+        scalingType = Simulation::ScalingType::ISOTROPIC;
+    else if (params.scalingType == "anisotropic x")
+        scalingType = Simulation::ScalingType::ANISOTROPIC_X;
+    else if (params.scalingType == "anisotropic y")
+        scalingType = Simulation::ScalingType::ANISOTROPIC_Y;
+    else if (params.scalingType == "anisotropic z")
+        scalingType = Simulation::ScalingType::ANISOTROPIC_Z;
+    else if (params.scalingType == "anisotropic xyz")
+        scalingType = Simulation::ScalingType::ANISOTROPIC_XYZ;
+    else
+        throw ValidationException("Uknown scaling type: " + params.scalingType);
+
     // Find starting run index if specified
     std::size_t startRunIndex{};
     if (parsedOptions.count("start-from")) {
@@ -227,7 +242,7 @@ int Frontend::casino(int argc, char **argv) {
 
     // Perform simulations starting from initial run
     Simulation simulation(std::move(packing), params.positionStepSize, params.rotationStepSize, params.volumeStepSize,
-                          params.seed, domainDivisions);
+                          params.seed, scalingType, domainDivisions);
 
     for (std::size_t i = startRunIndex; i < params.runsParameters.size(); i++) {
         auto runParams = params.runsParameters[i];

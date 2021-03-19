@@ -32,7 +32,7 @@ private:
     std::size_t scalingThreads{};
 
     std::vector<std::size_t> lastAlteredParticleIdx{};
-    double lastScalingFactor{};
+    std::array<double, 3> lastScalingFactor{};
 
     std::size_t neighbourGridRebuilds{};
     std::size_t neighbourGridResizes{};
@@ -106,7 +106,7 @@ public:
     double tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction);
     double tryMove(std::size_t particleIdx, const Vector<3> &translation, const Matrix<3, 3> &rotation,
                    const Interaction &interaction, std::optional<ActiveDomain> boundaries = std::nullopt);
-    double tryScaling(double scaleFactor, const Interaction &interaction);
+    double tryScaling(const std::array<double, 3> &scaleFactor, const Interaction &interaction);
     void acceptTranslation();
     void acceptRotation();
     void acceptMove();

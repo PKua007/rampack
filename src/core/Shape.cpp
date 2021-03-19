@@ -29,3 +29,9 @@ void Shape::setOrientation(const Matrix<3, 3> &orientation_) {
     this->orientation = orientation_;
 }
 
+void Shape::scale(const std::array<double, 3> &factor) {
+    this->position[0] *= factor[0];
+    this->position[1] *= factor[1];
+    this->position[2] *= factor[2];
+}
+

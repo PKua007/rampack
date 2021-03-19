@@ -39,6 +39,8 @@ Parameters::Parameters(std::istream &input) {
             this->scalingThreads = generalConfig.getString("scalingThreads");
         else if (key == "domainDivisions")
             this->domainDivisions = generalConfig.getString("domainDivisions");
+        else if (key == "scalingType")
+            this->scalingType = generalConfig.getString("scalingType");
         else
             throw ParametersParseException("Unknown parameter " + key);
     }
@@ -83,6 +85,7 @@ void Parameters::validate() const {
     Validate(this->volumeStepSize > 0);
     Validate(!this->scalingThreads.empty());
     Validate(!this->domainDivisions.empty());
+    Validate(!this->scalingType.empty());
 }
 
 void Parameters::RunParameters::validate() const {
@@ -106,6 +109,7 @@ void Parameters::print(Logger &logger) const {
     logger.info() << "interaction       : " << this->interaction << std::endl;
     logger.info() << "scalingThreads    : " << this->scalingThreads << std::endl;
     logger.info() << "domainDivisions   : " << this->domainDivisions << std::endl;
+    logger.info() << "scalingType       : " << this->scalingType << std::endl;
 }
 
 void Parameters::RunParameters::print(Logger &logger) const {
