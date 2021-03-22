@@ -103,7 +103,7 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
-    Simulation simulation(std::move(packing), 1, 0.1, 10, 1234, std::move(volumeScaler));
+    Simulation simulation(std::move(packing), 1, 0.1, 1, 1234, std::move(volumeScaler));
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 

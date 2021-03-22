@@ -14,6 +14,6 @@ std::array<double, 3> DeltaVolumeScaler::sampleScalingFactors(const std::array<d
     std::uniform_real_distribution<double> unitIntervalDistribution(0, 1);
     double deltaV = (2*unitIntervalDistribution(mt) - 1) * scalingStepSize;
     double currentV = std::accumulate(oldDim.begin(), oldDim.end(), 1., std::multiplies<>{});
-    double factor = (deltaV + currentV) / currentV;
+    double factor = std::cbrt((deltaV + currentV) / currentV);
     return {factor, factor, factor};
 }
