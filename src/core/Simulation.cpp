@@ -36,7 +36,8 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep,
 }
 
 void Simulation::perform(double temperature_, double pressure_, std::size_t thermalisationCycles_,
-                         std::size_t averagingCycles_, std::size_t averagingEvery_, const Interaction &interaction,
+                         std::size_t averagingCycles_, std::size_t averagingEvery_, std::size_t snapshotEvery_,
+                         const Interaction &interaction, std::unique_ptr<ObservablesCollector> observablesCollector_,
                          Logger &logger)
 {
     Expects(temperature_ > 0);
@@ -50,6 +51,8 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     this->thermalisationCycles = thermalisationCycles_;
     this->averagingCycles = averagingCycles_;
     this->averagingEvery = averagingEvery_;
+    this->snapshotEvery = snapshotEvery_;
+    this->observablesCollector = std::move(observablesCollector_);
     this->reset();
 
     this->shouldAdjustStepSize = true;
@@ -57,13 +60,11 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     logger.info() << "Starting thermalisation..." << std::endl;
     for (std::size_t i{}; i < this->thermalisationCycles; i++) {
         this->performCycle(logger, interaction);
-        if ((i + 1) % this->averagingEvery == 0)
-            this->densityThermalisationSnapshots.push_back({i + 1,this->packing->getNumberDensity()});
+        if ((i + 1) % this->snapshotEvery == 0)
+            this->observablesCollector->addSnapshot(*this->packing, i + 1);
         if ((i + 1) % 100 == 0) {
-            logger.info() << "Performed " << (i + 1) << " cycles. ";
-            auto dimensions = this->packing->getDimensions();
-            logger << "Dimensions: " << dimensions[0] << ", " << dimensions[1] << ", " << dimensions[2];
-            logger << ", number density: " << this->packing->getNumberDensity() << std::endl;
+            logger.info() << "Performed " << (i + 1) << " cycles; ";
+            logger << this->observablesCollector->generateInlineObservablesString(*this->packing) << std::endl;
         }
     }
 
@@ -72,16 +73,13 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     logger.info() << "Starting averaging..." << std::endl;
     for(std::size_t i{}; i < this->averagingCycles; i++) {
         this->performCycle(logger, interaction);
-        if ((i + 1) % this->averagingEvery == 0) {
-            this->averagedDensities.push_back(this->packing->getNumberDensity());
-            this->averagedEnergy.push_back(this->packing->getTotalEnergy(interaction));
-            this->averagedEnergyFluctuations.push_back(this->packing->getParticleEnergyFluctuations(interaction));
-        }
+        if ((i + 1) % this->snapshotEvery == 0)
+            this->observablesCollector->addSnapshot(*this->packing, this->thermalisationCycles + i + 1);
+        if ((i + 1) % this->averagingEvery == 0)
+            this->observablesCollector->addAveragingValues(*this->packing);
         if ((i + 1) % 100 == 0) {
-            logger.info() << "Performed " << (i + 1) << " cycles. ";
-            auto dimensions = this->packing->getDimensions();
-            logger << "Dimensions: " << dimensions[0] << ", " << dimensions[1] << ", " << dimensions[2];
-            logger << ", number density: " << this->packing->getNumberDensity() << std::endl;
+            logger.info() << "Performed " << (i + 1) << " cycles; ";
+            logger << this->observablesCollector->generateInlineObservablesString(*this->packing) << std::endl;
         }
     }
 
@@ -92,11 +90,10 @@ void Simulation::reset() {
     std::uniform_int_distribution<int>(0, this->packing->size() - 1);
     this->moveCounter.reset();
     this->scalingCounter.reset();
-    this->averagedDensities.clear();
-    this->densityThermalisationSnapshots.clear();
     this->packing->resetCounters();
     this->moveMicroseconds = 0;
     this->scalingMicroseconds = 0;
+    this->observablesCollector->clearValues();
 }
 
 void Simulation::performCycle(Logger &logger, const Interaction &interaction) {
@@ -293,27 +290,6 @@ void Simulation::evaluateCounters(Logger &logger) {
             logger << " -> " << this->scalingStep << std::endl;
         }
     }
-}
-
-Quantity Simulation::getAverageDensity() const {
-    Quantity density;
-    density.separator = Quantity::PLUS_MINUS;
-    density.calculateFromSamples(this->averagedDensities);
-    return density;
-}
-
-Quantity Simulation::getAverageEnergy() const {
-    Quantity energy;
-    energy.separator = Quantity::PLUS_MINUS;
-    energy.calculateFromSamples(this->averagedEnergy);
-    return energy;
-}
-
-Quantity Simulation::getAverageEnergyFluctuations() const {
-    Quantity energyFluctuations;
-    energyFluctuations.separator = Quantity::PLUS_MINUS;
-    energyFluctuations.calculateFromSamples(this->averagedEnergyFluctuations);
-    return energyFluctuations;
 }
 
 void Simulation::Counter::increment(bool accepted) {

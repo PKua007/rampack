@@ -14,6 +14,7 @@
 #include "utils/Quantity.h"
 #include "Interaction.h"
 #include "VolumeScaler.h"
+#include "ObservablesCollector.h"
 
 class Simulation {
 public:
@@ -50,6 +51,7 @@ private:
     std::size_t thermalisationCycles{};
     std::size_t averagingCycles{};
     std::size_t averagingEvery{};
+    std::size_t snapshotEvery{};
 
     double temperature{};
     double pressure{};
@@ -72,10 +74,7 @@ private:
     std::array<std::size_t, 3> domainDivisions;
     std::size_t numDomains{};
 
-    std::vector<double> averagedDensities;
-    std::vector<double> averagedEnergy;
-    std::vector<double> averagedEnergyFluctuations;
-    std::vector<ScalarSnapshot> densityThermalisationSnapshots;
+    std::unique_ptr<ObservablesCollector> observablesCollector;
 
     void performCycle(Logger &logger, const Interaction &interaction);
     void performMovesWithDomainDivision(const Interaction &interaction);
@@ -95,13 +94,9 @@ public:
                const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1});
 
     void perform(double temperature_, double pressure_, std::size_t thermalisationCycles_, std::size_t averagingCycles_,
-                 std::size_t averagingEvery_, const Interaction &interaction, Logger &logger);
-    [[nodiscard]] Quantity getAverageDensity() const;
-    [[nodiscard]] Quantity getAverageEnergy() const;
-    [[nodiscard]] Quantity getAverageEnergyFluctuations() const;
-    [[nodiscard]] std::vector<ScalarSnapshot> getDensityThermalisationSnapshots() const {
-        return this->densityThermalisationSnapshots;
-    }
+                 std::size_t averagingEvery_, std::size_t snapshotEvery_, const Interaction &interaction,
+                 std::unique_ptr<ObservablesCollector> observablesCollector_, Logger &logger);
+    [[nodiscard]] const ObservablesCollector &getObservablesCollector() { return *this->observablesCollector; }
     [[nodiscard]] double getMoveAcceptanceRate() const { return this->moveCounter.getRate(); }
     [[nodiscard]] double getScalingAcceptanceRate() const { return this->scalingCounter.getRate(); }
     [[nodiscard]] double getMoveMicroseconds() const { return this->moveMicroseconds; }
