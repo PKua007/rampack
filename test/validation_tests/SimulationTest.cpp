@@ -13,6 +13,7 @@
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/interactions/LennardJonesInteraction.h"
 #include "core/interactions/RepulsiveLennardJonesInteraction.h"
+#include "core/volume_scalers/DeltaVolumeScaler.h"
 #include "utils/OMPMacros.h"
 
 TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
@@ -26,7 +27,8 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
     auto shapes = LatticeArrangingModel{}.arrange(50, dimensions);
     SphereTraits sphereTraits(0.05);
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
-    Simulation simulation(std::move(packing), 1, 0.1, 1, 1234);
+    auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
+    Simulation simulation(std::move(packing), 1, 0.1, 1, 1234, std::move(volumeScaler));
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
@@ -49,7 +51,8 @@ TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
     auto shapes = LatticeArrangingModel{}.arrange(50, dimensions);
     SphereTraits sphereTraits(0.5);
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
-    Simulation simulation(std::move(packing), 1, 0.1, 1, 1234);
+    auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
+    Simulation simulation(std::move(packing), 1, 0.1, 1, 1234, std::move(volumeScaler));
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
@@ -72,7 +75,8 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
     auto shapes = LatticeArrangingModel{}.arrange(50, dimensions);
     SpherocylinderTraits spherocylinderTraits(0.5, 0.2);
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), spherocylinderTraits.getInteraction());
-    Simulation simulation(std::move(packing), 1, 0.1, 1, 1234);
+    auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
+    Simulation simulation(std::move(packing), 1, 0.1, 1, 1234, std::move(volumeScaler));
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
@@ -98,7 +102,8 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
     SphereTraits sphereTraits(0.5, std::make_unique<LennardJonesInteraction>(1, 0.5));
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
-    Simulation simulation(std::move(packing), 1, 0.1, 10, 1234);
+    auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
+    Simulation simulation(std::move(packing), 1, 0.1, 10, 1234, std::move(volumeScaler));
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
@@ -124,7 +129,8 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
     KMerTraits kmerTraits(2, 0.5, 1);
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), kmerTraits.getInteraction());
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
-    Simulation simulation(std::move(packing), 10, 1, 10, 1234);
+    auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
+    Simulation simulation(std::move(packing), 10, 1, 10, 1234, std::move(volumeScaler));
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
@@ -151,7 +157,8 @@ TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
     KMerTraits kmerTraits(2, 0.5, 1, std::move(interaction));
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), kmerTraits.getInteraction());
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
-    Simulation simulation(std::move(packing), 10, 1, 10, 1234);
+    auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
+    Simulation simulation(std::move(packing), 10, 1, 10, 1234, std::move(volumeScaler));
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
@@ -175,8 +182,8 @@ TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
     SphereTraits sphereTraits(0.5);
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc),
                                              sphereTraits.getInteraction(), 4, 4);
-    Simulation simulation(std::move(packing), 1, 0.1, 1, 1234,
-                          {2, 2, 1});
+    auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
+    Simulation simulation(std::move(packing), 1, 0.1, 1, 1234, std::move(volumeScaler), {2, 2, 1});
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 

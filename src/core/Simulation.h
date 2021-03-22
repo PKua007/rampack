@@ -13,6 +13,7 @@
 #include "utils/Logger.h"
 #include "utils/Quantity.h"
 #include "Interaction.h"
+#include "VolumeScaler.h"
 
 class Simulation {
 public:
@@ -21,14 +22,6 @@ public:
         double value{};
 
         friend std::ostream &operator<<(std::ostream &out, const Simulation::ScalarSnapshot &snapshot);
-    };
-
-    enum class ScalingType {
-        ISOTROPIC,
-        ANISOTROPIC_X,
-        ANISOTROPIC_Y,
-        ANISOTROPIC_Z,
-        ANISOTROPIC_XYZ
     };
 
 private:
@@ -64,7 +57,7 @@ private:
     double translationStep{};
     double rotationStep{};
     double scalingStep{};
-    ScalingType scalingType{};
+    std::unique_ptr<VolumeScaler> volumeScaler{};
     Counter moveCounter;
     Counter scalingCounter;
     double moveMicroseconds{};
@@ -98,7 +91,7 @@ private:
 
 public:
     Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep, double scalingStep,
-               unsigned long seed, ScalingType scalingType = ScalingType::ISOTROPIC,
+               unsigned long seed, std::unique_ptr<VolumeScaler> volumeScaler,
                const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1});
 
     void perform(double temperature_, double pressure_, std::size_t thermalisationCycles_, std::size_t averagingCycles_,

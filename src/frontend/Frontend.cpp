@@ -20,6 +20,9 @@
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/LatticeArrangingModel.h"
 #include "core/Packing.h"
+#include "core/volume_scalers/DeltaVolumeScaler.h"
+#include "core/volume_scalers/LinearVolumeScaler.h"
+#include "core/volume_scalers/LogVolumeScaler.h"
 #include "utils/OMPMacros.h"
 
 
@@ -168,17 +171,32 @@ int Frontend::casino(int argc, char **argv) {
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
     // Parse scaling type
-    Simulation::ScalingType scalingType;
-    if (params.scalingType == "isotropic")
-        scalingType = Simulation::ScalingType::ISOTROPIC;
-    else if (params.scalingType == "anisotropic x")
-        scalingType = Simulation::ScalingType::ANISOTROPIC_X;
-    else if (params.scalingType == "anisotropic y")
-        scalingType = Simulation::ScalingType::ANISOTROPIC_Y;
-    else if (params.scalingType == "anisotropic z")
-        scalingType = Simulation::ScalingType::ANISOTROPIC_Z;
-    else if (params.scalingType == "anisotropic xyz")
-        scalingType = Simulation::ScalingType::ANISOTROPIC_XYZ;
+    std::unique_ptr<VolumeScaler> volumeScaler;
+    // Old delta V scaling
+    if (params.scalingType == "delta V")
+        volumeScaler = std::make_unique<DeltaVolumeScaler>();
+    // Linear scaling
+    else if (params.scalingType == "linear isotropic")
+        volumeScaler = std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ISOTROPIC);
+    else if (params.scalingType == "linear anisotropic x")
+        volumeScaler = std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_X);
+    else if (params.scalingType == "linear anisotropic y")
+        volumeScaler = std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_Y);
+    else if (params.scalingType == "linear anisotropic z")
+        volumeScaler = std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_Z);
+    else if (params.scalingType == "linear anisotropic xyz")
+        volumeScaler = std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_XYZ);
+    // Log scaling
+    else if (params.scalingType == "log isotropic")
+        volumeScaler = std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ISOTROPIC);
+    else if (params.scalingType == "log anisotropic x")
+        volumeScaler = std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_X);
+    else if (params.scalingType == "log anisotropic y")
+        volumeScaler = std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_Y);
+    else if (params.scalingType == "log anisotropic z")
+        volumeScaler = std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_Z);
+    else if (params.scalingType == "log anisotropic xyz")
+        volumeScaler = std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_XYZ);
     else
         throw ValidationException("Uknown scaling type: " + params.scalingType);
 
@@ -242,7 +260,7 @@ int Frontend::casino(int argc, char **argv) {
 
     // Perform simulations starting from initial run
     Simulation simulation(std::move(packing), params.positionStepSize, params.rotationStepSize, params.volumeStepSize,
-                          params.seed, scalingType, domainDivisions);
+                          params.seed, std::move(volumeScaler), domainDivisions);
 
     for (std::size_t i = startRunIndex; i < params.runsParameters.size(); i++) {
         auto runParams = params.runsParameters[i];
