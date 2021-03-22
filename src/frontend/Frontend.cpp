@@ -7,6 +7,7 @@
 #include <limits>
 #include <iterator>
 #include <algorithm>
+#include <iomanip>
 
 #include <cxxopts.hpp>
 
@@ -23,6 +24,8 @@
 #include "core/volume_scalers/DeltaVolumeScaler.h"
 #include "core/volume_scalers/LinearVolumeScaler.h"
 #include "core/volume_scalers/LogVolumeScaler.h"
+#include "core/observables/NumberDensity.h"
+#include "core/observables/BoxDimensions.h"
 #include "utils/OMPMacros.h"
 
 
@@ -272,11 +275,16 @@ int Frontend::casino(int argc, char **argv) {
         runParams.print(logger);
         this->logger << "--------------------------------------------------------------------" << std::endl;
 
+        auto collector = std::make_unique<ObservablesCollector>();
+        collector->addObservable(std::make_unique<BoxDimensions>(), true);
+        collector->addObservable(std::make_unique<NumberDensity>(), true);
+
         simulation.perform(runParams.temperature, runParams.pressure, runParams.thermalisationCycles,
-                           runParams.averagingCycles, runParams.averagingEvery, shapeTraits->getInteraction(), logger);
+                           runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
+                           shapeTraits->getInteraction(), std::move(collector), this->logger);
 
         // Print info
-        Quantity rho = simulation.getAverageDensity();
+        /*Quantity rho = simulation.getAverageDensity();
         Quantity E = simulation.getAverageEnergy();
         E.value = E.value / params.numOfParticles;
         E.error = E.error / params.numOfParticles;
@@ -285,7 +293,9 @@ int Frontend::casino(int argc, char **argv) {
         theta.separator = Quantity::PLUS_MINUS;
         Quantity Z(runParams.pressure / runParams.temperature / rho.value,
                    runParams.pressure / runParams.temperature * rho.error / rho.value / rho.value);
-        Z.separator = Quantity::PLUS_MINUS;
+        Z.separator = Quantity::PLUS_MINUS;*/
+
+        const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
         std::size_t ngRebuilds = simulation.getPacking().getNeighbourGridRebuilds();
         std::size_t ngResizes = simulation.getPacking().getNeighbourGridResizes();
@@ -302,11 +312,12 @@ int Frontend::casino(int argc, char **argv) {
 
         this->logger.info();
         this->logger << "--------------------------------------------------------------------" << std::endl;
-        this->logger << "Average density                          : " << rho << std::endl;
+        this->printAverageValues(observablesCollector);
+        /*this->logger << "Average density                          : " << rho << std::endl;
         this->logger << "Average packing fraction                 : " << theta << std::endl;
         this->logger << "Average compressibility factor           : " << Z << std::endl;
         this->logger << "Average energy per particle              : " << E << std::endl;
-        this->logger << "Average energy fluctuations per particle : " << Efluct << std::endl;
+        this->logger << "Average energy fluctuations per particle : " << Efluct << std::endl;*/
         this->logger << "--------------------------------------------------------------------" << std::endl;
         this->logger << "Move acceptance rate            : " << simulation.getMoveAcceptanceRate() << std::endl;
         this->logger << "Scaling acceptance rate         : " << simulation.getScalingAcceptanceRate() << std::endl;
@@ -337,23 +348,20 @@ int Frontend::casino(int argc, char **argv) {
         }
 
         // Store density, energy, etc. (if desired)
-        if (!runParams.outputFilename.empty()) {
+        /*if (!runParams.outputFilename.empty()) {
             std::ofstream out(runParams.outputFilename, std::ios_base::app);
             ValidateMsg(out, "Could not open " + runParams.outputFilename + " to store output!");
             out.precision(std::numeric_limits<double>::max_digits10);
             out << runParams.temperature << " " << runParams.pressure << " " << rho.value << " " << theta.value << " ";
             out << Z.value << " " << E.value << " " << Efluct.value << std::endl;
             this->logger.info() << "Output factor stored to " + runParams.outputFilename << std::endl;
-        }
+        }*/
 
         // Store density snapshots during thermalisation phase
         if (!runParams.densitySnapshotFilename.empty()) {
             std::ofstream out(runParams.densitySnapshotFilename);
             ValidateMsg(out, "Could not open " + runParams.densitySnapshotFilename + " to store density snapshots!");
-            auto snapshots = simulation.getDensityThermalisationSnapshots();
-            out.precision(std::numeric_limits<double>::max_digits10);
-            std::copy(snapshots.begin(), snapshots.end(),
-                      std::ostream_iterator<Simulation::ScalarSnapshot>(out, "\n"));
+            observablesCollector.printSnapshots(out);
             this->logger.info() << "Density snapshots stored to " + runParams.densitySnapshotFilename << std::endl;
         }
     }
@@ -417,4 +425,19 @@ std::vector<Shape> Frontend::arrangePacking(std::size_t numOfParticles, const st
     }
 
     throw ValidationException("Unknown arrangement type: " + type + ". Available: now only lattice");
+}
+
+void Frontend::printAverageValues(const ObservablesCollector &collector) {
+    auto observableDescription = collector.generateObservablesAverageValueDescription();
+
+    auto lengthComparator =  [](const auto &desc1, const auto &desc2) {
+        return desc1.observableName.length() < desc2.observableName.length();
+    };
+    std::size_t maxLength = std::max_element(observableDescription.begin(), observableDescription.end(),
+                                             lengthComparator)->observableName.length();
+
+    for (const auto &description : observableDescription) {
+        this->logger << "Average " << std::left << std::setw(maxLength);
+        this->logger << description.observableName << " : " << description.observableValues << std::endl;
+    }
 }

@@ -6,6 +6,7 @@
 #define RAMPACK_FRONTEND_H
 
 #include <vector>
+#include <core/ObservablesCollector.h>
 
 #include "utils/Logger.h"
 #include "Parameters.h"
@@ -23,6 +24,7 @@ private:
     void setOverridenParamsAsAdditionalText(std::vector<std::string> overridenParams) const;
     std::vector<Shape> arrangePacking(std::size_t numOfParticles, const std::array<double, 3> &boxDimensions,
                                       const std::string &arrangementString);
+    void printAverageValues(const ObservablesCollector &collector);
 
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }

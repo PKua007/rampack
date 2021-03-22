@@ -9,7 +9,8 @@
 #include "ObservablesCollector.h"
 
 void ObservablesCollector::addObservable(std::unique_ptr<Observable> observable, bool shouldDisplayInline) {
-    ExpectsMsg(this->snapshotValues.empty(), "Cannot add a new observable if snapshots are already captured");
+    if (!this->snapshotValues.empty())
+        ExpectsMsg(snapshotValues.front().empty(), "Cannot add a new observable if snapshots are already captured");
 
     auto header = observable->getHeader();
     this->observableHeader.insert(this->observableHeader.end(), header.begin(), header.end());
@@ -33,6 +34,7 @@ void ObservablesCollector::addObservablesToContainer(const Packing &packing, std
         for (double value : values) {
             Assert(valueIndex < container.size());
             container[valueIndex].push_back(value);
+            valueIndex++;
         }
     }
     Assert(valueIndex == container.size());
@@ -74,11 +76,15 @@ void ObservablesCollector::clearValues() {
         singleSet.clear();
 }
 
-void ObservablesCollector::printSnapshots(std::ostream &out) {
+void ObservablesCollector::printSnapshots(std::ostream &out) const {
+    Expects(!this->observableHeader.empty());
+    Expects(!this->observableHeader.front().empty());
+
     std::size_t numSnapshots = this->snapshotCycleNumbers.size();
     for (const auto &singleSet : this->snapshotValues)
         Assert(singleSet.size() == numSnapshots);
 
+    out << "cycle ";
     std::copy(this->observableHeader.begin(), this->observableHeader.end(),
               std::ostream_iterator<std::string>(out, " "));
     out << std::endl;
@@ -99,4 +105,35 @@ std::vector<Quantity> ObservablesCollector::getAverageValues() const {
     for (std::size_t i{}; i < quantities.size(); i++)
         quantities[i].calculateFromSamples(this->averagingValues[i]);
     return quantities;
+}
+
+std::vector<ObservablesCollector::ObservableDescription>
+ObservablesCollector::generateObservablesAverageValueDescription() const
+{
+    std::vector<ObservableDescription> result;
+    auto averageValues = this->getAverageValues();
+    for (auto &averageValue : averageValues)
+        averageValue.separator = Quantity::PLUS_MINUS;
+
+    std::size_t index{};
+    for (const auto &observable : this->observables) {
+        auto header = observable->getHeader();
+        std::ostringstream valuesStream;
+        for (std::size_t i{}; i < header.size() - 1; i++) {
+            Assert(index < averageValues.size());
+            valuesStream << header[i] << " = " << averageValues[index] << ", ";
+            index++;
+        }
+        Assert(index < averageValues.size());
+        valuesStream << header.back() << " = " << averageValues[index];
+        index++;
+
+        ObservableDescription description;
+        description.observableName = observable->getName();
+        description.observableValues = valuesStream.str();
+        result.push_back(description);
+    }
+    Assert(index == averageValues.size());
+
+    return result;
 }

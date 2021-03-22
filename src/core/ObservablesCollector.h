@@ -25,14 +25,20 @@ private:
     void addObservablesToContainer(const Packing &packing, std::vector<std::vector<double>> &container);
 
 public:
+    struct ObservableDescription {
+        std::string observableName;
+        std::string observableValues;
+    };
+
     void addObservable(std::unique_ptr<Observable> observable, bool shouldDisplayInline);
 
     void addSnapshot(const Packing &packing, std::size_t cycleNumber);
     void addAveragingValues(const Packing &packing);
     void clearValues();
 
-    void printSnapshots(std::ostream &out);
+    void printSnapshots(std::ostream &out) const;
     [[nodiscard]] std::string generateInlineObservablesString(const Packing &packing) const;
+    [[nodiscard]] std::vector<ObservableDescription> generateObservablesAverageValueDescription() const;
     [[nodiscard]] const std::vector<std::string> &getObservableHeader() const { return this->observableHeader; }
     [[nodiscard]] std::vector<Quantity> getAverageValues() const;
 };
