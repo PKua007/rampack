@@ -61,9 +61,9 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
             this->densityThermalisationSnapshots.push_back({i + 1,this->packing->getNumberDensity()});
         if ((i + 1) % 100 == 0) {
             logger.info() << "Performed " << (i + 1) << " cycles. ";
-            //logger << "Number density: " << this->packing->getNumberDensity() << std::endl;
             auto dimensions = this->packing->getDimensions();
-            logger << "Dimensions: " << dimensions[0] << ", " << dimensions[1] << ", " << dimensions[2] << std::endl;
+            logger << "Dimensions: " << dimensions[0] << ", " << dimensions[1] << ", " << dimensions[2];
+            logger << ", number density: " << this->packing->getNumberDensity() << std::endl;
         }
     }
 
@@ -79,7 +79,9 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
         }
         if ((i + 1) % 100 == 0) {
             logger.info() << "Performed " << (i + 1) << " cycles. ";
-            logger << "Number density: " << this->packing->getNumberDensity() << std::endl;
+            auto dimensions = this->packing->getDimensions();
+            logger << "Dimensions: " << dimensions[0] << ", " << dimensions[1] << ", " << dimensions[2];
+            logger << ", number density: " << this->packing->getNumberDensity() << std::endl;
         }
     }
 
