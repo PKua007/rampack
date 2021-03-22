@@ -18,6 +18,8 @@ public:
         ANISOTROPIC_XYZ
     };
 
+    virtual ~VolumeScaler() = default;
+
     virtual std::array<double, 3> sampleScalingFactors(const std::array<double, 3> &oldDim, double scalingStepSize,
                                                        std::mt19937 &mt) const = 0;
 };
