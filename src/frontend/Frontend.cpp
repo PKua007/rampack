@@ -27,6 +27,7 @@
 #include "core/volume_scalers/LogVolumeScaler.h"
 #include "core/observables/NumberDensity.h"
 #include "core/observables/BoxDimensions.h"
+#include "core/observables/PackingFraction.h"
 #include "utils/OMPMacros.h"
 
 
@@ -279,6 +280,7 @@ int Frontend::casino(int argc, char **argv) {
         auto collector = std::make_unique<ObservablesCollector>();
         collector->addObservable(std::make_unique<BoxDimensions>(), true);
         collector->addObservable(std::make_unique<NumberDensity>(), true);
+        collector->addObservable(std::make_unique<PackingFraction>(shapeTraits->getVolume()), false);
 
         simulation.perform(runParams.temperature, runParams.pressure, runParams.thermalisationCycles,
                            runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,

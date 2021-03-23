@@ -53,6 +53,7 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     this->averagingEvery = averagingEvery_;
     this->snapshotEvery = snapshotEvery_;
     this->observablesCollector = std::move(observablesCollector_);
+    this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
     this->reset();
 
     this->shouldAdjustStepSize = true;
@@ -61,10 +62,11 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     for (std::size_t i{}; i < this->thermalisationCycles; i++) {
         this->performCycle(logger, interaction);
         if ((i + 1) % this->snapshotEvery == 0)
-            this->observablesCollector->addSnapshot(*this->packing, i + 1);
+            this->observablesCollector->addSnapshot(*this->packing, i + 1, interaction);
         if ((i + 1) % 100 == 0) {
             logger.info() << "Performed " << (i + 1) << " cycles; ";
-            logger << this->observablesCollector->generateInlineObservablesString(*this->packing) << std::endl;
+            logger << this->observablesCollector->generateInlineObservablesString(*this->packing, interaction);
+            logger << std::endl;
         }
     }
 
@@ -74,12 +76,13 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     for(std::size_t i{}; i < this->averagingCycles; i++) {
         this->performCycle(logger, interaction);
         if ((i + 1) % this->snapshotEvery == 0)
-            this->observablesCollector->addSnapshot(*this->packing, this->thermalisationCycles + i + 1);
+            this->observablesCollector->addSnapshot(*this->packing, this->thermalisationCycles + i + 1, interaction);
         if ((i + 1) % this->averagingEvery == 0)
-            this->observablesCollector->addAveragingValues(*this->packing);
+            this->observablesCollector->addAveragingValues(*this->packing, interaction);
         if ((i + 1) % 100 == 0) {
             logger.info() << "Performed " << (i + 1) << " cycles; ";
-            logger << this->observablesCollector->generateInlineObservablesString(*this->packing) << std::endl;
+            logger << this->observablesCollector->generateInlineObservablesString(*this->packing, interaction);
+            logger << std::endl;
         }
     }
 

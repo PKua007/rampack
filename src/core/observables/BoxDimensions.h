@@ -14,7 +14,12 @@ private:
     std::array<double, 3> dimensions{0, 0, 0};
 
 public:
-    void calculate(const Packing &packing) override { this->dimensions = packing.getDimensions(); }
+    void calculate(const Packing &packing, [[maybe_unused]] double temperature, [[maybe_unused]] double pressure,
+                   [[maybe_unused]] const Interaction &interaction) override
+    {
+        this->dimensions = packing.getDimensions();
+    }
+
     [[nodiscard]] std::vector<std::string> getHeader() const override { return {"L_X", "L_Y", "L_Z"}; }
 
     [[nodiscard]] std::vector<double> getValues() const override {
