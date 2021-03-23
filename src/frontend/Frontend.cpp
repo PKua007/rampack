@@ -28,6 +28,9 @@
 #include "core/observables/NumberDensity.h"
 #include "core/observables/BoxDimensions.h"
 #include "core/observables/PackingFraction.h"
+#include "core/observables/CompressibilityFactor.h"
+#include "core/observables/EnergyPerParticle.h"
+#include "core/observables/EnergyFluctuationsPerParticle.h"
 #include "utils/OMPMacros.h"
 
 
@@ -281,23 +284,15 @@ int Frontend::casino(int argc, char **argv) {
         collector->addObservable(std::make_unique<BoxDimensions>(), true);
         collector->addObservable(std::make_unique<NumberDensity>(), true);
         collector->addObservable(std::make_unique<PackingFraction>(shapeTraits->getVolume()), false);
+        collector->addObservable(std::make_unique<CompressibilityFactor>(), false);
+        collector->addObservable(std::make_unique<EnergyPerParticle>(), false);
+        collector->addObservable(std::make_unique<EnergyFluctuationsPerParticle>(), false);
 
         simulation.perform(runParams.temperature, runParams.pressure, runParams.thermalisationCycles,
                            runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
                            shapeTraits->getInteraction(), std::move(collector), this->logger);
 
         // Print info
-        /*Quantity rho = simulation.getAverageDensity();
-        Quantity E = simulation.getAverageEnergy();
-        E.value = E.value / params.numOfParticles;
-        E.error = E.error / params.numOfParticles;
-        Quantity Efluct = simulation.getAverageEnergyFluctuations();
-        Quantity theta(rho.value * shapeTraits->getVolume(), rho.error * shapeTraits->getVolume());
-        theta.separator = Quantity::PLUS_MINUS;
-        Quantity Z(runParams.pressure / runParams.temperature / rho.value,
-                   runParams.pressure / runParams.temperature * rho.error / rho.value / rho.value);
-        Z.separator = Quantity::PLUS_MINUS;*/
-
         const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
         std::size_t ngRebuilds = simulation.getPacking().getNeighbourGridRebuilds();
