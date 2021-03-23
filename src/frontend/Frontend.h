@@ -25,6 +25,8 @@ private:
     std::vector<Shape> arrangePacking(std::size_t numOfParticles, const std::array<double, 3> &boxDimensions,
                                       const std::string &arrangementString);
     void printAverageValues(const ObservablesCollector &collector);
+    void storeAverageValues(const std::string &filename, const ObservablesCollector &collector, double temperature,
+                            double pressure) const;
 
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }

@@ -8,6 +8,7 @@
 #include <iterator>
 #include <algorithm>
 #include <iomanip>
+#include <filesystem>
 
 #include <cxxopts.hpp>
 
@@ -313,11 +314,6 @@ int Frontend::casino(int argc, char **argv) {
         this->logger.info();
         this->logger << "--------------------------------------------------------------------" << std::endl;
         this->printAverageValues(observablesCollector);
-        /*this->logger << "Average density                          : " << rho << std::endl;
-        this->logger << "Average packing fraction                 : " << theta << std::endl;
-        this->logger << "Average compressibility factor           : " << Z << std::endl;
-        this->logger << "Average energy per particle              : " << E << std::endl;
-        this->logger << "Average energy fluctuations per particle : " << Efluct << std::endl;*/
         this->logger << "--------------------------------------------------------------------" << std::endl;
         this->logger << "Move acceptance rate            : " << simulation.getMoveAcceptanceRate() << std::endl;
         this->logger << "Scaling acceptance rate         : " << simulation.getScalingAcceptanceRate() << std::endl;
@@ -347,17 +343,14 @@ int Frontend::casino(int argc, char **argv) {
             this->logger.info() << "Wolfram packing stored to " + runParams.wolframFilename << std::endl;
         }
 
-        // Store density, energy, etc. (if desired)
-        /*if (!runParams.outputFilename.empty()) {
-            std::ofstream out(runParams.outputFilename, std::ios_base::app);
-            ValidateMsg(out, "Could not open " + runParams.outputFilename + " to store output!");
-            out.precision(std::numeric_limits<double>::max_digits10);
-            out << runParams.temperature << " " << runParams.pressure << " " << rho.value << " " << theta.value << " ";
-            out << Z.value << " " << E.value << " " << Efluct.value << std::endl;
-            this->logger.info() << "Output factor stored to " + runParams.outputFilename << std::endl;
-        }*/
+        // Store average values of observables (if desired)
+        if (!runParams.outputFilename.empty()) {
+            this->storeAverageValues(runParams.outputFilename, observablesCollector, runParams.temperature,
+                                     runParams.pressure);
+            this->logger.info() << "Average values stored to " + runParams.outputFilename << std::endl;
+        }
 
-        // Store density snapshots during thermalisation phase
+        // Store observables vs cycles snapshots (if desired)
         if (!runParams.densitySnapshotFilename.empty()) {
             std::ofstream out(runParams.densitySnapshotFilename);
             ValidateMsg(out, "Could not open " + runParams.densitySnapshotFilename + " to store density snapshots!");
@@ -440,4 +433,30 @@ void Frontend::printAverageValues(const ObservablesCollector &collector) {
         this->logger << "Average " << std::left << std::setw(maxLength);
         this->logger << description.observableName << " : " << description.observableValues << std::endl;
     }
+}
+
+void Frontend::storeAverageValues(const std::string &filename, const ObservablesCollector &collector,
+                                  double temperature, double pressure) const
+{
+    std::ofstream out;
+    if (!std::filesystem::exists(filename)) {
+        out.open(filename);
+        ValidateMsg(out, "Could not open " + filename + " to store output!");
+        out << "temperature pressure ";
+        const auto &header = collector.getObservableHeader();
+        for (const auto &headerEntry : header)
+            out << headerEntry << " d" << headerEntry << " ";
+        out << std::endl;
+    } else {
+        out.open(filename, std::ios_base::app);
+        ValidateMsg(out, "Could not open " + filename + " to store output!");
+    }
+
+    out.precision(std::numeric_limits<double>::max_digits10);
+    out << temperature << " " << pressure << " ";
+    auto averageValues = collector.getAverageValues();
+    for (auto &averageValue : averageValues)
+        averageValue.separator = Quantity::SPACE;
+    std::copy(averageValues.begin(), averageValues.end(), std::ostream_iterator<Quantity>(out, " "));
+    out << std::endl;
 }
