@@ -13,9 +13,9 @@ private:
 
 public:
     void calculate(const Packing &packing, [[maybe_unused]] double temperature, [[maybe_unused]] double pressure,
-                   const Interaction &interaction) override
+                   const ShapeTraits &shapeTraits) override
     {
-        this->energyFluctuationsPerParticle = packing.getParticleEnergyFluctuations(interaction);
+        this->energyFluctuationsPerParticle = packing.getParticleEnergyFluctuations(shapeTraits.getInteraction());
     }
 
     [[nodiscard]] std::vector<std::string> getHeader() const override { return {"varE"}; }

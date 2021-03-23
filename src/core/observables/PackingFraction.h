@@ -10,18 +10,13 @@
 
 class PackingFraction : public Observable {
 private:
-    double shapeVolume{};
     double packingFraction{};
 
 public:
-    explicit PackingFraction(double shapeVolume) : shapeVolume{shapeVolume} {
-        Expects(this->shapeVolume > 0);
-    }
-
     void calculate(const Packing &packing, [[maybe_unused]] double temperature, [[maybe_unused]] double pressure,
-                   [[maybe_unused]] const Interaction &interaction) override
+                   const ShapeTraits &shapeTraits) override
     {
-        this->packingFraction = packing.getPackingFraction(shapeVolume);
+        this->packingFraction = packing.getPackingFraction(shapeTraits.getVolume());
     }
 
     [[nodiscard]] std::vector<std::string> getHeader() const override { return {"theta"}; }

@@ -283,14 +283,14 @@ int Frontend::casino(int argc, char **argv) {
         auto collector = std::make_unique<ObservablesCollector>();
         collector->addObservable(std::make_unique<BoxDimensions>(), true);
         collector->addObservable(std::make_unique<NumberDensity>(), true);
-        collector->addObservable(std::make_unique<PackingFraction>(shapeTraits->getVolume()), false);
+        collector->addObservable(std::make_unique<PackingFraction>(), false);
         collector->addObservable(std::make_unique<CompressibilityFactor>(), false);
         collector->addObservable(std::make_unique<EnergyPerParticle>(), false);
         collector->addObservable(std::make_unique<EnergyFluctuationsPerParticle>(), false);
 
         simulation.perform(runParams.temperature, runParams.pressure, runParams.thermalisationCycles,
                            runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
-                           shapeTraits->getInteraction(), std::move(collector), this->logger);
+                           *shapeTraits, std::move(collector), this->logger);
 
         // Print info
         const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();

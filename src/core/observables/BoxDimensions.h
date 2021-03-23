@@ -15,7 +15,7 @@ private:
 
 public:
     void calculate(const Packing &packing, [[maybe_unused]] double temperature, [[maybe_unused]] double pressure,
-                   [[maybe_unused]] const Interaction &interaction) override
+                   [[maybe_unused]] const ShapeTraits &shapeTraits) override
     {
         this->dimensions = packing.getDimensions();
     }

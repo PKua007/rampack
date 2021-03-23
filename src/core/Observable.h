@@ -9,14 +9,14 @@
 #include <string>
 
 #include "Packing.h"
-#include "Interaction.h"
+#include "ShapeTraits.h"
 
 class Observable {
 public:
     virtual ~Observable() = default;
 
     virtual void calculate(const Packing &packing, double temperature, double pressure,
-                           const Interaction &interaction) = 0;
+                           const ShapeTraits &shapeTraits) = 0;
     [[nodiscard]] virtual std::vector<std::string> getHeader() const = 0;
     [[nodiscard]] virtual std::vector<double> getValues() const = 0;
     [[nodiscard]] virtual std::string getName() const = 0;

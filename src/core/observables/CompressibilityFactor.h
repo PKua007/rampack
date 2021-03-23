@@ -13,7 +13,7 @@ private:
 
 public:
     void calculate(const Packing &packing, double temperature, double pressure,
-                   [[maybe_unused]] const Interaction &interaction) override
+                   [[maybe_unused]] const ShapeTraits &shapeTraits) override
     {
         this->compressibilityFactor = pressure / temperature / packing.getNumberDensity();
     }

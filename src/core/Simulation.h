@@ -12,7 +12,7 @@
 #include "Packing.h"
 #include "utils/Logger.h"
 #include "utils/Quantity.h"
-#include "Interaction.h"
+#include "ShapeTraits.h"
 #include "VolumeScaler.h"
 #include "ObservablesCollector.h"
 
@@ -94,7 +94,7 @@ public:
                const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1});
 
     void perform(double temperature_, double pressure_, std::size_t thermalisationCycles_, std::size_t averagingCycles_,
-                 std::size_t averagingEvery_, std::size_t snapshotEvery_, const Interaction &interaction,
+                 std::size_t averagingEvery_, std::size_t snapshotEvery_, const ShapeTraits &shapeTraits,
                  std::unique_ptr<ObservablesCollector> observablesCollector_, Logger &logger);
     [[nodiscard]] const ObservablesCollector &getObservablesCollector() { return *this->observablesCollector; }
     [[nodiscard]] double getMoveAcceptanceRate() const { return this->moveCounter.getRate(); }

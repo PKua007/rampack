@@ -37,7 +37,7 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep,
 
 void Simulation::perform(double temperature_, double pressure_, std::size_t thermalisationCycles_,
                          std::size_t averagingCycles_, std::size_t averagingEvery_, std::size_t snapshotEvery_,
-                         const Interaction &interaction, std::unique_ptr<ObservablesCollector> observablesCollector_,
+                         const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
                          Logger &logger)
 {
     Expects(temperature_ > 0);
@@ -56,16 +56,18 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
     this->reset();
 
+    const Interaction &interaction = shapeTraits.getInteraction();
+
     this->shouldAdjustStepSize = true;
     logger.setAdditionalText("thermalisation");
     logger.info() << "Starting thermalisation..." << std::endl;
     for (std::size_t i{}; i < this->thermalisationCycles; i++) {
         this->performCycle(logger, interaction);
         if ((i + 1) % this->snapshotEvery == 0)
-            this->observablesCollector->addSnapshot(*this->packing, i + 1, interaction);
+            this->observablesCollector->addSnapshot(*this->packing, i + 1, shapeTraits);
         if ((i + 1) % 100 == 0) {
             logger.info() << "Performed " << (i + 1) << " cycles; ";
-            logger << this->observablesCollector->generateInlineObservablesString(*this->packing, interaction);
+            logger << this->observablesCollector->generateInlineObservablesString(*this->packing, shapeTraits);
             logger << std::endl;
         }
     }
@@ -76,12 +78,12 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     for(std::size_t i{}; i < this->averagingCycles; i++) {
         this->performCycle(logger, interaction);
         if ((i + 1) % this->snapshotEvery == 0)
-            this->observablesCollector->addSnapshot(*this->packing, this->thermalisationCycles + i + 1, interaction);
+            this->observablesCollector->addSnapshot(*this->packing, this->thermalisationCycles + i + 1, shapeTraits);
         if ((i + 1) % this->averagingEvery == 0)
-            this->observablesCollector->addAveragingValues(*this->packing, interaction);
+            this->observablesCollector->addAveragingValues(*this->packing, shapeTraits);
         if ((i + 1) % 100 == 0) {
             logger.info() << "Performed " << (i + 1) << " cycles; ";
-            logger << this->observablesCollector->generateInlineObservablesString(*this->packing, interaction);
+            logger << this->observablesCollector->generateInlineObservablesString(*this->packing, shapeTraits);
             logger << std::endl;
         }
     }

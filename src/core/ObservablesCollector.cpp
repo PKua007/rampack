@@ -21,19 +21,19 @@ void ObservablesCollector::addObservable(std::unique_ptr<Observable> observable,
         this->inlineObservableIndices.push_back(this->observables.size() - 1);
 }
 
-void ObservablesCollector::addSnapshot(const Packing &packing, std::size_t cycleNumber, const Interaction &interaction)
+void ObservablesCollector::addSnapshot(const Packing &packing, std::size_t cycleNumber, const ShapeTraits &shapeTraits)
 {
     this->snapshotCycleNumbers.push_back(cycleNumber);
-    this->addObservablesToContainer(packing, this->snapshotValues, interaction);
+    this->addObservablesToContainer(packing, this->snapshotValues, shapeTraits);
 }
 
 void ObservablesCollector::addObservablesToContainer(const Packing &packing,
                                                      std::vector<std::vector<double>> &container,
-                                                     const Interaction &interaction)
+                                                     const ShapeTraits &shapeTraits)
 {
     std::size_t valueIndex{};
     for (auto &observable : observables) {
-        observable->calculate(packing, this->temperature, this->pressure, interaction);
+        observable->calculate(packing, this->temperature, this->pressure, shapeTraits);
         auto values = observable->getValues();
         for (double value : values) {
             Assert(valueIndex < container.size());
@@ -45,26 +45,26 @@ void ObservablesCollector::addObservablesToContainer(const Packing &packing,
 }
 
 std::string ObservablesCollector::generateInlineObservablesString(const Packing &packing,
-                                                                  const Interaction &interaction) const
+                                                                  const ShapeTraits &shapeTraits) const
 {
     if (this->inlineObservableIndices.empty())
         return "";
 
     std::ostringstream stream;
     for (std::size_t i{}; i < this->inlineObservableIndices.size() - 1; i++) {
-        this->printInlineObservable(this->inlineObservableIndices[i], packing, interaction, stream);
+        this->printInlineObservable(this->inlineObservableIndices[i], packing, shapeTraits, stream);
         stream << ", ";
     }
-    this->printInlineObservable(this->inlineObservableIndices.back(), packing, interaction, stream);
+    this->printInlineObservable(this->inlineObservableIndices.back(), packing, shapeTraits, stream);
 
     return stream.str();
 }
 
 void ObservablesCollector::printInlineObservable(unsigned long observableIdx, const Packing &packing,
-                                                 const Interaction &interaction, std::ostringstream &out) const
+                                                 const ShapeTraits &shapeTraits, std::ostringstream &out) const
 {
     auto &observable = *this->observables[observableIdx];
-    observable.calculate(packing, this->temperature, this->pressure, interaction);
+    observable.calculate(packing, this->temperature, this->pressure, shapeTraits);
     auto header = observable.getHeader();
     auto values = observable.getValues();
     Assert(!header.empty());
@@ -102,8 +102,8 @@ void ObservablesCollector::printSnapshots(std::ostream &out) const {
     }
 }
 
-void ObservablesCollector::addAveragingValues(const Packing &packing, const Interaction &interaction) {
-    this->addObservablesToContainer(packing, this->averagingValues, interaction);
+void ObservablesCollector::addAveragingValues(const Packing &packing, const ShapeTraits &shapeTraits) {
+    this->addObservablesToContainer(packing, this->averagingValues, shapeTraits);
 }
 
 std::vector<Quantity> ObservablesCollector::getAverageValues() const {
