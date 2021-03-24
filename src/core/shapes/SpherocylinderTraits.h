@@ -23,6 +23,8 @@ public:
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
+    [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
+    [[nodiscard]] double getVolume() const override;
 
     [[nodiscard]] bool hasHardPart() const override { return true; }
     [[nodiscard]] bool hasSoftPart() const override { return false; }
@@ -31,7 +33,6 @@ public:
                                       const BoundaryConditions &bc) const override;
     [[nodiscard]] double getRangeRadius() const override { return 2*this->radius + this->length; };
 
-    [[nodiscard]] double getVolume() const override;
     [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
 };
 

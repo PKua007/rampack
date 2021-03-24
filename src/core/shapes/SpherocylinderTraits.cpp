@@ -117,3 +117,7 @@ std::string SpherocylinderTraits::toWolfram(const Shape &shape) const {
     out << "CapsuleShape[{" << beg << "," << end << "}," << this->radius << "]";
     return out.str();
 }
+
+Vector<3> SpherocylinderTraits::getPrimaryAxis(const Shape &shape) const {
+    return shape.getOrientation().column(0);
+}

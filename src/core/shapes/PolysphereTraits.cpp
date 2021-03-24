@@ -32,10 +32,13 @@ std::string PolysphereTraits::toWolfram(const Shape &shape) const {
 
 PolysphereTraits::PolysphereTraits(std::vector<SphereData> sphereData,
                                    std::unique_ptr<CentralInteraction> centralInteraction,
+                                   const Vector<3> &primaryAxis,
                                    bool shouldNormalizeMassCentre)
-        : sphereData{std::move(sphereData)}
+        : sphereData{std::move(sphereData)}, primaryAxis{primaryAxis}
 {
     Expects(!this->sphereData.empty());
+
+    this->primaryAxis = this->primaryAxis.normalized();
 
     if (shouldNormalizeMassCentre)
         this->normalizeMassCentre();
@@ -48,10 +51,12 @@ PolysphereTraits::PolysphereTraits(std::vector<SphereData> sphereData,
     this->interaction = std::move(centralInteraction);
 }
 
-PolysphereTraits::PolysphereTraits(const std::vector<SphereData> &sphereData, bool shouldNormalizeMassCentre)
-        : sphereData{sphereData}
+PolysphereTraits::PolysphereTraits(const std::vector<SphereData> &sphereData, const Vector<3> &primaryAxis,
+                                   bool shouldNormalizeMassCentre)
+        : sphereData{sphereData}, primaryAxis{primaryAxis}
 {
     Expects(!sphereData.empty());
+    this->primaryAxis = this->primaryAxis.normalized();
     if (shouldNormalizeMassCentre)
         this->normalizeMassCentre();
     this->interaction = std::make_unique<HardInteraction>(this->sphereData);
@@ -82,6 +87,10 @@ void PolysphereTraits::normalizeMassCentre() {
     std::transform(this->sphereData.begin(), this->sphereData.end(), std::back_inserter(newSphereData),
                    massCentreShifter);
     this->sphereData = std::move(newSphereData);
+}
+
+Vector<3> PolysphereTraits::getPrimaryAxis(const Shape &shape) const {
+    return shape.getOrientation() * this->primaryAxis;
 }
 
 PolysphereTraits::SphereData::SphereData(const Vector<3> &position, double radius)

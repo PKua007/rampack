@@ -15,15 +15,15 @@ private:
 public:
     PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
                            bool shouldNormalizeMassCentre = true)
-            : PolysphereTraits(generateSphereData(arcRadius, arcAngle, sphereNum, sphereRadius),
+            : PolysphereTraits(generateSphereData(arcRadius, arcAngle, sphereNum, sphereRadius), {1, 0, 0},
                                shouldNormalizeMassCentre)
     { }
 
     PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
                            std::unique_ptr<CentralInteraction> centralInteraction,
-                           bool shouldNosmalizeMassCentre = true)
+                           bool shouldNormalizeMassCentre = true)
             : PolysphereTraits(generateSphereData(arcRadius, arcAngle, sphereNum, sphereRadius),
-                               std::move(centralInteraction), shouldNosmalizeMassCentre)
+                               std::move(centralInteraction), {1, 0, 0}, shouldNormalizeMassCentre)
     { }
 };
 

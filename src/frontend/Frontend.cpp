@@ -31,6 +31,7 @@
 #include "core/observables/CompressibilityFactor.h"
 #include "core/observables/EnergyPerParticle.h"
 #include "core/observables/EnergyFluctuationsPerParticle.h"
+#include "core/observables/NematicOrder.h"
 #include "utils/OMPMacros.h"
 
 
@@ -287,6 +288,7 @@ int Frontend::casino(int argc, char **argv) {
         collector->addObservable(std::make_unique<CompressibilityFactor>(), false);
         collector->addObservable(std::make_unique<EnergyPerParticle>(), false);
         collector->addObservable(std::make_unique<EnergyFluctuationsPerParticle>(), false);
+        collector->addObservable(std::make_unique<NematicOrder>(), true);
 
         simulation.perform(runParams.temperature, runParams.pressure, runParams.thermalisationCycles,
                            runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,

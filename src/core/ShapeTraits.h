@@ -8,6 +8,7 @@
 #include "Shape.h"
 #include "Interaction.h"
 #include "ShapePrinter.h"
+#include "geometry/Vector.h"
 
 class ShapeTraits {
 public:
@@ -15,6 +16,9 @@ public:
 
     [[nodiscard]] virtual const Interaction &getInteraction() const = 0;
     [[nodiscard]] virtual double getVolume() const = 0;
+    [[nodiscard]] virtual Vector<3> getPrimaryAxis([[maybe_unused]] const Shape &shape) const {
+        throw std::runtime_error("unsupported");
+    }
     [[nodiscard]] virtual const ShapePrinter &getPrinter() const = 0;
 };
 

@@ -52,16 +52,19 @@ private:
 
     std::vector<SphereData> sphereData;
     std::unique_ptr<Interaction> interaction{};
+    Vector<3> primaryAxis;
 
     void normalizeMassCentre();
 
 public:
-    explicit PolysphereTraits(const std::vector<SphereData> &sphereData, bool shouldNormalizeMassCentre);
+    explicit PolysphereTraits(const std::vector<SphereData> &sphereData, const Vector<3> &primaryAxis,
+                              bool shouldNormalizeMassCentre);
     PolysphereTraits(std::vector<SphereData> sphereData, std::unique_ptr<CentralInteraction> centralInteraction,
-                     bool shouldNormalizeMassCentre);
+                     const Vector<3> &primaryAxis, bool shouldNormalizeMassCentre);
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; }
     [[nodiscard]] double getVolume() const override;
+    Vector<3> getPrimaryAxis(const Shape &shape) const override;
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
 
     [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
