@@ -14,7 +14,7 @@ TEST_CASE("DomainDecomposition") {
     // ghost layer middles theoretically go to 0th: 19 and 1st: 6.5, to they are rounded to ranges
     // 0th: (14, 19), 1st: (5, 10), which makes the domains as 0th: (19, 5) - through pbc, 1st: (10, 14)
 
-    PolysphereTraits dimer({{{0, 0, 0}, 1}, {{1, 0, 0}, 1}}, false);
+    PolysphereTraits dimer({{{0, 0, 0}, 1}, {{1, 0, 0}, 1}}, {1, 0, 0}, false);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
 
     Matrix<3, 3> id = Matrix<3, 3>::identity();
@@ -58,18 +58,17 @@ TEST_CASE("DomainDecomposition") {
 
     SECTION("domain boundaries") {
         constexpr double inf = std::numeric_limits<double>::infinity();
-        using pair = std::pair<double, double>;
 
         auto domain0 = domainDecomposition.getActiveDomainBounds({0, 0, 0});
         auto domain1 = domainDecomposition.getActiveDomainBounds({0, 1, 0});
 
-        CHECK(domain0[0] == pair{-inf, inf});
-        CHECK(domain0[1].first == Approx(19));
-        CHECK(domain0[1].second == Approx(5));
-        CHECK(domain0[2] == pair{-inf, inf});
-        CHECK(domain1[0] == pair{-inf, inf});
-        CHECK(domain1[1].first == Approx(10));
-        CHECK(domain1[1].second == Approx(14));
-        CHECK(domain1[2] == pair{-inf, inf});
+        CHECK(domain0.getBoundsForCoordinate(0) == ActiveDomain::RegionBounds{-inf, inf});
+        CHECK(domain0.getBoundsForCoordinate(1).beg == Approx(19));
+        CHECK(domain0.getBoundsForCoordinate(1).end == Approx(5));
+        CHECK(domain0.getBoundsForCoordinate(2) == ActiveDomain::RegionBounds{-inf, inf});
+        CHECK(domain1.getBoundsForCoordinate(0) == ActiveDomain::RegionBounds{-inf, inf});
+        CHECK(domain1.getBoundsForCoordinate(1).beg == Approx(10));
+        CHECK(domain1.getBoundsForCoordinate(1).end == Approx(14));
+        CHECK(domain1.getBoundsForCoordinate(2) == ActiveDomain::RegionBounds{-inf, inf});
     }
 }

@@ -73,7 +73,7 @@ TEST_CASE("Packing: operations") {
 
     SECTION ("scaling") {
         SECTION("hard core upwards") {
-            CHECK(packing.tryScaling(std::pow(1.1, 3), hardCore) == 0);
+            CHECK(packing.tryScaling(1.1, hardCore) == 0);
             CHECK(packing.getDimensions()[0] == Approx(5.5));
             CHECK(packing.getDimensions()[1] == Approx(5.5));
             CHECK(packing.getDimensions()[2] == Approx(5.5));
@@ -84,7 +84,7 @@ TEST_CASE("Packing: operations") {
         SECTION("hard core downward without overlapping") {
             // For scale 0.5 => linear size = 5*0.5 = 2.5 spheres 0 and 1 are touching (through pbc).
             // So a little bit more should prevent any overlaps
-            CHECK(packing.tryScaling(std::pow(0.51, 3), hardCore) == 0);
+            CHECK(packing.tryScaling(0.51, hardCore) == 0);
             CHECK(packing.getDimensions()[0] == Approx(2.55));
             CHECK(packing.getDimensions()[1] == Approx(2.55));
             CHECK(packing.getDimensions()[2] == Approx(2.55));
@@ -94,7 +94,7 @@ TEST_CASE("Packing: operations") {
 
         SECTION("hard core downward with overlapping") {
             // Same as above, but a little bit more gives an overlap
-            REQUIRE(packing.tryScaling(std::pow(0.49, 3), hardCore) == inf);
+            REQUIRE(packing.tryScaling(0.49, hardCore) == inf);
             CHECK(packing.getDimensions()[0] == Approx(2.45));
             CHECK(packing.getDimensions()[1] == Approx(2.45));
             CHECK(packing.getDimensions()[2] == Approx(2.45));
@@ -116,7 +116,7 @@ TEST_CASE("Packing: operations") {
             // We scale downward from 5 to 2.5
             double scale1dE = (2 + 2*std::sqrt(41))/10;
             double dE = scale1dE * (2.5 - 5);
-            CHECK(packing.tryScaling(0.125, distanceInteraction) == Approx(dE));
+            CHECK(packing.tryScaling(0.5, distanceInteraction) == Approx(dE));
         }
     }
 

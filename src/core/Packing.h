@@ -107,6 +107,9 @@ public:
     double tryMove(std::size_t particleIdx, const Vector<3> &translation, const Matrix<3, 3> &rotation,
                    const Interaction &interaction, std::optional<ActiveDomain> boundaries = std::nullopt);
     double tryScaling(const std::array<double, 3> &scaleFactor, const Interaction &interaction);
+    double tryScaling(double scaleFactor, const Interaction &interaction) {
+        return this->tryScaling({scaleFactor, scaleFactor, scaleFactor}, interaction);
+    }
     void acceptTranslation();
     void acceptRotation();
     void acceptMove();

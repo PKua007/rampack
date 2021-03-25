@@ -4,6 +4,8 @@
 
 #include "ActiveDomain.h"
 
+#include "utils/Assertions.h"
+
 bool ActiveDomain::isInside(const Vector<3> &position) const {
     for (std::size_t i{}; i < 3; i++) {
         const auto &boundary = this->bounds[i];
@@ -16,5 +18,10 @@ bool ActiveDomain::isInside(const Vector<3> &position) const {
         }
     }
     return true;
+}
+
+const ActiveDomain::RegionBounds &ActiveDomain::getBoundsForCoordinate(std::size_t coordI) const {
+    Expects(coordI < 3);
+    return this->bounds[coordI];
 }
 
