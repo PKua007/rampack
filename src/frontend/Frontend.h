@@ -11,6 +11,7 @@
 #include "utils/Logger.h"
 #include "Parameters.h"
 #include "core/Shape.h"
+#include "core/VolumeScaler.h"
 
 /**
  * @brief Class responsible for the communication between the user and the simulation backend.
@@ -27,6 +28,7 @@ private:
     void printAverageValues(const ObservablesCollector &collector);
     void storeAverageValues(const std::string &filename, const ObservablesCollector &collector, double temperature,
                             double pressure) const;
+    std::unique_ptr<VolumeScaler> createVolumeScaler(const std::string &scalingType) const;
 
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }
@@ -35,6 +37,7 @@ public:
     int analyze(int argc, char **argv);
 
     int printGeneralHelp(const std::string &cmd);
+
 };
 
 

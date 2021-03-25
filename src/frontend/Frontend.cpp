@@ -18,6 +18,7 @@
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
 #include "ShapeFactory.h"
+#include "ObservablesCollectorFactory.h"
 #include "core/Simulation.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/LatticeArrangingModel.h"
@@ -25,14 +26,8 @@
 #include "core/volume_scalers/DeltaVolumeScaler.h"
 #include "core/volume_scalers/LinearVolumeScaler.h"
 #include "core/volume_scalers/LogVolumeScaler.h"
-#include "core/observables/NumberDensity.h"
-#include "core/observables/BoxDimensions.h"
-#include "core/observables/PackingFraction.h"
-#include "core/observables/CompressibilityFactor.h"
-#include "core/observables/EnergyPerParticle.h"
-#include "core/observables/EnergyFluctuationsPerParticle.h"
-#include "core/observables/NematicOrder.h"
 #include "utils/OMPMacros.h"
+#include "utils/Utils.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename, const std::vector<std::string> &overridenParams) {
@@ -180,34 +175,7 @@ int Frontend::casino(int argc, char **argv) {
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
     // Parse scaling type
-    std::unique_ptr<VolumeScaler> volumeScaler;
-    // Old delta V scaling
-    if (params.scalingType == "delta V")
-        volumeScaler = std::make_unique<DeltaVolumeScaler>();
-    // Linear scaling
-    else if (params.scalingType == "linear isotropic")
-        volumeScaler = std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ISOTROPIC);
-    else if (params.scalingType == "linear anisotropic x")
-        volumeScaler = std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_X);
-    else if (params.scalingType == "linear anisotropic y")
-        volumeScaler = std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_Y);
-    else if (params.scalingType == "linear anisotropic z")
-        volumeScaler = std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_Z);
-    else if (params.scalingType == "linear anisotropic xyz")
-        volumeScaler = std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_XYZ);
-    // Log scaling
-    else if (params.scalingType == "log isotropic")
-        volumeScaler = std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ISOTROPIC);
-    else if (params.scalingType == "log anisotropic x")
-        volumeScaler = std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_X);
-    else if (params.scalingType == "log anisotropic y")
-        volumeScaler = std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_Y);
-    else if (params.scalingType == "log anisotropic z")
-        volumeScaler = std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_Z);
-    else if (params.scalingType == "log anisotropic xyz")
-        volumeScaler = std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_XYZ);
-    else
-        throw ValidationException("Uknown scaling type: " + params.scalingType);
+    std::unique_ptr<VolumeScaler> volumeScaler = this->createVolumeScaler(params.scalingType);
 
     // Find starting run index if specified
     std::size_t startRunIndex{};
@@ -281,14 +249,7 @@ int Frontend::casino(int argc, char **argv) {
         runParams.print(logger);
         this->logger << "--------------------------------------------------------------------" << std::endl;
 
-        auto collector = std::make_unique<ObservablesCollector>();
-        collector->addObservable(std::make_unique<BoxDimensions>(), true);
-        collector->addObservable(std::make_unique<NumberDensity>(), true);
-        collector->addObservable(std::make_unique<PackingFraction>(), false);
-        collector->addObservable(std::make_unique<CompressibilityFactor>(), false);
-        collector->addObservable(std::make_unique<EnergyPerParticle>(), false);
-        collector->addObservable(std::make_unique<EnergyFluctuationsPerParticle>(), false);
-        collector->addObservable(std::make_unique<NematicOrder>(), true);
+        auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
 
         simulation.perform(runParams.temperature, runParams.pressure, runParams.thermalisationCycles,
                            runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
@@ -359,6 +320,36 @@ int Frontend::casino(int argc, char **argv) {
     }
 
     return EXIT_SUCCESS;
+}
+
+std::unique_ptr<VolumeScaler> Frontend::createVolumeScaler(const std::string &scalingType) const {
+    // Old delta V scaling
+    if (scalingType == "delta V")
+        return std::make_unique<DeltaVolumeScaler>();
+    // Linear scaling
+    else if (scalingType == "linear isotropic")
+        return std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ISOTROPIC);
+    else if (scalingType == "linear anisotropic x")
+        return std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_X);
+    else if (scalingType == "linear anisotropic y")
+        return std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_Y);
+    else if (scalingType == "linear anisotropic z")
+        return std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_Z);
+    else if (scalingType == "linear anisotropic xyz")
+        return std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_XYZ);
+    // Log scaling
+    else if (scalingType == "log isotropic")
+        return std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ISOTROPIC);
+    else if (scalingType == "log anisotropic x")
+        return std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_X);
+    else if (scalingType == "log anisotropic y")
+        return std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_Y);
+    else if (scalingType == "log anisotropic z")
+        return std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_Z);
+    else if (scalingType == "log anisotropic xyz")
+        return std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_XYZ);
+    else
+        throw ValidationException("Uknown scaling type: " + scalingType);
 }
 
 int Frontend::analyze([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {

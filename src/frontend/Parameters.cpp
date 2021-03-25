@@ -66,6 +66,8 @@ Parameters::RunParameters::RunParameters(const std::string &runName, const Confi
             this->averagingEvery = runConfig.getUnsignedLong("averagingEvery");
         else if (key == "snapshotEvery")
             this->snapshotEvery = runConfig.getUnsignedLong("snapshotEvery");
+        else if (key == "observables")
+            this->observables = runConfig.getString("observables");
         else if (key == "wolframFilename")
             this->wolframFilename = runConfig.getString("wolframFilename");
         else if (key == "packingFilename")
@@ -122,6 +124,7 @@ void Parameters::RunParameters::print(Logger &logger) const {
     logger.info() << "averagingCycles         : " << this->averagingCycles << std::endl;
     logger.info() << "averagingEvery          : " << this->averagingEvery << std::endl;
     logger.info() << "snapshotEvery           : " << this->snapshotEvery << std::endl;
+    logger.info() << "observables             : " << this->observables << std::endl;
     logger.info() << "packingFilename         : " << this->packingFilename << std::endl;
     logger.info() << "wolframFilename         : " << this->wolframFilename << std::endl;
     logger.info() << "outputFilename          : " << this->outputFilename << std::endl;

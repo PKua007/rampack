@@ -46,6 +46,7 @@ public:
         std::size_t averagingCycles{};
         std::size_t averagingEvery{};
         std::size_t snapshotEvery{};
+        std::string observables{};
         std::string packingFilename{};
         std::string wolframFilename{};
         std::string outputFilename{};
