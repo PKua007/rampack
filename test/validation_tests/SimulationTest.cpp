@@ -14,6 +14,8 @@
 #include "core/interactions/LennardJonesInteraction.h"
 #include "core/interactions/RepulsiveLennardJonesInteraction.h"
 #include "core/volume_scalers/DeltaVolumeScaler.h"
+#include "core/ObservablesCollector.h"
+#include "core/observables/NumberDensity.h"
 #include "utils/OMPMacros.h"
 
 TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
@@ -29,12 +31,14 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
     Simulation simulation(std::move(packing), 1, 0.1, 1, 1234, std::move(volumeScaler));
+    auto collector = std::make_unique<ObservablesCollector>();
+    collector->addObservable(std::make_unique<NumberDensity>(), false);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(10, 1, 5000, 10000, 100, sphereTraits.getInteraction(), logger);
+    simulation.perform(10, 1, 5000, 10000, 100, 100, sphereTraits, std::move(collector), logger);
 
-    Quantity density = simulation.getAverageDensity();
+    Quantity density = simulation.getObservablesCollector().getAverageValues().front();
     double expected = 0.0999791;
     INFO("Carnahan-Starling density: " << expected);
     INFO("Monte Carlo density: " << density);
@@ -53,12 +57,14 @@ TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
     Simulation simulation(std::move(packing), 1, 0.1, 1, 1234, std::move(volumeScaler));
+    auto collector = std::make_unique<ObservablesCollector>();
+    collector->addObservable(std::make_unique<NumberDensity>(), false);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(1, 1, 5000, 10000, 100, sphereTraits.getInteraction(), logger);
+    simulation.perform(1, 1, 5000, 10000, 100, 100, sphereTraits, std::move(collector), logger);
 
-    Quantity density = simulation.getAverageDensity();
+    Quantity density = simulation.getObservablesCollector().getAverageValues().front();
     double expected = 0.398574;
     INFO("Carnahan-Starling density: " << expected);
     INFO("Monte Carlo density: " << density);
@@ -77,12 +83,14 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), spherocylinderTraits.getInteraction());
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
     Simulation simulation(std::move(packing), 1, 0.1, 1, 1234, std::move(volumeScaler));
+    auto collector = std::make_unique<ObservablesCollector>();
+    collector->addObservable(std::make_unique<NumberDensity>(), false);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(10, 1, 5000, 10000, 100, spherocylinderTraits.getInteraction(), logger);
+    simulation.perform(10, 1, 5000, 10000, 100, 100, spherocylinderTraits, std::move(collector), logger);
 
-    Quantity density = simulation.getAverageDensity();
+    Quantity density = simulation.getObservablesCollector().getAverageValues().front();
     double expected = 0.0956448;
     INFO("Boublik density: " << expected);
     INFO("Monte Carlo density: " << density);
@@ -104,12 +112,14 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
     Simulation simulation(std::move(packing), 1, 0.1, 1, 1234, std::move(volumeScaler));
+    auto collector = std::make_unique<ObservablesCollector>();
+    collector->addObservable(std::make_unique<NumberDensity>(), false);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(100, 200, 2000, 2000, 20, sphereTraits.getInteraction(), logger);
+    simulation.perform(100, 200, 2000, 2000, 20, 20, sphereTraits, std::move(collector), logger);
 
-    Quantity density = simulation.getAverageDensity();
+    Quantity density = simulation.getObservablesCollector().getAverageValues().front();
     double expected = 1.6637139014398628;
     INFO("1-st order virial density: " << expected);
     INFO("Monte Carlo density: " << density);
@@ -131,12 +141,14 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
     Simulation simulation(std::move(packing), 10, 1, 10, 1234, std::move(volumeScaler));
+    auto collector = std::make_unique<ObservablesCollector>();
+    collector->addObservable(std::make_unique<NumberDensity>(), false);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(1, 2, 10000, 5000, 100, kmerTraits.getInteraction(), logger);
+    simulation.perform(1, 2, 10000, 5000, 100, 100, kmerTraits, std::move(collector), logger);
 
-    Quantity density = simulation.getAverageDensity();
+    Quantity density = simulation.getObservablesCollector().getAverageValues().front();
     double expected = 0.3043317608769238;
     INFO("Tildesley-Streett density: " << expected);
     INFO("Monte Carlo density: " << density);
@@ -159,12 +171,14 @@ TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
     Simulation simulation(std::move(packing), 10, 1, 10, 1234, std::move(volumeScaler));
+    auto collector = std::make_unique<ObservablesCollector>();
+    collector->addObservable(std::make_unique<NumberDensity>(), false);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(1, 7.5, 5000, 5000, 100, kmerTraits.getInteraction(), logger);
+    simulation.perform(1, 7.5, 5000, 5000, 100, 100, kmerTraits, std::move(collector), logger);
 
-    Quantity density = simulation.getAverageDensity();
+    Quantity density = simulation.getObservablesCollector().getAverageValues().front();
     double expected = 0.43451;
     INFO("hoomd-blue density: " << expected);
     INFO("Monte Carlo density: " << density);
@@ -184,12 +198,14 @@ TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
                                              sphereTraits.getInteraction(), 4, 4);
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
     Simulation simulation(std::move(packing), 1, 0.1, 1, 1234, std::move(volumeScaler), {2, 2, 1});
+    auto collector = std::make_unique<ObservablesCollector>();
+    collector->addObservable(std::make_unique<NumberDensity>(), false);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(1, 1, 10000, 15000, 1000, sphereTraits.getInteraction(), logger);
+    simulation.perform(1, 1, 10000, 15000, 1000, 1000, sphereTraits, std::move(collector), logger);
 
-    Quantity density = simulation.getAverageDensity();
+    Quantity density = simulation.getObservablesCollector().getAverageValues().front();
     double expected = 0.398574;
     INFO("Carnahan-Starling density: " << expected);
     INFO("Monte Carlo density: " << density);
