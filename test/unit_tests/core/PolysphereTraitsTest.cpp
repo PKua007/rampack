@@ -7,6 +7,8 @@
 #include "core/shapes/PolysphereTraits.h"
 #include "core/PeriodicBoundaryConditions.h"
 
+#include "matchers/VectorApproxMatcher.h"
+
 namespace {
     class DummyInteraction : public CentralInteraction {
     protected:
@@ -55,6 +57,12 @@ TEST_CASE("PolysphereTraits: hard interactions") {
 
     SECTION("getVolume") {
         CHECK(traits.getVolume() == Approx(4.71238898038469));
+    }
+
+    SECTION("primary axis") {
+        // primary axis X rotated 90 deg around z axis => primary axis is Y
+        Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2));
+        CHECK_THAT(traits.getPrimaryAxis(shape), IsApproxEqual({0, 1, 0}, 1e-8));
     }
 }
 

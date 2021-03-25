@@ -8,6 +8,8 @@
 #include "core/FreeBoundaryConditions.h"
 #include "core/PeriodicBoundaryConditions.h"
 
+#include "matchers/VectorApproxMatcher.h"
+
 TEST_CASE("Spherocylinder: overlap") {
     FreeBoundaryConditions fbc;
     SpherocylinderTraits traits(3, 2);
@@ -123,4 +125,12 @@ TEST_CASE("Spherocylinder: toWolfram") {
 
     CHECK(traits.toWolfram(shape) == "CapsuleShape[{{2.000000, 4.000000, 7.500000},"
                                         "{2.000000, 4.000000, 4.500000}},2.000000]");
+}
+
+TEST_CASE("Spherocylinder: primary axis") {
+    SpherocylinderTraits traits(3, 2);
+
+    // primary axis X rotated 90 deg around z axis => primary axis is Y
+    Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2));
+    CHECK_THAT(traits.getPrimaryAxis(shape), IsApproxEqual({0, 1, 0}, 1e-8));
 }
