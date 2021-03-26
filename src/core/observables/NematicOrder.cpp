@@ -40,7 +40,7 @@ double NematicOrder::calculateHighestEigenvalue(const Matrix<3, 3> &tensor) {
     Assert(p > 0);
     double sqrt_p = std::sqrt(p);
     double q = 2*b*b*b - 9*b*c - 27*d;
-    double ratio = q / 2 / sqrt_p*sqrt_p*sqrt_p;
+    double ratio = q / 2 / (sqrt_p*sqrt_p*sqrt_p);
     Assert(std::abs(ratio) <= 1);
     double Delta = std::acos(ratio);
 
