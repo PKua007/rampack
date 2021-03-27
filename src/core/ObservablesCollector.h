@@ -20,20 +20,20 @@ private:
 
     std::vector<std::unique_ptr<Observable>> observables;
     std::vector<std::string> observableHeader;
+    std::vector<std::size_t> inlineObservablesIndices;
     std::vector<std::size_t> snapshotCycleNumbers;
     std::vector<std::vector<double>> snapshotValues;
     std::vector<std::vector<double>> averagingValues;
-    std::vector<std::size_t> inlineObservableIndices;
 
     void printInlineObservable(unsigned long observableIdx, const Packing &packing, const ShapeTraits &shapeTraits,
                                std::ostringstream &out) const;
-    void addObservablesToContainer(const Packing &packing, std::vector<std::vector<double>> &container,
-                                   const ShapeTraits &shapeTraits);
+    void addObservablesToContainer(const Packing &packing, const ShapeTraits &shapeTraits,
+                                   std::vector<std::vector<double>> &container);
 
 public:
     struct ObservableData {
         std::string name;
-        Quantity value;
+        Quantity quantity;
     };
 
     struct ObservableGroupData {

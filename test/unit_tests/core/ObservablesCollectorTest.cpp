@@ -59,15 +59,15 @@ TEST_CASE("ObservablesCollector") {
 
             REQUIRE(values.size() == 5);
             CHECK(values[0].name == "L_X");
-            CHECK(values[0].value.value == Approx(4.5));
+            CHECK(values[0].quantity.value == Approx(4.5));
             CHECK(values[1].name == "L_Y");
-            CHECK(values[1].value.value == Approx(6));
+            CHECK(values[1].quantity.value == Approx(6));
             CHECK(values[2].name == "L_Z");
-            CHECK(values[2].value.value == Approx(7.5));
+            CHECK(values[2].quantity.value == Approx(7.5));
             CHECK(values[3].name == "Z");
-            CHECK(values[3].value.value == Approx(45));
+            CHECK(values[3].quantity.value == Approx(45));
             CHECK(values[4].name == "rho");
-            CHECK(values[4].value.value == Approx(0.028125));
+            CHECK(values[4].quantity.value == Approx(0.028125));
         }
 
         SECTION("grouped") {
@@ -78,19 +78,19 @@ TEST_CASE("ObservablesCollector") {
 
             REQUIRE(values[0].observableData.size() == 3);
             CHECK(values[0].observableData[0].name == "L_X");
-            CHECK(values[0].observableData[0].value.value == Approx(4.5));
+            CHECK(values[0].observableData[0].quantity.value == Approx(4.5));
             CHECK(values[0].observableData[1].name == "L_Y");
-            CHECK(values[0].observableData[1].value.value == Approx(6));
+            CHECK(values[0].observableData[1].quantity.value == Approx(6));
             CHECK(values[0].observableData[2].name == "L_Z");
-            CHECK(values[0].observableData[2].value.value == Approx(7.5));
+            CHECK(values[0].observableData[2].quantity.value == Approx(7.5));
 
             REQUIRE(values[1].observableData.size() == 1);
             CHECK(values[1].observableData[0].name == "Z");
-            CHECK(values[1].observableData[0].value.value == Approx(45));
+            CHECK(values[1].observableData[0].quantity.value == Approx(45));
 
             REQUIRE(values[2].observableData.size() == 1);
             CHECK(values[2].observableData[0].name == "rho");
-            CHECK(values[2].observableData[0].value.value == Approx(0.028125));
+            CHECK(values[2].observableData[0].quantity.value == Approx(0.028125));
         }
     }
 

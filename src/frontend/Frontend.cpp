@@ -419,33 +419,33 @@ void Frontend::printAverageValues(const ObservablesCollector &collector) {
     std::size_t maxLength = std::max_element(groupedAverageValues.begin(), groupedAverageValues.end(),
                                              lengthComparator)->groupName.length();
 
-    for (auto &group : groupedAverageValues) {
+    for (auto &observableGroup : groupedAverageValues) {
         this->logger << "Average " << std::left << std::setw(maxLength);
-        this->logger << group.groupName << " : ";
-        Assert(!group.observableData.empty());
-        for (std::size_t i{}; i < group.observableData.size() - 1; i++) {
-            auto &data = group.observableData[i];
-            data.value.separator = Quantity::PLUS_MINUS;
-            this->logger << data.name << " = " << data.value << ", ";
+        this->logger << observableGroup.groupName << " : ";
+        Assert(!observableGroup.observableData.empty());
+        for (std::size_t i{}; i < observableGroup.observableData.size() - 1; i++) {
+            auto &data = observableGroup.observableData[i];
+            data.quantity.separator = Quantity::PLUS_MINUS;
+            this->logger << data.name << " = " << data.quantity << ", ";
         }
-        auto &data = group.observableData.back();
-        data.value.separator = Quantity::PLUS_MINUS;
-        this->logger << data.name << " = " << data.value << std::endl;
+        auto &data = observableGroup.observableData.back();
+        data.quantity.separator = Quantity::PLUS_MINUS;
+        this->logger << data.name << " = " << data.quantity << std::endl;
     }
 }
 
 void Frontend::storeAverageValues(const std::string &filename, const ObservablesCollector &collector,
                                   double temperature, double pressure) const
 {
-    auto values = collector.getFlattenedAverageValues();
+    auto flatValues = collector.getFlattenedAverageValues();
 
     std::ofstream out;
     if (!std::filesystem::exists(filename)) {
         out.open(filename);
         ValidateMsg(out, "Could not open " + filename + " to store output!");
         out << "temperature pressure ";
-        for (const auto &entry : values)
-            out << entry.name << " d" << entry.name << " ";
+        for (const auto &value : flatValues)
+            out << value.name << " d" << value.name << " ";
         out << std::endl;
     } else {
         out.open(filename, std::ios_base::app);
@@ -454,9 +454,9 @@ void Frontend::storeAverageValues(const std::string &filename, const Observables
 
     out.precision(std::numeric_limits<double>::max_digits10);
     out << temperature << " " << pressure << " ";
-    for (auto &value : values) {
-        value.value.separator = Quantity::SPACE;
-        out << value.value << " ";
+    for (auto &value : flatValues) {
+        value.quantity.separator = Quantity::SPACE;
+        out << value.quantity << " ";
     }
     out << std::endl;
 }

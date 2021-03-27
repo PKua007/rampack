@@ -18,18 +18,21 @@ void ObservablesCollector::addObservable(std::unique_ptr<Observable> observable,
     this->averagingValues.resize(this->averagingValues.size() + header.size());
     this->observables.push_back(std::move(observable));
     if (shouldDisplayInline)
-        this->inlineObservableIndices.push_back(this->observables.size() - 1);
+        this->inlineObservablesIndices.push_back(this->observables.size() - 1);
 }
 
 void ObservablesCollector::addSnapshot(const Packing &packing, std::size_t cycleNumber, const ShapeTraits &shapeTraits)
 {
     this->snapshotCycleNumbers.push_back(cycleNumber);
-    this->addObservablesToContainer(packing, this->snapshotValues, shapeTraits);
+    this->addObservablesToContainer(packing, shapeTraits, this->snapshotValues);
 }
 
-void ObservablesCollector::addObservablesToContainer(const Packing &packing,
-                                                     std::vector<std::vector<double>> &container,
-                                                     const ShapeTraits &shapeTraits)
+void ObservablesCollector::addAveragingValues(const Packing &packing, const ShapeTraits &shapeTraits) {
+    this->addObservablesToContainer(packing, shapeTraits, this->averagingValues);
+}
+
+void ObservablesCollector::addObservablesToContainer(const Packing &packing, const ShapeTraits &shapeTraits,
+                                                     std::vector<std::vector<double>> &container)
 {
     std::size_t valueIndex{};
     for (auto &observable : observables) {
@@ -47,15 +50,15 @@ void ObservablesCollector::addObservablesToContainer(const Packing &packing,
 std::string ObservablesCollector::generateInlineObservablesString(const Packing &packing,
                                                                   const ShapeTraits &shapeTraits) const
 {
-    if (this->inlineObservableIndices.empty())
+    if (this->inlineObservablesIndices.empty())
         return "";
 
     std::ostringstream stream;
-    for (std::size_t i{}; i < this->inlineObservableIndices.size() - 1; i++) {
-        this->printInlineObservable(this->inlineObservableIndices[i], packing, shapeTraits, stream);
+    for (std::size_t i{}; i < this->inlineObservablesIndices.size() - 1; i++) {
+        this->printInlineObservable(this->inlineObservablesIndices[i], packing, shapeTraits, stream);
         stream << ", ";
     }
-    this->printInlineObservable(this->inlineObservableIndices.back(), packing, shapeTraits, stream);
+    this->printInlineObservable(this->inlineObservablesIndices.back(), packing, shapeTraits, stream);
 
     return stream.str();
 }
@@ -70,9 +73,8 @@ void ObservablesCollector::printInlineObservable(unsigned long observableIdx, co
     Assert(!header.empty());
     Assert(header.size() == values.size());
 
-    for (std::size_t i{}; i < header.size() - 1; i++) {
+    for (std::size_t i{}; i < header.size() - 1; i++)
         out << header[i] << ": " << values[i] << ", ";
-    }
     out << header.back() << ": " << values.back();
 }
 
@@ -102,37 +104,33 @@ void ObservablesCollector::printSnapshots(std::ostream &out) const {
     }
 }
 
-void ObservablesCollector::addAveragingValues(const Packing &packing, const ShapeTraits &shapeTraits) {
-    this->addObservablesToContainer(packing, this->averagingValues, shapeTraits);
-}
-
 std::vector<ObservablesCollector::ObservableData> ObservablesCollector::getFlattenedAverageValues() const {
-    std::vector<ObservableData> data(this->observableHeader.size());
-    for (std::size_t i{}; i < data.size(); i++) {
-        data[i].name = this->observableHeader[i];
-        data[i].value.calculateFromSamples(this->averagingValues[i]);
+    std::vector<ObservableData> flatValues(this->observableHeader.size());
+    for (std::size_t i{}; i < flatValues.size(); i++) {
+        flatValues[i].name = this->observableHeader[i];
+        flatValues[i].quantity.calculateFromSamples(this->averagingValues[i]);
     }
-    return data;
+    return flatValues;
 }
 
 std::vector<ObservablesCollector::ObservableGroupData> ObservablesCollector::getGroupedAverageValues() const {
-    std::vector<ObservableGroupData> result;
-    result.reserve(this->observables.size());
-    auto averageValues = this->getFlattenedAverageValues();
+    std::vector<ObservableGroupData> groupedValues;
+    groupedValues.reserve(this->observables.size());
+    auto flatValues = this->getFlattenedAverageValues();
 
-    std::size_t index{};
+    std::size_t flatIndex{};
     for (const auto &observable : this->observables) {
         auto header = observable->getHeader();
-        Assert(index + header.size() <= averageValues.size());
-        result.push_back({
+        Assert(flatIndex + header.size() <= flatValues.size());
+        groupedValues.push_back({
             observable->getName(),
-            std::vector<ObservableData>(averageValues.begin() + index, averageValues.begin() + index + header.size())
+            std::vector<ObservableData>(flatValues.begin() + flatIndex, flatValues.begin() + flatIndex + header.size())
         });
-        index += header.size();
+        flatIndex += header.size();
     }
-    Assert(index == averageValues.size());
+    Assert(flatIndex == flatValues.size());
 
-    return result;
+    return groupedValues;
 }
 
 void ObservablesCollector::setThermodynamicParameters(double temperature_, double pressure_) {
