@@ -411,31 +411,41 @@ std::vector<Shape> Frontend::arrangePacking(std::size_t numOfParticles, const st
 }
 
 void Frontend::printAverageValues(const ObservablesCollector &collector) {
-    auto observableDescription = collector.generateObservablesAverageValueDescription();
+    auto groupedAverageValues = collector.getGroupedAverageValues();
 
-    auto lengthComparator =  [](const auto &desc1, const auto &desc2) {
-        return desc1.observableName.length() < desc2.observableName.length();
+    auto lengthComparator = [](const auto &desc1, const auto &desc2) {
+        return desc1.groupName.length() < desc2.groupName.length();
     };
-    std::size_t maxLength = std::max_element(observableDescription.begin(), observableDescription.end(),
-                                             lengthComparator)->observableName.length();
+    std::size_t maxLength = std::max_element(groupedAverageValues.begin(), groupedAverageValues.end(),
+                                             lengthComparator)->groupName.length();
 
-    for (const auto &description : observableDescription) {
+    for (auto &group : groupedAverageValues) {
         this->logger << "Average " << std::left << std::setw(maxLength);
-        this->logger << description.observableName << " : " << description.observableValues << std::endl;
+        this->logger << group.groupName << " : ";
+        Assert(!group.observableData.empty());
+        for (std::size_t i{}; i < group.observableData.size() - 1; i++) {
+            auto &data = group.observableData[i];
+            data.value.separator = Quantity::PLUS_MINUS;
+            this->logger << data.name << " = " << data.value << ", ";
+        }
+        auto &data = group.observableData.back();
+        data.value.separator = Quantity::PLUS_MINUS;
+        this->logger << data.name << " = " << data.value << std::endl;
     }
 }
 
 void Frontend::storeAverageValues(const std::string &filename, const ObservablesCollector &collector,
                                   double temperature, double pressure) const
 {
+    auto values = collector.getFlattenedAverageValues();
+
     std::ofstream out;
     if (!std::filesystem::exists(filename)) {
         out.open(filename);
         ValidateMsg(out, "Could not open " + filename + " to store output!");
         out << "temperature pressure ";
-        const auto &header = collector.getObservableHeader();
-        for (const auto &headerEntry : header)
-            out << headerEntry << " d" << headerEntry << " ";
+        for (const auto &entry : values)
+            out << entry.name << " d" << entry.name << " ";
         out << std::endl;
     } else {
         out.open(filename, std::ios_base::app);
@@ -444,9 +454,9 @@ void Frontend::storeAverageValues(const std::string &filename, const Observables
 
     out.precision(std::numeric_limits<double>::max_digits10);
     out << temperature << " " << pressure << " ";
-    auto averageValues = collector.getAverageValues();
-    for (auto &averageValue : averageValues)
-        averageValue.separator = Quantity::SPACE;
-    std::copy(averageValues.begin(), averageValues.end(), std::ostream_iterator<Quantity>(out, " "));
+    for (auto &value : values) {
+        value.value.separator = Quantity::SPACE;
+        out << value.value << " ";
+    }
     out << std::endl;
 }

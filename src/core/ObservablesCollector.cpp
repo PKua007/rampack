@@ -106,38 +106,29 @@ void ObservablesCollector::addAveragingValues(const Packing &packing, const Shap
     this->addObservablesToContainer(packing, this->averagingValues, shapeTraits);
 }
 
-std::vector<Quantity> ObservablesCollector::getAverageValues() const {
-    std::vector<Quantity> quantities(this->observableHeader.size());
-    for (std::size_t i{}; i < quantities.size(); i++)
-        quantities[i].calculateFromSamples(this->averagingValues[i]);
-    return quantities;
+std::vector<ObservablesCollector::ObservableData> ObservablesCollector::getFlattenedAverageValues() const {
+    std::vector<ObservableData> data(this->observableHeader.size());
+    for (std::size_t i{}; i < data.size(); i++) {
+        data[i].name = this->observableHeader[i];
+        data[i].value.calculateFromSamples(this->averagingValues[i]);
+    }
+    return data;
 }
 
-std::vector<ObservablesCollector::ObservableDescription>
-ObservablesCollector::generateObservablesAverageValueDescription() const
-{
-    std::vector<ObservableDescription> result;
-    auto averageValues = this->getAverageValues();
-    for (auto &averageValue : averageValues)
-        averageValue.separator = Quantity::PLUS_MINUS;
+std::vector<ObservablesCollector::ObservableGroupData> ObservablesCollector::getGroupedAverageValues() const {
+    std::vector<ObservableGroupData> result;
+    result.reserve(this->observables.size());
+    auto averageValues = this->getFlattenedAverageValues();
 
     std::size_t index{};
     for (const auto &observable : this->observables) {
         auto header = observable->getHeader();
-        std::ostringstream valuesStream;
-        for (std::size_t i{}; i < header.size() - 1; i++) {
-            Assert(index < averageValues.size());
-            valuesStream << header[i] << " = " << averageValues[index] << ", ";
-            index++;
-        }
-        Assert(index < averageValues.size());
-        valuesStream << header.back() << " = " << averageValues[index];
-        index++;
-
-        ObservableDescription description;
-        description.observableName = observable->getName();
-        description.observableValues = valuesStream.str();
-        result.push_back(description);
+        Assert(index + header.size() <= averageValues.size());
+        result.push_back({
+            observable->getName(),
+            std::vector<ObservableData>(averageValues.begin() + index, averageValues.begin() + index + header.size())
+        });
+        index += header.size();
     }
     Assert(index == averageValues.size());
 

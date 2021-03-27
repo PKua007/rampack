@@ -31,9 +31,14 @@ private:
                                    const ShapeTraits &shapeTraits);
 
 public:
-    struct ObservableDescription {
-        std::string observableName;
-        std::string observableValues;
+    struct ObservableData {
+        std::string name;
+        Quantity value;
+    };
+
+    struct ObservableGroupData {
+        std::string groupName;
+        std::vector<ObservableData> observableData;
     };
 
     void addObservable(std::unique_ptr<Observable> observable, bool shouldDisplayInline);
@@ -41,14 +46,13 @@ public:
 
     void addSnapshot(const Packing &packing, std::size_t cycleNumber, const ShapeTraits &shapeTraits);
     void addAveragingValues(const Packing &packing, const ShapeTraits &shapeTraits);
+    [[nodiscard]] std::string generateInlineObservablesString(const Packing &packing,
+                                                              const ShapeTraits &shapeTraits) const;
     void clearValues();
 
     void printSnapshots(std::ostream &out) const;
-    [[nodiscard]] std::string generateInlineObservablesString(const Packing &packing,
-                                                              const ShapeTraits &shapeTraits) const;
-    [[nodiscard]] std::vector<ObservableDescription> generateObservablesAverageValueDescription() const;
-    [[nodiscard]] const std::vector<std::string> &getObservableHeader() const { return this->observableHeader; }
-    [[nodiscard]] std::vector<Quantity> getAverageValues() const;
+    [[nodiscard]] std::vector<ObservableData> getFlattenedAverageValues() const;
+    [[nodiscard]] std::vector<ObservableGroupData> getGroupedAverageValues() const;
 };
 
 
