@@ -38,7 +38,7 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
 
     simulation.perform(10, 1, 5000, 10000, 100, 100, sphereTraits, std::move(collector), logger);
 
-    Quantity density = simulation.getObservablesCollector().getAverageValues().front();
+    Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 0.0999791;
     INFO("Carnahan-Starling density: " << expected);
     INFO("Monte Carlo density: " << density);
@@ -64,7 +64,7 @@ TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
 
     simulation.perform(1, 1, 5000, 10000, 100, 100, sphereTraits, std::move(collector), logger);
 
-    Quantity density = simulation.getObservablesCollector().getAverageValues().front();
+    Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 0.398574;
     INFO("Carnahan-Starling density: " << expected);
     INFO("Monte Carlo density: " << density);
@@ -90,7 +90,7 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
 
     simulation.perform(10, 1, 5000, 10000, 100, 100, spherocylinderTraits, std::move(collector), logger);
 
-    Quantity density = simulation.getObservablesCollector().getAverageValues().front();
+    Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 0.0956448;
     INFO("Boublik density: " << expected);
     INFO("Monte Carlo density: " << density);
@@ -119,7 +119,7 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
 
     simulation.perform(100, 200, 2000, 2000, 20, 20, sphereTraits, std::move(collector), logger);
 
-    Quantity density = simulation.getObservablesCollector().getAverageValues().front();
+    Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 1.6637139014398628;
     INFO("1-st order virial density: " << expected);
     INFO("Monte Carlo density: " << density);
@@ -148,7 +148,7 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
 
     simulation.perform(1, 2, 10000, 5000, 100, 100, kmerTraits, std::move(collector), logger);
 
-    Quantity density = simulation.getObservablesCollector().getAverageValues().front();
+    Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 0.3043317608769238;
     INFO("Tildesley-Streett density: " << expected);
     INFO("Monte Carlo density: " << density);
@@ -178,7 +178,7 @@ TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
 
     simulation.perform(1, 7.5, 5000, 5000, 100, 100, kmerTraits, std::move(collector), logger);
 
-    Quantity density = simulation.getObservablesCollector().getAverageValues().front();
+    Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 0.43451;
     INFO("hoomd-blue density: " << expected);
     INFO("Monte Carlo density: " << density);
@@ -205,7 +205,7 @@ TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
 
     simulation.perform(1, 1, 10000, 15000, 1000, 1000, sphereTraits, std::move(collector), logger);
 
-    Quantity density = simulation.getObservablesCollector().getAverageValues().front();
+    Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 0.398574;
     INFO("Carnahan-Starling density: " << expected);
     INFO("Monte Carlo density: " << density);
