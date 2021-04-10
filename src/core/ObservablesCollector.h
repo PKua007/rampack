@@ -17,6 +17,7 @@ class ObservablesCollector {
 private:
     double temperature{};
     double pressure{};
+    std::size_t cycleOffset{};
 
     std::vector<std::unique_ptr<Observable>> observables;
     std::vector<std::string> observableHeader;
@@ -43,6 +44,7 @@ public:
 
     void addObservable(std::unique_ptr<Observable> observable, bool shouldDisplayInline);
     void setThermodynamicParameters(double temperature_, double pressure_);
+    void setCycleOffset(std::size_t offset);
 
     void addSnapshot(const Packing &packing, std::size_t cycleNumber, const ShapeTraits &shapeTraits);
     void addAveragingValues(const Packing &packing, const ShapeTraits &shapeTraits);
@@ -50,7 +52,7 @@ public:
                                                               const ShapeTraits &shapeTraits) const;
     void clearValues();
 
-    void printSnapshots(std::ostream &out) const;
+    void printSnapshots(std::ostream &out, bool printHeader = true) const;
     [[nodiscard]] std::vector<ObservableData> getFlattenedAverageValues() const;
     [[nodiscard]] std::vector<ObservableGroupData> getGroupedAverageValues() const;
 };

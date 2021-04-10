@@ -102,6 +102,9 @@ public:
     [[nodiscard]] double getMoveMicroseconds() const { return this->moveMicroseconds; }
     [[nodiscard]] double getScalingMicroseconds() const { return this->scalingMicroseconds; }
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }
+    [[nodiscard]] double getCurrentTranslationStep() const { return this->translationStep; }
+    [[nodiscard]] double getCurrentRotationStep() const { return this->rotationStep; }
+    [[nodiscard]] double getCurrentScalingStep() const { return this->scalingStep; }
 };
 
 

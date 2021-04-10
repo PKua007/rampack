@@ -204,6 +204,8 @@ int Frontend::casino(int argc, char **argv) {
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     std::unique_ptr<Packing> packing;
 
+    std::size_t cycleOffset{};  // Non-zero, if continuing previous run
+    bool isContinuation{};
     if ((parsedOptions.count("start-from") && startRunIndex != 0) || parsedOptions.count("continue")) {
         packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
         auto runsParameters = params.runsParameters;
@@ -216,7 +218,18 @@ int Frontend::casino(int argc, char **argv) {
         std::string previousPackingFilename = startingRunParams.packingFilename;
         std::ifstream packingFile(previousPackingFilename);
         ValidateMsg(packingFile, "Cannot open file " + previousPackingFilename + " to restore starting state");
-        packing->restore(packingFile, shapeTraits->getInteraction());
+        auto auxInfo = packing->restore(packingFile, shapeTraits->getInteraction());
+
+        params.positionStepSize = std::stod(auxInfo.at("translationStep"));
+        params.rotationStepSize = std::stod(auxInfo.at("rotationStep"));
+        params.volumeStepSize = std::stod(auxInfo.at("scalingStep"));
+        Validate(params.positionStepSize > 0);
+        Validate(params.rotationStepSize > 0);
+        Validate(params.volumeStepSize > 0);
+        if (parsedOptions.count("continue")) {
+            cycleOffset = std::stoul(auxInfo.at("cycles"));
+            isContinuation = true;
+        }
 
         std::string previousRunName = startingRunParams.runName;
         this->logger.info() << "Loaded packing from the run '" << previousRunName << "' as a starting point.";
@@ -250,6 +263,8 @@ int Frontend::casino(int argc, char **argv) {
         this->logger << "--------------------------------------------------------------------" << std::endl;
 
         auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
+        if (isContinuation)
+            collector->setCycleOffset(cycleOffset);
 
         simulation.perform(runParams.temperature, runParams.pressure, runParams.thermalisationCycles,
                            runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
@@ -289,9 +304,15 @@ int Frontend::casino(int argc, char **argv) {
 
         // Store packing (if desired)
         if (!runParams.packingFilename.empty()) {
+            std::map<std::string, std::string> auxInfo;
+            auxInfo["translationStep"] = std::to_string(simulation.getCurrentTranslationStep());
+            auxInfo["rotationStep"] = std::to_string(simulation.getCurrentRotationStep());
+            auxInfo["scalingStep"] = std::to_string(simulation.getCurrentScalingStep());
+            auxInfo["cycles"] = std::to_string(runParams.thermalisationCycles + runParams.averagingCycles);
+
             std::ofstream out(runParams.packingFilename);
             ValidateMsg(out, "Could not open " + runParams.packingFilename + " to store packing!");
-            simulation.getPacking().store(out);
+            simulation.getPacking().store(out, auxInfo);
             this->logger.info() << "Packing stored to " + runParams.packingFilename << std::endl;
         }
 
@@ -312,11 +333,21 @@ int Frontend::casino(int argc, char **argv) {
 
         // Store observables vs cycles snapshots (if desired)
         if (!runParams.densitySnapshotFilename.empty()) {
-            std::ofstream out(runParams.densitySnapshotFilename);
-            ValidateMsg(out, "Could not open " + runParams.densitySnapshotFilename + " to store density snapshots!");
-            observablesCollector.printSnapshots(out);
+
+            if (isContinuation) {
+                std::ofstream out(runParams.densitySnapshotFilename, std::ios_base::app);
+                ValidateMsg(out, "Could not open " + runParams.densitySnapshotFilename + " to store density snapshots!");
+                observablesCollector.printSnapshots(out, false);
+            } else {
+                std::ofstream out(runParams.densitySnapshotFilename);
+                ValidateMsg(out, "Could not open " + runParams.densitySnapshotFilename + " to store density snapshots!");
+                observablesCollector.printSnapshots(out, true);
+            }
+
             this->logger.info() << "Density snapshots stored to " + runParams.densitySnapshotFilename << std::endl;
         }
+
+        isContinuation = false;
     }
 
     return EXIT_SUCCESS;

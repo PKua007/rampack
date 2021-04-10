@@ -8,6 +8,7 @@
 #include <vector>
 #include <memory>
 #include <optional>
+#include <map>
 
 #include "Shape.h"
 #include "BoundaryConditions.h"
@@ -122,8 +123,8 @@ public:
     [[nodiscard]] double getNeighbourGridRebuildMicroseconds() const { return this->neighbourGridRebuildMicroseconds; }
 
     void toWolfram(std::ostream &out, const ShapePrinter &printer) const;
-    void store(std::ostream &out) const;
-    void restore(std::istream &in, const Interaction &interaction);
+    void store(std::ostream &out, const std::map<std::string, std::string> &auxInfo) const;
+    std::map<std::string, std::string> restore(std::istream &in, const Interaction &interaction);
 };
 
 

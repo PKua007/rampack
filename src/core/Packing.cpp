@@ -547,7 +547,15 @@ double Packing::getVolume() const {
     return std::accumulate(this->dimensions.begin(), this->dimensions.end(), 1., std::multiplies<>{});
 }
 
-void Packing::store(std::ostream &out) const {
+void Packing::store(std::ostream &out, const std::map<std::string, std::string> &auxInfo) const {
+    out << auxInfo.size() << std::endl;
+    for (const auto &infoEntry : auxInfo) {
+        const auto &key = infoEntry.first;
+        const auto &value = infoEntry.second;
+        Expects(std::none_of(key.begin(), key.end(), [](char c) { return std::isspace(c); }));
+        out << key << " " << value << std::endl;
+    }
+
     out.precision(std::numeric_limits<double>::max_digits10);
     out << this->dimensions[0] << " " << this->dimensions[1] << " " << this->dimensions[2] << std::endl;
     out << this->size() << std::endl;
@@ -563,12 +571,28 @@ void Packing::store(std::ostream &out) const {
     }
 }
 
-void Packing::restore(std::istream &in, const Interaction &interaction) {
+std::map<std::string, std::string> Packing::restore(std::istream &in, const Interaction &interaction) {
+    // Read aux info map
+    std::size_t auxInfoSize{};
+    in >> auxInfoSize;
+    ValidateMsg(in, "Broken packing file: aux info size");
+    std::map<std::string, std::string> auxInfo;
+    for (std::size_t i{}; i < auxInfoSize; i++) {
+        std::string key;
+        std::string value;
+        in >> key >> std::ws;
+        std::getline(in, value);
+        ValidateMsg(in, "Broken packing file: aux info entry " + std::to_string(i));
+        auxInfo[key] = value;
+    }
+
+    // Read box dimensions
     std::array<double, 3> dimensions_{};
     in >> dimensions_[0] >> dimensions_[1] >> dimensions_[2];
     ValidateMsg(in, "Broken packing file: dimensions");
     Validate(std::all_of(dimensions_.begin(), dimensions_.end(), [](double d) { return d > 0; }));
 
+    // Read particles
     std::size_t size{};
     in >> size;
     ValidateMsg(in, "Broken packing file: size");
@@ -587,11 +611,14 @@ void Packing::restore(std::istream &in, const Interaction &interaction) {
         shapes_.emplace_back(position, orientation);
     }
 
+    // Load data into class
     this->dimensions = dimensions_;
     shapes_.resize(shapes_.size() + this->moveThreads);     // add temp shapes
     this->shapes = shapes_;
     this->bc->setLinearSize(dimensions_);
     this->setupForInteraction(interaction);
+
+    return auxInfo;
 }
 
 void Packing::resetCounters() {

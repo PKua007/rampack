@@ -23,7 +23,7 @@ void ObservablesCollector::addObservable(std::unique_ptr<Observable> observable,
 
 void ObservablesCollector::addSnapshot(const Packing &packing, std::size_t cycleNumber, const ShapeTraits &shapeTraits)
 {
-    this->snapshotCycleNumbers.push_back(cycleNumber);
+    this->snapshotCycleNumbers.push_back(cycleNumber + this->cycleOffset);
     this->addObservablesToContainer(packing, shapeTraits, this->snapshotValues);
 }
 
@@ -84,7 +84,7 @@ void ObservablesCollector::clearValues() {
         singleSet.clear();
 }
 
-void ObservablesCollector::printSnapshots(std::ostream &out) const {
+void ObservablesCollector::printSnapshots(std::ostream &out, bool printHeader) const {
     Expects(!this->observableHeader.empty());
     Expects(!this->observableHeader.front().empty());
 
@@ -92,10 +92,13 @@ void ObservablesCollector::printSnapshots(std::ostream &out) const {
     for (const auto &singleSet : this->snapshotValues)
         Assert(singleSet.size() == numSnapshots);
 
-    out << "cycle ";
-    std::copy(this->observableHeader.begin(), this->observableHeader.end(),
-              std::ostream_iterator<std::string>(out, " "));
-    out << std::endl;
+    if (printHeader) {
+        out << "cycle ";
+        std::copy(this->observableHeader.begin(), this->observableHeader.end(),
+                  std::ostream_iterator<std::string>(out, " "));
+        out << std::endl;
+    }
+
     for (std::size_t i{}; i < numSnapshots; i++) {
         out << this->snapshotCycleNumbers[i] << " ";
         for (const auto &observableValues : this->snapshotValues)
@@ -139,4 +142,8 @@ void ObservablesCollector::setThermodynamicParameters(double temperature_, doubl
 
     this->temperature = temperature_;
     this->pressure = pressure_;
+}
+
+void ObservablesCollector::setCycleOffset(std::size_t offset) {
+    this->cycleOffset = offset;
 }

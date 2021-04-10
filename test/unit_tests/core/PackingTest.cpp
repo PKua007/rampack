@@ -189,13 +189,17 @@ TEST_CASE("Packing: operations") {
         auto pbc2 = std::make_unique<PeriodicBoundaryConditions>();
         Packing packingRestored(std::move(pbc2));
 
-        packing.store(inOut);
-        packingRestored.restore(inOut, distanceInteraction);
+        std::map<std::string, std::string> expectedAuxInfo = {{"key1", "value 1"}, {"key2", "value 2"}};
+        packing.store(inOut, expectedAuxInfo);
+        auto auxInfo = packingRestored.restore(inOut, distanceInteraction);
 
         REQUIRE(packing.size() == packingRestored.size());
         CHECK(packing[0] == packingRestored[0]);
         CHECK(packing[1] == packingRestored[1]);
         CHECK(packing[2] == packingRestored[2]);
+        REQUIRE(auxInfo.size() == 2);
+        CHECK(auxInfo["key1"] == "value 1");
+        CHECK(auxInfo["key2"] == "value 2");
 
         SECTION("fix: lastAlteredParticleIdx not initialized for packingRestored") {
             // This used to cause SIGSEGV
