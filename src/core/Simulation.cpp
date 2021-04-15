@@ -245,14 +245,28 @@ bool Simulation::tryScaling(const Interaction &interaction) {
     double newV = oldV * factor;
     double deltaV = newV - oldV;
 
-    double N = this->packing->size();
-    double dE = this->packing->tryScaling(scalingFactor, interaction);
-    double exponent = N * log(factor) - dE / this->temperature - this->pressure * deltaV / this->temperature;
-    if (this->unitIntervalDistribution(mt) <= std::exp(exponent)) {
-        return true;
+    auto N = static_cast<double>(this->packing->size());
+    if (interaction.hasSoftPart()) {
+        // Soft interaction present - we have a nontrivial energy change an we always need to try scaling
+        double dE = this->packing->tryScaling(scalingFactor, interaction);
+        double exponent = N * log(factor) - dE / this->temperature - this->pressure * deltaV / this->temperature;
+        if (this->unitIntervalDistribution(mt) <= std::exp(exponent)) {
+            return true;
+        } else {
+            this->packing->revertScaling();
+            return false;
+        }
     } else {
-        this->packing->revertScaling();
-        return false;
+        // No soft interaction - we do not need to try scaling, if Metropolis criterion will kill it anyway
+        double exponent = N * log(factor) - this->pressure * deltaV / this->temperature;
+        if (this->unitIntervalDistribution(mt) > std::exp(exponent)) {
+            return false;
+        } else if (this->packing->tryScaling(scalingFactor, interaction) != 0) {
+            this->packing->revertScaling();
+            return false;
+        } else {
+            return true;
+        }
     }
 }
 
