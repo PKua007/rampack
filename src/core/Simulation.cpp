@@ -148,6 +148,8 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
 
                 const auto &domainParticleIndices = domainDecomposition.getParticlesInRegion(coords);
                 auto activeDomain = domainDecomposition.getActiveDomainBounds(coords);
+                if (domainParticleIndices.empty())
+                    continue;
 
                 std::size_t numMoves = this->packing->size() / this->numDomains;
                 for (std::size_t x{}; x < numMoves; x++) {
