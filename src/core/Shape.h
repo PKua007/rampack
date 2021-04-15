@@ -39,6 +39,8 @@ public:
     friend bool operator!=(const Shape &lhs, const Shape &rhs) {
         return !(rhs == lhs);
     }
+
+    friend std::ostream &operator<<(std::ostream &out, const Shape &shape);
 };
 
 

@@ -33,7 +33,7 @@ private:
     std::size_t scalingThreads{};
 
     std::vector<std::size_t> lastAlteredParticleIdx{};
-    std::array<double, 3> lastScalingFactor{};
+    std::array<double, 3> lastDimensions{};
 
     std::size_t neighbourGridRebuilds{};
     std::size_t neighbourGridResizes{};
@@ -125,6 +125,8 @@ public:
     void toWolfram(std::ostream &out, const ShapePrinter &printer) const;
     void store(std::ostream &out, const std::map<std::string, std::string> &auxInfo) const;
     std::map<std::string, std::string> restore(std::istream &in, const Interaction &interaction);
+
+    friend std::ostream &operator<<(std::ostream &out, const Packing &packing);
 };
 
 

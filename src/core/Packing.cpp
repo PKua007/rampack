@@ -114,7 +114,7 @@ double Packing::tryMove(std::size_t particleIdx, const Vector<3> &translation, c
 double Packing::tryScaling(const std::array<double, 3> &scaleFactor, const Interaction &interaction) {
     Expects(std::all_of(scaleFactor.begin(), scaleFactor.end(), [](double d) { return d > 0; }));
     Expects(interaction.getRangeRadius() <= this->interactionRange);
-    this->lastScalingFactor = scaleFactor;
+    this->lastDimensions = this->dimensions;
 
     double initialEnergy = this->getTotalEnergy(interaction);
 
@@ -260,14 +260,14 @@ void Packing::rotateTempInteractionCentres(const Matrix<3, 3> &rotation) {
 }
 
 void Packing::revertScaling() {
-    std::transform(this->dimensions.begin(), this->dimensions.end(), this->lastScalingFactor.begin(),
-                   this->dimensions.begin(), std::divides<>{});
-    this->bc->setLinearSize(this->dimensions);
     std::array<double, 3> reverseFactor{};
-    for (std::size_t i{}; i < 3; i++)
-        reverseFactor[i] = 1. / this->lastScalingFactor[i];
+    std::transform(this->lastDimensions.begin(), this->lastDimensions.end(), this->dimensions.begin(),
+                   reverseFactor.begin(), std::divides<>{});
     for (auto &shape : this->shapes)
         shape.scale(reverseFactor);
+
+    this->dimensions = this->lastDimensions;
+    this->bc->setLinearSize(this->dimensions);
     std::swap(this->neighbourGrid, this->tempNeighbourGrid);
 }
 
@@ -626,3 +626,16 @@ void Packing::resetCounters() {
     this->neighbourGridResizes = 0;
     this->neighbourGridRebuildMicroseconds = 0;
 }
+
+std::ostream &operator<<(std::ostream &out, const Packing &packing) {
+    out << "Packing {" << std::endl;
+    out << "  dimensions: {";
+    out << packing.dimensions[0] << ", " << packing.dimensions[1] << ", " << packing.dimensions[2] << "}," << std::endl;
+    out << "  particles (" << packing.size() << "): {" << std::endl;
+    for (const auto &shape : packing)
+        out << "    " << shape << std::endl;
+    out << "  }" << std::endl;
+    out << "}";
+    return out;
+}
+

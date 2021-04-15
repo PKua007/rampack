@@ -36,7 +36,7 @@ public:
 
     [[nodiscard]] std::string describe() const override {
         std::ostringstream ss;
-        ss << "is, within " << this->epsilon << " tolerance threshold, equal to" << std::endl;
+        ss << "has, within " << this->epsilon << " tolerance threshold, particles" << std::endl;
         for (const auto &position : this->expected) {
             ss << "{" << position[0] << ", " << position[1] << ", " << position[2] << "}, ";
         }
