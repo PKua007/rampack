@@ -105,6 +105,8 @@ public:
     [[nodiscard]] double getCurrentTranslationStep() const { return this->translationStep; }
     [[nodiscard]] double getCurrentRotationStep() const { return this->rotationStep; }
     [[nodiscard]] double getCurrentScalingStep() const { return this->scalingStep; }
+
+    void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger);
 };
 
 

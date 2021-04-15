@@ -7,6 +7,7 @@
 #include <iterator>
 
 #include "ObservablesCollector.h"
+#include "utils/Utils.h"
 
 void ObservablesCollector::addObservable(std::unique_ptr<Observable> observable, bool shouldDisplayInline) {
     if (!this->snapshotValues.empty())
@@ -146,4 +147,13 @@ void ObservablesCollector::setThermodynamicParameters(double temperature_, doubl
 
 void ObservablesCollector::setCycleOffset(std::size_t offset) {
     this->cycleOffset = offset;
+}
+
+std::size_t ObservablesCollector::getMemoryUsage() const {
+    std::size_t bytes{};
+    for (const auto &vec : this->snapshotValues)
+        bytes += get_vector_memory_usage(vec);
+    for (const auto &vec : this->averagingValues)
+        bytes += get_vector_memory_usage(vec);
+    return bytes;
 }

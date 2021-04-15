@@ -65,11 +65,8 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
         this->performCycle(logger, interaction);
         if ((i + 1) % this->snapshotEvery == 0)
             this->observablesCollector->addSnapshot(*this->packing, i + 1, shapeTraits);
-        if ((i + 1) % 100 == 0) {
-            logger.info() << "Performed " << (i + 1) << " cycles; ";
-            logger << this->observablesCollector->generateInlineObservablesString(*this->packing, shapeTraits);
-            logger << std::endl;
-        }
+        if ((i + 1) % 100 == 0)
+            this->printInlineInfo(i + 1, shapeTraits, logger);
     }
 
     this->shouldAdjustStepSize = false;
@@ -81,11 +78,8 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
             this->observablesCollector->addSnapshot(*this->packing, this->thermalisationCycles + i + 1, shapeTraits);
         if ((i + 1) % this->averagingEvery == 0)
             this->observablesCollector->addAveragingValues(*this->packing, shapeTraits);
-        if ((i + 1) % 100 == 0) {
-            logger.info() << "Performed " << (i + 1) << " cycles; ";
-            logger << this->observablesCollector->generateInlineObservablesString(*this->packing, shapeTraits);
-            logger << std::endl;
-        }
+        if ((i + 1) % 100 == 0)
+            this->printInlineInfo(i + 1, shapeTraits, logger);
     }
 
     logger.setAdditionalText("");
@@ -337,15 +331,17 @@ void Simulation::Counter::resetCurrent() {
 }
 
 double Simulation::Counter::getCurrentRate() const {
-    return static_cast<double>(total(this->acceptedMovesSinceEvaluation)) / total(this->movesSinceEvaluation);
+    return static_cast<double>(total(this->acceptedMovesSinceEvaluation))
+           / static_cast<double>(total(this->movesSinceEvaluation));
 }
 
 double Simulation::Counter::getRate() const {
-    return static_cast<double>(total(this->acceptedMoves)) / total(this->moves);
+    return static_cast<double>(total(this->acceptedMoves))
+           / static_cast<double>(total(this->moves));
 }
 
 std::size_t Simulation::Counter::total(const std::vector<std::size_t> &vec) {
-    return std::accumulate(vec.begin(), vec.end(), 0., std::plus<>{});
+    return std::accumulate(vec.begin(), vec.end(), 0, std::plus<>{});
 }
 
 std::size_t Simulation::Counter::getMovesSinceEvaluation() const {
@@ -368,4 +364,13 @@ Simulation::Counter::Counter() {
 
 std::ostream &operator<<(std::ostream &out, const Simulation::ScalarSnapshot &snapshot) {
     return out << snapshot.cycleCount << " " << snapshot.value;
+}
+
+void Simulation::printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger) {
+    logger.info() << "Performed " << cycleNumber << " cycles; ";
+    logger << this->observablesCollector->generateInlineObservablesString(*this->packing, traits);
+    logger << std::endl;
+    logger.verbose() << "Memory usage (bytes): shape: " << this->packing->getShapesMemoryUsage() << ", ";
+    logger << "ng: " << this->packing->getNeighbourGridMemoryUsage() << ", ";
+    logger << "obs: " << this->observablesCollector->getMemoryUsage() << std::endl;
 }

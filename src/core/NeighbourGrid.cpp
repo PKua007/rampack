@@ -7,6 +7,7 @@
 #include <numeric>
 
 #include "NeighbourGrid.h"
+#include "utils/Utils.h"
 
 std::size_t NeighbourGrid::positionToCellNo(const Vector<3> &position) const {
     std::size_t result{};
@@ -256,4 +257,14 @@ void swap(NeighbourGrid &ng1, NeighbourGrid &ng2) {
 
 std::array<std::size_t, 3> NeighbourGrid::getCellDivisions() const {
     return {this->cellDivisions[0] - 2, this->cellDivisions[1] - 2, this->cellDivisions[2] - 2};
+}
+
+std::size_t NeighbourGrid::getMemoryUsage() const {
+    std::size_t bytes{};
+    bytes += get_vector_memory_usage(this->cells);
+    for (const auto &cell : this->cells)
+        bytes += get_vector_memory_usage(cell);
+    bytes += get_vector_memory_usage(this->reflectedCells);
+    bytes += get_vector_memory_usage(this->neighbouringCellsOffsets);
+    return bytes;
 }

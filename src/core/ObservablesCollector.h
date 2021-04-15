@@ -55,6 +55,8 @@ public:
     void printSnapshots(std::ostream &out, bool printHeader = true) const;
     [[nodiscard]] std::vector<ObservableData> getFlattenedAverageValues() const;
     [[nodiscard]] std::vector<ObservableGroupData> getGroupedAverageValues() const;
+
+    [[nodiscard]] std::size_t getMemoryUsage() const;
 };
 
 

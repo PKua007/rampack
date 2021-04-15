@@ -31,4 +31,9 @@ int lastIndexOf(const std::string &s, char target);
 void die(const std::string &reason);
 void die(const std::string &reason, Logger &logger);
 
+template <typename T>
+std::size_t get_vector_memory_usage(const std::vector<T> &vec) {
+    return vec.capacity() * sizeof(T);
+}
+
 #endif //RAMPACK_UTILS_H

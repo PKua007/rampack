@@ -10,6 +10,7 @@
 
 #include "Packing.h"
 #include "utils/Assertions.h"
+#include "utils/Utils.h"
 
 
 Packing::Packing(const std::array<double, 3> &dimensions, std::vector<Shape> shapes,
@@ -637,5 +638,21 @@ std::ostream &operator<<(std::ostream &out, const Packing &packing) {
     out << "  }" << std::endl;
     out << "}";
     return out;
+}
+
+std::size_t Packing::getShapesMemoryUsage() const {
+    std::size_t bytes{};
+    bytes += get_vector_memory_usage(this->shapes);
+    bytes += get_vector_memory_usage(this->interactionCentres);
+    return bytes;
+}
+
+std::size_t Packing::getNeighbourGridMemoryUsage() const {
+    std::size_t bytes{};
+    if (this->neighbourGrid.has_value())
+        bytes += this->neighbourGrid->getMemoryUsage();
+    if (this->tempNeighbourGrid.has_value())
+        bytes += this->tempNeighbourGrid->getMemoryUsage();
+    return bytes;
 }
 

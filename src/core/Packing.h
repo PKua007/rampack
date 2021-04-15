@@ -126,6 +126,9 @@ public:
     void store(std::ostream &out, const std::map<std::string, std::string> &auxInfo) const;
     std::map<std::string, std::string> restore(std::istream &in, const Interaction &interaction);
 
+    [[nodiscard]] std::size_t getShapesMemoryUsage() const;
+    [[nodiscard]] std::size_t getNeighbourGridMemoryUsage() const;
+
     friend std::ostream &operator<<(std::ostream &out, const Packing &packing);
 };
 
