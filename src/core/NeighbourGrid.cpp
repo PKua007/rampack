@@ -80,7 +80,7 @@ int NeighbourGrid::getReflectedCellNo(std::size_t cellNo) const {
         if (coord == this->cellDivisions[i] - 1)
             coord = 1;
     }
-    return this->coordinatesToCellNo(coords);
+    return static_cast<int>(this->coordinatesToCellNo(coords));
 }
 
 bool NeighbourGrid::increment(std::array<int, 3> &in) {
@@ -156,12 +156,12 @@ void NeighbourGrid::setupSizes(const std::array<double, 3> &newLinearSize, doubl
 }
 
 void NeighbourGrid::add(std::size_t idx, const Vector<3> &position) {
-    int i = this->positionToCellNo(position);
+    std::size_t i = this->positionToCellNo(position);
     this->getCellVector(i).push_back(idx);
 }
 
 void NeighbourGrid::remove(std::size_t idx, const Vector<3> &position) {
-    int i = this->positionToCellNo(position);
+    std::size_t i = this->positionToCellNo(position);
     auto &cell = this->getCellVector(i);
     auto it = std::find(cell.begin(), cell.end(), idx);
     if (it != cell.end())
@@ -174,22 +174,22 @@ void NeighbourGrid::clear() {
 }
 
 const std::vector<std::size_t> &NeighbourGrid::getCell(const Vector<3> &position) const {
-    int i = this->positionToCellNo(position);
+    std::size_t i = this->positionToCellNo(position);
     return this->getCellVector(i);
 }
 
 std::vector<std::size_t> NeighbourGrid::getNeighbours(const Vector<3> &position) const {
     std::vector<std::size_t> result;
 
-    int cellNo = this->positionToCellNo(position);
+    std::size_t cellNo = this->positionToCellNo(position);
 
     // Pre-counting vector capacity gives huge performance boost
     std::size_t capacity{};
-    for (int cellOffset : this->neighbouringCellsOffsets)
+    for (std::size_t cellOffset : this->neighbouringCellsOffsets)
         capacity += this->getCellVector(cellNo + cellOffset).size();
     result.reserve(capacity);
 
-    for (int cellOffset : this->neighbouringCellsOffsets) {
+    for (std::size_t cellOffset : this->neighbouringCellsOffsets) {
         const auto &cellVector = this->getCellVector(cellNo + cellOffset);
         result.insert(result.end(), cellVector.begin(), cellVector.end());
     }
@@ -212,7 +212,7 @@ const std::vector<std::size_t> &NeighbourGrid::getCellVector(std::size_t cellNo)
 
 bool NeighbourGrid::resize(const std::array<double, 3> &newLinearSize, double newCellSize) {
     std::array<std::size_t, 3> oldNumCellsInLine = this->cellDivisions;
-    double oldNumCells = this->numCells;
+    std::size_t oldNumCells = this->numCells;
     this->setupSizes(newLinearSize, newCellSize);
 
     // Early exit - if number of cells in line did not change we do not need to rebuild the structure, only clear

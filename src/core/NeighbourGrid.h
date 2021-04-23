@@ -22,7 +22,7 @@ private:
     std::vector<std::vector<std::size_t>> cells;
     std::vector<int> reflectedCells;
     std::size_t numCells{};
-    std::vector<long> neighbouringCellsOffsets;
+    std::vector<std::size_t> neighbouringCellsOffsets;
 
     [[nodiscard]] std::size_t positionToCellNo(const Vector<3> &position) const;
     [[nodiscard]] std::array<std::size_t, 3> cellNoToCoordinates(std::size_t cellNo) const;
