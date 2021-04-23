@@ -308,7 +308,8 @@ int Frontend::casino(int argc, char **argv) {
             auxInfo["translationStep"] = std::to_string(simulation.getCurrentTranslationStep());
             auxInfo["rotationStep"] = std::to_string(simulation.getCurrentRotationStep());
             auxInfo["scalingStep"] = std::to_string(simulation.getCurrentScalingStep());
-            auxInfo["cycles"] = std::to_string(runParams.thermalisationCycles + runParams.averagingCycles);
+            std::size_t totalCycles = cycleOffset + runParams.thermalisationCycles + runParams.averagingCycles;
+            auxInfo["cycles"] = std::to_string(totalCycles);
 
             std::ofstream out(runParams.packingFilename);
             ValidateMsg(out, "Could not open " + runParams.packingFilename + " to store packing!");
