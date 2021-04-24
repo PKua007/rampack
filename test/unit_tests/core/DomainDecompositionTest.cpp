@@ -8,6 +8,8 @@
 #include "core/shapes/PolysphereTraits.h"
 #include "core/PeriodicBoundaryConditions.h"
 
+/*
+
 TEST_CASE("DomainDecomposition") {
     // 2 domains for dimers of radius 1, distance 1 (width: 3, range: 2, total range: 6) with origin placed at y = 17
     // packing is 12 x 21 x 6 with neighbour grid divisions 4 x 7 x 2, which gives cubic cells of size 3
@@ -72,3 +74,5 @@ TEST_CASE("DomainDecomposition") {
         CHECK(domain1.getBoundsForCoordinate(2) == ActiveDomain::RegionBounds{-inf, inf});
     }
 }
+
+ */

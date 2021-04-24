@@ -121,6 +121,7 @@ void NeighbourGrid::fillNeighbouringCellsOffsets() {
 NeighbourGrid::NeighbourGrid(const std::array<double, 3> &linearSize, double cellSize) {
     this->setupSizes(linearSize, cellSize);
     this->cells.resize(this->numCells);
+    this->cellGuarded.resize(this->numCells, false);
     this->reflectedCells.resize(this->numCells);
 
     // Aliasing "reflected" cell lists to real ones
@@ -157,6 +158,8 @@ void NeighbourGrid::setupSizes(const std::array<double, 3> &newLinearSize, doubl
 
 void NeighbourGrid::add(std::size_t idx, const Vector<3> &position) {
     std::size_t i = this->positionToCellNo(position);
+    if (this->isCellGuarded(i))
+        throw std::runtime_error("AAAAaAaaaaaaaAaaAaaAAaAaAAaAA");
     this->getCellVector(i).push_back(idx);
 }
 
@@ -171,6 +174,7 @@ void NeighbourGrid::remove(std::size_t idx, const Vector<3> &position) {
 void NeighbourGrid::clear() {
     for (std::size_t i{}; i < this->numCells; i++)
         this->cells[i].clear();
+    std::fill(this->cellGuarded.begin(), this->cellGuarded.end(), false);
 }
 
 const std::vector<std::size_t> &NeighbourGrid::getCell(const Vector<3> &position) const {
@@ -224,6 +228,7 @@ bool NeighbourGrid::resize(const std::array<double, 3> &newLinearSize, double ne
     // The resize is needed only if number of cells is to big for allocated memory - otherwise reuse the old structure
     if (oldNumCells < this->numCells) {
         this->cells.resize(this->numCells);
+        this->cellGuarded.resize(this->numCells);
         this->reflectedCells.resize(this->numCells);
     }
 
@@ -250,6 +255,7 @@ void swap(NeighbourGrid &ng1, NeighbourGrid &ng2) {
     std::swap(ng1.cellDivisions, ng2.cellDivisions);
     std::swap(ng1.cellSize, ng2.cellSize);
     std::swap(ng1.cells, ng2.cells);
+    std::swap(ng1.cellGuarded, ng2.cellGuarded);
     std::swap(ng1.reflectedCells, ng2.reflectedCells);
     std::swap(ng1.numCells, ng2.numCells);
     std::swap(ng1.neighbouringCellsOffsets, ng2.neighbouringCellsOffsets);
@@ -267,4 +273,43 @@ std::size_t NeighbourGrid::getMemoryUsage() const {
     bytes += get_vector_memory_usage(this->reflectedCells);
     bytes += get_vector_memory_usage(this->neighbouringCellsOffsets);
     return bytes;
+}
+
+void NeighbourGrid::guardLayer(std::size_t coordIdx, std::size_t coordToGuard) {
+    switch (coordIdx) {
+        case 0:
+           coordToGuard %= (this->cellDivisions[0] - 2);
+            for (std::size_t i1 = 1; i1 < this->cellDivisions[1] - 1; i1++)
+                for (std::size_t i2 = 1; i2 < this->cellDivisions[2] - 1; i2++)
+                    this->cellGuarded[this->coordinatesToCellNo({coordToGuard + 1, i1, i2})] = true;
+            break;
+
+        case 1:
+            coordToGuard %= (this->cellDivisions[1] - 2);
+            for (std::size_t i0 = 1; i0 < this->cellDivisions[0] - 1; i0++)
+                for (std::size_t i2 = 1; i2 < this->cellDivisions[2] - 1; i2++)
+                    this->cellGuarded[this->coordinatesToCellNo({i0, coordToGuard + 1, i2})] = true;
+            break;
+
+        case 2:
+            coordToGuard %= (this->cellDivisions[2] - 2);
+            for (std::size_t i0 = 1; i0 < this->cellDivisions[0] - 1; i0++)
+                for (std::size_t i1 = 1; i1 < this->cellDivisions[1] - 1; i1++)
+                    this->cellGuarded[this->coordinatesToCellNo({i0, i1, coordToGuard + 1})] = true;
+            break;
+
+        default:
+            throw PreconditionException("coord");
+    }
+}
+
+void NeighbourGrid::resetGuards() {
+    std::fill(this->cellGuarded.begin(), this->cellGuarded.end(), false);
+}
+
+bool NeighbourGrid::isCellGuarded(std::size_t cellNo) const {
+    if (this->reflectedCells[cellNo] == -1)
+        return this->cellGuarded[cellNo];
+    else
+        return this->cellGuarded[this->reflectedCells[cellNo]];
 }

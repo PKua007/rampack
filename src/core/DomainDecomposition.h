@@ -10,6 +10,7 @@
 #include "Packing.h"
 #include "Interaction.h"
 #include "ActiveDomain.h"
+#include "NeighbourGrid.h"
 
 class DomainDecomposition {
 private:
@@ -22,7 +23,7 @@ private:
 
     void prepareDomains(const std::array<double, 3> &dimensions,
                         const std::array<std::size_t, 3> &neighbourGridDivisions, double range, double totalRange,
-                        const Vector<3> &origin);
+                        const Vector<3> &origin, NeighbourGrid &ng);
     void populateDomains(const Packing &packing, const Vector<3> &origin);
     [[nodiscard]] static double fitPeriodically(double x, double period);
     [[nodiscard]] std::size_t coordToIdx(const std::array<std::size_t, 3> &coords) const;
@@ -30,7 +31,8 @@ private:
 public:
     DomainDecomposition(const Packing &packing, const Interaction &interaction,
                         const std::array<std::size_t, 3> &domainDivisions,
-                        const std::array<std::size_t, 3> &neighbourGridDivisions, const Vector<3> &origin);
+                        const std::array<std::size_t, 3> &neighbourGridDivisions, const Vector<3> &origin,
+                        NeighbourGrid &ng);
 
     [[nodiscard]] const std::vector<std::size_t> &getParticlesInRegion(const std::array<std::size_t, 3> &coord) const {
         return this->particlesInRegions[this->coordToIdx(coord)];

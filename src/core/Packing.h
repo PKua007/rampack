@@ -129,6 +129,8 @@ public:
     [[nodiscard]] std::size_t getShapesMemoryUsage() const;
     [[nodiscard]] std::size_t getNeighbourGridMemoryUsage() const;
 
+    NeighbourGrid &getNeighbourGrid() { return *this->neighbourGrid; }
+
     friend std::ostream &operator<<(std::ostream &out, const Packing &packing);
 };
 

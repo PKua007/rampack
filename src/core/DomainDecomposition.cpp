@@ -12,20 +12,20 @@
 DomainDecomposition::DomainDecomposition(const Packing &packing, const Interaction &interaction,
                                          const std::array<std::size_t, 3> &domainDivisions,
                                          const std::array<std::size_t, 3> &neighbourGridDivisions,
-                                         const Vector<3> &origin)
+                                         const Vector<3> &origin, NeighbourGrid &ng)
         : domainDivisions{domainDivisions}
 {
     const auto &dimensions = packing.getDimensions();
     double range = interaction.getRangeRadius();
     double totalRange = interaction.getTotalRangeRadius();
 
-    this->prepareDomains(dimensions, neighbourGridDivisions, range, totalRange, origin);
+    this->prepareDomains(dimensions, neighbourGridDivisions, range, totalRange, origin, ng);
     this->populateDomains(packing, origin);
 }
 
 void DomainDecomposition::prepareDomains(const std::array<double, 3> &dimensions,
                                          const std::array<std::size_t, 3> &neighbourGridDivisions, double range,
-                                         double totalRange, const Vector<3> &origin)
+                                         double totalRange, const Vector<3> &origin, NeighbourGrid &ng)
 {
     for (std::size_t coord{}; coord < 3; coord++) {
         Expects(origin[coord] >= 0 && origin[coord] < dimensions[coord]);
@@ -47,7 +47,10 @@ void DomainDecomposition::prepareDomains(const std::array<double, 3> &dimensions
         for (std::size_t domainIdx{}; domainIdx < this->domainDivisions[coord]; domainIdx++) {
             double theoreticalMiddle = origin[coord] + domainIdx * wholeDomainWidth;
             // Ghost layer middle should be in the middle of the closest neighbour grit cells
-            double realMiddle = ngCellSize * (std::round(theoreticalMiddle/ngCellSize - 0.5) + 0.5);
+            auto ghostCoord = static_cast<std::size_t>(std::round(theoreticalMiddle/ngCellSize - 0.5));
+            double realMiddle = ngCellSize * (static_cast<double>(ghostCoord) + 0.5);
+
+            ng.guardLayer(coord, ghostCoord);
 
             std::size_t previousDomainIdx = (domainIdx + this->domainDivisions[coord] - 1) % domainDivisions[coord];
             double &ghostBeg = this->regionBounds[coord][previousDomainIdx].end;

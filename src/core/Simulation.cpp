@@ -126,12 +126,15 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
     const auto &packingDimensions = this->packing->getDimensions();
     auto &mt = this->mts[_OMP_THREAD_ID];
 
+    this->packing->getNeighbourGrid().resetGuards();
+
     Vector<3> randomOrigin{packingDimensions[0] * this->unitIntervalDistribution(mt),
                            packingDimensions[1] * this->unitIntervalDistribution(mt),
                            packingDimensions[2] * this->unitIntervalDistribution(mt)};
     const auto &neighbourGridCellDivisions = this->packing->getNeighbourGridCellDivisions();
     DomainDecomposition domainDecomposition(*this->packing, interaction, this->domainDivisions,
-                                            neighbourGridCellDivisions, randomOrigin);
+                                            neighbourGridCellDivisions, randomOrigin,
+                                            this->packing->getNeighbourGrid());
 
     #pragma omp parallel for shared(domainDecomposition, interaction) default(none) collapse(3) \
             num_threads(this->numDomains)
@@ -153,6 +156,8 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
             }
         }
     }
+
+    this->packing->getNeighbourGrid().resetGuards();
 }
 
 bool Simulation::tryTranslation(const Interaction &interaction, const std::vector<std::size_t> &particleIndices,

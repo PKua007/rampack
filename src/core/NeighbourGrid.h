@@ -20,6 +20,7 @@ private:
     std::array<std::size_t, 3> cellDivisions{};
     std::array<double, 3> cellSize{};
     std::vector<std::vector<std::size_t>> cells;
+    std::vector<bool> cellGuarded;
     std::vector<int> reflectedCells;
     std::size_t numCells{};
     std::vector<std::size_t> neighbouringCellsOffsets;
@@ -46,6 +47,7 @@ private:
 
     std::vector<std::size_t> &getCellVector(std::size_t cellNo);
     [[nodiscard]] const std::vector<std::size_t> &getCellVector(std::size_t cellNo) const;
+    [[nodiscard]] bool isCellGuarded(std::size_t cellNo) const;
     void setupSizes(const std::array<double, 3> &newLinearSize, double newCellSize);
 
     friend class NeighboursView;
@@ -124,6 +126,9 @@ public:
     [[nodiscard]] NeighboursView getNeighbouringCells(const Vector<3> &position) const;
     [[nodiscard]] std::array<std::size_t, 3> getCellDivisions() const;
     [[nodiscard]] std::size_t getMemoryUsage() const;
+
+    void guardLayer(std::size_t coordIdx, std::size_t coordToGuard);
+    void resetGuards();
 
     friend void swap(NeighbourGrid &ng1, NeighbourGrid &ng2);
 };
