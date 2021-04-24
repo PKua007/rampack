@@ -128,6 +128,8 @@ public:
 
     [[nodiscard]] std::size_t getShapesMemoryUsage() const;
     [[nodiscard]] std::size_t getNeighbourGridMemoryUsage() const;
+    void resetNeighbourGridCellUsage() { this->neighbourGrid->resetCellTracker(); };
+    void dumpNeighbourGridCellUsage(std::ostream &out) const { this->neighbourGrid->dumpCellUsage(out); };
 
     friend std::ostream &operator<<(std::ostream &out, const Packing &packing);
 };

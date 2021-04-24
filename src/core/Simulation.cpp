@@ -5,6 +5,7 @@
 #include <cmath>
 #include <ostream>
 #include <chrono>
+#include <fstream>
 
 #include "Simulation.h"
 #include "DomainDecomposition.h"
@@ -133,6 +134,8 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
     DomainDecomposition domainDecomposition(*this->packing, interaction, this->domainDivisions,
                                             neighbourGridCellDivisions, randomOrigin);
 
+    this->packing->resetNeighbourGridCellUsage();
+
     #pragma omp parallel for shared(domainDecomposition, interaction) default(none) collapse(3) \
             num_threads(this->numDomains)
     for (std::size_t i = 0; i < this->domainDivisions[0]; i++) {
@@ -146,13 +149,17 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
                     continue;
 
                 std::size_t numMoves = this->packing->size() / this->numDomains;
-                for (std::size_t x{}; x < numMoves; x++) {
+                for (std::size_t x{}; x < numMoves * 1000000; x++) {
                     bool wasMoved = tryMove(interaction, domainParticleIndices, activeDomain);
                     this->moveCounter.increment(wasMoved);
                 }
             }
         }
     }
+
+    std::ofstream out("ng_dump.nb");
+    this->packing->dumpNeighbourGridCellUsage(out);
+    std::exit(0);
 }
 
 bool Simulation::tryTranslation(const Interaction &interaction, const std::vector<std::size_t> &particleIndices,
