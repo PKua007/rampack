@@ -121,6 +121,7 @@ void NeighbourGrid::fillNeighbouringCellsOffsets() {
 NeighbourGrid::NeighbourGrid(const std::array<double, 3> &linearSize, double cellSize) {
     this->setupSizes(linearSize, cellSize);
     this->cells.resize(this->numCells);
+    this->cellsUsed.resize(this->numCells, false);
     this->reflectedCells.resize(this->numCells);
 
     // Aliasing "reflected" cell lists to real ones
@@ -158,6 +159,7 @@ void NeighbourGrid::setupSizes(const std::array<double, 3> &newLinearSize, doubl
 void NeighbourGrid::add(std::size_t idx, const Vector<3> &position) {
     std::size_t i = this->positionToCellNo(position);
     this->getCellVector(i).push_back(idx);
+    this->markCellUsed(i);
 }
 
 void NeighbourGrid::remove(std::size_t idx, const Vector<3> &position) {
@@ -171,6 +173,7 @@ void NeighbourGrid::remove(std::size_t idx, const Vector<3> &position) {
 void NeighbourGrid::clear() {
     for (std::size_t i{}; i < this->numCells; i++)
         this->cells[i].clear();
+    std::fill(this->cellsUsed.begin(), this->cellsUsed.end(), false);
 }
 
 const std::vector<std::size_t> &NeighbourGrid::getCell(const Vector<3> &position) const {
@@ -203,11 +206,25 @@ std::vector<std::size_t> &NeighbourGrid::getCellVector(std::size_t cellNo) {
         return this->cells[this->reflectedCells[cellNo]];
 }
 
+void NeighbourGrid::markCellUsed(std::size_t cellNo) {
+    if (this->reflectedCells[cellNo] == -1)
+        this->cellsUsed[cellNo] = true;
+    else
+        this->cellsUsed[this->reflectedCells[cellNo]] = true;
+}
+
 const std::vector<std::size_t> &NeighbourGrid::getCellVector(std::size_t cellNo) const {
     if (this->reflectedCells[cellNo] == -1)
         return this->cells[cellNo];
     else
         return this->cells[this->reflectedCells[cellNo]];
+}
+
+bool NeighbourGrid::isCellUsed(std::size_t cellNo) const {
+    if (this->reflectedCells[cellNo] == -1)
+        return this->cellsUsed[cellNo];
+    else
+        return this->cellsUsed[this->reflectedCells[cellNo]];
 }
 
 bool NeighbourGrid::resize(const std::array<double, 3> &newLinearSize, double newCellSize) {
@@ -224,6 +241,7 @@ bool NeighbourGrid::resize(const std::array<double, 3> &newLinearSize, double ne
     // The resize is needed only if number of cells is to big for allocated memory - otherwise reuse the old structure
     if (oldNumCells < this->numCells) {
         this->cells.resize(this->numCells);
+        this->cellsUsed.resize(this->numCells, false);
         this->reflectedCells.resize(this->numCells);
     }
 
@@ -250,6 +268,7 @@ void swap(NeighbourGrid &ng1, NeighbourGrid &ng2) {
     std::swap(ng1.cellDivisions, ng2.cellDivisions);
     std::swap(ng1.cellSize, ng2.cellSize);
     std::swap(ng1.cells, ng2.cells);
+    std::swap(ng1.cellsUsed, ng2.cellsUsed);
     std::swap(ng1.reflectedCells, ng2.reflectedCells);
     std::swap(ng1.numCells, ng2.numCells);
     std::swap(ng1.neighbouringCellsOffsets, ng2.neighbouringCellsOffsets);
@@ -264,7 +283,37 @@ std::size_t NeighbourGrid::getMemoryUsage() const {
     bytes += get_vector_memory_usage(this->cells);
     for (const auto &cell : this->cells)
         bytes += get_vector_memory_usage(cell);
+    bytes += get_vector_memory_usage(this->cellsUsed);
     bytes += get_vector_memory_usage(this->reflectedCells);
     bytes += get_vector_memory_usage(this->neighbouringCellsOffsets);
     return bytes;
+}
+
+void NeighbourGrid::resetCellTracker() {
+    std::fill(this->cellsUsed.begin(), this->cellsUsed.end(), false);
+}
+
+void NeighbourGrid::dumpCellUsage(std::ostream &out) const {
+    out << "pos = {" << std::endl;
+
+    std::vector<std::array<std::size_t, 3>> unusedCells;
+    for (std::size_t i = 1; i < this->cellDivisions[0] - 1; i++) {
+        for (std::size_t j = 1; j < this->cellDivisions[1] - 1; j++) {
+            for (std::size_t k = 1; k < this->cellDivisions[2] - 1; k++) {
+                std::array<std::size_t, 3> coords = {i, j, k};
+                if (!this->isCellUsed(this->coordinatesToCellNo(coords)))
+                    unusedCells.push_back(coords);
+            }
+        }
+    }
+
+    if (!unusedCells.empty()) {
+        for (std::size_t i{}; i < unusedCells.size() - 1; i++) {
+            const auto &unusedCell = unusedCells[i];
+            out << "{" << unusedCell[0] << "," << unusedCell[1] << "," << unusedCell[2] << "}," << std::endl;
+        }
+        const auto &unusedCell = unusedCells.back();
+        out << "{" << unusedCell[0] << "," << unusedCell[1] << "," << unusedCell[2] << "}" << std::endl;
+    }
+    out << "}" << std::endl;
 }
