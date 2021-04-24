@@ -7,6 +7,7 @@
 #include <numeric>
 #include <algorithm>
 #include <chrono>
+#include <atomic>
 
 #include "Packing.h"
 #include "utils/Assertions.h"
@@ -300,13 +301,13 @@ bool Packing::isParticleOverlappingAnything(std::size_t originalParticleIdx, std
 
 bool Packing::areAnyParticlesOverlapping(const Interaction &interaction) const {
     if (this->neighbourGrid.has_value()) {
-        volatile bool overlapFound = false;
+        std::atomic<bool> overlapFound = false;
         #pragma omp parallel for default(none) shared(overlapFound, interaction) num_threads(this->scalingThreads)
         for (std::size_t i = 0; i < this->size(); i++) {
-            if (overlapFound)
+            if (overlapFound.load(std::memory_order_relaxed))
                 continue;
             if (this->isParticleOverlappingAnything(i, i, interaction))
-                overlapFound = true;
+                overlapFound.store(true, std::memory_order_relaxed);
         }
 
         return overlapFound;
