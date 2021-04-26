@@ -75,7 +75,7 @@ void PolyspherocylinderTraits::SpherocylinderData::toWolfram(std::ostream &out, 
     Vector<3> beg = shape.getPosition() + shape.getOrientation() * this->position + shapeHalfAxis;
     Vector<3> end = shape.getPosition() + shape.getOrientation() * this->position - shapeHalfAxis;
 
-    out << "CapsuleShape[{" << beg << "," << end << "}," << this->radius << "]";
+    out << "Tube[{" << beg << "," << end << "}," << this->radius << "]";
 }
 
 Vector<3> PolyspherocylinderTraits::SpherocylinderData::centreForShape(const Shape &shape) const {

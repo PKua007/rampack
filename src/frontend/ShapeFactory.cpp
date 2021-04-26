@@ -10,6 +10,7 @@
 #include "core/shapes/SpherocylinderTraits.h"
 #include "core/shapes/PolysphereBananaTraits.h"
 #include "core/shapes/KMerTraits.h"
+#include "core/shapes/PolyspherocylinderBananaTraits.h"
 #include "core/interactions/LennardJonesInteraction.h"
 #include "core/interactions/RepulsiveLennardJonesInteraction.h"
 
@@ -86,6 +87,26 @@ std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
             throw ValidationException("PolysphereBanana support interactions: hard, lj (Lennard Jones), "
                                       "repulsive_lj (Lennard Jones cut at the minimum)");
         }
+    } else if (shapeName == "PolyspherocylinderBanana") {
+        double arcRadius, arcAngle, radius;
+        std::size_t segmentNum, subdivisions;
+        shapeAttrStream >> arcRadius >> arcAngle >> segmentNum >> radius;
+        ValidateMsg(shapeAttrStream, "Malformed PolysphereBanana attributes; expected: "
+                                     "[arc radius] [arc angle] [number of segments] [radius] (subdivisions = 1)");
+        Validate(arcRadius > 0);
+        Validate(arcAngle > 0);
+        Validate(segmentNum > 0);
+        Validate(radius > 0);
+
+        shapeAttrStream >> subdivisions;
+        if (!shapeAttrStream)
+            subdivisions = 1;
+        else
+            Validate(subdivisions > 0);
+
+        ValidateMsg(interactionName.empty(), "SpherocylinderBanana supports only hard interactions");
+
+        return std::make_unique<PolyspherocylinderBananaTraits>(arcRadius, arcAngle, segmentNum, radius, subdivisions);
     } else if (shapeName == "KMer") {
         double sphereRadius, distance;
         std::size_t sphereNum;
