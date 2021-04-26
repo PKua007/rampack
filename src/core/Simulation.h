@@ -28,17 +28,12 @@ public:
 private:
     class Counter {
     private:
-        std::vector<std::size_t> movesSinceEvaluation;
-        std::vector<std::size_t> acceptedMovesSinceEvaluation{};
-        std::vector<std::size_t> moves{};
-        std::vector<std::size_t> acceptedMoves{};
-
-        static std::size_t total(const std::vector<std::size_t> &vec);
+        std::size_t movesSinceEvaluation{};
+        std::size_t acceptedMovesSinceEvaluation{};
+        std::size_t moves{};
+        std::size_t acceptedMoves{};
 
     public:
-        Counter();
-
-        void setNumThreads(std::size_t numThreads);
         void increment(bool accepted);
         void reset();
         void resetCurrent();
@@ -46,6 +41,9 @@ private:
         [[nodiscard]] std::size_t getMovesSinceEvaluation() const;
         [[nodiscard]] double getCurrentRate() const;
         [[nodiscard]] double getRate() const;
+
+        Counter &operator+=(const Counter &other);
+        friend Counter operator+(Counter c1, const Counter &c2) { return c1 += c2; }
     };
 
     std::size_t thermalisationCycles{};

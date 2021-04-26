@@ -26,8 +26,6 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep,
     Expects(this->numDomains > 0);
     Expects(this->numDomains <= this->packing->getMoveThreads());
 
-    this->moveCounter.setNumThreads(this->numDomains);
-
     this->mts.reserve(this->numDomains);
     for (std::size_t i{}; i < this->numDomains; i++)
         this->mts.emplace_back(seed + i);
@@ -132,9 +130,11 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
     const auto &neighbourGridCellDivisions = this->packing->getNeighbourGridCellDivisions();
     DomainDecomposition domainDecomposition(*this->packing, interaction, this->domainDivisions,
                                             neighbourGridCellDivisions, randomOrigin);
+    Counter tempMoveCounter;
 
+    #pragma omp declare reduction (+ : Counter : omp_out += omp_in)
     #pragma omp parallel for shared(domainDecomposition, interaction) default(none) collapse(3) \
-            num_threads(this->numDomains)
+            reduction(+ : tempMoveCounter) num_threads(this->numDomains)
     for (std::size_t i = 0; i < this->domainDivisions[0]; i++) {
         for (std::size_t j = 0; j < this->domainDivisions[1]; j++) {
             for (std::size_t k = 0; k < this->domainDivisions[2]; k++) {
@@ -148,11 +148,13 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
                 std::size_t numMoves = this->packing->size() / this->numDomains;
                 for (std::size_t x{}; x < numMoves; x++) {
                     bool wasMoved = tryMove(interaction, domainParticleIndices, activeDomain);
-                    this->moveCounter.increment(wasMoved);
+                    tempMoveCounter.increment(wasMoved);
                 }
             }
         }
     }
+
+    this->moveCounter += tempMoveCounter;
 }
 
 bool Simulation::tryTranslation(const Interaction &interaction, const std::vector<std::size_t> &particleIndices,
@@ -308,58 +310,44 @@ void Simulation::evaluateCounters(Logger &logger) {
 }
 
 void Simulation::Counter::increment(bool accepted) {
-    std::size_t tid = _OMP_THREAD_ID;
-
-    this->moves[tid]++;
-    this->movesSinceEvaluation[tid]++;
+    this->moves++;
+    this->movesSinceEvaluation++;
     if (accepted) {
-        this->acceptedMoves[tid]++;
-        this->acceptedMovesSinceEvaluation[tid]++;
+        this->acceptedMoves++;
+        this->acceptedMovesSinceEvaluation++;
     }
 }
 
 void Simulation::Counter::reset() {
-    std::fill(this->acceptedMoves.begin(), this->acceptedMoves.end(), 0);
-    std::fill(this->moves.begin(), this->moves.end(), 0);
-    std::fill(this->acceptedMovesSinceEvaluation.begin(), this->acceptedMovesSinceEvaluation.end(), 0);
-    std::fill(this->movesSinceEvaluation.begin(), this->movesSinceEvaluation.end(), 0);
+    this->acceptedMoves = 0;
+    this->moves = 0;
+    this->acceptedMovesSinceEvaluation = 0;
+    this->movesSinceEvaluation = 0;
 }
 
 void Simulation::Counter::resetCurrent() {
-    std::fill(this->acceptedMovesSinceEvaluation.begin(), this->acceptedMovesSinceEvaluation.end(), 0);
-    std::fill(this->movesSinceEvaluation.begin(), this->movesSinceEvaluation.end(), 0);
+    this->acceptedMovesSinceEvaluation = 0;
+    this->movesSinceEvaluation = 0;
 }
 
 double Simulation::Counter::getCurrentRate() const {
-    return static_cast<double>(total(this->acceptedMovesSinceEvaluation))
-           / static_cast<double>(total(this->movesSinceEvaluation));
+    return static_cast<double>(this->acceptedMovesSinceEvaluation) / static_cast<double>(this->movesSinceEvaluation);
 }
 
 double Simulation::Counter::getRate() const {
-    return static_cast<double>(total(this->acceptedMoves))
-           / static_cast<double>(total(this->moves));
-}
-
-std::size_t Simulation::Counter::total(const std::vector<std::size_t> &vec) {
-    return std::accumulate(vec.begin(), vec.end(), 0, std::plus<>{});
+    return static_cast<double>(this->acceptedMoves) / static_cast<double>(this->moves);
 }
 
 std::size_t Simulation::Counter::getMovesSinceEvaluation() const {
-    return total(this->movesSinceEvaluation);
+    return this->movesSinceEvaluation;
 }
 
-void Simulation::Counter::setNumThreads(std::size_t numThreads) {
-    Expects(numThreads > 0);
-
-    this->moves.resize(numThreads, 0);
-    this->movesSinceEvaluation.resize(numThreads, 0);
-    this->acceptedMoves.resize(numThreads, 0);
-    this->acceptedMovesSinceEvaluation.resize(numThreads, 0);
-    this->reset();
-}
-
-Simulation::Counter::Counter() {
-    this->setNumThreads(1);
+Simulation::Counter &Simulation::Counter::operator+=(const Simulation::Counter &other) {
+    this->acceptedMoves += other.acceptedMoves;
+    this->moves += other.moves;
+    this->acceptedMovesSinceEvaluation += other.acceptedMovesSinceEvaluation;
+    this->movesSinceEvaluation += other.getMovesSinceEvaluation();
+    return *this;
 }
 
 std::ostream &operator<<(std::ostream &out, const Simulation::ScalarSnapshot &snapshot) {
