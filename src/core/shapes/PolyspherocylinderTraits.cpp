@@ -8,6 +8,7 @@
 
 #include "PolyspherocylinderTraits.h"
 #include "utils/Assertions.h"
+#include "geometry/SegmentDistanceCalculator.h"
 
 double PolyspherocylinderTraits::getVolume() const {
     return std::accumulate(this->spherocylinderData.begin(), this->spherocylinderData.end(), 0.,
@@ -46,12 +47,11 @@ void PolyspherocylinderTraits::normalizeMassCentre() {
                                            massCentreAccumulator);
     massCentre /= this->getVolume();
 
+    std::vector<SpherocylinderData> newSpherocylinderData;
+    newSpherocylinderData.reserve(this->spherocylinderData.size());
     auto massCentreShifter = [massCentre](const SpherocylinderData &data) {
         return SpherocylinderData(data.position - massCentre, data.halfAxis, data.radius);
     };
-
-    std::vector<SpherocylinderData> newSpherocylinderData;
-    newSpherocylinderData.reserve(this->spherocylinderData.size());
     std::transform(this->spherocylinderData.begin(), this->spherocylinderData.end(),
                    std::back_inserter(newSpherocylinderData), massCentreShifter);
     this->spherocylinderData = std::move(newSpherocylinderData);
@@ -64,8 +64,7 @@ Vector<3> PolyspherocylinderTraits::getPrimaryAxis(const Shape &shape) const {
 PolyspherocylinderTraits::SpherocylinderData::SpherocylinderData(const Vector<3> &position, const Vector<3> &halfAxis,
                                                                  double radius)
         : position{position}, halfAxis{halfAxis}, halfLength{halfAxis.norm()}, radius{radius},
-          circumsphereRadius{radius + halfLength},
-          maxDistance{std::max((position + halfAxis).norm(), (position - halfAxis).norm()) + radius}
+          circumsphereRadius{radius + halfLength}
 {
     Expects(radius > 0);
 }
@@ -113,7 +112,8 @@ bool PolyspherocylinderTraits::overlapBetween(const Vector<3> &pos1, const Matri
 
     Vector<3> halfAxis1 = orientation1 * data1.halfAxis;
     Vector<3> halfAxis2 = orientation2 * data2.halfAxis;
-    return distance2Between(pos1 + halfAxis1, pos1 - halfAxis1, pos2bc + halfAxis2, pos2bc - halfAxis2) < insphereR2;
+    return SegmentDistanceCalculator::calculate(pos1+halfAxis1, pos1-halfAxis1, pos2bc+halfAxis2, pos2bc-halfAxis2)
+           < insphereR2;
 }
 
 std::vector<Vector<3>> PolyspherocylinderTraits::getInteractionCentres() const {
@@ -132,74 +132,3 @@ double PolyspherocylinderTraits::getRangeRadius() const {
     return 2 * maxIt->circumsphereRadius;
 }
 
-// Based on
-// Copyright 2001 softSurfer, 2012 Dan Sunday
-// This code may be freely used, distributed and modified for any purpose
-// providing that this copyright notice is included with it.
-// SoftSurfer makes no warranty for this code, and cannot be held
-// liable for any real or imagined damage resulting from its use.
-// Users of this code must verify correctness for their application.
-double PolyspherocylinderTraits::distance2Between(const Vector<3> &capCentre11, const Vector<3> &capCentre12,
-                                                  const Vector<3> &capCentre21, const Vector<3> &capCentre22)
-{
-    Vector<3> u = capCentre12 - capCentre11;
-    Vector<3> v = capCentre22 - capCentre21;
-    Vector<3> w = capCentre11 - capCentre21;
-    double a = u * u, b = u * v, c = v * v, d = u * w, e = v * w;
-
-    double D = a * c - b * b;        // always >= 0
-    double sc, sN, sD = D;       // sc = sN / sD, default sD = D >= 0
-    double tc, tN, tD = D;       // tc = tN / tD, default tD = D >= 0
-
-    // compute the line parameters of the two closest points
-    if (D < EPSILON) { // the lines are almost parallel
-        sN = 0.0;      // force using point P0 on segment S1
-        sD = 1.0;      // to prevent possible division by 0.0 later
-        tN = e;
-        tD = c;
-    } else {           // get the closest points on the infinite lines
-        sN = (b * e - c * d);
-        tN = (a * e - b * d);
-        if (sN < 0.0) { // sc < 0 => the s=0 edge is visible
-            sN = 0.0;
-            tN = e;
-            tD = c;
-        } else if (sN > sD) {  // sc > 1  => the s=1 edge is visible
-            sN = sD;
-            tN = e + b;
-            tD = c;
-        }
-    }
-
-    if (tN < 0.0) { // tc < 0 => the t=0 edge is visible
-        tN = 0.0;
-        // recompute sc for this edge
-        if (-d < 0.0)
-            sN = 0.0;
-        else if (-d > a)
-            sN = sD;
-        else {
-            sN = -d;
-            sD = a;
-        }
-    } else if (tN > tD) { // tc > 1  => the t=1 edge is visible
-        tN = tD;
-        // recompute sc for this edge
-        if ((-d + b) < 0.0)
-            sN = 0;
-        else if ((-d + b) > a)
-            sN = sD;
-        else {
-            sN = (-d + b);
-            sD = a;
-        }
-    }
-    // finally do the division to get sc and tc
-    sc = (std::abs(sN) < EPSILON ? 0.0 : sN / sD);
-    tc = (std::abs(tN) < EPSILON ? 0.0 : tN / tD);
-
-    // get the difference of the two closest points
-    Vector<3> dP = w + (sc * u) - (tc * v);  // =  S1(sc) - S2(tc)
-
-    return dP.norm2();   // return the closest distance
-}

@@ -6,7 +6,6 @@
 #define RAMPACK_POLYSPHEROCYLINDERTRAITS_H
 
 
-#include <utility>
 #include <ostream>
 
 #include "core/ShapeTraits.h"
@@ -19,7 +18,6 @@ public:
         const double halfLength{};
         const double radius{};
         const double circumsphereRadius{};
-        const double maxDistance{};
 
         SpherocylinderData(const Vector<3> &position, const Vector<3> &halfAxis, double radius);
 
@@ -30,7 +28,7 @@ public:
 
         friend bool operator==(const SpherocylinderData &lhs, const SpherocylinderData &rhs) {
             return lhs.radius == rhs.radius && lhs.position == rhs.position
-                   &&(lhs.halfAxis == rhs.halfAxis || lhs.halfAxis == -rhs.halfAxis);
+                   && (lhs.halfAxis == rhs.halfAxis || lhs.halfAxis == -rhs.halfAxis);
         }
 
         friend std::ostream &operator<<(std::ostream &os, const SpherocylinderData &data) {
@@ -40,14 +38,8 @@ public:
     };
 
 private:
-    static constexpr double EPSILON = 0.0000000001;
-
     std::vector<SpherocylinderData> spherocylinderData;
-    std::unique_ptr<Interaction> interaction{};
     Vector<3> primaryAxis;
-
-    static double distance2Between(const Vector<3> &capCentre11, const Vector<3> &capCentre12,
-                                   const Vector<3> &capCentre21, const Vector<3> &capCentre22);
 
     void normalizeMassCentre();
 
@@ -67,12 +59,11 @@ public:
     [[nodiscard]] double getVolume() const override;
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
-
-    [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
-
     [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const {
         return this->spherocylinderData;
     }
+
+    [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
 };
 
 

@@ -12,10 +12,7 @@ private:
     double length{};    // distance between two spherical caps centres
     double radius{};    // radius of spherical caps
 
-    static constexpr double EPSILON = 0.0000000001;
-
     [[nodiscard]] Vector<3> getCapCentre(short beginOrEnd, const Shape &shape) const;
-    [[nodiscard]] double distance2Between(const Shape &shape1, const Shape &shape2) const;
 
 public:
     SpherocylinderTraits() : length{1}, radius{1} { }
