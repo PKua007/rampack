@@ -121,6 +121,7 @@ public:
     [[nodiscard]] std::size_t getNeighbourGridRebuilds() const { return this->neighbourGridRebuilds; }
     [[nodiscard]] std::size_t getNeighbourGridResizes() const { return this->neighbourGridResizes; }
     [[nodiscard]] double getNeighbourGridRebuildMicroseconds() const { return this->neighbourGridRebuildMicroseconds; }
+    [[nodiscard]] double getAverageNumberOfNeighbours() const;
 
     void toWolfram(std::ostream &out, const ShapePrinter &printer) const;
     void store(std::ostream &out, const std::map<std::string, std::string> &auxInfo) const;

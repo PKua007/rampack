@@ -657,3 +657,39 @@ std::size_t Packing::getNeighbourGridMemoryUsage() const {
     return bytes;
 }
 
+double Packing::getAverageNumberOfNeighbours() const {
+    if (!this->neighbourGrid.has_value()) {
+        if (this->numInteractionCentres == 0)
+            return static_cast<double>(this->size() - 1ul);
+        else
+            return static_cast<double>(this->size()*this->numInteractionCentres - 1ul);
+    }
+
+    if (this->numInteractionCentres == 0) {
+        std::size_t numNeighbours{};
+        for (std::size_t i{}; i < this->size(); i++) {
+            const auto &pos = this->shapes[i].getPosition();
+            for (const auto &cell : this->neighbourGrid->getNeighbouringCells(pos))
+                for (auto j : cell)
+                    if (i != j)
+                        numNeighbours++;
+        }
+        return static_cast<double>(numNeighbours) / static_cast<double>(this->size());
+    } else {
+        std::size_t numNeighbours{};
+        for (std::size_t centreIdx1{}; centreIdx1 < this->size()*this->numInteractionCentres; centreIdx1++) {
+            std::size_t particle1 = centreIdx1 / this->numInteractionCentres;
+            auto pos1 = this->shapes[particle1].getPosition() + this->interactionCentres[centreIdx1];
+            pos1 += this->bc->getCorrection(pos1);
+            for (const auto &cell : this->neighbourGrid->getNeighbouringCells(pos1)) {
+                for (auto centreIdx2 : cell) { // NOLINT(readability-use-anyofallof)
+                    std::size_t particle2 = centreIdx2 / this->numInteractionCentres;
+                    if (particle2 != particle1)
+                        numNeighbours++;
+                }
+            }
+        }
+        return static_cast<double>(numNeighbours) / static_cast<double>(this->size()*this->numInteractionCentres);
+    }
+}
+
