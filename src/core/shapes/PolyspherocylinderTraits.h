@@ -11,7 +11,7 @@
 
 #include "core/ShapeTraits.h"
 
-class PolyspherocylinderTraits : public ShapeTraits, public ShapePrinter, Interaction {
+class PolyspherocylinderTraits : public ShapeTraits, public ShapePrinter, public Interaction {
 public:
     struct SpherocylinderData {
         const Vector<3> position;
