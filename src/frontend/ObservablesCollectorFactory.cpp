@@ -14,6 +14,7 @@
 #include "core/observables/EnergyPerParticle.h"
 #include "core/observables/EnergyFluctuationsPerParticle.h"
 #include "core/observables/NematicOrder.h"
+#include "core/observables/SmecticOrder.h"
 
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
@@ -77,6 +78,8 @@ std::unique_ptr<ObservablesCollector> ObservablesCollectorFactory::create(const 
             collector->addObservable(std::make_unique<EnergyFluctuationsPerParticle>(), observableType);
         } else if (observableName == "nematicOrder") {
             collector->addObservable(std::make_unique<NematicOrder>(), observableType);
+        } else if (observableName == "smecticOrder") {
+            collector->addObservable(std::make_unique<SmecticOrder>(), observableType);
         } else {
             throw ValidationException("Unknown observable: " + observableName);
         }
