@@ -29,6 +29,8 @@ private:
     std::vector<std::vector<std::string>> snapshotValues;
     std::vector<std::vector<double>> averagingValues;
 
+    mutable double computationMicroseconds{};
+
     void printInlineObservable(unsigned long observableIdx, const Packing &packing, const ShapeTraits &shapeTraits,
                                std::ostringstream &out) const;
 
@@ -57,12 +59,13 @@ public:
     void addAveragingValues(const Packing &packing, const ShapeTraits &shapeTraits);
     [[nodiscard]] std::string generateInlineObservablesString(const Packing &packing,
                                                               const ShapeTraits &shapeTraits) const;
-    void clearValues();
+    void clear();
 
     void printSnapshots(std::ostream &out, bool printHeader = true) const;
     [[nodiscard]] std::vector<ObservableData> getFlattenedAverageValues() const;
     [[nodiscard]] std::vector<ObservableGroupData> getGroupedAverageValues() const;
 
+    [[nodiscard]] double getComputationMicroseconds() const { return this->computationMicroseconds; }
     [[nodiscard]] std::size_t getMemoryUsage() const;
 };
 

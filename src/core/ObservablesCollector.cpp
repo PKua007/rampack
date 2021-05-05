@@ -4,6 +4,7 @@
 
 #include <ostream>
 #include <iterator>
+#include <chrono>
 
 #include "ObservablesCollector.h"
 #include "utils/Utils.h"
@@ -39,6 +40,8 @@ void ObservablesCollector::addObservable(std::unique_ptr<Observable> observable,
 
 void ObservablesCollector::addSnapshot(const Packing &packing, std::size_t cycleNumber, const ShapeTraits &shapeTraits)
 {
+    auto start = std::chrono::high_resolution_clock::now();
+
     this->snapshotCycleNumbers.push_back(cycleNumber + this->cycleOffset);
     std::size_t valueIndex{};
     for (std::size_t observableIndex : this->snapshotObservablesIndices) {
@@ -63,9 +66,14 @@ void ObservablesCollector::addSnapshot(const Packing &packing, std::size_t cycle
         }
     }
     Assert(valueIndex == this->snapshotValues.size());
+
+    auto end = std::chrono::high_resolution_clock::now();
+    this->computationMicroseconds += std::chrono::duration<double, std::micro>(end - start).count();
 }
 
 void ObservablesCollector::addAveragingValues(const Packing &packing, const ShapeTraits &shapeTraits) {
+    auto start = std::chrono::high_resolution_clock::now();
+
     std::size_t valueIndex{};
     for (std::size_t observableIndex : this->averagingObservablesIndices) {
         auto &observable = *this->observables[observableIndex];
@@ -79,11 +87,15 @@ void ObservablesCollector::addAveragingValues(const Packing &packing, const Shap
         }
     }
     Assert(valueIndex == this->averagingValues.size());
+
+    auto end = std::chrono::high_resolution_clock::now();
+    this->computationMicroseconds += std::chrono::duration<double, std::micro>(end - start).count();
 }
 
 std::string ObservablesCollector::generateInlineObservablesString(const Packing &packing,
                                                                   const ShapeTraits &shapeTraits) const
 {
+
     if (this->inlineObservablesIndices.empty())
         return "";
 
@@ -100,6 +112,8 @@ std::string ObservablesCollector::generateInlineObservablesString(const Packing 
 void ObservablesCollector::printInlineObservable(unsigned long observableIdx, const Packing &packing,
                                                  const ShapeTraits &shapeTraits, std::ostringstream &out) const
 {
+    auto start = std::chrono::high_resolution_clock::now();
+
     auto &observable = *this->observables[observableIdx];
     observable.calculate(packing, this->temperature, this->pressure, shapeTraits);
 
@@ -128,14 +142,18 @@ void ObservablesCollector::printInlineObservable(unsigned long observableIdx, co
     }
 
     Assert(valueNum == totalValues);
+
+    auto end = std::chrono::high_resolution_clock::now();
+    this->computationMicroseconds += std::chrono::duration<double, std::micro>(end - start).count();
 }
 
-void ObservablesCollector::clearValues() {
+void ObservablesCollector::clear() {
     this->snapshotCycleNumbers.clear();
     for (auto &singleSet : this->snapshotValues)
         singleSet.clear();
     for (auto &singleSet : this->averagingValues)
         singleSet.clear();
+    this->computationMicroseconds = 0;
 }
 
 void ObservablesCollector::printSnapshots(std::ostream &out, bool printHeader) const {

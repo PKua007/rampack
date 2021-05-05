@@ -90,7 +90,7 @@ void Simulation::reset() {
     this->packing->resetCounters();
     this->moveMicroseconds = 0;
     this->scalingMicroseconds = 0;
-    this->observablesCollector->clearValues();
+    this->observablesCollector->clear();
 }
 
 void Simulation::performCycle(Logger &logger, const Interaction &interaction) {

@@ -68,7 +68,7 @@ TEST_CASE("ObservablesCollector") {
         SECTION("clearing") {
             std::ostringstream out2;
 
-            collector.clearValues();
+            collector.clear();
 
             collector.printSnapshots(out2);
             CHECK(out2.str() == "cycle L_X L_Y L_Z dim Z rho \n");
@@ -94,7 +94,7 @@ TEST_CASE("ObservablesCollector") {
             CHECK(values[3].quantity.value == Approx(45));
 
             SECTION("clearing") {
-                collector.clearValues();
+                collector.clear();
 
                 auto values2 = collector.getFlattenedAverageValues();
 

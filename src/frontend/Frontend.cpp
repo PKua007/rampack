@@ -266,9 +266,12 @@ int Frontend::casino(int argc, char **argv) {
         if (isContinuation)
             collector->setCycleOffset(cycleOffset);
 
+        auto start = std::chrono::high_resolution_clock::now();
         simulation.perform(runParams.temperature, runParams.pressure, runParams.thermalisationCycles,
                            runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
                            *shapeTraits, std::move(collector), this->logger);
+        auto end = std::chrono::high_resolution_clock::now();
+        double totalSeconds = std::chrono::duration<double>(end - start).count();
 
         // Print info
         const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
@@ -276,16 +279,21 @@ int Frontend::casino(int argc, char **argv) {
         const auto &simulatedPacking = simulation.getPacking();
         std::size_t ngRebuilds = simulatedPacking.getNeighbourGridRebuilds();
         std::size_t ngResizes = simulatedPacking.getNeighbourGridResizes();
+
         double ngRebuildSeconds = simulatedPacking.getNeighbourGridRebuildMicroseconds() / 1e6;
         double moveSeconds = simulation.getMoveMicroseconds() / 1e6;
         double scalingSeconds = simulation.getScalingMicroseconds() / 1e6;
-        double totalSeconds = moveSeconds + scalingSeconds;
+        double observablesSeconds = simulation.getObservablesMicroseconds() / 1e6;
+        double otherSeconds = totalSeconds - moveSeconds - scalingSeconds - observablesSeconds;
         double cyclesPerSecond = static_cast<double>(runParams.thermalisationCycles + runParams.averagingCycles)
                                  / totalSeconds;
+
         double ngRebuildTotalPercent = ngRebuildSeconds / totalSeconds * 100;
         double ngRebuildScalingPercent = ngRebuildSeconds / scalingSeconds * 100;
         double movePercent = moveSeconds / totalSeconds * 100;
         double scalingPercent = scalingSeconds / totalSeconds * 100;
+        double observablesPercent = observablesSeconds / totalSeconds * 100;
+        double otherPercent = otherSeconds / totalSeconds * 100;
 
         this->logger.info();
         this->logger << "--------------------------------------------------------------------" << std::endl;
@@ -301,6 +309,9 @@ int Frontend::casino(int argc, char **argv) {
         this->logger << "Scaling time      : " << scalingSeconds << " s (" << scalingPercent << "% total)" << std::endl;
         this->logger << "NG rebuild time   : " << ngRebuildSeconds << " s (";
         this->logger << ngRebuildScalingPercent << "% scaling, " << ngRebuildTotalPercent << "% total)" <<  std::endl;
+        this->logger << "Observables time  : " << observablesSeconds << " s (";
+        this->logger << observablesPercent << "% total)" << std::endl;
+        this->logger << "Other time        : " << otherSeconds << " s (" << otherPercent << "% total)" << std::endl;
         this->logger << "Total time        : " << totalSeconds << " s" << std::endl;
         this->logger << "Cycles per second : " << cyclesPerSecond << std::endl;
         this->logger << "--------------------------------------------------------------------" << std::endl;
