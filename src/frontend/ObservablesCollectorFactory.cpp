@@ -18,21 +18,16 @@
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
 
-std::unique_ptr<ObservablesCollector> ObservablesCollectorFactory::create(const std::vector<std::string> &observables) {
-    auto collector = std::make_unique<ObservablesCollector>();
+namespace {
+    auto parse_observable_name_and_type(std::istringstream &observableStream, const std::regex &typePattern) {
+        std::string observable = observableStream.str();
 
-    std::regex typePattern(R"(^(?:inline|snapshot|averaging)(?:\/(?:inline|snapshot|averaging))*$)");
-
-    for (auto observable : observables) {
-        trim(observable);
-        std::istringstream observableStream(observable);
+        std::string observableName;
+        std::size_t observableType{};
 
         std::string firstToken;
         observableStream >> firstToken;
         ValidateMsg(observableStream, "Malformed observable: " + observable);
-
-        std::string observableName;
-        std::size_t observableType{};
         if (std::regex_match(firstToken, typePattern)) {
             auto types = explode(firstToken, '/');
             for (const auto &type : types) {
@@ -52,6 +47,21 @@ std::unique_ptr<ObservablesCollector> ObservablesCollectorFactory::create(const 
             using OC = ObservablesCollector;
             observableType = OC::SNAPSHOT | OC::AVERAGING | OC::INLINE;
         }
+
+        return std::make_pair(observableName, observableType);
+    }
+}
+
+std::unique_ptr<ObservablesCollector> ObservablesCollectorFactory::create(const std::vector<std::string> &observables) {
+    auto collector = std::make_unique<ObservablesCollector>();
+
+    std::regex typePattern(R"(^(?:inline|snapshot|averaging)(?:\/(?:inline|snapshot|averaging))*$)");
+
+    for (auto observable : observables) {
+        trim(observable);
+        std::istringstream observableStream(observable);
+
+        auto [observableName, observableType] = parse_observable_name_and_type(observableStream, typePattern);
 
         if (observableName == "numberDensity") {
             collector->addObservable(std::make_unique<NumberDensity>(), observableType);

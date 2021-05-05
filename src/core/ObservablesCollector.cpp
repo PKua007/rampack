@@ -2,7 +2,6 @@
 // Created by Piotr Kubala on 22/03/2021.
 //
 
-#include <sstream>
 #include <ostream>
 #include <iterator>
 
@@ -45,6 +44,7 @@ void ObservablesCollector::addSnapshot(const Packing &packing, std::size_t cycle
     for (std::size_t observableIndex : this->snapshotObservablesIndices) {
         auto &observable = *this->observables[observableIndex];
         observable.calculate(packing, this->temperature, this->pressure, shapeTraits);
+
         auto intervalValues = observable.getIntervalValues();
         for (double value : intervalValues) {
             Assert(valueIndex < this->snapshotValues.size());
@@ -70,6 +70,7 @@ void ObservablesCollector::addAveragingValues(const Packing &packing, const Shap
     for (std::size_t observableIndex : this->averagingObservablesIndices) {
         auto &observable = *this->observables[observableIndex];
         observable.calculate(packing, this->temperature, this->pressure, shapeTraits);
+
         auto values = observable.getIntervalValues();
         for (double value : values) {
             Assert(valueIndex < this->averagingValues.size());
@@ -101,6 +102,7 @@ void ObservablesCollector::printInlineObservable(unsigned long observableIdx, co
 {
     auto &observable = *this->observables[observableIdx];
     observable.calculate(packing, this->temperature, this->pressure, shapeTraits);
+
     auto intervalHeader = observable.getIntervalHeader();
     auto intervalValues = observable.getIntervalValues();
     auto nominalHeader = observable.getNominalHeader();
@@ -110,20 +112,22 @@ void ObservablesCollector::printInlineObservable(unsigned long observableIdx, co
     Assert(intervalHeader.size() == intervalValues.size());
     Assert(nominalHeader.size() == nominalValues.size());
 
-    std::size_t valueNum = 1;
+    std::size_t valueNum = 0;
     for (std::size_t i{}; i < intervalHeader.size(); i++) {
         out << intervalHeader[i] << ": " << intervalValues[i];
-        if (valueNum < totalValues)
+        if (valueNum < totalValues - 1)
             out << ", ";
         valueNum++;
     }
 
     for (std::size_t i{}; i < nominalHeader.size(); i++) {
         out << nominalHeader[i] << ": " << nominalValues[i];
-        if (valueNum < totalValues)
+        if (valueNum < totalValues - 1)
             out << ", ";
         valueNum++;
     }
+
+    Assert(valueNum == totalValues);
 }
 
 void ObservablesCollector::clearValues() {
