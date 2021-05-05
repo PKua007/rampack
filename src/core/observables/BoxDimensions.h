@@ -20,12 +20,14 @@ public:
         this->dimensions = packing.getDimensions();
     }
 
-    [[nodiscard]] std::vector<std::string> getHeader() const override { return {"L_X", "L_Y", "L_Z"}; }
+    [[nodiscard]] std::vector<std::string> getIntervalHeader() const override { return {"L_X", "L_Y", "L_Z"}; }
 
-    [[nodiscard]] std::vector<double> getValues() const override {
+    [[nodiscard]] std::vector<double> getIntervalValues() const override {
         return std::vector<double>(this->dimensions.begin(), this->dimensions.end());
     }
 
+    [[nodiscard]] std::vector<std::string> getNominalHeader() const override { return {}; }
+    [[nodiscard]]  std::vector<std::string> getNominalValues() const override { return {}; }
     [[nodiscard]] std::string getName() const override { return "box dimensions"; }
 };
 

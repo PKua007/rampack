@@ -3,6 +3,7 @@
 //
 
 #include <sstream>
+#include <regex>
 
 #include "ObservablesCollectorFactory.h"
 
@@ -20,37 +21,54 @@
 std::unique_ptr<ObservablesCollector> ObservablesCollectorFactory::create(const std::vector<std::string> &observables) {
     auto collector = std::make_unique<ObservablesCollector>();
 
+    std::regex typePattern(R"(^(?:inline|snapshot|averaging)(?:\/(?:inline|snapshot|averaging))*$)");
+
     for (auto observable : observables) {
         trim(observable);
-        bool isInline = false;
         std::istringstream observableStream(observable);
-        if (startsWith(observable, "inline")) {
-            std::string inlineString;
-            observableStream >> inlineString;
-            ValidateMsg(observableStream && inlineString == "inline", "Malformed observable: " + observable);
-            isInline = true;
-        }
 
-        std::string observableName;
-        observableStream >> observableName;
+        std::string firstToken;
+        observableStream >> firstToken;
         ValidateMsg(observableStream, "Malformed observable: " + observable);
 
-        if (observableName == "numberDensity") {
-            collector->addObservable(std::make_unique<NumberDensity>(), isInline);
-        } else if (observableName == "boxDimensions") {
-            collector->addObservable(std::make_unique<BoxDimensions>(), isInline);
-        } else if (observableName == "packingFraction") {
-            collector->addObservable(std::make_unique<PackingFraction>(), isInline);
-        } else if (observableName == "compressibilityFactor") {
-            collector->addObservable(std::make_unique<CompressibilityFactor>(), isInline);
-        } else if (observableName == "energyPerParticle") {
-            collector->addObservable(std::make_unique<EnergyPerParticle>(), isInline);
-        } else if (observableName == "energyFluctuationsPerParticle") {
-            collector->addObservable(std::make_unique<EnergyFluctuationsPerParticle>(), isInline);
-        } else if (observableName == "nematicOrder") {
-            collector->addObservable(std::make_unique<NematicOrder>(), isInline);
+        std::string observableName;
+        std::size_t observableType{};
+        if (std::regex_match(firstToken, typePattern)) {
+            auto types = explode(firstToken, '/');
+            for (const auto &type : types) {
+                if (type == "inline")
+                    observableType |= ObservablesCollector::INLINE;
+                else if (type == "snapshot")
+                    observableType |= ObservablesCollector::SNAPSHOT;
+                else if (type == "averaging")
+                    observableType |= ObservablesCollector::AVERAGING;
+                else
+                    throw AssertionException("observable type: " + type);
+            }
+            observableStream >> observableName;
+            ValidateMsg(observableStream, "Malformed observable: " + observable);
         } else {
-            throw ValidationException("Unknown observable: " + observable);
+            observableName = firstToken;
+            using OC = ObservablesCollector;
+            observableType = OC::SNAPSHOT | OC::AVERAGING | OC::INLINE;
+        }
+
+        if (observableName == "numberDensity") {
+            collector->addObservable(std::make_unique<NumberDensity>(), observableType);
+        } else if (observableName == "boxDimensions") {
+            collector->addObservable(std::make_unique<BoxDimensions>(), observableType);
+        } else if (observableName == "packingFraction") {
+            collector->addObservable(std::make_unique<PackingFraction>(), observableType);
+        } else if (observableName == "compressibilityFactor") {
+            collector->addObservable(std::make_unique<CompressibilityFactor>(), observableType);
+        } else if (observableName == "energyPerParticle") {
+            collector->addObservable(std::make_unique<EnergyPerParticle>(), observableType);
+        } else if (observableName == "energyFluctuationsPerParticle") {
+            collector->addObservable(std::make_unique<EnergyFluctuationsPerParticle>(), observableType);
+        } else if (observableName == "nematicOrder") {
+            collector->addObservable(std::make_unique<NematicOrder>(), observableType);
+        } else {
+            throw ValidationException("Unknown observable: " + observableName);
         }
     }
 

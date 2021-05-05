@@ -18,8 +18,10 @@ public:
         this->numberDensity = packing.getNumberDensity();
     }
 
-    [[nodiscard]] std::vector<std::string> getHeader() const override { return {"rho"}; }
-    [[nodiscard]] std::vector<double> getValues() const override { return {this->numberDensity}; }
+    [[nodiscard]] std::vector<std::string> getIntervalHeader() const override { return {"rho"}; }
+    [[nodiscard]] std::vector<double> getIntervalValues() const override { return {this->numberDensity}; }
+    [[nodiscard]] std::vector<std::string> getNominalHeader() const override { return {}; }
+    [[nodiscard]]  std::vector<std::string> getNominalValues() const override { return {}; }
     [[nodiscard]] std::string getName() const override { return "number density"; };
 };
 

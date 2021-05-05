@@ -18,8 +18,10 @@ public:
         this->compressibilityFactor = pressure / temperature / packing.getNumberDensity();
     }
 
-    [[nodiscard]] std::vector<std::string> getHeader() const override { return {"Z"}; }
-    [[nodiscard]] std::vector<double> getValues() const override { return {this->compressibilityFactor}; }
+    [[nodiscard]] std::vector<std::string> getIntervalHeader() const override { return {"Z"}; }
+    [[nodiscard]] std::vector<double> getIntervalValues() const override { return {this->compressibilityFactor}; }
+    [[nodiscard]] std::vector<std::string> getNominalHeader() const override { return {}; }
+    [[nodiscard]]  std::vector<std::string> getNominalValues() const override { return {}; }
     [[nodiscard]] std::string getName() const override { return "compressibility factor"; };
 };
 

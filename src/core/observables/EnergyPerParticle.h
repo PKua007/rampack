@@ -18,8 +18,10 @@ public:
         this->energyPerParticle = packing.getTotalEnergy(shapeTraits.getInteraction()) / packing.size();
     }
 
-    [[nodiscard]] std::vector<std::string> getHeader() const override { return {"E"}; }
-    [[nodiscard]] std::vector<double> getValues() const override { return {this->energyPerParticle}; }
+    [[nodiscard]] std::vector<std::string> getIntervalHeader() const override { return {"E"}; }
+    [[nodiscard]] std::vector<double> getIntervalValues() const override { return {this->energyPerParticle}; }
+    [[nodiscard]] std::vector<std::string> getNominalHeader() const override { return {}; }
+    [[nodiscard]]  std::vector<std::string> getNominalValues() const override { return {}; }
     [[nodiscard]] std::string getName() const override { return "energy per particle"; };
 };
 

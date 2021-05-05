@@ -20,16 +20,17 @@ private:
     std::size_t cycleOffset{};
 
     std::vector<std::unique_ptr<Observable>> observables;
-    std::vector<std::string> observableHeader;
+    std::vector<std::string> snapshotHeader;
+    std::vector<std::string> averagingHeader;
     std::vector<std::size_t> inlineObservablesIndices;
+    std::vector<std::size_t> snapshotObservablesIndices;
+    std::vector<std::size_t> averagingObservablesIndices;
     std::vector<std::size_t> snapshotCycleNumbers;
-    std::vector<std::vector<double>> snapshotValues;
+    std::vector<std::vector<std::string>> snapshotValues;
     std::vector<std::vector<double>> averagingValues;
 
     void printInlineObservable(unsigned long observableIdx, const Packing &packing, const ShapeTraits &shapeTraits,
                                std::ostringstream &out) const;
-    void addObservablesToContainer(const Packing &packing, const ShapeTraits &shapeTraits,
-                                   std::vector<std::vector<double>> &container);
 
 public:
     struct ObservableData {
@@ -42,7 +43,13 @@ public:
         std::vector<ObservableData> observableData;
     };
 
-    void addObservable(std::unique_ptr<Observable> observable, bool shouldDisplayInline);
+    enum ObservableType : std::size_t {
+        SNAPSHOT = 1,
+        AVERAGING = 2,
+        INLINE = 4
+    };
+
+    void addObservable(std::unique_ptr<Observable> observable, std::size_t observableType);
     void setThermodynamicParameters(double temperature_, double pressure_);
     void setCycleOffset(std::size_t offset);
 

@@ -18,8 +18,10 @@ public:
         this->energyFluctuationsPerParticle = packing.getParticleEnergyFluctuations(shapeTraits.getInteraction());
     }
 
-    [[nodiscard]] std::vector<std::string> getHeader() const override { return {"varE"}; }
-    [[nodiscard]] std::vector<double> getValues() const override { return {this->energyFluctuationsPerParticle}; }
+    [[nodiscard]] std::vector<std::string> getIntervalHeader() const override { return {"varE"}; }
+    [[nodiscard]] std::vector<double> getIntervalValues() const override { return {this->energyFluctuationsPerParticle}; }
+    [[nodiscard]] std::vector<std::string> getNominalHeader() const override { return {}; }
+    [[nodiscard]]  std::vector<std::string> getNominalValues() const override { return {}; }
     [[nodiscard]] std::string getName() const override { return "energy fluctuations per particle"; };
 };
 

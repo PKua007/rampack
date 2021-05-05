@@ -17,8 +17,10 @@ public:
 
     virtual void calculate(const Packing &packing, double temperature, double pressure,
                            const ShapeTraits &shapeTraits) = 0;
-    [[nodiscard]] virtual std::vector<std::string> getHeader() const = 0;
-    [[nodiscard]] virtual std::vector<double> getValues() const = 0;
+    [[nodiscard]] virtual std::vector<std::string> getIntervalHeader() const = 0;
+    [[nodiscard]] virtual std::vector<std::string> getNominalHeader() const = 0;
+    [[nodiscard]] virtual std::vector<double> getIntervalValues() const = 0;
+    [[nodiscard]] virtual std::vector<std::string> getNominalValues() const = 0;
     [[nodiscard]] virtual std::string getName() const = 0;
 };
 

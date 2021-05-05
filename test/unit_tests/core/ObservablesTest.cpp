@@ -41,9 +41,9 @@ TEST_CASE("Observables") {
 
         boxDimensions.calculate(packing, 1, 1, mockShapeTraits);
 
-        CHECK(boxDimensions.getHeader() == std::vector<std::string>{"L_X", "L_Y", "L_Z"});
+        CHECK(boxDimensions.getIntervalHeader() == std::vector<std::string>{"L_X", "L_Y", "L_Z"});
         CHECK(boxDimensions.getName() == "box dimensions");
-        CHECK(boxDimensions.getValues() == std::vector<double>{3, 4, 5});
+        CHECK(boxDimensions.getIntervalValues() == std::vector<double>{3, 4, 5});
     }
 
     SECTION("CompressibilityFactor") {
@@ -51,9 +51,9 @@ TEST_CASE("Observables") {
 
         compressibilityFactor.calculate(packing, 4, 2, mockShapeTraits);
 
-        CHECK(compressibilityFactor.getHeader() == std::vector<std::string>{"Z"});
+        CHECK(compressibilityFactor.getIntervalHeader() == std::vector<std::string>{"Z"});
         CHECK(compressibilityFactor.getName() == "compressibility factor");
-        CHECK(compressibilityFactor.getValues() == std::vector<double>{10});
+        CHECK(compressibilityFactor.getIntervalValues() == std::vector<double>{10});
     }
 
     SECTION("EnergyFluctuationsPerParticle") {
@@ -61,10 +61,10 @@ TEST_CASE("Observables") {
 
         energyFluctuationsPerParticle.calculate(packing, 1, 1, mockShapeTraits);
 
-        CHECK(energyFluctuationsPerParticle.getHeader() == std::vector<std::string>{"varE"});
+        CHECK(energyFluctuationsPerParticle.getIntervalHeader() == std::vector<std::string>{"varE"});
         CHECK(energyFluctuationsPerParticle.getName() == "energy fluctuations per particle");
         // It is already tested in the Packing test
-        CHECK(energyFluctuationsPerParticle.getValues()
+        CHECK(energyFluctuationsPerParticle.getIntervalValues()
               == std::vector<double>{packing.getParticleEnergyFluctuations(mockShapeTraits.getInteraction())});
     }
 
@@ -73,10 +73,10 @@ TEST_CASE("Observables") {
 
         energyPerParticle.calculate(packing, 1, 1, mockShapeTraits);
 
-        CHECK(energyPerParticle.getHeader() == std::vector<std::string>{"E"});
+        CHECK(energyPerParticle.getIntervalHeader() == std::vector<std::string>{"E"});
         CHECK(energyPerParticle.getName() == "energy per particle");
         // It is already tested in the Packing test
-        CHECK(energyPerParticle.getValues()
+        CHECK(energyPerParticle.getIntervalValues()
               == std::vector<double>{packing.getTotalEnergy(mockShapeTraits.getInteraction()) / 3});
     }
 
@@ -85,10 +85,10 @@ TEST_CASE("Observables") {
 
         nematicOrder.calculate(packing, 1, 1, mockShapeTraits);
 
-        CHECK(nematicOrder.getHeader() == std::vector<std::string>{"P2"});
+        CHECK(nematicOrder.getIntervalHeader() == std::vector<std::string>{"P2"});
         CHECK(nematicOrder.getName() == "nematic order");
-        REQUIRE(nematicOrder.getValues().size() == 1);
-        CHECK(nematicOrder.getValues()[0] == Approx(0.6403882032022076));   // Mathematica
+        REQUIRE(nematicOrder.getIntervalValues().size() == 1);
+        CHECK(nematicOrder.getIntervalValues()[0] == Approx(0.6403882032022076));   // Mathematica
     }
 
     SECTION("NumberDensity") {
@@ -96,10 +96,10 @@ TEST_CASE("Observables") {
 
         numberDensity.calculate(packing, 1, 1, mockShapeTraits);
 
-        CHECK(numberDensity.getHeader() == std::vector<std::string>{"rho"});
+        CHECK(numberDensity.getIntervalHeader() == std::vector<std::string>{"rho"});
         CHECK(numberDensity.getName() == "number density");
-        REQUIRE(numberDensity.getValues().size() == 1);
-        CHECK(numberDensity.getValues()[0] == Approx(0.05));
+        REQUIRE(numberDensity.getIntervalValues().size() == 1);
+        CHECK(numberDensity.getIntervalValues()[0] == Approx(0.05));
     }
 
     SECTION("PackingFraction") {
@@ -107,9 +107,9 @@ TEST_CASE("Observables") {
 
         packingFraction.calculate(packing, 1, 1, mockShapeTraits);
 
-        CHECK(packingFraction.getHeader() == std::vector<std::string>{"theta"});
+        CHECK(packingFraction.getIntervalHeader() == std::vector<std::string>{"theta"});
         CHECK(packingFraction.getName() == "packing fraction");
-        REQUIRE(packingFraction.getValues().size() == 1);
-        CHECK(packingFraction.getValues()[0] == Approx(0.1));
+        REQUIRE(packingFraction.getIntervalValues().size() == 1);
+        CHECK(packingFraction.getIntervalValues()[0] == Approx(0.1));
     }
 }

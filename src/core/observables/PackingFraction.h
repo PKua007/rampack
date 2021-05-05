@@ -19,8 +19,10 @@ public:
         this->packingFraction = packing.getPackingFraction(shapeTraits.getVolume());
     }
 
-    [[nodiscard]] std::vector<std::string> getHeader() const override { return {"theta"}; }
-    [[nodiscard]] std::vector<double> getValues() const override { return {this->packingFraction}; }
+    [[nodiscard]] std::vector<std::string> getIntervalHeader() const override { return {"theta"}; }
+    [[nodiscard]] std::vector<double> getIntervalValues() const override { return {this->packingFraction}; }
+    [[nodiscard]] std::vector<std::string> getNominalHeader() const override { return {}; }
+    [[nodiscard]]  std::vector<std::string> getNominalValues() const override { return {}; }
     [[nodiscard]] std::string getName() const override { return "packing fraction"; };
 };
 

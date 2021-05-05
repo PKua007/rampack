@@ -18,6 +18,7 @@
 #include "core/observables/NumberDensity.h"
 #include "utils/OMPMacros.h"
 
+
 TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
     // We choose temperature 10 and pressure 1. For particles of radius 0.05 we should obtain number density 0.0999791
     // We start with density 0.01 and too small step ranges. The program should adjust and equilibrate correctly
@@ -32,7 +33,7 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
     Simulation simulation(std::move(packing), 1, 0.1, 1, 1234, std::move(volumeScaler));
     auto collector = std::make_unique<ObservablesCollector>();
-    collector->addObservable(std::make_unique<NumberDensity>(), false);
+    collector->addObservable(std::make_unique<NumberDensity>(), ObservablesCollector::AVERAGING);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
@@ -58,7 +59,7 @@ TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
     Simulation simulation(std::move(packing), 1, 0.1, 1, 1234, std::move(volumeScaler));
     auto collector = std::make_unique<ObservablesCollector>();
-    collector->addObservable(std::make_unique<NumberDensity>(), false);
+    collector->addObservable(std::make_unique<NumberDensity>(), ObservablesCollector::AVERAGING);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
@@ -84,7 +85,7 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
     Simulation simulation(std::move(packing), 1, 0.1, 1, 1234, std::move(volumeScaler));
     auto collector = std::make_unique<ObservablesCollector>();
-    collector->addObservable(std::make_unique<NumberDensity>(), false);
+    collector->addObservable(std::make_unique<NumberDensity>(), ObservablesCollector::AVERAGING);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
@@ -113,7 +114,7 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
     Simulation simulation(std::move(packing), 1, 0.1, 1, 1234, std::move(volumeScaler));
     auto collector = std::make_unique<ObservablesCollector>();
-    collector->addObservable(std::make_unique<NumberDensity>(), false);
+    collector->addObservable(std::make_unique<NumberDensity>(), ObservablesCollector::AVERAGING);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
@@ -142,7 +143,7 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
     Simulation simulation(std::move(packing), 10, 1, 10, 1234, std::move(volumeScaler));
     auto collector = std::make_unique<ObservablesCollector>();
-    collector->addObservable(std::make_unique<NumberDensity>(), false);
+    collector->addObservable(std::make_unique<NumberDensity>(), ObservablesCollector::AVERAGING);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
@@ -172,7 +173,7 @@ TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
     Simulation simulation(std::move(packing), 10, 1, 10, 1234, std::move(volumeScaler));
     auto collector = std::make_unique<ObservablesCollector>();
-    collector->addObservable(std::make_unique<NumberDensity>(), false);
+    collector->addObservable(std::make_unique<NumberDensity>(), ObservablesCollector::AVERAGING);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
@@ -199,7 +200,7 @@ TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
     Simulation simulation(std::move(packing), 1, 0.1, 1, 1234, std::move(volumeScaler), {2, 2, 1});
     auto collector = std::make_unique<ObservablesCollector>();
-    collector->addObservable(std::make_unique<NumberDensity>(), false);
+    collector->addObservable(std::make_unique<NumberDensity>(), ObservablesCollector::AVERAGING);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 

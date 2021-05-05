@@ -9,43 +9,75 @@
 #include "ObservablesCollector.h"
 #include "utils/Utils.h"
 
-void ObservablesCollector::addObservable(std::unique_ptr<Observable> observable, bool shouldDisplayInline) {
+void ObservablesCollector::addObservable(std::unique_ptr<Observable> observable, std::size_t observableType) {
     if (!this->snapshotValues.empty())
         ExpectsMsg(snapshotValues.front().empty(), "Cannot add a new observable if snapshots are already captured");
+    if (!this->averagingValues.empty())
+        ExpectsMsg(averagingValues.front().empty(), "Cannot add a new observable if snapshots are already captured");
 
-    auto header = observable->getHeader();
-    this->observableHeader.insert(this->observableHeader.end(), header.begin(), header.end());
-    this->snapshotValues.resize(this->snapshotValues.size() + header.size());
-    this->averagingValues.resize(this->averagingValues.size() + header.size());
+    auto intervalHeader = observable->getIntervalHeader();
+    auto nominalHeader = observable->getNominalHeader();
+
     this->observables.push_back(std::move(observable));
-    if (shouldDisplayInline)
-        this->inlineObservablesIndices.push_back(this->observables.size() - 1);
+    std::size_t observableIndex = this->observables.size() - 1;
+
+    if (observableType & ObservableType::SNAPSHOT) {
+        this->snapshotHeader.insert(this->snapshotHeader.end(), intervalHeader.begin(), intervalHeader.end());
+        this->snapshotHeader.insert(this->snapshotHeader.end(), nominalHeader.begin(), nominalHeader.end());
+        this->snapshotValues.resize(this->snapshotHeader.size());
+        this->snapshotObservablesIndices.push_back(observableIndex);
+    }
+
+    if (observableType & ObservableType::AVERAGING) {
+        this->averagingHeader.insert(this->averagingHeader.end(), intervalHeader.begin(), intervalHeader.end());
+        this->averagingValues.resize(this->averagingHeader.size());
+        this->averagingObservablesIndices.push_back(observableIndex);
+    }
+
+    if (observableType & ObservableType::INLINE)
+        this->inlineObservablesIndices.push_back(observableIndex);
 }
 
 void ObservablesCollector::addSnapshot(const Packing &packing, std::size_t cycleNumber, const ShapeTraits &shapeTraits)
 {
     this->snapshotCycleNumbers.push_back(cycleNumber + this->cycleOffset);
-    this->addObservablesToContainer(packing, shapeTraits, this->snapshotValues);
-}
-
-void ObservablesCollector::addAveragingValues(const Packing &packing, const ShapeTraits &shapeTraits) {
-    this->addObservablesToContainer(packing, shapeTraits, this->averagingValues);
-}
-
-void ObservablesCollector::addObservablesToContainer(const Packing &packing, const ShapeTraits &shapeTraits,
-                                                     std::vector<std::vector<double>> &container)
-{
     std::size_t valueIndex{};
-    for (auto &observable : observables) {
-        observable->calculate(packing, this->temperature, this->pressure, shapeTraits);
-        auto values = observable->getValues();
-        for (double value : values) {
-            Assert(valueIndex < container.size());
-            container[valueIndex].push_back(value);
+    for (std::size_t observableIndex : this->snapshotObservablesIndices) {
+        auto &observable = *this->observables[observableIndex];
+        observable.calculate(packing, this->temperature, this->pressure, shapeTraits);
+        auto intervalValues = observable.getIntervalValues();
+        for (double value : intervalValues) {
+            Assert(valueIndex < this->snapshotValues.size());
+            std::ostringstream ostr;
+            ostr.precision(std::numeric_limits<double>::max_digits10);
+            ostr << value;
+            this->snapshotValues[valueIndex].push_back(ostr.str());
+            valueIndex++;
+        }
+
+        auto nominalValues = observable.getNominalValues();
+        for (const auto &value : nominalValues) {
+            Assert(valueIndex < this->snapshotValues.size());
+            this->snapshotValues[valueIndex].push_back(value);
             valueIndex++;
         }
     }
-    Assert(valueIndex == container.size());
+    Assert(valueIndex == this->snapshotValues.size());
+}
+
+void ObservablesCollector::addAveragingValues(const Packing &packing, const ShapeTraits &shapeTraits) {
+    std::size_t valueIndex{};
+    for (std::size_t observableIndex : this->averagingObservablesIndices) {
+        auto &observable = *this->observables[observableIndex];
+        observable.calculate(packing, this->temperature, this->pressure, shapeTraits);
+        auto values = observable.getIntervalValues();
+        for (double value : values) {
+            Assert(valueIndex < this->averagingValues.size());
+            this->averagingValues[valueIndex].push_back(value);
+            valueIndex++;
+        }
+    }
+    Assert(valueIndex == this->averagingValues.size());
 }
 
 std::string ObservablesCollector::generateInlineObservablesString(const Packing &packing,
@@ -69,33 +101,50 @@ void ObservablesCollector::printInlineObservable(unsigned long observableIdx, co
 {
     auto &observable = *this->observables[observableIdx];
     observable.calculate(packing, this->temperature, this->pressure, shapeTraits);
-    auto header = observable.getHeader();
-    auto values = observable.getValues();
-    Assert(!header.empty());
-    Assert(header.size() == values.size());
+    auto intervalHeader = observable.getIntervalHeader();
+    auto intervalValues = observable.getIntervalValues();
+    auto nominalHeader = observable.getNominalHeader();
+    auto nominalValues = observable.getNominalValues();
+    std::size_t totalValues = intervalHeader.size() + nominalHeader.size();
+    Assert(totalValues > 0);
+    Assert(intervalHeader.size() == intervalValues.size());
+    Assert(nominalHeader.size() == nominalValues.size());
 
-    for (std::size_t i{}; i < header.size() - 1; i++)
-        out << header[i] << ": " << values[i] << ", ";
-    out << header.back() << ": " << values.back();
+    std::size_t valueNum = 1;
+    for (std::size_t i{}; i < intervalHeader.size(); i++) {
+        out << intervalHeader[i] << ": " << intervalValues[i];
+        if (valueNum < totalValues)
+            out << ", ";
+        valueNum++;
+    }
+
+    for (std::size_t i{}; i < nominalHeader.size(); i++) {
+        out << nominalHeader[i] << ": " << nominalValues[i];
+        if (valueNum < totalValues)
+            out << ", ";
+        valueNum++;
+    }
 }
 
 void ObservablesCollector::clearValues() {
     this->snapshotCycleNumbers.clear();
     for (auto &singleSet : this->snapshotValues)
         singleSet.clear();
+    for (auto &singleSet : this->averagingValues)
+        singleSet.clear();
 }
 
 void ObservablesCollector::printSnapshots(std::ostream &out, bool printHeader) const {
-    Expects(!this->observableHeader.empty());
-    Expects(!this->observableHeader.front().empty());
+    Expects(!this->snapshotValues.empty());
 
+    // Consistency check - all observables should have the same number of entries as number of recorder cycles
     std::size_t numSnapshots = this->snapshotCycleNumbers.size();
     for (const auto &singleSet : this->snapshotValues)
         Assert(singleSet.size() == numSnapshots);
 
     if (printHeader) {
         out << "cycle ";
-        std::copy(this->observableHeader.begin(), this->observableHeader.end(),
+        std::copy(this->snapshotHeader.begin(), this->snapshotHeader.end(),
                   std::ostream_iterator<std::string>(out, " "));
         out << std::endl;
     }
@@ -109,9 +158,9 @@ void ObservablesCollector::printSnapshots(std::ostream &out, bool printHeader) c
 }
 
 std::vector<ObservablesCollector::ObservableData> ObservablesCollector::getFlattenedAverageValues() const {
-    std::vector<ObservableData> flatValues(this->observableHeader.size());
+    std::vector<ObservableData> flatValues(this->averagingHeader.size());
     for (std::size_t i{}; i < flatValues.size(); i++) {
-        flatValues[i].name = this->observableHeader[i];
+        flatValues[i].name = this->averagingHeader[i];
         flatValues[i].quantity.calculateFromSamples(this->averagingValues[i]);
     }
     return flatValues;
@@ -119,15 +168,16 @@ std::vector<ObservablesCollector::ObservableData> ObservablesCollector::getFlatt
 
 std::vector<ObservablesCollector::ObservableGroupData> ObservablesCollector::getGroupedAverageValues() const {
     std::vector<ObservableGroupData> groupedValues;
-    groupedValues.reserve(this->observables.size());
+    groupedValues.reserve(this->averagingObservablesIndices.size());
     auto flatValues = this->getFlattenedAverageValues();
 
     std::size_t flatIndex{};
-    for (const auto &observable : this->observables) {
-        auto header = observable->getHeader();
+    for (std::size_t observableIdx : this->averagingObservablesIndices) {
+        const auto &observable = *this->observables[observableIdx];
+        auto header = observable.getIntervalHeader();
         Assert(flatIndex + header.size() <= flatValues.size());
         groupedValues.push_back({
-            observable->getName(),
+            observable.getName(),
             std::vector<ObservableData>(flatValues.begin() + flatIndex, flatValues.begin() + flatIndex + header.size())
         });
         flatIndex += header.size();
