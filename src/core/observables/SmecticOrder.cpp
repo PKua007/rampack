@@ -38,6 +38,7 @@ std::vector<std::string> SmecticOrder::getNominalValues() const {
 
 SmecticOrder::SmecticOrder(const std::array<int, 3> &kTauRanges) : kTauRanges{kTauRanges} {
     Expects(std::any_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i != 0; }));
+    Expects(std::all_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i >= 0; }));
 }
 
 std::complex<double> SmecticOrder::calculateTau(const std::array<int, 3> &kTau_, const Packing &packing) {

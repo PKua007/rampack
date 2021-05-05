@@ -79,7 +79,18 @@ std::unique_ptr<ObservablesCollector> ObservablesCollectorFactory::create(const 
         } else if (observableName == "nematicOrder") {
             collector->addObservable(std::make_unique<NematicOrder>(), observableType);
         } else if (observableName == "smecticOrder") {
-            collector->addObservable(std::make_unique<SmecticOrder>(), observableType);
+            observableStream >> std::ws;
+            if (!observableStream.eof()) {
+                std::array<int, 3> kTauRanges{};
+                observableStream >> kTauRanges[0] >> kTauRanges[1] >> kTauRanges[2];
+                ValidateMsg(observableStream, "Malformed smectic order, usage: smecticOrder (max_k_x max_k_y max_k_z)");
+                bool anyNonzero = std::any_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i != 0; });
+                bool allNonNegative = std::all_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i >= 0; });
+                ValidateMsg(anyNonzero && allNonNegative, "All tau ranges must be nonzero and some must be positive");
+                collector->addObservable(std::make_unique<SmecticOrder>(kTauRanges), observableType);
+            } else {
+                collector->addObservable(std::make_unique<SmecticOrder>(), observableType);
+            }
         } else {
             throw ValidationException("Unknown observable: " + observableName);
         }
