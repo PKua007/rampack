@@ -6,6 +6,7 @@
 #include <catch2/trompeloeil.hpp>
 
 #include "mocks/MockShapeTraits.h"
+#include "mocks/MockObservable.h"
 
 #include "core/ObservablesCollector.h"
 
@@ -24,6 +25,21 @@ TEST_CASE("ObservablesCollector") {
     ALLOW_CALL(mockShapeTraits, hasSoftPart()).RETURN(true);
     ALLOW_CALL(mockShapeTraits, hasHardPart()).RETURN(false);
     ALLOW_CALL(mockShapeTraits, calculateEnergyBetween(_, _, _, _, _, _, _)).RETURN(0);
+
+    std::array<double, 3> boxSize{0, 0, 0};
+    auto dimFormatter = [&boxSize]() {
+        std::ostringstream out;
+        out << boxSize[0] << "x" << boxSize[1] << "x" << boxSize[2];
+        return out.str();
+    };
+    auto mockObservable = std::make_unique<MockObservable>();
+    ALLOW_CALL(*mockObservable, calculate(_, _, _, _)).LR_SIDE_EFFECT(boxSize = _1.getDimensions());
+    ALLOW_CALL(*mockObservable, getIntervalHeader()).RETURN(std::vector<std::string>{"L_X", "L_Y", "L_Z"});
+    ALLOW_CALL(*mockObservable, getIntervalValues()).LR_RETURN(std::vector<double>(boxSize.begin(), boxSize.end()));
+    ALLOW_CALL(*mockObservable, getNominalHeader()).RETURN(std::vector<std::string>{"dim"});
+    ALLOW_CALL(*mockObservable, getNominalValues()).LR_RETURN(std::vector<std::string>{dimFormatter()});
+    ALLOW_CALL(*mockObservable, getName()).RETURN("box dimensions");
+
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     Shape s1({1, 1, 1});
     Shape s2({2, 3, 3});
@@ -32,7 +48,7 @@ TEST_CASE("ObservablesCollector") {
 
     ObservablesCollector collector;
     using OC = ObservablesCollector;
-    collector.addObservable(std::make_unique<BoxDimensions>(), OC::INLINE | OC::SNAPSHOT | OC::AVERAGING);
+    collector.addObservable(std::move(mockObservable), OC::INLINE | OC::SNAPSHOT | OC::AVERAGING);
     collector.addObservable(std::make_unique<CompressibilityFactor>(), OC::SNAPSHOT | OC::AVERAGING);
     collector.addObservable(std::make_unique<NumberDensity>(), OC::INLINE | OC::SNAPSHOT);
     collector.setThermodynamicParameters(4, 2);
@@ -45,9 +61,9 @@ TEST_CASE("ObservablesCollector") {
 
         collector.printSnapshots(out);
 
-        CHECK(out.str() == "cycle L_X L_Y L_Z Z rho \n"
-                           "100 3 4 5 10 0.050000000000000003 \n"
-                           "200 6 8 10 80 0.0062500000000000003 \n");
+        CHECK(out.str() == "cycle L_X L_Y L_Z dim Z rho \n"
+                           "100 3 4 5 3x4x5 10 0.050000000000000003 \n"
+                           "200 6 8 10 6x8x10 80 0.0062500000000000003 \n");
 
         SECTION("clearing") {
             std::ostringstream out2;
@@ -55,7 +71,7 @@ TEST_CASE("ObservablesCollector") {
             collector.clearValues();
 
             collector.printSnapshots(out2);
-            CHECK(out2.str() == "cycle L_X L_Y L_Z Z rho \n");
+            CHECK(out2.str() == "cycle L_X L_Y L_Z dim Z rho \n");
         }
     }
 
@@ -111,6 +127,6 @@ TEST_CASE("ObservablesCollector") {
     SECTION("inline string") {
         std::string inlineString = collector.generateInlineObservablesString(packing, mockShapeTraits);
 
-        CHECK(inlineString == "L_X: 3, L_Y: 4, L_Z: 5, rho: 0.05");
+        CHECK(inlineString == "L_X: 3, L_Y: 4, L_Z: 5, dim: 3x4x5, rho: 0.05");
     }
 }
