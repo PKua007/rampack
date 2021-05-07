@@ -159,18 +159,25 @@ int Frontend::casino(int argc, char **argv) {
     domainDivisionsStream >> domainDivisions[0] >> domainDivisions[1] >> domainDivisions[2];
     ValidateMsg(domainDivisionsStream, "Malformed domain divisions, usage: x divisions, y div., z div.");
 
-    std::size_t moveThreads = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies<>{});
-    Validate(moveThreads > 0);
-    Validate(moveThreads <= static_cast<std::size_t>(_OMP_MAXTHREADS));
+    std::size_t numDomains = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies<>{});
+    Validate(numDomains > 0);
+    Validate(numDomains <= static_cast<std::size_t>(_OMP_MAXTHREADS));
+
+    // We use the same number of threads for scaling and particle moves, otherwise OpenMP leaks memory
+    // Too many domain threads are ok, some will just be jobless. But we cannot use less scaling threads than
+    // domain threads
+    // See https://stackoverflow.com/questions/67267035/...
+    // ...increasing-memory-consumption-for-2-alternating-openmp-parallel-regions-with-dif
+    Validate(numDomains <= scalingThreads);
 
     // Info about threads
     this->logger << _OMP_MAXTHREADS << " OpenMP threads are available" << std::endl;
-    this->logger << "Using " << scalingThreads << " threads for scaling" << std::endl;
-    if (moveThreads == 1) {
-        this->logger << "Using 1 thread without domain decomposition for moves" << std::endl;
+    this->logger << "Using " << scalingThreads << " threads for scaling moves" << std::endl;
+    if (numDomains == 1) {
+        this->logger << "Using 1 thread without domain decomposition for particle moves" << std::endl;
     } else {
-        this->logger << "Using " << moveThreads << " threads with " << domainDivisions[0] << " x ";
-        this->logger << domainDivisions[1] << " x " << domainDivisions[2] << " domain division" << std::endl;
+        this->logger << "Using " << domainDivisions[0] << " x " << domainDivisions[1] << " x ";
+        this->logger << domainDivisions[2] << " = " << numDomains << " domains for particle moves" << std::endl;
     }
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
@@ -210,7 +217,8 @@ int Frontend::casino(int argc, char **argv) {
         std::string previousPackingFilename = startingPackingRun.packingFilename;
         std::ifstream packingFile(previousPackingFilename);
         ValidateMsg(packingFile, "Cannot open file " + previousPackingFilename + " to restore starting state");
-        packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
+        // Same number of scaling and domain decemposition threads
+        packing = std::make_unique<Packing>(std::move(bc), scalingThreads, scalingThreads);
         auto auxInfo = packing->restore(packingFile, shapeTraits->getInteraction());
 
         params.positionStepSize = std::stod(auxInfo.at("translationStep"));
@@ -245,8 +253,9 @@ int Frontend::casino(int argc, char **argv) {
         ValidateMsg(dimensionsStream, "Invalid packing dimensions format. Expected: [dim x] [dim y] [dim z]");
         Validate(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
         auto shapes = this->arrangePacking(params.numOfParticles, dimensions, params.initialArrangement);
+        // Same number of scaling and domain threads
         packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(bc), shapeTraits->getInteraction(),
-                                            moveThreads, scalingThreads);
+                                            scalingThreads, scalingThreads);
     }
 
     // Perform simulations starting from initial run
