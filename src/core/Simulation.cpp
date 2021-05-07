@@ -138,6 +138,7 @@ void Simulation::reset() {
     this->observablesCollector->clear();
     this->performedCycles = 0;
     this->totalCycles = 0;
+    sigint_received = false;
 }
 
 void Simulation::performCycle(Logger &logger, const Interaction &interaction) {
@@ -411,4 +412,8 @@ void Simulation::printInlineInfo(std::size_t cycleNumber, const ShapeTraits &tra
     logger.verbose() << "Memory usage (bytes): shape: " << this->packing->getShapesMemoryUsage() << ", ";
     logger << "ng: " << this->packing->getNeighbourGridMemoryUsage() << ", ";
     logger << "obs: " << this->observablesCollector->getMemoryUsage() << std::endl;
+}
+
+bool Simulation::wasInterrupted() const {
+    return sigint_received;
 }

@@ -87,6 +87,7 @@ private:
     bool tryScaling(const Interaction &interaction);
     void evaluateCounters(Logger &logger);
     void reset();
+    void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger);
 
 public:
     Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep, double scalingStep,
@@ -112,8 +113,7 @@ public:
     [[nodiscard]] double getCurrentScalingStep() const { return this->scalingStep; }
     [[nodiscard]] std::size_t getTotalCycles() const { return this->totalCycles; }
     [[nodiscard]] std::size_t getPerformedCycles() const { return this->performedCycles; }
-
-    void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger);
+    [[nodiscard]] bool wasInterrupted() const;
 };
 
 

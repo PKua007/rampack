@@ -361,6 +361,9 @@ int Frontend::casino(int argc, char **argv) {
 
         isContinuation = false;
         cycleOffset = 0;
+        
+        if (simulation.wasInterrupted())
+            break;
     }
 
     return EXIT_SUCCESS;
