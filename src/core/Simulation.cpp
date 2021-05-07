@@ -185,7 +185,7 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
 
     #pragma omp declare reduction (+ : Counter : omp_out += omp_in)
     #pragma omp parallel for shared(domainDecomposition, interaction) default(none) collapse(3) \
-            reduction(+ : tempMoveCounter) num_threads(this->numDomains)
+            reduction(+ : tempMoveCounter) num_threads(this->packing->getMoveThreads())
     for (std::size_t i = 0; i < this->domainDivisions[0]; i++) {
         for (std::size_t j = 0; j < this->domainDivisions[1]; j++) {
             for (std::size_t k = 0; k < this->domainDivisions[2]; k++) {
