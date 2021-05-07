@@ -16,17 +16,24 @@ namespace {
     std::atomic<bool> sigint_received = false;
     static_assert(decltype(sigint_received)::is_always_lock_free);
 
-    class LoggerAdditionalTextResetter {
+    class LoggerAdditionalTextAppender {
     private:
         Logger &logger;
         std::string previousAdditionalText;
 
     public:
-        explicit LoggerAdditionalTextResetter(Logger &logger)
+        explicit LoggerAdditionalTextAppender(Logger &logger)
                 : logger{logger}, previousAdditionalText{logger.getAdditionalText()}
         { }
 
-        ~LoggerAdditionalTextResetter() { this->logger.setAdditionalText(this->previousAdditionalText); }
+        ~LoggerAdditionalTextAppender() { this->logger.setAdditionalText(this->previousAdditionalText); }
+
+        void setAdditionalText(const std::string &additionalText) {
+            if (this->previousAdditionalText.empty())
+                this->logger.setAdditionalText(additionalText);
+            else
+                this->logger.setAdditionalText(this->previousAdditionalText + ", " + additionalText);
+        }
     };
 }
 
@@ -84,10 +91,10 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     this->reset();
 
     const Interaction &interaction = shapeTraits.getInteraction();
-    LoggerAdditionalTextResetter loggerAdditionalTextResetter(logger);
+    LoggerAdditionalTextAppender loggerAdditionalTextAppender(logger);
 
     this->shouldAdjustStepSize = true;
-    logger.setAdditionalText("thermalisation");
+    loggerAdditionalTextAppender.setAdditionalText("th");
     logger.info() << "Starting thermalisation..." << std::endl;
     for (std::size_t i{}; i < this->thermalisationCycles; i++) {
         this->performCycle(logger, interaction);
@@ -102,7 +109,7 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     }
 
     this->shouldAdjustStepSize = false;
-    logger.setAdditionalText("averaging");
+    loggerAdditionalTextAppender.setAdditionalText("av");
     logger.info() << "Starting averaging..." << std::endl;
     for(std::size_t i{}; i < this->averagingCycles; i++) {
         this->performCycle(logger, interaction);

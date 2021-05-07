@@ -255,6 +255,7 @@ int Frontend::casino(int argc, char **argv) {
     for (std::size_t i = startRunIndex; i < params.runsParameters.size(); i++) {
         auto runParams = params.runsParameters[i];
 
+        this->logger.setAdditionalText(runParams.runName);
         this->logger.info() << std::endl;
         this->logger << "--------------------------------------------------------------------" << std::endl;
         this->logger << "Starting run '" << runParams.runName << "'" << std::endl;
