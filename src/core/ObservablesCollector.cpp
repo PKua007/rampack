@@ -42,7 +42,7 @@ void ObservablesCollector::addSnapshot(const Packing &packing, std::size_t cycle
 {
     auto start = std::chrono::high_resolution_clock::now();
 
-    this->snapshotCycleNumbers.push_back(cycleNumber + this->cycleOffset);
+    this->snapshotCycleNumbers.push_back(cycleNumber);
     std::size_t valueIndex{};
     for (std::size_t observableIndex : this->snapshotObservablesIndices) {
         auto &observable = *this->observables[observableIndex];
@@ -215,10 +215,6 @@ void ObservablesCollector::setThermodynamicParameters(double temperature_, doubl
 
     this->temperature = temperature_;
     this->pressure = pressure_;
-}
-
-void ObservablesCollector::setCycleOffset(std::size_t offset) {
-    this->cycleOffset = offset;
 }
 
 std::size_t ObservablesCollector::getMemoryUsage() const {

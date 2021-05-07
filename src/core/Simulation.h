@@ -64,6 +64,7 @@ private:
     double scalingMicroseconds{};
     bool shouldAdjustStepSize{};
     std::size_t performedCycles{};
+    std::size_t totalCycles{};
 
     std::vector<std::mt19937> mts;
     std::uniform_real_distribution<double> unitIntervalDistribution;
@@ -95,7 +96,8 @@ public:
 
     void perform(double temperature_, double pressure_, std::size_t thermalisationCycles_, std::size_t averagingCycles_,
                  std::size_t averagingEvery_, std::size_t snapshotEvery_, const ShapeTraits &shapeTraits,
-                 std::unique_ptr<ObservablesCollector> observablesCollector_, Logger &logger);
+                 std::unique_ptr<ObservablesCollector> observablesCollector_, Logger &logger,
+                 std::size_t cycleOffset = 0);
     [[nodiscard]] const ObservablesCollector &getObservablesCollector() { return *this->observablesCollector; }
     [[nodiscard]] double getMoveAcceptanceRate() const { return this->moveCounter.getRate(); }
     [[nodiscard]] double getScalingAcceptanceRate() const { return this->scalingCounter.getRate(); }
@@ -108,6 +110,7 @@ public:
     [[nodiscard]] double getCurrentTranslationStep() const { return this->translationStep; }
     [[nodiscard]] double getCurrentRotationStep() const { return this->rotationStep; }
     [[nodiscard]] double getCurrentScalingStep() const { return this->scalingStep; }
+    [[nodiscard]] std::size_t getTotalCycles() const { return this->totalCycles; }
     [[nodiscard]] std::size_t getPerformedCycles() const { return this->performedCycles; }
 
     void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger);

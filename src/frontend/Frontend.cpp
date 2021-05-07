@@ -190,15 +190,6 @@ int Frontend::casino(int argc, char **argv) {
         startRunIndex = it - runsParameters.begin();
     }
 
-    // Override thermalization cycles if this is continuation run
-    if (parsedOptions.count("continue")) {
-        Validate(continuationCycles > 0);
-        auto &startingRun = params.runsParameters[startRunIndex];
-        startingRun.thermalisationCycles = continuationCycles;
-        this->logger.info() << "Thermalisation from the finished run '" << startingRun.runName << "' will be ";
-        this->logger << "continued for " << continuationCycles << " more cycles" << std::endl;
-    }
-
     // Load starting state from a previous or current run packing depending on --start-from and --continue
     // options combination
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
@@ -207,17 +198,19 @@ int Frontend::casino(int argc, char **argv) {
     std::size_t cycleOffset{};  // Non-zero, if continuing previous run
     bool isContinuation{};
     if ((parsedOptions.count("start-from") && startRunIndex != 0) || parsedOptions.count("continue")) {
-        packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
-        auto runsParameters = params.runsParameters;
-        Parameters::RunParameters startingRunParams;
+        auto &runsParameters = params.runsParameters;
+        std::size_t startingPackingRunIndex{};
         if (parsedOptions.count("continue"))
-            startingRunParams = runsParameters[startRunIndex];
+            startingPackingRunIndex = startRunIndex;
         else
-            startingRunParams = runsParameters[startRunIndex - 1];
+            startingPackingRunIndex = startRunIndex - 1;
+        // A run, whose resulting packing will be the starting point
+        Parameters::RunParameters &startingPackingRun = runsParameters[startingPackingRunIndex];
 
-        std::string previousPackingFilename = startingRunParams.packingFilename;
+        std::string previousPackingFilename = startingPackingRun.packingFilename;
         std::ifstream packingFile(previousPackingFilename);
         ValidateMsg(packingFile, "Cannot open file " + previousPackingFilename + " to restore starting state");
+        packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
         auto auxInfo = packing->restore(packingFile, shapeTraits->getInteraction());
 
         params.positionStepSize = std::stod(auxInfo.at("translationStep"));
@@ -226,12 +219,20 @@ int Frontend::casino(int argc, char **argv) {
         Validate(params.positionStepSize > 0);
         Validate(params.rotationStepSize > 0);
         Validate(params.volumeStepSize > 0);
+
         if (parsedOptions.count("continue")) {
             cycleOffset = std::stoul(auxInfo.at("cycles"));
             isContinuation = true;
+            Validate(continuationCycles > 0);
+            Validate(continuationCycles > cycleOffset);
+            auto &startingRun = startingPackingRun;     // Because we continue this already finished run
+            startingRun.thermalisationCycles = continuationCycles - cycleOffset;
+            this->logger.info() << "Thermalisation from the finished run '" << startingRun.runName;
+            this->logger << "' will be continued up to " << continuationCycles << " cycles (";
+            this->logger << startingRun.thermalisationCycles << " to go)" << std::endl;
         }
 
-        std::string previousRunName = startingRunParams.runName;
+        std::string previousRunName = startingPackingRun.runName;
         this->logger.info() << "Loaded packing from the run '" << previousRunName << "' as a starting point.";
         this->logger << std::endl;
     }
@@ -264,13 +265,11 @@ int Frontend::casino(int argc, char **argv) {
         this->logger << "--------------------------------------------------------------------" << std::endl;
 
         auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
-        if (isContinuation)
-            collector->setCycleOffset(cycleOffset);
 
         auto start = std::chrono::high_resolution_clock::now();
         simulation.perform(runParams.temperature, runParams.pressure, runParams.thermalisationCycles,
                            runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
-                           *shapeTraits, std::move(collector), this->logger);
+                           *shapeTraits, std::move(collector), this->logger, cycleOffset);
         auto end = std::chrono::high_resolution_clock::now();
         double totalSeconds = std::chrono::duration<double>(end - start).count();
 
@@ -322,12 +321,7 @@ int Frontend::casino(int argc, char **argv) {
             auxInfo["translationStep"] = std::to_string(simulation.getCurrentTranslationStep());
             auxInfo["rotationStep"] = std::to_string(simulation.getCurrentRotationStep());
             auxInfo["scalingStep"] = std::to_string(simulation.getCurrentScalingStep());
-
-            std::size_t totalCycles = cycleOffset + simulation.getPerformedCycles();
-            // If the simulation was interrupted, a strange number of cycles may have been performed
-            // Round down to a nearest snapshotEvery multiple
-            totalCycles = (totalCycles / runParams.snapshotEvery) * runParams.snapshotEvery;
-            auxInfo["cycles"] = std::to_string(totalCycles);
+            auxInfo["cycles"] = std::to_string(simulation.getTotalCycles());
 
             std::ofstream out(runParams.packingFilename);
             ValidateMsg(out, "Could not open " + runParams.packingFilename + " to store packing!");
@@ -352,7 +346,6 @@ int Frontend::casino(int argc, char **argv) {
 
         // Store observables vs cycles snapshots (if desired)
         if (!runParams.densitySnapshotFilename.empty()) {
-
             if (isContinuation) {
                 std::ofstream out(runParams.densitySnapshotFilename, std::ios_base::app);
                 ValidateMsg(out, "Could not open " + runParams.densitySnapshotFilename + " to store density snapshots!");
@@ -367,6 +360,7 @@ int Frontend::casino(int argc, char **argv) {
         }
 
         isContinuation = false;
+        cycleOffset = 0;
     }
 
     return EXIT_SUCCESS;

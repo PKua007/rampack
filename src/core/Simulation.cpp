@@ -72,7 +72,7 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep,
 void Simulation::perform(double temperature_, double pressure_, std::size_t thermalisationCycles_,
                          std::size_t averagingCycles_, std::size_t averagingEvery_, std::size_t snapshotEvery_,
                          const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
-                         Logger &logger)
+                         Logger &logger, std::size_t cycleOffset)
 {
     Expects(temperature_ > 0);
     Expects(pressure_ > 0);
@@ -90,6 +90,8 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
     this->reset();
 
+    this->totalCycles = cycleOffset;
+
     const Interaction &interaction = shapeTraits.getInteraction();
     LoggerAdditionalTextAppender loggerAdditionalTextAppender(logger);
 
@@ -98,12 +100,12 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     logger.info() << "Starting thermalisation..." << std::endl;
     for (std::size_t i{}; i < this->thermalisationCycles; i++) {
         this->performCycle(logger, interaction);
-        if (this->performedCycles % this->snapshotEvery == 0)
-            this->observablesCollector->addSnapshot(*this->packing, this->performedCycles, shapeTraits);
-        if (this->performedCycles % 100 == 0)
-            this->printInlineInfo(this->performedCycles, shapeTraits, logger);
+        if (this->totalCycles % this->snapshotEvery == 0)
+            this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
+        if (this->totalCycles % 100 == 0)
+            this->printInlineInfo(this->totalCycles, shapeTraits, logger);
         if (sigint_received) {
-            logger.warn() << "SIGINT/SIGKILL received, stopping" << std::endl;
+            logger.warn() << "SIGINT/SIGKILL received, stopping on " << this->totalCycles << " cycle." << std::endl;
             return;
         }
     }
@@ -113,14 +115,14 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     logger.info() << "Starting averaging..." << std::endl;
     for(std::size_t i{}; i < this->averagingCycles; i++) {
         this->performCycle(logger, interaction);
-        if (this->performedCycles % this->snapshotEvery == 0)
-            this->observablesCollector->addSnapshot(*this->packing, this->performedCycles, shapeTraits);
-        if (this->performedCycles % this->averagingEvery == 0)
+        if (this->totalCycles % this->snapshotEvery == 0)
+            this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
+        if (this->totalCycles % this->averagingEvery == 0)
             this->observablesCollector->addAveragingValues(*this->packing, shapeTraits);
-        if (this->performedCycles % 100 == 0)
-            this->printInlineInfo(this->performedCycles, shapeTraits, logger);
+        if (this->totalCycles % 100 == 0)
+            this->printInlineInfo(this->totalCycles, shapeTraits, logger);
         if (sigint_received) {
-            logger.warn() << "SIGINT/SIGKILL received, stopping" << std::endl;
+            logger.warn() << "SIGINT/SIGKILL received, stopping on " << this->totalCycles << " cycle." << std::endl;
             return;
         }
     }
@@ -135,6 +137,7 @@ void Simulation::reset() {
     this->scalingMicroseconds = 0;
     this->observablesCollector->clear();
     this->performedCycles = 0;
+    this->totalCycles = 0;
 }
 
 void Simulation::performCycle(Logger &logger, const Interaction &interaction) {
@@ -157,6 +160,7 @@ void Simulation::performCycle(Logger &logger, const Interaction &interaction) {
         this->evaluateCounters(logger);
 
     this->performedCycles++;
+    this->totalCycles++;
 }
 
 void Simulation::performMovesWithoutDomainDivision(const Interaction &interaction) {
