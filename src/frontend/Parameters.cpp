@@ -41,6 +41,8 @@ Parameters::Parameters(std::istream &input) {
             this->domainDivisions = generalConfig.getString("domainDivisions");
         else if (key == "scalingType")
             this->scalingType = generalConfig.getString("scalingType");
+        else if (key == "saveOnSignal")
+            this->saveOnSignal = generalConfig.getBoolean("saveOnSignal");
         else
             throw ParametersParseException("Unknown parameter " + key);
     }
@@ -115,6 +117,7 @@ void Parameters::print(Logger &logger) const {
     logger.info() << "scalingThreads    : " << this->scalingThreads << std::endl;
     logger.info() << "domainDivisions   : " << this->domainDivisions << std::endl;
     logger.info() << "scalingType       : " << this->scalingType << std::endl;
+    logger.info() << "saveOnSignal      : " << (this->saveOnSignal ? "true" : "false") << std::endl;
 }
 
 void Parameters::RunParameters::print(Logger &logger) const {

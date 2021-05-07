@@ -63,6 +63,7 @@ private:
     double moveMicroseconds{};
     double scalingMicroseconds{};
     bool shouldAdjustStepSize{};
+    std::size_t performedCycles{};
 
     std::vector<std::mt19937> mts;
     std::uniform_real_distribution<double> unitIntervalDistribution;
@@ -89,7 +90,8 @@ private:
 public:
     Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep, double scalingStep,
                unsigned long seed, std::unique_ptr<VolumeScaler> volumeScaler,
-               const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1});
+               const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1},
+               bool handleSignals = false);
 
     void perform(double temperature_, double pressure_, std::size_t thermalisationCycles_, std::size_t averagingCycles_,
                  std::size_t averagingEvery_, std::size_t snapshotEvery_, const ShapeTraits &shapeTraits,
@@ -106,6 +108,7 @@ public:
     [[nodiscard]] double getCurrentTranslationStep() const { return this->translationStep; }
     [[nodiscard]] double getCurrentRotationStep() const { return this->rotationStep; }
     [[nodiscard]] double getCurrentScalingStep() const { return this->scalingStep; }
+    [[nodiscard]] std::size_t getPerformedCycles() const { return this->performedCycles; }
 
     void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger);
 };

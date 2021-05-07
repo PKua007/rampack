@@ -5,14 +5,38 @@
 #include <cmath>
 #include <ostream>
 #include <chrono>
+#include <atomic>
+#include <csignal>
 
 #include "Simulation.h"
 #include "DomainDecomposition.h"
 #include "utils/Assertions.h"
 
+namespace {
+    std::atomic<bool> sigint_received = false;
+    static_assert(decltype(sigint_received)::is_always_lock_free);
+
+    class LoggerAdditionalTextResetter {
+    private:
+        Logger &logger;
+        std::string previousAdditionalText;
+
+    public:
+        explicit LoggerAdditionalTextResetter(Logger &logger)
+                : logger{logger}, previousAdditionalText{logger.getAdditionalText()}
+        { }
+
+        ~LoggerAdditionalTextResetter() { this->logger.setAdditionalText(this->previousAdditionalText); }
+    };
+}
+
+void sigint_handler([[maybe_unused]] int signal) {
+    sigint_received = true;
+}
+
 Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep,
                        double scalingStep, unsigned long seed, std::unique_ptr<VolumeScaler> volumeScaler,
-                       const std::array<std::size_t, 3> &domainDivisions)
+                       const std::array<std::size_t, 3> &domainDivisions, bool handleSignals)
         : translationStep{translationStep}, rotationStep{rotationStep}, scalingStep{scalingStep},
           volumeScaler{std::move(volumeScaler)}, packing{std::move(packing)}, allParticleIndices(this->packing->size()),
           domainDivisions{domainDivisions}
@@ -31,6 +55,11 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep,
         this->mts.emplace_back(seed + i);
 
     std::iota(this->allParticleIndices.begin(), this->allParticleIndices.end(), 0);
+
+    if (handleSignals) {
+        std::signal(SIGINT, sigint_handler);
+        std::signal(SIGTERM, sigint_handler);
+    }
 }
 
 void Simulation::perform(double temperature_, double pressure_, std::size_t thermalisationCycles_,
@@ -55,16 +84,21 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     this->reset();
 
     const Interaction &interaction = shapeTraits.getInteraction();
+    LoggerAdditionalTextResetter loggerAdditionalTextResetter(logger);
 
     this->shouldAdjustStepSize = true;
     logger.setAdditionalText("thermalisation");
     logger.info() << "Starting thermalisation..." << std::endl;
     for (std::size_t i{}; i < this->thermalisationCycles; i++) {
         this->performCycle(logger, interaction);
-        if ((i + 1) % this->snapshotEvery == 0)
-            this->observablesCollector->addSnapshot(*this->packing, i + 1, shapeTraits);
-        if ((i + 1) % 100 == 0)
-            this->printInlineInfo(i + 1, shapeTraits, logger);
+        if (this->performedCycles % this->snapshotEvery == 0)
+            this->observablesCollector->addSnapshot(*this->packing, this->performedCycles, shapeTraits);
+        if (this->performedCycles % 100 == 0)
+            this->printInlineInfo(this->performedCycles, shapeTraits, logger);
+        if (sigint_received) {
+            logger.warn() << "SIGINT/SIGKILL received, stopping" << std::endl;
+            return;
+        }
     }
 
     this->shouldAdjustStepSize = false;
@@ -72,15 +106,17 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     logger.info() << "Starting averaging..." << std::endl;
     for(std::size_t i{}; i < this->averagingCycles; i++) {
         this->performCycle(logger, interaction);
-        if ((i + 1) % this->snapshotEvery == 0)
-            this->observablesCollector->addSnapshot(*this->packing, this->thermalisationCycles + i + 1, shapeTraits);
-        if ((i + 1) % this->averagingEvery == 0)
+        if (this->performedCycles % this->snapshotEvery == 0)
+            this->observablesCollector->addSnapshot(*this->packing, this->performedCycles, shapeTraits);
+        if (this->performedCycles % this->averagingEvery == 0)
             this->observablesCollector->addAveragingValues(*this->packing, shapeTraits);
-        if ((i + 1) % 100 == 0)
-            this->printInlineInfo(i + 1, shapeTraits, logger);
+        if (this->performedCycles % 100 == 0)
+            this->printInlineInfo(this->performedCycles, shapeTraits, logger);
+        if (sigint_received) {
+            logger.warn() << "SIGINT/SIGKILL received, stopping" << std::endl;
+            return;
+        }
     }
-
-    logger.setAdditionalText("");
 }
 
 void Simulation::reset() {
@@ -91,6 +127,7 @@ void Simulation::reset() {
     this->moveMicroseconds = 0;
     this->scalingMicroseconds = 0;
     this->observablesCollector->clear();
+    this->performedCycles = 0;
 }
 
 void Simulation::performCycle(Logger &logger, const Interaction &interaction) {
@@ -111,6 +148,8 @@ void Simulation::performCycle(Logger &logger, const Interaction &interaction) {
 
     if (this->shouldAdjustStepSize)
         this->evaluateCounters(logger);
+
+    this->performedCycles++;
 }
 
 void Simulation::performMovesWithoutDomainDivision(const Interaction &interaction) {

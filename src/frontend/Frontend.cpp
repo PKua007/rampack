@@ -250,7 +250,7 @@ int Frontend::casino(int argc, char **argv) {
 
     // Perform simulations starting from initial run
     Simulation simulation(std::move(packing), params.positionStepSize, params.rotationStepSize, params.volumeStepSize,
-                          params.seed, std::move(volumeScaler), domainDivisions);
+                          params.seed, std::move(volumeScaler), domainDivisions, params.saveOnSignal);
 
     for (std::size_t i = startRunIndex; i < params.runsParameters.size(); i++) {
         auto runParams = params.runsParameters[i];
@@ -285,8 +285,7 @@ int Frontend::casino(int argc, char **argv) {
         double scalingSeconds = simulation.getScalingMicroseconds() / 1e6;
         double observablesSeconds = simulation.getObservablesMicroseconds() / 1e6;
         double otherSeconds = totalSeconds - moveSeconds - scalingSeconds - observablesSeconds;
-        double cyclesPerSecond = static_cast<double>(runParams.thermalisationCycles + runParams.averagingCycles)
-                                 / totalSeconds;
+        double cyclesPerSecond = static_cast<double>(simulation.getPerformedCycles()) / totalSeconds;
 
         double ngRebuildTotalPercent = ngRebuildSeconds / totalSeconds * 100;
         double ngRebuildScalingPercent = ngRebuildSeconds / scalingSeconds * 100;
@@ -322,7 +321,11 @@ int Frontend::casino(int argc, char **argv) {
             auxInfo["translationStep"] = std::to_string(simulation.getCurrentTranslationStep());
             auxInfo["rotationStep"] = std::to_string(simulation.getCurrentRotationStep());
             auxInfo["scalingStep"] = std::to_string(simulation.getCurrentScalingStep());
-            std::size_t totalCycles = cycleOffset + runParams.thermalisationCycles + runParams.averagingCycles;
+
+            std::size_t totalCycles = cycleOffset + simulation.getPerformedCycles();
+            // If the simulation was interrupted, a strange number of cycles may have been performed
+            // Round down to a nearest snapshotEvery multiple
+            totalCycles = (totalCycles / runParams.snapshotEvery) * runParams.snapshotEvery;
             auxInfo["cycles"] = std::to_string(totalCycles);
 
             std::ofstream out(runParams.packingFilename);
