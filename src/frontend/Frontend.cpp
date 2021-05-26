@@ -378,34 +378,41 @@ int Frontend::casino(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-std::unique_ptr<VolumeScaler> Frontend::createVolumeScaler(const std::string &scalingType) const {
+std::unique_ptr<VolumeScaler> Frontend::createVolumeScaler(std::string scalingType) const {
+    std::string independentString = "independent ";
+    bool scaleTogether = !startsWith(scalingType, independentString);
+    if (!scaleTogether)
+        scalingType = scalingType.substr(independentString.length());
+
+    using ScalingDirection = VolumeScaler::ScalingDirection;
+
     // Old delta V scaling
     if (scalingType == "delta V")
         return std::make_unique<DeltaVolumeScaler>();
     // Linear scaling
     else if (scalingType == "linear isotropic")
-        return std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ISOTROPIC);
+        return std::make_unique<LinearVolumeScaler>(ScalingDirection::ISOTROPIC);
     else if (scalingType == "linear anisotropic x")
-        return std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_X);
+        return std::make_unique<LinearVolumeScaler>(ScalingDirection::ANISOTROPIC_X);
     else if (scalingType == "linear anisotropic y")
-        return std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_Y);
+        return std::make_unique<LinearVolumeScaler>(ScalingDirection::ANISOTROPIC_Y);
     else if (scalingType == "linear anisotropic z")
-        return std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_Z);
+        return std::make_unique<LinearVolumeScaler>(ScalingDirection::ANISOTROPIC_Z);
     else if (scalingType == "linear anisotropic xyz")
-        return std::make_unique<LinearVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_XYZ);
+        return std::make_unique<LinearVolumeScaler>(ScalingDirection::ANISOTROPIC_XYZ);
     // Log scaling
     else if (scalingType == "log isotropic")
-        return std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ISOTROPIC);
+        return std::make_unique<LogVolumeScaler>(ScalingDirection::ISOTROPIC, scaleTogether);
     else if (scalingType == "log anisotropic x")
-        return std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_X);
+        return std::make_unique<LogVolumeScaler>(ScalingDirection::ANISOTROPIC_X, scaleTogether);
     else if (scalingType == "log anisotropic y")
-        return std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_Y);
+        return std::make_unique<LogVolumeScaler>(ScalingDirection::ANISOTROPIC_Y, scaleTogether);
     else if (scalingType == "log anisotropic z")
-        return std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_Z);
+        return std::make_unique<LogVolumeScaler>(ScalingDirection::ANISOTROPIC_Z, scaleTogether);
     else if (scalingType == "log anisotropic xyz")
-        return std::make_unique<LogVolumeScaler>(VolumeScaler::ScalingDirection::ANISOTROPIC_XYZ);
+        return std::make_unique<LogVolumeScaler>(ScalingDirection::ANISOTROPIC_XYZ, scaleTogether);
     else
-        throw ValidationException("Uknown scaling type: " + scalingType);
+        throw ValidationException("Unknown scaling type: " + scalingType);
 }
 
 int Frontend::analyze([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {

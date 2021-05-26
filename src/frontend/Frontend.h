@@ -28,7 +28,7 @@ private:
     void printAverageValues(const ObservablesCollector &collector);
     void storeAverageValues(const std::string &filename, const ObservablesCollector &collector, double temperature,
                             double pressure) const;
-    std::unique_ptr<VolumeScaler> createVolumeScaler(const std::string &scalingType) const;
+    std::unique_ptr<VolumeScaler> createVolumeScaler(std::string scalingType) const;
 
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }

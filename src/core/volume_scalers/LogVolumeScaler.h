@@ -10,9 +10,14 @@
 class LogVolumeScaler : public VolumeScaler {
 private:
     ScalingDirection scalingDirection;
+    bool scaleTogether = true;
+
+    std::array<double, 3> sampleIndependentScalingFactors(double scalingStepSize, std::mt19937 &mt) const;
 
 public:
-    explicit LogVolumeScaler(ScalingDirection scalingDirection) : scalingDirection{scalingDirection} { }
+    explicit LogVolumeScaler(ScalingDirection scalingDirection, bool scaleTogether = true)
+            : scalingDirection{scalingDirection}, scaleTogether{scaleTogether}
+    { }
 
     std::array<double, 3> sampleScalingFactors(const std::array<double, 3> &oldDim, double scalingStepSize,
                                                std::mt19937 &mt) const override;
