@@ -21,7 +21,7 @@
 #include "ObservablesCollectorFactory.h"
 #include "core/Simulation.h"
 #include "core/PeriodicBoundaryConditions.h"
-#include "core/LatticeArrangingModel.h"
+#include "core/arranging_models/OrthorombicArrangingModel.h"
 #include "core/Packing.h"
 #include "core/volume_scalers/DeltaVolumeScaler.h"
 #include "core/volume_scalers/LinearVolumeScaler.h"
@@ -444,10 +444,31 @@ std::vector<Shape> Frontend::arrangePacking(std::size_t numOfParticles, const st
     std::istringstream arrangementStream(arrangementString);
     std::string type;
     arrangementStream >> type;
-    ValidateMsg(arrangementStream, "Malformed arrangement. Usage: [type: now only lattice] "
+    ValidateMsg(arrangementStream, "Malformed arrangement. Usage: [type: now only orthorombic] "
                                    "(type dependent parameters)");
-    if (type == "lattice") {
-        LatticeArrangingModel model;
+    if (type == "orthorombic") {
+        bool antipolar = false;
+        auto axis = OrthorombicArrangingModel::PolarAxis::X;
+
+        if (arrangementStream.str().find("antipolar") != std::string::npos) {
+            std::string antipolarStr;
+            std::string axisStr;
+            arrangementStream >> antipolarStr >> axisStr;
+            ValidateMsg(arrangementStream && antipolarStr == "antipolar",
+                        "Malformed latice arrangement. Usage: orthorombic (antipolar {x|y|z}) "
+                        "{default|[cell size x] [... y] [... z] [number of particles in line x] [... y] [... z]}");
+            antipolar = true;
+            if (axisStr == "x")
+                axis = OrthorombicArrangingModel::PolarAxis::X;
+            else if (axisStr == "y")
+                axis = OrthorombicArrangingModel::PolarAxis::Y;
+            else if (axisStr == "z")
+                axis = OrthorombicArrangingModel::PolarAxis::Z;
+            else
+                throw ValidationException("Only x, y, z axes are allowed for antipolar orthorombic arrangement");
+        }
+
+        OrthorombicArrangingModel model(antipolar, axis);
         if (arrangementStream.str().find("default") != std::string::npos) {
             std::string defaultStr;
             arrangementStream >> defaultStr;

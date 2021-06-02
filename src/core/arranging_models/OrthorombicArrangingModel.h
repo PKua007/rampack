@@ -2,17 +2,30 @@
 // Created by Piotr Kubala on 12/12/2020.
 //
 
-#ifndef RAMPACK_LATTICEARRANGINGMODEL_H
-#define RAMPACK_LATTICEARRANGINGMODEL_H
+#ifndef RAMPACK_ORTHOROMBICARRANGINGMODEL_H
+#define RAMPACK_ORTHOROMBICARRANGINGMODEL_H
 
 #include <vector>
 #include <array>
 
-#include "Shape.h"
-#include "BoundaryConditions.h"
+#include "core/Shape.h"
+#include "core/BoundaryConditions.h"
 
-class LatticeArrangingModel {
+class OrthorombicArrangingModel {
 public:
+    enum class PolarAxis {
+        X,
+        Y,
+        Z
+    };
+
+private:
+    bool polar = false;
+    std::size_t axisNum = 0;
+
+public:
+    explicit OrthorombicArrangingModel(bool polar = false, PolarAxis axis = PolarAxis::X);
+
     [[nodiscard]] std::vector<Shape> arrange(std::size_t numOfParticles, const std::array<double, 3> &dimensions) const;
     [[nodiscard]] std::vector<Shape> arrange(std::size_t numOfParticles,
                                              const std::array<std::size_t, 3> &particlesInLine,
@@ -21,4 +34,4 @@ public:
 };
 
 
-#endif //RAMPACK_LATTICEARRANGINGMODEL_H
+#endif //RAMPACK_ORTHOROMBICARRANGINGMODEL_H
