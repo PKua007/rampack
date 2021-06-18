@@ -50,8 +50,8 @@ public:
     [[nodiscard]] double calculateEnergyBetweenShapes(const Shape &shape1, const Shape &shape2,
                                                       const BoundaryConditions &bc) const;
 
-    [[nodiscard]] double overlapBetweenShapes(const Shape &shape1, const Shape &shape2,
-                                              const BoundaryConditions &bc) const;
+    [[nodiscard]] bool overlapBetweenShapes(const Shape &shape1, const Shape &shape2,
+                                            const BoundaryConditions &bc) const;
 };
 
 

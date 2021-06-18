@@ -29,7 +29,7 @@ double Interaction::calculateEnergyBetweenShapes(const Shape &shape1, const Shap
     return energy;
 }
 
-double Interaction::overlapBetweenShapes(const Shape &shape1, const Shape &shape2, const BoundaryConditions &bc) const {
+bool Interaction::overlapBetweenShapes(const Shape &shape1, const Shape &shape2, const BoundaryConditions &bc) const {
     auto centres = this->getInteractionCentres();
     if (centres.empty()) {
         return this->overlapBetween(shape1.getPosition(), shape1.getOrientation(), 0,
