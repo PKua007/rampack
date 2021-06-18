@@ -25,9 +25,9 @@ std::vector<Shape> OrthorombicArrangingModel::arrange(std::size_t numOfParticles
 }
 
 std::vector<Shape> OrthorombicArrangingModel::arrange(std::size_t numOfParticles,
-                                                  const std::array<std::size_t, 3> &particlesInLine,
-                                                  const std::array<double, 3> &cellDimensions,
-                                                  const std::array<double, 3> &boxDimensions) const
+                                                      const std::array<std::size_t, 3> &particlesInLine,
+                                                      const std::array<double, 3> &cellDimensions,
+                                                      const std::array<double, 3> &boxDimensions) const
 {
     Expects(numOfParticles > 0);
     Expects(std::all_of(particlesInLine.begin(), particlesInLine.end(), [](double d) { return d > 0; }));

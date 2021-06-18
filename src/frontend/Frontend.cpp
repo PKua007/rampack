@@ -252,10 +252,9 @@ int Frontend::casino(int argc, char **argv) {
         dimensionsStream >> dimensions[0] >> dimensions[1] >> dimensions[2];
         ValidateMsg(dimensionsStream, "Invalid packing dimensions format. Expected: [dim x] [dim y] [dim z]");
         Validate(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
-        auto shapes = this->arrangePacking(params.numOfParticles, dimensions, params.initialArrangement);
         // Same number of scaling and domain threads
-        packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(bc), shapeTraits->getInteraction(),
-                                            scalingThreads, scalingThreads);
+        packing = this->arrangePacking(params.numOfParticles, dimensions, params.initialArrangement, std::move(bc),
+                                           shapeTraits->getInteraction(), scalingThreads, scalingThreads);
     }
 
     // Perform simulations starting from initial run
@@ -438,8 +437,12 @@ int Frontend::printGeneralHelp(const std::string &cmd) {
     return EXIT_SUCCESS;
 }
 
-std::vector<Shape> Frontend::arrangePacking(std::size_t numOfParticles, const std::array<double, 3> &boxDimensions,
-                                            const std::string &arrangementString)
+std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles,
+                                                  const std::array<double, 3> &boxDimensions,
+                                                  const std::string &arrangementString,
+                                                  std::unique_ptr<BoundaryConditions> bc,
+                                                  const Interaction &interaction, std::size_t moveThreads,
+                                                  std::size_t scalingThreads)
 {
     std::istringstream arrangementStream(arrangementString);
     std::string type;
@@ -475,7 +478,8 @@ std::vector<Shape> Frontend::arrangePacking(std::size_t numOfParticles, const st
             ValidateMsg(arrangementStream && defaultStr == "default",
                         "Malformed latice arrangement. Usage: lattice {default|[cell size x] [... y] [... z] "
                         "[number of particles in line x] [... y] [... z]}");
-            return model.arrange(numOfParticles, boxDimensions);
+            return std::make_unique<Packing>(boxDimensions, model.arrange(numOfParticles, boxDimensions), std::move(bc),
+                                             interaction, moveThreads, scalingThreads);
         } else {
             std::array<double, 3> cellDimensions{};
             std::array<std::size_t, 3> particlesInLine{};
@@ -487,11 +491,23 @@ std::vector<Shape> Frontend::arrangePacking(std::size_t numOfParticles, const st
             Validate(std::all_of(cellDimensions.begin(), cellDimensions.end(), [](double d) { return d; }));
             Validate(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
                      >= numOfParticles);
-            return model.arrange(numOfParticles, particlesInLine, cellDimensions, boxDimensions);
+            return std::make_unique<Packing>(boxDimensions, model.arrange(numOfParticles, boxDimensions), std::move(bc),
+                                             interaction, moveThreads, scalingThreads);
         }
-    }
+    } else if (type == "presimulated") {
+        std::string filename;
+        arrangementStream >> filename;
+        ValidateMsg(arrangementStream, "Malformed presimulated arrangement. Usage: presimulated [packing dat file]");
 
-    throw ValidationException("Unknown arrangement type: " + type + ". Available: now only lattice");
+        std::ifstream packingFile(filename);
+        ValidateMsg(packingFile, "Cannot open '" + filename + "' to restore packing as an initial configuration");
+
+        auto packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
+        packing->restore(packingFile, interaction);
+        return packing;
+    } else {
+        throw ValidationException("Unknown arrangement type: " + type + ". Available: lattice, presimulated");
+    }
 }
 
 void Frontend::printAverageValues(const ObservablesCollector &collector) {
