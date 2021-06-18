@@ -28,6 +28,7 @@
 #include "core/volume_scalers/LogVolumeScaler.h"
 #include "utils/OMPMacros.h"
 #include "utils/Utils.h"
+#include "core/MinimalDistanceOptimizer.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename, const std::vector<std::string> &overridenParams) {
@@ -254,7 +255,7 @@ int Frontend::casino(int argc, char **argv) {
         Validate(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
         // Same number of scaling and domain threads
         packing = this->arrangePacking(params.numOfParticles, dimensions, params.initialArrangement, std::move(bc),
-                                           shapeTraits->getInteraction(), scalingThreads, scalingThreads);
+                                       shapeTraits->getInteraction(), scalingThreads, scalingThreads);
     }
 
     // Perform simulations starting from initial run
@@ -431,6 +432,9 @@ int Frontend::printGeneralHelp(const std::string &cmd) {
     rawOut << Fold("Hard particle Monte Carlo.").width(80).margin(4) << std::endl;
     rawOut << "analyze" << std::endl;
     rawOut << Fold("Statistical analysis of simulations.").width(80).margin(4) << std::endl;
+    rawOut << "optimize-distance" << std::endl;
+    rawOut << Fold("Find minimal distances between shapes in given direction(s).")
+              .width(80).margin(4) << std::endl;
     rawOut << std::endl;
     rawOut << "Type " + cmd + " [mode] --help to get help on the specific mode." << std::endl;
 
@@ -559,4 +563,118 @@ void Frontend::storeAverageValues(const std::string &filename, const Observables
         out << value.quantity << " ";
     }
     out << std::endl;
+}
+
+int Frontend::optimize_distance(int argc, char **argv) {
+    // Prepare and parse options
+    cxxopts::Options options(argv[0], "Tangent distance optimizer.");
+
+    std::string inputFilename;
+    std::string shapeName;
+    std::string shapeAttributes;
+    std::string interaction;
+    std::string rotation1Str;
+    std::string rotation2Str;
+    std::vector<std::string> directionsStr;
+
+    options.add_options()
+        ("h,help", "prints help for this mode")
+        ("i,input", "loads shape parameters from INI file with parameters. If not specified, --shape-name "
+                    "must be specified manually",
+         cxxopts::value<std::string>(inputFilename))
+        ("s,shape-name", "if specified, overrides shape name from --input", cxxopts::value<std::string>(shapeName))
+        ("a,shape-attributes", "if specified, overrides shape attributes from --input. If not specified and no "
+                               "--input is passed, it defaults to the empty string",
+         cxxopts::value<std::string>(shapeAttributes))
+        ("I,interaction", "if specified, overrides interaction from --input. If not specified and and no --input is "
+                          "passed, it defaults to the empty string",
+         cxxopts::value<std::string>(interaction))
+        ("1,rotation-1", "[x angle] [y angle] [z angle] - the external Euler angles in degrees to rotate the 1st shape",
+         cxxopts::value<std::string>(rotation1Str)->default_value("0 0 0"))
+        ("2,rotation-2", "[x angle] [y angle] [z angle] - the external Euler angles in degrees to rotate the 2nd shape",
+         cxxopts::value<std::string>(rotation2Str)->default_value("0 0 0"))
+        ("d,direction", "[x] [y] [z] - if specified, the minimal distance will be computed in the given directionsStr(s)",
+         cxxopts::value<std::vector<std::string>>(directionsStr))
+        ("A,axes", "if specified, the distance will be computed for x, y and z axes");
+
+    auto parsedOptions = options.parse(argc, argv);
+    if (parsedOptions.count("help")) {
+        std::ostream &rawOut = this->logger;
+        rawOut << options.help() << std::endl;
+        return EXIT_SUCCESS;
+    }
+
+    // Validate parsed options
+    std::string cmd(argv[0]);
+    if (argc != 1)
+        die("Unexpected positional arguments. See " + cmd + " --help", this->logger);
+    if (!parsedOptions.count("input") && !parsedOptions.count("shape-name"))
+        die("You must specify--input file or --shape-name", this->logger);
+    if (!parsedOptions.count("direction") && !parsedOptions.count("axes"))
+        die("You must specify at least one --direction or use --axes");
+
+    // Load parameters from file if specified
+    if (parsedOptions.count("input")) {
+        Parameters params = this->loadParameters(inputFilename, {});
+        this->logger.info() << "Loaded shape parameters from '" << inputFilename << "'" << std::endl;
+        if (!parsedOptions.count("shape-name"))
+            shapeName = params.shapeName;
+        if (!parsedOptions.count("shape-attributes"))
+            shapeAttributes = params.shapeAttributes;
+        if (!parsedOptions.count("interaction"))
+            interaction = params.interaction;
+    }
+
+    // Axes option - add x, y, z axes to directions
+    if (parsedOptions.count("axes")) {
+        directionsStr.emplace_back("1 0 0");
+        directionsStr.emplace_back("0 1 0");
+        directionsStr.emplace_back("0 0 1");
+    }
+
+    // Parse directions
+    std::vector<Vector<3>> directions;
+    directions.reserve(directionsStr.size());
+    auto directionParser = [](const std::string &directionStr) {
+        Vector<3> direction;
+        std::istringstream directionStream(directionStr);
+        directionStream >> direction[0] >> direction[1] >> direction[2];
+        ValidateMsg(directionStream, "Malformed direction '" + directionStr + "'. Expected format: [x] [y] [z]");
+        Validate(direction.norm2() > 1e-12);
+        return direction;
+    };
+    std::transform(directionsStr.begin(), directionsStr.end(), std::back_inserter(directions), directionParser);
+
+    // Parse rotations
+    auto rotationParser = [](const std::string &rotationStr) {
+        double angleX, angleY, angleZ;
+        std::istringstream rotationStream(rotationStr);
+        rotationStream >> angleX >> angleY >> angleZ;
+        ValidateMsg(rotationStream, "Malformed rotation '" + rotationStr + "'. Expected format: "
+                                    + "[angle x] [angle y] [angle z]");
+        double factor = M_PI/180;
+        return Matrix<3, 3>::rotation(angleX*factor, angleY*factor, angleZ*factor);
+    };
+    Matrix<3, 3> rotation1 = rotationParser(rotation1Str);
+    Matrix<3, 3> rotation2 = rotationParser(rotation2Str);
+    Shape shape1, shape2;
+    shape1.setOrientation(rotation1);
+    shape2.setOrientation(rotation2);
+
+    auto shapeTraits = ShapeFactory::shapeTraitsFor(shapeName, shapeAttributes, interaction);
+
+    this->logger.info() << "Shape name       : " << shapeName << std::endl;
+    this->logger.info() << "Shape attributes : " << shapeAttributes << std::endl;
+    this->logger.info() << "Interaction      : " << interaction<< std::endl;
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+
+    for (const auto &direction : directions) {
+        std::ostringstream minimalDistanceStream;
+        minimalDistanceStream.precision(std::numeric_limits<double>::max_digits10);
+        minimalDistanceStream << MinimalDistanceOptimizer::forDirection(shape1, shape2, direction,
+                                                                        shapeTraits->getInteraction());
+        this->logger << direction << ": " << minimalDistanceStream.str() << std::endl;
+    }
+
+    return EXIT_SUCCESS;
 }

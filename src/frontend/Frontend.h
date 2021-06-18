@@ -40,6 +40,7 @@ public:
 
     int casino(int argc, char **argv);
     int analyze(int argc, char **argv);
+    int optimize_distance(int argc, char **argv);
 
     int printGeneralHelp(const std::string &cmd);
 

@@ -34,6 +34,8 @@ int main(int argc, char **argv) {
         return frontend.casino(argc, argv);
     else if (mode == "analyze")
         return frontend.analyze(argc, argv);
+    else if (mode == "optimize-distance")
+        return frontend.optimize_distance(argc, argv);
 
     logger.error() << "Unknown mode " << mode << std::endl;
     return EXIT_FAILURE;
