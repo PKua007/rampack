@@ -435,6 +435,9 @@ int Frontend::printGeneralHelp(const std::string &cmd) {
     rawOut << "optimize-distance" << std::endl;
     rawOut << Fold("Find minimal distances between shapes in given direction(s).")
               .width(80).margin(4) << std::endl;
+    rawOut << "preview" << std::endl;
+    rawOut << Fold("Based on the input file generate initial configuration and store Wolfram and/or *.dat packing.")
+              .width(80).margin(4) << std::endl;
     rawOut << std::endl;
     rawOut << "Type " + cmd + " [mode] --help to get help on the specific mode." << std::endl;
 
@@ -451,9 +454,9 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles,
     std::istringstream arrangementStream(arrangementString);
     std::string type;
     arrangementStream >> type;
-    ValidateMsg(arrangementStream, "Malformed arrangement. Usage: [type: now only orthorombic] "
+    ValidateMsg(arrangementStream, "Malformed arrangement. Usage: [type: orthorombic, presimulated] "
                                    "(type dependent parameters)");
-    if (type == "orthorombic") {
+    if (type == "orthorombic" || type == "lattice") {
         bool antipolar = false;
         auto axis = OrthorombicArrangingModel::PolarAxis::X;
 
@@ -480,7 +483,7 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles,
             std::string defaultStr;
             arrangementStream >> defaultStr;
             ValidateMsg(arrangementStream && defaultStr == "default",
-                        "Malformed latice arrangement. Usage: lattice {default|[cell size x] [... y] [... z] "
+                        "Malformed latice arrangement. Usage: orthorombic {default|[cell size x] [... y] [... z] "
                         "[number of particles in line x] [... y] [... z]}");
             return std::make_unique<Packing>(boxDimensions, model.arrange(numOfParticles, boxDimensions), std::move(bc),
                                              interaction, moveThreads, scalingThreads);
@@ -490,13 +493,14 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles,
             arrangementStream >> cellDimensions[0] >> cellDimensions[1] >> cellDimensions[2];
             arrangementStream >> particlesInLine[0] >> particlesInLine[1] >> particlesInLine[2];
             ValidateMsg(arrangementStream,
-                        "Malformed latice arrangement. Usage: lattice {default|[cell size x] [... y] [... z] "
+                        "Malformed latice arrangement. Usage: orthorombic {default|[cell size x] [... y] [... z] "
                         "[number particles in line x] [... y] [... z]}");
             Validate(std::all_of(cellDimensions.begin(), cellDimensions.end(), [](double d) { return d; }));
             Validate(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
                      >= numOfParticles);
-            return std::make_unique<Packing>(boxDimensions, model.arrange(numOfParticles, boxDimensions), std::move(bc),
-                                             interaction, moveThreads, scalingThreads);
+            auto shapes = model.arrange(numOfParticles, particlesInLine, cellDimensions, boxDimensions);
+            return std::make_unique<Packing>(boxDimensions, std::move(shapes), std::move(bc), interaction, moveThreads,
+                                             scalingThreads);
         }
     } else if (type == "presimulated") {
         std::string filename;
@@ -510,7 +514,7 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles,
         packing->restore(packingFile, interaction);
         return packing;
     } else {
-        throw ValidationException("Unknown arrangement type: " + type + ". Available: lattice, presimulated");
+        throw ValidationException("Unknown arrangement type: " + type + ". Available: orthorombic, presimulated");
     }
 }
 
@@ -609,9 +613,9 @@ int Frontend::optimize_distance(int argc, char **argv) {
     if (argc != 1)
         die("Unexpected positional arguments. See " + cmd + " --help", this->logger);
     if (!parsedOptions.count("input") && !parsedOptions.count("shape-name"))
-        die("You must specify--input file or --shape-name", this->logger);
+        die("You must specify --input file or --shape-name", this->logger);
     if (!parsedOptions.count("direction") && !parsedOptions.count("axes"))
-        die("You must specify at least one --direction or use --axes");
+        die("You must specify at least one --direction or use --axes", this->logger);
 
     // Load parameters from file if specified
     if (parsedOptions.count("input")) {
@@ -674,6 +678,79 @@ int Frontend::optimize_distance(int argc, char **argv) {
         minimalDistanceStream << MinimalDistanceOptimizer::forDirection(shape1, shape2, direction,
                                                                         shapeTraits->getInteraction());
         this->logger << direction << ": " << minimalDistanceStream.str() << std::endl;
+    }
+
+    return EXIT_SUCCESS;
+}
+
+int Frontend::preview(int argc, char **argv) {
+    // Prepare and parse options
+    cxxopts::Options options(argv[0], "Initial arrangement preview.");
+
+    std::string inputFilename;
+    std::string datFilename;
+    std::string wolframFilename;
+    std::vector<std::string> overridenParams;
+
+    options.add_options()
+        ("h,help", "prints help for this mode")
+        ("i,input", "an INI file with parameters. See input.ini for parameters description",
+         cxxopts::value<std::string>(inputFilename))
+        ("P,set-param", "overrides the value of the parameter loaded from --input parameter set. More precisely, "
+                        "doing -P N=1 (-PN=1 does not work) acts as one would append N=1 to the input file",
+         cxxopts::value<std::vector<std::string>>(overridenParams))
+        ("w,wolfram", "if specified, Mathematica notebook with the packing will be generated",
+         cxxopts::value<std::string>(wolframFilename))
+        ("d,dat", "if specified, *.dat file with packing will be generated",
+         cxxopts::value<std::string>(datFilename));
+
+    auto parsedOptions = options.parse(argc, argv);
+    if (parsedOptions.count("help")) {
+        std::ostream &rawOut = this->logger;
+        rawOut << options.help() << std::endl;
+        return EXIT_SUCCESS;
+    }
+
+    // Validate parsed options
+    std::string cmd(argv[0]);
+    if (argc != 1)
+        die("Unexpected positional arguments. See " + cmd + " --help", this->logger);
+    if (!parsedOptions.count("input"))
+        die("Input file must be specified with option -i [input file name]", this->logger);
+    if (!parsedOptions.count("wolfram") && !parsedOptions.count("dat"))
+        die("At least one of: --wolfram, --dat options must be specified", this->logger);
+
+    Parameters params = this->loadParameters(inputFilename, overridenParams);
+    std::istringstream dimensionsStream(params.initialDimensions);
+    std::array<double, 3> dimensions{};
+    dimensionsStream >> dimensions[0] >> dimensions[1] >> dimensions[2];
+    ValidateMsg(dimensionsStream, "Invalid packing dimensions format. Expected: [dim x] [dim y] [dim z]");
+    Validate(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
+    auto bc = std::make_unique<PeriodicBoundaryConditions>();
+    auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
+    auto packing = this->arrangePacking(params.numOfParticles, dimensions, params.initialArrangement, std::move(bc),
+                                        shapeTraits->getInteraction(), 1, 1);
+
+    // Store packing (if desired)
+    if (parsedOptions.count("dat")) {
+        std::map<std::string, std::string> auxInfo;
+        auxInfo["translationStep"] = std::to_string(params.positionStepSize);
+        auxInfo["rotationStep"] = std::to_string(params.rotationStepSize);
+        auxInfo["scalingStep"] = std::to_string(params.volumeStepSize);
+        auxInfo["cycles"] = "0";
+
+        std::ofstream out(datFilename);
+        ValidateMsg(out, "Could not open " + datFilename + " to store packing!");
+        packing->store(out, auxInfo);
+        this->logger.info() << "Packing stored to " + datFilename << std::endl;
+    }
+
+    // Store Mathematica packing (if desired)
+    if (parsedOptions.count("wolfram")) {
+        std::ofstream out(wolframFilename);
+        ValidateMsg(out, "Could not open " + wolframFilename + " to store Wolfram packing!");
+        packing->toWolfram(out, shapeTraits->getPrinter());
+        this->logger.info() << "Wolfram packing stored to " + wolframFilename << std::endl;
     }
 
     return EXIT_SUCCESS;
