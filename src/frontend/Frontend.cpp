@@ -496,7 +496,7 @@ auto Frontend::parseAntipolar(std::istringstream &arrangementStream) const {
     return std::make_pair(antipolar, axis);
 }
 
-std::vector<Shape> Frontend::arrangeOrthorombicShapes(std::size_t numOfParticles, std::array<double, 3> boxDimensions,
+std::vector<Shape> Frontend::arrangeOrthorombicShapes(std::size_t numOfParticles, std::array<double, 3> &boxDimensions,
                                                       const Interaction &interaction,
                                                       std::istringstream &arrangementStream) const
 {

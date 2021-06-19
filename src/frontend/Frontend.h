@@ -36,7 +36,7 @@ private:
     [[nodiscard]] std::unique_ptr<VolumeScaler> createVolumeScaler(std::string scalingType) const;
     [[nodiscard]] std::array<double, 3> parseDimensions(const std::string &initialDimensions) const;
     [[nodiscard]] std::vector<Shape> arrangeOrthorombicShapes(std::size_t numOfParticles,
-                                                              std::array<double, 3> boxDimensions,
+                                                              std::array<double, 3> &boxDimensions,
                                                               const Interaction &interaction,
                                                               std::istringstream &arrangementStream) const;
     auto parseAntipolar(std::istringstream &arrangementStream) const;
