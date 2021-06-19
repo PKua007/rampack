@@ -248,11 +248,7 @@ int Frontend::casino(int argc, char **argv) {
 
     // If packing was not loaded from file, arrange it as given in config file
     if (packing == nullptr) {
-        std::istringstream dimensionsStream(params.initialDimensions);
-        std::array<double, 3> dimensions{};
-        dimensionsStream >> dimensions[0] >> dimensions[1] >> dimensions[2];
-        ValidateMsg(dimensionsStream, "Invalid packing dimensions format. Expected: [dim x] [dim y] [dim z]");
-        Validate(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
+        std::array<double, 3> dimensions = this->parseDimensions(params.initialDimensions);
         // Same number of scaling and domain threads
         packing = this->arrangePacking(params.numOfParticles, dimensions, params.initialArrangement, std::move(bc),
                                        shapeTraits->getInteraction(), scalingThreads, scalingThreads);
@@ -445,7 +441,7 @@ int Frontend::printGeneralHelp(const std::string &cmd) {
 }
 
 std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles,
-                                                  const std::array<double, 3> &boxDimensions,
+                                                  std::array<double, 3> boxDimensions,
                                                   const std::string &arrangementString,
                                                   std::unique_ptr<BoundaryConditions> bc,
                                                   const Interaction &interaction, std::size_t moveThreads,
@@ -457,91 +453,9 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles,
     ValidateMsg(arrangementStream, "Malformed arrangement. Usage: [type: orthorombic, presimulated] "
                                    "(type dependent parameters)");
     if (type == "orthorombic" || type == "lattice") {
-        bool antipolar = false;
-        auto axis = OrthorombicArrangingModel::PolarAxis::X;
-
-        if (arrangementStream.str().find("antipolar") != std::string::npos) {
-            std::string antipolarStr;
-            std::string axisStr;
-            arrangementStream >> antipolarStr >> axisStr;
-            ValidateMsg(arrangementStream && antipolarStr == "antipolar",
-                        "Malformed latice arrangement. Usage: orthorombic (antipolar {x|y|z}) "
-                        "{default|[cell size x] [... y] [... z] [number of particles in line x] [... y] [... z]}");
-            antipolar = true;
-            if (axisStr == "x")
-                axis = OrthorombicArrangingModel::PolarAxis::X;
-            else if (axisStr == "y")
-                axis = OrthorombicArrangingModel::PolarAxis::Y;
-            else if (axisStr == "z")
-                axis = OrthorombicArrangingModel::PolarAxis::Z;
-            else
-                throw ValidationException("Only x, y, z axes are allowed for antipolar orthorombic arrangement");
-        }
-
-        OrthorombicArrangingModel model(antipolar, axis);
-        if (arrangementStream.str().find("default") != std::string::npos) {
-            std::string defaultStr;
-            arrangementStream >> defaultStr;
-            ValidateMsg(arrangementStream && defaultStr == "default",
-                        "Malformed latice arrangement. Usage: orthorombic {default|[cell size x] [... y] [... z] "
-                        "[number of particles in line x] [... y] [... z]}");
-            return std::make_unique<Packing>(boxDimensions, model.arrange(numOfParticles, boxDimensions), std::move(bc),
-                                             interaction, moveThreads, scalingThreads);
-        } else if (arrangementStream.str().find("spacing")) {
-            std::string spacingStr;
-            double spacing;
-            std::array<std::size_t, 3> particlesInLine{};
-            arrangementStream >> spacingStr >> spacing;
-            arrangementStream >> particlesInLine[0] >> particlesInLine[1] >> particlesInLine[2];
-            ValidateMsg(arrangementStream && spacingStr == "spacing",
-                        "Malformed latice arrangement. Usage: orthorombic {default|[cell size x] [... y] [... z] "
-                        "[number of particles in line x] [... y] [... z]}");
-            Validate(spacing > 0);
-            Validate(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
-                     >= numOfParticles);
-
-            Shape s1, s2;
-            auto distances = MinimalDistanceOptimizer::forAxes(s1, s2, interaction);
-            if (antipolar) {
-                std::size_t axisNum = OrthorombicArrangingModel::getAxisNumber(axis);
-
-                std::array<double, 3> angles{};
-                angles.fill(0);
-                angles[axisNum] = M_PI;
-
-                Vector<3> direction;
-                direction[axisNum] = 1;
-
-                s2.rotate(Matrix<3, 3>::rotation(angles[0], angles[1], angles[2]));
-                double antipolarDistance1 = MinimalDistanceOptimizer::forDirection(s1, s2, direction, interaction);
-                double antipolarDistance2 = MinimalDistanceOptimizer::forDirection(s1, s2, -direction, interaction);
-                distances[axisNum] = std::max(antipolarDistance1, antipolarDistance2);
-            }
-
-            std::array<double, 3> cellDimensions{};
-            std::array<double, 3> newBoxDimensions{};
-            std::transform(distances.begin(), distances.end(), cellDimensions.begin(),
-                           [spacing](double distance) { return distance + spacing; });
-            std::transform(cellDimensions.begin(), cellDimensions.end(), particlesInLine.begin(),
-                           newBoxDimensions.begin(), std::multiplies<>{});
-            auto shapes = model.arrange(numOfParticles, particlesInLine, cellDimensions, newBoxDimensions);
-            return std::make_unique<Packing>(newBoxDimensions, std::move(shapes), std::move(bc), interaction,
-                                             moveThreads, scalingThreads);
-        } else {
-            std::array<double, 3> cellDimensions{};
-            std::array<std::size_t, 3> particlesInLine{};
-            arrangementStream >> cellDimensions[0] >> cellDimensions[1] >> cellDimensions[2];
-            arrangementStream >> particlesInLine[0] >> particlesInLine[1] >> particlesInLine[2];
-            ValidateMsg(arrangementStream,
-                        "Malformed latice arrangement. Usage: orthorombic {default|[cell size x] [... y] [... z] "
-                        "[number particles in line x] [... y] [... z]}");
-            Validate(std::all_of(cellDimensions.begin(), cellDimensions.end(), [](double d) { return d; }));
-            Validate(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
-                     >= numOfParticles);
-            auto shapes = model.arrange(numOfParticles, particlesInLine, cellDimensions, boxDimensions);
-            return std::make_unique<Packing>(boxDimensions, std::move(shapes), std::move(bc), interaction, moveThreads,
-                                             scalingThreads);
-        }
+        auto shapes = this->arrangeOrthorombicShapes(numOfParticles, boxDimensions, interaction,arrangementStream);
+        return std::make_unique<Packing>(boxDimensions, std::move(shapes), std::move(bc), interaction, moveThreads,
+                                         scalingThreads);
     } else if (type == "presimulated") {
         std::string filename;
         arrangementStream >> filename;
@@ -555,6 +469,105 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles,
         return packing;
     } else {
         throw ValidationException("Unknown arrangement type: " + type + ". Available: orthorombic, presimulated");
+    }
+}
+
+auto Frontend::parseAntipolar(std::istringstream &arrangementStream) const {
+    bool antipolar = false;
+    auto axis = OrthorombicArrangingModel::PolarAxis::X;
+    if (arrangementStream.str().find("antipolar") != std::string::npos) {
+        std::string antipolarStr;
+        std::string axisStr;
+        arrangementStream >> antipolarStr >> axisStr;
+        ValidateMsg(arrangementStream && antipolarStr == "antipolar",
+                    "Malformed latice arrangement. Usage: orthorombic (antipolar {x|y|z}) "
+                    "{default|[cell size x] [... y] [... z] [number of particles in line x] [... y] [... z]}");
+        antipolar = true;
+        if (axisStr == "x")
+            axis = OrthorombicArrangingModel::PolarAxis::X;
+        else if (axisStr == "y")
+            axis = OrthorombicArrangingModel::PolarAxis::Y;
+        else if (axisStr == "z")
+            axis = OrthorombicArrangingModel::PolarAxis::Z;
+        else
+            throw ValidationException("Only x, y, z axes are allowed for antipolar orthorombic arrangement");
+    }
+
+    return std::make_pair(antipolar, axis);
+}
+
+std::vector<Shape> Frontend::arrangeOrthorombicShapes(std::size_t numOfParticles, std::array<double, 3> boxDimensions,
+                                                      const Interaction &interaction,
+                                                      std::istringstream &arrangementStream) const
+{
+    auto [isAntipolar, axis] = this->parseAntipolar(arrangementStream);
+
+    OrthorombicArrangingModel model(isAntipolar, axis);
+    if (arrangementStream.str().find("default") != std::string::npos) {
+        std::string defaultStr;
+        arrangementStream >> defaultStr;
+        ValidateMsg(arrangementStream && defaultStr == "default",
+                    "Malformed latice arrangement. Usage: orthorombic {default|[cell size x] [... y] [... z] "
+                    "[number of particles in line x] [... y] [... z]}");
+        ValidateMsg((boxDimensions != std::array<double, 3>{0, 0, 0}),
+                    "Default arrangement unsupported for automatic box size");
+
+        return model.arrange(numOfParticles, boxDimensions);
+    } else if (arrangementStream.str().find("spacing") != std::string::npos) {
+        std::string spacingStr;
+        double spacing;
+        std::array<std::size_t, 3> particlesInLine{};
+        arrangementStream >> spacingStr >> spacing;
+        arrangementStream >> particlesInLine[0] >> particlesInLine[1] >> particlesInLine[2];
+        ValidateMsg(arrangementStream && spacingStr == "spacing",
+                    "Malformed latice arrangement. Usage: orthorombic {default|[cell size x] [... y] [... z] "
+                    "[number of particles in line x] [... y] [... z]}");
+        Validate(spacing > 0);
+        Validate(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
+                 >= numOfParticles);
+
+        Shape s1, s2;
+        auto distances = MinimalDistanceOptimizer::forAxes(s1, s2, interaction);
+        if (isAntipolar) {
+            std::size_t axisNum = OrthorombicArrangingModel::getAxisNumber(axis);
+
+            std::array<double, 3> angles{};
+            angles.fill(0);
+            angles[axisNum] = M_PI;
+
+            Vector<3> direction;
+            direction[axisNum] = 1;
+
+            s2.rotate(Matrix<3, 3>::rotation(angles[0], angles[1], angles[2]));
+            double antipolarDistance1 = MinimalDistanceOptimizer::forDirection(s1, s2, direction, interaction);
+            double antipolarDistance2 = MinimalDistanceOptimizer::forDirection(s1, s2, -direction, interaction);
+            distances[axisNum] = std::max(antipolarDistance1, antipolarDistance2);
+        }
+
+        std::array<double, 3> cellDimensions{};
+        std::transform(distances.begin(), distances.end(), cellDimensions.begin(),
+                       [spacing](double distance) { return distance + spacing; });
+        std::transform(cellDimensions.begin(), cellDimensions.end(), particlesInLine.begin(), boxDimensions.begin(),
+                       std::multiplies<>{});
+        return model.arrange(numOfParticles, particlesInLine, cellDimensions, boxDimensions);
+    } else {
+        std::array<double, 3> cellDimensions{};
+        std::array<std::size_t, 3> particlesInLine{};
+        arrangementStream >> cellDimensions[0] >> cellDimensions[1] >> cellDimensions[2];
+        arrangementStream >> particlesInLine[0] >> particlesInLine[1] >> particlesInLine[2];
+        ValidateMsg(arrangementStream,
+                    "Malformed latice arrangement. Usage: orthorombic {default|[cell size x] [... y] [... z] "
+                    "[number particles in line x] [... y] [... z]}");
+        Validate(std::all_of(cellDimensions.begin(), cellDimensions.end(), [](double d) { return d; }));
+        Validate(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
+                 >= numOfParticles);
+
+        if (boxDimensions == std::array<double, 3>{0, 0, 0}) {
+            std::transform(cellDimensions.begin(), cellDimensions.end(), particlesInLine.begin(),
+                           boxDimensions.begin(), std::multiplies<>{});
+        }
+
+        return model.arrange(numOfParticles, particlesInLine, cellDimensions, boxDimensions);
     }
 }
 
@@ -620,6 +633,7 @@ int Frontend::optimize_distance(int argc, char **argv) {
     std::string rotation1Str;
     std::string rotation2Str;
     std::vector<std::string> directionsStr;
+    bool minimalOutput = false;
 
     options.add_options()
         ("h,help", "prints help for this mode")
@@ -639,13 +653,19 @@ int Frontend::optimize_distance(int argc, char **argv) {
          cxxopts::value<std::string>(rotation2Str)->default_value("0 0 0"))
         ("d,direction", "[x] [y] [z] - if specified, the minimal distance will be computed in the given directionsStr(s)",
          cxxopts::value<std::vector<std::string>>(directionsStr))
-        ("A,axes", "if specified, the distance will be computed for x, y and z axes");
+        ("A,axes", "if specified, the distance will be computed for x, y and z axes")
+        ("m,minimal-output", "output only distances (and errors)");
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
         std::ostream &rawOut = this->logger;
         rawOut << options.help() << std::endl;
         return EXIT_SUCCESS;
+    }
+
+    if (parsedOptions.count("minimal-output")) {
+        minimalOutput = true;
+        this->logger.setVerbosityLevel(Logger::ERROR);
     }
 
     // Validate parsed options
@@ -717,7 +737,10 @@ int Frontend::optimize_distance(int argc, char **argv) {
         minimalDistanceStream.precision(std::numeric_limits<double>::max_digits10);
         minimalDistanceStream << MinimalDistanceOptimizer::forDirection(shape1, shape2, direction,
                                                                         shapeTraits->getInteraction());
-        this->logger << direction << ": " << minimalDistanceStream.str() << std::endl;
+        if (minimalOutput)
+            this->logger.raw() << minimalDistanceStream.str() << std::endl;
+        else
+            this->logger << direction << ": " << minimalDistanceStream.str() << std::endl;
     }
 
     return EXIT_SUCCESS;
@@ -761,11 +784,7 @@ int Frontend::preview(int argc, char **argv) {
         die("At least one of: --wolfram, --dat options must be specified", this->logger);
 
     Parameters params = this->loadParameters(inputFilename, overridenParams);
-    std::istringstream dimensionsStream(params.initialDimensions);
-    std::array<double, 3> dimensions{};
-    dimensionsStream >> dimensions[0] >> dimensions[1] >> dimensions[2];
-    ValidateMsg(dimensionsStream, "Invalid packing dimensions format. Expected: [dim x] [dim y] [dim z]");
-    Validate(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
+    std::array<double, 3> dimensions = this->parseDimensions(params.initialDimensions);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
     auto packing = this->arrangePacking(params.numOfParticles, dimensions, params.initialArrangement, std::move(bc),
@@ -794,4 +813,22 @@ int Frontend::preview(int argc, char **argv) {
     }
 
     return EXIT_SUCCESS;
+}
+
+std::array<double, 3> Frontend::parseDimensions(const std::string &initialDimensions) const {
+    std::istringstream dimensionsStream(initialDimensions);
+    std::array<double, 3> dimensions{};
+    if (initialDimensions.find("auto") != std::string::npos) {
+        std::string autoStr;
+        dimensionsStream >> autoStr;
+        ValidateMsg(dimensionsStream && autoStr == "auto", "Invalid packing dimensions format. "
+                                                           "Expected: {auto|[dim x] [dim y] [dim z]}");
+        dimensions.fill(0);
+    } else {
+        dimensionsStream >> dimensions[0] >> dimensions[1] >> dimensions[2];
+        ValidateMsg(dimensionsStream, "Invalid packing dimensions format. "
+                                      "Expected: {auto|[dim x] [dim y] [dim z]}");
+        Validate(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
+    }
+    return dimensions;
 }

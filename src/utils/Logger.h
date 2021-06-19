@@ -95,6 +95,7 @@ public:
     void setVerbosityLevel(LogType maxLogType_) { this->maxLogType = maxLogType_; }
 
     operator std::ostream&() { return this->out; }
+    std::ostream &raw() { return this->out; }
 
     Logger &info() { return this->changeLogType(INFO); }
     Logger &warn() { return this->changeLogType(WARN); }
