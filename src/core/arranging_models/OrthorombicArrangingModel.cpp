@@ -74,12 +74,11 @@ std::vector<Shape> OrthorombicArrangingModel::arrange(std::size_t numOfParticles
     return result;
 }
 
-OrthorombicArrangingModel::OrthorombicArrangingModel(bool polar, OrthorombicArrangingModel::PolarAxis axis)
-        : polar{polar}
-{
+std::size_t OrthorombicArrangingModel::getAxisNumber(OrthorombicArrangingModel::PolarAxis axis) {
     switch (axis) {
-        case PolarAxis::X: this->axisNum = 0; break;
-        case PolarAxis::Y: this->axisNum = 1; break;
-        case PolarAxis::Z: this->axisNum = 2; break;
+        case PolarAxis::X: return 0;
+        case PolarAxis::Y: return 1;
+        case PolarAxis::Z: return 2;
     }
+    throw AssertionException{""};
 }

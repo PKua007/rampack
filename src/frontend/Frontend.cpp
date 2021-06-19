@@ -487,6 +487,46 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles,
                         "[number of particles in line x] [... y] [... z]}");
             return std::make_unique<Packing>(boxDimensions, model.arrange(numOfParticles, boxDimensions), std::move(bc),
                                              interaction, moveThreads, scalingThreads);
+        } else if (arrangementStream.str().find("spacing")) {
+            std::string spacingStr;
+            double spacing;
+            std::array<std::size_t, 3> particlesInLine{};
+            arrangementStream >> spacingStr >> spacing;
+            arrangementStream >> particlesInLine[0] >> particlesInLine[1] >> particlesInLine[2];
+            ValidateMsg(arrangementStream && spacingStr == "spacing",
+                        "Malformed latice arrangement. Usage: orthorombic {default|[cell size x] [... y] [... z] "
+                        "[number of particles in line x] [... y] [... z]}");
+            Validate(spacing > 0);
+            Validate(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
+                     >= numOfParticles);
+
+            Shape s1, s2;
+            auto distances = MinimalDistanceOptimizer::forAxes(s1, s2, interaction);
+            if (antipolar) {
+                std::size_t axisNum = OrthorombicArrangingModel::getAxisNumber(axis);
+
+                std::array<double, 3> angles{};
+                angles.fill(0);
+                angles[axisNum] = M_PI;
+
+                Vector<3> direction;
+                direction[axisNum] = 1;
+
+                s2.rotate(Matrix<3, 3>::rotation(angles[0], angles[1], angles[2]));
+                double antipolarDistance1 = MinimalDistanceOptimizer::forDirection(s1, s2, direction, interaction);
+                double antipolarDistance2 = MinimalDistanceOptimizer::forDirection(s1, s2, -direction, interaction);
+                distances[axisNum] = std::max(antipolarDistance1, antipolarDistance2);
+            }
+
+            std::array<double, 3> cellDimensions{};
+            std::array<double, 3> newBoxDimensions{};
+            std::transform(distances.begin(), distances.end(), cellDimensions.begin(),
+                           [spacing](double distance) { return distance + spacing; });
+            std::transform(cellDimensions.begin(), cellDimensions.end(), particlesInLine.begin(),
+                           newBoxDimensions.begin(), std::multiplies<>{});
+            auto shapes = model.arrange(numOfParticles, particlesInLine, cellDimensions, newBoxDimensions);
+            return std::make_unique<Packing>(newBoxDimensions, std::move(shapes), std::move(bc), interaction,
+                                             moveThreads, scalingThreads);
         } else {
             std::array<double, 3> cellDimensions{};
             std::array<std::size_t, 3> particlesInLine{};

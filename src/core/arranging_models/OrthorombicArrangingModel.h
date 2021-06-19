@@ -24,7 +24,11 @@ private:
     std::size_t axisNum = 0;
 
 public:
-    explicit OrthorombicArrangingModel(bool polar = false, PolarAxis axis = PolarAxis::X);
+    [[nodiscard]] static std::size_t getAxisNumber(PolarAxis axis);
+
+    explicit OrthorombicArrangingModel(bool polar = false, PolarAxis axis = PolarAxis::X)
+            : polar{polar}, axisNum{getAxisNumber(axis)}
+    { }
 
     [[nodiscard]] std::vector<Shape> arrange(std::size_t numOfParticles, const std::array<double, 3> &dimensions) const;
     [[nodiscard]] std::vector<Shape> arrange(std::size_t numOfParticles,

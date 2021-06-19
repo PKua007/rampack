@@ -26,7 +26,7 @@ private:
     Parameters loadParameters(const std::string &inputFilename, const std::vector<std::string> &overridenParams);
     void setVerbosityLevel(const std::string &verbosityLevelName) const;
     void setOverridenParamsAsAdditionalText(std::vector<std::string> overridenParams) const;
-    std::unique_ptr<Packing> arrangePacking(std::size_t numOfParticles, const std::array<double, 3> &boxDimensions,
+    std::unique_ptr<Packing> arrangePacking(std::size_t distance, const std::array<double, 3> &boxDimensions,
                                             const std::string &arrangementString,
                                             std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction,
                                             std::size_t moveThreads, std::size_t scalingThreads);
