@@ -67,6 +67,8 @@ private:
     [[nodiscard]] bool isInteractionCentreOverlappingAnything(std::size_t originalParticleIdx,
                                                               std::size_t tempParticleIdx, std::size_t centre,
                                                               const Interaction &interaction) const;
+    [[nodiscard]] bool areAnyParticlesFromNGCellOverlapping(const std::array<std::size_t, 3> &coord,
+                                                            const Interaction &interaction) const;
 
     [[nodiscard]] double calculateParticleEnergy(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
                                                  const Interaction &interaction) const;
@@ -76,8 +78,8 @@ private:
     [[nodiscard]] double calculateInteractionCentreEnergy(std::size_t originalParticleIdx,
                                                           std::size_t tempParticleIdx, size_t centre,
                                                           const Interaction &interaction) const;
-    [[nodiscard]] bool areAnyParticlesFromNGCellOverlapping(const std::array<std::size_t, 3> &coord,
-                                                            const Interaction &interaction) const;
+    [[nodiscard]] double calculateEnergyForParticlesInNGCell(const std::array<std::size_t, 3> &coord,
+                                                             const Interaction &interaction) const;
 
     using iterator = decltype(shapes)::iterator;
 
