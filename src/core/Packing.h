@@ -59,7 +59,6 @@ private:
     // originalParticleIdx or be the last index (temp shape). originalParticleIdx is the actual id of the particle, but
     // the position under it may be not representative at the moment - for example in the process of performing the move
 
-    [[nodiscard]] bool areAnyParticlesOverlapping(const Interaction &interaction) const;
     [[nodiscard]] bool isParticleOverlappingAnything(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
                                                      const Interaction &interaction) const;
     [[nodiscard]] bool overlapBetweenParticles(std::size_t tempParticleIdx, std::size_t anotherParticleIdx,
@@ -67,8 +66,8 @@ private:
     [[nodiscard]] bool isInteractionCentreOverlappingAnything(std::size_t originalParticleIdx,
                                                               std::size_t tempParticleIdx, std::size_t centre,
                                                               const Interaction &interaction) const;
-    [[nodiscard]] bool areAnyParticlesFromNGCellOverlapping(const std::array<std::size_t, 3> &coord,
-                                                            const Interaction &interaction) const;
+    [[nodiscard]] bool areAnyParticlesOverlappingNGCellHelper(const std::array<std::size_t, 3> &coord,
+                                                              const Interaction &interaction) const;
 
     [[nodiscard]] double calculateParticleEnergy(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
                                                  const Interaction &interaction) const;
@@ -78,8 +77,8 @@ private:
     [[nodiscard]] double calculateInteractionCentreEnergy(std::size_t originalParticleIdx,
                                                           std::size_t tempParticleIdx, size_t centre,
                                                           const Interaction &interaction) const;
-    [[nodiscard]] double calculateEnergyForParticlesInNGCell(const std::array<std::size_t, 3> &coord,
-                                                             const Interaction &interaction) const;
+    [[nodiscard]] double getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coord,
+                                                    const Interaction &interaction) const;
 
     using iterator = decltype(shapes)::iterator;
 
@@ -185,6 +184,7 @@ public:
      * @brief Returns the soft potential total energy of the packing for @a interaction.
      */
     [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;
+    [[nodiscard]] bool areAnyParticlesOverlapping(const Interaction &interaction) const;
 
     /**
      * @brief Tries a translation on a particle of index @a particleIdx by a vector @a translation and returns the
@@ -271,26 +271,6 @@ public:
     void resetCounters();
 
     /**
-     * @brief Returns the number of neighbour grid complete rebuilds since the last reset.
-     */
-    [[nodiscard]] std::size_t getNeighbourGridRebuilds() const { return this->neighbourGridRebuilds; }
-
-    /**
-     * @brief Returns the number of neighbour grid resizes (some required full rebuilds, some not) since the last reset.
-     */
-    [[nodiscard]] std::size_t getNeighbourGridResizes() const { return this->neighbourGridResizes; }
-
-    /**
-     * @brief Returns the total time in microseconds consumed for neighbour grid rebuilds since the last reset.
-     */
-    [[nodiscard]] double getNeighbourGridRebuildMicroseconds() const { return this->neighbourGridRebuildMicroseconds; }
-
-    /**
-     * @brief Returns an average number of neighbour per particles according to neighbour grid.
-     */
-    [[nodiscard]] double getAverageNumberOfNeighbours() const;
-
-    /**
      * @brief Represents a packing as a Wolfram Mathematica code.
      * @param out the output stream to store a packing
      * @param printer the object responsible for representing a single shape
@@ -312,6 +292,26 @@ public:
      * @return an auxiliary key, value map which was stored together with a packing
      */
     std::map<std::string, std::string> restore(std::istream &in, const Interaction &interaction);
+
+    /**
+     * @brief Returns the number of neighbour grid complete rebuilds since the last reset.
+     */
+    [[nodiscard]] std::size_t getNeighbourGridRebuilds() const { return this->neighbourGridRebuilds; }
+
+    /**
+     * @brief Returns the number of neighbour grid resizes (some required full rebuilds, some not) since the last reset.
+     */
+    [[nodiscard]] std::size_t getNeighbourGridResizes() const { return this->neighbourGridResizes; }
+
+    /**
+     * @brief Returns the total time in microseconds consumed for neighbour grid rebuilds since the last reset.
+     */
+    [[nodiscard]] double getNeighbourGridRebuildMicroseconds() const { return this->neighbourGridRebuildMicroseconds; }
+
+    /**
+     * @brief Returns an average number of neighbour per particles according to neighbour grid.
+     */
+    [[nodiscard]] double getAverageNumberOfNeighbours() const;
 
     /**
      * @brief Returns estimated memory usage of the packing in bytes (excluding the neighbour grid).

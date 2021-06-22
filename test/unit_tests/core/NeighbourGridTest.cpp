@@ -60,15 +60,17 @@ TEST_CASE("NeighbourGrid") {
         }
 
         SECTION("getCell") {
-            REQUIRE_THAT(neighbourGrid.getCell({3, 7, 3}), Catch::UnorderedEquals(std::vector<std::size_t>{0, 1}));
-            REQUIRE(neighbourGrid.getCell({6, 1, 3}).empty());
+            REQUIRE_THAT(neighbourGrid.getCell(Vector<3>{3, 7, 3}),
+                         Catch::UnorderedEquals(std::vector<std::size_t>{0, 1}));
+            REQUIRE(neighbourGrid.getCell(Vector<3>{6, 1, 3}).empty());
         }
 
         SECTION("add") {
             neighbourGrid.add(6, {6, 4, 3});
             auto neighbours = neighbourGrid.getNeighbours({3, 7, 3});
 
-            REQUIRE_THAT(neighbourGrid.getCell({6, 4.5, 3}), Catch::UnorderedEquals(std::vector<std::size_t>{2, 6}));
+            REQUIRE_THAT(neighbourGrid.getCell(Vector<3>{6, 4.5, 3}),
+                         Catch::UnorderedEquals(std::vector<std::size_t>{2, 6}));
             REQUIRE_THAT(neighbours, Catch::UnorderedEquals(std::vector<std::size_t>{0, 1, 2, 4, 6}));
         }
 
@@ -76,7 +78,8 @@ TEST_CASE("NeighbourGrid") {
             neighbourGrid.remove(0, {3, 7, 3});
             auto neighbours = neighbourGrid.getNeighbours({3, 7, 3});
 
-            REQUIRE_THAT(neighbourGrid.getCell({3.5, 6.5, 3}), Catch::UnorderedEquals(std::vector<std::size_t>{1}));
+            REQUIRE_THAT(neighbourGrid.getCell(Vector<3>{3.5, 6.5, 3}),
+                         Catch::UnorderedEquals(std::vector<std::size_t>{1}));
             REQUIRE_THAT(neighbours, Catch::UnorderedEquals(std::vector<std::size_t>{1, 2, 4}));
         }
 
@@ -84,17 +87,18 @@ TEST_CASE("NeighbourGrid") {
             neighbourGrid.remove(2, {3, 7, 3});
             auto neighbours = neighbourGrid.getNeighbours({3, 7, 3});
 
-            REQUIRE_THAT(neighbourGrid.getCell({3.5, 6.5, 3}), Catch::UnorderedEquals(std::vector<std::size_t>{0, 1}));
+            REQUIRE_THAT(neighbourGrid.getCell(Vector<3>{3.5, 6.5, 3}),
+                         Catch::UnorderedEquals(std::vector<std::size_t>{0, 1}));
             REQUIRE_THAT(neighbours, Catch::UnorderedEquals(std::vector<std::size_t>{0, 1, 2, 4}));
         }
 
         SECTION("clearing") {
             neighbourGrid.clear();
 
-            REQUIRE(neighbourGrid.getCell({0.5, 0.5, 3}).empty());
-            REQUIRE(neighbourGrid.getCell({5.5, 5.5, 3}).empty());
-            REQUIRE(neighbourGrid.getCell({9.5, 4.5, 3}).empty());
-            REQUIRE(neighbourGrid.getCell({0.5, 9.8, 3}).empty());
+            REQUIRE(neighbourGrid.getCell(Vector<3>{0.5, 0.5, 3}).empty());
+            REQUIRE(neighbourGrid.getCell(Vector<3>{5.5, 5.5, 3}).empty());
+            REQUIRE(neighbourGrid.getCell(Vector<3>{9.5, 4.5, 3}).empty());
+            REQUIRE(neighbourGrid.getCell(Vector<3>{0.5, 9.8, 3}).empty());
             REQUIRE(neighbourGrid.getNeighbours({3, 7, 3}).empty());
             REQUIRE(neighbourGrid.getNeighbours({2, 5, 3}).empty());
             REQUIRE(neighbourGrid.getNeighbours({5, 9, 3}).empty());

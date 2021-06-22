@@ -54,13 +54,13 @@ std::size_t NeighbourGrid::realCoordinatesToCellNo(const std::array<std::size_t,
     return result;
 }
 
-std::size_t NeighbourGrid::cellNeighbourToCellNo(const std::array<std::size_t, 3> &coordinates,
+std::size_t NeighbourGrid::cellNeighbourToCellNo(const std::array<std::size_t, 3> &coords,
                                                  const std::array<int, 3> &neighbour) const
 {
     std::size_t result{};
     for (int i = 2; i >= 0; i--) {
         // -1, because neighbour array goes from 0 to 2, and real offsets are from -1 to 1
-        std::size_t ix = coordinates[i] + neighbour[i] - 1;
+        std::size_t ix = coords[i] + neighbour[i] - 1;
         Assert(ix < this->cellDivisions[i]);
         result = this->cellDivisions[i] * result + ix;
     }

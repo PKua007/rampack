@@ -32,7 +32,7 @@ private:
     [[nodiscard]] std::array<std::size_t, 3> cellNoToCoordinates(std::size_t cellNo) const;
     [[nodiscard]] std::size_t coordinatesToCellNo(const std::array<std::size_t, 3> &coords) const;
     [[nodiscard]] std::size_t realCoordinatesToCellNo(const std::array<std::size_t, 3> &coords) const;
-    [[nodiscard]] std::size_t cellNeighbourToCellNo(const std::array<std::size_t, 3> &coordinates,
+    [[nodiscard]] std::size_t cellNeighbourToCellNo(const std::array<std::size_t, 3> &coords,
                                                     const std::array<int, 3> &neighbour) const;
 
     /*
@@ -70,16 +70,16 @@ public:
         const NeighbourGrid &grid;
         const std::vector<std::size_t> &offsets;
         std::size_t cellNo{};
-        std::size_t offset{};
+        std::size_t offsetIdx{};
 
     public:
         NeighboursViewIterator(const NeighbourGrid &grid, std::size_t cellNo, std::size_t offset,
                                const std::vector<std::size_t> &offsets)
-                : grid{grid}, offsets{offsets}, cellNo{cellNo}, offset{offset}
+                : grid{grid}, offsets{offsets}, cellNo{cellNo}, offsetIdx{offset}
         { }
 
         NeighboursViewIterator& operator++() {
-            this->offset++;
+            this->offsetIdx++;
             return *this;
         }
 
@@ -90,7 +90,7 @@ public:
         }
 
         bool operator==(NeighboursViewIterator other) const {
-            return this->offset == other.offset;
+            return this->offsetIdx == other.offsetIdx;
         }
 
         bool operator!=(NeighboursViewIterator other) const {
@@ -98,7 +98,7 @@ public:
         }
 
         reference operator*() const {
-            return this->grid.getCellVector(this->cellNo + this->offsets[this->offset]);
+            return this->grid.getCellVector(this->cellNo + this->offsets[this->offsetIdx]);
         }
     };
 
@@ -110,11 +110,11 @@ public:
         const NeighbourGrid &grid;
         const std::vector<std::size_t> &offsets;
         std::size_t cellNo{};
-        std::size_t numOfOffsets{};
+        std::size_t numOffsets{};
 
     public:
         explicit NeighboursView(const NeighbourGrid &grid, std::size_t cellNo, const std::vector<std::size_t> &offsets)
-                : grid{grid}, offsets{offsets}, cellNo{cellNo}, numOfOffsets{offsets.size()}
+                : grid{grid}, offsets{offsets}, cellNo{cellNo}, numOffsets{offsets.size()}
         { }
 
         [[nodiscard]] NeighboursViewIterator begin() const {
@@ -122,7 +122,7 @@ public:
         }
 
         [[nodiscard]] NeighboursViewIterator end() const {
-            return NeighboursViewIterator(this->grid, this->cellNo, this->numOfOffsets, this->offsets);
+            return NeighboursViewIterator(this->grid, this->cellNo, this->numOffsets, this->offsets);
         }
     };
 

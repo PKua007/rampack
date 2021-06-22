@@ -299,24 +299,26 @@ bool Packing::isParticleOverlappingAnything(std::size_t originalParticleIdx, std
     return false;
 }
 
-bool Packing::areAnyParticlesFromNGCellOverlapping(const std::array<std::size_t, 3> &coord,
-                                                   const Interaction &interaction) const
+bool Packing::areAnyParticlesOverlappingNGCellHelper(const std::array<std::size_t, 3> &coord,
+                                                     const Interaction &interaction) const
 {
     if (this->numInteractionCentres == 0) {
-        const auto &indices = this->neighbourGrid->getCell(coord);
-        for (std::size_t c1{}; c1 < indices.size(); c1++) {
-            std::size_t particleIdx1 = indices[c1];
+        const auto &cellParticleIndices = this->neighbourGrid->getCell(coord);
+        for (std::size_t cellIdx1{}; cellIdx1 < cellParticleIndices.size(); cellIdx1++) {
+            std::size_t particleIdx1 = cellParticleIndices[cellIdx1];
             const auto &pos1 = this->shapes[particleIdx1].getPosition();
             const auto &orientation1 = this->shapes[particleIdx1].getOrientation();
 
-            for (std::size_t c2 = c1 + 1; c2 < indices.size(); c2++) {
-                std::size_t particleIdx2 = indices[c2];
+            // Overlaps within the cell
+            for (std::size_t cellIdx2 = cellIdx1 + 1; cellIdx2 < cellParticleIndices.size(); cellIdx2++) {
+                std::size_t particleIdx2 = cellParticleIndices[cellIdx2];
                 const auto &pos2 = this->shapes[particleIdx2].getPosition();
                 const auto &orientation2 = this->shapes[particleIdx2].getOrientation();
                 if (interaction.overlapBetween(pos1, orientation1, 0, pos2, orientation2, 0,*this->bc))
                     return true;
             }
 
+            // Overlaps with other cells (but only with a half to avoid redundant checks)
             for (const auto &cell : this->neighbourGrid->getNeighbouringCells(coord, true)) {
                 for (auto particleIdx2 : cell) { // NOLINT(readability-use-anyofallof)
                     const auto &pos2 = this->shapes[particleIdx2].getPosition();
@@ -327,16 +329,17 @@ bool Packing::areAnyParticlesFromNGCellOverlapping(const std::array<std::size_t,
             }
         }
     } else {
-        const auto &centres = this->neighbourGrid->getCell(coord);
-        for (std::size_t c1{}; c1 < centres.size(); c1++) {
-            std::size_t centreIdx1 = centres[c1];
+        const auto &cellCentreIndices = this->neighbourGrid->getCell(coord);
+        for (std::size_t cellIdx1{}; cellIdx1 < cellCentreIndices.size(); cellIdx1++) {
+            std::size_t centreIdx1 = cellCentreIndices[cellIdx1];
             std::size_t particleIdx1 = centreIdx1 / this->numInteractionCentres;
             std::size_t centre1 = centreIdx1 % this->numInteractionCentres;
             auto pos1 = this->shapes[particleIdx1].getPosition() + this->interactionCentres[centreIdx1];
             const auto &orientation1 = this->shapes[particleIdx1].getOrientation();
 
-            for (std::size_t c2 = c1 + 1; c2 < centres.size(); c2++) {
-                std::size_t centreIdx2 = centres[c2];
+            // Overlaps within the cell
+            for (std::size_t cellIdx2 = cellIdx1 + 1; cellIdx2 < cellCentreIndices.size(); cellIdx2++) {
+                std::size_t centreIdx2 = cellCentreIndices[cellIdx2];
                 std::size_t particleIdx2 = centreIdx2 / this->numInteractionCentres;
                 if (particleIdx1 == particleIdx2)
                     continue;
@@ -349,6 +352,7 @@ bool Packing::areAnyParticlesFromNGCellOverlapping(const std::array<std::size_t,
                 }
             }
 
+            // Overlaps with other cells (but only with a half to avoid redundant checks)
             for (const auto &cell : this->neighbourGrid->getNeighbouringCells(coord, true)) {
                 for (auto centreIdx2 : cell) { // NOLINT(readability-use-anyofallof)
                     std::size_t particleIdx2 = centreIdx2 / this->numInteractionCentres;
@@ -379,7 +383,7 @@ bool Packing::areAnyParticlesOverlapping(const Interaction &interaction) const {
                 for (std::size_t k = 0; k < cellDivisions[2]; k++) {
                     if (overlapFound.load(std::memory_order_relaxed))
                         continue;
-                    if (this->areAnyParticlesFromNGCellOverlapping({i, j, k}, interaction))
+                    if (this->areAnyParticlesOverlappingNGCellHelper({i, j, k}, interaction))
                         overlapFound.store(true, std::memory_order_relaxed);
                 }
             }
@@ -494,7 +498,7 @@ double Packing::getTotalEnergy(const Interaction &interaction) const {
         for (std::size_t i = 0; i < cellDivisions[0]; i++)
             for (std::size_t j = 0; j < cellDivisions[1]; j++)
                 for (std::size_t k = 0; k < cellDivisions[2]; k++)
-                    energy += this->calculateEnergyForParticlesInNGCell({i, j, k}, interaction);
+                    energy += this->getTotalEnergyNGCellHelper({i, j, k}, interaction);
     } else {
         for (std::size_t i{}; i < this->size(); i++)
             for (std::size_t j = i + 1; j < this->size(); j++)
@@ -558,24 +562,26 @@ double Packing::calculateInteractionCentreEnergy(size_t originalParticleIdx, std
     return energy;
 }
 
-double Packing::calculateEnergyForParticlesInNGCell(const std::array<std::size_t, 3> &coord,
-                                                    const Interaction &interaction) const
+double Packing::getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coord,
+                                           const Interaction &interaction) const
 {
     double energy{};
     if (this->numInteractionCentres == 0) {
-        const auto &indices = this->neighbourGrid->getCell(coord);
-        for (std::size_t c1{}; c1 < indices.size(); c1++) {
-            std::size_t particleIdx1 = indices[c1];
+        const auto &cellParticleIndices = this->neighbourGrid->getCell(coord);
+        for (std::size_t cellIdx1{}; cellIdx1 < cellParticleIndices.size(); cellIdx1++) {
+            std::size_t particleIdx1 = cellParticleIndices[cellIdx1];
             const auto &pos1 = this->shapes[particleIdx1].getPosition();
             const auto &orientation1 = this->shapes[particleIdx1].getOrientation();
 
-            for (std::size_t c2 = c1 + 1; c2 < indices.size(); c2++) {
-                std::size_t particleIdx2 = indices[c2];
+            // Energy within the cell
+            for (std::size_t cellIdx2 = cellIdx1 + 1; cellIdx2 < cellParticleIndices.size(); cellIdx2++) {
+                std::size_t particleIdx2 = cellParticleIndices[cellIdx2];
                 const auto &pos2 = this->shapes[particleIdx2].getPosition();
                 const auto &orientation2 = this->shapes[particleIdx2].getOrientation();
                 energy += interaction.calculateEnergyBetween(pos1, orientation1, 0, pos2, orientation2, 0, *this->bc);
             }
 
+            // Energy with other cells (but only with a half to avoid double calculations)
             for (const auto &cell : this->neighbourGrid->getNeighbouringCells(coord, true)) {
                 for (auto particleIdx2 : cell) { // NOLINT(readability-use-anyofallof)
                     const auto &pos2 = this->shapes[particleIdx2].getPosition();
@@ -585,16 +591,17 @@ double Packing::calculateEnergyForParticlesInNGCell(const std::array<std::size_t
             }
         }
     } else {
-        const auto &centres = this->neighbourGrid->getCell(coord);
-        for (std::size_t c1{}; c1 < centres.size(); c1++) {
-            std::size_t centreIdx1 = centres[c1];
+        const auto &cellCentreIndices = this->neighbourGrid->getCell(coord);
+        for (std::size_t cellIdx1{}; cellIdx1 < cellCentreIndices.size(); cellIdx1++) {
+            std::size_t centreIdx1 = cellCentreIndices[cellIdx1];
             std::size_t particleIdx1 = centreIdx1 / this->numInteractionCentres;
             std::size_t centre1 = centreIdx1 % this->numInteractionCentres;
             auto pos1 = this->shapes[particleIdx1].getPosition() + this->interactionCentres[centreIdx1];
             const auto &orientation1 = this->shapes[particleIdx1].getOrientation();
 
-            for (std::size_t c2 = c1 + 1; c2 < centres.size(); c2++) {
-                std::size_t centreIdx2 = centres[c2];
+            // Energy within the cell
+            for (std::size_t cellIdx2 = cellIdx1 + 1; cellIdx2 < cellCentreIndices.size(); cellIdx2++) {
+                std::size_t centreIdx2 = cellCentreIndices[cellIdx2];
                 std::size_t particleIdx2 = centreIdx2 / this->numInteractionCentres;
                 if (particleIdx1 == particleIdx2)
                     continue;
@@ -605,6 +612,7 @@ double Packing::calculateEnergyForParticlesInNGCell(const std::array<std::size_t
                                                              *this->bc);
             }
 
+            // Energy with other cells (but only with a half to avoid double calculations)
             for (const auto &cell : this->neighbourGrid->getNeighbouringCells(coord, true)) {
                 for (auto centreIdx2 : cell) { // NOLINT(readability-use-anyofallof)
                     std::size_t particleIdx2 = centreIdx2 / this->numInteractionCentres;
