@@ -299,15 +299,90 @@ bool Packing::isParticleOverlappingAnything(std::size_t originalParticleIdx, std
     return false;
 }
 
+bool Packing::areAnyParticlesFromNGCellOverlapping(const std::array<std::size_t, 3> &coord,
+                                                   const Interaction &interaction) const
+{
+    if (this->numInteractionCentres == 0) {
+        const auto &indices = this->neighbourGrid->getCell(coord);
+        for (std::size_t c1{}; c1 < indices.size(); c1++) {
+            std::size_t particleIdx1 = indices[c1];
+            const auto &pos1 = this->shapes[particleIdx1].getPosition();
+            const auto &orientation1 = this->shapes[particleIdx1].getOrientation();
+
+            for (std::size_t c2 = c1 + 1; c2 < indices.size(); c2++) {
+                std::size_t particleIdx2 = indices[c2];
+                const auto &pos2 = this->shapes[particleIdx2].getPosition();
+                const auto &orientation2 = this->shapes[particleIdx2].getOrientation();
+                if (interaction.overlapBetween(pos1, orientation1, 0, pos2, orientation2, 0,*this->bc))
+                    return true;
+            }
+
+            for (const auto &cell : this->neighbourGrid->getNeighbouringCells(coord, true)) {
+                for (auto particleIdx2 : cell) { // NOLINT(readability-use-anyofallof)
+                    const auto &pos2 = this->shapes[particleIdx2].getPosition();
+                    const auto &orientation2 = this->shapes[particleIdx2].getOrientation();
+                    if (interaction.overlapBetween(pos1, orientation1, 0, pos2, orientation2, 0,*this->bc))
+                        return true;
+                }
+            }
+        }
+    } else {
+        const auto &centres = this->neighbourGrid->getCell(coord);
+        for (std::size_t c1{}; c1 < centres.size(); c1++) {
+            std::size_t centreIdx1 = centres[c1];
+            std::size_t particleIdx1 = centreIdx1 / this->numInteractionCentres;
+            std::size_t centre1 = centreIdx1 % this->numInteractionCentres;
+            auto pos1 = this->shapes[particleIdx1].getPosition() + this->interactionCentres[centreIdx1];
+            const auto &orientation1 = this->shapes[particleIdx1].getOrientation();
+
+            for (std::size_t c2 = c1 + 1; c2 < centres.size(); c2++) {
+                std::size_t centreIdx2 = centres[c2];
+                std::size_t particleIdx2 = centreIdx2 / this->numInteractionCentres;
+                if (particleIdx1 == particleIdx2)
+                    continue;
+                std::size_t centre2 = centreIdx2 % this->numInteractionCentres;
+                auto pos2 = this->shapes[particleIdx2].getPosition() + this->interactionCentres[centreIdx2];
+                const auto &orientation2 = this->shapes[particleIdx2].getOrientation();
+                if (interaction.overlapBetween(pos1, orientation1, centre1, pos2, orientation2, centre2,
+                                               *this->bc)) {
+                    return true;
+                }
+            }
+
+            for (const auto &cell : this->neighbourGrid->getNeighbouringCells(coord, true)) {
+                for (auto centreIdx2 : cell) { // NOLINT(readability-use-anyofallof)
+                    std::size_t particleIdx2 = centreIdx2 / this->numInteractionCentres;
+                    if (particleIdx1 == particleIdx2)
+                        continue;
+                    std::size_t centre2 = centreIdx2 % this->numInteractionCentres;
+                    auto pos2 = this->shapes[particleIdx2].getPosition() + this->interactionCentres[centreIdx2];
+                    const auto &orientation2 = this->shapes[particleIdx2].getOrientation();
+                    if (interaction.overlapBetween(pos1, orientation1, centre1, pos2, orientation2, centre2,
+                                                   *this->bc)) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
 bool Packing::areAnyParticlesOverlapping(const Interaction &interaction) const {
     if (this->neighbourGrid.has_value()) {
         std::atomic<bool> overlapFound = false;
-        #pragma omp parallel for default(none) shared(overlapFound, interaction) num_threads(this->scalingThreads)
-        for (std::size_t i = 0; i < this->size(); i++) {
-            if (overlapFound.load(std::memory_order_relaxed))
-                continue;
-            if (this->isParticleOverlappingAnything(i, i, interaction))
-                overlapFound.store(true, std::memory_order_relaxed);
+        auto cellDivisions = this->neighbourGrid->getCellDivisions();
+        #pragma omp parallel for collapse(3) default(none) shared(overlapFound, interaction, cellDivisions) num_threads(this->scalingThreads)
+        for (std::size_t i = 0; i < cellDivisions[0]; i++) {
+            for (std::size_t j = 0; j < cellDivisions[1]; j++)  {
+                for (std::size_t k = 0; k < cellDivisions[2]; k++) {
+                    if (overlapFound.load(std::memory_order_relaxed))
+                        continue;
+                    if (this->areAnyParticlesFromNGCellOverlapping({i, j, k}, interaction))
+                        overlapFound.store(true, std::memory_order_relaxed);
+                }
+            }
         }
 
         return overlapFound;

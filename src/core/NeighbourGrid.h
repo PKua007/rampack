@@ -26,10 +26,12 @@ private:
     std::vector<int> reflectedCells;
     std::size_t numCells{};
     std::vector<std::size_t> neighbouringCellsOffsets;
+    std::vector<std::size_t> positiveNeighbouringCellsOffsets;
 
     [[nodiscard]] std::size_t positionToCellNo(const Vector<3> &position) const;
     [[nodiscard]] std::array<std::size_t, 3> cellNoToCoordinates(std::size_t cellNo) const;
     [[nodiscard]] std::size_t coordinatesToCellNo(const std::array<std::size_t, 3> &coords) const;
+    [[nodiscard]] std::size_t realCoordinatesToCellNo(const std::array<std::size_t, 3> &coords) const;
     [[nodiscard]] std::size_t cellNeighbourToCellNo(const std::array<std::size_t, 3> &coordinates,
                                                     const std::array<int, 3> &neighbour) const;
 
@@ -66,12 +68,14 @@ public:
     {
     private:
         const NeighbourGrid &grid;
+        const std::vector<std::size_t> &offsets;
         std::size_t cellNo{};
         std::size_t offset{};
 
     public:
-        NeighboursViewIterator(const NeighbourGrid &grid, std::size_t cellNo, std::size_t offset)
-                : grid{grid}, cellNo{cellNo}, offset{offset}
+        NeighboursViewIterator(const NeighbourGrid &grid, std::size_t cellNo, std::size_t offset,
+                               const std::vector<std::size_t> &offsets)
+                : grid{grid}, offsets{offsets}, cellNo{cellNo}, offset{offset}
         { }
 
         NeighboursViewIterator& operator++() {
@@ -94,7 +98,7 @@ public:
         }
 
         reference operator*() const {
-            return this->grid.getCellVector(this->cellNo + this->grid.neighbouringCellsOffsets[this->offset]);
+            return this->grid.getCellVector(this->cellNo + this->offsets[this->offset]);
         }
     };
 
@@ -104,20 +108,21 @@ public:
     class NeighboursView {
     private:
         const NeighbourGrid &grid;
+        const std::vector<std::size_t> &offsets;
         std::size_t cellNo{};
         std::size_t numOfOffsets{};
 
     public:
-        explicit NeighboursView(const NeighbourGrid &grid, std::size_t cellNo)
-                : grid{grid}, cellNo{cellNo}, numOfOffsets{grid.neighbouringCellsOffsets.size()}
+        explicit NeighboursView(const NeighbourGrid &grid, std::size_t cellNo, const std::vector<std::size_t> &offsets)
+                : grid{grid}, offsets{offsets}, cellNo{cellNo}, numOfOffsets{offsets.size()}
         { }
 
         [[nodiscard]] NeighboursViewIterator begin() const {
-            return NeighboursViewIterator(this->grid, this->cellNo, 0);
+            return NeighboursViewIterator(this->grid, this->cellNo, 0, this->offsets);
         }
 
         [[nodiscard]] NeighboursViewIterator end() const {
-            return NeighboursViewIterator(this->grid, this->cellNo, this->numOfOffsets);
+            return NeighboursViewIterator(this->grid, this->cellNo, this->numOfOffsets, this->offsets);
         }
     };
 
@@ -166,6 +171,11 @@ public:
     [[nodiscard]] const std::vector<std::size_t> &getCell(const Vector<3> &position) const;
 
     /**
+     * @brief Returns all identifiers of objects places in NG cell given by integer coordinates @a coord.
+     */
+    [[nodiscard]] const std::vector<std::size_t> &getCell(const std::array<std::size_t, 3> &coord) const;
+
+    /**
      * @brief Returns all identifiers of objects in NG cell containing @a position point and in neighbouring cells.
      * @details As a result, all objects potentially interacting with a one placed in @a position should be listed.
      * The methods dynamically allocates the memory for the list, so NeighbourGrid::getNeighbouringCells method
@@ -175,8 +185,18 @@ public:
 
     /**
      * @brief Returns NeighboursView of all neighbouring cells of the NG cell containing @a position point.
+     * @param position the position somewhere inside a given NG cell (identifing it)
+     * @param if true, only half of the cells will be enumerated (usefull for iterating over distinct pairs of NG cells)
      */
-    [[nodiscard]] NeighboursView getNeighbouringCells(const Vector<3> &position) const;
+    [[nodiscard]] NeighboursView getNeighbouringCells(const Vector<3> &position, bool onlyPositive = false) const;
+
+    /**
+     * @brief Returns NeighboursView of all neighbouring cells of the NG cell given by integer coordinates @a coord.
+     * @param coord integer coordinates of neighbour grid cell
+     * @param if true, only half of the cells will be enumerated (usefull for iterating over distinct pairs of NG cells)
+     */
+    [[nodiscard]] NeighboursView getNeighbouringCells(const std::array<std::size_t, 3> &coord,
+                                                      bool onlyPositive = false) const;
 
     /**
      * @brief Returns a number of NG cells in each direction.

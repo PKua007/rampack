@@ -47,6 +47,13 @@ std::size_t NeighbourGrid::coordinatesToCellNo(const std::array<std::size_t, 3> 
     return result;
 }
 
+std::size_t NeighbourGrid::realCoordinatesToCellNo(const std::array<std::size_t, 3> &coords) const {
+    std::size_t result{};
+    for (int i = 2; i >= 0; i--)
+        result = this->cellDivisions[i] * result + coords[i] + 1;
+    return result;
+}
+
 std::size_t NeighbourGrid::cellNeighbourToCellNo(const std::array<std::size_t, 3> &coordinates,
                                                  const std::array<int, 3> &neighbour) const
 {
@@ -98,6 +105,8 @@ void NeighbourGrid::fillNeighbouringCellsOffsets() {
     // 3 x 3 neighbours
     this->neighbouringCellsOffsets.clear();
     this->neighbouringCellsOffsets.reserve(27);
+    this->positiveNeighbouringCellsOffsets.clear();
+    this->positiveNeighbouringCellsOffsets.reserve(13);
 
     // We are taking the cell somewhere in the middle and computing offsets in cell list to all of its neighbours
     std::array<int, 3> neighbour{};
@@ -109,6 +118,8 @@ void NeighbourGrid::fillNeighbouringCellsOffsets() {
     do {
         std::size_t neigbourNo = this->cellNeighbourToCellNo(testCellCoords, neighbour);
         this->neighbouringCellsOffsets.push_back(neigbourNo - testCellNo);
+        if (9*neighbour[0] + 3*neighbour[1] + neighbour[2] > 13)
+            this->positiveNeighbouringCellsOffsets.push_back(neigbourNo - testCellNo);
     } while(increment(neighbour));
 
     // sort and erase to avoid duplicates - important for small packings
@@ -116,6 +127,10 @@ void NeighbourGrid::fillNeighbouringCellsOffsets() {
     this->neighbouringCellsOffsets.erase(std::unique(this->neighbouringCellsOffsets.begin(),
                                                      this->neighbouringCellsOffsets.end()),
                                          this->neighbouringCellsOffsets.end());
+    std::sort( this->positiveNeighbouringCellsOffsets.begin(), this->positiveNeighbouringCellsOffsets.end());
+    this->positiveNeighbouringCellsOffsets.erase(std::unique(this->positiveNeighbouringCellsOffsets.begin(),
+                                                     this->positiveNeighbouringCellsOffsets.end()),
+                                         this->positiveNeighbouringCellsOffsets.end());
 }
 
 NeighbourGrid::NeighbourGrid(const std::array<double, 3> &linearSize, double cellSize) {
@@ -176,6 +191,13 @@ void NeighbourGrid::clear() {
 const std::vector<std::size_t> &NeighbourGrid::getCell(const Vector<3> &position) const {
     std::size_t i = this->positionToCellNo(position);
     return this->getCellVector(i);
+}
+
+const std::vector<std::size_t> &NeighbourGrid::getCell(const std::array<std::size_t, 3> &coord) const {
+    for (std::size_t i = 0; i < 3; i++)
+        Expects(coord[i] < this->cellDivisions[i] - 2);
+
+    return this->cells[this->realCoordinatesToCellNo(coord)];
 }
 
 std::vector<std::size_t> NeighbourGrid::getNeighbours(const Vector<3> &position) const {
@@ -239,8 +261,23 @@ bool NeighbourGrid::resize(double newLinearSize, double newCellSize) {
     return this->resize({newLinearSize, newLinearSize, newLinearSize}, newCellSize);
 }
 
-NeighbourGrid::NeighboursView NeighbourGrid::getNeighbouringCells(const Vector<3> &position) const {
-    return NeighboursView(*this, this->positionToCellNo(position));
+NeighbourGrid::NeighboursView NeighbourGrid::getNeighbouringCells(const Vector<3> &position, bool onlyPositive) const {
+    if (onlyPositive)
+        return NeighboursView(*this, this->positionToCellNo(position), this->positiveNeighbouringCellsOffsets);
+    else
+        return NeighboursView(*this, this->positionToCellNo(position), this->neighbouringCellsOffsets);
+}
+
+NeighbourGrid::NeighboursView NeighbourGrid::getNeighbouringCells(const std::array<std::size_t, 3> &coord,
+                                                                  bool onlyPositive) const
+{
+    for (std::size_t i = 0; i < 3; i++)
+        Expects(coord[i] < this->cellDivisions[i] - 2);
+
+    if (onlyPositive)
+        return NeighboursView(*this, this->realCoordinatesToCellNo(coord), this->positiveNeighbouringCellsOffsets);
+    else
+        return NeighboursView(*this, this->realCoordinatesToCellNo(coord), this->neighbouringCellsOffsets);
 }
 
 void swap(NeighbourGrid &ng1, NeighbourGrid &ng2) {
@@ -253,6 +290,7 @@ void swap(NeighbourGrid &ng1, NeighbourGrid &ng2) {
     std::swap(ng1.reflectedCells, ng2.reflectedCells);
     std::swap(ng1.numCells, ng2.numCells);
     std::swap(ng1.neighbouringCellsOffsets, ng2.neighbouringCellsOffsets);
+    std::swap(ng1.positiveNeighbouringCellsOffsets, ng2.positiveNeighbouringCellsOffsets);
 }
 
 std::array<std::size_t, 3> NeighbourGrid::getCellDivisions() const {
@@ -266,5 +304,6 @@ std::size_t NeighbourGrid::getMemoryUsage() const {
         bytes += get_vector_memory_usage(cell);
     bytes += get_vector_memory_usage(this->reflectedCells);
     bytes += get_vector_memory_usage(this->neighbouringCellsOffsets);
+    bytes += get_vector_memory_usage(this->positiveNeighbouringCellsOffsets);
     return bytes;
 }
