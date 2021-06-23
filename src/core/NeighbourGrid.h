@@ -23,7 +23,8 @@ private:
     std::array<std::size_t, 3> cellDivisions{};
     std::array<double, 3> cellSize{};
     std::vector<std::vector<std::size_t>> cells;
-    std::vector<int> reflectedCells;
+    std::vector<Vector<3>> translations;
+    std::vector<std::size_t> reflectedCells;
     std::size_t numCells{};
     std::vector<std::size_t> neighbouringCellsOffsets;
     std::vector<std::size_t> positiveNeighbouringCellsOffsets;
@@ -44,7 +45,7 @@ private:
      * @brief If @a cellNo is the reflection of a real cell due to periodic boundary conditions the method returns
      * pointer to the vector in the real cell. Otherwise @a nullptr is returned.
      */
-    [[nodiscard]] int getReflectedCellNo(std::size_t cellNo) const;
+    [[nodiscard]] std::pair<std::size_t, Vector<3>> getReflectedCellData(std::size_t cellNo) const;
 
     static bool increment(std::array<int, 3> &in);
     void fillNeighbouringCellsOffsets();
