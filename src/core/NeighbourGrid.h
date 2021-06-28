@@ -58,6 +58,20 @@ private:
     friend class NeighboursViewIterator;
 
 public:
+    class NeighbourCellData {
+    private:
+        const std::vector<std::size_t> *neighbours;
+        const Vector<3> *translation;
+
+    public:
+        NeighbourCellData(const std::vector<size_t> *neighbours, const Vector<3> *translation)
+                : neighbours{neighbours}, translation{translation}
+        { }
+
+        [[nodiscard]] const std::vector<std::size_t> &getNeighbours() const { return *this->neighbours; }
+        [[nodiscard]] const Vector<3> &getTranslation() const { return *this->translation; }
+    };
+
     /**
      * @brief An iterator over all neighbouring cells of a given cell. Dereferencing it returns the vector of
      * identifiers lying in the given cell.
@@ -65,8 +79,8 @@ public:
     class NeighboursViewIterator : public std::iterator<std::input_iterator_tag,
                                                         std::pair<const std::vector<std::size_t>*, const Vector<3>*>,
                                                         std::ptrdiff_t,
-                                                        const std::pair<const std::vector<std::size_t>*, const Vector<3>*>*,
-                                                        const std::pair<const std::vector<std::size_t>*, const Vector<3>*>>
+                                                        const NeighbourCellData*,
+                                                        const NeighbourCellData>
     {
     private:
         const NeighbourGrid &grid;
@@ -102,8 +116,8 @@ public:
         reference operator*() const {
             std::size_t neighbourCellNo = this->cellNo + this->offsets[this->offsetIdx];
 
-            return std::make_pair(&this->grid.cells[this->grid.reflectedCells[neighbourCellNo]],
-                                  &this->grid.translations[neighbourCellNo]);
+            return NeighbourCellData(&this->grid.cells[this->grid.reflectedCells[neighbourCellNo]],
+                                     &this->grid.translations[neighbourCellNo]);
         }
     };
 
