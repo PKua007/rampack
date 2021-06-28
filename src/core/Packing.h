@@ -30,6 +30,7 @@ class Packing {
 private:
     std::vector<Shape> shapes;  // Shapes in the packing - the last shape is a temporary slot
     std::vector<Vector<3>> interactionCentres;  // Interaction centres - last numInteractionCentres are temporary slots
+    std::vector<Vector<3>> interactionCentreCorrections;
     std::array<double, 3> dimensions{};
     std::unique_ptr<BoundaryConditions> bc;
     std::optional<NeighbourGrid> neighbourGrid;
@@ -50,6 +51,7 @@ private:
     void rebuildNeighbourGrid();
     void removeInteractionCentresFromNeighbourGrid(size_t particleIdx);
     void addInteractionCentresToNeighbourGrid(size_t particleIdx);
+    void recalculateCorrections();
 
     void prepareTempInteractionCentres(std::size_t particleIdx);
     void rotateTempInteractionCentres(const Matrix<3, 3> &rotation);

@@ -62,10 +62,11 @@ public:
      * @brief An iterator over all neighbouring cells of a given cell. Dereferencing it returns the vector of
      * identifiers lying in the given cell.
      */
-    class NeighboursViewIterator : public std::iterator<std::input_iterator_tag, std::vector<std::size_t>,
+    class NeighboursViewIterator : public std::iterator<std::input_iterator_tag,
+                                                        std::pair<const std::vector<std::size_t>*, const Vector<3>*>,
                                                         std::ptrdiff_t,
-                                                        const std::vector<std::size_t>*,
-                                                        const std::vector<std::size_t> &>
+                                                        const std::pair<const std::vector<std::size_t>*, const Vector<3>*>*,
+                                                        const std::pair<const std::vector<std::size_t>*, const Vector<3>*>>
     {
     private:
         const NeighbourGrid &grid;
@@ -99,7 +100,10 @@ public:
         }
 
         reference operator*() const {
-            return this->grid.getCellVector(this->cellNo + this->offsets[this->offsetIdx]);
+            std::size_t neighbourCellNo = this->cellNo + this->offsets[this->offsetIdx];
+
+            return std::make_pair(&this->grid.cells[this->grid.reflectedCells[neighbourCellNo]],
+                                  &this->grid.translations[neighbourCellNo]);
         }
     };
 

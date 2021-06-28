@@ -173,6 +173,15 @@ void NeighbourGrid::setupSizes(const std::array<double, 3> &newLinearSize, doubl
     this->numCells = static_cast<std::size_t>(
         std::accumulate(this->cellDivisions.begin(), this->cellDivisions.end(), 1., std::multiplies<>{})
     );
+
+    for (auto &translation : this->translations) {
+        for (std::size_t i{}; i < 3; i++) {
+            if (translation[i] < 0)
+                translation[i] = -this->linearSize[i];
+            else if (translation[i] > 0)
+                translation[i] = this->linearSize[i];
+        }
+    }
 }
 
 void NeighbourGrid::add(std::size_t idx, const Vector<3> &position) {
@@ -287,6 +296,7 @@ void swap(NeighbourGrid &ng1, NeighbourGrid &ng2) {
     std::swap(ng1.cellDivisions, ng2.cellDivisions);
     std::swap(ng1.cellSize, ng2.cellSize);
     std::swap(ng1.cells, ng2.cells);
+    std::swap(ng1.translations, ng2.translations);
     std::swap(ng1.reflectedCells, ng2.reflectedCells);
     std::swap(ng1.numCells, ng2.numCells);
     std::swap(ng1.neighbouringCellsOffsets, ng2.neighbouringCellsOffsets);
