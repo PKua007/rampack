@@ -30,7 +30,7 @@ class Packing {
 private:
     std::vector<Shape> shapes;  // Shapes in the packing - the last shape is a temporary slot
     std::vector<Vector<3>> interactionCentres;  // Interaction centres - last numInteractionCentres are temporary slots
-    std::vector<Vector<3>> interactionCentreCorrections;
+    std::vector<Vector<3>> absoluteInteractionCentres;
     std::array<double, 3> dimensions{};
     std::unique_ptr<BoundaryConditions> bc;
     std::optional<NeighbourGrid> neighbourGrid;
