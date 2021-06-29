@@ -9,8 +9,23 @@
 #include "frontend/Frontend.h"
 #include "utils/Logger.h"
 
-int main(int argc, char **argv) {
+namespace {
     Logger logger(std::cout);
+
+    void logger_terminate_handler() {
+        logger.error() << "Terminate called after throwing an instance of ";
+        try {
+            std::rethrow_exception(std::current_exception());
+        } catch (const std::exception &ex) {
+            logger << typeid(ex).name() << std::endl;
+            logger << "what(): " << ex.what() << std::endl;
+        }
+        std::abort();
+    }
+}
+
+int main(int argc, char **argv) {
+    std::set_terminate(logger_terminate_handler);
 
     std::string cmd(argv[0]);
     if (argc < 2) {

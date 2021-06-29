@@ -6,6 +6,7 @@
 #define RAMPACK_ASSERTIONS_H
 
 #include <stdexcept>
+#include <string>
 
 // Cpp Core Guidelines-style assertions for design by contract
 // https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#i6-prefer-expects-for-expressing-preconditions
@@ -32,7 +33,13 @@
 // fail, because it is not the programmer's fault ;)
 #define Validate(cond) if (!(cond)) throw ValidationException(__WHERE__ ": Validation (" #cond ") failed")
 #define ValidateMsg(cond, msg) if (!(cond)) throw ValidationException(__WHERE__ ": " msg)
-
+#define ValidateOpened(stream, filename) \
+    if (!(stream)) \
+        throw ValidationException(std::string(__WHERE__) + ": could not open '" + (filename) + "': " + strerror(errno))
+#define ValidateOpenedDesc(stream, filename, desc) \
+    if (!(stream)) \
+        throw ValidationException(std::string(__WHERE__) + ": could not open '" + (filename) + "' " + (desc) + ": " \
+                                  + strerror(errno)) \
 /**
  * @brief An exception thrown by Validate and ValidateMsg macros.
  */

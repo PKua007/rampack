@@ -33,15 +33,14 @@
 
 Parameters Frontend::loadParameters(const std::string &inputFilename, const std::vector<std::string> &overridenParams) {
     std::ifstream paramsFile(inputFilename);
-    if (!paramsFile)
-        die("Cannot open " + inputFilename + " to read parameters from.", logger);
+    ValidateOpenedDesc(paramsFile, inputFilename, "to load input parameters");
     std::stringstream paramsStream;
     paramsStream << paramsFile.rdbuf() << std::endl;
 
     for (const auto &overridenParam : overridenParams) {
         std::size_t equalPos = overridenParam.find('=');
         if (equalPos == std::string::npos)
-            die("Malformed overriden param. Use: [param name]=[value]",logger);
+            die("Malformed overriden param. Use: [param name]=[value]", this->logger);
 
         paramsStream << overridenParam << std::endl;
     }
@@ -217,7 +216,7 @@ int Frontend::casino(int argc, char **argv) {
 
         std::string previousPackingFilename = startingPackingRun.packingFilename;
         std::ifstream packingFile(previousPackingFilename);
-        ValidateMsg(packingFile, "Cannot open file " + previousPackingFilename + " to restore starting state");
+        ValidateOpenedDesc(packingFile, previousPackingFilename, "to load previous packing");
         // Same number of scaling and domain decemposition threads
         packing = std::make_unique<Packing>(std::move(bc), scalingThreads, scalingThreads);
         auto auxInfo = packing->restore(packingFile, shapeTraits->getInteraction());
@@ -329,7 +328,7 @@ int Frontend::casino(int argc, char **argv) {
             auxInfo["cycles"] = std::to_string(simulation.getTotalCycles());
 
             std::ofstream out(runParams.packingFilename);
-            ValidateMsg(out, "Could not open " + runParams.packingFilename + " to store packing!");
+            ValidateOpenedDesc(out, runParams.packingFilename, "to store packing data");
             simulation.getPacking().store(out, auxInfo);
             this->logger.info() << "Packing stored to " + runParams.packingFilename << std::endl;
         }
@@ -337,7 +336,7 @@ int Frontend::casino(int argc, char **argv) {
         // Store Mathematica packing (if desired)
         if (!runParams.wolframFilename.empty()) {
             std::ofstream out(runParams.wolframFilename);
-            ValidateMsg(out, "Could not open " + runParams.wolframFilename + " to store Wolfram packing!");
+            ValidateOpenedDesc(out, runParams.wolframFilename, "to store Wolfram packing");
             simulation.getPacking().toWolfram(out, shapeTraits->getPrinter());
             this->logger.info() << "Wolfram packing stored to " + runParams.wolframFilename << std::endl;
         }
@@ -353,11 +352,11 @@ int Frontend::casino(int argc, char **argv) {
         if (!runParams.densitySnapshotFilename.empty()) {
             if (isContinuation) {
                 std::ofstream out(runParams.densitySnapshotFilename, std::ios_base::app);
-                ValidateMsg(out, "Could not open " + runParams.densitySnapshotFilename + " to store density snapshots!");
+                ValidateOpenedDesc(out, runParams.densitySnapshotFilename, "to store observables");
                 observablesCollector.printSnapshots(out, false);
             } else {
                 std::ofstream out(runParams.densitySnapshotFilename);
-                ValidateMsg(out, "Could not open " + runParams.densitySnapshotFilename + " to store density snapshots!");
+                ValidateOpenedDesc(out, runParams.densitySnapshotFilename, "to store observables");
                 observablesCollector.printSnapshots(out, true);
             }
 
@@ -462,7 +461,7 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles,
         ValidateMsg(arrangementStream, "Malformed presimulated arrangement. Usage: presimulated [packing dat file]");
 
         std::ifstream packingFile(filename);
-        ValidateMsg(packingFile, "Cannot open '" + filename + "' to restore packing as an initial configuration");
+        ValidateOpenedDesc(packingFile, filename, "to load initial configuration");
 
         auto packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
         packing->restore(packingFile, interaction);
@@ -603,14 +602,14 @@ void Frontend::storeAverageValues(const std::string &filename, const Observables
     std::ofstream out;
     if (!std::filesystem::exists(filename)) {
         out.open(filename);
-        ValidateMsg(out, "Could not open " + filename + " to store output!");
+        ValidateOpenedDesc(out, filename, "to store average values");
         out << "temperature pressure ";
         for (const auto &value : flatValues)
             out << value.name << " d" << value.name << " ";
         out << std::endl;
     } else {
         out.open(filename, std::ios_base::app);
-        ValidateMsg(out, "Could not open " + filename + " to store output!");
+        ValidateOpenedDesc(out, filename, "to store average values");
     }
 
     out.precision(std::numeric_limits<double>::max_digits10);
@@ -799,7 +798,7 @@ int Frontend::preview(int argc, char **argv) {
         auxInfo["cycles"] = "0";
 
         std::ofstream out(datFilename);
-        ValidateMsg(out, "Could not open " + datFilename + " to store packing!");
+        ValidateOpenedDesc(out, datFilename, "to store packing data");
         packing->store(out, auxInfo);
         this->logger.info() << "Packing stored to " + datFilename << std::endl;
     }
@@ -807,7 +806,7 @@ int Frontend::preview(int argc, char **argv) {
     // Store Mathematica packing (if desired)
     if (parsedOptions.count("wolfram")) {
         std::ofstream out(wolframFilename);
-        ValidateMsg(out, "Could not open " + wolframFilename + " to store Wolfram packing!");
+        ValidateOpenedDesc(out, wolframFilename, "to store Wolfram packing");
         packing->toWolfram(out, shapeTraits->getPrinter());
         this->logger.info() << "Wolfram packing stored to " + wolframFilename << std::endl;
     }
