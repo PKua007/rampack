@@ -8,6 +8,10 @@
 
 #include "core/arranging_models/OrthorombicArrangingModel.h"
 
+using Polarization = OrthorombicArrangingModel::Polarization;
+using Axis = OrthorombicArrangingModel::Axis;
+using Clinicity = OrthorombicArrangingModel::Clinicity;
+
 TEST_CASE("OrthorombicArrangingModel: polar") {
     OrthorombicArrangingModel model;
 
@@ -40,7 +44,7 @@ TEST_CASE("OrthorombicArrangingModel: polar") {
 }
 
 TEST_CASE("OrthorombicArrangingModel: antipolar") {
-    OrthorombicArrangingModel model(true, OrthorombicArrangingModel::PolarAxis::Y);
+    OrthorombicArrangingModel model(Polarization::ANTIFERRO, Axis::Y);
 
     auto shapes = model.arrange(8, {2, 2, 2});
 
@@ -63,4 +67,83 @@ TEST_CASE("OrthorombicArrangingModel: antipolar") {
     CHECK_THAT(shapes[6].getOrientation(), IsApproxEqual(rotated, 1e-10));
     CHECK(shapes[7].getPosition() == Vector<3>{1.5, 1.5, 1.5});
     CHECK_THAT(shapes[7].getOrientation(), IsApproxEqual(rotated, 1e-10));
+}
+
+TEST_CASE("OrthorombicArrangingModel: tilted") {
+    SECTION("synclinic ferro") {
+        OrthorombicArrangingModel model(Polarization::FERRO, Axis::Y, Clinicity::SYNCLINIC, Axis::X, 0.5);
+
+        auto shapes = model.arrange(8, {2, 2, 2});
+
+        Matrix<3, 3> tilted = Matrix<3, 3>::rotation(0.5, 0, 0);
+        REQUIRE(shapes.size() == 8);
+        CHECK(shapes[0].getPosition() == Vector<3>{0.5, 0.5, 0.5});
+        CHECK_THAT(shapes[0].getOrientation(), IsApproxEqual(tilted, 1e-10));
+        CHECK(shapes[1].getPosition() == Vector<3>{0.5, 0.5, 1.5});
+        CHECK_THAT(shapes[1].getOrientation(), IsApproxEqual(tilted, 1e-10));
+        CHECK(shapes[2].getPosition() == Vector<3>{0.5, 1.5, 0.5});
+        CHECK_THAT(shapes[2].getOrientation(), IsApproxEqual(tilted, 1e-10));
+        CHECK(shapes[3].getPosition() == Vector<3>{0.5, 1.5, 1.5});
+        CHECK_THAT(shapes[3].getOrientation(), IsApproxEqual(tilted, 1e-10));
+        CHECK(shapes[4].getPosition() == Vector<3>{1.5, 0.5, 0.5});
+        CHECK_THAT(shapes[4].getOrientation(), IsApproxEqual(tilted, 1e-10));
+        CHECK(shapes[5].getPosition() == Vector<3>{1.5, 0.5, 1.5});
+        CHECK_THAT(shapes[5].getOrientation(), IsApproxEqual(tilted, 1e-10));
+        CHECK(shapes[6].getPosition() == Vector<3>{1.5, 1.5, 0.5});
+        CHECK_THAT(shapes[6].getOrientation(), IsApproxEqual(tilted, 1e-10));
+        CHECK(shapes[7].getPosition() == Vector<3>{1.5, 1.5, 1.5});
+        CHECK_THAT(shapes[7].getOrientation(), IsApproxEqual(tilted, 1e-10));
+    }
+
+    SECTION("anticlinic ferro") {
+        OrthorombicArrangingModel model(Polarization::FERRO, Axis::Y, Clinicity::ANTICLINIC, Axis::X, 0.5);
+
+        auto shapes = model.arrange(8, {2, 2, 2});
+
+        Matrix<3, 3> tilted = Matrix<3, 3>::rotation(0.5, 0, 0);
+        Matrix<3, 3> antiTilted = Matrix<3, 3>::rotation(-0.5, 0, 0);
+        REQUIRE(shapes.size() == 8);
+        CHECK(shapes[0].getPosition() == Vector<3>{0.5, 0.5, 0.5});
+        CHECK_THAT(shapes[0].getOrientation(), IsApproxEqual(tilted, 1e-10));
+        CHECK(shapes[1].getPosition() == Vector<3>{0.5, 0.5, 1.5});
+        CHECK_THAT(shapes[1].getOrientation(), IsApproxEqual(tilted, 1e-10));
+        CHECK(shapes[2].getPosition() == Vector<3>{0.5, 1.5, 0.5});
+        CHECK_THAT(shapes[2].getOrientation(), IsApproxEqual(antiTilted, 1e-10));
+        CHECK(shapes[3].getPosition() == Vector<3>{0.5, 1.5, 1.5});
+        CHECK_THAT(shapes[3].getOrientation(), IsApproxEqual(antiTilted, 1e-10));
+        CHECK(shapes[4].getPosition() == Vector<3>{1.5, 0.5, 0.5});
+        CHECK_THAT(shapes[4].getOrientation(), IsApproxEqual(tilted, 1e-10));
+        CHECK(shapes[5].getPosition() == Vector<3>{1.5, 0.5, 1.5});
+        CHECK_THAT(shapes[5].getOrientation(), IsApproxEqual(tilted, 1e-10));
+        CHECK(shapes[6].getPosition() == Vector<3>{1.5, 1.5, 0.5});
+        CHECK_THAT(shapes[6].getOrientation(), IsApproxEqual(antiTilted, 1e-10));
+        CHECK(shapes[7].getPosition() == Vector<3>{1.5, 1.5, 1.5});
+        CHECK_THAT(shapes[7].getOrientation(), IsApproxEqual(antiTilted, 1e-10));
+    }
+
+    SECTION("anticlinic antiferro") {
+        OrthorombicArrangingModel model(Polarization::ANTIFERRO, Axis::Y, Clinicity::ANTICLINIC, Axis::X, 0.5);
+
+        auto shapes = model.arrange(8, {2, 2, 2});
+
+        Matrix<3, 3> tilted = Matrix<3, 3>::rotation(0.5, 0, 0);
+        Matrix<3, 3> antiTilted = Matrix<3, 3>::rotation(-0.5, 0, 0) * Matrix<3, 3>::rotation(0, M_PI, 0);
+        REQUIRE(shapes.size() == 8);
+        CHECK(shapes[0].getPosition() == Vector<3>{0.5, 0.5, 0.5});
+        CHECK_THAT(shapes[0].getOrientation(), IsApproxEqual(tilted, 1e-10));
+        CHECK(shapes[1].getPosition() == Vector<3>{0.5, 0.5, 1.5});
+        CHECK_THAT(shapes[1].getOrientation(), IsApproxEqual(tilted, 1e-10));
+        CHECK(shapes[2].getPosition() == Vector<3>{0.5, 1.5, 0.5});
+        CHECK_THAT(shapes[2].getOrientation(), IsApproxEqual(antiTilted, 1e-10));
+        CHECK(shapes[3].getPosition() == Vector<3>{0.5, 1.5, 1.5});
+        CHECK_THAT(shapes[3].getOrientation(), IsApproxEqual(antiTilted, 1e-10));
+        CHECK(shapes[4].getPosition() == Vector<3>{1.5, 0.5, 0.5});
+        CHECK_THAT(shapes[4].getOrientation(), IsApproxEqual(tilted, 1e-10));
+        CHECK(shapes[5].getPosition() == Vector<3>{1.5, 0.5, 1.5});
+        CHECK_THAT(shapes[5].getOrientation(), IsApproxEqual(tilted, 1e-10));
+        CHECK(shapes[6].getPosition() == Vector<3>{1.5, 1.5, 0.5});
+        CHECK_THAT(shapes[6].getOrientation(), IsApproxEqual(antiTilted, 1e-10));
+        CHECK(shapes[7].getPosition() == Vector<3>{1.5, 1.5, 1.5});
+        CHECK_THAT(shapes[7].getOrientation(), IsApproxEqual(antiTilted, 1e-10));
+    }
 }

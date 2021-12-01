@@ -13,21 +13,39 @@
 
 class OrthorombicArrangingModel {
 public:
-    enum class PolarAxis {
+    enum class Axis {
         X,
         Y,
         Z
     };
 
+    enum class Clinicity {
+        IMPLICIT,
+        SYNCLINIC,
+        ANTICLINIC
+    };
+
+    enum class Polarization {
+        IMPLICIT,
+        FERRO,
+        ANTIFERRO
+    };
+
 private:
-    bool polar = false;
-    std::size_t axisNum = 0;
+    Polarization polarization = Polarization::IMPLICIT;
+    std::size_t polarAxisNum = 0;
+    Clinicity clinicity = Clinicity::IMPLICIT;
+    std::size_t tiltAxisNum = 0;
+    double tiltAngle = 0;
 
 public:
-    [[nodiscard]] static std::size_t getAxisNumber(PolarAxis axis);
+    [[nodiscard]] static std::size_t getAxisNumber(Axis axis);
 
-    explicit OrthorombicArrangingModel(bool polar = false, PolarAxis axis = PolarAxis::X)
-            : polar{polar}, axisNum{getAxisNumber(axis)}
+    explicit OrthorombicArrangingModel(Polarization polarization = Polarization::IMPLICIT, Axis polarAxis = Axis::X,
+                                       Clinicity clinicity = Clinicity::SYNCLINIC, Axis tiltAxis = Axis::X,
+                                       double tiltAngle = 0)
+            : polarization{polarization}, polarAxisNum{getAxisNumber(polarAxis)}, clinicity{clinicity},
+              tiltAxisNum{getAxisNumber(tiltAxis)}, tiltAngle{tiltAngle}
     { }
 
     [[nodiscard]] std::vector<Shape> arrange(std::size_t numOfParticles, const std::array<double, 3> &dimensions) const;

@@ -15,6 +15,7 @@
 #include "core/VolumeScaler.h"
 #include "core/BoundaryConditions.h"
 #include "core/Interaction.h"
+#include "core/arranging_models/OrthorombicArrangingModel.h"
 
 /**
  * @brief Class responsible for the communication between the user and the simulation backend.
@@ -26,20 +27,11 @@ private:
     Parameters loadParameters(const std::string &inputFilename, const std::vector<std::string> &overridenParams);
     void setVerbosityLevel(const std::string &verbosityLevelName) const;
     void setOverridenParamsAsAdditionalText(std::vector<std::string> overridenParams) const;
-    std::unique_ptr<Packing> arrangePacking(std::size_t distance, std::array<double, 3> boxDimensions,
-                                            const std::string &arrangementString,
-                                            std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction,
-                                            std::size_t moveThreads, std::size_t scalingThreads);
     void printAverageValues(const ObservablesCollector &collector);
     void storeAverageValues(const std::string &filename, const ObservablesCollector &collector, double temperature,
                             double pressure) const;
     [[nodiscard]] std::unique_ptr<VolumeScaler> createVolumeScaler(std::string scalingType) const;
     [[nodiscard]] std::array<double, 3> parseDimensions(const std::string &initialDimensions) const;
-    [[nodiscard]] std::vector<Shape> arrangeOrthorombicShapes(std::size_t numOfParticles,
-                                                              std::array<double, 3> &boxDimensions,
-                                                              const Interaction &interaction,
-                                                              std::istringstream &arrangementStream) const;
-    auto parseAntipolar(std::istringstream &arrangementStream) const;
 
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }
@@ -50,7 +42,6 @@ public:
     int preview(int argc, char **argv);
 
     int printGeneralHelp(const std::string &cmd);
-
 };
 
 

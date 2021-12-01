@@ -7,6 +7,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <cstring>
 
 // Cpp Core Guidelines-style assertions for design by contract
 // https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#i6-prefer-expects-for-expressing-preconditions

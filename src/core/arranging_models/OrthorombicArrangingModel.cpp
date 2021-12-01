@@ -34,8 +34,8 @@ std::vector<Shape> OrthorombicArrangingModel::arrange(std::size_t numOfParticles
     Expects(std::all_of(cellDimensions.begin(), cellDimensions.end(), [](double d) { return d > 0; }));
     Expects(std::all_of(boxDimensions.begin(), boxDimensions.end(), [](double d) { return d > 0; }));
 
-    if (this->polar)
-        ExpectsMsg(particlesInLine[this->axisNum] % 2 == 0, "Even number of layers is needed for polar axis");
+    if (this->polarization == Polarization::ANTIFERRO)
+        ExpectsMsg(particlesInLine[this->polarAxisNum] % 2 == 0, "Even number of layers is needed for polar axis");
 
     std::array<double, 3> offset{};
     for (std::size_t i{}; i < 3; i++) {
@@ -56,16 +56,25 @@ std::vector<Shape> OrthorombicArrangingModel::arrange(std::size_t numOfParticles
                 auto translation = Vector<3>{static_cast<double>(i) * cellDimensions[0] + offset[0],
                                              static_cast<double>(j) * cellDimensions[1] + offset[1],
                                              static_cast<double>(k) * cellDimensions[2] + offset[2]};
+                auto rotation = Matrix<3, 3>::identity();
 
+                // Apply polarization
                 std::array<std::size_t, 3> indices = {i, j, k};
-                if (this->polar && indices[this->axisNum] % 2 == 1) {
+                if (this->polarization == Polarization::ANTIFERRO && indices[this->polarAxisNum] % 2 == 1) {
                     std::array<double, 3> angles = {0, 0, 0};
-                    angles[this->axisNum] = M_PI;
-                    result.emplace_back(translation, Matrix<3, 3>::rotation(angles[0], angles[1], angles[2]));
-                } else {
-                    result.emplace_back(translation);
+                    angles[this->polarAxisNum] = M_PI;
+                    rotation = Matrix<3, 3>::rotation(angles[0], angles[1], angles[2]);
                 }
 
+                // Apply tilt
+                double layerTiltAngle = this->tiltAngle;
+                if (this->clinicity == Clinicity::ANTICLINIC && indices[this->polarAxisNum] % 2 == 1)
+                    layerTiltAngle = -layerTiltAngle;
+                std::array<double, 3> tiltAngles = {0, 0, 0};
+                tiltAngles[this->tiltAxisNum] = layerTiltAngle;
+                rotation = Matrix<3, 3>::rotation(tiltAngles[0], tiltAngles[1], tiltAngles[2]) * rotation;
+
+                result.emplace_back(translation, rotation);
                 shapeIdx++;
             }
         }
@@ -74,11 +83,11 @@ std::vector<Shape> OrthorombicArrangingModel::arrange(std::size_t numOfParticles
     return result;
 }
 
-std::size_t OrthorombicArrangingModel::getAxisNumber(OrthorombicArrangingModel::PolarAxis axis) {
+std::size_t OrthorombicArrangingModel::getAxisNumber(OrthorombicArrangingModel::Axis axis) {
     switch (axis) {
-        case PolarAxis::X: return 0;
-        case PolarAxis::Y: return 1;
-        case PolarAxis::Z: return 2;
+        case Axis::X: return 0;
+        case Axis::Y: return 1;
+        case Axis::Z: return 2;
     }
     throw AssertionException{""};
 }
