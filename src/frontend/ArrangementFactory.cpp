@@ -176,7 +176,7 @@ namespace {
         }
 
         OrthorombicArrangingModel model(polarization, polarAxis, clinicity, tiltAxis, tiltAngle);
-        if (arrangementStream.str().find(" default ") != std::string::npos) {
+        if (arrangementStream.str().find(" default") != std::string::npos) {
             return parse_default(arrangementStream, numOfParticles, boxDimensions, model);
         } else if (arrangementStream.str().find(" spacing ") != std::string::npos) {
             return parse_spacing(arrangementStream, numOfParticles, boxDimensions, interaction, model);
