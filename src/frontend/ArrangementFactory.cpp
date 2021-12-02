@@ -9,11 +9,12 @@
 #include "core/arranging_models/OrthorombicArrangingModel.h"
 #include "core/MinimalDistanceOptimizer.h"
 #include "utils/Assertions.h"
+#include "core/PeriodicBoundaryConditions.h"
 
 
 #define ORTHOROMBIC_USAGE "Malformed latice arrangement. Usage: \n" \
                           "orthorombic (({synclinic|anticlinic} {x|y|z} [tile angle]) {polar|antipolar} {x|y|z}) ...\n" \
-                          "  ... {default|spacing [space size] [num. of particles in line x] [... y] [... z]|" \
+                          "  ... {default|spacing [space size] [axis optimization order] [num. of particles in line x] [... y] [... z]|" \
                           "[cell size x] [... y] [... z] [num. of particles in line x] [... y] [... z]}"
 
 namespace {
@@ -84,46 +85,38 @@ namespace {
         return model.arrange(numOfParticles, boxDimensions);
     }
 
-    std::array<double, 3> compute_distancec(OrthorombicArrangingModel::Polarization polarization,
-                                            OrthorombicArrangingModel::Axis polarAxis, const Interaction &interaction)
-    {
-        Shape s1, s2;
-        auto distances = MinimalDistanceOptimizer::forAxes(s1, s2, interaction);
-        if (polarization == OrthorombicArrangingModel::Polarization::ANTIFERRO) {
-            std::size_t axisNum = OrthorombicArrangingModel::getAxisNumber(polarAxis);
-
-            std::array<double, 3> angles{};
-            angles.fill(0);
-            angles[axisNum] = M_PI;
-
-            Vector<3> direction;
-            direction[axisNum] = 1;
-
-            s2.rotate(Matrix<3, 3>::rotation(angles[0], angles[1], angles[2]));
-            double antipolarDistance1 = MinimalDistanceOptimizer::forDirection(s1, s2, direction, interaction);
-            double antipolarDistance2 = MinimalDistanceOptimizer::forDirection(s1, s2, -direction, interaction);
-            distances[axisNum] = std::max(antipolarDistance1, antipolarDistance2);
-        }
-        return distances;
-    }
-
-    std::vector<Shape> parse_spacing(std::istringstream &arrangementStream, size_t numOfParticles,
-                                     std::array<double, 3> &boxDimensions,
-                                     OrthorombicArrangingModel::Polarization polarization,
-                                     OrthorombicArrangingModel::Axis polarAxis, const Interaction &interaction,
+    std::vector<Shape> parse_spacing(std::istringstream &arrangementStream, std::size_t numOfParticles,
+                                     std::array<double, 3> &boxDimensions, const Interaction &interaction,
                                      const OrthorombicArrangingModel &model)
     {
         std::string spacingStr;
         double spacing;
         std::array<std::size_t, 3> particlesInLine{};
-        arrangementStream >> spacingStr >> spacing;
+        std::string axisOrderString;
+        arrangementStream >> spacingStr >> spacing >> axisOrderString;
         arrangementStream >> particlesInLine[0] >> particlesInLine[1] >> particlesInLine[2];
         ValidateMsg(arrangementStream && spacingStr == "spacing", ORTHOROMBIC_USAGE);
         Validate(spacing > 0);
         Validate(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
                  >= numOfParticles);
 
-        std::array<double, 3> distances = compute_distancec(polarization, polarAxis, interaction);
+        double rangeDiameter = interaction.getTotalRangeRadius();
+        std::array<double, 3> testCellDimensions{};
+        constexpr double EPSILON = 1e-12;
+        testCellDimensions.fill(rangeDiameter + EPSILON);
+        std::array<double, 3> testPackingDimensions{};
+        std::transform(testCellDimensions.begin(), testCellDimensions.end(), particlesInLine.begin(),
+                       testPackingDimensions.begin(), [](double dim, std::size_t num) { return dim*num; });
+        auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+        auto testShapes = model.arrange(numOfParticles, particlesInLine, testCellDimensions,
+                                        testPackingDimensions);
+        Packing testPacking(testPackingDimensions, testShapes, std::move(pbc), interaction);
+        MinimalDistanceOptimizer::shrinkPacking(testPacking, interaction, axisOrderString);
+        std::array<double, 3> distances{};
+        std::array<double, 3> finalDimensions = testPacking.getDimensions();
+        std::transform(finalDimensions.begin(), finalDimensions.end(), particlesInLine.begin(), distances.begin(),
+                       [](double dim, std::size_t num) { return dim/num; });
+
         std::array<double, 3> cellDimensions{};
         std::transform(distances.begin(), distances.end(), cellDimensions.begin(),
                        [spacing](double distance) { return distance + spacing; });
@@ -171,9 +164,7 @@ namespace {
         if (arrangementStream.str().find(" default ") != std::string::npos) {
             return parse_default(arrangementStream, numOfParticles, boxDimensions, model);
         } else if (arrangementStream.str().find(" spacing ") != std::string::npos) {
-            return parse_spacing(arrangementStream, numOfParticles, boxDimensions, polarization, polarAxis, interaction,
-                                 model);
-
+            return parse_spacing(arrangementStream, numOfParticles, boxDimensions, interaction, model);
         } else {
             return parse_explicit_sizes(arrangementStream, numOfParticles, boxDimensions, model);
         }
