@@ -4,7 +4,7 @@
 
 #include <catch2/catch.hpp>
 
-#include "core/MinimalDistanceOptimizer.h"
+#include "core/DistanceOptimizer.h"
 
 #include "core/shapes/SpherocylinderTraits.h"
 
@@ -13,17 +13,17 @@ TEST_CASE("MinimalDiscanceOptimizer") {
     Shape sc1, sc2;
     sc2.setOrientation(Matrix<3, 3>::rotation(0, M_PI/2, 0));
 
-    SECTION("forDirection: x") {
-        double distance = MinimalDistanceOptimizer::forDirection(sc1, sc2, {1, 0, 0}, scTraits.getInteraction());
+    SECTION("minimizeForDirection: x") {
+        double distance = DistanceOptimizer::minimizeForDirection(sc1, sc2, {1, 0, 0}, scTraits.getInteraction());
 
-        CHECK(distance == Approx(3).margin(MinimalDistanceOptimizer::EPSILON));
+        CHECK(distance == Approx(3).margin(DistanceOptimizer::EPSILON));
     }
 
-    SECTION("forAxes") {
-        auto distances = MinimalDistanceOptimizer::forAxes(sc1, sc2, scTraits.getInteraction());
+    SECTION("minimizeForAxes") {
+        auto distances = DistanceOptimizer::minimizeForAxes(sc1, sc2, scTraits.getInteraction());
 
-        CHECK(distances[0] == Approx(3).margin(MinimalDistanceOptimizer::EPSILON));
-        CHECK(distances[1] == Approx(2).margin(MinimalDistanceOptimizer::EPSILON));
-        CHECK(distances[2] == Approx(3).margin(MinimalDistanceOptimizer::EPSILON));
+        CHECK(distances[0] == Approx(3).margin(DistanceOptimizer::EPSILON));
+        CHECK(distances[1] == Approx(2).margin(DistanceOptimizer::EPSILON));
+        CHECK(distances[2] == Approx(3).margin(DistanceOptimizer::EPSILON));
     }
 }

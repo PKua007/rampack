@@ -7,7 +7,7 @@
 
 #include "ArrangementFactory.h"
 #include "core/arranging_models/OrthorombicArrangingModel.h"
-#include "core/MinimalDistanceOptimizer.h"
+#include "core/DistanceOptimizer.h"
 #include "utils/Assertions.h"
 #include "core/PeriodicBoundaryConditions.h"
 
@@ -111,7 +111,7 @@ namespace {
         auto testShapes = model.arrange(numOfParticles, particlesInLine, testCellDimensions,
                                         testPackingDimensions);
         Packing testPacking(testPackingDimensions, testShapes, std::move(pbc), interaction);
-        MinimalDistanceOptimizer::shrinkPacking(testPacking, interaction, axisOrderString);
+        DistanceOptimizer::shrinkPacking(testPacking, interaction, axisOrderString);
         std::array<double, 3> distances{};
         std::array<double, 3> finalDimensions = testPacking.getDimensions();
         std::transform(finalDimensions.begin(), finalDimensions.end(), particlesInLine.begin(), distances.begin(),

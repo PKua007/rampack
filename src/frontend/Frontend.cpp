@@ -26,7 +26,7 @@
 #include "core/volume_scalers/LinearVolumeScaler.h"
 #include "core/volume_scalers/LogVolumeScaler.h"
 #include "utils/OMPMacros.h"
-#include "core/MinimalDistanceOptimizer.h"
+#include "core/DistanceOptimizer.h"
 #include "ArrangementFactory.h"
 
 
@@ -603,8 +603,8 @@ int Frontend::optimize_distance(int argc, char **argv) {
     for (const auto &direction : directions) {
         std::ostringstream minimalDistanceStream;
         minimalDistanceStream.precision(std::numeric_limits<double>::max_digits10);
-        minimalDistanceStream << MinimalDistanceOptimizer::forDirection(shape1, shape2, direction,
-                                                                        shapeTraits->getInteraction());
+        minimalDistanceStream << DistanceOptimizer::minimizeForDirection(shape1, shape2, direction,
+                                                                         shapeTraits->getInteraction());
         if (minimalOutput)
             this->logger.raw() << minimalDistanceStream.str() << std::endl;
         else
