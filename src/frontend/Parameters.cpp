@@ -76,8 +76,8 @@ Parameters::RunParameters::RunParameters(const std::string &runName, const Confi
             this->packingFilename = runConfig.getString("packingFilename");
         else if (key == "outputFilename")
             this->outputFilename = runConfig.getString("outputFilename");
-        else if (key == "densitySnapshotFilename")
-            this->densitySnapshotFilename = runConfig.getString("densitySnapshotFilename");
+        else if (key == "observableSnapshotFilename")
+            this->observableSnapshotFilename = runConfig.getString("observableSnapshotFilename");
         else
             throw ParametersParseException("Unknown parameter " + key);
     }
@@ -131,5 +131,5 @@ void Parameters::RunParameters::print(Logger &logger) const {
     logger.info() << "packingFilename         : " << this->packingFilename << std::endl;
     logger.info() << "wolframFilename         : " << this->wolframFilename << std::endl;
     logger.info() << "outputFilename          : " << this->outputFilename << std::endl;
-    logger.info() << "densitySnapshotFilename : " << this->densitySnapshotFilename << std::endl;
+    logger.info() << "observableSnapshotFilename : " << this->observableSnapshotFilename << std::endl;
 }

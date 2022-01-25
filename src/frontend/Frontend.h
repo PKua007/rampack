@@ -15,7 +15,7 @@
 #include "core/VolumeScaler.h"
 #include "core/BoundaryConditions.h"
 #include "core/Interaction.h"
-#include "core/arranging_models/OrthorombicArrangingModel.h"
+#include "core/arranging_models/OrthorhombicArrangingModel.h"
 
 /**
  * @brief Class responsible for the communication between the user and the simulation backend.

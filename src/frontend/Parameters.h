@@ -50,7 +50,7 @@ public:
         std::string packingFilename{};
         std::string wolframFilename{};
         std::string outputFilename{};
-        std::string densitySnapshotFilename{};
+        std::string observableSnapshotFilename{};
 
         void print(Logger &logger) const;
     };

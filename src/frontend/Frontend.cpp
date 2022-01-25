@@ -349,18 +349,18 @@ int Frontend::casino(int argc, char **argv) {
         }
 
         // Store observables vs cycles snapshots (if desired)
-        if (!runParams.densitySnapshotFilename.empty()) {
+        if (!runParams.observableSnapshotFilename.empty()) {
             if (isContinuation) {
-                std::ofstream out(runParams.densitySnapshotFilename, std::ios_base::app);
-                ValidateOpenedDesc(out, runParams.densitySnapshotFilename, "to store observables");
+                std::ofstream out(runParams.observableSnapshotFilename, std::ios_base::app);
+                ValidateOpenedDesc(out, runParams.observableSnapshotFilename, "to store observables");
                 observablesCollector.printSnapshots(out, false);
             } else {
-                std::ofstream out(runParams.densitySnapshotFilename);
-                ValidateOpenedDesc(out, runParams.densitySnapshotFilename, "to store observables");
+                std::ofstream out(runParams.observableSnapshotFilename);
+                ValidateOpenedDesc(out, runParams.observableSnapshotFilename, "to store observables");
                 observablesCollector.printSnapshots(out, true);
             }
 
-            this->logger.info() << "Density snapshots stored to " + runParams.densitySnapshotFilename << std::endl;
+            this->logger.info() << "Observable snapshots stored to " + runParams.observableSnapshotFilename << std::endl;
         }
 
         isContinuation = false;

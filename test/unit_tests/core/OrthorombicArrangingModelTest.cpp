@@ -6,14 +6,14 @@
 
 #include "matchers/MatrixApproxMatcher.h"
 
-#include "core/arranging_models/OrthorombicArrangingModel.h"
+#include "core/arranging_models/OrthorhombicArrangingModel.h"
 
-using Polarization = OrthorombicArrangingModel::Polarization;
-using Axis = OrthorombicArrangingModel::Axis;
-using Clinicity = OrthorombicArrangingModel::Clinicity;
+using Polarization = OrthorhombicArrangingModel::Polarization;
+using Axis = OrthorhombicArrangingModel::Axis;
+using Clinicity = OrthorhombicArrangingModel::Clinicity;
 
-TEST_CASE("OrthorombicArrangingModel: polar") {
-    OrthorombicArrangingModel model;
+TEST_CASE("OrthorhombicArrangingModel: polar") {
+    OrthorhombicArrangingModel model;
 
     SECTION("not fully filled lattice") {
         auto shapes = model.arrange(7, {2, 2, 2});
@@ -43,8 +43,8 @@ TEST_CASE("OrthorombicArrangingModel: polar") {
     }
 }
 
-TEST_CASE("OrthorombicArrangingModel: antipolar") {
-    OrthorombicArrangingModel model(Polarization::ANTIFERRO, Axis::Y);
+TEST_CASE("OrthorhombicArrangingModel: antipolar") {
+    OrthorhombicArrangingModel model(Polarization::ANTIFERRO, Axis::Y);
 
     auto shapes = model.arrange(8, {2, 2, 2});
 
@@ -69,9 +69,9 @@ TEST_CASE("OrthorombicArrangingModel: antipolar") {
     CHECK_THAT(shapes[7].getOrientation(), IsApproxEqual(rotated, 1e-10));
 }
 
-TEST_CASE("OrthorombicArrangingModel: tilted") {
+TEST_CASE("OrthorhombicArrangingModel: tilted") {
     SECTION("synclinic ferro") {
-        OrthorombicArrangingModel model(Polarization::FERRO, Axis::Y, Clinicity::SYNCLINIC, Axis::X, 0.5);
+        OrthorhombicArrangingModel model(Polarization::FERRO, Axis::Y, Clinicity::SYNCLINIC, Axis::X, 0.5);
 
         auto shapes = model.arrange(8, {2, 2, 2});
 
@@ -96,7 +96,7 @@ TEST_CASE("OrthorombicArrangingModel: tilted") {
     }
 
     SECTION("anticlinic ferro") {
-        OrthorombicArrangingModel model(Polarization::FERRO, Axis::Y, Clinicity::ANTICLINIC, Axis::X, 0.5);
+        OrthorhombicArrangingModel model(Polarization::FERRO, Axis::Y, Clinicity::ANTICLINIC, Axis::X, 0.5);
 
         auto shapes = model.arrange(8, {2, 2, 2});
 
@@ -122,7 +122,7 @@ TEST_CASE("OrthorombicArrangingModel: tilted") {
     }
 
     SECTION("anticlinic antiferro") {
-        OrthorombicArrangingModel model(Polarization::ANTIFERRO, Axis::Y, Clinicity::ANTICLINIC, Axis::X, 0.5);
+        OrthorhombicArrangingModel model(Polarization::ANTIFERRO, Axis::Y, Clinicity::ANTICLINIC, Axis::X, 0.5);
 
         auto shapes = model.arrange(8, {2, 2, 2});
 

@@ -2,8 +2,8 @@
 // Created by Piotr Kubala on 12/12/2020.
 //
 
-#ifndef RAMPACK_ORTHOROMBICARRANGINGMODEL_H
-#define RAMPACK_ORTHOROMBICARRANGINGMODEL_H
+#ifndef RAMPACK_ORTHORHOMBICARRANGINGMODEL_H
+#define RAMPACK_ORTHORHOMBICARRANGINGMODEL_H
 
 #include <vector>
 #include <array>
@@ -11,7 +11,7 @@
 #include "core/Shape.h"
 #include "core/BoundaryConditions.h"
 
-class OrthorombicArrangingModel {
+class OrthorhombicArrangingModel {
 public:
     enum class Axis {
         X,
@@ -41,9 +41,9 @@ private:
 public:
     [[nodiscard]] static std::size_t getAxisNumber(Axis axis);
 
-    explicit OrthorombicArrangingModel(Polarization polarization = Polarization::IMPLICIT, Axis polarAxis = Axis::X,
-                                       Clinicity clinicity = Clinicity::SYNCLINIC, Axis tiltAxis = Axis::X,
-                                       double tiltAngle = 0)
+    explicit OrthorhombicArrangingModel(Polarization polarization = Polarization::IMPLICIT, Axis polarAxis = Axis::X,
+                                        Clinicity clinicity = Clinicity::SYNCLINIC, Axis tiltAxis = Axis::X,
+                                        double tiltAngle = 0)
             : polarization{polarization}, polarAxisNum{getAxisNumber(polarAxis)}, clinicity{clinicity},
               tiltAxisNum{getAxisNumber(tiltAxis)}, tiltAngle{tiltAngle}
     { }
@@ -56,4 +56,4 @@ public:
 };
 
 
-#endif //RAMPACK_ORTHOROMBICARRANGINGMODEL_H
+#endif //RAMPACK_ORTHORHOMBICARRANGINGMODEL_H

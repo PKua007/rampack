@@ -5,11 +5,11 @@
 #include <cmath>
 #include <algorithm>
 
-#include "OrthorombicArrangingModel.h"
+#include "OrthorhombicArrangingModel.h"
 #include "utils/Assertions.h"
 
-std::vector<Shape> OrthorombicArrangingModel::arrange(std::size_t numOfParticles,
-                                                      const std::array<double, 3> &dimensions) const
+std::vector<Shape> OrthorhombicArrangingModel::arrange(std::size_t numOfParticles,
+                                                       const std::array<double, 3> &dimensions) const
 {
     Expects(numOfParticles > 0);
     Expects(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
@@ -24,10 +24,10 @@ std::vector<Shape> OrthorombicArrangingModel::arrange(std::size_t numOfParticles
     return this->arrange(numOfParticles, particlesInLineArray, cellDimensions, dimensions);
 }
 
-std::vector<Shape> OrthorombicArrangingModel::arrange(std::size_t numOfParticles,
-                                                      const std::array<std::size_t, 3> &particlesInLine,
-                                                      const std::array<double, 3> &cellDimensions,
-                                                      const std::array<double, 3> &boxDimensions) const
+std::vector<Shape> OrthorhombicArrangingModel::arrange(std::size_t numOfParticles,
+                                                       const std::array<std::size_t, 3> &particlesInLine,
+                                                       const std::array<double, 3> &cellDimensions,
+                                                       const std::array<double, 3> &boxDimensions) const
 {
     Expects(numOfParticles > 0);
     Expects(std::all_of(particlesInLine.begin(), particlesInLine.end(), [](double d) { return d > 0; }));
@@ -83,7 +83,7 @@ std::vector<Shape> OrthorombicArrangingModel::arrange(std::size_t numOfParticles
     return result;
 }
 
-std::size_t OrthorombicArrangingModel::getAxisNumber(OrthorombicArrangingModel::Axis axis) {
+std::size_t OrthorhombicArrangingModel::getAxisNumber(OrthorhombicArrangingModel::Axis axis) {
     switch (axis) {
         case Axis::X: return 0;
         case Axis::Y: return 1;

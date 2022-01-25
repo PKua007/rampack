@@ -6,7 +6,7 @@
 #include <sstream>
 
 #include "core/Simulation.h"
-#include "core/arranging_models/OrthorombicArrangingModel.h"
+#include "core/arranging_models/OrthorhombicArrangingModel.h"
 #include "core/shapes/SphereTraits.h"
 #include "core/shapes/SpherocylinderTraits.h"
 #include "core/shapes/KMerTraits.h"
@@ -27,7 +27,7 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
     double V = 5000;
     double linearSize = std::cbrt(V);
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
-    auto shapes = OrthorombicArrangingModel{}.arrange(50, dimensions);
+    auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
     SphereTraits sphereTraits(0.05);
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
@@ -53,7 +53,7 @@ TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
     double V = 200;
     double linearSize = std::cbrt(V);
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
-    auto shapes = OrthorombicArrangingModel{}.arrange(50, dimensions);
+    auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
     SphereTraits sphereTraits(0.5);
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
@@ -79,7 +79,7 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
     double V = 200;
     double linearSize = std::cbrt(V);
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
-    auto shapes = OrthorombicArrangingModel{}.arrange(50, dimensions);
+    auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
     SpherocylinderTraits spherocylinderTraits(0.5, 0.2);
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), spherocylinderTraits.getInteraction());
     auto volumeScaler = std::make_unique<DeltaVolumeScaler>();
@@ -107,7 +107,7 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
     double V = 200;
     double linearSize = std::cbrt(V);
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
-    auto shapes = OrthorombicArrangingModel{}.arrange(50, dimensions);
+    auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
     SphereTraits sphereTraits(0.5, std::make_unique<LennardJonesInteraction>(1, 0.5));
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
@@ -136,7 +136,7 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
     double V = 500;
     double linearSize = std::cbrt(V);
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
-    auto shapes = OrthorombicArrangingModel{}.arrange(50, dimensions);
+    auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
     KMerTraits kmerTraits(2, 0.5, 1);
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), kmerTraits.getInteraction());
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
@@ -165,7 +165,7 @@ TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
     double V = 500;
     double linearSize = std::cbrt(V);
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
-    auto shapes = OrthorombicArrangingModel{}.arrange(50, dimensions);
+    auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
     auto interaction = std::make_unique<RepulsiveLennardJonesInteraction>(1, 1);
     KMerTraits kmerTraits(2, 0.5, 1, std::move(interaction));
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), kmerTraits.getInteraction());
@@ -193,7 +193,7 @@ TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
     double V = 1000;
     double linearSize = std::cbrt(V);
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
-    auto shapes = OrthorombicArrangingModel{}.arrange(200, dimensions);
+    auto shapes = OrthorhombicArrangingModel{}.arrange(200, dimensions);
     SphereTraits sphereTraits(0.5);
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc),
                                              sphereTraits.getInteraction(), 4, 4);

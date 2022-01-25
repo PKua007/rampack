@@ -6,38 +6,38 @@
 #include <fstream>
 
 #include "ArrangementFactory.h"
-#include "core/arranging_models/OrthorombicArrangingModel.h"
+#include "core/arranging_models/OrthorhombicArrangingModel.h"
 #include "core/DistanceOptimizer.h"
 #include "utils/Assertions.h"
 #include "core/PeriodicBoundaryConditions.h"
 
 
-#define ORTHOROMBIC_USAGE "Malformed latice arrangement. Usage: \n" \
-                          "orthorombic (({synclinic|anticlinic} {x|y|z} [tile angle]) {polar|antipolar} {x|y|z}) ...\n" \
-                          "  ... {default|spacing [space size] [axis optimization order] [num. of particles in line x] [... y] [... z]|" \
-                          "[cell size x] [... y] [... z] [num. of particles in line x] [... y] [... z]}"
+#define ORTHORHOMBIC_USAGE "Malformed latice arrangement. Usage: \n" \
+                           "orthorhombic (({synclinic|anticlinic} {x|y|z} [tilt angle]) {polar|antipolar} {x|y|z}) ...\n" \
+                           "  ... {default|spacing [space size] [axis optimization order] [num. of particles in line x] [... y] [... z]|" \
+                           "[cell size x] [... y] [... z] [num. of particles in line x] [... y] [... z]}"
 
 namespace {
-    OrthorombicArrangingModel::Axis parse_axis(const std::string &axisStr) {
-        OrthorombicArrangingModel::Axis tiltAxis;
+    OrthorhombicArrangingModel::Axis parse_axis(const std::string &axisStr) {
+        OrthorhombicArrangingModel::Axis tiltAxis;
         if (axisStr == "x")
-            tiltAxis = OrthorombicArrangingModel::Axis::X;
+            tiltAxis = OrthorhombicArrangingModel::Axis::X;
         else if (axisStr == "y")
-            tiltAxis = OrthorombicArrangingModel::Axis::Y;
+            tiltAxis = OrthorhombicArrangingModel::Axis::Y;
         else if (axisStr == "z")
-            tiltAxis = OrthorombicArrangingModel::Axis::Z;
+            tiltAxis = OrthorhombicArrangingModel::Axis::Z;
         else
             throw ValidationException("Only x, y, z tilt axes are allowed");
         return tiltAxis;
     }
 
     auto parse_polarization(std::istringstream &arrangementStream)  {
-        auto polarization = OrthorombicArrangingModel::Polarization::IMPLICIT;
-        auto axis = OrthorombicArrangingModel::Axis::X;
+        auto polarization = OrthorhombicArrangingModel::Polarization::IMPLICIT;
+        auto axis = OrthorhombicArrangingModel::Axis::X;
         if (arrangementStream.str().find(" polar ") != std::string::npos)
-            polarization = OrthorombicArrangingModel::Polarization::FERRO;
+            polarization = OrthorhombicArrangingModel::Polarization::FERRO;
         else if (arrangementStream.str().find(" antipolar ") != std::string::npos)
-            polarization = OrthorombicArrangingModel::Polarization::ANTIFERRO;
+            polarization = OrthorhombicArrangingModel::Polarization::ANTIFERRO;
         else
             return std::make_pair(polarization, axis);
 
@@ -45,20 +45,20 @@ namespace {
         std::string axisStr;
         arrangementStream >> polarizationStr >> axisStr;
         ValidateMsg(arrangementStream && (polarizationStr == "polar" || polarizationStr == "antipolar"),
-                    ORTHOROMBIC_USAGE);
+                    ORTHORHOMBIC_USAGE);
         axis = parse_axis(axisStr);
 
         return std::make_pair(polarization, axis);
     }
 
     auto parse_tilt(std::istringstream &arrangementStream)  {
-        auto clinicity = OrthorombicArrangingModel::Clinicity::IMPLICIT;
-        auto tiltAxis = OrthorombicArrangingModel::Axis::X;
+        auto clinicity = OrthorhombicArrangingModel::Clinicity::IMPLICIT;
+        auto tiltAxis = OrthorhombicArrangingModel::Axis::X;
         double tiltAngle = 0;
         if (arrangementStream.str().find(" synclinic ") != std::string::npos)
-            clinicity = OrthorombicArrangingModel::Clinicity::SYNCLINIC;
+            clinicity = OrthorhombicArrangingModel::Clinicity::SYNCLINIC;
         else if (arrangementStream.str().find(" anticlinic ") != std::string::npos)
-            clinicity = OrthorombicArrangingModel::Clinicity::ANTICLINIC;
+            clinicity = OrthorhombicArrangingModel::Clinicity::ANTICLINIC;
         else
             return std::make_tuple(clinicity, tiltAxis, tiltAngle);
 
@@ -66,7 +66,7 @@ namespace {
         std::string axisStr;
         arrangementStream >> clinicityStr >> axisStr >> tiltAngle;
         ValidateMsg(arrangementStream && (clinicityStr == "synclinic" || clinicityStr == "anticlinic"),
-                    ORTHOROMBIC_USAGE);
+                    ORTHORHOMBIC_USAGE);
         tiltAxis = parse_axis(axisStr);
 
         return std::make_tuple(clinicity, tiltAxis, tiltAngle);
@@ -74,11 +74,11 @@ namespace {
 
     std::vector<Shape> parse_default(std::istringstream &arrangementStream, size_t numOfParticles,
                                      const std::array<double, 3> &boxDimensions,
-                                     const OrthorombicArrangingModel &model)
+                                     const OrthorhombicArrangingModel &model)
     {
         std::string defaultStr;
         arrangementStream >> defaultStr;
-        ValidateMsg(arrangementStream && defaultStr == "default", ORTHOROMBIC_USAGE);
+        ValidateMsg(arrangementStream && defaultStr == "default", ORTHORHOMBIC_USAGE);
         ValidateMsg((boxDimensions != std::array<double, 3>{0, 0, 0}),
                     "Default arrangement unsupported for automatic box size");
 
@@ -88,11 +88,11 @@ namespace {
     std::array<double, 3> find_minimal_distances(std::size_t numOfParticles, const Interaction &interaction,
                                                  std::array<std::size_t, 3> &particlesInLine,
                                                  const std::string &axisOrderString,
-                                                 const OrthorombicArrangingModel &model);
+                                                 const OrthorhombicArrangingModel &model);
 
     std::vector<Shape> parse_spacing(std::istringstream &arrangementStream, std::size_t numOfParticles,
                                      std::array<double, 3> &boxDimensions, const Interaction &interaction,
-                                     const OrthorombicArrangingModel &model)
+                                     const OrthorhombicArrangingModel &model)
     {
         std::string spacingStr;
         double spacing;
@@ -100,7 +100,7 @@ namespace {
         std::string axisOrderString;
         arrangementStream >> spacingStr >> spacing >> axisOrderString;
         arrangementStream >> particlesInLine[0] >> particlesInLine[1] >> particlesInLine[2];
-        ValidateMsg(arrangementStream && spacingStr == "spacing", ORTHOROMBIC_USAGE);
+        ValidateMsg(arrangementStream && spacingStr == "spacing", ORTHORHOMBIC_USAGE);
         Validate(spacing > 0);
         Validate(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
                  >= numOfParticles);
@@ -118,7 +118,7 @@ namespace {
     std::array<double, 3> find_minimal_distances(std::size_t numOfParticles, const Interaction &interaction,
                                                  std::array<std::size_t, 3> &particlesInLine,
                                                  const std::string &axisOrderString,
-                                                 const OrthorombicArrangingModel &model)
+                                                 const OrthorhombicArrangingModel &model)
     {
         double rangeRadius = interaction.getTotalRangeRadius();
         constexpr double EPSILON = 1e-12;
@@ -142,13 +142,13 @@ namespace {
 
     std::vector<Shape> parse_explicit_sizes(std::istringstream &arrangementStream, std::size_t numOfParticles,
                                             std::array<double, 3> &boxDimensions,
-                                            const OrthorombicArrangingModel &model)
+                                            const OrthorhombicArrangingModel &model)
     {
         std::array<double, 3> cellDimensions{};
         std::array<std::size_t, 3> particlesInLine{};
         arrangementStream >> cellDimensions[0] >> cellDimensions[1] >> cellDimensions[2];
         arrangementStream >> particlesInLine[0] >> particlesInLine[1] >> particlesInLine[2];
-        ValidateMsg(arrangementStream, ORTHOROMBIC_USAGE);
+        ValidateMsg(arrangementStream, ORTHORHOMBIC_USAGE);
         Validate(std::all_of(cellDimensions.begin(), cellDimensions.end(), [](double d) { return d; }));
         Validate(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
                  >= numOfParticles);
@@ -161,21 +161,21 @@ namespace {
         return model.arrange(numOfParticles, particlesInLine, cellDimensions, boxDimensions);
     }
 
-    std::vector<Shape> arrange_orthorombic_shapes(std::size_t numOfParticles,
-                                                  std::array<double, 3> &boxDimensions, const Interaction &interaction,
-                                                  std::istringstream &arrangementStream)
+    std::vector<Shape> arrange_orthorhombic_shapes(std::size_t numOfParticles,
+                                                   std::array<double, 3> &boxDimensions, const Interaction &interaction,
+                                                   std::istringstream &arrangementStream)
     {
         auto [clinicity, tiltAxis, tiltAngle] = parse_tilt(arrangementStream);
         auto [polarization, polarAxis] = parse_polarization(arrangementStream);
 
 
-        if (clinicity != OrthorombicArrangingModel::Clinicity::IMPLICIT &&
-            polarization == OrthorombicArrangingModel::Polarization::IMPLICIT)
+        if (clinicity != OrthorhombicArrangingModel::Clinicity::IMPLICIT &&
+            polarization == OrthorhombicArrangingModel::Polarization::IMPLICIT)
         {
             throw ValidationException("Polarization must be specified explicitly for non-implicit clinicity!");
         }
 
-        OrthorombicArrangingModel model(polarization, polarAxis, clinicity, tiltAxis, tiltAngle);
+        OrthorhombicArrangingModel model(polarization, polarAxis, clinicity, tiltAxis, tiltAngle);
         if (arrangementStream.str().find(" default") != std::string::npos) {
             return parse_default(arrangementStream, numOfParticles, boxDimensions, model);
         } else if (arrangementStream.str().find(" spacing ") != std::string::npos) {
@@ -196,10 +196,10 @@ std::unique_ptr<Packing> ArrangementFactory::arrangePacking(std::size_t numOfPar
     std::istringstream arrangementStream(arrangementString);
     std::string type;
     arrangementStream >> type;
-    ValidateMsg(arrangementStream, "Malformed arrangement. Usage: [type: orthorombic, presimulated] "
+    ValidateMsg(arrangementStream, "Malformed arrangement. Usage: [type: orthorhombic, presimulated] "
                                    "(type dependent parameters)");
-    if (type == "orthorombic" || type == "lattice") {
-        auto shapes = arrange_orthorombic_shapes(numOfParticles, boxDimensions, interaction, arrangementStream);
+    if (type == "orthorhombic" || type == "lattice") {
+        auto shapes = arrange_orthorhombic_shapes(numOfParticles, boxDimensions, interaction, arrangementStream);
         return std::make_unique<Packing>(boxDimensions, std::move(shapes), std::move(bc), interaction, moveThreads,
                                          scalingThreads);
     } else if (type == "presimulated") {
@@ -214,6 +214,6 @@ std::unique_ptr<Packing> ArrangementFactory::arrangePacking(std::size_t numOfPar
         packing->restore(packingFile, interaction);
         return packing;
     } else {
-        throw ValidationException("Unknown arrangement type: " + type + ". Available: orthorombic, presimulated");
+        throw ValidationException("Unknown arrangement type: " + type + ". Available: orthorhombic, presimulated");
     }
 }
