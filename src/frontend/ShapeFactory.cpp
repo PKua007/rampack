@@ -104,7 +104,8 @@ std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         else
             Validate(subdivisions > 0);
 
-        ValidateMsg(interactionName.empty(), "SpherocylinderBanana supports only hard interactions");
+        ValidateMsg(interactionName == "hard" || interactionName.empty(),
+                    "SpherocylinderBanana supports only hard interactions");
 
         return std::make_unique<PolyspherocylinderBananaTraits>(arcRadius, arcAngle, segmentNum, radius, subdivisions);
     } else if (shapeName == "KMer") {
@@ -147,7 +148,8 @@ std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         ValidateMsg(shapeAttrStream, "Malformed Spherocylinder attributes; expected: [length] [radius]");
         Validate(r > 0);
         Validate(length >= 0);
-        ValidateMsg(interactionName.empty(), "Spherocylinder supports only hard interactions");
+        ValidateMsg(interactionName == "hard" || interactionName.empty(),
+                    "Spherocylinder supports only hard interactions");
         return std::make_unique<SpherocylinderTraits>(length, r);
     } else {
         throw ValidationException("Unknown particle name: " + shapeName);
