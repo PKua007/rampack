@@ -18,11 +18,18 @@ void NematicOrder::calculate(const Packing &packing, [[maybe_unused]] double tem
     }
     Qtensor /= static_cast<double>(packing.size());
 
+    auto eigenvalues = calculateEigenvalues(Qtensor);
     // Take into account the normalisation of the order parameter
-    this->P2 = 0.5*(3*calculateHighestEigenvalue(Qtensor) - 1);
+    for (auto &eigenvalue : eigenvalues)
+        eigenvalue = 0.5*(3*eigenvalue - 1);
+
+    // P2 is given by the eigenvalue with the highest magnitude
+    this->P2 = *std::max_element(eigenvalues.begin(), eigenvalues.end(), [](double eigval1, double eigval2) {
+        return std::abs(eigval1) < std::abs(eigval2);
+    });
 }
 
-double NematicOrder::calculateHighestEigenvalue(const Matrix<3, 3> &tensor) {
+std::array<double, 3> NematicOrder::calculateEigenvalues(const Matrix<3, 3> &tensor) {
     // A trival method from arXiv:1306.6291 based on the Cardano equation
 
     double A11 = tensor(0, 0);
@@ -44,9 +51,7 @@ double NematicOrder::calculateHighestEigenvalue(const Matrix<3, 3> &tensor) {
     Assert(std::abs(ratio) <= 1);
     double Delta = std::acos(ratio);
 
-    std::array<double, 3> eigenvalues = {1./3*(b + 2*sqrt_p*std::cos(Delta/3)),
-                                         1./3*(b + 2*sqrt_p*std::cos((Delta + 2*M_PI)/3)),
-                                         1./3*(b + 2*sqrt_p*std::cos((Delta - 2*M_PI)/3))};
-
-    return *std::max_element(eigenvalues.begin(), eigenvalues.end());
+    return {1./3*(b + 2*sqrt_p*std::cos(Delta/3)),
+            1./3*(b + 2*sqrt_p*std::cos((Delta + 2*M_PI)/3)),
+            1./3*(b + 2*sqrt_p*std::cos((Delta - 2*M_PI)/3))};
 }

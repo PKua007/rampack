@@ -5,11 +5,13 @@
 #ifndef RAMPACK_NEMATICORDER_H
 #define RAMPACK_NEMATICORDER_H
 
+#include <array>
+
 #include "core/Observable.h"
 
 class NematicOrder : public Observable {
 private:
-    static double calculateHighestEigenvalue(const Matrix<3, 3> &tensor);
+    static std::array<double, 3> calculateEigenvalues(const Matrix<3, 3> &tensor);
 
     double P2;
 

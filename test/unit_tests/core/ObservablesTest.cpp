@@ -83,12 +83,29 @@ TEST_CASE("Observables") {
     SECTION("NematicOrder") {
         NematicOrder nematicOrder;
 
-        nematicOrder.calculate(packing, 1, 1, mockShapeTraits);
+        SECTION("positive order") {
+            nematicOrder.calculate(packing, 1, 1, mockShapeTraits);
 
-        CHECK(nematicOrder.getIntervalHeader() == std::vector<std::string>{"P2"});
-        CHECK(nematicOrder.getName() == "nematic order");
-        REQUIRE(nematicOrder.getIntervalValues().size() == 1);
-        CHECK(nematicOrder.getIntervalValues()[0] == Approx(0.6403882032022076));   // Mathematica
+            CHECK(nematicOrder.getIntervalHeader() == std::vector<std::string>{"P2"});
+            CHECK(nematicOrder.getName() == "nematic order");
+            REQUIRE(nematicOrder.getIntervalValues().size() == 1);
+            CHECK(nematicOrder.getIntervalValues()[0] == Approx(0.6403882032022076));   // Mathematica
+        }
+
+        SECTION("negative order") {
+            Shape s2_1({1, 1, 1}, Matrix<3, 3>::rotation(0, M_PI/2, 0));
+            Shape s2_2({2, 3, 3}, Matrix<3, 3>::rotation(0, -2*M_PI/3, 0));
+            Shape s2_3({4, 3, 1}, Matrix<3, 3>::rotation(0, 0, M_PI/2));
+            Shape s2_4({2, 3, 2}, Matrix<3, 3>::rotation(0, 0, -2*M_PI/3));
+            auto pbc2 = std::make_unique<PeriodicBoundaryConditions>();
+            Packing packing2({3, 4, 5}, {s2_1, s2_2, s2_3, s2_4}, std::move(pbc2), mockShapeTraits.getInteraction(), 1,
+                             1);
+
+            nematicOrder.calculate(packing2, 1, 1, mockShapeTraits);
+
+            REQUIRE(nematicOrder.getIntervalValues().size() == 1);
+            CHECK(nematicOrder.getIntervalValues()[0] == Approx(-13./32));   // Mathematica
+        }
     }
 
     SECTION("NumberDensity") {
