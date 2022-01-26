@@ -47,13 +47,11 @@ int main(int argc, char **argv) {
         return frontend.printGeneralHelp(cmd);
     else if (mode == "casino")
         return frontend.casino(argc, argv);
-    else if (mode == "analyze")
-        return frontend.analyze(argc, argv);
     else if (mode == "optimize-distance")
         return frontend.optimize_distance(argc, argv);
     else if (mode == "preview")
         return frontend.preview(argc, argv);
 
-    logger.error() << "Unknown mode " << mode << std::endl;
+    logger.error() << "Unknown mode " << mode << ". See " << cmd << " --help" << std::endl;
     return EXIT_FAILURE;
 }

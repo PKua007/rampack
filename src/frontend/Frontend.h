@@ -24,9 +24,8 @@ class Frontend {
 private:
     Logger &logger;
 
-    Parameters loadParameters(const std::string &inputFilename, const std::vector<std::string> &overridenParams);
+    Parameters loadParameters(const std::string &inputFilename);
     void setVerbosityLevel(const std::string &verbosityLevelName) const;
-    void setOverridenParamsAsAdditionalText(std::vector<std::string> overridenParams) const;
     void printAverageValues(const ObservablesCollector &collector);
     void storeAverageValues(const std::string &filename, const ObservablesCollector &collector, double temperature,
                             double pressure) const;
@@ -38,7 +37,6 @@ public:
     explicit Frontend(Logger &logger) : logger{logger} { }
 
     int casino(int argc, char **argv);
-    int analyze(int argc, char **argv);
     int optimize_distance(int argc, char **argv);
     int preview(int argc, char **argv);
 

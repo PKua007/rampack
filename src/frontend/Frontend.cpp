@@ -30,39 +30,10 @@
 #include "ArrangementFactory.h"
 
 
-Parameters Frontend::loadParameters(const std::string &inputFilename, const std::vector<std::string> &overridenParams) {
+Parameters Frontend::loadParameters(const std::string &inputFilename) {
     std::ifstream paramsFile(inputFilename);
     ValidateOpenedDesc(paramsFile, inputFilename, "to load input parameters");
-    std::stringstream paramsStream;
-    paramsStream << paramsFile.rdbuf() << std::endl;
-
-    for (const auto &overridenParam : overridenParams) {
-        std::size_t equalPos = overridenParam.find('=');
-        if (equalPos == std::string::npos)
-            die("Malformed overriden param. Use: [param name]=[value]", this->logger);
-
-        paramsStream << overridenParam << std::endl;
-    }
-
-    return Parameters(paramsStream);
-}
-
-void Frontend::setOverridenParamsAsAdditionalText(std::vector<std::string> overridenParams) const {
-    if (overridenParams.empty())
-        return;
-
-    for (auto &param : overridenParams) {
-        std::regex pattern(R"([a-zA-Z0-9_]+\.(.+=.+))");
-        std::string replaced = std::regex_replace(param, pattern, "$1");
-        if (!replaced.empty())
-            param = replaced;
-    }
-
-    std::ostringstream additionalText;
-    std::copy(overridenParams.begin(), overridenParams.end() - 1,
-              std::ostream_iterator<std::string>(additionalText, ", "));
-    additionalText << overridenParams.back();
-    this->logger.setAdditionalText(additionalText.str());
+    return Parameters(paramsFile);
 }
 
 void Frontend::setVerbosityLevel(const std::string &verbosityLevelName) const {
@@ -82,31 +53,29 @@ void Frontend::setVerbosityLevel(const std::string &verbosityLevelName) const {
 
 int Frontend::casino(int argc, char **argv) {
     // Prepare and parse options
-    cxxopts::Options options(argv[0], "Hard particle Monte Carlo.");
+    cxxopts::Options options(argv[0], "Monte Carlo sampling for both hard and soft potentials.");
 
     std::string inputFilename;
-    std::vector<std::string> overridenParams;
     std::string verbosity;
     std::string startFrom;
     std::size_t continuationCycles;
 
     options.add_options()
             ("h,help", "prints help for this mode")
-            ("i,input", "an INI file with parameters. See input.ini for parameters description",
+            ("i,input", "an INI file with parameters. See sample_input.ini for full parameters documentation",
              cxxopts::value<std::string>(inputFilename))
-            ("P,set-param", "overrides the value of the parameter loaded from --input parameter set. More precisely, "
-                            "doing -P N=1 (-PN=1 does not work) acts as one would append N=1 to the input file",
-             cxxopts::value<std::vector<std::string>>(overridenParams))
             ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
                             "error, warn, info, verbose, debug",
              cxxopts::value<std::string>(verbosity)->default_value("info"))
-            ("s,start-from", "when specified, the simulation will be started at the specified run from "
-                             "the input file. The packing will be restored from the file specified by the preceding "
-                             "run, or from the previous run of this step if used together with --continue option.",
+            ("s,start-from", "when specified, the simulation will be started from the run with the name given. If not "
+                             "used in conjunction with --continue option, the packing will be restored from the "
+                             "internal representation file of the preceding run. If --continue is used, the current "
+                             "run, but finished or aborted in the past, will be loaded instead",
              cxxopts::value<std::string>(startFrom))
-            ("c,continue", "when specified, the previously generated packing will be loaded and continued "
-                           "for as many more cycles as specified. It can be used together with --start-from. The "
-                           "of continuation cycles overrides both the value from input file and --set-param.",
+            ("c,continue", "when specified, the thermalization of previously finished or aborted run will be continued "
+                           "for as many more cycles as specified. It can be used together with --start-from to specify "
+                           "which run should be continued. If the thermalization phase is already over, the error will "
+                           "be reported",
              cxxopts::value<std::size_t>(continuationCycles));
 
     auto parsedOptions = options.parse(argc, argv);
@@ -116,7 +85,6 @@ int Frontend::casino(int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
-    this->setOverridenParamsAsAdditionalText(overridenParams);
     this->setVerbosityLevel(verbosity);
 
     // Validate parsed options
@@ -132,7 +100,7 @@ int Frontend::casino(int argc, char **argv) {
     this->logger << "General simulation parameters" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    Parameters params = this->loadParameters(inputFilename, overridenParams);
+    Parameters params = this->loadParameters(inputFilename);
     params.print(this->logger);
 
     this->logger << "--------------------------------------------------------------------" << std::endl;
@@ -410,23 +378,17 @@ std::unique_ptr<VolumeScaler> Frontend::createVolumeScaler(std::string scalingTy
         throw ValidationException("Unknown scaling type: " + scalingType);
 }
 
-int Frontend::analyze([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
-    return EXIT_SUCCESS;
-}
-
 int Frontend::printGeneralHelp(const std::string &cmd) {
     std::ostream &rawOut = this->logger;
 
     rawOut << Fold("Random and Maximal PACKing PACKage - computational package dedicated to simulate various packing "
-                   "models.").width(80) << std::endl;
+                   "models (currently only Monte Carlo is available).").width(80) << std::endl;
     rawOut << std::endl;
     rawOut << "Usage: " << cmd << " [mode] (mode dependent parameters). " << std::endl;
     rawOut << std::endl;
     rawOut << "Available modules:" << std::endl;
     rawOut << "casino" << std::endl;
-    rawOut << Fold("Hard particle Monte Carlo.").width(80).margin(4) << std::endl;
-    rawOut << "analyze" << std::endl;
-    rawOut << Fold("Statistical analysis of simulations.").width(80).margin(4) << std::endl;
+    rawOut << Fold("Monte Carlo sampling for both hard and soft potentials.").width(80).margin(4) << std::endl;
     rawOut << "optimize-distance" << std::endl;
     rawOut << Fold("Find minimal distances between shapes in given direction(s).")
               .width(80).margin(4) << std::endl;
@@ -505,12 +467,12 @@ int Frontend::optimize_distance(int argc, char **argv) {
 
     options.add_options()
         ("h,help", "prints help for this mode")
-        ("i,input", "loads shape parameters from INI file with parameters. If not specified, --shape-name "
-                    "must be specified manually",
+        ("i,input", "loads shape parameters from INI file with parameters. If not specified, --shape-name must be "
+                    "specified manually",
          cxxopts::value<std::string>(inputFilename))
         ("s,shape-name", "if specified, overrides shape name from --input", cxxopts::value<std::string>(shapeName))
         ("a,shape-attributes", "if specified, overrides shape attributes from --input. If not specified and no "
-                               "--input is passed, it defaults to the empty string",
+                               "--input is passed, it defaults to an empty string",
          cxxopts::value<std::string>(shapeAttributes))
         ("I,interaction", "if specified, overrides interaction from --input. If not specified and and no --input is "
                           "passed, it defaults to the empty string",
@@ -519,10 +481,11 @@ int Frontend::optimize_distance(int argc, char **argv) {
          cxxopts::value<std::string>(rotation1Str)->default_value("0 0 0"))
         ("2,rotation-2", "[x angle] [y angle] [z angle] - the external Euler angles in degrees to rotate the 2nd shape",
          cxxopts::value<std::string>(rotation2Str)->default_value("0 0 0"))
-        ("d,direction", "[x] [y] [z] - if specified, the minimal distance will be computed in the given directionsStr(s)",
+        ("d,direction", "[x] [y] [z] - if specified, the minimal distance will be computed in the direction given by "
+                        "3D vector with its coordinates as specified. The option may be used more than once",
          cxxopts::value<std::vector<std::string>>(directionsStr))
         ("A,axes", "if specified, the distance will be computed for x, y and z axes")
-        ("m,minimal-output", "output only distances (and errors)");
+        ("m,minimal-output", "output only distances - easier to parse in automated workflows");
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
@@ -547,7 +510,7 @@ int Frontend::optimize_distance(int argc, char **argv) {
 
     // Load parameters from file if specified
     if (parsedOptions.count("input")) {
-        Parameters params = this->loadParameters(inputFilename, {});
+        Parameters params = this->loadParameters(inputFilename);
         this->logger.info() << "Loaded shape parameters from '" << inputFilename << "'" << std::endl;
         if (!parsedOptions.count("shape-name"))
             shapeName = params.shapeName;
@@ -621,15 +584,11 @@ int Frontend::preview(int argc, char **argv) {
     std::string inputFilename;
     std::string datFilename;
     std::string wolframFilename;
-    std::vector<std::string> overridenParams;
 
     options.add_options()
         ("h,help", "prints help for this mode")
         ("i,input", "an INI file with parameters. See input.ini for parameters description",
          cxxopts::value<std::string>(inputFilename))
-        ("P,set-param", "overrides the value of the parameter loaded from --input parameter set. More precisely, "
-                        "doing -P N=1 (-PN=1 does not work) acts as one would append N=1 to the input file",
-         cxxopts::value<std::vector<std::string>>(overridenParams))
         ("w,wolfram", "if specified, Mathematica notebook with the packing will be generated",
          cxxopts::value<std::string>(wolframFilename))
         ("d,dat", "if specified, *.dat file with packing will be generated",
@@ -651,7 +610,7 @@ int Frontend::preview(int argc, char **argv) {
     if (!parsedOptions.count("wolfram") && !parsedOptions.count("dat"))
         die("At least one of: --wolfram, --dat options must be specified", this->logger);
 
-    Parameters params = this->loadParameters(inputFilename, overridenParams);
+    Parameters params = this->loadParameters(inputFilename);
     std::array<double, 3> dimensions = this->parseDimensions(params.initialDimensions);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
@@ -661,9 +620,9 @@ int Frontend::preview(int argc, char **argv) {
     // Store packing (if desired)
     if (parsedOptions.count("dat")) {
         std::map<std::string, std::string> auxInfo;
-        auxInfo["translationStep"] = std::to_string(params.positionStepSize);
-        auxInfo["rotationStep"] = std::to_string(params.rotationStepSize);
-        auxInfo["scalingStep"] = std::to_string(params.volumeStepSize);
+        auxInfo["translationStep"] = this->doubleToString(params.positionStepSize);
+        auxInfo["rotationStep"] = this->doubleToString(params.rotationStepSize);
+        auxInfo["scalingStep"] = this->doubleToString(params.volumeStepSize);
         auxInfo["cycles"] = "0";
 
         std::ofstream out(datFilename);
