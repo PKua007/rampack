@@ -32,6 +32,7 @@ private:
                             double pressure) const;
     [[nodiscard]] std::unique_ptr<VolumeScaler> createVolumeScaler(std::string scalingType) const;
     [[nodiscard]] std::array<double, 3> parseDimensions(const std::string &initialDimensions) const;
+    std::string doubleToString(double d);
 
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }

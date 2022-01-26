@@ -322,9 +322,9 @@ int Frontend::casino(int argc, char **argv) {
         // Store packing (if desired)
         if (!runParams.packingFilename.empty()) {
             std::map<std::string, std::string> auxInfo;
-            auxInfo["translationStep"] = std::to_string(simulation.getCurrentTranslationStep());
-            auxInfo["rotationStep"] = std::to_string(simulation.getCurrentRotationStep());
-            auxInfo["scalingStep"] = std::to_string(simulation.getCurrentScalingStep());
+            auxInfo["translationStep"] = this->doubleToString(simulation.getCurrentTranslationStep());
+            auxInfo["rotationStep"] = this->doubleToString(simulation.getCurrentRotationStep());
+            auxInfo["scalingStep"] = this->doubleToString(simulation.getCurrentScalingStep());
             auxInfo["cycles"] = std::to_string(simulation.getTotalCycles());
 
             std::ofstream out(runParams.packingFilename);
@@ -699,4 +699,11 @@ std::array<double, 3> Frontend::parseDimensions(const std::string &initialDimens
         Validate(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
     }
     return dimensions;
+}
+
+std::string Frontend::doubleToString(double d) {
+    std::ostringstream ostr;
+    ostr.precision(std::numeric_limits<double>::max_digits10);
+    ostr << d;
+    return ostr.str();
 }
