@@ -14,6 +14,9 @@
 #include "geometry/Vector.h"
 #include "utils/Assertions.h"
 
+/**
+ * @brief An acceleration structure for a constant-time lookup of neighbours.
+ */
 class NeighbourGrid {
 private:
     std::array<double, 3> linearSize{};
@@ -52,6 +55,10 @@ private:
     friend class NeighboursViewIterator;
 
 public:
+    /**
+     * @brief An iterator over all neighbouring cells of a given cell. Dereferencing it returns the vector of
+     * identifiers lying in the given cell.
+     */
     class NeighboursViewIterator : public std::iterator<std::input_iterator_tag, std::vector<std::size_t>,
                                                         std::ptrdiff_t,
                                                         const std::vector<std::size_t>*,
@@ -91,6 +98,9 @@ public:
         }
     };
 
+    /**
+     * @brief A view of neighbours of the given cell in a neighbour grid.
+     */
     class NeighboursView {
     private:
         const NeighbourGrid &grid;
@@ -111,18 +121,71 @@ public:
         }
     };
 
+    /**
+     * @brief Creates a neighbour grid for a cubic box of side length @a linearSize. The minimal cell size is given by
+     * @a cellSize.
+     */
     NeighbourGrid(double linearSize, double cellSize);
+
+    /**
+     * @brief Creates a neighbour grid for a cuboidal box of side lengths @a linearSize The minimal cell size is given
+     * by @a cellSize.
+     */
     NeighbourGrid(const std::array<double, 3> &linearSize, double cellSize);
 
+    /**
+     * @brief Adds an object with identifier @a idx at position @a position to the neighbour grid.
+     */
     void add(std::size_t idx, const Vector<3> &position);
+
+    /**
+     * @brief Removes an object with identifier @a idx at position @a position from the neighbour grid.
+     */
     void remove(std::size_t idx, const Vector<3> &position);
+
+    /**
+     * @brief Clears the neighbour grid.
+     */
     void clear();
+
+    /**
+     * @brief Resizes the neighbour grid with given new linear size (of a cubic box) and new cell size. NG is also
+     * cleared.
+     */
     bool resize(double newLinearSize, double newCellSize);
+
+    /**
+     * @brief Resizes the neighbour grid with given new linear size (of a cuboidal box) and new cell size. NG is also
+     * cleared.
+     */
     bool resize(const std::array<double, 3> &newLinearSize, double newCellSize);
+
+    /**
+     * @brief Returns all identifiers of objects places in NG cell containing @a position point.
+     */
     [[nodiscard]] const std::vector<std::size_t> &getCell(const Vector<3> &position) const;
+
+    /**
+     * @brief Returns all identifiers of objects in NG cell containing @a position point and in neighbouring cells.
+     * @details As a result, all objects potentially interacting with a one placed in @a position should be listed.
+     * The methods dynamically allocates the memory for the list, so NeighbourGrid::getNeighbouringCells method
+     * should be used instead for maximal performance.
+     */
     [[nodiscard]] std::vector<std::size_t> getNeighbours(const Vector<3> &position) const;
+
+    /**
+     * @brief Returns NeighboursView of all neighbouring cells of the NG cell containing @a position point.
+     */
     [[nodiscard]] NeighboursView getNeighbouringCells(const Vector<3> &position) const;
+
+    /**
+     * @brief Returns a number of NG cells in each direction.
+     */
     [[nodiscard]] std::array<std::size_t, 3> getCellDivisions() const;
+
+    /**
+     * @brief Estimates the memory usage of the neighbour grid in bytes.
+     */
     [[nodiscard]] std::size_t getMemoryUsage() const;
 
     friend void swap(NeighbourGrid &ng1, NeighbourGrid &ng2);

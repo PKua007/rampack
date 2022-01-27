@@ -401,10 +401,6 @@ Simulation::Counter &Simulation::Counter::operator+=(const Simulation::Counter &
     return *this;
 }
 
-std::ostream &operator<<(std::ostream &out, const Simulation::ScalarSnapshot &snapshot) {
-    return out << snapshot.cycleCount << " " << snapshot.value;
-}
-
 void Simulation::printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger) {
     logger.info() << "Performed " << cycleNumber << " cycles; ";
     logger << this->observablesCollector->generateInlineObservablesString(*this->packing, traits);

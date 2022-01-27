@@ -9,6 +9,9 @@
 
 #include "core/Observable.h"
 
+/**
+ * @brief P2 nematic order interval observable. P2 is given by highest-magnitude eigenvalue of the Q tensor.
+ */
 class NematicOrder : public Observable {
 private:
     static std::array<double, 3> calculateEigenvalues(const Matrix<3, 3> &tensor);

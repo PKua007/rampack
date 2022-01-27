@@ -7,6 +7,10 @@
 
 #include "CentralInteraction.h"
 
+/**
+ * @brief CentralInteraction class representing Lennard-Jones interaction.
+ * @details It is defined as 4 * epsilon * ((r/sigma)^12 - (r/sigma)^6)
+ */
 class LennardJonesInteraction : public CentralInteraction {
 private:
     double epsilon{};

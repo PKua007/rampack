@@ -7,6 +7,9 @@
 
 #include "core/Observable.h"
 
+/**
+ * @brief Energy fluctuation (energy variance) per particle interval observable.
+ */
 class EnergyFluctuationsPerParticle : public Observable {
 private:
     double energyFluctuationsPerParticle{};

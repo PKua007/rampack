@@ -11,8 +11,14 @@
 #include "core/ShapeTraits.h"
 #include "core/interactions/CentralInteraction.h"
 
+/**
+ * @brief A polymer consisting of identical or different hard of soft-interacting spheres.
+ */
 class PolysphereTraits : public ShapeTraits, public ShapePrinter {
 public:
+    /**
+     * @brief A helper class describing a single spherical bead.
+     */
     struct SphereData {
         const Vector<3> position;
         const double radius{};
@@ -57,14 +63,26 @@ private:
     void normalizeMassCentre();
 
 public:
-    explicit PolysphereTraits(const std::vector<SphereData> &sphereData, const Vector<3> &primaryAxis,
-                              bool shouldNormalizeMassCentre);
+    /**
+     * @brief Construct the polymer from the specified @a sphereData.
+     * @param sphereData sphere data describing all constituant monomers
+     * @param primaryAxis the primary axis of the polymer
+     * @param shouldNormalizeMassCentre if true, mass centre will be moved to the origin. If false, no translation is
+     * applied
+     */
+    PolysphereTraits(const std::vector<SphereData> &sphereData, const Vector<3> &primaryAxis,
+                     bool shouldNormalizeMassCentre);
+
+    /**
+     * @brief Similar as PolysphereTraits::PolysphereTraits(const std::vector<SphereData> &, const Vector<3> &, bool),
+     * but for soft central interaction given by @a centralInteraction.
+     */
     PolysphereTraits(std::vector<SphereData> sphereData, std::unique_ptr<CentralInteraction> centralInteraction,
                      const Vector<3> &primaryAxis, bool shouldNormalizeMassCentre);
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; }
     [[nodiscard]] double getVolume() const override;
-    Vector<3> getPrimaryAxis(const Shape &shape) const override;
+    [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
 
     [[nodiscard]] std::string toWolfram(const Shape &shape) const override;

@@ -7,6 +7,9 @@
 
 #include "BoundaryConditions.h"
 
+/**
+ * @brief Open boundary conditions. Currently unused.
+ */
 class FreeBoundaryConditions : public BoundaryConditions {
 public:
     void setLinearSize([[maybe_unused]] const std::array<double, 3> &size) override { }

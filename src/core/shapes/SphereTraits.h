@@ -10,6 +10,9 @@
 #include "core/ShapeTraits.h"
 #include "core/interactions/CentralInteraction.h"
 
+/**
+ * @brief Spherical molecules with hard of soft interactions.
+ */
 class SphereTraits : public ShapeTraits, public ShapePrinter {
 private:
     class HardInteraction : public Interaction {
@@ -31,7 +34,14 @@ private:
     std::unique_ptr<Interaction> interaction{};
 
 public:
+    /**
+     * @brief Creates a hard sphere.
+     */
     explicit SphereTraits(double radius = 1);
+
+    /**
+     * @brief Creates a sphere interacting via @a centralInteraction soft potential.
+     */
     SphereTraits(double radius, std::unique_ptr<CentralInteraction> centralInteraction);
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; };

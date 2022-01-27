@@ -10,13 +10,25 @@
 
 #include "core/ShapeTraits.h"
 
+/**
+ * @brief A class analogous to PolysphereTraits, but for hard spherocylinders.
+ */
 class PolyspherocylinderTraits : public ShapeTraits, public ShapePrinter, public Interaction {
 public:
+    /**
+     * @brief A single building spherocylinder data.
+     * @details Spherocylinder cap centers are given by @a posision +/- @a halfAxis
+     */
     struct SpherocylinderData {
+        /** @brief Position of the mass centre of the spheroculinder. */
         const Vector<3> position;
+        /** @brief The vector joining mass centre with one of the caps. */
         const Vector<3> halfAxis;
+        /** @brief The norm of the above vector. */
         const double halfLength{};
+        /** @brief Radius of the spherical cap (and also half-width of the spherocylinder. */
         const double radius{};
+        /** @brief Spherocylinder's circumsphere radius. */
         const double circumsphereRadius{};
 
         SpherocylinderData(const Vector<3> &position, const Vector<3> &halfAxis, double radius);
@@ -24,6 +36,11 @@ public:
         [[nodiscard]] Vector<3> centreForShape(const Shape &shape) const;
         void toWolfram(std::ostream &out, const Shape &shape) const;
         [[nodiscard]] double getVolume() const;
+
+        /**
+         * @brief Returns half-axis for a shape with specific orientation (the orientation matrix is applied to
+         * SpherocylinderData::halfAxis).
+         */
         [[nodiscard]] Vector<3> halfAxisForShape(const Shape &shape) const;
 
         friend bool operator==(const SpherocylinderData &lhs, const SpherocylinderData &rhs) {
@@ -44,6 +61,13 @@ private:
     void normalizeMassCentre();
 
 public:
+    /**
+     * @brief Creates the molecule from a given set of spherocylinders.
+     * @param spherocylinderData a set of spherocylinders
+     * @param primaryAxis the primary axis of the molecule
+     * @param shouldNormalizeMassCentre if true, the mass centre will be moved to the origin. Otherwise, no translation
+     * is applied
+     */
     PolyspherocylinderTraits(const std::vector<SpherocylinderData> &spherocylinderData, const Vector<3> &primaryAxis,
                              bool shouldNormalizeMassCentre);
 

@@ -8,18 +8,34 @@
 #include <array>
 #include <random>
 
+/**
+ * @brief A class used to sample volume scaling factor in a certain way/
+ */
 class VolumeScaler {
 public:
+    /**
+     * @brief A helper enum class representing independent scaling directions.
+     */
     enum class ScalingDirection {
+        /** @brief All directions scaled by the same random number. */
         ISOTROPIC,
+        /** @brief x direction scaled by a different random number than y and z directions. */
         ANISOTROPIC_X,
+        /** @brief y direction scaled by a different random number than x and z directions. */
         ANISOTROPIC_Y,
+        /** @brief z direction scaled by a different random number than x and z directions. */
         ANISOTROPIC_Z,
+        /** @brief All directions scaled by different random numbers. */
         ANISOTROPIC_XYZ
     };
 
     virtual ~VolumeScaler() = default;
 
+    /**
+     * @brief Given old dimensions of the box @a oldDim and @a scalingStepSize, the methods samples scaling factors
+     * by which @a oldDim should by scaled according to class-specific distribution.
+     * @details @a mt RNG generator is used to sample one of more random numbers needed.
+     */
     virtual std::array<double, 3> sampleScalingFactors(const std::array<double, 3> &oldDim, double scalingStepSize,
                                                        std::mt19937 &mt) const = 0;
 };

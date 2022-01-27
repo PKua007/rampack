@@ -9,6 +9,11 @@
 
 #include "core/Observable.h"
 
+/**
+ * @brief Absolute value of (interval) smectic tau parameter.
+ * @details The wavevector (nominal observable) giving maximal tau is selected automatically. The wavevectors compatible
+ * with PBC are given by integer multiples of 2 pi/(box length).
+ */
 class SmecticOrder : public Observable {
 private:
     std::complex<double> tau{};
@@ -18,7 +23,15 @@ private:
     static std::complex<double> calculateTau(const std::array<int, 3> &kTau_, const Packing &packing);
 
 public:
+    /**
+     * @brief Constructor with @a kTauRanges - a specified range of integer multiples of 2 pi/(box length) to construct
+     * wavevectors.
+     */
     explicit SmecticOrder(const std::array<int, 3> &kTauRanges);
+
+    /**
+     * @brief Constructor with a default range of integer multiples of 2 pi/(box length) to construct wavevectors.
+     */
     SmecticOrder() : SmecticOrder({5, 5, 5}) { }
 
     void calculate(const Packing &packing, double temperature, double pressure,

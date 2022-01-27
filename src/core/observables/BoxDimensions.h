@@ -9,6 +9,9 @@
 
 #include "core/Observable.h"
 
+/**
+ * @brief Observable representing box dimensions (three interval values).
+ */
 class BoxDimensions : public Observable {
 private:
     std::array<double, 3> dimensions{0, 0, 0};

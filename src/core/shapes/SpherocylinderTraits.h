@@ -7,6 +7,9 @@
 
 #include "core/ShapeTraits.h"
 
+/**
+ * @brief Hard spherocylinder.
+ */
 class SpherocylinderTraits : public ShapeTraits, public ShapePrinter, public Interaction {
 private:
     double length{};    // distance between two spherical caps centres
@@ -15,7 +18,15 @@ private:
     [[nodiscard]] Vector<3> getCapCentre(short beginOrEnd, const Shape &shape) const;
 
 public:
+    /**
+     * @brief Creates a spherocylinder spanned on x axis with a unit distance between cap centers and a unit radius.
+     */
     SpherocylinderTraits() : length{1}, radius{1} { }
+
+    /**
+     * @brief Creates a spherocylinder spanned on x axis with @a lenght distance between cap centers and @a radius
+     * radius.
+     */
     SpherocylinderTraits(double length, double radius);
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }

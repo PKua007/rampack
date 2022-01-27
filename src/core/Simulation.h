@@ -16,15 +16,10 @@
 #include "VolumeScaler.h"
 #include "ObservablesCollector.h"
 
+/**
+ * @brief A class responsible for performing Monte Carlo sampling.
+ */
 class Simulation {
-public:
-    struct ScalarSnapshot {
-        std::size_t cycleCount{};
-        double value{};
-
-        friend std::ostream &operator<<(std::ostream &out, const Simulation::ScalarSnapshot &snapshot);
-    };
-
 private:
     class Counter {
     private:
@@ -90,29 +85,87 @@ private:
     void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger);
 
 public:
+    /**
+     * @brief Constructs the simulation for given parameters.
+     * @param packing initial configuration of shapes
+     * @param translationStep initial translation step size
+     * @param rotationStep initial rotation step size
+     * @param scalingStep initial volume scaling step
+     * @param seed seed of the RNG
+     * @param volumeScaler volume move scaling sampler
+     * @param domainDivisions domain divisions in each direction to use; {1, 1, 1} disables domain division
+     * @param handleSignals if @a true, SIGINT and SIGCONT will be captured
+     */
     Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep, double scalingStep,
                unsigned long seed, std::unique_ptr<VolumeScaler> volumeScaler,
                const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1},
                bool handleSignals = false);
 
+    /**
+     * @brief Performs the simulation.
+     * @param temperature_ temperature of the system
+     * @param pressure_ system pressure
+     * @param thermalisationCycles_ the number of cycles in thermalization phase
+     * @param averagingCycles_ the number of cycles in averaging (production) phase
+     * @param averagingEvery_ how often to take observables for averaging
+     * @param snapshotEvery_ how often to take observable snapshots
+     * @param shapeTraits shape traits describing the simulated molecules
+     * @param observablesCollector_ the observables collector with observable capturing configuration
+     * @param logger Logger object to display simulation data
+     * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
+     */
     void perform(double temperature_, double pressure_, std::size_t thermalisationCycles_, std::size_t averagingCycles_,
                  std::size_t averagingEvery_, std::size_t snapshotEvery_, const ShapeTraits &shapeTraits,
                  std::unique_ptr<ObservablesCollector> observablesCollector_, Logger &logger,
                  std::size_t cycleOffset = 0);
+
     [[nodiscard]] const ObservablesCollector &getObservablesCollector() { return *this->observablesCollector; }
+
+    /**
+     * @brief Returns the ratio of accepted to all molecule moves.
+     */
     [[nodiscard]] double getMoveAcceptanceRate() const { return this->moveCounter.getRate(); }
+
+    /**
+     * @brief Returns the ratio of accepted to all scaling moves.
+     */
     [[nodiscard]] double getScalingAcceptanceRate() const { return this->scalingCounter.getRate(); }
+
+    /**
+     * @brief Returns the total time consumed by molecule moves in microseconds.
+     */
     [[nodiscard]] double getMoveMicroseconds() const { return this->moveMicroseconds; }
+
+    /**
+     * @brief Returns the total time consumed by scaling moves in microseconds.
+     */
     [[nodiscard]] double getScalingMicroseconds() const { return this->scalingMicroseconds; }
+
+    /**
+     * @brief Returns the total time consumed by computation of observables.
+     */
     [[nodiscard]] double getObservablesMicroseconds() const {
         return this->observablesCollector->getComputationMicroseconds();
     }
+
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }
     [[nodiscard]] double getCurrentTranslationStep() const { return this->translationStep; }
     [[nodiscard]] double getCurrentRotationStep() const { return this->rotationStep; }
     [[nodiscard]] double getCurrentScalingStep() const { return this->scalingStep; }
+
+    /**
+     * @brief Returns total number of performed MC cycles (together with cycle offset)
+     */
     [[nodiscard]] std::size_t getTotalCycles() const { return this->totalCycles; }
+
+    /**
+     * @brief Returns number of cycles actually performed by the class (not counging the cycle offset)
+     */
     [[nodiscard]] std::size_t getPerformedCycles() const { return this->performedCycles; }
+
+    /**
+     * @brief Returns true if the current run was interrupted by SIGCONT or SIGINT.
+     */
     [[nodiscard]] bool wasInterrupted() const;
 };
 

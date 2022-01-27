@@ -7,6 +7,10 @@
 
 #include "CentralInteraction.h"
 
+/**
+ * @brief CentralInteraction class representing Weeks-Chandler-Anderson interaction (repulsive part of LJ interaction).
+ * @details It is defined as 4 * epsilon * ((r/sigma)^12 - (r/sigma)^6) + epsilon for r < 2^(1/6), 0 otherwise.
+ */
 class RepulsiveLennardJonesInteraction : public CentralInteraction {
 private:
     double epsilon{};

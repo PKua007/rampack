@@ -7,6 +7,9 @@
 
 #include "core/Observable.h"
 
+/**
+ * @brief Number density (N/V) interval observable.
+ */
 class NumberDensity : public Observable {
 private:
     double numberDensity{};

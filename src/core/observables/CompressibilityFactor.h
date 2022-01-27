@@ -7,6 +7,9 @@
 
 #include "core/Observable.h"
 
+/**
+ * @brief An (interval) observable representing compressibility factor (pV/NT).
+ */
 class CompressibilityFactor : public Observable {
 private:
     double compressibilityFactor{};

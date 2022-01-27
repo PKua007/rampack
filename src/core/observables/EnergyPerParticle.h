@@ -7,6 +7,9 @@
 
 #include "core/Observable.h"
 
+/**
+ * @brief Energy per particle interval observable.
+ */
 class EnergyPerParticle : public Observable {
 private:
     double energyPerParticle{};

@@ -7,13 +7,27 @@
 
 #include "BoundaryConditions.h"
 
+/**
+ * @brief Periodic boundary conditions on cuboidal box.
+ */
 class PeriodicBoundaryConditions : public BoundaryConditions {
 private:
     std::array<double, 3> size{};
 
 public:
+    /**
+     * @brief A default constructor creating PBC for 1 x 1 x 1 cube.
+     */
     PeriodicBoundaryConditions() : size{1, 1, 1} { }
+
+    /**
+     * @brief A constructor creating PBC for cuboidal box with side lengths given by @a size.
+     */
     explicit PeriodicBoundaryConditions(const std::array<double, 3> &size);
+
+    /**
+     * @brief A constructor creating PBC for cubic box of side length @a linearSize
+     */
     explicit PeriodicBoundaryConditions(double linearSize);
 
     void setLinearSize(const std::array<double, 3> &size_) override;

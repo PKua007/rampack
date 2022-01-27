@@ -10,8 +10,14 @@
 
 #include "geometry/Vector.h"
 
+/**
+ * @brief A class representing a single active domain in domain division scheme
+ */
 class ActiveDomain {
 public:
+    /**
+     * @brief A helper structure describing a single interval - domain bounds in one dimension
+     */
     struct RegionBounds {
         double beg{};
         double end{};
@@ -29,10 +35,21 @@ private:
     std::array<RegionBounds, 3> bounds{};
 
 public:
+    /**
+     * @brief Default constructor creating an empty region with all bounds being 0
+     */
     ActiveDomain() = default;
+
     explicit ActiveDomain(const std::array<RegionBounds, 3> &bounds) : bounds{bounds} { }
 
+    /**
+     * @brief Returns @a true if @a position lies inside the bounds, @a false otherwise
+     */
     [[nodiscard]] bool isInside(const Vector<3> &position) const;
+
+    /**
+     * @brief Returns RegionBounds for a single coordinate given by index @a coordI
+     */
     [[nodiscard]] const RegionBounds &getBoundsForCoordinate(std::size_t coordI) const;
 };
 

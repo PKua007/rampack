@@ -8,6 +8,9 @@
 #include "core/Observable.h"
 #include "utils/Assertions.h"
 
+/**
+ * @brief Packing fraction interval observable (total volume of shapes divided by a box volume).
+ */
 class PackingFraction : public Observable {
 private:
     double packingFraction{};

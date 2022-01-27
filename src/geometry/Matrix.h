@@ -98,7 +98,7 @@ Matrix<ROWS, COLS, E> operator-(Matrix<ROWS, COLS, E> matrix1, const Matrix<ROWS
  * @brief Multiplies @a matrix by a scalar @a x. Version `matrix * x`.
  * @param matrix matrix to multiply
  * @param x scalar to multiply by
- * @return @a matrix multiplied by a scalar @x
+ * @return @a matrix multiplied by a scalar @a x
  */
 template <std::size_t ROWS, std::size_t COLS, typename E>
 Matrix<ROWS, COLS, E> operator*(Matrix<ROWS, COLS, E> matrix, E x);
@@ -107,7 +107,7 @@ Matrix<ROWS, COLS, E> operator*(Matrix<ROWS, COLS, E> matrix, E x);
  * @brief Multiplies @a matrix by a scalar @a x. Version `x * matrix`.
  * @param matrix matrix to multiply
  * @param x scalar to multiply by
- * @return @a matrix multiplied by a scalar @x
+ * @return @a matrix multiplied by a scalar @a x
  */
 template <std::size_t ROWS, std::size_t COLS, typename E>
 Matrix<ROWS, COLS, E> operator*(E x, Matrix<ROWS, COLS, E> matrix);
@@ -116,7 +116,7 @@ Matrix<ROWS, COLS, E> operator*(E x, Matrix<ROWS, COLS, E> matrix);
  * @brief divides @a matrix by a scalar @a x.
  * @param matrix matrix to multiply
  * @param x scalar to multiply by
- * @return @a matrix divided by a scalar @x
+ * @return @a matrix divided by a scalar @a x
  */
 template <std::size_t ROWS, std::size_t COLS, typename E>
 Matrix<ROWS, COLS, E> operator/(Matrix<ROWS, COLS, E> matrix, E x);
