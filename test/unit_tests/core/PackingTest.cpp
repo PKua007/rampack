@@ -53,10 +53,21 @@ namespace {
             return std::sqrt(bc.getDistance2(pos1, pos2));
         }
     };
+
+    class DimerDistanceInteraction : public SphereDistanceInteraction {
+    public:
+        [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return {{0, 0, 0}, {1, 0, 0}}; }
+    };
+
+    class DimerHardCoreInteraction : public SphereHardCoreInteraction {
+    public:
+        explicit DimerHardCoreInteraction(double radius) : SphereHardCoreInteraction(radius) { }
+
+        [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return {{0, 0, 0}, {1, 0, 0}}; }
+    };
 }
 
-TEST_CASE("Packing: operations") {
-    // Packing has linear scale of 5, so all coordinates in translate are multiplied by 3 (before scaling of course)
+TEST_CASE("Packing: single interaction center operations") {
     double radius = 0.25;
     SphereHardCoreInteraction hardCore(radius);
     SphereDistanceInteraction distanceInteraction{};
@@ -144,10 +155,16 @@ TEST_CASE("Packing: operations") {
             // 1 <-> 2: d = sqrt(0.2^2 + 0.3^2) = sqrt(13)/10
             // 1 <-> 3: d = sqrt(0.4^2 + 0.4^2) = sqrt(32)/10
             // 2 <-> 3: d = sqrt(0.4^2 + 0.4^2 + 0.3^2) = sqrt(41)/10
-            double scale1E0 = (2 + 2*std::sqrt(41))/10;
-            double scale1E1 = (std::sqrt(13) + std::sqrt(32) + std::sqrt(41))/10;
-            double dE = 5 * (scale1E1 - scale1E0);
+            double E0 = (2 + 2*std::sqrt(41))/2;
+            double E1 = (std::sqrt(13) + std::sqrt(32) + std::sqrt(41))/2;
+            double dE = E1 - E0;
             CHECK(packing.tryTranslation(0, {0, 0, 3.5}, distanceInteraction) == Approx(dE));
+
+            SECTION("correct energy before and after accepted move") {
+                CHECK(packing.getTotalEnergy(distanceInteraction) == Approx(E0));
+                packing.acceptTranslation();
+                CHECK(packing.getTotalEnergy(distanceInteraction) == Approx(E1));
+            }
         }
     }
 
@@ -204,6 +221,102 @@ TEST_CASE("Packing: operations") {
         SECTION("fix: lastAlteredParticleIdx not initialized for packingRestored") {
             // This used to cause SIGSEGV
             packingRestored.tryTranslation(2, {1, 2, 3}, distanceInteraction);
+        }
+    }
+}
+
+TEST_CASE("Packing: multiple interaction center moves") {
+    // Packing has linear scale of 5, so all coordinates in translate are multiplied by 3 (before scaling of course)
+    double radius = 0.5;
+    DimerHardCoreInteraction hardCore(radius);
+    DimerDistanceInteraction distanceInteraction{};
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    std::vector<Shape> shapes;
+    shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5});
+    shapes.emplace_back(Vector<3>{0.5, 3.5, 0.5});
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
+
+    constexpr double inf = std::numeric_limits<double>::infinity();
+
+    SECTION ("scaling") {
+        SECTION("hard core without overlapping") {
+            // For scale 0.5 dimers 0 and 1 are touching (through pbc). So a bit more should prevent any overlaps
+            CHECK(packing.tryScaling(0.51, hardCore) == 0);
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.255, 0.255, 0.255}, {0.255, 1.785, 0.255}}, 1e-9));
+        }
+
+        SECTION("hard core downward with overlapping") {
+            // Same as above, but a little bit more gives an overlap
+            REQUIRE(packing.tryScaling(0.49, hardCore) == inf);
+
+            SECTION("reverting the move") {
+                packing.revertScaling();
+                CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {0.5, 3.5, 0.5}}, 1e-9));
+            }
+        }
+
+        SECTION("distance interaction") {
+            packing.setupForInteraction(distanceInteraction);
+            // interaction: particle1.center1 <-> particle2.center2
+            // before scaling:
+            // 0.0 <-> 1.0: d = 2
+            // 0.0 <-> 1.1: d = sqrt(2^2 + 1^2) = sqrt(5)
+            // 1.0 <-> 1.0: d = sqrt(2^2 + 1^2) = sqrt(5)
+            // 1.0 <-> 1.1: d = 2
+            // after scaling:
+            // 0.0 <-> 1.0: d = 1
+            // 0.0 <-> 1.1: d = sqrt(1^2 + 1^2) = sqrt(2)
+            // 1.0 <-> 1.0: d = sqrt(1^2 + 1^2) = sqrt(2)
+            // 1.0 <-> 1.1: d = 1
+            // We scale downward from 5 to 2.5
+            double scale1E = (4 + 2*std::sqrt(5));
+            double scale05E = (2 + 2*std::sqrt(2));
+            double dE = scale05E - scale1E;
+            CHECK(packing.tryScaling(0.5, distanceInteraction) == Approx(dE));
+        }
+    }
+
+    SECTION("translating") {
+        SECTION("non-overlapping") {
+            // Translation {0, 1, 0} places particle 1 at {0.5, 4.5, 0.5}, while particle 1 is at
+            // {0.5, 0.5, 0.5} - they touch through pbc on y coordinate. Do a little bit less prevents overlap
+            CHECK(packing.tryTranslation(1, {0, 0.9, 0}, hardCore) == 0);
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {0.5, 3.5, 0.5}}, 1e-9));
+            SECTION("accepting the move") {
+                packing.acceptTranslation();
+                CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {0.5, 4.4, 0.5}}, 1e-9));
+            }
+        }
+
+        SECTION("overlapping") {
+            // Same as above, but we do more instead of less
+            CHECK(packing.tryTranslation(1, {0, 1.1, 0}, hardCore) == inf);
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {0.5, 3.5, 0.5}}, 1e-9));
+        }
+
+        SECTION("distance interaction") {
+            packing.setupForInteraction(distanceInteraction);
+            // interaction: particle1.center1 <-> particle2.center2
+            // before translation:
+            // 0.0 <-> 1.0: d = 2
+            // 0.0 <-> 1.1: d = sqrt(2^2 + 1^2) = sqrt(5)
+            // 1.0 <-> 1.0: d = sqrt(2^2 + 1^2) = sqrt(5)
+            // 1.0 <-> 1.1: d = 2
+            // after translation:
+            // 0.0 <-> 1.0: d = 1
+            // 0.0 <-> 1.1: d = sqrt(1^2 + 1^2) = sqrt(2)
+            // 1.0 <-> 1.0: d = sqrt(1^2 + 1^2) = sqrt(2)
+            // 1.0 <-> 1.1: d = 1
+            double E0 = (4 + 2*std::sqrt(5));
+            double E1 = (2 + 2*std::sqrt(2));
+            double dE = E1 - E0;
+            CHECK(packing.tryTranslation(1, {0, 1, 0}, distanceInteraction) == Approx(dE));
+
+            SECTION("correct energy before and after accepted move") {
+                CHECK(packing.getTotalEnergy(distanceInteraction) == Approx(E0));
+                packing.acceptTranslation();
+                CHECK(packing.getTotalEnergy(distanceInteraction) == Approx(E1));
+            }
         }
     }
 }
