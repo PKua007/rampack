@@ -445,10 +445,10 @@ bool Packing::overlapBetweenParticles(std::size_t tempParticleIdx, std::size_t a
         }
     } else {
         for (std::size_t centre1{}; centre1 < this->numInteractionCentres; centre1++) {
+            std::size_t centreIdx1 = tempParticleIdx * this->numInteractionCentres + centre1;
+            const auto &pos1 = this->shapes[tempParticleIdx].getPosition() + this->interactionCentres[centreIdx1];
+            const auto &orientation1 = this->shapes[tempParticleIdx].getOrientation();
             for (std::size_t centre2{}; centre2 < this->numInteractionCentres; centre2++) {
-                std::size_t centreIdx1 = tempParticleIdx * this->numInteractionCentres + centre1;
-                const auto &pos1 = this->absoluteInteractionCentres[centreIdx1];
-                const auto &orientation1 = this->shapes[tempParticleIdx].getOrientation();
                 std::size_t centreIdx2 = anotherParticleIdx * this->numInteractionCentres + centre2;
                 const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
                 const auto &orientation2 = this->shapes[anotherParticleIdx].getOrientation();
@@ -553,12 +553,12 @@ double Packing::calculateEnergyBetweenParticles(std::size_t tempParticleIdx, std
                                                      *this->bc);
     } else {
         for (size_t centre1{}; centre1 < this->numInteractionCentres; centre1++) {
+            std::size_t centreIdx1 = tempParticleIdx * this->numInteractionCentres + centre1;
+            const auto &pos1 = this->shapes[tempParticleIdx].getPosition() + this->interactionCentres[centreIdx1];
+            const auto &orientation1 = this->shapes[tempParticleIdx].getOrientation();
             for (size_t centre2{}; centre2 < this->numInteractionCentres; centre2++) {
-                std::size_t centreIdx1 = tempParticleIdx * this->numInteractionCentres + centre1;
-                auto pos1 = this->shapes[tempParticleIdx].getPosition() + this->interactionCentres[centreIdx1];
-                const auto &orientation1 = this->shapes[tempParticleIdx].getOrientation();
                 std::size_t centreIdx2 = anotherParticleIdx * this->numInteractionCentres + centre2;
-                auto pos2 = this->shapes[anotherParticleIdx].getPosition() + this->interactionCentres[centreIdx2];
+                const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
                 const auto &orientation2 =  this->shapes[anotherParticleIdx].getOrientation();
                 energy += interaction.calculateEnergyBetween(pos1, orientation1, centre1, pos2, orientation2, centre2,
                                                              *this->bc);
@@ -586,7 +586,7 @@ double Packing::calculateInteractionCentreEnergy(size_t originalParticleIdx, std
             if (j == originalParticleIdx)
                 continue;
             size_t centre2 = centreIdx2 % this->numInteractionCentres;
-            auto pos2 = this->shapes[j].getPosition() + this->interactionCentres[centreIdx2];
+            const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
             const auto &orientation2 = this->shapes[j].getOrientation();
             energy += interaction.calculateEnergyBetween(pos1, orientation1, centre, pos2, orientation2, centre2,
                                                          cellTranslation);
@@ -633,7 +633,7 @@ double Packing::getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coo
             std::size_t centreIdx1 = cellCentreIndices[cellIdx1];
             std::size_t particleIdx1 = centreIdx1 / this->numInteractionCentres;
             std::size_t centre1 = centreIdx1 % this->numInteractionCentres;
-            auto pos1 = this->shapes[particleIdx1].getPosition() + this->interactionCentres[centreIdx1];
+            const auto &pos1 = this->absoluteInteractionCentres[centreIdx1];
             const auto &orientation1 = this->shapes[particleIdx1].getOrientation();
 
             // Energy within the cell
@@ -644,7 +644,7 @@ double Packing::getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coo
                 if (particleIdx1 == particleIdx2)
                     continue;
                 std::size_t centre2 = centreIdx2 % this->numInteractionCentres;
-                auto pos2 = this->shapes[particleIdx2].getPosition() + this->interactionCentres[centreIdx2];
+                const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
                 const auto &orientation2 = this->shapes[particleIdx2].getOrientation();
                 energy += interaction.calculateEnergyBetween(pos1, orientation1, centre1, pos2, orientation2, centre2,
                                                              noTranslation);
@@ -658,7 +658,7 @@ double Packing::getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coo
                     if (particleIdx1 == particleIdx2)
                         continue;
                     std::size_t centre2 = centreIdx2 % this->numInteractionCentres;
-                    auto pos2 = this->shapes[particleIdx2].getPosition() + this->interactionCentres[centreIdx2];
+                    const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
                     const auto &orientation2 = this->shapes[particleIdx2].getOrientation();
                     energy += interaction.calculateEnergyBetween(pos1, orientation1, centre1, pos2, orientation2,
                                                                  centre2, cellTranslation);
