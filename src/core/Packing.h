@@ -52,6 +52,7 @@ private:
     void removeInteractionCentresFromNeighbourGrid(size_t particleIdx);
     void addInteractionCentresToNeighbourGrid(size_t particleIdx);
     void recalculateAbsoluteInteractionCentres();
+    void recalculateAbsoluteInteractionCentres(size_t particleIdx);
 
     void prepareTempInteractionCentres(std::size_t particleIdx);
     void rotateTempInteractionCentres(const Matrix<3, 3> &rotation);
