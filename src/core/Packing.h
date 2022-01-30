@@ -28,13 +28,20 @@
  */
 class Packing {
 private:
-    std::vector<Shape> shapes;  // Shapes in the packing - the last shape is a temporary slot
-    std::vector<Vector<3>> interactionCentres;  // Interaction centres - last numInteractionCentres are temporary slots
+    // shapes, interactioCentres and absuluteInteractionCentres contain additional slots at the end for temporary data
+    // for all threads
+
+    // Shapes in the packing - mass centers and orientations
+    std::vector<Shape> shapes;
+    // Positions of interaction centers with respect to mass centers (coherent with particle orientations)
+    std::vector<Vector<3>> interactionCentres;
+    // Absolute positions of interaction centers (shapes[i].getPosition() + interactionCentres[i] + bc correction)
     std::vector<Vector<3>> absoluteInteractionCentres;
+
     std::array<double, 3> dimensions{};
     std::unique_ptr<BoundaryConditions> bc;
     std::optional<NeighbourGrid> neighbourGrid;
-    std::optional<NeighbourGrid> tempNeighbourGrid;
+    std::optional<NeighbourGrid> tempNeighbourGrid;     // temp ng is used for swapping in volume moves
     double interactionRange{};
     std::size_t numInteractionCentres{};
 
@@ -62,24 +69,30 @@ private:
     // originalParticleIdx or be the last index (temp shape). originalParticleIdx is the actual id of the particle, but
     // the position under it may be not representative at the moment - for example in the process of performing the move
 
+    // "Main hub" for checking a single particle (all cases - with or without neighbour grid, one or many interaction
+    // centres
     [[nodiscard]] bool isParticleOverlappingAnything(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
                                                      const Interaction &interaction) const;
-    [[nodiscard]] bool overlapBetweenParticles(std::size_t tempParticleIdx, std::size_t anotherParticleIdx,
-                                               const Interaction &interaction) const;
-    [[nodiscard]] bool isInteractionCentreOverlappingAnything(std::size_t originalParticleIdx,
-                                                              std::size_t tempParticleIdx, std::size_t centre,
-                                                              const Interaction &interaction) const;
+    // Helper method for the overlap check without neighbour grid - exhaustive checks for all interaction centers
+    [[nodiscard]] bool overlapBetweenParticlesWithoutNG(std::size_t tempParticleIdx, std::size_t anotherParticleIdx,
+                                                        const Interaction &interaction) const;
+    // Helper method for a single interaction center with neighbour grid
+    [[nodiscard]] bool isInteractionCentreOverlappingAnythingWithNG(std::size_t originalParticleIdx,
+                                                                    std::size_t tempParticleIdx, std::size_t centre,
+                                                                    const Interaction &interaction) const;
+    // Helper method for a single NG cell when checking all particles
     [[nodiscard]] bool areAnyParticlesOverlappingNGCellHelper(const std::array<std::size_t, 3> &coord,
                                                               const Interaction &interaction) const;
 
+    // Analogous helper methods as for overlaps but for energy
     [[nodiscard]] double calculateParticleEnergy(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
                                                  const Interaction &interaction) const;
-    [[nodiscard]] double calculateEnergyBetweenParticles(std::size_t tempParticleIdx,
-                                                         std::size_t anotherParticleIdx,
-                                                         const Interaction &interaction) const;
-    [[nodiscard]] double calculateInteractionCentreEnergy(std::size_t originalParticleIdx,
-                                                          std::size_t tempParticleIdx, size_t centre,
-                                                          const Interaction &interaction) const;
+    [[nodiscard]] double calculateEnergyBetweenParticlesWithoutNG(std::size_t tempParticleIdx,
+                                                                  std::size_t anotherParticleIdx,
+                                                                  const Interaction &interaction) const;
+    [[nodiscard]] double calculateInteractionCentreEnergyWithNG(std::size_t originalParticleIdx,
+                                                                std::size_t tempParticleIdx, size_t centre,
+                                                                const Interaction &interaction) const;
     [[nodiscard]] double getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coord,
                                                     const Interaction &interaction) const;
 
