@@ -28,7 +28,7 @@
  */
 class Packing {
 private:
-    // shapes, interactioCentres and absuluteInteractionCentres contain additional slots at the end for temporary data
+    // shapes, interactionCentres and absoluteInteractionCentres contain additional slots at the end for temporary data
     // for all threads
 
     // Shapes in the packing - mass centers and orientations

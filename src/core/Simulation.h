@@ -18,6 +18,8 @@
 
 /**
  * @brief A class responsible for performing Monte Carlo sampling.
+ * @details Actual moves are done by Packing class - this class only check Metropolis criterion and accepts or rejects
+ * them. It also does other "higher level" things such as collecting observables, etc.
  */
 class Simulation {
 private:

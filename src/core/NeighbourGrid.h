@@ -36,12 +36,12 @@ private:
     [[nodiscard]] std::size_t cellNeighbourToCellNo(const std::array<std::size_t, 3> &coords,
                                                     const std::array<int, 3> &neighbour) const;
 
-    /*
+    /**
      * @brief Returns true if @a cellNo is the reflection of a real cell due to periodic boundary conditions
      */
     [[nodiscard]] bool isCellReflected(std::size_t cellNo) const;
 
-    /*
+    /**
      * @brief If @a cellNo is the reflection of a real cell due to periodic boundary conditions the method returns
      * pointer to the vector in the real cell. Otherwise @a nullptr is returned.
      */
@@ -58,13 +58,16 @@ private:
     friend class NeighboursViewIterator;
 
 public:
+    /**
+     * @brief Helper class for NeighboursViewIterator containing points in cell and its BC translation
+     */
     class NeighbourCellData {
     private:
         const std::vector<std::size_t> *neighbours;
         const Vector<3> *translation;
 
     public:
-        NeighbourCellData(const std::vector<size_t> *neighbours, const Vector<3> *translation)
+        NeighbourCellData(const std::vector<std::size_t> *neighbours, const Vector<3> *translation)
                 : neighbours{neighbours}, translation{translation}
         { }
 
@@ -73,7 +76,7 @@ public:
     };
 
     /**
-     * @brief An iterator over all neighbouring cells of a given cell. Dereferencing it returns the vector of
+     * @brief An iterator over all (or half) neighbouring cells of a given cell. Dereferencing it returns the vector of
      * identifiers lying in the given cell.
      */
     class NeighboursViewIterator : public std::iterator<std::input_iterator_tag,
@@ -205,14 +208,14 @@ public:
     /**
      * @brief Returns NeighboursView of all neighbouring cells of the NG cell containing @a position point.
      * @param position the position somewhere inside a given NG cell (identifing it)
-     * @param if true, only half of the cells will be enumerated (usefull for iterating over distinct pairs of NG cells)
+     * @param if true, only half of the cells will be enumerated (useful for iterating over distinct pairs of NG cells)
      */
     [[nodiscard]] NeighboursView getNeighbouringCells(const Vector<3> &position, bool onlyPositive = false) const;
 
     /**
      * @brief Returns NeighboursView of all neighbouring cells of the NG cell given by integer coordinates @a coord.
      * @param coord integer coordinates of neighbour grid cell
-     * @param if true, only half of the cells will be enumerated (usefull for iterating over distinct pairs of NG cells)
+     * @param if true, only half of the cells will be enumerated (useful for iterating over distinct pairs of NG cells)
      */
     [[nodiscard]] NeighboursView getNeighbouringCells(const std::array<std::size_t, 3> &coord,
                                                       bool onlyPositive = false) const;
