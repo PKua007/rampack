@@ -4,6 +4,8 @@
 
 #include <catch2/catch.hpp>
 
+#include "matchers/VectorApproxMatcher.h"
+
 #include "core/boxes/OrthorhombicBox.h"
 
 TEST_CASE("OrthorhombicBox") {
@@ -36,5 +38,23 @@ TEST_CASE("OrthorhombicBox") {
             box.relativeToAbsolute(relativeShapes);
             CHECK(relativeShapes == absoluteShapes);
         }
+    }
+
+    SECTION("sides") {
+        auto sides = box.getSides();
+        CHECK_THAT(sides[0], IsApproxEqual(Vector<3>{10, 0, 0}, 1e-12));
+        CHECK_THAT(sides[1], IsApproxEqual(Vector<3>{0, 20, 0}, 1e-12));
+        CHECK_THAT(sides[2], IsApproxEqual(Vector<3>{0, 0, 40}, 1e-12));
+    }
+
+    SECTION("heights") {
+        auto heights = box.getHeights();
+        CHECK(heights[0] == 10);
+        CHECK(heights[1] == 20);
+        CHECK(heights[2] == 40);
+    }
+
+    SECTION("volume") {
+        CHECK(box.getVolume() == Approx(8000));
     }
 }

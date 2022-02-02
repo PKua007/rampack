@@ -47,4 +47,22 @@ TEST_CASE("TriclinicBox") {
                 CHECK_THAT(relativeShapes[i].getPosition(), IsApproxEqual(absoluteShapes[i].getPosition(), 1e-12));
         }
     }
+
+    SECTION("sides") {
+        auto sides = box.getSides();
+        CHECK_THAT(sides[0], IsApproxEqual(Vector<3>{16, 8, 0}, 1e-12));
+        CHECK_THAT(sides[1], IsApproxEqual(Vector<3>{4, 16, 0}, 1e-12));
+        CHECK_THAT(sides[2], IsApproxEqual(Vector<3>{0, 0, 10}, 1e-12));
+    }
+
+    SECTION("heights") {
+        auto heights = box.getHeights();
+        CHECK(heights[0] == Approx(56 / std::sqrt(17)));
+        CHECK(heights[1] == Approx(28 / std::sqrt(5)));
+        CHECK(heights[2] == Approx(10));
+    }
+
+    SECTION("volume") {
+        CHECK(box.getVolume() == Approx(2240));
+    }
 }
