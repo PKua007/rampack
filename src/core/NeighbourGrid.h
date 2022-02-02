@@ -10,7 +10,9 @@
 #include <algorithm>
 #include <array>
 #include <iterator>
+#include <memory>
 
+#include "Box.h"
 #include "geometry/Vector.h"
 #include "utils/Assertions.h"
 
@@ -19,9 +21,10 @@
  */
 class NeighbourGrid {
 private:
-    std::array<double, 3> linearSize{};
+    std::shared_ptr<Box> box;
+    std::array<Vector<3>, 3> boxSides;
     std::array<std::size_t, 3> cellDivisions{};
-    std::array<double, 3> cellSize{};
+    std::array<double, 3> relativeCellSize{};
     std::vector<std::vector<std::size_t>> cells;
     std::vector<Vector<3>> translations;
     std::vector<std::size_t> reflectedCells;
@@ -52,7 +55,7 @@ private:
 
     std::vector<std::size_t> &getCellVector(std::size_t cellNo);
     [[nodiscard]] const std::vector<std::size_t> &getCellVector(std::size_t cellNo) const;
-    void setupSizes(const std::array<double, 3> &newLinearSize, double newCellSize);
+    void setupSizes(const std::shared_ptr<Box> &newBox, double newCellSize);
 
     friend class NeighboursView;
     friend class NeighboursViewIterator;
@@ -155,10 +158,15 @@ public:
     NeighbourGrid(double linearSize, double cellSize);
 
     /**
-     * @brief Creates a neighbour grid for a cuboidal box of side lengths @a linearSize The minimal cell size is given
-     * by @a cellSize.
+     * @brief Creates a neighbour grid for a cuboidal box of side lengths @a linearSizes. The minimal cell size is
+     * given by @a cellSize.
      */
-    NeighbourGrid(const std::array<double, 3> &linearSize, double cellSize);
+    NeighbourGrid(const std::array<double, 3> &linearSizes, double cellSize);
+
+    /**
+     * @brief Creates a neighbour grid for a general box. The minimal cell size is given by @a cellSize.
+     */
+    NeighbourGrid(const std::shared_ptr<Box> &box, double cellSize);
 
     /**
      * @brief Adds an object with identifier @a idx at position @a position to the neighbour grid.
@@ -186,6 +194,11 @@ public:
      * cleared.
      */
     bool resize(const std::array<double, 3> &newLinearSize, double newCellSize);
+
+    /**
+     * @brief Resizes the neighbour grid with given new box and new cell size. NG is also cleared.
+     */
+    bool resize(const std::shared_ptr<Box> &newBox, double newCellSize);
 
     /**
      * @brief Returns all identifiers of objects places in NG cell containing @a position point.
