@@ -12,7 +12,7 @@
 
 std::size_t NeighbourGrid::positionToCellNo(const Vector<3> &position) const {
     std::size_t result{};
-    Vector<3> relativePos = this->box->absoluteToRelative(position);
+    Vector<3> relativePos = this->box.absoluteToRelative(position);
     for (int i = 2; i >= 0; i--) {
         // Fix numerical accuracy problems, but only up to some EPSILON, bigger discrepancies are treated as
         // preconditions miss
@@ -139,7 +139,7 @@ void NeighbourGrid::fillNeighbouringCellsOffsets() {
                                          this->positiveNeighbouringCellsOffsets.end());
 }
 
-NeighbourGrid::NeighbourGrid(const std::shared_ptr<Box> &box, double cellSize) {
+NeighbourGrid::NeighbourGrid(OrthorhombicBox box, double cellSize) : box{box} {
     this->setupSizes(box, cellSize);
     this->cells.resize(this->numCells);
     this->translations.resize(this->numCells);
@@ -153,19 +153,19 @@ NeighbourGrid::NeighbourGrid(const std::shared_ptr<Box> &box, double cellSize) {
 }
 
 NeighbourGrid::NeighbourGrid(double linearSize, double cellSize)
-        : NeighbourGrid(std::make_shared<OrthorhombicBox>(linearSize), cellSize)
+        : NeighbourGrid(OrthorhombicBox{linearSize}, cellSize)
 { }
 
 NeighbourGrid::NeighbourGrid(const std::array<double, 3> &linearSizes, double cellSize)
-        : NeighbourGrid(std::make_shared<OrthorhombicBox>(linearSizes), cellSize)
+        : NeighbourGrid(OrthorhombicBox{linearSizes}, cellSize)
 { }
 
-void NeighbourGrid::setupSizes(const std::shared_ptr<Box> &newBox, double newCellSize) {
-    Expects(newBox->getVolume() > 0);
+void NeighbourGrid::setupSizes(OrthorhombicBox newBox, double newCellSize) {
+    Expects(newBox.getVolume() > 0);
     Expects(newCellSize > 0);
 
-    auto newBoxSides = newBox->getSides();
-    auto newBoxHeights = newBox->getHeights();
+    auto newBoxSides = newBox.getSides();
+    auto newBoxHeights = newBox.getHeights();
 
     // 2 additional cells on both edges - "reflected" cells - are used by periodic boundary conditions
     std::array<std::size_t, 3> cellDivisions_{};
@@ -240,7 +240,7 @@ const std::vector<std::size_t> &NeighbourGrid::getCellVector(std::size_t cellNo)
     return this->cells[this->reflectedCells[cellNo]];
 }
 
-bool NeighbourGrid::resize(const std::shared_ptr<Box> &newBox, double newCellSize) {
+bool NeighbourGrid::resize(OrthorhombicBox newBox, double newCellSize) {
     auto oldNumCellsInLine = this->cellDivisions;
     std::size_t oldNumCells = this->numCells;
     auto oldBox = this->box;
@@ -252,7 +252,7 @@ bool NeighbourGrid::resize(const std::shared_ptr<Box> &newBox, double newCellSiz
         // Very hackish way of recreating translations - rescale them using old and new boxes
         for (std::size_t i{}; i < this->numCells; i++) {
             auto &translation = this->translations[i];
-            translation = newBox->relativeToAbsolute(oldBox->absoluteToRelative(translation));
+            translation = newBox.relativeToAbsolute(oldBox.absoluteToRelative(translation));
         }
 
         this->clear();
@@ -275,7 +275,7 @@ bool NeighbourGrid::resize(const std::shared_ptr<Box> &newBox, double newCellSiz
 }
 
 bool NeighbourGrid::resize(const std::array<double, 3> &newLinearSize, double newCellSize) {
-    return this->resize(std::make_shared<OrthorhombicBox>(newLinearSize), newCellSize);
+    return this->resize(OrthorhombicBox{newLinearSize}, newCellSize);
 }
 
 bool NeighbourGrid::resize(double newLinearSize, double newCellSize) {

@@ -13,6 +13,7 @@
 #include <memory>
 
 #include "Box.h"
+#include "boxes/OrthorhombicBox.h"
 #include "geometry/Vector.h"
 #include "utils/Assertions.h"
 
@@ -21,7 +22,8 @@
  */
 class NeighbourGrid {
 private:
-    std::shared_ptr<Box> box;
+//    std::shared_ptr<Box> box;
+    OrthorhombicBox box;
     std::array<Vector<3>, 3> boxSides;
     std::array<std::size_t, 3> cellDivisions{};
     std::array<double, 3> relativeCellSize{};
@@ -55,7 +57,7 @@ private:
 
     std::vector<std::size_t> &getCellVector(std::size_t cellNo);
     [[nodiscard]] const std::vector<std::size_t> &getCellVector(std::size_t cellNo) const;
-    void setupSizes(const std::shared_ptr<Box> &newBox, double newCellSize);
+    void setupSizes(OrthorhombicBox newBox, double newCellSize);
 
     friend class NeighboursView;
     friend class NeighboursViewIterator;
@@ -166,7 +168,7 @@ public:
     /**
      * @brief Creates a neighbour grid for a general box. The minimal cell size is given by @a cellSize.
      */
-    NeighbourGrid(const std::shared_ptr<Box> &box, double cellSize);
+    NeighbourGrid(OrthorhombicBox box, double cellSize);
 
     /**
      * @brief Adds an object with identifier @a idx at position @a position to the neighbour grid.
@@ -198,7 +200,7 @@ public:
     /**
      * @brief Resizes the neighbour grid with given new box and new cell size. NG is also cleared.
      */
-    bool resize(const std::shared_ptr<Box> &newBox, double newCellSize);
+    bool resize(OrthorhombicBox box_, double newCellSize);
 
     /**
      * @brief Returns all identifiers of objects places in NG cell containing @a position point.
