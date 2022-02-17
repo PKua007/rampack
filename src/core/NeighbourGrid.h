@@ -22,12 +22,15 @@
  */
 class NeighbourGrid {
 private:
+    static constexpr std::size_t LIST_END = std::numeric_limits<std::size_t>::max();
+
 //    std::shared_ptr<Box> box;
     OrthorhombicBox box;
     std::array<Vector<3>, 3> boxSides;
     std::array<std::size_t, 3> cellDivisions{};
     std::array<double, 3> relativeCellSize{};
-    std::vector<std::vector<std::size_t>> cells;
+    std::vector<std::size_t> cellHeads;
+    std::vector<std::size_t> successors;
     std::vector<Vector<3>> translations;
     std::vector<std::size_t> reflectedCells;
     std::size_t numCells{};
@@ -55,12 +58,12 @@ private:
     static bool increment(std::array<int, 3> &in);
     void fillNeighbouringCellsOffsets();
 
-    std::vector<std::size_t> &getCellVector(std::size_t cellNo);
-    [[nodiscard]] const std::vector<std::size_t> &getCellVector(std::size_t cellNo) const;
+    [[nodiscard]] std::vector<std::size_t> getCellVector(std::size_t cellNo) const;
     void setupSizes(OrthorhombicBox newBox, double newCellSize);
 
     friend class NeighboursView;
     friend class NeighboursViewIterator;
+    friend class NeighbourCellData;
 
 public:
     /**
@@ -68,15 +71,21 @@ public:
      */
     class NeighbourCellData {
     private:
-        const std::vector<std::size_t> *neighbours;
+        const NeighbourGrid *grid;
+        std::vector<std::size_t> neighbours;
         const Vector<3> *translation;
 
     public:
-        NeighbourCellData(const std::vector<std::size_t> *neighbours, const Vector<3> *translation)
-                : neighbours{neighbours}, translation{translation}
-        { }
+        NeighbourCellData(std::size_t head, const Vector<3> *translation, const NeighbourGrid *grid)
+                : grid{grid}, translation{translation}
+        {
+            while (head != NeighbourGrid::LIST_END) {
+                neighbours.push_back(head);
+                head = grid->successors[head];
+            }
+        }
 
-        [[nodiscard]] const std::vector<std::size_t> &getNeighbours() const { return *this->neighbours; }
+        [[nodiscard]] const std::vector<std::size_t> &getNeighbours() const { return this->neighbours; }
         [[nodiscard]] const Vector<3> &getTranslation() const { return *this->translation; }
     };
 
@@ -124,8 +133,8 @@ public:
         reference operator*() const {
             std::size_t neighbourCellNo = this->cellNo + this->offsets[this->offsetIdx];
 
-            return NeighbourCellData(&this->grid.cells[this->grid.reflectedCells[neighbourCellNo]],
-                                     &this->grid.translations[neighbourCellNo]);
+            return NeighbourCellData(this->grid.cellHeads[this->grid.reflectedCells[neighbourCellNo]],
+                                     &this->grid.translations[neighbourCellNo], &this->grid);
         }
     };
 
@@ -170,6 +179,8 @@ public:
      */
     NeighbourGrid(OrthorhombicBox box, double cellSize);
 
+    NeighbourGrid(OrthorhombicBox box, double cellSize, std::size_t numParticles);
+
     /**
      * @brief Adds an object with identifier @a idx at position @a position to the neighbour grid.
      */
@@ -205,12 +216,12 @@ public:
     /**
      * @brief Returns all identifiers of objects places in NG cell containing @a position point.
      */
-    [[nodiscard]] const std::vector<std::size_t> &getCell(const Vector<3> &position) const;
+    [[nodiscard]] std::vector<std::size_t> getCell(const Vector<3> &position) const;
 
     /**
      * @brief Returns all identifiers of objects places in NG cell given by integer coordinates @a coord.
      */
-    [[nodiscard]] const std::vector<std::size_t> &getCell(const std::array<std::size_t, 3> &coord) const;
+    [[nodiscard]] std::vector<std::size_t> getCell(const std::array<std::size_t, 3> &coord) const;
 
     /**
      * @brief Returns all identifiers of objects in NG cell containing @a position point and in neighbouring cells.
@@ -244,8 +255,6 @@ public:
      * @brief Estimates the memory usage of the neighbour grid in bytes.
      */
     [[nodiscard]] std::size_t getMemoryUsage() const;
-
-    friend void swap(NeighbourGrid &ng1, NeighbourGrid &ng2);
 };
 
 #endif //RAMPACK_NEIGHBOURGRID_H

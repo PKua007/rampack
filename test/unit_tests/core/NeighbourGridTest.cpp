@@ -48,15 +48,39 @@ TEST_CASE("NeighbourGrid") {
         neighbourGrid.add(5, {12, 9, 3});
 
         SECTION("non-reflected neighbours") {
-            auto neighbours = neighbourGrid.getNeighbours({3, 7, 3});
+            SECTION("getNeighbours") {
+                auto neighbours = neighbourGrid.getNeighbours({3, 7, 3});
 
-            REQUIRE_THAT(neighbours, Catch::UnorderedEquals(std::vector<std::size_t>{0, 1, 2, 4}));
+                REQUIRE_THAT(neighbours, Catch::UnorderedEquals(std::vector<std::size_t>{0, 1, 2, 4}));
+            }
+
+            SECTION("iterator") {
+                std::vector<std::size_t> neighbours;
+
+                for (const auto &cell : neighbourGrid.getNeighbouringCells(Vector<3>{3, 7, 3}))
+                    for (const auto &neighbour : cell.getNeighbours())
+                        neighbours.push_back(neighbour);
+
+                REQUIRE_THAT(neighbours, Catch::UnorderedEquals(std::vector<std::size_t>{0, 1, 2, 4}));
+            }
         }
 
         SECTION("reflected neighbours") {
-            auto neighbours = neighbourGrid.getNeighbours({11, 9, 3});
+            SECTION("getNeighbours") {
+                auto neighbours = neighbourGrid.getNeighbours({11, 9, 3});
 
-            REQUIRE_THAT(neighbours, Catch::UnorderedEquals(std::vector<std::size_t>{3, 5}));
+                REQUIRE_THAT(neighbours, Catch::UnorderedEquals(std::vector<std::size_t>{3, 5}));
+            }
+
+            SECTION("iterator") {
+                std::vector<std::size_t> neighbours;
+
+                for (const auto &cell : neighbourGrid.getNeighbouringCells(Vector<3>{11, 9, 3}))
+                    for (const auto &neighbour : cell.getNeighbours())
+                        neighbours.push_back(neighbour);
+
+                REQUIRE_THAT(neighbours, Catch::UnorderedEquals(std::vector<std::size_t>{3, 5}));
+            }
         }
 
         SECTION("getCell") {
@@ -75,12 +99,39 @@ TEST_CASE("NeighbourGrid") {
         }
 
         SECTION("remove existing") {
-            neighbourGrid.remove(0, {3, 7, 3});
-            auto neighbours = neighbourGrid.getNeighbours({3, 7, 3});
+            SECTION("first from two") {
+                neighbourGrid.remove(0, {3, 7, 3});
+                auto neighbours = neighbourGrid.getNeighbours({3, 7, 3});
 
-            REQUIRE_THAT(neighbourGrid.getCell(Vector<3>{3.5, 6.5, 3}),
-                         Catch::UnorderedEquals(std::vector<std::size_t>{1}));
-            REQUIRE_THAT(neighbours, Catch::UnorderedEquals(std::vector<std::size_t>{1, 2, 4}));
+                REQUIRE(neighbourGrid.getCell(Vector<3>{3.5, 6.5, 3}) == std::vector<std::size_t>{1});
+                REQUIRE_THAT(neighbours, Catch::UnorderedEquals(std::vector<std::size_t>{1, 2, 4}));
+            }
+
+            SECTION("second from two") {
+                neighbourGrid.remove(1, {3, 7, 3});
+                auto neighbours = neighbourGrid.getNeighbours({3, 7, 3});
+
+                REQUIRE(neighbourGrid.getCell(Vector<3>{3.5, 6.5, 3}) == std::vector<std::size_t>{0});
+                REQUIRE_THAT(neighbours, Catch::UnorderedEquals(std::vector<std::size_t>{0, 2, 4}));
+            }
+
+            SECTION("both from two") {
+                neighbourGrid.remove(0, {3, 7, 3});
+                neighbourGrid.remove(1, {3, 7, 3});
+                auto neighbours = neighbourGrid.getNeighbours({3, 7, 3});
+
+                REQUIRE(neighbourGrid.getCell(Vector<3>{3.5, 6.5, 3}).empty());
+                REQUIRE_THAT(neighbours, Catch::UnorderedEquals(std::vector<std::size_t>{2, 4}));
+            }
+
+            SECTION("both from two: different order") {
+                neighbourGrid.remove(1, {3, 7, 3});
+                neighbourGrid.remove(0, {3, 7, 3});
+                auto neighbours = neighbourGrid.getNeighbours({3, 7, 3});
+
+                REQUIRE(neighbourGrid.getCell(Vector<3>{3.5, 6.5, 3}).empty());
+                REQUIRE_THAT(neighbours, Catch::UnorderedEquals(std::vector<std::size_t>{2, 4}));
+            }
         }
 
         SECTION("remove nonexistent") {
@@ -102,6 +153,14 @@ TEST_CASE("NeighbourGrid") {
             REQUIRE(neighbourGrid.getNeighbours({3, 7, 3}).empty());
             REQUIRE(neighbourGrid.getNeighbours({2, 5, 3}).empty());
             REQUIRE(neighbourGrid.getNeighbours({5, 9, 3}).empty());
+        }
+
+        SECTION("swap") {
+            NeighbourGrid neighbourGrid2(linearSize, 2.4);
+
+            std::swap(neighbourGrid, neighbourGrid2);
+
+            REQUIRE_THAT(neighbourGrid2.getNeighbours({3, 7, 3}), Catch::UnorderedEquals(std::vector<std::size_t>{0, 1, 2, 4}));
         }
     }
 }

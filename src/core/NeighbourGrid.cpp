@@ -139,11 +139,15 @@ void NeighbourGrid::fillNeighbouringCellsOffsets() {
                                          this->positiveNeighbouringCellsOffsets.end());
 }
 
-NeighbourGrid::NeighbourGrid(OrthorhombicBox box, double cellSize) : box{box} {
+NeighbourGrid::NeighbourGrid(OrthorhombicBox box, double cellSize, std::size_t numParticles) : box{box} {
     this->setupSizes(box, cellSize);
-    this->cells.resize(this->numCells);
+    this->cellHeads.resize(this->numCells);
+    std::fill(this->cellHeads.begin(), this->cellHeads.end(), LIST_END);
     this->translations.resize(this->numCells);
     this->reflectedCells.resize(this->numCells);
+
+    this->successors.resize(numParticles);
+    std::fill(this->successors.begin(), this->successors.end(), NeighbourGrid::LIST_END);
 
     // Aliasing "reflected" cell lists to real ones
     for (std::size_t i{}; i < this->numCells; i++)
@@ -151,6 +155,10 @@ NeighbourGrid::NeighbourGrid(OrthorhombicBox box, double cellSize) : box{box} {
 
     this->fillNeighbouringCellsOffsets();
 }
+
+NeighbourGrid::NeighbourGrid(OrthorhombicBox box, double cellSize)
+        : NeighbourGrid(box, cellSize, 10000)
+{ }
 
 NeighbourGrid::NeighbourGrid(double linearSize, double cellSize)
         : NeighbourGrid(OrthorhombicBox{linearSize}, cellSize)
@@ -186,32 +194,60 @@ void NeighbourGrid::setupSizes(OrthorhombicBox newBox, double newCellSize) {
 
 void NeighbourGrid::add(std::size_t idx, const Vector<3> &position) {
     std::size_t i = this->positionToCellNo(position);
-    this->getCellVector(i).push_back(idx);
+    this->successors[idx] = this->cellHeads[i];
+    this->cellHeads[i] = idx;
 }
 
 void NeighbourGrid::remove(std::size_t idx, const Vector<3> &position) {
     std::size_t i = this->positionToCellNo(position);
-    auto &cell = this->getCellVector(i);
-    auto it = std::find(cell.begin(), cell.end(), idx);
-    if (it != cell.end())
-        cell.erase(it);
+    std::size_t head = this->cellHeads[i];
+    if (head == idx) {
+        this->cellHeads[i] = this->successors[idx];
+        this->successors[idx] = LIST_END;
+    } else {
+        while (head != LIST_END) {
+            if (this->successors[head] == idx) {
+                this->successors[head] = this->successors[idx];
+                this->successors[idx] = LIST_END;
+                break;
+            }
+            head = this->successors[head];
+        }
+    }
 }
 
 void NeighbourGrid::clear() {
-    for (std::size_t i{}; i < this->numCells; i++)
-        this->cells[i].clear();
+    std::fill(this->cellHeads.begin(), this->cellHeads.end(), LIST_END);
+    std::fill(this->successors.begin(), this->successors.end(), LIST_END);
 }
 
-const std::vector<std::size_t> &NeighbourGrid::getCell(const Vector<3> &position) const {
+std::vector<std::size_t> NeighbourGrid::getCell(const Vector<3> &position) const {
     std::size_t i = this->positionToCellNo(position);
-    return this->getCellVector(i);
+    std::size_t head = this->cellHeads[i];
+
+    std::vector<std::size_t> cell;
+    while (head != NeighbourGrid::LIST_END) {
+        cell.push_back(head);
+        head = this->successors[head];
+    }
+
+    return cell;
 }
 
-const std::vector<std::size_t> &NeighbourGrid::getCell(const std::array<std::size_t, 3> &coord) const {
+std::vector<std::size_t> NeighbourGrid::getCell(const std::array<std::size_t, 3> &coord) const {
     for (std::size_t i = 0; i < 3; i++)
         Expects(coord[i] < this->cellDivisions[i] - 2);
 
-    return this->cells[this->realCoordinatesToCellNo(coord)];
+    std::size_t i = this->realCoordinatesToCellNo(coord);
+    std::size_t head = this->cellHeads[i];
+
+    std::vector<std::size_t> cell;
+    while (head != NeighbourGrid::LIST_END) {
+        cell.push_back(head);
+        head = this->successors[head];
+    }
+
+    return cell;
 }
 
 std::vector<std::size_t> NeighbourGrid::getNeighbours(const Vector<3> &position) const {
@@ -232,12 +268,17 @@ std::vector<std::size_t> NeighbourGrid::getNeighbours(const Vector<3> &position)
     return result;
 }
 
-std::vector<std::size_t> &NeighbourGrid::getCellVector(std::size_t cellNo) {
-    return this->cells[this->reflectedCells[cellNo]];
-}
+std::vector<std::size_t> NeighbourGrid::getCellVector(std::size_t cellNo) const {
+    std::size_t realI = this->reflectedCells[cellNo];
+    std::size_t head = this->cellHeads[realI];
 
-const std::vector<std::size_t> &NeighbourGrid::getCellVector(std::size_t cellNo) const {
-    return this->cells[this->reflectedCells[cellNo]];
+    std::vector<std::size_t> cell;
+    while (head != NeighbourGrid::LIST_END) {
+        cell.push_back(head);
+        head = this->successors[head];
+    }
+
+    return cell;
 }
 
 bool NeighbourGrid::resize(OrthorhombicBox newBox, double newCellSize) {
@@ -261,7 +302,7 @@ bool NeighbourGrid::resize(OrthorhombicBox newBox, double newCellSize) {
 
     // The resize is needed only if number of cells is to big for allocated memory - otherwise reuse the old structure
     if (oldNumCells < this->numCells) {
-        this->cells.resize(this->numCells);
+        this->cellHeads.resize(this->numCells);
         this->translations.resize(this->numCells);
         this->reflectedCells.resize(this->numCells);
     }
@@ -301,31 +342,16 @@ NeighbourGrid::NeighboursView NeighbourGrid::getNeighbouringCells(const std::arr
         return NeighboursView(*this, this->realCoordinatesToCellNo(coord), this->neighbouringCellsOffsets);
 }
 
-void swap(NeighbourGrid &ng1, NeighbourGrid &ng2) {
-    using std::swap;
-
-    std::swap(ng1.box, ng2.box);
-    std::swap(ng1.boxSides, ng2.boxSides);
-    std::swap(ng1.cellDivisions, ng2.cellDivisions);
-    std::swap(ng1.relativeCellSize, ng2.relativeCellSize);
-    std::swap(ng1.cells, ng2.cells);
-    std::swap(ng1.translations, ng2.translations);
-    std::swap(ng1.reflectedCells, ng2.reflectedCells);
-    std::swap(ng1.numCells, ng2.numCells);
-    std::swap(ng1.neighbouringCellsOffsets, ng2.neighbouringCellsOffsets);
-    std::swap(ng1.positiveNeighbouringCellsOffsets, ng2.positiveNeighbouringCellsOffsets);
-}
-
 std::array<std::size_t, 3> NeighbourGrid::getCellDivisions() const {
     return {this->cellDivisions[0] - 2, this->cellDivisions[1] - 2, this->cellDivisions[2] - 2};
 }
 
 std::size_t NeighbourGrid::getMemoryUsage() const {
     std::size_t bytes{};
-    bytes += get_vector_memory_usage(this->cells);
+    bytes += get_vector_memory_usage(this->cellHeads);
     bytes += get_vector_memory_usage(this->translations);
-    for (const auto &cell : this->cells)
-        bytes += get_vector_memory_usage(cell);
+    bytes += get_vector_memory_usage(this->cellHeads);
+    bytes += get_vector_memory_usage(this->successors);
     bytes += get_vector_memory_usage(this->reflectedCells);
     bytes += get_vector_memory_usage(this->neighbouringCellsOffsets);
     bytes += get_vector_memory_usage(this->positiveNeighbouringCellsOffsets);
