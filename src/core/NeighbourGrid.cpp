@@ -156,16 +156,12 @@ NeighbourGrid::NeighbourGrid(OrthorhombicBox box, double cellSize, std::size_t n
     this->fillNeighbouringCellsOffsets();
 }
 
-NeighbourGrid::NeighbourGrid(OrthorhombicBox box, double cellSize)
-        : NeighbourGrid(box, cellSize, 10000)
+NeighbourGrid::NeighbourGrid(double linearSize, double cellSize, std::size_t numParticles)
+        : NeighbourGrid(OrthorhombicBox{linearSize}, cellSize, numParticles)
 { }
 
-NeighbourGrid::NeighbourGrid(double linearSize, double cellSize)
-        : NeighbourGrid(OrthorhombicBox{linearSize}, cellSize)
-{ }
-
-NeighbourGrid::NeighbourGrid(const std::array<double, 3> &linearSizes, double cellSize)
-        : NeighbourGrid(OrthorhombicBox{linearSizes}, cellSize)
+NeighbourGrid::NeighbourGrid(const std::array<double, 3> &linearSizes, double cellSize, std::size_t numParticles)
+        : NeighbourGrid(OrthorhombicBox{linearSizes}, cellSize, numParticles)
 { }
 
 void NeighbourGrid::setupSizes(OrthorhombicBox newBox, double newCellSize) {

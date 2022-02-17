@@ -18,13 +18,12 @@
 #include "utils/Assertions.h"
 
 /**
- * @brief An acceleration structure for a constant-time lookup of neighbours.
+ * @brief An acceleration structure for a constant-time lookup of neighbours for a fixed number of particles.
  */
 class NeighbourGrid {
 private:
     static constexpr std::size_t LIST_END = std::numeric_limits<std::size_t>::max();
 
-//    std::shared_ptr<Box> box;
     OrthorhombicBox box;
     std::array<Vector<3>, 3> boxSides;
     std::array<std::size_t, 3> cellDivisions{};
@@ -66,6 +65,9 @@ private:
     friend class NeighbourCellData;
 
 public:
+    /**
+     * @brief Iterator over the cell linked-list.
+     */
     class CellViewIterator : public std::iterator<std::input_iterator_tag, const std::size_t, std::ptrdiff_t>
     {
     private:
@@ -73,7 +75,7 @@ public:
         std::size_t head;
 
     public:
-        CellViewIterator(const NeighbourGrid &grid, std::size_t head) : grid{&grid}, head{head} { }
+        CellViewIterator(const NeighbourGrid *grid, std::size_t head) : grid{grid}, head{head} { }
 
         CellViewIterator& operator++() {
             this->head = this->grid->successors[this->head];
@@ -86,19 +88,14 @@ public:
             return retval;
         }
 
-        bool operator==(CellViewIterator other) const {
-            return this->head == other.head;
-        }
-
-        bool operator!=(CellViewIterator other) const {
-            return !(*this == other);
-        }
-
-        reference operator*() const {
-            return this->head;
-        }
+        bool operator==(CellViewIterator other) const { return this->head == other.head; }
+        bool operator!=(CellViewIterator other) const { return !(*this == other);}
+        reference operator*() const { return this->head; }
     };
 
+    /**
+     * @brief The view over a single cell linked-list.
+     */
     class CellView {
     private:
         const NeighbourGrid &grid;
@@ -107,8 +104,8 @@ public:
     public:
         CellView(const NeighbourGrid &grid, std::size_t head) : grid{grid}, head{head} { }
 
-        [[nodiscard]] CellViewIterator begin() const { return CellViewIterator(this->grid, this->head); }
-        [[nodiscard]] CellViewIterator end() const { return CellViewIterator(this->grid, LIST_END); }
+        [[nodiscard]] CellViewIterator begin() const { return CellViewIterator(&this->grid, this->head); }
+        [[nodiscard]] CellViewIterator end() const { return CellViewIterator(&this->grid, LIST_END); }
     };
 
 
@@ -143,14 +140,14 @@ public:
                                                         const NeighbourCellData>
     {
     private:
-        const NeighbourGrid &grid;
-        const std::vector<std::size_t> &offsets;
+        const NeighbourGrid *grid;
+        const std::vector<std::size_t> *offsets;
         std::size_t cellNo{};
         std::size_t offsetIdx{};
 
     public:
-        NeighboursViewIterator(const NeighbourGrid &grid, std::size_t cellNo, std::size_t offset,
-                               const std::vector<std::size_t> &offsets)
+        NeighboursViewIterator(const NeighbourGrid *grid, std::size_t cellNo, std::size_t offset,
+                               const std::vector<std::size_t> *offsets)
                 : grid{grid}, offsets{offsets}, cellNo{cellNo}, offsetIdx{offset}
         { }
 
@@ -174,10 +171,10 @@ public:
         }
 
         reference operator*() const {
-            std::size_t neighbourCellNo = this->cellNo + this->offsets[this->offsetIdx];
+            std::size_t neighbourCellNo = this->cellNo + (*this->offsets)[this->offsetIdx];
 
-            return NeighbourCellData(this->grid.cellHeads[this->grid.reflectedCells[neighbourCellNo]],
-                                     &this->grid.translations[neighbourCellNo], &this->grid);
+            return NeighbourCellData(this->grid->cellHeads[this->grid->reflectedCells[neighbourCellNo]],
+                                     &(this->grid->translations[neighbourCellNo]), this->grid);
         }
     };
 
@@ -197,31 +194,30 @@ public:
         { }
 
         [[nodiscard]] NeighboursViewIterator begin() const {
-            return NeighboursViewIterator(this->grid, this->cellNo, 0, this->offsets);
+            return NeighboursViewIterator(&this->grid, this->cellNo, 0, &this->offsets);
         }
 
         [[nodiscard]] NeighboursViewIterator end() const {
-            return NeighboursViewIterator(this->grid, this->cellNo, this->numOffsets, this->offsets);
+            return NeighboursViewIterator(&this->grid, this->cellNo, this->numOffsets, &this->offsets);
         }
     };
 
     /**
      * @brief Creates a neighbour grid for a cubic box of side length @a linearSize. The minimal cell size is given by
-     * @a cellSize.
+     * @a cellSize and the number of supported particles is given by @a numParticles.
      */
-    NeighbourGrid(double linearSize, double cellSize);
+    NeighbourGrid(double linearSize, double cellSize, std::size_t numParticles);
 
     /**
      * @brief Creates a neighbour grid for a cuboidal box of side lengths @a linearSizes. The minimal cell size is
-     * given by @a cellSize.
+     * given by @a cellSize and the number of supported particles is given by @a numParticles.
      */
-    NeighbourGrid(const std::array<double, 3> &linearSizes, double cellSize);
+    NeighbourGrid(const std::array<double, 3> &linearSizes, double cellSize, std::size_t numParticles);
 
     /**
-     * @brief Creates a neighbour grid for a general box. The minimal cell size is given by @a cellSize.
+     * @brief Creates a neighbour grid for a general box. The minimal cell size is given by @a cellSize and the number
+     * of supported particles is given by @a numParticles.
      */
-    NeighbourGrid(OrthorhombicBox box, double cellSize);
-
     NeighbourGrid(OrthorhombicBox box, double cellSize, std::size_t numParticles);
 
     /**

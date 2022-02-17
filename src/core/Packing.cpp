@@ -738,8 +738,14 @@ void Packing::rebuildNeighbourGrid() {
         return;
     }
 
+    std::size_t totalInteractionCentres{};
+    if (this->numInteractionCentres == 0)
+        totalInteractionCentres = this->size();
+    else
+        totalInteractionCentres = this->numInteractionCentres*this->size();
+
     if (!this->neighbourGrid.has_value())
-        this->neighbourGrid = NeighbourGrid(this->dimensions, cellSize);
+        this->neighbourGrid = NeighbourGrid(this->dimensions, cellSize, totalInteractionCentres);
     else
         this->neighbourGridResizes += this->neighbourGrid->resize(this->dimensions, cellSize);
 

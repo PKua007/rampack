@@ -40,7 +40,7 @@ TEST_CASE("NeighbourGrid") {
     else FAIL("test error");
 
     // Cell size 2.4 is not a "divisor" of 10, nor 13, so it should be corrected to 2.5 and 2.6
-    NeighbourGrid neighbourGrid(linearSize, 2.4);
+    NeighbourGrid neighbourGrid(linearSize, 2.4, 7);
 
     DYNAMIC_SECTION(testMode) {
         if (testMode != "without resizing")
@@ -162,11 +162,12 @@ TEST_CASE("NeighbourGrid") {
         }
 
         SECTION("swap") {
-            NeighbourGrid neighbourGrid2(linearSize, 2.4);
+            NeighbourGrid neighbourGrid2(linearSize, 2.4, 7);
 
             std::swap(neighbourGrid, neighbourGrid2);
 
-            REQUIRE_THAT(neighbourGrid2.getNeighbours({3, 7, 3}), Catch::UnorderedEquals(std::vector<std::size_t>{0, 1, 2, 4}));
+            REQUIRE_THAT(neighbourGrid2.getNeighbours({3, 7, 3}),
+                         Catch::UnorderedEquals(std::vector<std::size_t>{0, 1, 2, 4}));
         }
     }
 }
