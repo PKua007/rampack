@@ -221,33 +221,19 @@ void NeighbourGrid::clear() {
     std::fill(this->successors.begin(), this->successors.end(), LIST_END);
 }
 
-std::vector<std::size_t> NeighbourGrid::getCell(const Vector<3> &position) const {
+NeighbourGrid::CellView NeighbourGrid::getCell(const Vector<3> &position) const {
     std::size_t i = this->positionToCellNo(position);
     std::size_t head = this->cellHeads[i];
-
-    std::vector<std::size_t> cell;
-    while (head != NeighbourGrid::LIST_END) {
-        cell.push_back(head);
-        head = this->successors[head];
-    }
-
-    return cell;
+    return CellView(*this, head);
 }
 
-std::vector<std::size_t> NeighbourGrid::getCell(const std::array<std::size_t, 3> &coord) const {
+NeighbourGrid::CellView NeighbourGrid::getCell(const std::array<std::size_t, 3> &coord) const {
     for (std::size_t i = 0; i < 3; i++)
         Expects(coord[i] < this->cellDivisions[i] - 2);
 
     std::size_t i = this->realCoordinatesToCellNo(coord);
     std::size_t head = this->cellHeads[i];
-
-    std::vector<std::size_t> cell;
-    while (head != NeighbourGrid::LIST_END) {
-        cell.push_back(head);
-        head = this->successors[head];
-    }
-
-    return cell;
+    return CellView(*this, head);
 }
 
 std::vector<std::size_t> NeighbourGrid::getNeighbours(const Vector<3> &position) const {

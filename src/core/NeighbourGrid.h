@@ -66,26 +66,69 @@ private:
     friend class NeighbourCellData;
 
 public:
+    class CellViewIterator : public std::iterator<std::input_iterator_tag, const std::size_t, std::ptrdiff_t>
+    {
+    private:
+        const NeighbourGrid *grid;
+        std::size_t head;
+
+    public:
+        CellViewIterator(const NeighbourGrid &grid, std::size_t head) : grid{&grid}, head{head} { }
+
+        CellViewIterator& operator++() {
+            this->head = this->grid->successors[this->head];
+            return *this;
+        }
+
+        CellViewIterator operator++(int) {
+            CellViewIterator retval = *this;
+            ++(*this);
+            return retval;
+        }
+
+        bool operator==(CellViewIterator other) const {
+            return this->head == other.head;
+        }
+
+        bool operator!=(CellViewIterator other) const {
+            return !(*this == other);
+        }
+
+        reference operator*() const {
+            return this->head;
+        }
+    };
+
+    class CellView {
+    private:
+        const NeighbourGrid &grid;
+        std::size_t head;
+
+    public:
+        CellView(const NeighbourGrid &grid, std::size_t head) : grid{grid}, head{head} { }
+
+        [[nodiscard]] CellViewIterator begin() const { return CellViewIterator(this->grid, this->head); }
+        [[nodiscard]] CellViewIterator end() const { return CellViewIterator(this->grid, LIST_END); }
+    };
+
+
     /**
      * @brief Helper class for NeighboursViewIterator containing points in cell and its BC translation
      */
     class NeighbourCellData {
     private:
         const NeighbourGrid *grid;
-        std::vector<std::size_t> neighbours;
+        const std::size_t head;
         const Vector<3> *translation;
 
     public:
         NeighbourCellData(std::size_t head, const Vector<3> *translation, const NeighbourGrid *grid)
-                : grid{grid}, translation{translation}
-        {
-            while (head != NeighbourGrid::LIST_END) {
-                neighbours.push_back(head);
-                head = grid->successors[head];
-            }
-        }
+                : grid{grid}, head{head}, translation{translation}
+        { }
 
-        [[nodiscard]] const std::vector<std::size_t> &getNeighbours() const { return this->neighbours; }
+        [[nodiscard]] CellView getNeighbours() const {
+            return CellView(*this->grid, this->head);
+        }
         [[nodiscard]] const Vector<3> &getTranslation() const { return *this->translation; }
     };
 
@@ -216,12 +259,12 @@ public:
     /**
      * @brief Returns all identifiers of objects places in NG cell containing @a position point.
      */
-    [[nodiscard]] std::vector<std::size_t> getCell(const Vector<3> &position) const;
+    [[nodiscard]] CellView getCell(const Vector<3> &position) const;
 
     /**
      * @brief Returns all identifiers of objects places in NG cell given by integer coordinates @a coord.
      */
-    [[nodiscard]] std::vector<std::size_t> getCell(const std::array<std::size_t, 3> &coord) const;
+    [[nodiscard]] CellView getCell(const std::array<std::size_t, 3> &coord) const;
 
     /**
      * @brief Returns all identifiers of objects in NG cell containing @a position point and in neighbouring cells.
