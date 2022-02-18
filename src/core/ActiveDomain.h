@@ -7,8 +7,10 @@
 
 #include <array>
 #include <tuple>
+#include <utility>
 
 #include "geometry/Vector.h"
+#include "boxes/TriclinicBox.h"
 
 /**
  * @brief A class representing a single active domain in domain division scheme
@@ -33,14 +35,17 @@ public:
     
 private:
     std::array<RegionBounds, 3> bounds{};
+    TriclinicBox box;
 
 public:
     /**
      * @brief Default constructor creating an empty region with all bounds being 0
      */
-    ActiveDomain() = default;
+    //ActiveDomain() = default;
 
-    explicit ActiveDomain(const std::array<RegionBounds, 3> &bounds) : bounds{bounds} { }
+    explicit ActiveDomain(TriclinicBox box, const std::array<RegionBounds, 3> &bounds)
+            : bounds{bounds}, box{std::move(box)}
+    { }
 
     /**
      * @brief Returns @a true if @a position lies inside the bounds, @a false otherwise

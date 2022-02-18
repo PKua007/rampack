@@ -9,77 +9,88 @@
 #include "utils/Assertions.h"
 
 
+TriclinicBox DomainDecomposition::prepareBox(const Packing &packing) {
+    const auto &dimensions = packing.getDimensions();
+    return TriclinicBox(Matrix<3, 3>{dimensions[0], 0, 0,
+                                     0, dimensions[1], 0,
+                                     0, 0, dimensions[2]});
+}
+
 DomainDecomposition::DomainDecomposition(const Packing &packing, const Interaction &interaction,
                                          const std::array<std::size_t, 3> &domainDivisions,
                                          const std::array<std::size_t, 3> &neighbourGridDivisions,
                                          const Vector<3> &origin)
-        : domainDivisions{domainDivisions}
+        : box{DomainDecomposition::prepareBox(packing)}, domainDivisions{domainDivisions}
 {
-    const auto &dimensions = packing.getDimensions();
     double range = interaction.getRangeRadius();
     double totalRange = interaction.getTotalRangeRadius();
 
-    this->prepareDomains(dimensions, neighbourGridDivisions, range, totalRange, origin);
+    this->prepareDomains(neighbourGridDivisions, range, totalRange, origin);
     this->populateDomains(packing, origin);
 }
 
-void DomainDecomposition::prepareDomains(const std::array<double, 3> &dimensions,
-                                         const std::array<std::size_t, 3> &neighbourGridDivisions, double range,
+void DomainDecomposition::prepareDomains(const std::array<std::size_t, 3> &neighbourGridDivisions, double range,
                                          double totalRange, const Vector<3> &origin)
 {
+    auto boxHeights = this->box.getHeights();
+    Vector<3> originRel = this->box.absoluteToRelative(origin);
+
     for (std::size_t coord{}; coord < 3; coord++) {
-        Expects(origin[coord] >= 0 && origin[coord] < dimensions[coord]);
+        Expects(originRel[coord] >= 0 && originRel[coord] < 1);
         Expects(this->domainDivisions[coord] > 0);
         Expects(neighbourGridDivisions[coord] > 0);
 
         if (this->domainDivisions[coord] < 2)
             continue;
 
-        double ngCellSize = dimensions[coord] / neighbourGridDivisions[coord];
+        double ngCellSize = boxHeights[coord] / neighbourGridDivisions[coord];
         Expects(ngCellSize >= range);
-        double wholeDomainWidth = dimensions[coord] / this->domainDivisions[coord];
+        double wholeDomainWidthRel = 1. / this->domainDivisions[coord];
         // Ghost layer is the total interaction range plus the excess size of the neighbour grid cell
-        double ghostLayerWidth = totalRange - range + ngCellSize;
-        Expects(ghostLayerWidth < wholeDomainWidth);
+        double ghostLayerWidthRel = (totalRange - range + ngCellSize) / boxHeights[coord];
+        Expects(ghostLayerWidthRel < wholeDomainWidthRel);
+
 
         this->regionBounds[coord].resize(this->domainDivisions[coord]);
         double previousGhostEnd = -std::numeric_limits<double>::infinity();
         for (std::size_t domainIdx{}; domainIdx < this->domainDivisions[coord]; domainIdx++) {
-            double theoreticalMiddle = origin[coord] + domainIdx * wholeDomainWidth;
+            double theoreticalMiddle = originRel[coord] + domainIdx * wholeDomainWidthRel;
             // Ghost layer middle should be in the middle of the closest neighbour grit cells
-            double realMiddle = ngCellSize * (std::round(theoreticalMiddle/ngCellSize - 0.5) + 0.5);
+            double realMiddle = (std::round(theoreticalMiddle * neighbourGridDivisions[coord] - 0.5) + 0.5)
+                                / neighbourGridDivisions[coord];
 
             std::size_t previousDomainIdx = (domainIdx + this->domainDivisions[coord] - 1) % domainDivisions[coord];
             double &ghostBeg = this->regionBounds[coord][previousDomainIdx].end;
             double &ghostEnd = this->regionBounds[coord][domainIdx].beg;
-            ghostBeg = realMiddle - ghostLayerWidth / 2, dimensions[coord];
-            ghostEnd = realMiddle + ghostLayerWidth / 2, dimensions[coord];
+            ghostBeg = realMiddle - ghostLayerWidthRel / 2;
+            ghostEnd = realMiddle + ghostLayerWidthRel / 2;
 
             ExpectsMsg(ghostBeg > previousGhostEnd,
                        "Domain of index " + std::to_string(domainIdx) + " on coord " + std::to_string(coord) + " is < 0");
             previousGhostEnd = ghostEnd;
 
-            ghostBeg = fitPeriodically(ghostBeg, dimensions[coord]);
-            ghostEnd = fitPeriodically(ghostEnd, dimensions[coord]);
+            ghostBeg = fitPeriodically(ghostBeg, 1);
+            ghostEnd = fitPeriodically(ghostEnd, 1);
         }
     }
 }
 
 void DomainDecomposition::populateDomains(const Packing &packing, const Vector<3> &origin) {
-    const auto &dimensions = packing.getDimensions();
     this->particlesInRegions.resize(
         std::accumulate(this->domainDivisions.begin(), this->domainDivisions.end(), 1, std::multiplies{})
     );
+
+    Vector<3> originRel = this->box.absoluteToRelative(origin);
     for (std::size_t particleIdx{}; particleIdx < packing.size(); particleIdx++) {
         Vector<3> pos = packing[particleIdx].getPosition();
+        Vector<3> posRel = this->box.absoluteToRelative(pos);
         std::array<std::size_t, 3> coords{};
         for (std::size_t i{}; i < 3; i++) {
-            double wholeDomainWidth = dimensions[i] / this->domainDivisions[i];
-            int coord = std::floor((pos[i] - origin[i]) / wholeDomainWidth);
+            int coord = std::floor((posRel[i] - originRel[i]) * this->domainDivisions[i]);
             coords[i] = (coord + this->domainDivisions[i]) % this->domainDivisions[i];
         }
 
-        if (isVectorInActiveRegion(pos, coords))
+        if (this->isRelativeVectorInActiveRegion(posRel, coords))
             this->particlesInRegions[coordToIdx(coords)].push_back(particleIdx);
     }
 }
@@ -93,8 +104,8 @@ std::size_t DomainDecomposition::coordToIdx(const std::array<std::size_t, 3> &co
     return idx;
 }
 
-bool DomainDecomposition::isVectorInActiveRegion(const Vector<3> &vector,
-                                                 const std::array<std::size_t, 3> &coords) const
+bool DomainDecomposition::isRelativeVectorInActiveRegion(const Vector<3> &vector,
+                                                         const std::array<std::size_t, 3> &coords) const
 {
     for (std::size_t i = 0; i < 3; i++) {
         Expects(coords[i] < this->domainDivisions[i]);
@@ -112,6 +123,12 @@ bool DomainDecomposition::isVectorInActiveRegion(const Vector<3> &vector,
         }
     }
     return true;
+}
+
+bool DomainDecomposition::isVectorInActiveRegion(const Vector<3> &vector,
+                                                 const std::array<std::size_t, 3> &coords) const
+{
+    return this->isRelativeVectorInActiveRegion(this->box.absoluteToRelative(vector), coords);
 }
 
 double DomainDecomposition::fitPeriodically(double x, double period) {
@@ -135,5 +152,5 @@ ActiveDomain DomainDecomposition::getActiveDomainBounds(const std::array<std::si
             boundaries[i].end = this->regionBounds[i][coords[i]].end;
         }
     }
-    return ActiveDomain(boundaries);
+    return ActiveDomain(this->box, boundaries);
 }

@@ -61,14 +61,13 @@ TEST_CASE("DomainDecomposition") {
 
         auto domain0 = domainDecomposition.getActiveDomainBounds({0, 0, 0});
         auto domain1 = domainDecomposition.getActiveDomainBounds({0, 1, 0});
-
         CHECK(domain0.getBoundsForCoordinate(0) == ActiveDomain::RegionBounds{-inf, inf});
-        CHECK(domain0.getBoundsForCoordinate(1).beg == Approx(19));
-        CHECK(domain0.getBoundsForCoordinate(1).end == Approx(5));
+        CHECK(domain0.getBoundsForCoordinate(1).beg == Approx(19./21));
+        CHECK(domain0.getBoundsForCoordinate(1).end == Approx(5./21));
         CHECK(domain0.getBoundsForCoordinate(2) == ActiveDomain::RegionBounds{-inf, inf});
         CHECK(domain1.getBoundsForCoordinate(0) == ActiveDomain::RegionBounds{-inf, inf});
-        CHECK(domain1.getBoundsForCoordinate(1).beg == Approx(10));
-        CHECK(domain1.getBoundsForCoordinate(1).end == Approx(14));
+        CHECK(domain1.getBoundsForCoordinate(1).beg == Approx(10./21));
+        CHECK(domain1.getBoundsForCoordinate(1).end == Approx(14./21));
         CHECK(domain1.getBoundsForCoordinate(2) == ActiveDomain::RegionBounds{-inf, inf});
     }
 }

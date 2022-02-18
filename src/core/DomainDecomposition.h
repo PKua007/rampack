@@ -10,6 +10,7 @@
 #include "Packing.h"
 #include "Interaction.h"
 #include "ActiveDomain.h"
+#include "boxes/TriclinicBox.h"
 
 /**
  * @brief The class decomposes the packing space into ActiveDomain -s separated by ghost layers.
@@ -21,17 +22,20 @@ class DomainDecomposition {
 private:
     using RegionBounds = ActiveDomain::RegionBounds;
 
+    TriclinicBox box;
     std::array<std::size_t, 3> domainDivisions{};
     std::array<std::vector<RegionBounds>, 3> regionBounds;
     std::vector<std::vector<std::size_t>> particlesInRegions;
 
+    static TriclinicBox prepareBox(const Packing &packing);
 
-    void prepareDomains(const std::array<double, 3> &dimensions,
-                        const std::array<std::size_t, 3> &neighbourGridDivisions, double range, double totalRange,
+    void prepareDomains(const std::array<std::size_t, 3> &neighbourGridDivisions, double range, double totalRange,
                         const Vector<3> &origin);
     void populateDomains(const Packing &packing, const Vector<3> &origin);
     [[nodiscard]] static double fitPeriodically(double x, double period);
     [[nodiscard]] std::size_t coordToIdx(const std::array<std::size_t, 3> &coords) const;
+    [[nodiscard]] bool isRelativeVectorInActiveRegion(const Vector<3> &vector,
+                                                      const std::array<std::size_t, 3> &coords) const;
 
 public:
     /**

@@ -7,13 +7,14 @@
 #include "utils/Assertions.h"
 
 bool ActiveDomain::isInside(const Vector<3> &position) const {
+    Vector<3> positionRel = this->box.absoluteToRelative(position);
     for (std::size_t i{}; i < 3; i++) {
         const auto &boundary = this->bounds[i];
         if (boundary.end > boundary.beg) {
-            if (position[i] <= boundary.beg || position[i] >= boundary.end)
+            if (positionRel[i] <= boundary.beg || positionRel[i] >= boundary.end)
                 return false;
         } else {
-            if (position[i] <= boundary.beg && position[i] >= boundary.end)
+            if (positionRel[i] <= boundary.beg && positionRel[i] >= boundary.end)
                 return false;
         }
     }

@@ -7,8 +7,10 @@
 #include "core/ActiveDomain.h"
 
 TEST_CASE("ActiveDomain") {
+    TriclinicBox box(Matrix<3, 3>::identity());
+
     SECTION("normal order") {
-        ActiveDomain activeDomain({{{1, 2}, {3, 4}, {5, 6}}});
+        ActiveDomain activeDomain(box, {{{1, 2}, {3, 4}, {5, 6}}});
 
         CHECK(activeDomain.isInside({1.5, 3.5, 5.5}));
         CHECK_FALSE(activeDomain.isInside({0.5, 3.5, 5.5}));
@@ -21,7 +23,7 @@ TEST_CASE("ActiveDomain") {
     }
 
     SECTION("reversed order") {
-        ActiveDomain activeDomain({{{2, 1}, {3, 4}, {5, 6}}});
+        ActiveDomain activeDomain(box, {{{2, 1}, {3, 4}, {5, 6}}});
 
         CHECK_FALSE(activeDomain.isInside({1.5, 3.5, 5.5}));
         CHECK(activeDomain.isInside({0.5, 3.5, 5.5}));
