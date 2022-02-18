@@ -22,9 +22,15 @@ public:
     explicit TriclinicBox(const std::array<Vector<3>, 3> &dimensions);
 
     void absoluteToRelative(std::vector<Shape> &shapes) const override;
-    [[nodiscard]] Vector<3> absoluteToRelative(const Vector<3> &pos) const override;
     void relativeToAbsolute(std::vector<Shape> &shapes) const override;
-    [[nodiscard]] Vector<3> relativeToAbsolute(const Vector<3> &pos) const override;
+
+    [[nodiscard]] Vector<3> absoluteToRelative(const Vector<3> &pos) const override {
+        return this->inverseDimensions * pos;
+    }
+
+    [[nodiscard]] Vector<3> relativeToAbsolute(const Vector<3> &pos) const override {
+        return this->dimensions * pos;
+    }
 };
 
 

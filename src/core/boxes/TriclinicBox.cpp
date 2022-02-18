@@ -9,17 +9,9 @@ void TriclinicBox::absoluteToRelative(std::vector<Shape> &shapes) const {
         shape.setPosition(this->inverseDimensions * shape.getPosition());
 }
 
-Vector<3> TriclinicBox::absoluteToRelative(const Vector<3> &pos) const {
-    return this->inverseDimensions * pos;
-}
-
 void TriclinicBox::relativeToAbsolute(std::vector<Shape> &shapes) const {
     for (auto &shape : shapes)
         shape.setPosition(this->dimensions * shape.getPosition());
-}
-
-Vector<3> TriclinicBox::relativeToAbsolute(const Vector<3> &pos) const {
-    return this->dimensions * pos;
 }
 
 TriclinicBox::TriclinicBox(const std::array<Vector<3>, 3> &dimensions) {

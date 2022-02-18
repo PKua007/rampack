@@ -139,7 +139,7 @@ void NeighbourGrid::fillNeighbouringCellsOffsets() {
                                          this->positiveNeighbouringCellsOffsets.end());
 }
 
-NeighbourGrid::NeighbourGrid(OrthorhombicBox box, double cellSize, std::size_t numParticles) : box{box} {
+NeighbourGrid::NeighbourGrid(TriclinicBox box, double cellSize, std::size_t numParticles) : box{box} {
     this->setupSizes(box, cellSize);
     this->cellHeads.resize(this->numCells);
     std::fill(this->cellHeads.begin(), this->cellHeads.end(), LIST_END);
@@ -157,14 +157,17 @@ NeighbourGrid::NeighbourGrid(OrthorhombicBox box, double cellSize, std::size_t n
 }
 
 NeighbourGrid::NeighbourGrid(double linearSize, double cellSize, std::size_t numParticles)
-        : NeighbourGrid(OrthorhombicBox{linearSize}, cellSize, numParticles)
+        : NeighbourGrid({linearSize, linearSize, linearSize}, cellSize, numParticles)
 { }
 
 NeighbourGrid::NeighbourGrid(const std::array<double, 3> &linearSizes, double cellSize, std::size_t numParticles)
-        : NeighbourGrid(OrthorhombicBox{linearSizes}, cellSize, numParticles)
+        : NeighbourGrid(TriclinicBox(Matrix<3, 3>{linearSizes[0], 0, 0,
+                                                  0, linearSizes[1], 0,
+                                                  0, 0, linearSizes[2]}),
+                        cellSize, numParticles)
 { }
 
-void NeighbourGrid::setupSizes(OrthorhombicBox newBox, double newCellSize) {
+void NeighbourGrid::setupSizes(TriclinicBox newBox, double newCellSize) {
     Expects(newBox.getVolume() > 0);
     Expects(newCellSize > 0);
 
@@ -263,7 +266,7 @@ std::vector<std::size_t> NeighbourGrid::getCellVector(std::size_t cellNo) const 
     return cell;
 }
 
-bool NeighbourGrid::resize(OrthorhombicBox newBox, double newCellSize) {
+bool NeighbourGrid::resize(TriclinicBox newBox, double newCellSize) {
     auto oldNumCellsInLine = this->cellDivisions;
     std::size_t oldNumCells = this->numCells;
     auto oldBox = this->box;
@@ -298,7 +301,10 @@ bool NeighbourGrid::resize(OrthorhombicBox newBox, double newCellSize) {
 }
 
 bool NeighbourGrid::resize(const std::array<double, 3> &newLinearSize, double newCellSize) {
-    return this->resize(OrthorhombicBox{newLinearSize}, newCellSize);
+    return this->resize(TriclinicBox(Matrix<3, 3>{newLinearSize[0], 0, 0,
+                                                  0, newLinearSize[1], 0,
+                                                  0, 0, newLinearSize[2]}),
+                        newCellSize);
 }
 
 bool NeighbourGrid::resize(double newLinearSize, double newCellSize) {
