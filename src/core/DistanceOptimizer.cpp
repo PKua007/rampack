@@ -57,7 +57,7 @@ void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &inter
     Expects(interaction.hasHardPart());
 
     const double range = interaction.getTotalRangeRadius();
-    const auto &initialDim = packing.getDimensions();
+    const auto &initialDim = packing.getBox().getHeights();
     constexpr double FACTOR_EPSILON = 1 + 1e-12;
 
     // Verify initial dimensions whether they are large enough

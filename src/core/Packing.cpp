@@ -23,7 +23,7 @@ namespace {
     public:
         explicit HardcodedTranslation(const Vector<3> &translation) : translation{translation} { }
 
-        void setLinearSize(const std::array<double, 3> &) override { }
+        void setBox(const TriclinicBox &) override { }
 
         [[nodiscard]] Vector<3> getCorrection(const Vector<3> &) const override {
             throw std::runtime_error("HardcodedTranslation::getCorrection");
@@ -39,13 +39,13 @@ namespace {
     };
 }
 
-Packing::Packing(const std::array<double, 3> &dimensions, std::vector<Shape> shapes,
+Packing::Packing(TriclinicBox box, std::vector<Shape> shapes,
                  std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction, std::size_t moveThreads,
                  std::size_t scalingThreads)
-        : shapes{std::move(shapes)}, dimensions{dimensions}, bc{std::move(bc)},
+        : shapes{std::move(shapes)}, box{std::move(box)}, bc{std::move(bc)},
           interactionRange{interaction.getRangeRadius()}
 {
-    Expects(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
+    Expects(this->box.getVolume() != 0);
     Expects(this->interactionRange > 0);
     Expects(!this->shapes.empty());
 
@@ -54,7 +54,7 @@ Packing::Packing(const std::array<double, 3> &dimensions, std::vector<Shape> sha
 
     this->shapes.resize(this->shapes.size() + this->moveThreads);    // temp shapes at the back
     this->lastAlteredParticleIdx.resize(this->moveThreads, 0);
-    this->bc->setLinearSize(this->dimensions);
+    this->bc->setBox(this->box);
     this->setupForInteraction(interaction);
 }
 
@@ -147,17 +147,22 @@ double Packing::tryMove(std::size_t particleIdx, const Vector<3> &translation, c
 }
 
 double Packing::tryScaling(const std::array<double, 3> &scaleFactor, const Interaction &interaction) {
-    Expects(std::all_of(scaleFactor.begin(), scaleFactor.end(), [](double d) { return d > 0; }));
+    TriclinicBox newBox = this->box;
+    newBox.scale(scaleFactor);
+    return this->tryScaling(newBox, interaction);
+}
+
+double Packing::tryScaling(const TriclinicBox &newBox, const Interaction &interaction) {
+    Expects(newBox.getVolume() != 0);
     Expects(interaction.getRangeRadius() <= this->interactionRange);
-    this->lastDimensions = this->dimensions;
+    this->lastBox = this->box;
 
     double initialEnergy = this->getTotalEnergy(interaction);
 
-    std::transform(this->dimensions.begin(), this->dimensions.end(), scaleFactor.begin(), this->dimensions.begin(),
-                   std::multiplies<>{});
-    this->bc->setLinearSize(this->dimensions);
+    this->box = newBox;
+    this->bc->setBox(this->box);
     for (auto &shape : *this)
-        shape.scale(scaleFactor);
+        shape.setPosition(this->box.relativeToAbsolute(this->lastBox.absoluteToRelative(shape.getPosition())));
     std::swap(this->neighbourGrid, this->tempNeighbourGrid);
     if (this->numInteractionCentres != 0)
         this->recalculateAbsoluteInteractionCentres();
@@ -299,14 +304,11 @@ void Packing::rotateTempInteractionCentres(const Matrix<3, 3> &rotation) {
 }
 
 void Packing::revertScaling() {
-    std::array<double, 3> reverseFactor{};
-    std::transform(this->lastDimensions.begin(), this->lastDimensions.end(), this->dimensions.begin(),
-                   reverseFactor.begin(), std::divides<>{});
-    for (auto &shape : this->shapes)
-        shape.scale(reverseFactor);
+    for (auto &shape : *this)
+        shape.setPosition(this->lastBox.relativeToAbsolute(this->box.absoluteToRelative(shape.getPosition())));
 
-    this->dimensions = this->lastDimensions;
-    this->bc->setLinearSize(this->dimensions);
+    this->box = this->lastBox;
+    this->bc->setBox(this->box);
     std::swap(this->neighbourGrid, this->tempNeighbourGrid);
     if (this->numInteractionCentres != 0)
         this->recalculateAbsoluteInteractionCentres();
@@ -733,7 +735,8 @@ void Packing::rebuildNeighbourGrid() {
         cellSize = minCellSize;
 
     // Less than 4 cells in line is redundant, because everything always would be neighbour
-    if (cellSize * 4 > *std::min_element(this->dimensions.begin(), this->dimensions.end())) {
+    auto boxHeights = this->box.getHeights();
+    if (cellSize * 4 > *std::max_element(boxHeights.begin(), boxHeights.end())) {
         this->neighbourGrid = std::nullopt;
         return;
     }
@@ -745,9 +748,9 @@ void Packing::rebuildNeighbourGrid() {
         totalInteractionCentres = this->numInteractionCentres*this->size();
 
     if (!this->neighbourGrid.has_value())
-        this->neighbourGrid = NeighbourGrid(this->dimensions, cellSize, totalInteractionCentres);
+        this->neighbourGrid = NeighbourGrid(this->box, cellSize, totalInteractionCentres);
     else
-        this->neighbourGridResizes += this->neighbourGrid->resize(this->dimensions, cellSize);
+        this->neighbourGridResizes += this->neighbourGrid->resize(this->box, cellSize);
 
     for (std::size_t i{}; i < this->size(); i++) {
         if (this->numInteractionCentres == 0)
@@ -780,7 +783,7 @@ void Packing::setupForInteraction(const Interaction &interaction) {
 }
 
 double Packing::getVolume() const {
-    return std::accumulate(this->dimensions.begin(), this->dimensions.end(), 1., std::multiplies<>{});
+    return std::abs(this->box.getVolume());
 }
 
 void Packing::store(std::ostream &out, const std::map<std::string, std::string> &auxInfo) const {
@@ -793,7 +796,10 @@ void Packing::store(std::ostream &out, const std::map<std::string, std::string> 
     }
 
     out.precision(std::numeric_limits<double>::max_digits10);
-    out << this->dimensions[0] << " " << this->dimensions[1] << " " << this->dimensions[2] << std::endl;
+    const auto &dimensions = this->box.getDimensions();
+    out << dimensions(0, 0) << " " << dimensions(0, 1) << " " << dimensions(0, 2) << " ";
+    out << dimensions(1, 0) << " " << dimensions(1, 1) << " " << dimensions(1, 2) << " ";
+    out << dimensions(2, 0) << " " << dimensions(2, 1) << " " << dimensions(2, 2) << std::endl;
     out << this->size() << std::endl;
     for (const auto &shape : *this) {
         Vector<3> position = shape.getPosition();
@@ -823,10 +829,8 @@ std::map<std::string, std::string> Packing::restore(std::istream &in, const Inte
     }
 
     // Read box dimensions
-    std::array<double, 3> dimensions_{};
-    in >> dimensions_[0] >> dimensions_[1] >> dimensions_[2];
-    ValidateMsg(in, "Broken packing file: dimensions");
-    Validate(std::all_of(dimensions_.begin(), dimensions_.end(), [](double d) { return d > 0; }));
+    TriclinicBox box_(Packing::restoreDimensions(in));
+    Validate(box_.getVolume() != 0);
 
     // Read particles
     std::size_t size{};
@@ -848,10 +852,10 @@ std::map<std::string, std::string> Packing::restore(std::istream &in, const Inte
     }
 
     // Load data into class
-    this->dimensions = dimensions_;
+    this->box = box_;
     shapes_.resize(shapes_.size() + this->moveThreads);     // add temp shapes
     this->shapes = shapes_;
-    this->bc->setLinearSize(dimensions_);
+    this->bc->setBox(this->box);
     this->setupForInteraction(interaction);
 
     return auxInfo;
@@ -865,8 +869,7 @@ void Packing::resetCounters() {
 
 std::ostream &operator<<(std::ostream &out, const Packing &packing) {
     out << "Packing {" << std::endl;
-    out << "  dimensions: {";
-    out << packing.dimensions[0] << ", " << packing.dimensions[1] << ", " << packing.dimensions[2] << "}," << std::endl;
+    out << "  box: {" << packing.box.getDimensions() << "}," << std::endl;
     out << "  particles (" << packing.size() << "): {" << std::endl;
     for (const auto &shape : packing)
         out << "    " << shape << std::endl;
@@ -938,5 +941,35 @@ void Packing::recalculateAbsoluteInteractionCentres(std::size_t particleIdx) {
         auto pos = this->shapes[particleIdx].getPosition() + this->interactionCentres[centreIdx];
         this->absoluteInteractionCentres[centreIdx] = pos + this->bc->getCorrection(pos);
     }
+}
+
+Matrix<3, 3> Packing::restoreDimensions(std::istream &in) {
+    std::string line;
+    std::getline(in, line);
+    ValidateMsg(in, "Broken packing file: dimensions");
+
+    // We support both new and old format: in the old box was cuboidal, so only 3 numbers were stored. Now we store
+    // a whole 9-element box matrix. The format can be recognized by the number of string in the line.
+    double tokensOld[3];
+    std::istringstream dimensionsStream(line);
+    dimensionsStream >> tokensOld[0] >> tokensOld[1] >> tokensOld[2] >> std::ws;
+    // in.fail() is error apart from eof, which may happen
+    ValidateMsg(!dimensionsStream.fail(), "Broken packing file: dimensions");
+
+    Matrix<3, 3> dimensions;
+    if (dimensionsStream.eof()) {     // If eof, dimensions were saved in the old format: L_x, L_y, L_z
+        dimensions(0, 0) = tokensOld[0];
+        dimensions(1, 1) = tokensOld[1];
+        dimensions(2, 2) = tokensOld[2];
+    } else {            // Otherwise, new format - box matrix
+        dimensions(0, 0) = tokensOld[0];
+        dimensions(0, 1) = tokensOld[1];
+        dimensions(0, 2) = tokensOld[2];
+        dimensionsStream >> dimensions(1, 0) >> dimensions(1, 1) >> dimensions(1, 2);
+        dimensionsStream >> dimensions(2, 0) >> dimensions(2, 1) >> dimensions(2, 2);
+        ValidateMsg(!dimensionsStream.fail(), "Broken packing file: dimensions");
+    }
+
+    return dimensions;
 }
 

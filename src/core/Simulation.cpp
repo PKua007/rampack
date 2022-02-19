@@ -172,12 +172,13 @@ void Simulation::performMovesWithoutDomainDivision(const Interaction &interactio
 }
 
 void Simulation::performMovesWithDomainDivision(const Interaction &interaction) {
-    const auto &packingDimensions = this->packing->getDimensions();
+    const auto &packingBox = this->packing->getBox();
     auto &mt = this->mts[_OMP_THREAD_ID];
 
-    Vector<3> randomOrigin{packingDimensions[0] * this->unitIntervalDistribution(mt),
-                           packingDimensions[1] * this->unitIntervalDistribution(mt),
-                           packingDimensions[2] * this->unitIntervalDistribution(mt)};
+    Vector<3> randomOrigin{this->unitIntervalDistribution(mt),
+                           this->unitIntervalDistribution(mt),
+                           this->unitIntervalDistribution(mt)};
+    randomOrigin = packingBox.relativeToAbsolute(randomOrigin);
     const auto &neighbourGridCellDivisions = this->packing->getNeighbourGridCellDivisions();
     DomainDecomposition domainDecomposition(*this->packing, interaction, this->domainDivisions,
                                             neighbourGridCellDivisions, randomOrigin);
@@ -284,7 +285,7 @@ bool Simulation::tryMove(const Interaction &interaction, const std::vector<std::
 bool Simulation::tryScaling(const Interaction &interaction) {
     auto &mt = this->mts.front();
 
-    std::array<double, 3> oldDim = this->packing->getDimensions();
+    std::array<double, 3> oldDim = this->packing->getBox().getHeights();
     std::array<double, 3> scalingFactor = this->volumeScaler->sampleScalingFactors(oldDim, this->scalingStep, mt);
     Assert(std::all_of(scalingFactor.begin(), scalingFactor.end(), [](auto d) { return d > 0; }));
     double factor = std::accumulate(scalingFactor.begin(), scalingFactor.end(), 1., std::multiplies<>{});
@@ -322,7 +323,7 @@ void Simulation::evaluateCounters(Logger &logger) {
         double rate = this->moveCounter.getCurrentRate();
         this->moveCounter.resetCurrent();
         if (rate > 0.2) {
-            const auto &dimensions = this->packing->getDimensions();
+            const auto &dimensions = this->packing->getBox().getHeights();
             double minDimension = *std::min_element(dimensions.begin(), dimensions.end());
             // Current policy: adjust translations and rotations at the same time - the ratio from the config file
             // is kept. Translation step can be as large as the packing, but not larger. Rotation step would usually

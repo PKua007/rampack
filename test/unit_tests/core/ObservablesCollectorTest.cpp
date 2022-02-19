@@ -33,7 +33,7 @@ TEST_CASE("ObservablesCollector") {
         return out.str();
     };
     auto mockObservable = std::make_unique<MockObservable>();
-    ALLOW_CALL(*mockObservable, calculate(_, _, _, _)).LR_SIDE_EFFECT(boxSize = _1.getDimensions());
+    ALLOW_CALL(*mockObservable, calculate(_, _, _, _)).LR_SIDE_EFFECT(boxSize = _1.getBox().getHeights());
     ALLOW_CALL(*mockObservable, getIntervalHeader()).RETURN(std::vector<std::string>{"L_X", "L_Y", "L_Z"});
     ALLOW_CALL(*mockObservable, getIntervalValues()).LR_RETURN(std::vector<double>(boxSize.begin(), boxSize.end()));
     ALLOW_CALL(*mockObservable, getNominalHeader()).RETURN(std::vector<std::string>{"dim"});

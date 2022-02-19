@@ -12,7 +12,7 @@
  */
 class FreeBoundaryConditions : public BoundaryConditions {
 public:
-    void setLinearSize([[maybe_unused]] const std::array<double, 3> &size) override { }
+    void setBox([[maybe_unused]] const TriclinicBox &box) override { }
 
     [[nodiscard]] Vector<3> getCorrection([[maybe_unused]] const Vector<3> &position) const override {
         return Vector<3>{};

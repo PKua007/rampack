@@ -9,18 +9,11 @@
 #include "utils/Assertions.h"
 
 
-TriclinicBox DomainDecomposition::prepareBox(const Packing &packing) {
-    const auto &dimensions = packing.getDimensions();
-    return TriclinicBox(Matrix<3, 3>{dimensions[0], 0, 0,
-                                     0, dimensions[1], 0,
-                                     0, 0, dimensions[2]});
-}
-
 DomainDecomposition::DomainDecomposition(const Packing &packing, const Interaction &interaction,
                                          const std::array<std::size_t, 3> &domainDivisions,
                                          const std::array<std::size_t, 3> &neighbourGridDivisions,
                                          const Vector<3> &origin)
-        : box{DomainDecomposition::prepareBox(packing)}, domainDivisions{domainDivisions}
+        : box{packing.getBox()}, domainDivisions{domainDivisions}
 {
     double range = interaction.getRangeRadius();
     double totalRange = interaction.getTotalRangeRadius();

@@ -134,7 +134,7 @@ namespace {
 
         DistanceOptimizer::shrinkPacking(testPacking, interaction, axisOrderString);
         std::array<double, 3> minDistances{};
-        std::array<double, 3> finalTestPackingDim = testPacking.getDimensions();
+        std::array<double, 3> finalTestPackingDim = testPacking.getBox().getHeights();
         std::transform(finalTestPackingDim.begin(), finalTestPackingDim.end(), particlesInLine.begin(),
                        minDistances.begin(), [](double dim, std::size_t num) { return dim/num; });
         return minDistances;

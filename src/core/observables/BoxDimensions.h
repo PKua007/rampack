@@ -20,7 +20,7 @@ public:
     void calculate(const Packing &packing, [[maybe_unused]] double temperature, [[maybe_unused]] double pressure,
                    [[maybe_unused]] const ShapeTraits &shapeTraits) override
     {
-        this->dimensions = packing.getDimensions();
+        this->dimensions = packing.getBox().getHeights();
     }
 
     [[nodiscard]] std::vector<std::string> getIntervalHeader() const override { return {"L_X", "L_Y", "L_Z"}; }

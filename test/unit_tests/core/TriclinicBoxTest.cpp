@@ -65,4 +65,19 @@ TEST_CASE("TriclinicBox") {
     SECTION("volume") {
         CHECK(box.getVolume() == Approx(2240));
     }
+
+    SECTION("transform") {
+        box.transform(Matrix<3, 3>{1, 0, 0,
+                                   0, 2, 0,
+                                   0, 0, 3});
+
+        CHECK(box.getDimensions() == Matrix<3, 3>{16,  4,  0,
+                                                  16, 32,  0,
+                                                   0,  0, 30});
+
+        SECTION("self-consistency") {
+            CHECK_THAT(box.relativeToAbsolute(box.absoluteToRelative(Vector<3>{1, 2, 3})),
+                       IsApproxEqual(Vector<3>{1, 2, 3}, 1e-12));
+        }
+    }
 }

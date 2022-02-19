@@ -9,6 +9,8 @@
 
 #include "geometry/Vector.h"
 
+class TriclinicBox;
+
 /**
  * @brief A class representing boundary conditions
  */
@@ -19,7 +21,7 @@ public:
     /**
      * @brief Sets the dimensions of the box which BoundaryConditions should apply to
      */
-    virtual void setLinearSize(const std::array<double, 3> &size) = 0;
+    virtual void setBox(const TriclinicBox &box) = 0;
 
     /**
      * @brief For a given @a position, it returns the vector, which should be added to it in order to fit @a position

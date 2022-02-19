@@ -21,3 +21,14 @@ TriclinicBox::TriclinicBox(const std::array<Vector<3>, 3> &dimensions) {
 
     this->inverseDimensions = this->dimensions.inverse();
 }
+
+void TriclinicBox::transform(const Matrix<3, 3> &transformation) {
+    this->dimensions = transformation * dimensions;
+    this->inverseDimensions = this->dimensions.inverse();
+}
+
+void TriclinicBox::scale(const std::array<double, 3> &factors) {
+    this->transform(Matrix<3, 3>{factors[0], 0, 0,
+                                 0, factors[1], 0,
+                                 0, 0, factors[2]});
+}

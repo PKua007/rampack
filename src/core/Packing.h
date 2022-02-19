@@ -17,6 +17,7 @@
 #include "NeighbourGrid.h"
 #include "ActiveDomain.h"
 #include "utils/OMPMacros.h"
+#include "boxes/TriclinicBox.h"
 
 /**
  * @brief A class representing the packing of molecules, eligible for Monte Carlo perturbations.
@@ -38,7 +39,7 @@ private:
     // Absolute positions of interaction centers (shapes[i].getPosition() + interactionCentres[i] + bc correction)
     std::vector<Vector<3>> absoluteInteractionCentres;
 
-    std::array<double, 3> dimensions{};
+    TriclinicBox box;
     std::unique_ptr<BoundaryConditions> bc;
     std::optional<NeighbourGrid> neighbourGrid;
     std::optional<NeighbourGrid> tempNeighbourGrid;     // temp ng is used for swapping in volume moves
@@ -49,7 +50,7 @@ private:
     std::size_t scalingThreads{};
 
     std::vector<std::size_t> lastAlteredParticleIdx{};
-    std::array<double, 3> lastDimensions{};
+    TriclinicBox lastBox;
 
     std::size_t neighbourGridRebuilds{};
     std::size_t neighbourGridResizes{};
@@ -101,6 +102,8 @@ private:
     [[nodiscard]] iterator begin() { return this->shapes.begin(); }
     [[nodiscard]] iterator end() { return this->shapes.end() - this->moveThreads; }
 
+    static Matrix<3, 3> restoreDimensions(std::istream &in);
+
 public:
     using const_iterator = decltype(shapes)::const_iterator;
 
@@ -113,9 +116,12 @@ public:
     explicit Packing(std::unique_ptr<BoundaryConditions> bc, std::size_t moveThreads = 0,
                      std::size_t scalingThreads = 0);
 
+    Packing(TriclinicBox box, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
+            const Interaction &interaction, std::size_t moveThreads = 0, std::size_t scalingThreads = 0);
+
     /**
      * @brief Creates a packing from shape vector.
-     * @param dimensions dimensions of the packing
+     * @param box dimensions of the packing
      * @param shapes shapes in the packing
      * @param bc boundary conditions to use
      * @param interaction interaction between molecules in the packing
@@ -123,7 +129,9 @@ public:
      * @param scalingThreads number of threads used for volume moves. If 0, all OpenMP threads will be used
      */
     Packing(const std::array<double, 3> &dimensions, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
-            const Interaction &interaction, std::size_t moveThreads = 0, std::size_t scalingThreads = 0);
+            const Interaction &interaction, std::size_t moveThreads = 0, std::size_t scalingThreads = 0)
+            : Packing(TriclinicBox(dimensions), shapes, std::move(bc), interaction, moveThreads, scalingThreads)
+    { }
 
     /**
      * @brief Return the number of shapes in the packing.
@@ -160,7 +168,7 @@ public:
      */
     [[nodiscard]] const Shape &back() const;
 
-    [[nodiscard]] const std::array<double, 3> &getDimensions() const { return this->dimensions; }
+    [[nodiscard]] const TriclinicBox &getBox() const { return this->box; }
 
     /**
      * @brief Returns the number of molecule move threads passed in the constructor.
@@ -243,6 +251,8 @@ public:
      * @return energy difference between the final and initial state
      */
     double tryScaling(const std::array<double, 3> &scaleFactor, const Interaction &interaction);
+
+    double tryScaling(const TriclinicBox& newBox, const Interaction &interaction);
 
     /**
      * @brief Similar as Packing::tryScaling(const std::array<double, 3> &, const Interaction &), but with all sides

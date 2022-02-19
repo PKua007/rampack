@@ -27,8 +27,6 @@ private:
     std::array<std::vector<RegionBounds>, 3> regionBounds;
     std::vector<std::vector<std::size_t>> particlesInRegions;
 
-    static TriclinicBox prepareBox(const Packing &packing);
-
     void prepareDomains(const std::array<std::size_t, 3> &neighbourGridDivisions, double range, double totalRange,
                         const Vector<3> &origin);
     void populateDomains(const Packing &packing, const Vector<3> &origin);

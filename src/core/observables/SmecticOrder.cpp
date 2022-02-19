@@ -42,10 +42,11 @@ SmecticOrder::SmecticOrder(const std::array<int, 3> &kTauRanges) : kTauRanges{kT
 }
 
 std::complex<double> SmecticOrder::calculateTau(const std::array<int, 3> &kTau_, const Packing &packing) {
-    auto dim = packing.getDimensions();
+    auto dimInv = packing.getBox().getDimensions().inverse();
     Vector<3> wavevector;
     for (std::size_t i{}; i < 3; i++)
-        wavevector[i] = 2*M_PI*kTau_[i]/dim[i];
+        wavevector[i] = 2 * M_PI * kTau_[i];
+    wavevector = dimInv * wavevector;
     double volume = packing.getVolume();
 
     auto tauAccumulator = [wavevector](std::complex<double> tau_, const Shape &shape) {
