@@ -931,7 +931,8 @@ double Packing::getAverageNumberOfNeighbours() const {
 }
 
 void Packing::recalculateAbsoluteInteractionCentres() {
-    for (std::size_t particleIdx{}; particleIdx < this->size(); particleIdx++)
+    #pragma omp parallel for default(none) num_threads(this->scalingThreads)
+    for (std::size_t particleIdx = 0; particleIdx < this->size(); particleIdx++)
         this->recalculateAbsoluteInteractionCentres(particleIdx);
 }
 
