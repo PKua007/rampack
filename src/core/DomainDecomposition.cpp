@@ -69,12 +69,18 @@ void DomainDecomposition::prepareDomains(const std::array<std::size_t, 3> &neigh
 }
 
 void DomainDecomposition::populateDomains(const Packing &packing, const Vector<3> &origin) {
-    this->particlesInRegions.resize(
-        std::accumulate(this->domainDivisions.begin(), this->domainDivisions.end(), 1, std::multiplies{})
-    );
+    std::size_t numDomains = std::accumulate(this->domainDivisions.begin(), this->domainDivisions.end(), 1,
+                                             std::multiplies{});
+    this->particlesInRegions.resize(numDomains);
 
     Vector<3> originRel = this->box.absoluteToRelative(origin);
-    for (std::size_t particleIdx{}; particleIdx < packing.size(); particleIdx++) {
+
+    std::vector<std::size_t> particleDomainIdx(packing.size());
+    constexpr std::size_t GHOST_PARTICLE = std::numeric_limits<std::size_t>::max();
+
+    #pragma omp parallel for default(none) shared(particleDomainIdx, packing) firstprivate(originRel) \
+            num_threads(numDomains)
+    for (std::size_t particleIdx = 0; particleIdx < packing.size(); particleIdx++) {
         Vector<3> pos = packing[particleIdx].getPosition();
         Vector<3> posRel = this->box.absoluteToRelative(pos);
         std::array<std::size_t, 3> coords{};
@@ -84,8 +90,14 @@ void DomainDecomposition::populateDomains(const Packing &packing, const Vector<3
         }
 
         if (this->isRelativeVectorInActiveRegion(posRel, coords))
-            this->particlesInRegions[coordToIdx(coords)].push_back(particleIdx);
+            particleDomainIdx[particleIdx] = coordToIdx(coords);
+        else
+            particleDomainIdx[particleIdx] = GHOST_PARTICLE;
     }
+
+    for (std::size_t particleIdx = 0; particleIdx < packing.size(); particleIdx++)
+        if (particleDomainIdx[particleIdx] != GHOST_PARTICLE)
+            this->particlesInRegions[particleDomainIdx[particleIdx]].push_back(particleIdx);
 }
 
 std::size_t DomainDecomposition::coordToIdx(const std::array<std::size_t, 3> &coords) const {
