@@ -59,6 +59,7 @@ private:
     Counter scalingCounter;
     double moveMicroseconds{};
     double scalingMicroseconds{};
+    double domainDecompositionMicroseconds{};
     bool shouldAdjustStepSize{};
     std::size_t performedCycles{};
     std::size_t totalCycles{};
@@ -142,6 +143,11 @@ public:
      * @brief Returns the total time consumed by scaling moves in microseconds.
      */
     [[nodiscard]] double getScalingMicroseconds() const { return this->scalingMicroseconds; }
+
+    /**
+     * @brief Returns the total time consumed by scaling moves in microseconds.
+     */
+    [[nodiscard]] double getDomainDecompositionMicroseconds() const { return this->domainDecompositionMicroseconds; }
 
     /**
      * @brief Returns the total time consumed by computation of observables.

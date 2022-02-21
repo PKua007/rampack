@@ -255,12 +255,15 @@ int Frontend::casino(int argc, char **argv) {
         double ngRebuildSeconds = simulatedPacking.getNeighbourGridRebuildMicroseconds() / 1e6;
         double moveSeconds = simulation.getMoveMicroseconds() / 1e6;
         double scalingSeconds = simulation.getScalingMicroseconds() / 1e6;
+        double domainDecompositionSeconds = simulation.getDomainDecompositionMicroseconds() / 1e6;
         double observablesSeconds = simulation.getObservablesMicroseconds() / 1e6;
         double otherSeconds = totalSeconds - moveSeconds - scalingSeconds - observablesSeconds;
         double cyclesPerSecond = static_cast<double>(simulation.getPerformedCycles()) / totalSeconds;
 
         double ngRebuildTotalPercent = ngRebuildSeconds / totalSeconds * 100;
         double ngRebuildScalingPercent = ngRebuildSeconds / scalingSeconds * 100;
+        double domainDecompTotalPercent = domainDecompositionSeconds / totalSeconds * 100;
+        double domainDecompMovePercent = domainDecompositionSeconds / moveSeconds * 100;
         double movePercent = moveSeconds / totalSeconds * 100;
         double scalingPercent = scalingSeconds / totalSeconds * 100;
         double observablesPercent = observablesSeconds / totalSeconds * 100;
@@ -280,6 +283,8 @@ int Frontend::casino(int argc, char **argv) {
         this->logger << "Scaling time      : " << scalingSeconds << " s (" << scalingPercent << "% total)" << std::endl;
         this->logger << "NG rebuild time   : " << ngRebuildSeconds << " s (";
         this->logger << ngRebuildScalingPercent << "% scaling, " << ngRebuildTotalPercent << "% total)" <<  std::endl;
+        this->logger << "Dom. decomp. time : " << domainDecompositionSeconds << " s (";
+        this->logger << domainDecompMovePercent << "% move, " << domainDecompTotalPercent << "% total)" << std::endl;
         this->logger << "Observables time  : " << observablesSeconds << " s (";
         this->logger << observablesPercent << "% total)" << std::endl;
         this->logger << "Other time        : " << otherSeconds << " s (" << otherPercent << "% total)" << std::endl;

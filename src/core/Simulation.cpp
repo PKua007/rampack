@@ -135,6 +135,7 @@ void Simulation::reset() {
     this->packing->resetCounters();
     this->moveMicroseconds = 0;
     this->scalingMicroseconds = 0;
+    this->domainDecompositionMicroseconds = 0;
     this->observablesCollector->clear();
     this->performedCycles = 0;
     this->totalCycles = 0;
@@ -180,9 +181,14 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
                            this->unitIntervalDistribution(mt)};
     randomOrigin = packingBox.relativeToAbsolute(randomOrigin);
     const auto &neighbourGridCellDivisions = this->packing->getNeighbourGridCellDivisions();
+    Counter tempMoveCounter;
+
+    using namespace std::chrono;
+    auto start = high_resolution_clock::now();
     DomainDecomposition domainDecomposition(*this->packing, interaction, this->domainDivisions,
                                             neighbourGridCellDivisions, randomOrigin);
-    Counter tempMoveCounter;
+    auto end = high_resolution_clock::now();
+    this->domainDecompositionMicroseconds += duration<double, std::micro>(end - start).count();
 
     #pragma omp declare reduction (+ : Counter : omp_out += omp_in)
     #pragma omp parallel for shared(domainDecomposition, interaction) default(none) collapse(3) \
