@@ -38,6 +38,9 @@ private:
     std::vector<std::size_t> neighbouringCellsOffsets;
     std::vector<std::size_t> positiveNeighbouringCellsOffsets;
 
+    static bool increment(std::array<int, 3> &in);
+    static std::size_t flattenTranslationIndex(std::size_t i, std::size_t j, std::size_t k) { return i*3*3 + j*3 + k; }
+
     [[nodiscard]] std::array<std::size_t, 3> cellNoToCoordinates(std::size_t cellNo) const;
     [[nodiscard]] std::size_t coordinatesToCellNo(const std::array<std::size_t, 3> &coords) const;
     [[nodiscard]] std::size_t realCoordinatesToCellNo(const std::array<std::size_t, 3> &coords) const;
@@ -55,11 +58,10 @@ private:
      */
     [[nodiscard]] std::pair<std::size_t, std::size_t> getReflectedCellData(std::size_t cellNo) const;
 
-    static bool increment(std::array<int, 3> &in);
     void fillNeighbouringCellsOffsets();
 
     [[nodiscard]] std::vector<std::size_t> getCellVector(std::size_t cellNo) const;
-    void setupSizes(TriclinicBox newBox, double newCellSize);
+    void setupSizes(const TriclinicBox& newBox, double newCellSize);
     void calculateTranslations();
 
     friend class NeighboursView;
@@ -221,14 +223,22 @@ public:
      * @brief Creates a neighbour grid for a general box. The minimal cell size is given by @a cellSize and the number
      * of supported particles is given by @a numParticles.
      */
-    NeighbourGrid(TriclinicBox box, double cellSize, std::size_t numParticles);
+    NeighbourGrid(const TriclinicBox& box, double cellSize, std::size_t numParticles);
 
     /**
      * @brief Adds an object with identifier @a idx at position @a position to the neighbour grid.
      */
     void add(std::size_t idx, const Vector<3> &position);
 
+    /**
+     * @brief Translates @a position to internal cell identifier, which may be later used in
+     * NeighbourGrid::add(std::size_t, std::size_t)
+     */
     [[nodiscard]] std::size_t positionToCellNo(const Vector<3> &position) const;
+
+    /**
+     * @brief Adds an object with identifier @a idx at a cell indexed by @a cellNo.
+     */
     void add(std::size_t idx, std::size_t cellNo);
 
     /**

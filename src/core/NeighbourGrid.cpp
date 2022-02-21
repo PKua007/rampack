@@ -79,23 +79,24 @@ bool NeighbourGrid::isCellReflected(std::size_t cellNo) const {
 
 std::pair<std::size_t, std::size_t> NeighbourGrid::getReflectedCellData(std::size_t cellNo) const {
     if (!this->isCellReflected(cellNo))
-        return std::make_pair(cellNo, 1*3*3 + 1*3 + 1);
+        return std::make_pair(cellNo, NeighbourGrid::flattenTranslationIndex(1, 1, 1));
 
     std::array<std::size_t, 3> coords = this->cellNoToCoordinates(cellNo);
-    std::array<std::size_t, 3> translationCoord{};
-    translationCoord.fill(1);
+    std::array<std::size_t, 3> transCoord{};
+    transCoord.fill(1);
     for (std::size_t i{}; i < 3; i++) {
         std::size_t &coord = coords[i];
         if (coord == 0) {
             coord = this->cellDivisions[i] - 2;
-            translationCoord[i] = 0;
+            transCoord[i] = 0;
         } else if (coord == this->cellDivisions[i] - 1) {
             coord = 1;
-            translationCoord[i] = 2;
+            transCoord[i] = 2;
         }
     }
-    return std::make_pair(this->coordinatesToCellNo(coords),
-                          translationCoord[0]*3*3 + translationCoord[1]*3 + translationCoord[2]);
+
+    std::size_t transIdx = NeighbourGrid::flattenTranslationIndex(transCoord[0], transCoord[1], transCoord[2]);
+    return std::make_pair(this->coordinatesToCellNo(coords), transIdx);
 }
 
 bool NeighbourGrid::increment(std::array<int, 3> &in) {
@@ -141,7 +142,7 @@ void NeighbourGrid::fillNeighbouringCellsOffsets() {
                                          this->positiveNeighbouringCellsOffsets.end());
 }
 
-NeighbourGrid::NeighbourGrid(TriclinicBox box, double cellSize, std::size_t numParticles) : box{box} {
+NeighbourGrid::NeighbourGrid(const TriclinicBox& box, double cellSize, std::size_t numParticles) : box{box} {
     this->setupSizes(box, cellSize);
     this->cellHeads.resize(this->numCells);
     std::fill(this->cellHeads.begin(), this->cellHeads.end(), LIST_END);
@@ -169,7 +170,7 @@ NeighbourGrid::NeighbourGrid(const std::array<double, 3> &linearSizes, double ce
                         cellSize, numParticles)
 { }
 
-void NeighbourGrid::setupSizes(TriclinicBox newBox, double newCellSize) {
+void NeighbourGrid::setupSizes(const TriclinicBox& newBox, double newCellSize) {
     Expects(newBox.getVolume() > 0);
     Expects(newCellSize > 0);
 
@@ -198,10 +199,13 @@ void NeighbourGrid::calculateTranslations() {
     for (std::size_t i{}; i < 3; i++) {
         for (std::size_t j{}; j < 3; j++) {
             for (std::size_t k{}; k < 3; k++) {
-                Vector<3> relativeTranslation{i - 1., j - 1., k - 1.};
-                Vector<3> absoluteTranslation = box.relativeToAbsolute(relativeTranslation);
-                std::size_t idx = i*3*3 + j*3 + k;
-                translations[idx] = absoluteTranslation;
+                // indices 0, 1, 2 correspond to -1, 0, 1 (relative) translation respectively
+                Vector<3> relativeTranslation{static_cast<double>(i) - 1,
+                                              static_cast<double>(j) - 1.,
+                                              static_cast<double>(k) - 1.};
+                Vector<3> absoluteTranslation = this->box.relativeToAbsolute(relativeTranslation);
+                std::size_t idx = NeighbourGrid::flattenTranslationIndex(i, j, k);
+                this->translations[idx] = absoluteTranslation;
             }
         }
     }

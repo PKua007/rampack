@@ -145,7 +145,7 @@ public:
     [[nodiscard]] double getScalingMicroseconds() const { return this->scalingMicroseconds; }
 
     /**
-     * @brief Returns the total time consumed by scaling moves in microseconds.
+     * @brief Returns the total time consumed by domain decomposition moves in microseconds.
      */
     [[nodiscard]] double getDomainDecompositionMicroseconds() const { return this->domainDecompositionMicroseconds; }
 
