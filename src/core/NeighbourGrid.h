@@ -12,9 +12,7 @@
 #include <iterator>
 #include <memory>
 
-#include "Box.h"
-#include "boxes/OrthorhombicBox.h"
-#include "boxes/TriclinicBox.h"
+#include "TriclinicBox.h"
 #include "geometry/Vector.h"
 #include "utils/Assertions.h"
 

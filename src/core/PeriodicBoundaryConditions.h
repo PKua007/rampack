@@ -6,7 +6,7 @@
 #define RAMPACK_PERIODICBOUNDARYCONDITIONS_H
 
 #include "BoundaryConditions.h"
-#include "boxes/TriclinicBox.h"
+#include "TriclinicBox.h"
 
 /**
  * @brief Periodic boundary conditions on cuboidal box.

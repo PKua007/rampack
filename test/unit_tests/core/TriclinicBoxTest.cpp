@@ -6,7 +6,7 @@
 
 #include "matchers/VectorApproxMatcher.h"
 
-#include "core/boxes/TriclinicBox.h"
+#include "core/TriclinicBox.h"
 
 TEST_CASE("TriclinicBox") {
     Vector<3> posRel1{0.5, 0.25, 0.5}, posRel2{0.75, 1.0, 0};

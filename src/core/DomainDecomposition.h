@@ -10,7 +10,7 @@
 #include "Packing.h"
 #include "Interaction.h"
 #include "ActiveDomain.h"
-#include "boxes/TriclinicBox.h"
+#include "TriclinicBox.h"
 
 /**
  * @brief The class decomposes the packing space into ActiveDomain -s separated by ghost layers.

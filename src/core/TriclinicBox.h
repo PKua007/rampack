@@ -5,13 +5,15 @@
 #ifndef RAMPACK_TRICLINICBOX_H
 #define RAMPACK_TRICLINICBOX_H
 
+#include <vector>
 #include <array>
 
-#include "core/Box.h"
+#include "core/Shape.h"
+#include "geometry/Vector.h"
 #include "geometry/Matrix.h"
 
 
-class TriclinicBox : public Box {
+class TriclinicBox {
 private:
     Matrix<3, 3> dimensions;
     Matrix<3, 3> inverseDimensions;
@@ -35,22 +37,26 @@ public:
 
     explicit TriclinicBox(const std::array<Vector<3>, 3> &dimensions);
 
-    void absoluteToRelative(std::vector<Shape> &shapes) const override;
-    void relativeToAbsolute(std::vector<Shape> &shapes) const override;
+    void absoluteToRelative(std::vector<Shape> &shapes) const;
+    void relativeToAbsolute(std::vector<Shape> &shapes) const;
 
-    [[nodiscard]] Vector<3> absoluteToRelative(const Vector<3> &pos) const override {
+    [[nodiscard]] Vector<3> absoluteToRelative(const Vector<3> &pos) const {
         return this->inverseDimensions * pos;
     }
 
-    [[nodiscard]] Vector<3> relativeToAbsolute(const Vector<3> &pos) const override {
+    [[nodiscard]] Vector<3> relativeToAbsolute(const Vector<3> &pos) const {
         return this->dimensions * pos;
     }
 
-    const Matrix<3, 3> &getDimensions() const { return dimensions; }
+    [[nodiscard]] const Matrix<3, 3> &getDimensions() const { return dimensions; }
 
     void transform(const Matrix<3, 3> &transformation);
     void scale(const std::array<double, 3> &factors);
     void scale(double factor) { this->scale(std::array<double, 3>{factor, factor, factor}); }
+
+    [[nodiscard]] std::array<Vector<3>, 3> getSides() const;
+    [[nodiscard]] double getVolume() const;
+    [[nodiscard]] std::array<double, 3> getHeights() const;
 };
 
 

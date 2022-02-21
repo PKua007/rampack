@@ -10,7 +10,7 @@
 #include <utility>
 
 #include "geometry/Vector.h"
-#include "boxes/TriclinicBox.h"
+#include "TriclinicBox.h"
 
 /**
  * @brief A class representing a single active domain in domain division scheme

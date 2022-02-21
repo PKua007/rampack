@@ -8,7 +8,6 @@
 
 #include "NeighbourGrid.h"
 #include "utils/Utils.h"
-#include "boxes/OrthorhombicBox.h"
 
 std::size_t NeighbourGrid::positionToCellNo(const Vector<3> &position) const {
     std::size_t result{};
@@ -294,7 +293,6 @@ std::vector<std::size_t> NeighbourGrid::getCellVector(std::size_t cellNo) const 
 bool NeighbourGrid::resize(TriclinicBox newBox, double newCellSize) {
     auto oldNumCellsInLine = this->cellDivisions;
     std::size_t oldNumCells = this->numCells;
-    auto oldBox = this->box;
     this->setupSizes(newBox, newCellSize);
 
     // Early exit - if number of cells in line did not change we do not need to rebuild the structure, only clear and

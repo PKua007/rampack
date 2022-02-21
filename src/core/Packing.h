@@ -18,7 +18,7 @@
 #include "NeighbourGrid.h"
 #include "ActiveDomain.h"
 #include "utils/OMPMacros.h"
-#include "boxes/TriclinicBox.h"
+#include "TriclinicBox.h"
 
 /**
  * @brief A class representing the packing of molecules, eligible for Monte Carlo perturbations.
