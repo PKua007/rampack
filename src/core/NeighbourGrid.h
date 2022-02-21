@@ -31,7 +31,8 @@ private:
     std::array<double, 3> relativeCellSize{};
     std::vector<std::size_t> cellHeads;
     std::vector<std::size_t> successors;
-    std::vector<Vector<3>> translations;
+    std::array<Vector<3>, 27> translations;
+    std::vector<std::size_t> translationIndices;
     std::vector<std::size_t> reflectedCells;
     std::size_t numCells{};
     std::vector<std::size_t> neighbouringCellsOffsets;
@@ -52,13 +53,14 @@ private:
      * @brief If @a cellNo is the reflection of a real cell due to periodic boundary conditions the method returns
      * pointer to the vector in the real cell. Otherwise @a nullptr is returned.
      */
-    [[nodiscard]] std::pair<std::size_t, Vector<3>> getReflectedCellData(std::size_t cellNo) const;
+    [[nodiscard]] std::pair<std::size_t, std::size_t> getReflectedCellData(std::size_t cellNo) const;
 
     static bool increment(std::array<int, 3> &in);
     void fillNeighbouringCellsOffsets();
 
     [[nodiscard]] std::vector<std::size_t> getCellVector(std::size_t cellNo) const;
     void setupSizes(TriclinicBox newBox, double newCellSize);
+    void calculateTranslations();
 
     friend class NeighboursView;
     friend class NeighboursViewIterator;
@@ -172,9 +174,10 @@ public:
 
         reference operator*() const {
             std::size_t neighbourCellNo = this->cellNo + (*this->offsets)[this->offsetIdx];
+            std::size_t translationIdx = grid->translationIndices[neighbourCellNo];
 
             return NeighbourCellData(this->grid->cellHeads[this->grid->reflectedCells[neighbourCellNo]],
-                                     &(this->grid->translations[neighbourCellNo]), this->grid);
+                                     &(this->grid->translations[translationIdx]), this->grid);
         }
     };
 

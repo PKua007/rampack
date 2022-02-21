@@ -77,23 +77,25 @@ bool NeighbourGrid::isCellReflected(std::size_t cellNo) const {
     return false;
 }
 
-std::pair<std::size_t, Vector<3>> NeighbourGrid::getReflectedCellData(std::size_t cellNo) const {
+std::pair<std::size_t, std::size_t> NeighbourGrid::getReflectedCellData(std::size_t cellNo) const {
     if (!this->isCellReflected(cellNo))
-        return std::make_pair(cellNo, Vector<3>{});
+        return std::make_pair(cellNo, 1*3*3 + 1*3 + 1);
 
     std::array<std::size_t, 3> coords = this->cellNoToCoordinates(cellNo);
-    Vector<3> translation;
+    std::array<std::size_t, 3> translationCoord{};
+    translationCoord.fill(1);
     for (std::size_t i{}; i < 3; i++) {
         std::size_t &coord = coords[i];
         if (coord == 0) {
             coord = this->cellDivisions[i] - 2;
-            translation -= this->boxSides[i];
+            translationCoord[i] = 0;
         } else if (coord == this->cellDivisions[i] - 1) {
             coord = 1;
-            translation += this->boxSides[i];
+            translationCoord[i] = 2;
         }
     }
-    return std::make_pair(this->coordinatesToCellNo(coords), translation);
+    return std::make_pair(this->coordinatesToCellNo(coords),
+                          translationCoord[0]*3*3 + translationCoord[1]*3 + translationCoord[2]);
 }
 
 bool NeighbourGrid::increment(std::array<int, 3> &in) {
@@ -143,7 +145,7 @@ NeighbourGrid::NeighbourGrid(TriclinicBox box, double cellSize, std::size_t numP
     this->setupSizes(box, cellSize);
     this->cellHeads.resize(this->numCells);
     std::fill(this->cellHeads.begin(), this->cellHeads.end(), LIST_END);
-    this->translations.resize(this->numCells);
+    this->translationIndices.resize(this->numCells);
     this->reflectedCells.resize(this->numCells);
 
     this->successors.resize(numParticles);
@@ -151,7 +153,7 @@ NeighbourGrid::NeighbourGrid(TriclinicBox box, double cellSize, std::size_t numP
 
     // Aliasing "reflected" cell lists to real ones
     for (std::size_t i{}; i < this->numCells; i++)
-        std::tie(this->reflectedCells[i], this->translations[i]) = this->getReflectedCellData(i);
+        std::tie(this->reflectedCells[i], this->translationIndices[i]) = this->getReflectedCellData(i);
 
     this->fillNeighbouringCellsOffsets();
 }
@@ -186,9 +188,23 @@ void NeighbourGrid::setupSizes(TriclinicBox newBox, double newCellSize) {
     this->cellDivisions = cellDivisions_;
     for (std::size_t i{}; i < 3; i++)
         this->relativeCellSize[i] = 1 / static_cast<double>(this->cellDivisions[i] - 2);
+    this->calculateTranslations();
     this->numCells = static_cast<std::size_t>(
         std::accumulate(this->cellDivisions.begin(), this->cellDivisions.end(), 1., std::multiplies<>{})
     );
+}
+
+void NeighbourGrid::calculateTranslations() {
+    for (std::size_t i{}; i < 3; i++) {
+        for (std::size_t j{}; j < 3; j++) {
+            for (std::size_t k{}; k < 3; k++) {
+                Vector<3> relativeTranslation{i - 1., j - 1., k - 1.};
+                Vector<3> absoluteTranslation = box.relativeToAbsolute(relativeTranslation);
+                std::size_t idx = i*3*3 + j*3 + k;
+                translations[idx] = absoluteTranslation;
+            }
+        }
+    }
 }
 
 void NeighbourGrid::add(std::size_t idx, const Vector<3> &position) {
@@ -280,12 +296,6 @@ bool NeighbourGrid::resize(TriclinicBox newBox, double newCellSize) {
     // Early exit - if number of cells in line did not change we do not need to rebuild the structure, only clear and
     // recreate translations
     if (this->cellDivisions == oldNumCellsInLine) {
-        // Very hackish way of recreating translations - rescale them using old and new boxes
-        for (std::size_t i{}; i < this->numCells; i++) {
-            auto &translation = this->translations[i];
-            translation = newBox.relativeToAbsolute(oldBox.absoluteToRelative(translation));
-        }
-
         this->clear();
         return false;
     }
@@ -293,12 +303,12 @@ bool NeighbourGrid::resize(TriclinicBox newBox, double newCellSize) {
     // The resize is needed only if number of cells is to big for allocated memory - otherwise reuse the old structure
     if (oldNumCells < this->numCells) {
         this->cellHeads.resize(this->numCells);
-        this->translations.resize(this->numCells);
+        this->translationIndices.resize(this->numCells);
         this->reflectedCells.resize(this->numCells);
     }
 
     for (std::size_t i{}; i < this->numCells; i++)
-        std::tie(this->reflectedCells[i], this->translations[i]) = this->getReflectedCellData(i);
+        std::tie(this->reflectedCells[i], this->translationIndices[i]) = this->getReflectedCellData(i);
 
     this->fillNeighbouringCellsOffsets();
     this->clear();
@@ -342,7 +352,7 @@ std::array<std::size_t, 3> NeighbourGrid::getCellDivisions() const {
 std::size_t NeighbourGrid::getMemoryUsage() const {
     std::size_t bytes{};
     bytes += get_vector_memory_usage(this->cellHeads);
-    bytes += get_vector_memory_usage(this->translations);
+    bytes += get_vector_memory_usage(this->translationIndices);
     bytes += get_vector_memory_usage(this->cellHeads);
     bytes += get_vector_memory_usage(this->successors);
     bytes += get_vector_memory_usage(this->reflectedCells);

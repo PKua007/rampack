@@ -5,6 +5,7 @@
 #ifndef RAMPACK_PACKING_H
 #define RAMPACK_PACKING_H
 
+#include <utility>
 #include <vector>
 #include <memory>
 #include <optional>
@@ -133,7 +134,8 @@ public:
      */
     Packing(const std::array<double, 3> &dimensions, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
             const Interaction &interaction, std::size_t moveThreads = 0, std::size_t scalingThreads = 0)
-            : Packing(TriclinicBox(dimensions), shapes, std::move(bc), interaction, moveThreads, scalingThreads)
+            : Packing(TriclinicBox(dimensions), std::move(shapes), std::move(bc), interaction, moveThreads,
+                      scalingThreads)
     { }
 
     /**
