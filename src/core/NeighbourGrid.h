@@ -37,7 +37,6 @@ private:
     std::vector<std::size_t> neighbouringCellsOffsets;
     std::vector<std::size_t> positiveNeighbouringCellsOffsets;
 
-    [[nodiscard]] std::size_t positionToCellNo(const Vector<3> &position) const;
     [[nodiscard]] std::array<std::size_t, 3> cellNoToCoordinates(std::size_t cellNo) const;
     [[nodiscard]] std::size_t coordinatesToCellNo(const std::array<std::size_t, 3> &coords) const;
     [[nodiscard]] std::size_t realCoordinatesToCellNo(const std::array<std::size_t, 3> &coords) const;
@@ -225,6 +224,9 @@ public:
      * @brief Adds an object with identifier @a idx at position @a position to the neighbour grid.
      */
     void add(std::size_t idx, const Vector<3> &position);
+
+    [[nodiscard]] std::size_t positionToCellNo(const Vector<3> &position) const;
+    void add(std::size_t idx, std::size_t cellNo);
 
     /**
      * @brief Removes an object with identifier @a idx at position @a position from the neighbour grid.

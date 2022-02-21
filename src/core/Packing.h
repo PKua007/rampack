@@ -59,12 +59,15 @@ private:
     void rebuildNeighbourGrid();
     void removeInteractionCentresFromNeighbourGrid(size_t particleIdx);
     void addInteractionCentresToNeighbourGrid(size_t particleIdx);
+    void addInteractionCentresToNeighbourGrid();
+    
     void recalculateAbsoluteInteractionCentres();
     void recalculateAbsoluteInteractionCentres(size_t particleIdx);
 
     void prepareTempInteractionCentres(std::size_t particleIdx);
     void rotateTempInteractionCentres(const Matrix<3, 3> &rotation);
     void acceptTempInteractionCentres();
+
 
     // In all the methods below, tempParticleIdx means where the position is stored - may be equal to
     // originalParticleIdx or be the last index (temp shape). originalParticleIdx is the actual id of the particle, but

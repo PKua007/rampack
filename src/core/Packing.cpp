@@ -752,16 +752,41 @@ void Packing::rebuildNeighbourGrid() {
     else
         this->neighbourGridResizes += this->neighbourGrid->resize(this->box, cellSize);
 
-    for (std::size_t i{}; i < this->size(); i++) {
-        if (this->numInteractionCentres == 0)
-            this->neighbourGrid->add(i, this->shapes[i].getPosition());
-        else
-            this->addInteractionCentresToNeighbourGrid(i);
-    }
+    this->addInteractionCentresToNeighbourGrid();
 
     this->neighbourGridRebuilds++;
     auto end = high_resolution_clock::now();
     this->neighbourGridRebuildMicroseconds += duration<double, std::micro>(end - start).count();
+}
+
+void Packing::addInteractionCentresToNeighbourGrid() {
+    if (numInteractionCentres == 0) {
+        std::vector<std::size_t> cellNos(size());
+
+        #pragma omp parallel for default(none) shared(cellNos) num_threads(this->scalingThreads)
+        for (std::size_t particleIdx = 0; particleIdx < size(); particleIdx++)
+            cellNos[particleIdx] = neighbourGrid->positionToCellNo(shapes[particleIdx].getPosition());
+
+        for (std::size_t particleIdx{}; particleIdx < size(); particleIdx++)
+            neighbourGrid->add(particleIdx, cellNos[particleIdx]);
+    } else {
+        std::vector<std::size_t> cellNos(size() * numInteractionCentres);
+
+        #pragma omp parallel for default(none) shared(cellNos) num_threads(this->scalingThreads)
+        for (std::size_t particleIdx = 0; particleIdx < size(); particleIdx++) {
+            for (size_t i{}; i < numInteractionCentres; i++) {
+                std::size_t centreIdx = particleIdx * numInteractionCentres + i;
+                cellNos[centreIdx] = neighbourGrid->positionToCellNo(absoluteInteractionCentres[centreIdx]);
+            }
+        }
+
+        for (std::size_t particleIdx{}; particleIdx < size(); particleIdx++) {
+            for (size_t i{}; i < numInteractionCentres; i++) {
+                std::size_t centreIdx = particleIdx * numInteractionCentres + i;
+                neighbourGrid->add(centreIdx, cellNos[centreIdx]);
+            }
+        }
+    }
 }
 
 void Packing::setupForInteraction(const Interaction &interaction) {

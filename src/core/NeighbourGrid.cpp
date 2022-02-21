@@ -197,6 +197,11 @@ void NeighbourGrid::add(std::size_t idx, const Vector<3> &position) {
     this->cellHeads[i] = idx;
 }
 
+void NeighbourGrid::add(std::size_t idx, std::size_t cellNo) {
+    this->successors[idx] = this->cellHeads[cellNo];
+    this->cellHeads[cellNo] = idx;
+}
+
 void NeighbourGrid::remove(std::size_t idx, const Vector<3> &position) {
     std::size_t i = this->positionToCellNo(position);
     std::size_t head = this->cellHeads[i];
