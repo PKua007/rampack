@@ -7,11 +7,20 @@
 
 #include "core/TriclinicBoxScaler.h"
 
+/**
+ * @brief TriclinicBoxScaler translating box vectors by random vectors with uniformly sampled coordinates (enabling
+ * triclinic box moves).
+ */
 class TriclinicDeltaScaler : public TriclinicBoxScaler {
 private:
     bool scaleTogether{};
 
 public:
+    /**
+     * @brief Constructs the scaler.
+     * @param scaleTogether If @a true, all sides will be scaled at once. Otherwise, only a single, randomly chosen
+     * side will be perturbed.
+     */
     explicit TriclinicDeltaScaler(bool scaleTogether) : scaleTogether{scaleTogether} { }
 
     [[nodiscard]] TriclinicBox updateBox(const TriclinicBox &oldBox, double scalingStepSize,

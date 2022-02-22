@@ -58,7 +58,7 @@ std::unique_ptr<TriclinicBoxScaler>TriclinicBoxScalerFactory::create(const std::
     if (!scaleTogether)
         scalingTypeStripped = scalingType.substr(independentString.length());
 
-    if (scalingTypeStripped == "triclinic")
+    if (scalingTypeStripped == "delta triclinic")
         return std::make_unique<TriclinicDeltaScaler>(scaleTogether);
     else
         return std::make_unique<TriclinicAdapter>(create_volume_scaler(scalingType));

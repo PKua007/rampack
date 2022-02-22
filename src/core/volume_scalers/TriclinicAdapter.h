@@ -10,6 +10,9 @@
 #include "core/VolumeScaler.h"
 #include "core/TriclinicBoxScaler.h"
 
+/**
+ * @brief Class transforming old-fashioned VolumeScaler into new TriclinicBoxScaler.
+ */
 class TriclinicAdapter : public TriclinicBoxScaler {
 private:
     std::unique_ptr<VolumeScaler> volumeScaler;

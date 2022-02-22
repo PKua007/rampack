@@ -91,7 +91,27 @@ namespace {
     std::array<double, 3> find_minimal_distances(std::size_t numOfParticles, const Interaction &interaction,
                                                  std::array<std::size_t, 3> &particlesInLine,
                                                  const std::string &axisOrderString,
-                                                 const OrthorhombicArrangingModel &model);
+                                                 const OrthorhombicArrangingModel &model)
+    {
+        double rangeRadius = interaction.getTotalRangeRadius();
+        constexpr double EPSILON = 1e-12;
+
+        std::array<double, 3> testPackingCellDim{};
+        testPackingCellDim.fill(rangeRadius + EPSILON);
+        std::array<double, 3> initialTestPackingDim{};
+        std::transform(testPackingCellDim.begin(), testPackingCellDim.end(), particlesInLine.begin(),
+                       initialTestPackingDim.begin(), [](double dim, std::size_t num) { return dim*num; });
+        auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+        auto testShapes = model.arrange(numOfParticles, particlesInLine, testPackingCellDim, initialTestPackingDim);
+        Packing testPacking(initialTestPackingDim, testShapes, std::move(pbc), interaction);
+
+        DistanceOptimizer::shrinkPacking(testPacking, interaction, axisOrderString);
+        std::array<double, 3> minDistances{};
+        std::array<double, 3> finalTestPackingDim = testPacking.getBox().getHeights();
+        std::transform(finalTestPackingDim.begin(), finalTestPackingDim.end(), particlesInLine.begin(),
+                       minDistances.begin(), [](double dim, std::size_t num) { return dim/num; });
+        return minDistances;
+    }
 
     std::vector<Shape> parse_spacing(std::istringstream &arrangementStream, std::size_t numOfParticles,
                                      std::array<double, 3> &boxDimensions, const Interaction &interaction,
@@ -116,31 +136,6 @@ namespace {
         std::transform(cellDimensions.begin(), cellDimensions.end(), particlesInLine.begin(), boxDimensions.begin(),
                        std::multiplies<>{});
         return model.arrange(numOfParticles, particlesInLine, cellDimensions, boxDimensions);
-    }
-
-    std::array<double, 3> find_minimal_distances(std::size_t numOfParticles, const Interaction &interaction,
-                                                 std::array<std::size_t, 3> &particlesInLine,
-                                                 const std::string &axisOrderString,
-                                                 const OrthorhombicArrangingModel &model)
-    {
-        double rangeRadius = interaction.getTotalRangeRadius();
-        constexpr double EPSILON = 1e-12;
-
-        std::array<double, 3> testPackingCellDim{};
-        testPackingCellDim.fill(rangeRadius + EPSILON);
-        std::array<double, 3> initialTestPackingDim{};
-        std::transform(testPackingCellDim.begin(), testPackingCellDim.end(), particlesInLine.begin(),
-                       initialTestPackingDim.begin(), [](double dim, std::size_t num) { return dim*num; });
-        auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-        auto testShapes = model.arrange(numOfParticles, particlesInLine, testPackingCellDim, initialTestPackingDim);
-        Packing testPacking(initialTestPackingDim, testShapes, std::move(pbc), interaction);
-
-        DistanceOptimizer::shrinkPacking(testPacking, interaction, axisOrderString);
-        std::array<double, 3> minDistances{};
-        std::array<double, 3> finalTestPackingDim = testPacking.getBox().getHeights();
-        std::transform(finalTestPackingDim.begin(), finalTestPackingDim.end(), particlesInLine.begin(),
-                       minDistances.begin(), [](double dim, std::size_t num) { return dim/num; });
-        return minDistances;
     }
 
     std::vector<Shape> parse_explicit_sizes(std::istringstream &arrangementStream, std::size_t numOfParticles,
