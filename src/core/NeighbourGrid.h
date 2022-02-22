@@ -287,14 +287,16 @@ public:
     /**
      * @brief Returns NeighboursView of all neighbouring cells of the NG cell containing @a position point.
      * @param position the position somewhere inside a given NG cell (identifing it)
-     * @param if true, only half of the cells will be enumerated (useful for iterating over distinct pairs of NG cells)
+     * @param onlyPositive if true, only half of the cells will be enumerated (useful for iterating over distinct pairs
+     * of NG cells)
      */
     [[nodiscard]] NeighboursView getNeighbouringCells(const Vector<3> &position, bool onlyPositive = false) const;
 
     /**
      * @brief Returns NeighboursView of all neighbouring cells of the NG cell given by integer coordinates @a coord.
      * @param coord integer coordinates of neighbour grid cell
-     * @param if true, only half of the cells will be enumerated (useful for iterating over distinct pairs of NG cells)
+     * @param onlyPositive if true, only half of the cells will be enumerated (useful for iterating over distinct pairs
+     * of NG cells)
      */
     [[nodiscard]] NeighboursView getNeighbouringCells(const std::array<std::size_t, 3> &coord,
                                                       bool onlyPositive = false) const;

@@ -58,12 +58,12 @@ private:
     double neighbourGridRebuildMicroseconds{};
 
     void rebuildNeighbourGrid();
-    void removeInteractionCentresFromNeighbourGrid(size_t particleIdx);
-    void addInteractionCentresToNeighbourGrid(size_t particleIdx);
+    void removeInteractionCentresFromNeighbourGrid(std::size_t particleIdx);
+    void addInteractionCentresToNeighbourGrid(std::size_t particleIdx);
     void addInteractionCentresToNeighbourGrid();
     
     void recalculateAbsoluteInteractionCentres();
-    void recalculateAbsoluteInteractionCentres(size_t particleIdx);
+    void recalculateAbsoluteInteractionCentres(std::size_t particleIdx);
 
     void prepareTempInteractionCentres(std::size_t particleIdx);
     void rotateTempInteractionCentres(const Matrix<3, 3> &rotation);
@@ -119,13 +119,21 @@ public:
      */
     explicit Packing(std::unique_ptr<BoundaryConditions> bc, std::size_t moveThreads = 0,
                      std::size_t scalingThreads = 0);
-
+    /**
+     * @brief Creates a packing from shape vector (TriclinicBox version).
+     * @param box triclinic box containing the particles
+     * @param shapes shapes in the packing
+     * @param bc boundary conditions to use
+     * @param interaction interaction between molecules in the packing
+     * @param moveThreads number of threads used for molecule moves. If 0, all OpenMP threads will be used
+     * @param scalingThreads number of threads used for volume moves. If 0, all OpenMP threads will be used
+     */
     Packing(TriclinicBox box, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
             const Interaction &interaction, std::size_t moveThreads = 0, std::size_t scalingThreads = 0);
 
     /**
-     * @brief Creates a packing from shape vector.
-     * @param box dimensions of the packing
+     * @brief Creates a packing from shape vector (dimensions array version).
+     * @param dimensions dimensions of the packing
      * @param shapes shapes in the packing
      * @param bc boundary conditions to use
      * @param interaction interaction between molecules in the packing
