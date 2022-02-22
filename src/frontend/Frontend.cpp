@@ -22,14 +22,10 @@
 #include "core/Simulation.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/Packing.h"
-#include "core/volume_scalers/DeltaVolumeScaler.h"
-#include "core/volume_scalers/LinearVolumeScaler.h"
-#include "core/volume_scalers/LogVolumeScaler.h"
 #include "utils/OMPMacros.h"
 #include "core/DistanceOptimizer.h"
 #include "ArrangementFactory.h"
-#include "core/volume_scalers/TriclinicAdapter.h"
-#include "core/volume_scalers/TriclinicDeltaScaler.h"
+#include "TriclinicBoxScalerFactory.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -151,7 +147,7 @@ int Frontend::casino(int argc, char **argv) {
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
     // Parse scaling type
-    std::unique_ptr<TriclinicBoxScaler> triclinicBoxScaler = this->createTriclinicBoxScaler(params.scalingType);
+    std::unique_ptr<TriclinicBoxScaler> triclinicBoxScaler = TriclinicBoxScalerFactory::create(params.scalingType);
 
     // Find starting run index if specified
     std::size_t startRunIndex{};
@@ -346,56 +342,6 @@ int Frontend::casino(int argc, char **argv) {
     }
 
     return EXIT_SUCCESS;
-}
-
-std::unique_ptr<TriclinicBoxScaler> Frontend::createTriclinicBoxScaler(const std::string &scalingType) const {
-    std::string scalingTypeStripped = scalingType;
-    std::string independentString = "independent ";
-    bool scaleTogether = !startsWith(scalingType, independentString);
-    if (!scaleTogether)
-        scalingTypeStripped = scalingType.substr(independentString.length());
-
-    if (scalingTypeStripped == "triclinic")
-        return std::make_unique<TriclinicDeltaScaler>(scaleTogether);
-    else
-        return std::make_unique<TriclinicAdapter>(this->createVolumeScaler(scalingType));
-}
-
-std::unique_ptr<VolumeScaler> Frontend::createVolumeScaler(std::string scalingType) const {
-    std::string independentString = "independent ";
-    bool scaleTogether = !startsWith(scalingType, independentString);
-    if (!scaleTogether)
-        scalingType = scalingType.substr(independentString.length());
-
-    using ScalingDirection = VolumeScaler::ScalingDirection;
-
-    // Old delta V scaling
-    if (scalingType == "delta V")
-        return std::make_unique<DeltaVolumeScaler>();
-    // Linear scaling
-    else if (scalingType == "linear isotropic")
-        return std::make_unique<LinearVolumeScaler>(ScalingDirection::ISOTROPIC);
-    else if (scalingType == "linear anisotropic x")
-        return std::make_unique<LinearVolumeScaler>(ScalingDirection::ANISOTROPIC_X);
-    else if (scalingType == "linear anisotropic y")
-        return std::make_unique<LinearVolumeScaler>(ScalingDirection::ANISOTROPIC_Y);
-    else if (scalingType == "linear anisotropic z")
-        return std::make_unique<LinearVolumeScaler>(ScalingDirection::ANISOTROPIC_Z);
-    else if (scalingType == "linear anisotropic xyz")
-        return std::make_unique<LinearVolumeScaler>(ScalingDirection::ANISOTROPIC_XYZ);
-    // Log scaling
-    else if (scalingType == "log isotropic")
-        return std::make_unique<LogVolumeScaler>(ScalingDirection::ISOTROPIC, scaleTogether);
-    else if (scalingType == "log anisotropic x")
-        return std::make_unique<LogVolumeScaler>(ScalingDirection::ANISOTROPIC_X, scaleTogether);
-    else if (scalingType == "log anisotropic y")
-        return std::make_unique<LogVolumeScaler>(ScalingDirection::ANISOTROPIC_Y, scaleTogether);
-    else if (scalingType == "log anisotropic z")
-        return std::make_unique<LogVolumeScaler>(ScalingDirection::ANISOTROPIC_Z, scaleTogether);
-    else if (scalingType == "log anisotropic xyz")
-        return std::make_unique<LogVolumeScaler>(ScalingDirection::ANISOTROPIC_XYZ, scaleTogether);
-    else
-        throw ValidationException("Unknown scaling type: " + scalingType);
 }
 
 int Frontend::printGeneralHelp(const std::string &cmd) {

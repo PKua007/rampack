@@ -108,7 +108,7 @@ interfaces. The examples are:
   The shape parsing is done by `frontend/ShapeFactory`, so new shapes have to be registered there
 * observables implement `core/Observable` interface. They should be registered in `frontend/ObservableCollectorFactory`
 * volume scaling scheme (all dimensions at once vs a single one a time, linear vs logarithmic, etc.) is provided by
-  `core/VolumeScaler` interface. They are registered in `frontend/Frontend::createVolumeScaler`
+  `core/VolumeScaler` interface. They are registered in `frontend/TriclinicVolumeScalerFactory`
 
 ### Documentation
 
