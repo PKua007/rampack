@@ -28,6 +28,7 @@
 #include "utils/OMPMacros.h"
 #include "core/DistanceOptimizer.h"
 #include "ArrangementFactory.h"
+#include "core/volume_scalers/TriclinicAdapter.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -150,6 +151,9 @@ int Frontend::casino(int argc, char **argv) {
 
     // Parse scaling type
     std::unique_ptr<VolumeScaler> volumeScaler = this->createVolumeScaler(params.scalingType);
+    std::unique_ptr<TriclinicBoxScaler> triclinicBoxScaler = std::make_unique<TriclinicAdapter>(
+        std::move(volumeScaler)
+    );
 
     // Find starting run index if specified
     std::size_t startRunIndex{};
@@ -223,7 +227,7 @@ int Frontend::casino(int argc, char **argv) {
 
     // Perform simulations starting from initial run
     Simulation simulation(std::move(packing), params.positionStepSize, params.rotationStepSize, params.volumeStepSize,
-                          params.seed, std::move(volumeScaler), domainDivisions, params.saveOnSignal);
+                          params.seed, std::move(triclinicBoxScaler), domainDivisions, params.saveOnSignal);
 
     for (std::size_t i = startRunIndex; i < params.runsParameters.size(); i++) {
         auto runParams = params.runsParameters[i];

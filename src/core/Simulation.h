@@ -13,7 +13,7 @@
 #include "utils/Logger.h"
 #include "utils/Quantity.h"
 #include "ShapeTraits.h"
-#include "VolumeScaler.h"
+#include "TriclinicBoxScaler.h"
 #include "ObservablesCollector.h"
 
 /**
@@ -54,7 +54,7 @@ private:
     double translationStep{};
     double rotationStep{};
     double scalingStep{};
-    std::unique_ptr<VolumeScaler> volumeScaler{};
+    std::unique_ptr<TriclinicBoxScaler> boxScaler{};
     Counter moveCounter;
     Counter scalingCounter;
     double moveMicroseconds{};
@@ -95,12 +95,12 @@ public:
      * @param rotationStep initial rotation step size
      * @param scalingStep initial volume scaling step
      * @param seed seed of the RNG
-     * @param volumeScaler volume move scaling sampler
+     * @param boxScaler volume move scaling sampler
      * @param domainDivisions domain divisions in each direction to use; {1, 1, 1} disables domain division
      * @param handleSignals if @a true, SIGINT and SIGCONT will be captured
      */
     Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep, double scalingStep,
-               unsigned long seed, std::unique_ptr<VolumeScaler> volumeScaler,
+               unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
                const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1},
                bool handleSignals = false);
 

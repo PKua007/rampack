@@ -42,10 +42,10 @@ void sigint_handler([[maybe_unused]] int signal) {
 }
 
 Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep,
-                       double scalingStep, unsigned long seed, std::unique_ptr<VolumeScaler> volumeScaler,
+                       double scalingStep, unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
                        const std::array<std::size_t, 3> &domainDivisions, bool handleSignals)
         : translationStep{translationStep}, rotationStep{rotationStep}, scalingStep{scalingStep},
-          volumeScaler{std::move(volumeScaler)}, packing{std::move(packing)}, allParticleIndices(this->packing->size()),
+          boxScaler{std::move(boxScaler)}, packing{std::move(packing)}, allParticleIndices(this->packing->size()),
           domainDivisions{domainDivisions}
 {
     Expects(!this->packing->empty());
@@ -291,18 +291,18 @@ bool Simulation::tryMove(const Interaction &interaction, const std::vector<std::
 bool Simulation::tryScaling(const Interaction &interaction) {
     auto &mt = this->mts.front();
 
-    std::array<double, 3> oldDim = this->packing->getBox().getHeights();
-    std::array<double, 3> scalingFactor = this->volumeScaler->sampleScalingFactors(oldDim, this->scalingStep, mt);
-    Assert(std::all_of(scalingFactor.begin(), scalingFactor.end(), [](auto d) { return d > 0; }));
-    double factor = std::accumulate(scalingFactor.begin(), scalingFactor.end(), 1., std::multiplies<>{});
-    double oldV = this->packing->getVolume();
-    double newV = oldV * factor;
+    TriclinicBox oldBox = this->packing->getBox();
+    TriclinicBox newBox = this->boxScaler->updateBox(oldBox, this->scalingStep, mt);
+    Expects(newBox.getVolume() != 0);
+    double oldV = std::abs(oldBox.getVolume());
+    double newV = std::abs(newBox.getVolume());
     double deltaV = newV - oldV;
+    double factor = newV/oldV;
 
     auto N = static_cast<double>(this->packing->size());
     if (interaction.hasSoftPart()) {
         // Soft interaction present - we have a nontrivial energy change an we always need to try scaling
-        double dE = this->packing->tryScaling(scalingFactor, interaction);
+        double dE = this->packing->tryScaling(newBox, interaction);
         double exponent = N * log(factor) - dE / this->temperature - this->pressure * deltaV / this->temperature;
         if (this->unitIntervalDistribution(mt) <= std::exp(exponent)) {
             return true;
@@ -315,7 +315,7 @@ bool Simulation::tryScaling(const Interaction &interaction) {
         double exponent = N * log(factor) - this->pressure * deltaV / this->temperature;
         if (this->unitIntervalDistribution(mt) > std::exp(exponent)) {
             return false;
-        } else if (this->packing->tryScaling(scalingFactor, interaction) != 0) {
+        } else if (this->packing->tryScaling(newBox, interaction) != 0) {
             this->packing->revertScaling();
             return false;
         } else {
