@@ -29,6 +29,7 @@
 #include "core/DistanceOptimizer.h"
 #include "ArrangementFactory.h"
 #include "core/volume_scalers/TriclinicAdapter.h"
+#include "core/volume_scalers/TriclinicDeltaScaler.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -150,10 +151,7 @@ int Frontend::casino(int argc, char **argv) {
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
     // Parse scaling type
-    std::unique_ptr<VolumeScaler> volumeScaler = this->createVolumeScaler(params.scalingType);
-    std::unique_ptr<TriclinicBoxScaler> triclinicBoxScaler = std::make_unique<TriclinicAdapter>(
-        std::move(volumeScaler)
-    );
+    std::unique_ptr<TriclinicBoxScaler> triclinicBoxScaler = this->createTriclinicBoxScaler(params.scalingType);
 
     // Find starting run index if specified
     std::size_t startRunIndex{};
@@ -348,6 +346,19 @@ int Frontend::casino(int argc, char **argv) {
     }
 
     return EXIT_SUCCESS;
+}
+
+std::unique_ptr<TriclinicBoxScaler> Frontend::createTriclinicBoxScaler(const std::string &scalingType) const {
+    std::string scalingTypeStripped = scalingType;
+    std::string independentString = "independent ";
+    bool scaleTogether = !startsWith(scalingType, independentString);
+    if (!scaleTogether)
+        scalingTypeStripped = scalingType.substr(independentString.length());
+
+    if (scalingTypeStripped == "triclinic")
+        return std::make_unique<TriclinicDeltaScaler>(scaleTogether);
+    else
+        return std::make_unique<TriclinicAdapter>(this->createVolumeScaler(scalingType));
 }
 
 std::unique_ptr<VolumeScaler> Frontend::createVolumeScaler(std::string scalingType) const {

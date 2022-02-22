@@ -13,6 +13,7 @@
 #include "Parameters.h"
 #include "core/Shape.h"
 #include "core/VolumeScaler.h"
+#include "core/TriclinicBoxScaler.h"
 #include "core/BoundaryConditions.h"
 #include "core/Interaction.h"
 #include "core/arranging_models/OrthorhombicArrangingModel.h"
@@ -29,6 +30,7 @@ private:
     void printAverageValues(const ObservablesCollector &collector);
     void storeAverageValues(const std::string &filename, const ObservablesCollector &collector, double temperature,
                             double pressure) const;
+    [[nodiscard]] std::unique_ptr<TriclinicBoxScaler> createTriclinicBoxScaler(const std::string &scalingType) const;
     [[nodiscard]] std::unique_ptr<VolumeScaler> createVolumeScaler(std::string scalingType) const;
     [[nodiscard]] std::array<double, 3> parseDimensions(const std::string &initialDimensions) const;
     std::string doubleToString(double d);
