@@ -12,10 +12,13 @@
 #include "core/PeriodicBoundaryConditions.h"
 
 
-#define ORTHORHOMBIC_USAGE "Malformed latice arrangement. Usage: \n" \
-                           "orthorhombic (({synclinic|anticlinic} {x|y|z} [tilt angle]) {polar|antipolar} {x|y|z}) ...\n" \
-                           "  ... {default|spacing [space size] [axis optimization order] [num. of particles in line x] [... y] [... z]|" \
-                           "[cell size x] [... y] [... z] [num. of particles in line x] [... y] [... z]}"
+#define ORTHORHOMBIC_USAGE "Malformed orthorhombic arrangement. Usage alternatives:\n" \
+                           "1. orthorhombic ([clinicity]) ([polarization]) default\n" \
+                           "2. orthorhombic ([clinicity]) ([polarization]) spacing [spacing value] [axis order] [num molecules x] [... y] [... z]\n" \
+                           "3. orthorhombic ([clinicity]) ([polarization]) [num molecules x] [... y] [... z]\n" \
+                           "4. orthorhombic ([clinicity]) ([polarization]) [cell size x] [... y] [... z] [num molecules x] [... y] [... z]\n" \
+                           "[clinicity] := {synclinic|anticlinic} [tilt axis] [tilt angle]\n" \
+                           "[polarization] := {polar|antipolar} [polarization axis]"
 
 namespace {
     OrthorhombicArrangingModel::Axis parse_axis(const std::string &axisStr) {
@@ -144,19 +147,36 @@ namespace {
                                             std::array<double, 3> &boxDimensions,
                                             const OrthorhombicArrangingModel &model)
     {
+        std::array<std::string, 3> firstThreeTokens{};
+        arrangementStream >> firstThreeTokens[0] >> firstThreeTokens[1] >> firstThreeTokens[2] >> std::ws;
+        ValidateMsg(!arrangementStream.fail(), ORTHORHOMBIC_USAGE);
+
         std::array<double, 3> cellDimensions{};
         std::array<std::size_t, 3> particlesInLine{};
-        arrangementStream >> cellDimensions[0] >> cellDimensions[1] >> cellDimensions[2];
-        arrangementStream >> particlesInLine[0] >> particlesInLine[1] >> particlesInLine[2];
-        ValidateMsg(arrangementStream, ORTHORHOMBIC_USAGE);
-        Validate(std::all_of(cellDimensions.begin(), cellDimensions.end(), [](double d) { return d; }));
+        if (arrangementStream.eof()) {
+            // Format: [num particles x] [... y] [... z]
+            ValidateMsg((boxDimensions != std::array<double, 3>{0, 0, 0}),
+                        "Implicit cell sizes are not available for automatic box dimensions");
+            for (std::size_t i{}; i < 3; i++) {
+                particlesInLine[i] = std::stoul(firstThreeTokens[i]);
+                cellDimensions[i] = boxDimensions[i] / static_cast<double>(particlesInLine[i]);
+            }
+        } else {
+            // Format: [cell size x] [... y] [... z] [num particles x] [... y] [... z]
+            arrangementStream >> particlesInLine[0] >> particlesInLine[1] >> particlesInLine[2];
+            ValidateMsg(arrangementStream, ORTHORHOMBIC_USAGE);
+            for (std::size_t i{}; i < 3; i++)
+                cellDimensions[i] = std::stod(firstThreeTokens[i]);
+            Validate(std::all_of(cellDimensions.begin(), cellDimensions.end(), [](double d) { return d > 0; }));
+
+            if (boxDimensions == std::array<double, 3>{0, 0, 0}) {
+                std::transform(cellDimensions.begin(), cellDimensions.end(), particlesInLine.begin(),
+                               boxDimensions.begin(), std::multiplies<>{});
+            }
+        }
+
         Validate(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
                  >= numOfParticles);
-
-        if (boxDimensions == std::array<double, 3>{0, 0, 0}) {
-            std::transform(cellDimensions.begin(), cellDimensions.end(), particlesInLine.begin(),
-                           boxDimensions.begin(), std::multiplies<>{});
-        }
 
         return model.arrange(numOfParticles, particlesInLine, cellDimensions, boxDimensions);
     }
