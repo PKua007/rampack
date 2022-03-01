@@ -14,6 +14,41 @@
 #include "core/interactions/LennardJonesInteraction.h"
 #include "core/interactions/RepulsiveLennardJonesInteraction.h"
 
+
+namespace {
+    template <typename ConcreteTraits, typename... Args>
+    auto parse_polysphere_traits(const std::string &shapeName, const std::string &interactionName,
+                                 std::istream &interactionAttrStream, Args&&... args)
+    {
+        if (interactionName.empty() || interactionName == "hard") {
+            return std::make_unique<ConcreteTraits>(std::forward<Args>(args)...);
+        } else if (interactionName == "lj") {
+            double epsilon, sigma;
+            interactionAttrStream >> epsilon >> sigma;
+            ValidateMsg(interactionAttrStream, "Malformed Lennard Jones attributes. Usage: lj [epsilon] [sigma]");
+            Validate(epsilon > 0);
+            Validate(sigma > 0);
+            return std::make_unique<ConcreteTraits>(
+                std::forward<Args>(args)..., std::make_unique<LennardJonesInteraction>(epsilon, sigma)
+            );
+        } else if (interactionName == "repulsive_lj") {
+            double epsilon, sigma;
+            interactionAttrStream >> epsilon >> sigma;
+            ValidateMsg(interactionAttrStream, "Malformed repulsive Lennard Jones attributes. Usage: lj_repulsive "
+                                               "[epsilon] [sigma]");
+            Validate(epsilon > 0);
+            Validate(sigma > 0);
+            return std::make_unique<ConcreteTraits>(
+                std::forward<Args>(args)..., std::make_unique<RepulsiveLennardJonesInteraction>(epsilon, sigma)
+            );
+        } else {
+            throw ValidationException(shapeName + " supports interactions: hard, lj (Lennard Jones), repulsive_lj "
+                                                  "(Lennard Jones cut at the minimum)");
+        }
+    }
+}
+
+
 std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &shapeName,
                                                           const std::string &shapeAttributes,
                                                           const std::string &interaction)
@@ -27,29 +62,7 @@ std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         shapeAttrStream >> r;
         ValidateMsg(shapeAttrStream, "Malformed Sphere attributes; expected: [radius]");
         Validate(r > 0);
-        if (interactionName.empty() || interactionName == "hard") {
-            return std::make_unique<SphereTraits>(r);
-        } else if (interactionName == "lj") {
-            double epsilon, sigma;
-            interactionAttrStream >> epsilon >> sigma;
-            ValidateMsg(interactionAttrStream, "Malformed Lennard Jones attributes. Usage: lj [epsilon] [sigma]");
-            Validate(epsilon > 0);
-            Validate(sigma > 0);
-            return std::make_unique<SphereTraits>(r, std::make_unique<LennardJonesInteraction>(epsilon, sigma));
-        } else if (interactionName == "repulsive_lj") {
-            double epsilon, sigma;
-            interactionAttrStream >> epsilon >> sigma;
-            ValidateMsg(interactionAttrStream, "Malformed repulsive Lennard Jones attributes. Usage: lj_repulsive "
-                                               "[epsilon] [sigma]");
-            Validate(epsilon > 0);
-            Validate(sigma > 0);
-            return std::make_unique<SphereTraits>(
-                r, std::make_unique<RepulsiveLennardJonesInteraction>(epsilon, sigma)
-            );
-        } else {
-            throw ValidationException("Sphere support interactions: hard, lj (Lennard Jones), "
-                                      "repulsive_lj (Lennard Jones cut at the minimum)");
-        }
+        return parse_polysphere_traits<SphereTraits>(shapeName, interactionName, interactionAttrStream, r);
     } else if (shapeName == "PolysphereBanana") {
         double arcRadius, arcAngle, sphereRadius;
         std::size_t sphereNum;
@@ -60,33 +73,9 @@ std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         Validate(arcAngle > 0);
         Validate(sphereNum > 0);
         Validate(sphereRadius > 0);
-        if (interactionName.empty() || interactionName == "hard") {
-            return std::make_unique<PolysphereBananaTraits>(arcRadius, arcAngle, sphereNum, sphereRadius);
-        } else if (interactionName == "lj") {
-            double epsilon, sigma;
-            interactionAttrStream >> epsilon >> sigma;
-            ValidateMsg(interactionAttrStream, "Malformed Lennard Jones attributes. Usage: lj [epsilon] [sigma]");
-            Validate(epsilon > 0);
-            Validate(sigma > 0);
-            return std::make_unique<PolysphereBananaTraits>(
-                arcRadius, arcAngle, sphereNum, sphereRadius,
-                std::make_unique<LennardJonesInteraction>(epsilon, sigma)
-            );
-        } else if (interactionName == "repulsive_lj") {
-            double epsilon, sigma;
-            interactionAttrStream >> epsilon >> sigma;
-            ValidateMsg(interactionAttrStream, "Malformed repulsive Lennard Jones attributes. Usage: lj_repulsive "
-                                               "[epsilon] [sigma]");
-            Validate(epsilon > 0);
-            Validate(sigma > 0);
-            return std::make_unique<PolysphereBananaTraits>(
-                arcRadius, arcAngle, sphereNum, sphereRadius,
-                std::make_unique<RepulsiveLennardJonesInteraction>(epsilon, sigma)
-            );
-        } else {
-            throw ValidationException("PolysphereBanana support interactions: hard, lj (Lennard Jones), "
-                                      "repulsive_lj (Lennard Jones cut at the minimum)");
-        }
+
+        return parse_polysphere_traits<PolysphereBananaTraits>(shapeName, interactionName, interactionAttrStream,
+                                                               arcRadius, arcAngle, sphereNum, sphereRadius);
     } else if (shapeName == "PolyspherocylinderBanana") {
         double arcRadius, arcAngle, radius;
         std::size_t segmentNum, subdivisions;
@@ -117,31 +106,9 @@ std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         Validate(sphereNum >= 2);
         Validate(sphereRadius > 0);
         Validate(distance > 0);
-        if (interactionName.empty() || interactionName == "hard") {
-            return std::make_unique<KMerTraits>(sphereNum, sphereRadius, distance);
-        } else if (interactionName == "lj") {
-            double epsilon, sigma;
-            interactionAttrStream >> epsilon >> sigma;
-            ValidateMsg(interactionAttrStream, "Malformed Lennard Jones attributes. Usage: lj [epsilon] [sigma]");
-            Validate(epsilon > 0);
-            Validate(sigma > 0);
-            return std::make_unique<KMerTraits>(
-                sphereNum, sphereRadius, distance, std::make_unique<LennardJonesInteraction>(epsilon, sigma)
-            );
-        } else if (interactionName == "repulsive_lj") {
-            double epsilon, sigma;
-            interactionAttrStream >> epsilon >> sigma;
-            ValidateMsg(interactionAttrStream, "Malformed repulsive Lennard Jones attributes. Usage: lj_repulsive "
-                                               "[epsilon] [sigma]");
-            Validate(epsilon > 0);
-            Validate(sigma > 0);
-            return std::make_unique<KMerTraits>(
-                sphereNum, sphereRadius, distance, std::make_unique<RepulsiveLennardJonesInteraction>(epsilon, sigma)
-            );
-        } else {
-            throw ValidationException("KMer support interactions: hard, lj (Lennard Jones), "
-                                      "repulsive_lj (Lennard Jones cut at the minimum)");
-        }
+
+        return parse_polysphere_traits<KMerTraits>(shapeName, interactionName, interactionAttrStream, sphereNum,
+                                                   sphereRadius, distance);
     } else if (shapeName == "Spherocylinder") {
         double r, length;
         shapeAttrStream >> length >> r;
