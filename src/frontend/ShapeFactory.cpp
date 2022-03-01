@@ -11,6 +11,7 @@
 #include "core/shapes/PolysphereBananaTraits.h"
 #include "core/shapes/KMerTraits.h"
 #include "core/shapes/PolyspherocylinderBananaTraits.h"
+#include "core/shapes/PolysphereLollipopTraits.h"
 #include "core/interactions/LennardJonesInteraction.h"
 #include "core/interactions/RepulsiveLennardJonesInteraction.h"
 
@@ -109,6 +110,23 @@ std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
 
         return parse_polysphere_traits<KMerTraits>(shapeName, interactionName, interactionAttrStream, sphereNum,
                                                    sphereRadius, distance);
+    } else if (shapeName == "PolysphereLollipop") {
+        double smallSphereRadius, largeSphereRadius, smallSpherePenetration, largeSpherePenetration;
+        std::size_t sphereNum;
+        shapeAttrStream >> sphereNum >> smallSphereRadius >> largeSphereRadius >> smallSpherePenetration;
+        shapeAttrStream >> largeSpherePenetration;
+        ValidateMsg(shapeAttrStream, "Malformed PolysphereLollipop attributes; expected: "
+                                     "[number of spheres] [small sphere radius] [large sphere radius] "
+                                     "[small spheres penetration] [large sphere penetration]");
+        Validate(sphereNum >= 2);
+        Validate(smallSphereRadius > 0);
+        Validate(largeSphereRadius > 0);
+        Validate(smallSpherePenetration < 2*smallSphereRadius);
+        Validate(largeSpherePenetration < 2*std::min(smallSphereRadius, largeSphereRadius));
+
+        return parse_polysphere_traits<PolysphereLollipopTraits>(shapeName, interactionName, interactionAttrStream,
+                                                                 sphereNum, smallSphereRadius, largeSphereRadius,
+                                                                 smallSpherePenetration, largeSpherePenetration);
     } else if (shapeName == "Spherocylinder") {
         double r, length;
         shapeAttrStream >> length >> r;
