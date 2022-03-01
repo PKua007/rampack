@@ -41,8 +41,10 @@ void DomainDecomposition::prepareDomains(const std::array<std::size_t, 3> &neigh
         double wholeDomainWidthRel = 1. / this->domainDivisions[coord];
         // Ghost layer is the total interaction range plus the excess size of the neighbour grid cell
         double ghostLayerWidthRel = (totalRange - range + ngCellSize) / boxHeights[coord];
-        Expects(ghostLayerWidthRel < wholeDomainWidthRel);
 
+        // Active region has to be at least as large as NG cell, otherwise not particles will be perturbed
+        double ngCellSizeRel = 1. / neighbourGridDivisions[coord];
+        Expects(wholeDomainWidthRel - ghostLayerWidthRel > ngCellSizeRel);
 
         this->regionBounds[coord].resize(this->domainDivisions[coord]);
         double previousGhostEnd = -std::numeric_limits<double>::infinity();
