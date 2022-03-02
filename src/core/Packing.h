@@ -50,7 +50,12 @@ private:
     std::size_t moveThreads{};
     std::size_t scalingThreads{};
 
+    bool overlapCounting{};
+    std::size_t numOverlaps{};
+
     std::vector<std::size_t> lastAlteredParticleIdx{};
+    int lastOverlapDelta{};
+    std::size_t lastNumOverlaps{};
     TriclinicBox lastBox;
 
     std::size_t neighbourGridRebuilds{};
@@ -76,18 +81,22 @@ private:
 
     // "Main hub" for checking a single particle (all cases - with or without neighbour grid, one or many interaction
     // centres
-    [[nodiscard]] bool isParticleOverlappingAnything(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
-                                                     const Interaction &interaction) const;
+    [[nodiscard]] std::size_t countParticleOverlaps(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
+                                                    const Interaction &interaction, bool earlyExit) const;
     // Helper method for the overlap check without neighbour grid - exhaustive checks for all interaction centers
-    [[nodiscard]] bool overlapBetweenParticlesWithoutNG(std::size_t tempParticleIdx, std::size_t anotherParticleIdx,
-                                                        const Interaction &interaction) const;
+    [[nodiscard]] std::size_t countOverlapsBetweenParticlesWithoutNG(std::size_t tempParticleIdx,
+                                                                     std::size_t anotherParticleIdx,
+                                                                     const Interaction &interaction,
+                                                                     bool earlyExit) const;
     // Helper method for a single interaction center with neighbour grid
-    [[nodiscard]] bool isInteractionCentreOverlappingAnythingWithNG(std::size_t originalParticleIdx,
-                                                                    std::size_t tempParticleIdx, std::size_t centre,
-                                                                    const Interaction &interaction) const;
+    [[nodiscard]] std::size_t countInteractionCentreOverlapsWithNG(std::size_t originalParticleIdx,
+                                                                   std::size_t tempParticleIdx,
+                                                                   std::size_t centre,
+                                                                   const Interaction &interaction,
+                                                                   bool earlyExit) const;
     // Helper method for a single NG cell when checking all particles
-    [[nodiscard]] bool areAnyParticlesOverlappingNGCellHelper(const std::array<std::size_t, 3> &coord,
-                                                              const Interaction &interaction) const;
+    [[nodiscard]] std::size_t countTotalOverlapsNGCellHelper(const std::array<std::size_t, 3> &coord,
+                                                             const Interaction &interaction, bool earlyExit) const;
 
     // Analogous helper methods as for overlaps but for energy
     [[nodiscard]] double calculateParticleEnergy(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
@@ -200,6 +209,13 @@ public:
         return this->neighbourGrid->getCellDivisions();
     }
 
+    /**
+     * @brief Toggles if overlaps should be counted when performing moves. If toggled @a false, early exit will
+     * performed in methods like Packing::tryMove and Packing::tryScaling when the first overlap is found.
+     * @details When toggled @a false, move methods work faster, however number of overlaps is not tracked.
+     */
+     void toggleOverlapCounting(bool countOverlaps, const Interaction &interaction);
+
     [[nodiscard]] double getVolume() const;
 
     /**
@@ -221,7 +237,10 @@ public:
      * @brief Returns the soft potential total energy of the packing for @a interaction.
      */
     [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;
-    [[nodiscard]] bool areAnyParticlesOverlapping(const Interaction &interaction) const;
+
+    [[nodiscard]] std::size_t countTotalOverlaps(const Interaction &interaction, bool earlyExit = true) const;
+
+    [[nodiscard]] std::size_t getCachedNumberOfOverlaps() const;
 
     /**
      * @brief Tries a translation on a particle of index @a particleIdx by a vector @a translation and returns the

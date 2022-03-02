@@ -86,8 +86,21 @@ double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, c
         this->recalculateAbsoluteInteractionCentres(tempParticleIdx);
     }
 
-    if (interaction.hasHardPart() && this->isParticleOverlappingAnything(particleIdx, tempParticleIdx, interaction))
-        return std::numeric_limits<double>::infinity();
+    static constexpr double INF = std::numeric_limits<double>::infinity();
+    if (interaction.hasHardPart()) {
+        if (this->overlapCounting) {
+            std::size_t initialOverlaps = this->countParticleOverlaps(particleIdx, particleIdx, interaction, false);
+            std::size_t finalOverlaps = this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, false);
+            this->lastOverlapDelta = static_cast<int>(finalOverlaps) - initialOverlaps;
+            if (this->lastOverlapDelta < 0)
+                return -INF;
+            else if (this->lastOverlapDelta > 0)
+                return INF;
+        } else {
+            if (this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, true) > 0)
+                return std::numeric_limits<double>::infinity();
+        }
+    }
 
     double initialEnergy = this->calculateParticleEnergy(particleIdx, particleIdx, interaction);
     double finalEnergy = this->calculateParticleEnergy(particleIdx, tempParticleIdx, interaction);
@@ -109,8 +122,21 @@ double Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotatio
         this->recalculateAbsoluteInteractionCentres(tempParticleIdx);
     }
 
-    if (interaction.hasHardPart() && this->isParticleOverlappingAnything(particleIdx, tempParticleIdx, interaction))
-        return std::numeric_limits<double>::infinity();
+    static constexpr double INF = std::numeric_limits<double>::infinity();
+    if (interaction.hasHardPart()) {
+        if (this->overlapCounting) {
+            std::size_t initialOverlaps = this->countParticleOverlaps(particleIdx, particleIdx, interaction, false);
+            std::size_t finalOverlaps = this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, false);
+            this->lastOverlapDelta = static_cast<int>(finalOverlaps) - initialOverlaps;
+            if (this->lastOverlapDelta < 0)
+                return -INF;
+            else if (this->lastOverlapDelta > 0)
+                return INF;
+        } else {
+            if (this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, true) > 0)
+                return std::numeric_limits<double>::infinity();
+        }
+    }
 
     double initialEnergy = this->calculateParticleEnergy(particleIdx, particleIdx, interaction);
     double finalEnergy = this->calculateParticleEnergy(particleIdx, tempParticleIdx, interaction);
@@ -138,8 +164,21 @@ double Packing::tryMove(std::size_t particleIdx, const Vector<3> &translation, c
         this->recalculateAbsoluteInteractionCentres(tempParticleIdx);
     }
 
-    if (interaction.hasHardPart() && this->isParticleOverlappingAnything(particleIdx, tempParticleIdx, interaction))
-        return std::numeric_limits<double>::infinity();
+    static constexpr double INF = std::numeric_limits<double>::infinity();
+    if (interaction.hasHardPart()) {
+        if (this->overlapCounting) {
+            std::size_t initialOverlaps = this->countParticleOverlaps(particleIdx, particleIdx, interaction, false);
+            std::size_t finalOverlaps = this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, false);
+            this->lastOverlapDelta = static_cast<int>(finalOverlaps) - initialOverlaps;
+            if (this->lastOverlapDelta < 0)
+                return -INF;
+            else if (this->lastOverlapDelta > 0)
+                return INF;
+        } else {
+            if (this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, true) > 0)
+                return std::numeric_limits<double>::infinity();
+        }
+    }
 
     double initialEnergy = this->calculateParticleEnergy(particleIdx, particleIdx, interaction);
     double finalEnergy = this->calculateParticleEnergy(particleIdx, tempParticleIdx, interaction);
@@ -158,6 +197,7 @@ double Packing::tryScaling(const TriclinicBox &newBox, const Interaction &intera
     this->lastBox = this->box;
 
     double initialEnergy = this->getTotalEnergy(interaction);
+    this->lastNumOverlaps = this->numOverlaps;
 
     this->box = newBox;
     this->bc->setBox(this->box);
@@ -168,8 +208,20 @@ double Packing::tryScaling(const TriclinicBox &newBox, const Interaction &intera
         this->recalculateAbsoluteInteractionCentres();
     this->rebuildNeighbourGrid();
 
-    if (interaction.hasHardPart() /*&& scaleFactor < 1*/ && this->areAnyParticlesOverlapping(interaction))
-        return std::numeric_limits<double>::infinity();
+    static constexpr double INF = std::numeric_limits<double>::infinity();
+    if (interaction.hasHardPart()) {
+        if (this->overlapCounting) {
+            this->numOverlaps = this->countTotalOverlaps(interaction, false);
+            int overlapDelta = static_cast<int>(this->numOverlaps) - this->lastNumOverlaps;
+            if (overlapDelta < 0)
+                return -INF;
+            else if (overlapDelta > 0)
+                return INF;
+        } else {
+            if (this->countTotalOverlaps(interaction, true) > 0)
+                return INF;
+        }
+    }
 
     double finalEnergy = this->getTotalEnergy(interaction);
     return finalEnergy - initialEnergy;
@@ -229,6 +281,9 @@ void Packing::acceptTranslation() {
         else
             this->addInteractionCentresToNeighbourGrid(lastAlteredIdx);
     }
+
+    if (this->overlapCounting)
+        this->numOverlaps += this->lastOverlapDelta;
 }
 
 void Packing::acceptRotation() {
@@ -242,6 +297,9 @@ void Packing::acceptRotation() {
 
     if (this->neighbourGrid.has_value() && this->numInteractionCentres != 0)
         this->addInteractionCentresToNeighbourGrid(lastAlteredIdx);
+
+    if (this->overlapCounting)
+        this->numOverlaps += this->lastOverlapDelta;
 }
 
 void Packing::acceptMove() {
@@ -263,6 +321,9 @@ void Packing::acceptMove() {
         else
             this->addInteractionCentresToNeighbourGrid(lastAlteredIdx);
     }
+
+    if (this->overlapCounting)
+        this->numOverlaps += this->lastOverlapDelta;
 }
 
 void Packing::addInteractionCentresToNeighbourGrid(std::size_t particleIdx) {
@@ -312,11 +373,14 @@ void Packing::revertScaling() {
     std::swap(this->neighbourGrid, this->tempNeighbourGrid);
     if (this->numInteractionCentres != 0)
         this->recalculateAbsoluteInteractionCentres();
+    this->numOverlaps = this->lastNumOverlaps;
 }
 
-bool Packing::isParticleOverlappingAnything(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
-                                            const Interaction &interaction) const
+std::size_t Packing::countParticleOverlaps(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
+                                           const Interaction &interaction, bool earlyExit) const
 {
+    std::size_t overlapsCounted;
+
     if (this->neighbourGrid.has_value()) {
         if (this->numInteractionCentres == 0) {
             Vector<3> pos = this->shapes[tempParticleIdx].getPosition();
@@ -334,33 +398,42 @@ bool Packing::isParticleOverlappingAnything(std::size_t originalParticleIdx, std
                                                    0,
                                                    cellTranslation))
                     {
-                        return true;
+                        if (earlyExit) return 1;
+                        overlapsCounted++;
                     }
                 }
             }
         } else {
             for (std::size_t centre1{}; centre1 < this->numInteractionCentres; centre1++) {
-                if (this->isInteractionCentreOverlappingAnythingWithNG(originalParticleIdx, tempParticleIdx, centre1,
-                                                                       interaction))
-                {
-                    return true;
-                }
+                std::size_t centreOverlaps = this->countInteractionCentreOverlapsWithNG(originalParticleIdx,
+                                                                                        tempParticleIdx, centre1,
+                                                                                        interaction, earlyExit);
+                if (earlyExit && centreOverlaps > 0)
+                    return centreOverlaps;
+
+                overlapsCounted += centreOverlaps;
             }
         }
     } else {
         for (std::size_t j{}; j < this->size(); j++) {
             if (originalParticleIdx == j)
                 continue;
-            if (this->overlapBetweenParticlesWithoutNG(tempParticleIdx, j, interaction))
-                return true;
+            std::size_t particlesOverlaps = this->countOverlapsBetweenParticlesWithoutNG(tempParticleIdx, j,
+                                                                                         interaction, earlyExit);
+            if (earlyExit && particlesOverlaps)
+                return particlesOverlaps;
+
+            overlapsCounted += particlesOverlaps;
         }
     }
     return false;
 }
 
-bool Packing::areAnyParticlesOverlappingNGCellHelper(const std::array<std::size_t, 3> &coord,
-                                                     const Interaction &interaction) const
+std::size_t Packing::countTotalOverlapsNGCellHelper(const std::array<std::size_t, 3> &coord,
+                                                    const Interaction &interaction, bool earlyExit) const
 {
+    std::size_t overlapsCounted{};
+
     if (this->numInteractionCentres == 0) {
         const auto &cellView = this->neighbourGrid->getCell(coord);
         for (auto cellIt1 = cellView.begin(); cellIt1 != cellView.end(); cellIt1++) {
@@ -374,8 +447,10 @@ bool Packing::areAnyParticlesOverlappingNGCellHelper(const std::array<std::size_
                 std::size_t particleIdx2 = *cellIt2;
                 const auto &pos2 = this->shapes[particleIdx2].getPosition();
                 const auto &orientation2 = this->shapes[particleIdx2].getOrientation();
-                if (interaction.overlapBetween(pos1, orientation1, 0, pos2, orientation2, 0, noTranslation))
-                    return true;
+                if (interaction.overlapBetween(pos1, orientation1, 0, pos2, orientation2, 0, noTranslation)) {
+                    if (earlyExit) return 1;
+                    overlapsCounted++;
+                }
             }
 
             // Overlaps with other cells (but only with a half to avoid redundant checks)
@@ -384,8 +459,10 @@ bool Packing::areAnyParticlesOverlappingNGCellHelper(const std::array<std::size_
                 for (auto particleIdx2 : cell.getNeighbours()) { // NOLINT(readability-use-anyofallof)
                     const auto &pos2 = this->shapes[particleIdx2].getPosition();
                     const auto &orientation2 = this->shapes[particleIdx2].getOrientation();
-                    if (interaction.overlapBetween(pos1, orientation1, 0, pos2, orientation2, 0, cellTranslation))
-                        return true;
+                    if (interaction.overlapBetween(pos1, orientation1, 0, pos2, orientation2, 0, cellTranslation)) {
+                        if (earlyExit) return 1;
+                        overlapsCounted++;
+                    }
                 }
             }
         }
@@ -408,8 +485,12 @@ bool Packing::areAnyParticlesOverlappingNGCellHelper(const std::array<std::size_
                 std::size_t centre2 = centreIdx2 % this->numInteractionCentres;
                 const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
                 const auto &orientation2 = this->shapes[particleIdx2].getOrientation();
-                if (interaction.overlapBetween(pos1, orientation1, centre1, pos2, orientation2, centre2, noTranslation))
-                    return true;
+                if (interaction.overlapBetween(pos1, orientation1, centre1, pos2, orientation2, centre2,
+                                               noTranslation))
+                {
+                    if (earlyExit) return 1;
+                    overlapsCounted++;
+                }
             }
 
             // Overlaps with other cells (but only with a half to avoid redundant checks)
@@ -422,8 +503,12 @@ bool Packing::areAnyParticlesOverlappingNGCellHelper(const std::array<std::size_
                     std::size_t centre2 = centreIdx2 % this->numInteractionCentres;
                     const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
                     const auto &orientation2 = this->shapes[particleIdx2].getOrientation();
-                    if (interaction.overlapBetween(pos1, orientation1, centre1, pos2, orientation2, centre2, cellTrans))
-                        return true;
+                    if (interaction.overlapBetween(pos1, orientation1, centre1, pos2, orientation2, centre2,
+                                                   cellTrans))
+                    {
+                        if (earlyExit) return 1;
+                        overlapsCounted++;
+                    }
                 }
             }
         }
@@ -432,36 +517,51 @@ bool Packing::areAnyParticlesOverlappingNGCellHelper(const std::array<std::size_
     return false;
 }
 
-bool Packing::areAnyParticlesOverlapping(const Interaction &interaction) const {
+std::size_t Packing::countTotalOverlaps(const Interaction &interaction, bool earlyExit) const {
     if (this->neighbourGrid.has_value()) {
         std::atomic<bool> overlapFound = false;
+        std::size_t overlapsCounted{};
         auto cellDivisions = this->neighbourGrid->getCellDivisions();
         #pragma omp parallel for collapse(3) default(none) shared(overlapFound, interaction, cellDivisions) \
-                num_threads(this->scalingThreads)
+                firstprivate(earlyExit) reduction(+ : overlapsCounted) num_threads(this->scalingThreads)
         for (std::size_t i = 0; i < cellDivisions[0]; i++) {
             for (std::size_t j = 0; j < cellDivisions[1]; j++)  {
                 for (std::size_t k = 0; k < cellDivisions[2]; k++) {
-                    if (overlapFound.load(std::memory_order_relaxed))
+                    if (earlyExit && overlapFound.load(std::memory_order_relaxed))
                         continue;
-                    if (this->areAnyParticlesOverlappingNGCellHelper({i, j, k}, interaction))
+
+                    std::size_t ngCellOverlaps = this->countTotalOverlapsNGCellHelper({i, j, k}, interaction,
+                                                                                      earlyExit);
+                    if (earlyExit && ngCellOverlaps > 0)
                         overlapFound.store(true, std::memory_order_relaxed);
+
+                    overlapsCounted += ngCellOverlaps;
                 }
             }
         }
 
-        return overlapFound;
+        return overlapsCounted;
     } else {
-        for (std::size_t i{}; i < this->size(); i++)
-            for (std::size_t j = i + 1; j < this->size(); j++)
-                if (this->overlapBetweenParticlesWithoutNG(i, j, interaction))
-                    return true;
+        std::size_t overlapsCounted{};
+        for (std::size_t i{}; i < this->size(); i++) {
+            for (std::size_t j = i + 1; j < this->size(); j++) {
+                std::size_t particleOverlaps = this->countOverlapsBetweenParticlesWithoutNG(i, j, interaction,
+                                                                                            earlyExit);
+                if (earlyExit && particleOverlaps > 0)
+                    return particleOverlaps;
+
+                overlapsCounted += particleOverlaps;
+            }
+        }
+        return overlapsCounted;
     }
-    return false;
 }
 
-bool Packing::overlapBetweenParticlesWithoutNG(std::size_t tempParticleIdx, std::size_t anotherParticleIdx,
-                                               const Interaction &interaction) const
+std::size_t Packing::countOverlapsBetweenParticlesWithoutNG(std::size_t tempParticleIdx, std::size_t anotherParticleIdx,
+                                                            const Interaction &interaction, bool earlyExit) const
 {
+    std::size_t overlapsCounted{};
+
     if (this->numInteractionCentres == 0) {
         if (interaction.overlapBetween(this->shapes[tempParticleIdx].getPosition(),
                                        this->shapes[tempParticleIdx].getOrientation(),
@@ -471,7 +571,8 @@ bool Packing::overlapBetweenParticlesWithoutNG(std::size_t tempParticleIdx, std:
                                        0,
                                        *this->bc))
         {
-            return true;
+            if (earlyExit) return 1;
+            overlapsCounted++;
         }
     } else {
         for (std::size_t centre1{}; centre1 < this->numInteractionCentres; centre1++) {
@@ -482,18 +583,24 @@ bool Packing::overlapBetweenParticlesWithoutNG(std::size_t tempParticleIdx, std:
                 std::size_t centreIdx2 = anotherParticleIdx * this->numInteractionCentres + centre2;
                 const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
                 const auto &orientation2 = this->shapes[anotherParticleIdx].getOrientation();
-                if (interaction.overlapBetween(pos1, orientation1, centre1, pos2, orientation2, centre2, *this->bc))
-                    return true;
+                if (interaction.overlapBetween(pos1, orientation1, centre1, pos2, orientation2, centre2, *this->bc)) {
+                    if (earlyExit) return 1;
+                    overlapsCounted++;
+                }
             }
         }
     }
-    return false;
+
+    return overlapsCounted;
 }
 
-bool Packing::isInteractionCentreOverlappingAnythingWithNG(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
-                                                           std::size_t centre, const Interaction &interaction) const
+std::size_t Packing::countInteractionCentreOverlapsWithNG(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
+                                                          std::size_t centre, const Interaction &interaction,
+                                                          bool earlyExit) const
 {
     Expects(this->neighbourGrid.has_value());
+
+    std::size_t overlapsCounted{};
 
     std::size_t centreIdx1 = tempParticleIdx * this->numInteractionCentres + centre;
     auto pos1 = this->absoluteInteractionCentres[centreIdx1];
@@ -507,12 +614,14 @@ bool Packing::isInteractionCentreOverlappingAnythingWithNG(std::size_t originalP
             std::size_t centre2 = centreIdx2 % this->numInteractionCentres;
             const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
             const auto &orientation2 = this->shapes[j].getOrientation();
-            if (interaction.overlapBetween(pos1, orientation1, centre, pos2, orientation2, centre2, cellTranslation))
-                return true;
+            if (interaction.overlapBetween(pos1, orientation1, centre, pos2, orientation2, centre2, cellTranslation)){
+                if (earlyExit) return 1;
+                overlapsCounted++;
+            }
         }
     }
 
-    return false;
+    return overlapsCounted;
 }
 
 double Packing::calculateParticleEnergy(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
@@ -997,5 +1106,18 @@ Matrix<3, 3> Packing::restoreDimensions(std::istream &in) {
     }
 
     return dimensions;
+}
+
+void Packing::toggleOverlapCounting(bool countOverlaps, const Interaction &interaction) {
+    this->overlapCounting = countOverlaps;
+    if (this->overlapCounting)
+        this->numOverlaps = this->countTotalOverlaps(interaction, false);
+}
+
+std::size_t Packing::getCachedNumberOfOverlaps() const {
+    if (this->overlapCounting)
+        return this->numOverlaps;
+
+    throw std::runtime_error("Packing: overlap counting is toggled false; number of overlaps is not cached");
 }
 
