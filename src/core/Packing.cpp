@@ -86,21 +86,9 @@ double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, c
         this->recalculateAbsoluteInteractionCentres(tempParticleIdx);
     }
 
-    static constexpr double INF = std::numeric_limits<double>::infinity();
-    if (interaction.hasHardPart()) {
-        if (this->overlapCounting) {
-            std::size_t initialOverlaps = this->countParticleOverlaps(particleIdx, particleIdx, interaction, false);
-            std::size_t finalOverlaps = this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, false);
-            this->lastOverlapDelta = static_cast<int>(finalOverlaps) - initialOverlaps;
-            if (this->lastOverlapDelta < 0)
-                return -INF;
-            else if (this->lastOverlapDelta > 0)
-                return INF;
-        } else {
-            if (this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, true) > 0)
-                return std::numeric_limits<double>::infinity();
-        }
-    }
+    double overlapEnergy = this->calculateMoveOverlapEnergy(particleIdx, tempParticleIdx, interaction);
+    if (overlapEnergy != 0)
+        return overlapEnergy;
 
     double initialEnergy = this->calculateParticleEnergy(particleIdx, particleIdx, interaction);
     double finalEnergy = this->calculateParticleEnergy(particleIdx, tempParticleIdx, interaction);
@@ -122,21 +110,9 @@ double Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotatio
         this->recalculateAbsoluteInteractionCentres(tempParticleIdx);
     }
 
-    static constexpr double INF = std::numeric_limits<double>::infinity();
-    if (interaction.hasHardPart()) {
-        if (this->overlapCounting) {
-            std::size_t initialOverlaps = this->countParticleOverlaps(particleIdx, particleIdx, interaction, false);
-            std::size_t finalOverlaps = this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, false);
-            this->lastOverlapDelta = static_cast<int>(finalOverlaps) - initialOverlaps;
-            if (this->lastOverlapDelta < 0)
-                return -INF;
-            else if (this->lastOverlapDelta > 0)
-                return INF;
-        } else {
-            if (this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, true) > 0)
-                return std::numeric_limits<double>::infinity();
-        }
-    }
+    double overlapEnergy = this->calculateMoveOverlapEnergy(particleIdx, tempParticleIdx, interaction);
+    if (overlapEnergy != 0)
+        return overlapEnergy;
 
     double initialEnergy = this->calculateParticleEnergy(particleIdx, particleIdx, interaction);
     double finalEnergy = this->calculateParticleEnergy(particleIdx, tempParticleIdx, interaction);
@@ -164,21 +140,9 @@ double Packing::tryMove(std::size_t particleIdx, const Vector<3> &translation, c
         this->recalculateAbsoluteInteractionCentres(tempParticleIdx);
     }
 
-    static constexpr double INF = std::numeric_limits<double>::infinity();
-    if (interaction.hasHardPart()) {
-        if (this->overlapCounting) {
-            std::size_t initialOverlaps = this->countParticleOverlaps(particleIdx, particleIdx, interaction, false);
-            std::size_t finalOverlaps = this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, false);
-            this->lastOverlapDelta = static_cast<int>(finalOverlaps) - initialOverlaps;
-            if (this->lastOverlapDelta < 0)
-                return -INF;
-            else if (this->lastOverlapDelta > 0)
-                return INF;
-        } else {
-            if (this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, true) > 0)
-                return std::numeric_limits<double>::infinity();
-        }
-    }
+    double overlapEnergy = this->calculateMoveOverlapEnergy(particleIdx, tempParticleIdx, interaction);
+    if (overlapEnergy != 0)
+        return overlapEnergy;
 
     double initialEnergy = this->calculateParticleEnergy(particleIdx, particleIdx, interaction);
     double finalEnergy = this->calculateParticleEnergy(particleIdx, tempParticleIdx, interaction);
@@ -197,7 +161,7 @@ double Packing::tryScaling(const TriclinicBox &newBox, const Interaction &intera
     this->lastBox = this->box;
 
     double initialEnergy = this->getTotalEnergy(interaction);
-    this->lastNumOverlaps = this->numOverlaps;
+    this->lastScalingNumOverlaps = this->numOverlaps;
 
     this->box = newBox;
     this->bc->setBox(this->box);
@@ -212,7 +176,7 @@ double Packing::tryScaling(const TriclinicBox &newBox, const Interaction &intera
     if (interaction.hasHardPart()) {
         if (this->overlapCounting) {
             this->numOverlaps = this->countTotalOverlaps(interaction, false);
-            int overlapDelta = static_cast<int>(this->numOverlaps) - this->lastNumOverlaps;
+            int overlapDelta = static_cast<int>(this->numOverlaps) - this->lastScalingNumOverlaps;
             if (overlapDelta < 0)
                 return -INF;
             else if (overlapDelta > 0)
@@ -283,7 +247,7 @@ void Packing::acceptTranslation() {
     }
 
     if (this->overlapCounting)
-        this->numOverlaps += this->lastOverlapDelta;
+        this->numOverlaps += this->lastMoveOverlapDelta;
 }
 
 void Packing::acceptRotation() {
@@ -299,7 +263,7 @@ void Packing::acceptRotation() {
         this->addInteractionCentresToNeighbourGrid(lastAlteredIdx);
 
     if (this->overlapCounting)
-        this->numOverlaps += this->lastOverlapDelta;
+        this->numOverlaps += this->lastMoveOverlapDelta;
 }
 
 void Packing::acceptMove() {
@@ -323,7 +287,27 @@ void Packing::acceptMove() {
     }
 
     if (this->overlapCounting)
-        this->numOverlaps += this->lastOverlapDelta;
+        this->numOverlaps += this->lastMoveOverlapDelta;
+}
+
+double Packing::calculateMoveOverlapEnergy(size_t particleIdx, size_t tempParticleIdx, const Interaction &interaction) {
+    static constexpr double INF = std::numeric_limits<double>::infinity();
+
+    if (interaction.hasHardPart()) {
+        if (this->overlapCounting) {
+            std::size_t initialOverlaps = this->countParticleOverlaps(particleIdx, particleIdx, interaction, false);
+            std::size_t finalOverlaps = this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, false);
+            this->lastMoveOverlapDelta = static_cast<int>(finalOverlaps) - initialOverlaps;
+            if (this->lastMoveOverlapDelta < 0)
+                return -INF;
+            else if (this->lastMoveOverlapDelta > 0)
+                return INF;
+        } else {
+            if (this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, true) > 0)
+                return INF;
+        }
+    }
+    return 0;
 }
 
 void Packing::addInteractionCentresToNeighbourGrid(std::size_t particleIdx) {
@@ -373,7 +357,7 @@ void Packing::revertScaling() {
     std::swap(this->neighbourGrid, this->tempNeighbourGrid);
     if (this->numInteractionCentres != 0)
         this->recalculateAbsoluteInteractionCentres();
-    this->numOverlaps = this->lastNumOverlaps;
+    this->numOverlaps = this->lastScalingNumOverlaps;
 }
 
 std::size_t Packing::countParticleOverlaps(std::size_t originalParticleIdx, std::size_t tempParticleIdx,

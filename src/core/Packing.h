@@ -54,8 +54,8 @@ private:
     std::size_t numOverlaps{};
 
     std::vector<std::size_t> lastAlteredParticleIdx{};
-    int lastOverlapDelta{};
-    std::size_t lastNumOverlaps{};
+    int lastMoveOverlapDelta{};
+    std::size_t lastScalingNumOverlaps{};
     TriclinicBox lastBox;
 
     std::size_t neighbourGridRebuilds{};
@@ -63,10 +63,13 @@ private:
     double neighbourGridRebuildMicroseconds{};
 
     void rebuildNeighbourGrid();
+
+    double calculateMoveOverlapEnergy(size_t particleIdx, size_t tempParticleIdx, const Interaction &interaction);
+
     void removeInteractionCentresFromNeighbourGrid(std::size_t particleIdx);
     void addInteractionCentresToNeighbourGrid(std::size_t particleIdx);
     void addInteractionCentresToNeighbourGrid();
-    
+
     void recalculateAbsoluteInteractionCentres();
     void recalculateAbsoluteInteractionCentres(std::size_t particleIdx);
 
@@ -238,8 +241,20 @@ public:
      */
     [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;
 
+    /**
+     * @brief Calculated the number of overlaps in the packing for @a interaction.
+     * @details If @a earlyExit is @a true, the method will return after the first overlap is found. Even is overlap
+     * counting is toggled @a true, this method will actually perform overlap check, not use the cached value as
+     * Packing::getCachedNumberOfOverlaps().
+     */
     [[nodiscard]] std::size_t countTotalOverlaps(const Interaction &interaction, bool earlyExit = true) const;
 
+    /**
+     * @brief For overlap counting toggled @a true it returns cached number of overlaps, i.e. no overlap check are
+     * actually performed and the method consumes only a couple of CPU cycles.
+     * @details Number of overlaps is thoroughly updated during all moves and scaling. If overlap counting is toggled
+     * false, the method throws.
+     */
     [[nodiscard]] std::size_t getCachedNumberOfOverlaps() const;
 
     /**
@@ -248,7 +263,9 @@ public:
      * @details The translation is not applied directly to a particle, but stored in a thread-specific auxiliary
      * memory. To apply the translation (for example after checking the Metropolis criterion),
      * Packing::acceptTranslation has to be used. If @a boundaries ActiveDomain is passed, the moves pushing the
-     * molecule outside of the boundary return an infinite energy.
+     * molecule outside of the boundary return an infinite energy. If overlap counting is toggles @a true, changes in
+     * number of overlaps will we reported as 0, minus infinity and plus infinity for the same, smaller and larger
+     * number of overlaps, respectively.
      */
     double tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction,
                           std::optional<ActiveDomain> boundaries = std::nullopt);
@@ -258,7 +275,9 @@ public:
      * energy difference (overlap is reported as infinite energy change).
      * @details The rotation is not applied directly to a particle, but stored in a thread-specific auxiliary
      * memory. To apply the translation (for example after checking the Metropolis criterion),
-     * Packing::acceptRotation has to be used.
+     * Packing::acceptRotation has to be used. If overlap counting is toggles @a true, changes in number of overlaps
+     * will we reported as 0, minus infinity and plus infinity for the same, smaller and larger number of overlaps,
+     * respectively.
      */
     double tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction);
 
@@ -268,23 +287,32 @@ public:
      * @details The transformations are not applied directly to a particle, but stored in a thread-specific auxiliary
      * memory. To apply the move (for example after checking the Metropolis criterion), Packing::acceptMove has to be
      * used. If @a boundaries ActiveDomain is passed, the moves pushing the molecule outside of the boundary return an
-     * infinite energy.
+     * infinite energy. If overlap counting is toggles @a true, changes in number of overlaps will we reported as 0,
+     * minus infinity and plus infinity for the same, smaller and larger number of overlaps, respectively.
      */
     double tryMove(std::size_t particleIdx, const Vector<3> &translation, const Matrix<3, 3> &rotation,
                    const Interaction &interaction, std::optional<ActiveDomain> boundaries = std::nullopt);
 
     /**
-     * @brief Applies the scaling to the packing and returns the energy difference (overlap is reported as infinite
-     * energy change).
+     * @brief Applies new box to the packing and returns the energy difference (overlap is reported as infinite energy
+     * change).
      * @details Contrary to molecule moves, scaling is directly applied to the packing. If the move needs to be
      * reverted, Packing::revertScaling method can be used. The method calculates the energy using multiple threads.
-     * @param scaleFactor the factors by which corresponding side lengths should be scaled
+     * If overlap counting is toggles @a true, changes in number of overlaps will we reported as 0, minus infinity and
+     * plus infinity for the same, smaller and larger number of overlaps, respectively.
+     * @param newBox new box to which molecule centres should be rescaled
      * @param interaction interaction to compute the energy
      * @return energy difference between the final and initial state
      */
-    double tryScaling(const std::array<double, 3> &scaleFactor, const Interaction &interaction);
-
     double tryScaling(const TriclinicBox& newBox, const Interaction &interaction);
+
+    /**
+     * @brief Similar as Packing::tryScaling(const TriclinicBox &, const Interaction &), but the box is transformed by
+     * applying diagonal matrix with @a scaleFactors on the diagonal.
+     * @details Note that if a box has not orthogonal faces (has sheer), the angles between them may be changed when
+     * the factors on the diagonal are not identical.
+     */
+    double tryScaling(const std::array<double, 3> &scaleFactor, const Interaction &interaction);
 
     /**
      * @brief Similar as Packing::tryScaling(const std::array<double, 3> &, const Interaction &), but with all sides
