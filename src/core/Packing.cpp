@@ -379,7 +379,7 @@ void Packing::revertScaling() {
 std::size_t Packing::countParticleOverlaps(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
                                            const Interaction &interaction, bool earlyExit) const
 {
-    std::size_t overlapsCounted;
+    std::size_t overlapsCounted{};
 
     if (this->neighbourGrid.has_value()) {
         if (this->numInteractionCentres == 0) {
@@ -426,7 +426,7 @@ std::size_t Packing::countParticleOverlaps(std::size_t originalParticleIdx, std:
             overlapsCounted += particlesOverlaps;
         }
     }
-    return false;
+    return overlapsCounted;
 }
 
 std::size_t Packing::countTotalOverlapsNGCellHelper(const std::array<std::size_t, 3> &coord,
@@ -514,7 +514,7 @@ std::size_t Packing::countTotalOverlapsNGCellHelper(const std::array<std::size_t
         }
     }
 
-    return false;
+    return overlapsCounted;
 }
 
 std::size_t Packing::countTotalOverlaps(const Interaction &interaction, bool earlyExit) const {

@@ -320,3 +320,173 @@ TEST_CASE("Packing: multiple interaction center moves") {
         }
     }
 }
+
+TEST_CASE("Packing: single interaction center overlap counting") {
+    double radius = 0.5;
+    SphereHardCoreInteraction hardCore(radius);
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    std::vector<Shape> shapes;
+    shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5});
+    shapes.emplace_back(Vector<3>{0.5, 0.5, 1.0});
+    shapes.emplace_back(Vector<3>{0.5, 0.5, 2.25});
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
+    packing.toggleOverlapCounting(true, hardCore);
+
+    REQUIRE(packing.getCachedNumberOfOverlaps() == 1);
+
+    constexpr double INF = std::numeric_limits<double>::infinity();
+
+    SECTION("translation increasing overlaps") {
+        CHECK(packing.tryTranslation(1, {0, 0, 0.3}, hardCore) == INF);
+        CHECK(packing.getCachedNumberOfOverlaps() == 1);
+        packing.acceptTranslation();
+        CHECK(packing.getCachedNumberOfOverlaps() == 2);
+
+        SECTION("opposite move") {
+            CHECK(packing.tryTranslation(1, {0, 0, -0.3}, hardCore) == -INF);
+            CHECK(packing.getCachedNumberOfOverlaps() == 2);
+            packing.acceptTranslation();
+            CHECK(packing.getCachedNumberOfOverlaps() == 1);
+        }
+    }
+
+    SECTION("translation decreasing overlaps") {
+        CHECK(packing.tryTranslation(1, {0, 3, 0}, hardCore) == -INF);
+        CHECK(packing.getCachedNumberOfOverlaps() == 1);
+        packing.acceptTranslation();
+        CHECK(packing.getCachedNumberOfOverlaps() == 0);
+
+        SECTION("opposite move") {
+            CHECK(packing.tryTranslation(1, {0, -3, 0}, hardCore) == INF);
+            CHECK(packing.getCachedNumberOfOverlaps() == 0);
+            packing.acceptTranslation();
+            CHECK(packing.getCachedNumberOfOverlaps() == 1);
+        }
+    }
+
+    SECTION("translation preserving overlaps") {
+        CHECK(packing.tryTranslation(1, {0, 0, 0.1}, hardCore) == 0);
+        packing.acceptTranslation();
+        CHECK(packing.getCachedNumberOfOverlaps() == 1);
+    }
+
+    SECTION("scaling increasing overlaps") {
+        CHECK(packing.tryScaling(0.5, hardCore) == INF);
+        CHECK(packing.getCachedNumberOfOverlaps() == 3);
+
+        SECTION("reverting") {
+            packing.revertScaling();
+            CHECK(packing.getCachedNumberOfOverlaps() == 1);
+        }
+
+        SECTION("opposite move") {
+            CHECK(packing.tryScaling(2, hardCore) == -INF);
+            CHECK(packing.getCachedNumberOfOverlaps() == 1);
+        }
+    }
+
+    SECTION("scaling decreasing overlaps") {
+        CHECK(packing.tryScaling(3, hardCore) == -INF);
+        CHECK(packing.getCachedNumberOfOverlaps() == 0);
+
+        SECTION("reverting") {
+            packing.revertScaling();
+            CHECK(packing.getCachedNumberOfOverlaps() == 1);
+        }
+
+        SECTION("opposite move") {
+            CHECK(packing.tryScaling(1./3, hardCore) == INF);
+            CHECK(packing.getCachedNumberOfOverlaps() == 1);
+        }
+    }
+
+    SECTION("scaling preserving overlaps") {
+        CHECK(packing.tryScaling(1.05, hardCore) == 0);
+        CHECK(packing.getCachedNumberOfOverlaps() == 1);
+    }
+}
+
+TEST_CASE("Packing: multiple interaction center overlap counting") {
+    double radius = 0.5;
+    DimerHardCoreInteraction hardCore(radius);
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    std::vector<Shape> shapes;
+    shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5});
+    shapes.emplace_back(Vector<3>{1.5, 1, 0.5});
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
+
+    packing.toggleOverlapCounting(true, hardCore);
+
+    REQUIRE(packing.getCachedNumberOfOverlaps() == 1);
+
+    constexpr double INF = std::numeric_limits<double>::infinity();
+
+    SECTION("translation increasing overlaps") {
+        CHECK(packing.tryTranslation(1, {-0.5, 0, 0}, hardCore) == INF);
+        CHECK(packing.getCachedNumberOfOverlaps() == 1);
+        packing.acceptTranslation();
+        CHECK(packing.getCachedNumberOfOverlaps() == 3);
+
+        SECTION("opposite move") {
+            CHECK(packing.tryTranslation(1, {0.5, 0, 0}, hardCore) == -INF);
+            CHECK(packing.getCachedNumberOfOverlaps() == 3);
+            packing.acceptTranslation();
+            CHECK(packing.getCachedNumberOfOverlaps() == 1);
+        }
+    }
+
+    SECTION("translation decreasing overlaps") {
+        CHECK(packing.tryTranslation(1, {0, 1, 0}, hardCore) == -INF);
+        CHECK(packing.getCachedNumberOfOverlaps() == 1);
+        packing.acceptTranslation();
+        CHECK(packing.getCachedNumberOfOverlaps() == 0);
+
+        SECTION("opposite move") {
+            CHECK(packing.tryTranslation(1, {0, -1, 0}, hardCore) == INF);
+            CHECK(packing.getCachedNumberOfOverlaps() == 0);
+            packing.acceptTranslation();
+            CHECK(packing.getCachedNumberOfOverlaps() == 1);
+        }
+    }
+
+    SECTION("translation preserving overlaps") {
+        CHECK(packing.tryTranslation(1, {0.1, 0, 0}, hardCore) == 0);
+        packing.acceptTranslation();
+        CHECK(packing.getCachedNumberOfOverlaps() == 1);
+    }
+
+    SECTION("scaling increasing overlaps") {
+        CHECK(packing.tryScaling(0.5, hardCore) == INF);
+        CHECK(packing.getCachedNumberOfOverlaps() == 3);
+
+        SECTION("reverting") {
+            packing.revertScaling();
+            CHECK(packing.getCachedNumberOfOverlaps() == 1);
+        }
+
+        SECTION("opposite move") {
+            CHECK(packing.tryScaling(2, hardCore) == -INF);
+            CHECK(packing.getCachedNumberOfOverlaps() == 1);
+        }
+    }
+
+    SECTION("scaling decreasing overlaps") {
+        CHECK(packing.tryScaling(2, hardCore) == -INF);
+        CHECK(packing.getCachedNumberOfOverlaps() == 0);
+
+        SECTION("reverting") {
+            packing.revertScaling();
+            CHECK(packing.getCachedNumberOfOverlaps() == 1);
+        }
+
+        SECTION("opposite move") {
+            CHECK(packing.tryScaling(0.5, hardCore) == INF);
+            CHECK(packing.getCachedNumberOfOverlaps() == 1);
+        }
+    }
+
+    SECTION("scaling preserving overlaps") {
+        CHECK(packing.tryScaling(1.05, hardCore) == 0);
+        CHECK(packing.getCachedNumberOfOverlaps() == 1);
+    }
+}
