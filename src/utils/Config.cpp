@@ -40,6 +40,7 @@ Config Config::parse(std::istream &in, char delim, bool allowRedefinition) {
             result.keys.push_back(field.key);
     }
 
+    result.buildSections();
     result.buildRootSections();
     return result;
 }
@@ -123,8 +124,28 @@ bool Config::hasField(const std::string &field) const {
     return std::find(keys.begin(), keys.end(), field) != keys.end();
 }
 
+bool Config::hasSection(const std::string &section) const {
+    return std::find(this->sections.begin(), this->sections.end(), section) != this->sections.end();
+}
+
 bool Config::hasRootSection(const std::string &section) const {
     return std::find(this->rootSections.begin(), this->rootSections.end(), section) != this->rootSections.end();
+}
+
+void Config::buildSections() {
+    std::set<std::string> sectionsSet;
+    for (const auto &key : this->keys) {
+        std::size_t pos = key.find_last_of('.');
+        std::string sectionName;
+        if (pos == std::string::npos)
+            sectionName = "";
+        else
+            sectionName = key.substr(0, pos);
+        if (sectionsSet.find(sectionName) == sectionsSet.end()) {
+            sectionsSet.insert(sectionName);
+            this->sections.push_back(sectionName);
+        }
+    }
 }
 
 /**
@@ -147,15 +168,12 @@ void Config::buildRootSections() {
     }
 }
 
-Config Config::fetchSubconfig(const std::string &rootSection) const {
-    if (rootSection.find('.') != std::string::npos)
-        throw std::invalid_argument("Root section names do not have dots");
-
-    if (!this->hasRootSection(rootSection))
-        throw std::invalid_argument("No root section " + rootSection + " in config");
+Config Config::fetchSubconfig(const std::string &section) const {
+    if (!this->hasSection(section))
+        throw std::invalid_argument("No root section " + section + " in config");
 
     Config result;
-    if (rootSection.empty()) {
+    if (section.empty()) {
         // Fetching "empty" section, so all keys without section
         for (const auto &key : this->keys) {
             if (key.find('.') == std::string::npos) {
@@ -166,8 +184,8 @@ Config Config::fetchSubconfig(const std::string &rootSection) const {
     } else {
         // Fetching named section
         for (const auto &key : this->keys) {
-            if (startsWith(key, rootSection + ".")) {
-                std::string subKey = key.substr(rootSection.size() + 1);
+            if (startsWith(key, section + ".")) {
+                std::string subKey = key.substr(section.size() + 1);
                 result.fieldMap[subKey] = this->fieldMap.at(key);
                 result.keys.push_back(subKey);
             }

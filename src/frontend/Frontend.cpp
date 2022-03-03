@@ -153,8 +153,9 @@ int Frontend::casino(int argc, char **argv) {
     std::size_t startRunIndex{};
     if (parsedOptions.count("start-from")) {
         auto runsParameters = params.runsParameters;
-        auto nameMatchesStartFrom = [startFrom](const Parameters::RunParameters &params) {
-            return params.runName == startFrom;
+        auto nameMatchesStartFrom = [startFrom](const auto &params) {
+            auto runNameGetter = [](auto &&run) { return run.runName; };
+            return std::visit(runNameGetter, params) == startFrom;
         };
         auto it = std::find_if(runsParameters.begin(), runsParameters.end(), nameMatchesStartFrom);
 
@@ -177,9 +178,10 @@ int Frontend::casino(int argc, char **argv) {
         else
             startingPackingRunIndex = startRunIndex - 1;
         // A run, whose resulting packing will be the starting point
-        Parameters::RunParameters &startingPackingRun = runsParameters[startingPackingRunIndex];
+        auto &startingPackingRun = runsParameters[startingPackingRunIndex];
 
-        std::string previousPackingFilename = startingPackingRun.packingFilename;
+        auto packingFilenameGetter = [](auto &&run) { return run.packingFilename; };
+        std::string previousPackingFilename = std::visit(packingFilenameGetter, startingPackingRun);
         std::ifstream packingFile(previousPackingFilename);
         ValidateOpenedDesc(packingFile, previousPackingFilename, "to load previous packing");
         // Same number of scaling and domain decemposition threads
@@ -198,15 +200,18 @@ int Frontend::casino(int argc, char **argv) {
             isContinuation = true;
             Validate(continuationCycles > 0);
             Validate(continuationCycles > cycleOffset);
-            auto &startingRun = startingPackingRun;     // Because we continue this already finished run
-            startingRun.thermalisationCycles = continuationCycles - cycleOffset;
-            this->logger.info() << "Thermalisation from the finished run '" << startingRun.runName;
-            this->logger << "' will be continued up to " << continuationCycles << " cycles (";
-            this->logger << startingRun.thermalisationCycles << " to go)" << std::endl;
+
+            if (std::holds_alternative<Parameters::IntegrationParameters>(startingPackingRun)) {
+                // Because we continue this already finished run
+                auto &startingRun = std::get<Parameters::IntegrationParameters>(startingPackingRun);
+                startingRun.thermalisationCycles = continuationCycles - cycleOffset;
+                this->logger.info() << "Thermalisation from the finished run '" << startingRun.runName;
+                this->logger << "' will be continued up to " << continuationCycles << " cycles (";
+                this->logger << startingRun.thermalisationCycles << " to go)" << std::endl;
+            }
         }
 
-        std::string previousRunName = startingPackingRun.runName;
-        this->logger.info() << "Loaded packing from the run '" << previousRunName << "' as a starting point.";
+        this->logger.info() << "Loaded packing from the run '" << previousPackingFilename << "' as a starting point.";
         this->logger << std::endl;
     }
 
@@ -224,7 +229,7 @@ int Frontend::casino(int argc, char **argv) {
                           params.seed, std::move(triclinicBoxScaler), domainDivisions, params.saveOnSignal);
 
     for (std::size_t i = startRunIndex; i < params.runsParameters.size(); i++) {
-        auto runParams = params.runsParameters[i];
+        auto runParams = std::get<Parameters::IntegrationParameters>(params.runsParameters[i]);
 
         this->logger.setAdditionalText(runParams.runName);
         this->logger.info() << std::endl;

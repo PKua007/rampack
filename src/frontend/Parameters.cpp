@@ -48,12 +48,62 @@ Parameters::Parameters(std::istream &input) {
     }
     this->validate();
 
-    auto runConfigs = config.fetchSubconfig("run");
-    for (const auto &runName : runConfigs.getRootSections())
-        this->runsParameters.emplace_back(runName, runConfigs.fetchSubconfig(runName));
+    auto runSections = config.getSections();
+    for (const auto &runSection : runSections) {
+        if (runSection.empty())
+            continue;
+
+        auto [runType, runName] = Parameters::explodeRunSection(runSection);
+        auto runSubconfig = config.fetchSubconfig(runSection);
+
+        if (runType == "integration" || runType == "run")
+            this->runsParameters.emplace_back(IntegrationParameters(runName, runSubconfig));
+        else if (runType == "overlaps")
+            this->runsParameters.emplace_back(OverlapRelaxationParameters(runName, runSubconfig));
+        else
+            throw ParametersParseException("Unknown run type: \"" + runType + "\"");
+    }
 }
 
-Parameters::RunParameters::RunParameters(const std::string &runName, const Config &runConfig) {
+void Parameters::validate() const {
+    Validate(this->numOfParticles > 0);
+    Validate(this->positionStepSize > 0);
+    Validate(this->rotationStepSize > 0);
+    Validate(this->volumeStepSize > 0);
+    Validate(!this->scalingThreads.empty());
+    Validate(!this->domainDivisions.empty());
+    Validate(!this->scalingType.empty());
+}
+
+void Parameters::print(Logger &logger) const {
+    logger.info() << "initialDimensions : " << this->initialDimensions << std::endl;
+    logger.info() << "initialArangement : " << this->initialArrangement << std::endl;
+    logger.info() << "numOfParticles    : " << this->numOfParticles << std::endl;
+    logger.info() << "positionStepSize  : " << this->positionStepSize << std::endl;
+    logger.info() << "rotationStepSize  : " << this->rotationStepSize << std::endl;
+    logger.info() << "volumeStepSize    : " << this->volumeStepSize << std::endl;
+    logger.info() << "seed              : " << this->seed << std::endl;
+    logger.info() << "shapeName         : " << this->shapeName << std::endl;
+    logger.info() << "shapeAttributes   : " << this->shapeAttributes << std::endl;
+    logger.info() << "interaction       : " << this->interaction << std::endl;
+    logger.info() << "scalingThreads    : " << this->scalingThreads << std::endl;
+    logger.info() << "domainDivisions   : " << this->domainDivisions << std::endl;
+    logger.info() << "scalingType       : " << this->scalingType << std::endl;
+    logger.info() << "saveOnSignal      : " << (this->saveOnSignal ? "true" : "false") << std::endl;
+}
+
+std::pair<std::string, std::string> Parameters::explodeRunSection(const std::string &runSectionName) {
+    auto dotPos = runSectionName.find('.');
+    if (dotPos == std::string::npos)
+        throw ParametersParseException("Ini section [" + runSectionName + "] is not in format [runType.runName]");
+
+    std::pair<std::string, std::string> result;
+    result.first = runSectionName.substr(0, dotPos);
+    result.second = runSectionName.substr(dotPos + 1);
+    return result;
+}
+
+Parameters::IntegrationParameters::IntegrationParameters(const std::string &runName, const Config &runConfig) {
     this->runName = runName;
     for (const auto &key : runConfig.getKeys()) {
         if (key == "temperature")
@@ -84,17 +134,7 @@ Parameters::RunParameters::RunParameters(const std::string &runName, const Confi
     this->validate();
 }
 
-void Parameters::validate() const {
-    Validate(this->numOfParticles > 0);
-    Validate(this->positionStepSize > 0);
-    Validate(this->rotationStepSize > 0);
-    Validate(this->volumeStepSize > 0);
-    Validate(!this->scalingThreads.empty());
-    Validate(!this->domainDivisions.empty());
-    Validate(!this->scalingType.empty());
-}
-
-void Parameters::RunParameters::validate() const {
+void Parameters::IntegrationParameters::validate() const {
     Validate(this->temperature > 0);
     Validate(this->pressure > 0);
     Validate(this->thermalisationCycles > 0);
@@ -103,24 +143,7 @@ void Parameters::RunParameters::validate() const {
     Validate(this->snapshotEvery > 0);
 }
 
-void Parameters::print(Logger &logger) const {
-    logger.info() << "initialDimensions : " << this->initialDimensions << std::endl;
-    logger.info() << "initialArangement : " << this->initialArrangement << std::endl;
-    logger.info() << "numOfParticles    : " << this->numOfParticles << std::endl;
-    logger.info() << "positionStepSize  : " << this->positionStepSize << std::endl;
-    logger.info() << "rotationStepSize  : " << this->rotationStepSize << std::endl;
-    logger.info() << "volumeStepSize    : " << this->volumeStepSize << std::endl;
-    logger.info() << "seed              : " << this->seed << std::endl;
-    logger.info() << "shapeName         : " << this->shapeName << std::endl;
-    logger.info() << "shapeAttributes   : " << this->shapeAttributes << std::endl;
-    logger.info() << "interaction       : " << this->interaction << std::endl;
-    logger.info() << "scalingThreads    : " << this->scalingThreads << std::endl;
-    logger.info() << "domainDivisions   : " << this->domainDivisions << std::endl;
-    logger.info() << "scalingType       : " << this->scalingType << std::endl;
-    logger.info() << "saveOnSignal      : " << (this->saveOnSignal ? "true" : "false") << std::endl;
-}
-
-void Parameters::RunParameters::print(Logger &logger) const {
+void Parameters::IntegrationParameters::print(Logger &logger) const {
     logger.info() << "temperature             : " << this->temperature << std::endl;
     logger.info() << "pressure                : " << this->pressure << std::endl;
     logger.info() << "thermalisationCycles    : " << this->thermalisationCycles << std::endl;
@@ -131,5 +154,44 @@ void Parameters::RunParameters::print(Logger &logger) const {
     logger.info() << "packingFilename         : " << this->packingFilename << std::endl;
     logger.info() << "wolframFilename         : " << this->wolframFilename << std::endl;
     logger.info() << "outputFilename          : " << this->outputFilename << std::endl;
+    logger.info() << "observableSnapshotFilename : " << this->observableSnapshotFilename << std::endl;
+}
+
+Parameters::OverlapRelaxationParameters::OverlapRelaxationParameters(const std::string &runName, const Config &runConfig) {
+    this->runName = runName;
+    for (const auto &key : runConfig.getKeys()) {
+        if (key == "temperature")
+            this->temperature = runConfig.getDouble("temperature");
+        else if (key == "pressure")
+            this->pressure = runConfig.getDouble("pressure");
+        else if (key == "snapshotEvery")
+            this->snapshotEvery = runConfig.getUnsignedLong("snapshotEvery");
+        else if (key == "observables")
+            this->observables = runConfig.getString("observables");
+        else if (key == "wolframFilename")
+            this->wolframFilename = runConfig.getString("wolframFilename");
+        else if (key == "packingFilename")
+            this->packingFilename = runConfig.getString("packingFilename");
+        else if (key == "observableSnapshotFilename")
+            this->observableSnapshotFilename = runConfig.getString("observableSnapshotFilename");
+        else
+            throw ParametersParseException("Unknown parameter " + key);
+    }
+    this->validate();
+}
+
+void Parameters::OverlapRelaxationParameters::validate() const {
+    Validate(this->temperature > 0);
+    Validate(this->pressure > 0);
+    Validate(this->snapshotEvery > 0);
+}
+
+void Parameters::OverlapRelaxationParameters::print(Logger &logger) const {
+    logger.info() << "temperature             : " << this->temperature << std::endl;
+    logger.info() << "pressure                : " << this->pressure << std::endl;
+    logger.info() << "snapshotEvery           : " << this->snapshotEvery << std::endl;
+    logger.info() << "observables             : " << this->observables << std::endl;
+    logger.info() << "packingFilename         : " << this->packingFilename << std::endl;
+    logger.info() << "wolframFilename         : " << this->wolframFilename << std::endl;
     logger.info() << "observableSnapshotFilename : " << this->observableSnapshotFilename << std::endl;
 }

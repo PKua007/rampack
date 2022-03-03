@@ -10,6 +10,7 @@
 #include <exception>
 #include <map>
 #include <string>
+#include <variant>
 
 #include "utils/Config.h"
 #include "utils/Logger.h"
@@ -29,15 +30,16 @@ public:
 class Parameters {
 private:
     void validate() const;
+    [[nodiscard]] static std::pair<std::string, std::string> explodeRunSection(const std::string &runSectionName) ;
 
 public:
-    class RunParameters {
+    class IntegrationParameters {
     private:
         void validate() const;
 
     public:
-        RunParameters() = default;
-        RunParameters(const std::string &runName, const Config &runConfig);
+        IntegrationParameters() = default;
+        IntegrationParameters(const std::string &runName, const Config &runConfig);
 
         std::string runName{};
         double temperature{};
@@ -54,6 +56,28 @@ public:
 
         void print(Logger &logger) const;
     };
+
+    class OverlapRelaxationParameters {
+    private:
+        void validate() const;
+
+    public:
+        OverlapRelaxationParameters() = default;
+        OverlapRelaxationParameters(const std::string &runName, const Config &runConfig);
+
+        std::string runName{};
+        double temperature{};
+        double pressure{};
+        std::size_t snapshotEvery{};
+        std::string observables{};
+        std::string packingFilename{};
+        std::string wolframFilename{};
+        std::string observableSnapshotFilename{};
+
+        void print(Logger &logger) const;
+    };
+
+    using RunParameters = std::variant<IntegrationParameters, OverlapRelaxationParameters>;
 
     /* All of these are described in input.ini */
     std::string initialDimensions{};

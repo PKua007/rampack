@@ -77,6 +77,7 @@ class Config
 private:
     std::map<std::string, std::string>  fieldMap;
     std::vector<std::string>            keys;
+    std::vector<std::string>            sections;
     std::vector<std::string>            rootSections;
 
     struct Field {
@@ -89,6 +90,7 @@ private:
     static Field splitField(const std::string &line, char delim, std::size_t lineNum,
                             const std::string &currentSection);
 
+    void buildSections();
     void buildRootSections();
 
 public:
@@ -126,6 +128,12 @@ public:
     std::vector<std::string> getKeys() const { return this->keys; }
 
     /**
+     * @brief Returns names of sections - everything before the last dot in section name.
+     * @details Note, that there is a section with an empty name for keys without any section.
+     */
+    std::vector<std::string> getSections() const { return this->sections; }
+
+    /**
      * @brief Returns names of root sections - everything before the first dot in section name.
      * @details Note, that there is a section with an empty name for keys without any section.
      */
@@ -135,15 +143,21 @@ public:
      * @brief Returns @a true if a section with name @a section is present
      * @details Note, that there is a section with an empty name for keys without any section.
      */
+    bool hasSection(const std::string &section) const;
+
+    /**
+     * @brief Returns @a true if a root section with name @a section is present
+     * @details Note, that there is a section with an empty name for keys without any section.
+     */
     bool hasRootSection(const std::string &section) const;
 
     /**
-     * @brief Prepares subconfig file for section @a rootSection.
+     * @brief Prepares subconfig file for section @a section.
      * @details It includes all key=value pairs from this root section, including subsections. Of course all
-     * @a rootSection prefixes are stripped in the result, but subsections remain. The procedure can be recursed for
+     * @a section prefixes are stripped in the result, but subsections remain. The procedure can be recursed for
      * deeper nesting. Note, that one can also fetch fields with no section passing the empty string.
      */
-    Config fetchSubconfig(const std::string &rootSection) const;
+    Config fetchSubconfig(const std::string &section) const;
 
     friend std::ostream &operator<<(std::ostream &out, const Config &config);
 };
