@@ -43,11 +43,6 @@ private:
         friend Counter operator+(Counter c1, const Counter &c2) { return c1 += c2; }
     };
 
-    std::size_t thermalisationCycles{};
-    std::size_t averagingCycles{};
-    std::size_t averagingEvery{};
-    std::size_t snapshotEvery{};
-
     double temperature{};
     double pressure{};
 
@@ -85,7 +80,7 @@ private:
     bool tryScaling(const Interaction &interaction);
     void evaluateCounters(Logger &logger);
     void reset();
-    void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger);
+    void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger, bool displayOverlaps);
 
 public:
     /**
@@ -117,10 +112,14 @@ public:
      * @param logger Logger object to display simulation data
      * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
      */
-    void perform(double temperature_, double pressure_, std::size_t thermalisationCycles_, std::size_t averagingCycles_,
-                 std::size_t averagingEvery_, std::size_t snapshotEvery_, const ShapeTraits &shapeTraits,
+    void perform(double temperature_, double pressure_, std::size_t thermalisationCycles, std::size_t averagingCycles,
+                 std::size_t averagingEvery, std::size_t snapshotEvery, const ShapeTraits &shapeTraits,
                  std::unique_ptr<ObservablesCollector> observablesCollector_, Logger &logger,
                  std::size_t cycleOffset = 0);
+
+    void relaxOverlaps(double temperature_, double pressure_, std::size_t snapshotEvery,
+                       const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
+                       Logger &logger, std::size_t cycleOffset = 0);
 
     [[nodiscard]] const ObservablesCollector &getObservablesCollector() { return *this->observablesCollector; }
 

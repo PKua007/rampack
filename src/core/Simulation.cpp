@@ -69,23 +69,73 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep,
     }
 }
 
-void Simulation::perform(double temperature_, double pressure_, std::size_t thermalisationCycles_,
-                         std::size_t averagingCycles_, std::size_t averagingEvery_, std::size_t snapshotEvery_,
+void Simulation::perform(double temperature_, double pressure_, std::size_t thermalisationCycles,
+                         std::size_t averagingCycles, std::size_t averagingEvery, std::size_t snapshotEvery,
                          const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
                          Logger &logger, std::size_t cycleOffset)
 {
     Expects(temperature_ > 0);
     Expects(pressure_ > 0);
-    Expects(thermalisationCycles_ > 0);
-    Expects(averagingCycles_ > 0);
-    Expects(averagingEvery_ > 0 && averagingEvery_ < averagingCycles_);
+    Expects(thermalisationCycles > 0);
+    Expects(averagingCycles > 0);
+    Expects(averagingEvery > 0 && averagingEvery < averagingCycles);
 
     this->temperature = temperature_;
     this->pressure = pressure_;
-    this->thermalisationCycles = thermalisationCycles_;
-    this->averagingCycles = averagingCycles_;
-    this->averagingEvery = averagingEvery_;
-    this->snapshotEvery = snapshotEvery_;
+    this->observablesCollector = std::move(observablesCollector_);
+    this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
+    this->reset();
+
+    this->totalCycles = cycleOffset;
+
+    const Interaction &interaction = shapeTraits.getInteraction();
+    LoggerAdditionalTextAppender loggerAdditionalTextAppender(logger);
+
+    this->packing->toggleOverlapCounting(false, interaction);
+
+    this->shouldAdjustStepSize = true;
+    loggerAdditionalTextAppender.setAdditionalText("th");
+    logger.info() << "Starting thermalisation..." << std::endl;
+    for (std::size_t i{}; i < thermalisationCycles; i++) {
+        this->performCycle(logger, interaction);
+        if (this->totalCycles % snapshotEvery == 0)
+            this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
+        if (this->totalCycles % 100 == 0)
+            this->printInlineInfo(this->totalCycles, shapeTraits, logger, false);
+        if (sigint_received) {
+            logger.warn() << "SIGINT/SIGKILL received, stopping on " << this->totalCycles << " cycle." << std::endl;
+            return;
+        }
+    }
+
+    this->shouldAdjustStepSize = false;
+    loggerAdditionalTextAppender.setAdditionalText("av");
+    logger.info() << "Starting averaging..." << std::endl;
+    for(std::size_t i{}; i < averagingCycles; i++) {
+        this->performCycle(logger, interaction);
+        if (this->totalCycles % snapshotEvery == 0)
+            this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
+        if (this->totalCycles % averagingEvery == 0)
+            this->observablesCollector->addAveragingValues(*this->packing, shapeTraits);
+        if (this->totalCycles % 100 == 0)
+            this->printInlineInfo(this->totalCycles, shapeTraits, logger, false);
+        if (sigint_received) {
+            logger.warn() << "SIGINT/SIGKILL received, stopping on " << this->totalCycles << " cycle." << std::endl;
+            return;
+        }
+    }
+}
+
+void Simulation::relaxOverlaps(double temperature_, double pressure_, std::size_t snapshotEvery,
+                               const ShapeTraits &shapeTraits,
+                               std::unique_ptr<ObservablesCollector> observablesCollector_, Logger &logger,
+                               std::size_t cycleOffset)
+{
+    Expects(temperature_ > 0);
+    Expects(pressure_ > 0);
+
+    this->temperature = temperature_;
+    this->pressure = pressure_;
     this->observablesCollector = std::move(observablesCollector_);
     this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
     this->reset();
@@ -96,31 +146,15 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     LoggerAdditionalTextAppender loggerAdditionalTextAppender(logger);
 
     this->shouldAdjustStepSize = true;
-    loggerAdditionalTextAppender.setAdditionalText("th");
-    logger.info() << "Starting thermalisation..." << std::endl;
-    for (std::size_t i{}; i < this->thermalisationCycles; i++) {
+    this->packing->toggleOverlapCounting(true, interaction);
+    loggerAdditionalTextAppender.setAdditionalText("ov");
+    logger.info() << "Starting overlap relaxation...ss" << std::endl;
+    while (this->packing->getCachedNumberOfOverlaps() > 0) {
         this->performCycle(logger, interaction);
-        if (this->totalCycles % this->snapshotEvery == 0)
+        if (this->totalCycles % snapshotEvery == 0)
             this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
         if (this->totalCycles % 100 == 0)
-            this->printInlineInfo(this->totalCycles, shapeTraits, logger);
-        if (sigint_received) {
-            logger.warn() << "SIGINT/SIGKILL received, stopping on " << this->totalCycles << " cycle." << std::endl;
-            return;
-        }
-    }
-
-    this->shouldAdjustStepSize = false;
-    loggerAdditionalTextAppender.setAdditionalText("av");
-    logger.info() << "Starting averaging..." << std::endl;
-    for(std::size_t i{}; i < this->averagingCycles; i++) {
-        this->performCycle(logger, interaction);
-        if (this->totalCycles % this->snapshotEvery == 0)
-            this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
-        if (this->totalCycles % this->averagingEvery == 0)
-            this->observablesCollector->addAveragingValues(*this->packing, shapeTraits);
-        if (this->totalCycles % 100 == 0)
-            this->printInlineInfo(this->totalCycles, shapeTraits, logger);
+            this->printInlineInfo(this->totalCycles, shapeTraits, logger, true);
         if (sigint_received) {
             logger.warn() << "SIGINT/SIGKILL received, stopping on " << this->totalCycles << " cycle." << std::endl;
             return;
@@ -301,7 +335,7 @@ bool Simulation::tryScaling(const Interaction &interaction) {
 
     auto N = static_cast<double>(this->packing->size());
     if (interaction.hasSoftPart()) {
-        // Soft interaction present - we have a nontrivial energy change an we always need to try scaling
+        // Soft interaction present - we have a nontrivial energy change, and we always need to try scaling
         double dE = this->packing->tryScaling(newBox, interaction);
         double exponent = N * log(factor) - dE / this->temperature - this->pressure * deltaV / this->temperature;
         if (this->unitIntervalDistribution(mt) <= std::exp(exponent)) {
@@ -315,7 +349,7 @@ bool Simulation::tryScaling(const Interaction &interaction) {
         double exponent = N * log(factor) - this->pressure * deltaV / this->temperature;
         if (this->unitIntervalDistribution(mt) > std::exp(exponent)) {
             return false;
-        } else if (this->packing->tryScaling(newBox, interaction) != 0) {
+        } else if (this->packing->tryScaling(newBox, interaction) > 0) {
             this->packing->revertScaling();
             return false;
         } else {
@@ -408,8 +442,13 @@ Simulation::Counter &Simulation::Counter::operator+=(const Simulation::Counter &
     return *this;
 }
 
-void Simulation::printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger) {
+void Simulation::printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger,
+                                 bool displayOverlaps)
+{
     logger.info() << "Performed " << cycleNumber << " cycles; ";
+    if (displayOverlaps)
+        logger << "overlaps: " << this->packing->getCachedNumberOfOverlaps() << "; ";
+
     logger << this->observablesCollector->generateInlineObservablesString(*this->packing, traits);
     logger << std::endl;
     logger.verbose() << "Memory usage (bytes): shape: " << this->packing->getShapesMemoryUsage() << ", ";
