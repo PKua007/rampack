@@ -73,8 +73,9 @@ int Frontend::casino(int argc, char **argv) {
             ("c,continue", "when specified, the thermalization of previously finished or aborted run will be continued "
                            "for as many more cycles as specified. It can be used together with --start-from to specify "
                            "which run should be continued. If the thermalization phase is already over, the error will "
-                           "be reported",
-             cxxopts::value<std::size_t>(continuationCycles));
+                           "be reported. If 0 is specified (or left blank, since 0 is the default value), "
+                           "total number of thermalization cycles from the input file will not be changed",
+             cxxopts::value<std::size_t>(continuationCycles)->implicit_value("0"));
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
@@ -198,12 +199,16 @@ int Frontend::casino(int argc, char **argv) {
         if (parsedOptions.count("continue")) {
             cycleOffset = std::stoul(auxInfo.at("cycles"));
             isContinuation = true;
-            Validate(continuationCycles > 0);
-            Validate(continuationCycles > cycleOffset);
 
             if (std::holds_alternative<Parameters::IntegrationParameters>(startingPackingRun)) {
                 // Because we continue this already finished run
                 auto &startingRun = std::get<Parameters::IntegrationParameters>(startingPackingRun);
+
+                // Value of continuation cycles is only used in integration mode. For overlaps rejection it is redundant
+                if (continuationCycles == 0)
+                    continuationCycles = startingRun.thermalisationCycles;
+                Validate(continuationCycles > cycleOffset);
+
                 startingRun.thermalisationCycles = continuationCycles - cycleOffset;
                 this->logger.info() << "Thermalisation from the finished run '" << startingRun.runName;
                 this->logger << "' will be continued up to " << continuationCycles << " cycles (";
