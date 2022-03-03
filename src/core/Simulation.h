@@ -55,6 +55,7 @@ private:
     double moveMicroseconds{};
     double scalingMicroseconds{};
     double domainDecompositionMicroseconds{};
+    double totalMicroseconds{};
     bool shouldAdjustStepSize{};
     std::size_t performedCycles{};
     std::size_t totalCycles{};
@@ -154,6 +155,11 @@ public:
     [[nodiscard]] double getObservablesMicroseconds() const {
         return this->observablesCollector->getComputationMicroseconds();
     }
+
+    /**
+     * @brief Returns the total time consumed by the simulation.
+     */
+    [[nodiscard]] double getTotalMicroseconds() const { return this->totalMicroseconds; }
 
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }
     [[nodiscard]] double getCurrentTranslationStep() const { return this->translationStep; }

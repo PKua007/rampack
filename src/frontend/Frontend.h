@@ -27,7 +27,14 @@ private:
     Parameters loadParameters(const std::string &inputFilename);
     void setVerbosityLevel(const std::string &verbosityLevelName) const;
 
-    void printPerformanceInfo(const Simulation &simulation, double totalSeconds);
+    void performIntegration(Simulation &simulation, const Parameters::IntegrationParameters &runParams,
+                            const std::unique_ptr<ShapeTraits> &shapeTraits, size_t cycleOffset, bool isContinuation);
+
+    void performOverlapRelaxation(Simulation &simulation, const Parameters::OverlapRelaxationParameters &runParams,
+                                  const std::unique_ptr<ShapeTraits> &shapeTraits, size_t cycleOffset,
+                                  bool isContinuation);
+
+    void printPerformanceInfo(const Simulation &simulation);
     void printAverageValues(const ObservablesCollector &collector);
 
     void storeAverageValues(const std::string &filename, const ObservablesCollector &collector, double temperature,

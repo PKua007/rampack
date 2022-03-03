@@ -91,6 +91,8 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     const Interaction &interaction = shapeTraits.getInteraction();
     LoggerAdditionalTextAppender loggerAdditionalTextAppender(logger);
 
+    auto start = std::chrono::high_resolution_clock::now();
+
     this->packing->toggleOverlapCounting(false, interaction);
 
     this->shouldAdjustStepSize = true;
@@ -103,6 +105,8 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
         if (this->totalCycles % 100 == 0)
             this->printInlineInfo(this->totalCycles, shapeTraits, logger, false);
         if (sigint_received) {
+            auto end = std::chrono::high_resolution_clock::now();
+            this->totalMicroseconds = std::chrono::duration<double, std::micro>(end - start).count();
             logger.warn() << "SIGINT/SIGKILL received, stopping on " << this->totalCycles << " cycle." << std::endl;
             return;
         }
@@ -111,7 +115,7 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     this->shouldAdjustStepSize = false;
     loggerAdditionalTextAppender.setAdditionalText("av");
     logger.info() << "Starting averaging..." << std::endl;
-    for(std::size_t i{}; i < averagingCycles; i++) {
+    for (std::size_t i{}; i < averagingCycles; i++) {
         this->performCycle(logger, interaction);
         if (this->totalCycles % snapshotEvery == 0)
             this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
@@ -120,10 +124,17 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
         if (this->totalCycles % 100 == 0)
             this->printInlineInfo(this->totalCycles, shapeTraits, logger, false);
         if (sigint_received) {
+            auto end = std::chrono::high_resolution_clock::now();
+            this->totalMicroseconds = std::chrono::duration<double, std::micro>(end - start).count();
             logger.warn() << "SIGINT/SIGKILL received, stopping on " << this->totalCycles << " cycle." << std::endl;
             return;
         }
     }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    this->totalMicroseconds = std::chrono::duration<double, std::micro>(end - start).count();
+
+    logger.info() << "Integration completed after " << this->totalCycles << "cycles." << std::endl;
 }
 
 void Simulation::relaxOverlaps(double temperature_, double pressure_, std::size_t snapshotEvery,
@@ -145,10 +156,13 @@ void Simulation::relaxOverlaps(double temperature_, double pressure_, std::size_
     const Interaction &interaction = shapeTraits.getInteraction();
     LoggerAdditionalTextAppender loggerAdditionalTextAppender(logger);
 
-    this->shouldAdjustStepSize = true;
+    auto start = std::chrono::high_resolution_clock::now();
+
     this->packing->toggleOverlapCounting(true, interaction);
+
+    this->shouldAdjustStepSize = true;
     loggerAdditionalTextAppender.setAdditionalText("ov");
-    logger.info() << "Starting overlap relaxation...ss" << std::endl;
+    logger.info() << "Starting overlap relaxation..." << std::endl;
     while (this->packing->getCachedNumberOfOverlaps() > 0) {
         this->performCycle(logger, interaction);
         if (this->totalCycles % snapshotEvery == 0)
@@ -156,10 +170,18 @@ void Simulation::relaxOverlaps(double temperature_, double pressure_, std::size_
         if (this->totalCycles % 100 == 0)
             this->printInlineInfo(this->totalCycles, shapeTraits, logger, true);
         if (sigint_received) {
+            auto end = std::chrono::high_resolution_clock::now();
+            this->totalMicroseconds = std::chrono::duration<double, std::micro>(end - start).count();
             logger.warn() << "SIGINT/SIGKILL received, stopping on " << this->totalCycles << " cycle." << std::endl;
-            return;
+            break;
         }
     }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    this->totalMicroseconds = std::chrono::duration<double, std::micro>(end - start).count();
+
+    if (!sigint_received)
+        logger.info() << "Overlaps eliminated after " << this->totalCycles << " cycles." << std::endl;
 }
 
 void Simulation::reset() {
@@ -170,6 +192,7 @@ void Simulation::reset() {
     this->moveMicroseconds = 0;
     this->scalingMicroseconds = 0;
     this->domainDecompositionMicroseconds = 0;
+    this->totalMicroseconds = 0;
     this->observablesCollector->clear();
     this->performedCycles = 0;
     this->totalCycles = 0;

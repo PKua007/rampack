@@ -229,43 +229,15 @@ int Frontend::casino(int argc, char **argv) {
                           params.seed, std::move(triclinicBoxScaler), domainDivisions, params.saveOnSignal);
 
     for (std::size_t i = startRunIndex; i < params.runsParameters.size(); i++) {
-        auto runParams = std::get<Parameters::IntegrationParameters>(params.runsParameters[i]);
-
-        this->logger.setAdditionalText(runParams.runName);
-        this->logger.info() << std::endl;
-        this->logger << "--------------------------------------------------------------------" << std::endl;
-        this->logger << "Starting run '" << runParams.runName << "'" << std::endl;
-        this->logger << "--------------------------------------------------------------------" << std::endl;
-        runParams.print(logger);
-        this->logger << "--------------------------------------------------------------------" << std::endl;
-
-        auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
-
-        auto start = std::chrono::high_resolution_clock::now();
-        simulation.perform(runParams.temperature, runParams.pressure, runParams.thermalisationCycles,
-                           runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
-                           *shapeTraits, std::move(collector), this->logger, cycleOffset);
-        auto end = std::chrono::high_resolution_clock::now();
-        double totalSeconds = std::chrono::duration<double>(end - start).count();
-
-        // Print info
-        const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
-
-        this->logger.info();
-        this->logger << "--------------------------------------------------------------------" << std::endl;
-        this->printAverageValues(observablesCollector);
-        this->printPerformanceInfo(simulation, totalSeconds);
-
-        if (!runParams.packingFilename.empty())
-            this->storePacking(simulation, runParams.packingFilename);
-        if (!runParams.wolframFilename.empty())
-            this->storeWolframVisualization(simulation, *shapeTraits, runParams.wolframFilename);
-        if (!runParams.outputFilename.empty()) {
-            this->storeAverageValues(runParams.outputFilename, observablesCollector, runParams.temperature,
-                                     runParams.pressure);
+        if (std::holds_alternative<Parameters::IntegrationParameters>(params.runsParameters[i])) {
+            const auto &runParams = std::get<Parameters::IntegrationParameters>(params.runsParameters[i]);
+            this->performIntegration(simulation, runParams, shapeTraits, cycleOffset, isContinuation);
+        } else if (std::holds_alternative<Parameters::OverlapRelaxationParameters>(params.runsParameters[i])) {
+            const auto &runParams = std::get<Parameters::OverlapRelaxationParameters>(params.runsParameters[i]);
+            this->performOverlapRelaxation(simulation, runParams, shapeTraits, cycleOffset, isContinuation);
+        } else {
+            throw AssertionException("Unimplemented run type");
         }
-        if (!runParams.observableSnapshotFilename.empty())
-            this->storeSnapshots(observablesCollector, isContinuation, runParams.observableSnapshotFilename);
 
         isContinuation = false;
         cycleOffset = 0;
@@ -275,6 +247,71 @@ int Frontend::casino(int argc, char **argv) {
     }
 
     return EXIT_SUCCESS;
+}
+
+void Frontend::performIntegration(Simulation &simulation, const Parameters::IntegrationParameters &runParams,
+                                  const std::unique_ptr<ShapeTraits> &shapeTraits, size_t cycleOffset,
+                                  bool isContinuation)
+{
+    this->logger.setAdditionalText(runParams.runName);
+    this->logger.info() << std::endl;
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+    this->logger << "Starting integration '" << runParams.runName << "'" << std::endl;
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+    runParams.print(this->logger);
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+
+    auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
+    simulation.perform(runParams.temperature, runParams.pressure, runParams.thermalisationCycles,
+                       runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
+                       *shapeTraits, std::move(collector), logger, cycleOffset);
+    const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
+
+    this->logger.info();
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+    this->printAverageValues(observablesCollector);
+    this->printPerformanceInfo(simulation);
+
+    if (!runParams.packingFilename.empty())
+        this->storePacking(simulation, runParams.packingFilename);
+    if (!runParams.wolframFilename.empty())
+        this->storeWolframVisualization(simulation, *shapeTraits, runParams.wolframFilename);
+    if (!runParams.outputFilename.empty()) {
+        this->storeAverageValues(runParams.outputFilename, observablesCollector, runParams.temperature,
+                                 runParams.pressure);
+    }
+    if (!runParams.observableSnapshotFilename.empty())
+        this->storeSnapshots(observablesCollector, isContinuation, runParams.observableSnapshotFilename);
+}
+
+void Frontend::performOverlapRelaxation(Simulation &simulation,
+                                        const Parameters::OverlapRelaxationParameters &runParams,
+                                        const std::unique_ptr<ShapeTraits> &shapeTraits, size_t cycleOffset,
+                                        bool isContinuation)
+{
+    this->logger.setAdditionalText(runParams.runName);
+    this->logger.info() << std::endl;
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+    this->logger << "Starting overlap relaxation '" << runParams.runName << "'" << std::endl;
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+    runParams.print(this->logger);
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+
+    auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
+    simulation.relaxOverlaps(runParams.temperature, runParams.pressure, runParams.snapshotEvery, *shapeTraits,
+                             std::move(collector), this->logger, cycleOffset);
+    const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
+
+    this->logger.info();
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+    this->printPerformanceInfo(simulation);
+
+    if (!runParams.packingFilename.empty())
+        this->storePacking(simulation, runParams.packingFilename);
+    if (!runParams.wolframFilename.empty())
+        this->storeWolframVisualization(simulation, *shapeTraits, runParams.wolframFilename);
+    if (!runParams.observableSnapshotFilename.empty())
+        this->storeSnapshots(observablesCollector, isContinuation, runParams.observableSnapshotFilename);
 }
 
 void Frontend::storeSnapshots(const ObservablesCollector &observablesCollector, bool isContinuation,
@@ -316,11 +353,12 @@ void Frontend::storePacking(const Simulation &simulation, const std::string &pac
     this->logger.info() << "Packing stored to " + packingFilename << std::endl;
 }
 
-void Frontend::printPerformanceInfo(const Simulation &simulation, double totalSeconds) {
+void Frontend::printPerformanceInfo(const Simulation &simulation) {
     const auto &simulatedPacking = simulation.getPacking();
     std::size_t ngRebuilds = simulatedPacking.getNeighbourGridRebuilds();
     std::size_t ngResizes = simulatedPacking.getNeighbourGridResizes();
 
+    double totalSeconds = simulation.getTotalMicroseconds() / 1e6;
     double ngRebuildSeconds = simulatedPacking.getNeighbourGridRebuildMicroseconds() / 1e6;
     double moveSeconds = simulation.getMoveMicroseconds() / 1e6;
     double scalingSeconds = simulation.getScalingMicroseconds() / 1e6;
