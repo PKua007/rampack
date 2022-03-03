@@ -205,14 +205,19 @@ int Frontend::casino(int argc, char **argv) {
                 auto &startingRun = std::get<Parameters::IntegrationParameters>(startingPackingRun);
 
                 // Value of continuation cycles is only used in integration mode. For overlaps rejection it is redundant
-                if (continuationCycles == 0)
+                if (continuationCycles == 0) {
                     continuationCycles = startingRun.thermalisationCycles;
-                Validate(continuationCycles > cycleOffset);
-
-                startingRun.thermalisationCycles = continuationCycles - cycleOffset;
-                this->logger.info() << "Thermalisation from the finished run '" << startingRun.runName;
-                this->logger << "' will be continued up to " << continuationCycles << " cycles (";
-                this->logger << startingRun.thermalisationCycles << " to go)" << std::endl;
+                } else if (continuationCycles <= cycleOffset) {
+                    startingRun.thermalisationCycles = 0;
+                    this->logger.info() << "Thermalisation of the finished run '" << startingRun.runName;
+                    this->logger << "' will be skipped, since " << continuationCycles << " or more cycles were ";
+                    this->logger << "already performed." << std::endl;
+                } else {
+                    startingRun.thermalisationCycles = continuationCycles - cycleOffset;
+                    this->logger.info() << "Thermalisation from the finished run '" << startingRun.runName;
+                    this->logger << "' will be continued up to " << continuationCycles << " cycles (";
+                    this->logger << startingRun.thermalisationCycles << " to go)" << std::endl;
+                }
             }
         }
 

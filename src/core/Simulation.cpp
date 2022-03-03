@@ -76,9 +76,8 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
 {
     Expects(temperature_ > 0);
     Expects(pressure_ > 0);
-    Expects(thermalisationCycles > 0);
-    Expects(averagingCycles > 0);
-    Expects(averagingEvery > 0 && averagingEvery < averagingCycles);
+    if (averagingCycles > 0)
+        Expects(averagingEvery > 0 && averagingEvery < averagingCycles);
 
     this->temperature = temperature_;
     this->pressure = pressure_;
@@ -97,37 +96,45 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
 
     this->shouldAdjustStepSize = true;
     loggerAdditionalTextAppender.setAdditionalText("th");
-    logger.info() << "Starting thermalisation..." << std::endl;
-    for (std::size_t i{}; i < thermalisationCycles; i++) {
-        this->performCycle(logger, interaction);
-        if (this->totalCycles % snapshotEvery == 0)
-            this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
-        if (this->totalCycles % 100 == 0)
-            this->printInlineInfo(this->totalCycles, shapeTraits, logger, false);
-        if (sigint_received) {
-            auto end = std::chrono::high_resolution_clock::now();
-            this->totalMicroseconds = std::chrono::duration<double, std::micro>(end - start).count();
-            logger.warn() << "SIGINT/SIGKILL received, stopping on " << this->totalCycles << " cycle." << std::endl;
-            return;
+    if (thermalisationCycles == 0) {
+        logger.info() << "Thermalization skipped." << std::endl;
+    } else {
+        logger.info() << "Starting thermalisation..." << std::endl;
+        for (std::size_t i{}; i < thermalisationCycles; i++) {
+            this->performCycle(logger, interaction);
+            if (this->totalCycles % snapshotEvery == 0)
+                this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
+            if (this->totalCycles % 100 == 0)
+                this->printInlineInfo(this->totalCycles, shapeTraits, logger, false);
+            if (sigint_received) {
+                auto end = std::chrono::high_resolution_clock::now();
+                this->totalMicroseconds = std::chrono::duration<double, std::micro>(end - start).count();
+                logger.warn() << "SIGINT/SIGKILL received, stopping on " << this->totalCycles << " cycle." << std::endl;
+                return;
+            }
         }
     }
 
     this->shouldAdjustStepSize = false;
     loggerAdditionalTextAppender.setAdditionalText("av");
-    logger.info() << "Starting averaging..." << std::endl;
-    for (std::size_t i{}; i < averagingCycles; i++) {
-        this->performCycle(logger, interaction);
-        if (this->totalCycles % snapshotEvery == 0)
-            this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
-        if (this->totalCycles % averagingEvery == 0)
-            this->observablesCollector->addAveragingValues(*this->packing, shapeTraits);
-        if (this->totalCycles % 100 == 0)
-            this->printInlineInfo(this->totalCycles, shapeTraits, logger, false);
-        if (sigint_received) {
-            auto end = std::chrono::high_resolution_clock::now();
-            this->totalMicroseconds = std::chrono::duration<double, std::micro>(end - start).count();
-            logger.warn() << "SIGINT/SIGKILL received, stopping on " << this->totalCycles << " cycle." << std::endl;
-            return;
+    if (averagingCycles == 0) {
+        logger.info() << "Averaging skipped." << std::endl;
+    } else {
+        logger.info() << "Starting averaging..." << std::endl;
+        for (std::size_t i{}; i < averagingCycles; i++) {
+            this->performCycle(logger, interaction);
+            if (this->totalCycles % snapshotEvery == 0)
+                this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
+            if (this->totalCycles % averagingEvery == 0)
+                this->observablesCollector->addAveragingValues(*this->packing, shapeTraits);
+            if (this->totalCycles % 100 == 0)
+                this->printInlineInfo(this->totalCycles, shapeTraits, logger, false);
+            if (sigint_received) {
+                auto end = std::chrono::high_resolution_clock::now();
+                this->totalMicroseconds = std::chrono::duration<double, std::micro>(end - start).count();
+                logger.warn() << "SIGINT/SIGKILL received, stopping on " << this->totalCycles << " cycle." << std::endl;
+                return;
+            }
         }
     }
 
