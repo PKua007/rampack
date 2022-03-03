@@ -246,93 +246,21 @@ int Frontend::casino(int argc, char **argv) {
         // Print info
         const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
-        const auto &simulatedPacking = simulation.getPacking();
-        std::size_t ngRebuilds = simulatedPacking.getNeighbourGridRebuilds();
-        std::size_t ngResizes = simulatedPacking.getNeighbourGridResizes();
-
-        double ngRebuildSeconds = simulatedPacking.getNeighbourGridRebuildMicroseconds() / 1e6;
-        double moveSeconds = simulation.getMoveMicroseconds() / 1e6;
-        double scalingSeconds = simulation.getScalingMicroseconds() / 1e6;
-        double domainDecompositionSeconds = simulation.getDomainDecompositionMicroseconds() / 1e6;
-        double observablesSeconds = simulation.getObservablesMicroseconds() / 1e6;
-        double otherSeconds = totalSeconds - moveSeconds - scalingSeconds - observablesSeconds;
-        double cyclesPerSecond = static_cast<double>(simulation.getPerformedCycles()) / totalSeconds;
-
-        double ngRebuildTotalPercent = ngRebuildSeconds / totalSeconds * 100;
-        double ngRebuildScalingPercent = ngRebuildSeconds / scalingSeconds * 100;
-        double domainDecompTotalPercent = domainDecompositionSeconds / totalSeconds * 100;
-        double domainDecompMovePercent = domainDecompositionSeconds / moveSeconds * 100;
-        double movePercent = moveSeconds / totalSeconds * 100;
-        double scalingPercent = scalingSeconds / totalSeconds * 100;
-        double observablesPercent = observablesSeconds / totalSeconds * 100;
-        double otherPercent = otherSeconds / totalSeconds * 100;
-
         this->logger.info();
         this->logger << "--------------------------------------------------------------------" << std::endl;
         this->printAverageValues(observablesCollector);
-        this->logger << "--------------------------------------------------------------------" << std::endl;
-        this->logger << "Move acceptance rate            : " << simulation.getMoveAcceptanceRate() << std::endl;
-        this->logger << "Scaling acceptance rate         : " << simulation.getScalingAcceptanceRate() << std::endl;
-        this->logger << "Neighbour grid resizes/rebuilds : " << ngResizes << "/" << ngRebuilds << std::endl;
-        this->logger << "Average neighbours per centre   : " << simulatedPacking.getAverageNumberOfNeighbours();
-        this->logger << std::endl;
-        this->logger << "--------------------------------------------------------------------" << std::endl;
-        this->logger << "Move time         : " << moveSeconds << " s (" << movePercent << "% total)" << std::endl;
-        this->logger << "Scaling time      : " << scalingSeconds << " s (" << scalingPercent << "% total)" << std::endl;
-        this->logger << "NG rebuild time   : " << ngRebuildSeconds << " s (";
-        this->logger << ngRebuildScalingPercent << "% scaling, " << ngRebuildTotalPercent << "% total)" <<  std::endl;
-        this->logger << "Dom. decomp. time : " << domainDecompositionSeconds << " s (";
-        this->logger << domainDecompMovePercent << "% move, " << domainDecompTotalPercent << "% total)" << std::endl;
-        this->logger << "Observables time  : " << observablesSeconds << " s (";
-        this->logger << observablesPercent << "% total)" << std::endl;
-        this->logger << "Other time        : " << otherSeconds << " s (" << otherPercent << "% total)" << std::endl;
-        this->logger << "Total time        : " << totalSeconds << " s" << std::endl;
-        this->logger << "Cycles per second : " << cyclesPerSecond << std::endl;
-        this->logger << "--------------------------------------------------------------------" << std::endl;
+        this->printPerformanceInfo(simulation, totalSeconds);
 
-        // Store packing (if desired)
-        if (!runParams.packingFilename.empty()) {
-            std::map<std::string, std::string> auxInfo;
-            auxInfo["translationStep"] = this->doubleToString(simulation.getCurrentTranslationStep());
-            auxInfo["rotationStep"] = this->doubleToString(simulation.getCurrentRotationStep());
-            auxInfo["scalingStep"] = this->doubleToString(simulation.getCurrentScalingStep());
-            auxInfo["cycles"] = std::to_string(simulation.getTotalCycles());
-
-            std::ofstream out(runParams.packingFilename);
-            ValidateOpenedDesc(out, runParams.packingFilename, "to store packing data");
-            simulation.getPacking().store(out, auxInfo);
-            this->logger.info() << "Packing stored to " + runParams.packingFilename << std::endl;
-        }
-
-        // Store Mathematica packing (if desired)
-        if (!runParams.wolframFilename.empty()) {
-            std::ofstream out(runParams.wolframFilename);
-            ValidateOpenedDesc(out, runParams.wolframFilename, "to store Wolfram packing");
-            simulation.getPacking().toWolfram(out, shapeTraits->getPrinter());
-            this->logger.info() << "Wolfram packing stored to " + runParams.wolframFilename << std::endl;
-        }
-
-        // Store average values of observables (if desired)
+        if (!runParams.packingFilename.empty())
+            this->storePacking(simulation, runParams.packingFilename);
+        if (!runParams.wolframFilename.empty())
+            this->storeWolframVisualization(simulation, *shapeTraits, runParams.wolframFilename);
         if (!runParams.outputFilename.empty()) {
             this->storeAverageValues(runParams.outputFilename, observablesCollector, runParams.temperature,
                                      runParams.pressure);
-            this->logger.info() << "Average values stored to " + runParams.outputFilename << std::endl;
         }
-
-        // Store observables vs cycles snapshots (if desired)
-        if (!runParams.observableSnapshotFilename.empty()) {
-            if (isContinuation) {
-                std::ofstream out(runParams.observableSnapshotFilename, std::ios_base::app);
-                ValidateOpenedDesc(out, runParams.observableSnapshotFilename, "to store observables");
-                observablesCollector.printSnapshots(out, false);
-            } else {
-                std::ofstream out(runParams.observableSnapshotFilename);
-                ValidateOpenedDesc(out, runParams.observableSnapshotFilename, "to store observables");
-                observablesCollector.printSnapshots(out, true);
-            }
-
-            this->logger.info() << "Observable snapshots stored to " + runParams.observableSnapshotFilename << std::endl;
-        }
+        if (!runParams.observableSnapshotFilename.empty())
+            this->storeSnapshots(observablesCollector, isContinuation, runParams.observableSnapshotFilename);
 
         isContinuation = false;
         cycleOffset = 0;
@@ -342,6 +270,87 @@ int Frontend::casino(int argc, char **argv) {
     }
 
     return EXIT_SUCCESS;
+}
+
+void Frontend::storeSnapshots(const ObservablesCollector &observablesCollector, bool isContinuation,
+                              const std::string &observableSnapshotFilename) const
+{
+    if (isContinuation) {
+        std::ofstream out(observableSnapshotFilename, std::ios_base::app);
+        ValidateOpenedDesc(out, observableSnapshotFilename, "to store observables");
+        observablesCollector.printSnapshots(out, false);
+    } else {
+        std::ofstream out(observableSnapshotFilename);
+        ValidateOpenedDesc(out, observableSnapshotFilename, "to store observables");
+        observablesCollector.printSnapshots(out, true);
+    }
+
+    this->logger.info() << "Observable snapshots stored to " + observableSnapshotFilename << std::endl;
+}
+
+void Frontend::storeWolframVisualization(const Simulation &simulation, const ShapeTraits &shapeTraits,
+                                         const std::string &wolframFilename) const
+{
+    std::ofstream out(wolframFilename);
+    ValidateOpenedDesc(out, wolframFilename, "to store Wolfram packing");
+    simulation.getPacking().toWolfram(out, shapeTraits.getPrinter());
+    this->logger.info() << "Wolfram packing stored to " + wolframFilename << std::endl;
+}
+
+void Frontend::storePacking(const Simulation &simulation, const std::string &packingFilename) {
+    std::map<std::string, std::string> auxInfo;
+    auxInfo["translationStep"] = doubleToString(simulation.getCurrentTranslationStep());
+    auxInfo["rotationStep"] = doubleToString(simulation.getCurrentRotationStep());
+    auxInfo["scalingStep"] = doubleToString(simulation.getCurrentScalingStep());
+    auxInfo["cycles"] = std::to_string(simulation.getTotalCycles());
+
+    std::ofstream out(packingFilename);
+    ValidateOpenedDesc(out, packingFilename, "to store packing data");
+    simulation.getPacking().store(out, auxInfo);
+
+    this->logger.info() << "Packing stored to " + packingFilename << std::endl;
+}
+
+void Frontend::printPerformanceInfo(const Simulation &simulation, double totalSeconds) {
+    const auto &simulatedPacking = simulation.getPacking();
+    std::size_t ngRebuilds = simulatedPacking.getNeighbourGridRebuilds();
+    std::size_t ngResizes = simulatedPacking.getNeighbourGridResizes();
+
+    double ngRebuildSeconds = simulatedPacking.getNeighbourGridRebuildMicroseconds() / 1e6;
+    double moveSeconds = simulation.getMoveMicroseconds() / 1e6;
+    double scalingSeconds = simulation.getScalingMicroseconds() / 1e6;
+    double domainDecompositionSeconds = simulation.getDomainDecompositionMicroseconds() / 1e6;
+    double observablesSeconds = simulation.getObservablesMicroseconds() / 1e6;
+    double otherSeconds = totalSeconds - moveSeconds - scalingSeconds - observablesSeconds;
+    double cyclesPerSecond = static_cast<double>(simulation.getPerformedCycles()) / totalSeconds;
+
+    double ngRebuildTotalPercent = ngRebuildSeconds / totalSeconds * 100;
+    double ngRebuildScalingPercent = ngRebuildSeconds / scalingSeconds * 100;
+    double domainDecompTotalPercent = domainDecompositionSeconds / totalSeconds * 100;
+    double domainDecompMovePercent = domainDecompositionSeconds / moveSeconds * 100;
+    double movePercent = moveSeconds / totalSeconds * 100;
+    double scalingPercent = scalingSeconds / totalSeconds * 100;
+    double observablesPercent = observablesSeconds / totalSeconds * 100;
+    double otherPercent = otherSeconds / totalSeconds * 100;
+
+    this->logger << "Move acceptance rate            : " << simulation.getMoveAcceptanceRate() << std::endl;
+    this->logger << "Scaling acceptance rate         : " << simulation.getScalingAcceptanceRate() << std::endl;
+    this->logger << "Neighbour grid resizes/rebuilds : " << ngResizes << "/" << ngRebuilds << std::endl;
+    this->logger << "Average neighbours per centre   : " << simulatedPacking.getAverageNumberOfNeighbours();
+    this->logger << std::endl;
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+    this->logger << "Move time         : " << moveSeconds << " s (" << movePercent << "% total)" << std::endl;
+    this->logger << "Scaling time      : " << scalingSeconds << " s (" << scalingPercent << "% total)" << std::endl;
+    this->logger << "NG rebuild time   : " << ngRebuildSeconds << " s (";
+    this->logger << ngRebuildScalingPercent << "% scaling, " << ngRebuildTotalPercent << "% total)" << std::endl;
+    this->logger << "Dom. decomp. time : " << domainDecompositionSeconds << " s (";
+    this->logger << domainDecompMovePercent << "% move, " << domainDecompTotalPercent << "% total)" << std::endl;
+    this->logger << "Observables time  : " << observablesSeconds << " s (";
+    this->logger << observablesPercent << "% total)" << std::endl;
+    this->logger << "Other time        : " << otherSeconds << " s (" << otherPercent << "% total)" << std::endl;
+    this->logger << "Total time        : " << totalSeconds << " s" << std::endl;
+    this->logger << "Cycles per second : " << cyclesPerSecond << std::endl;
+    this->logger << "--------------------------------------------------------------------" << std::endl;
 }
 
 int Frontend::printGeneralHelp(const std::string &cmd) {
@@ -389,6 +398,8 @@ void Frontend::printAverageValues(const ObservablesCollector &collector) {
         data.quantity.separator = Quantity::PLUS_MINUS;
         this->logger << data.name << " = " << data.quantity << std::endl;
     }
+
+    this->logger << "--------------------------------------------------------------------" << std::endl;
 }
 
 void Frontend::storeAverageValues(const std::string &filename, const ObservablesCollector &collector,
@@ -416,6 +427,8 @@ void Frontend::storeAverageValues(const std::string &filename, const Observables
         out << value.quantity << " ";
     }
     out << std::endl;
+
+    this->logger.info() << "Average values stored to " + filename << std::endl;
 }
 
 int Frontend::optimize_distance(int argc, char **argv) {

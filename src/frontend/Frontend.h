@@ -15,6 +15,7 @@
 #include "core/BoundaryConditions.h"
 #include "core/Interaction.h"
 #include "core/arranging_models/OrthorhombicArrangingModel.h"
+#include "core/Simulation.h"
 
 /**
  * @brief Class responsible for the communication between the user and the simulation backend.
@@ -25,9 +26,18 @@ private:
 
     Parameters loadParameters(const std::string &inputFilename);
     void setVerbosityLevel(const std::string &verbosityLevelName) const;
+
+    void printPerformanceInfo(const Simulation &simulation, double totalSeconds);
     void printAverageValues(const ObservablesCollector &collector);
+
     void storeAverageValues(const std::string &filename, const ObservablesCollector &collector, double temperature,
                             double pressure) const;
+    void storePacking(const Simulation &simulation, const std::string &packingFilename);
+    void storeWolframVisualization(const Simulation &simulation, const ShapeTraits &shapeTraits,
+                                   const std::string &wolframFilename) const;
+    void storeSnapshots(const ObservablesCollector &observablesCollector, bool isContinuation,
+                        const std::string &observableSnapshotFilename) const;
+
     [[nodiscard]] std::array<double, 3> parseDimensions(const std::string &initialDimensions) const;
     std::string doubleToString(double d);
 
