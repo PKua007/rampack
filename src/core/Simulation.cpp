@@ -141,7 +141,7 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
     auto end = std::chrono::high_resolution_clock::now();
     this->totalMicroseconds = std::chrono::duration<double, std::micro>(end - start).count();
 
-    logger.info() << "Integration completed after " << this->totalCycles << "cycles." << std::endl;
+    logger.info() << "Integration completed after " << this->totalCycles << " cycles." << std::endl;
 }
 
 void Simulation::relaxOverlaps(double temperature_, double pressure_, std::size_t snapshotEvery,
