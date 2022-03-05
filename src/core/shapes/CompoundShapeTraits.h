@@ -13,17 +13,18 @@
 
 class CompoundShapeTraits : public ShapeTraits {
 private:
-    std::unique_ptr<ShapeTraits> mainShapeTraits;
-    [[maybe_unused]] std::unique_ptr<ShapeTraits> auxShapeTraits;
-    CompoundInteraction interaction;
+    std::shared_ptr<ShapeTraits> mainShapeTraits;
+    std::shared_ptr<ShapeTraits> auxShapeTraits;
+    CompoundInteraction compoundInteraction;
 
 public:
-    CompoundShapeTraits(std::unique_ptr<ShapeTraits> mainShapeTraits, std::unique_ptr<ShapeTraits> auxShapeTraits)
-            : mainShapeTraits{std::move(auxShapeTraits)}, auxShapeTraits{std::move(auxShapeTraits)},
-              interaction(this->mainShapeTraits->getInteraction(), this->auxShapeTraits->getInteraction())
+    CompoundShapeTraits(const std::shared_ptr<ShapeTraits> &mainShapeTraits,
+                        const std::shared_ptr<ShapeTraits> &auxShapeTraits)
+            : mainShapeTraits{mainShapeTraits}, auxShapeTraits{auxShapeTraits},
+              compoundInteraction(mainShapeTraits->getInteraction(), auxShapeTraits->getInteraction())
     { }
 
-    [[nodiscard]] const Interaction &getInteraction() const override { return this->mainShapeTraits->getInteraction(); }
+    [[nodiscard]] const Interaction &getInteraction() const override { return this->compoundInteraction; }
     [[nodiscard]] double getVolume() const override { return this->mainShapeTraits->getVolume(); }
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return this->mainShapeTraits->getPrinter(); }
 
