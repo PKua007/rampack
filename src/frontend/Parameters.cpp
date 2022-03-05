@@ -168,6 +168,8 @@ Parameters::OverlapRelaxationParameters::OverlapRelaxationParameters(const std::
             this->snapshotEvery = runConfig.getUnsignedLong("snapshotEvery");
         else if (key == "observables")
             this->observables = runConfig.getString("observables");
+        else if (key == "helperInteraction")
+            this->helperInteraction = runConfig.getString("helperInteraction");
         else if (key == "wolframFilename")
             this->wolframFilename = runConfig.getString("wolframFilename");
         else if (key == "packingFilename")
@@ -191,6 +193,7 @@ void Parameters::OverlapRelaxationParameters::print(Logger &logger) const {
     logger.info() << "pressure                : " << this->pressure << std::endl;
     logger.info() << "snapshotEvery           : " << this->snapshotEvery << std::endl;
     logger.info() << "observables             : " << this->observables << std::endl;
+    logger.info() << "helperInteraction       : " << this->helperInteraction << std::endl;
     logger.info() << "packingFilename         : " << this->packingFilename << std::endl;
     logger.info() << "wolframFilename         : " << this->wolframFilename << std::endl;
     logger.info() << "observableSnapshotFilename : " << this->observableSnapshotFilename << std::endl;

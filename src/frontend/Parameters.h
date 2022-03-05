@@ -70,6 +70,7 @@ public:
         double pressure{};
         std::size_t snapshotEvery{};
         std::string observables{};
+        std::string helperInteraction{};
         std::string packingFilename{};
         std::string wolframFilename{};
         std::string observableSnapshotFilename{};

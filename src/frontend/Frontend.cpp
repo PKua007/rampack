@@ -26,6 +26,7 @@
 #include "core/DistanceOptimizer.h"
 #include "ArrangementFactory.h"
 #include "TriclinicBoxScalerFactory.h"
+#include "core/shapes/CompoundShapeTraits.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -242,10 +243,11 @@ int Frontend::casino(int argc, char **argv) {
     for (std::size_t i = startRunIndex; i < params.runsParameters.size(); i++) {
         if (std::holds_alternative<Parameters::IntegrationParameters>(params.runsParameters[i])) {
             const auto &runParams = std::get<Parameters::IntegrationParameters>(params.runsParameters[i]);
-            this->performIntegration(simulation, runParams, shapeTraits, cycleOffset, isContinuation);
+            this->performIntegration(simulation, runParams, *shapeTraits, cycleOffset, isContinuation);
         } else if (std::holds_alternative<Parameters::OverlapRelaxationParameters>(params.runsParameters[i])) {
             const auto &runParams = std::get<Parameters::OverlapRelaxationParameters>(params.runsParameters[i]);
-            this->performOverlapRelaxation(simulation, runParams, shapeTraits, cycleOffset, isContinuation);
+            this->performOverlapRelaxation(simulation, params.shapeName, params.shapeAttributes, runParams, shapeTraits,
+                                           cycleOffset, isContinuation);
         } else {
             throw AssertionException("Unimplemented run type");
         }
@@ -261,8 +263,7 @@ int Frontend::casino(int argc, char **argv) {
 }
 
 void Frontend::performIntegration(Simulation &simulation, const Parameters::IntegrationParameters &runParams,
-                                  const std::unique_ptr<ShapeTraits> &shapeTraits, size_t cycleOffset,
-                                  bool isContinuation)
+                                  const ShapeTraits &shapeTraits, size_t cycleOffset, bool isContinuation)
 {
     this->logger.setAdditionalText(runParams.runName);
     this->logger.info() << std::endl;
@@ -275,7 +276,7 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
     simulation.perform(runParams.temperature, runParams.pressure, runParams.thermalisationCycles,
                        runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
-                       *shapeTraits, std::move(collector), logger, cycleOffset);
+                       shapeTraits, std::move(collector), logger, cycleOffset);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
     this->logger.info();
@@ -286,7 +287,7 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
     if (!runParams.packingFilename.empty())
         this->storePacking(simulation, runParams.packingFilename);
     if (!runParams.wolframFilename.empty())
-        this->storeWolframVisualization(simulation, *shapeTraits, runParams.wolframFilename);
+        this->storeWolframVisualization(simulation, shapeTraits, runParams.wolframFilename);
     if (!runParams.outputFilename.empty()) {
         this->storeAverageValues(runParams.outputFilename, observablesCollector, runParams.temperature,
                                  runParams.pressure);
@@ -295,9 +296,10 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
         this->storeSnapshots(observablesCollector, isContinuation, runParams.observableSnapshotFilename);
 }
 
-void Frontend::performOverlapRelaxation(Simulation &simulation,
+void Frontend::performOverlapRelaxation(Simulation &simulation, const std::string &shapeName,
+                                        const std::string &shapeAttr,
                                         const Parameters::OverlapRelaxationParameters &runParams,
-                                        const std::unique_ptr<ShapeTraits> &shapeTraits, size_t cycleOffset,
+                                        std::shared_ptr<ShapeTraits> shapeTraits, size_t cycleOffset,
                                         bool isContinuation)
 {
     this->logger.setAdditionalText(runParams.runName);
@@ -307,6 +309,11 @@ void Frontend::performOverlapRelaxation(Simulation &simulation,
     this->logger << "--------------------------------------------------------------------" << std::endl;
     runParams.print(this->logger);
     this->logger << "--------------------------------------------------------------------" << std::endl;
+
+    if (!runParams.helperInteraction.empty()) {
+        auto helperShape = ShapeFactory::shapeTraitsFor(shapeName, shapeAttr, runParams.helperInteraction);
+        shapeTraits = std::make_shared<CompoundShapeTraits>(shapeTraits, helperShape);
+    }
 
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
     simulation.relaxOverlaps(runParams.temperature, runParams.pressure, runParams.snapshotEvery, *shapeTraits,

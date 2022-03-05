@@ -22,14 +22,14 @@ namespace {
                                  std::istream &interactionAttrStream, Args&&... args)
     {
         if (interactionName.empty() || interactionName == "hard") {
-            return std::make_unique<ConcreteTraits>(std::forward<Args>(args)...);
+            return std::make_shared<ConcreteTraits>(std::forward<Args>(args)...);
         } else if (interactionName == "lj") {
             double epsilon, sigma;
             interactionAttrStream >> epsilon >> sigma;
             ValidateMsg(interactionAttrStream, "Malformed Lennard Jones attributes. Usage: lj [epsilon] [sigma]");
             Validate(epsilon > 0);
             Validate(sigma > 0);
-            return std::make_unique<ConcreteTraits>(
+            return std::make_shared<ConcreteTraits>(
                 std::forward<Args>(args)..., std::make_unique<LennardJonesInteraction>(epsilon, sigma)
             );
         } else if (interactionName == "repulsive_lj") {
@@ -39,7 +39,7 @@ namespace {
                                                "[epsilon] [sigma]");
             Validate(epsilon > 0);
             Validate(sigma > 0);
-            return std::make_unique<ConcreteTraits>(
+            return std::make_shared<ConcreteTraits>(
                 std::forward<Args>(args)..., std::make_unique<RepulsiveLennardJonesInteraction>(epsilon, sigma)
             );
         } else {
@@ -50,7 +50,7 @@ namespace {
 }
 
 
-std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &shapeName,
+std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &shapeName,
                                                           const std::string &shapeAttributes,
                                                           const std::string &interaction)
 {
@@ -97,7 +97,7 @@ std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         ValidateMsg(interactionName == "hard" || interactionName.empty(),
                     "SpherocylinderBanana supports only hard interactions");
 
-        return std::make_unique<PolyspherocylinderBananaTraits>(arcRadius, arcAngle, segmentNum, radius, subdivisions);
+        return std::make_shared<PolyspherocylinderBananaTraits>(arcRadius, arcAngle, segmentNum, radius, subdivisions);
     } else if (shapeName == "KMer") {
         double sphereRadius, distance;
         std::size_t sphereNum;
@@ -135,7 +135,7 @@ std::unique_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         Validate(length >= 0);
         ValidateMsg(interactionName == "hard" || interactionName.empty(),
                     "Spherocylinder supports only hard interactions");
-        return std::make_unique<SpherocylinderTraits>(length, r);
+        return std::make_shared<SpherocylinderTraits>(length, r);
     } else {
         throw ValidationException("Unknown particle name: " + shapeName);
     }

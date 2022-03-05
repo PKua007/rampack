@@ -28,11 +28,11 @@ private:
     void setVerbosityLevel(const std::string &verbosityLevelName) const;
 
     void performIntegration(Simulation &simulation, const Parameters::IntegrationParameters &runParams,
-                            const std::unique_ptr<ShapeTraits> &shapeTraits, size_t cycleOffset, bool isContinuation);
+                            const ShapeTraits &shapeTraits, size_t cycleOffset, bool isContinuation);
 
-    void performOverlapRelaxation(Simulation &simulation, const Parameters::OverlapRelaxationParameters &runParams,
-                                  const std::unique_ptr<ShapeTraits> &shapeTraits, size_t cycleOffset,
-                                  bool isContinuation);
+    void performOverlapRelaxation(Simulation &simulation, const std::string &shapeName, const std::string &shapeAttr,
+                                  const Parameters::OverlapRelaxationParameters &runParams,
+                                  std::shared_ptr<ShapeTraits> shapeTraits, size_t cycleOffset, bool isContinuation);
 
     void printPerformanceInfo(const Simulation &simulation);
     void printAverageValues(const ObservablesCollector &collector);

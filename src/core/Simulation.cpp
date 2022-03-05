@@ -92,6 +92,7 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
 
     auto start = std::chrono::high_resolution_clock::now();
 
+    this->packing->setupForInteraction(interaction);
     this->packing->toggleOverlapCounting(false, interaction);
 
     this->shouldAdjustStepSize = true;
@@ -165,6 +166,7 @@ void Simulation::relaxOverlaps(double temperature_, double pressure_, std::size_
 
     auto start = std::chrono::high_resolution_clock::now();
 
+    this->packing->setupForInteraction(interaction);
     this->packing->toggleOverlapCounting(true, interaction);
 
     this->shouldAdjustStepSize = true;
