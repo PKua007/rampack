@@ -14,6 +14,7 @@
 #include "core/shapes/PolysphereLollipopTraits.h"
 #include "core/interactions/LennardJonesInteraction.h"
 #include "core/interactions/RepulsiveLennardJonesInteraction.h"
+#include "core/interactions/SquareInverseCoreInteraction.h"
 
 
 namespace {
@@ -40,7 +41,17 @@ namespace {
             Validate(epsilon > 0);
             Validate(sigma > 0);
             return std::make_shared<ConcreteTraits>(
-                std::forward<Args>(args)..., std::make_unique<RepulsiveLennardJonesInteraction>(epsilon, sigma)
+                    std::forward<Args>(args)..., std::make_unique<RepulsiveLennardJonesInteraction>(epsilon, sigma)
+            );
+        } else if (interactionName == "square_inverse_core") {
+            double epsilon, sigma;
+            interactionAttrStream >> epsilon >> sigma;
+            ValidateMsg(interactionAttrStream, "Malformed square inverse core attributes. Usage: square_inverse_core "
+                                               "[epsilon] [sigma]");
+            Validate(epsilon != 0);
+            Validate(sigma > 0);
+            return std::make_shared<ConcreteTraits>(
+                    std::forward<Args>(args)..., std::make_unique<SquareInverseCoreInteraction>(epsilon, sigma)
             );
         } else {
             throw ValidationException(shapeName + " supports interactions: hard, lj (Lennard Jones), repulsive_lj "
