@@ -54,7 +54,7 @@ private:
     std::size_t numOverlaps{};
 
     std::vector<std::size_t> lastAlteredParticleIdx{};
-    int lastMoveOverlapDelta{};
+    std::vector<int> lastMoveOverlapDeltas{};
     std::size_t lastScalingNumOverlaps{};
     TriclinicBox lastBox;
 

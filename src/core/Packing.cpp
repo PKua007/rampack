@@ -54,6 +54,7 @@ Packing::Packing(TriclinicBox box, std::vector<Shape> shapes,
 
     this->shapes.resize(this->shapes.size() + this->moveThreads);    // temp shapes at the back
     this->lastAlteredParticleIdx.resize(this->moveThreads, 0);
+    this->lastMoveOverlapDeltas.resize(this->moveThreads, 0);
     this->bc->setBox(this->box);
     this->setupForInteraction(interaction);
 }
@@ -65,6 +66,7 @@ Packing::Packing(std::unique_ptr<BoundaryConditions> bc, std::size_t moveThreads
     this->scalingThreads = (scalingThreads == 0 ? _OMP_MAXTHREADS : scalingThreads);
 
     this->lastAlteredParticleIdx.resize(this->moveThreads, 0);
+    this->lastMoveOverlapDeltas.resize(this->moveThreads, 0);
 }
 
 double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction,
@@ -247,7 +249,7 @@ void Packing::acceptTranslation() {
     }
 
     if (this->overlapCounting)
-        this->numOverlaps += this->lastMoveOverlapDelta;
+        this->numOverlaps += this->lastMoveOverlapDeltas[_OMP_THREAD_ID];
 }
 
 void Packing::acceptRotation() {
@@ -263,7 +265,7 @@ void Packing::acceptRotation() {
         this->addInteractionCentresToNeighbourGrid(lastAlteredIdx);
 
     if (this->overlapCounting)
-        this->numOverlaps += this->lastMoveOverlapDelta;
+        this->numOverlaps += this->lastMoveOverlapDeltas[_OMP_THREAD_ID];
 }
 
 void Packing::acceptMove() {
@@ -287,7 +289,7 @@ void Packing::acceptMove() {
     }
 
     if (this->overlapCounting)
-        this->numOverlaps += this->lastMoveOverlapDelta;
+        this->numOverlaps += this->lastMoveOverlapDeltas[_OMP_THREAD_ID];
 }
 
 double Packing::calculateMoveOverlapEnergy(size_t particleIdx, size_t tempParticleIdx, const Interaction &interaction) {
@@ -297,10 +299,11 @@ double Packing::calculateMoveOverlapEnergy(size_t particleIdx, size_t tempPartic
         if (this->overlapCounting) {
             std::size_t initialOverlaps = this->countParticleOverlaps(particleIdx, particleIdx, interaction, false);
             std::size_t finalOverlaps = this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, false);
-            this->lastMoveOverlapDelta = static_cast<int>(finalOverlaps) - initialOverlaps;
-            if (this->lastMoveOverlapDelta < 0)
+            auto &lastMoveOverlapDelta = this->lastMoveOverlapDeltas[_OMP_THREAD_ID];
+            lastMoveOverlapDelta = static_cast<int>(finalOverlaps) - initialOverlaps;
+            if (lastMoveOverlapDelta < 0)
                 return -INF;
-            else if (this->lastMoveOverlapDelta > 0)
+            else if (lastMoveOverlapDelta > 0)
                 return INF;
         } else {
             if (this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, true) > 0)
