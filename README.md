@@ -4,7 +4,7 @@ Random And Maximal PACKing PACKage - the software enabling simulation of particl
 methods.  Currently, it supports only Monte Carlo sampling, however more algorithms are coming in the future. The
 package includes also some utility tools. The current interface is not final and is subject to change, so this
 description will provide only a general overview and often instruct to inspect the example input file
-`sample_input.ini` in root directory and the `--help` option.
+`sample_integration.ini` and other sample input files in `sample_inputs` directory, as well as the `--help` option.
 
 ## Operation modes
 
@@ -27,27 +27,31 @@ A general built-in help is available under `./rampack --help`. Mode-specific gui
 
 ### casino
 
-The `casino` mode is used to perform Monte Carlo simulations. Currently, only NpT ensemble is available. The submodule
-is optimized for hard-core repulsion, however some soft interaction potentials are also available. The parameters of the
-simulation are provided within an INI input file and passed using `-i [input file]` option. All details regarding the
-input file are described in an example `sample_input.ini` file in the root directory. The anonymous INI section at the
-beginning describes the initial conditions of the system, particle model and interaction model as well as specifies
-technical parameters such as number of threads and initial Monte Carlo step extents. Then, one or more Monte Carlo runs
-are specified. The runs are performed sequentially in the order specified in the input file and the final state of a
-finished run is used as a starting point of the next one (apart from the first run, whose initial configuration is
-specified in at the beginning). Each run corresponds to an INI section named `[run.run_name]` (including the brackets)
-and each of these sections includes the parameters for the specific run. Currently, when the run is finished the
-software can output the following data:
+The `casino` mode is used to perform Monte Carlo simulations. Currently, available simulation types are NpT integration
+and reduction of overlaps. The submodule is optimized for hard-core repulsion, however some soft interaction potentials
+are also available. The parameters of the  simulation are provided within an INI input file and passed using
+`-i [input file]` option. All details regarding the input file and NpT integration are described in an example 
+`sample_input/sample_integration.ini`. Overlap reduction is described in `sample_input/overlap_reduction.ini`. The
+anonymous INI section at the beginning describes the initial conditions of the system, particle model and interaction
+model as well as specifies technical parameters such as number of threads and initial Monte Carlo step extents. Then,
+one or more Monte Carlo runs  are specified. Each run can be either NpT integration or overlap reduction. The runs are
+performed sequentially in the order specified in the input file and the final state of a finished run is used as a
+starting point of the next one (apart from the first run, whose initial configuration is specified in at the beginning).
+Each run corresponds to an INI section named (including the brackets) `[integration.run_name]` for integration and
+`[overlaps.run_name]` for overlaps reduction. Each of these sections includes the parameters for the specific run.
+Currently, when the run is finished the software can output the following data:
 
-* internal representation of the packing, which can be used for example as a starting point for another run
+* internal representation of the packing, which can be used for example as a starting point for another run (both run
+  types)
 * Mathematica notebook representing the packing (for best performance it is advisable to open it in a text editor, copy
-  the contents and manually paste in an empty Mathematica notebook)
-* a csv-like table containing values of specified observables taken at given intervals of time
-* ensemble-averaged values of some observables
+  the contents and manually paste in an empty Mathematica notebook) (both run types)
+* a csv-like table containing values of specified observables taken at given intervals of time (both run types)
+* ensemble-averaged values of some observables (only NpT integration)
 
-The example input file `sample_input.ini` describes the simulation of hard-core balls. It starts with a gaseous phase,
-which  is then compressed to a degenerate liquid in the second run and in the third one is freezes into hcp crystalline
-structure.
+The example input file `sample_inputs/sample_integration.ini` describes the simulation of hard-core balls. It starts
+with a gaseous phase, which is then compressed to a degenerate liquid in the second run and in the third one is freezes
+into hcp crystalline structure. Another example input file `sample_inputs/sample_overlap_reduction.ini` performs
+reduction of overlaps of too tightly packed hard spheres followed by NpT run.
 
 The behavior of the `casino` mode can be altered using command-line options described in `./rampack casino --help`. For
 example, one can continue a finished run for more cycles or start from any run if the previous run has been finished
