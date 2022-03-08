@@ -102,7 +102,8 @@ public:
                bool handleSignals = false);
 
     /**
-     * @brief Performs the simulation.
+     * @brief Performs standard Monte Carlo integration consisting of thermalization (equilibration) phase and averaging
+     * (production) phase.
      * @param temperature_ temperature of the system
      * @param pressure_ system pressure
      * @param thermalisationCycles_ the number of cycles in thermalization phase
@@ -114,11 +115,22 @@ public:
      * @param logger Logger object to display simulation data
      * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
      */
-    void perform(double temperature_, double pressure_, std::size_t thermalisationCycles, std::size_t averagingCycles,
-                 std::size_t averagingEvery, std::size_t snapshotEvery, const ShapeTraits &shapeTraits,
-                 std::unique_ptr<ObservablesCollector> observablesCollector_, Logger &logger,
-                 std::size_t cycleOffset = 0);
+    void integrate(double temperature_, double pressure_, std::size_t thermalisationCycles, std::size_t averagingCycles,
+                   std::size_t averagingEvery, std::size_t snapshotEvery, const ShapeTraits &shapeTraits,
+                   std::unique_ptr<ObservablesCollector> observablesCollector_, Logger &logger,
+                   std::size_t cycleOffset = 0);
 
+    /**
+     * @brief Perform overlap reduction scheme - overlap counting is turned on and moves are continued until there is no
+     * overlaps in the system.
+     * @param temperature_ temperature of the system
+     * @param pressure_ system pressure
+     * @param snapshotEvery how often to take observable snapshots
+     * @param shapeTraits shape traits describing the simulated molecules
+     * @param observablesCollector_ the observables collector with observable capturing configuration
+     * @param logger  Logger object to display simulation data
+     * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
+     */
     void relaxOverlaps(double temperature_, double pressure_, std::size_t snapshotEvery,
                        const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
                        Logger &logger, std::size_t cycleOffset = 0);

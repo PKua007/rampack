@@ -40,7 +40,7 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(10, 1, 5000, 10000, 100, 100, sphereTraits, std::move(collector), logger);
+    simulation.integrate(10, 1, 5000, 10000, 100, 100, sphereTraits, std::move(collector), logger);
 
     Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 0.0999791;
@@ -66,7 +66,7 @@ TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(1, 1, 5000, 10000, 100, 100, sphereTraits, std::move(collector), logger);
+    simulation.integrate(1, 1, 5000, 10000, 100, 100, sphereTraits, std::move(collector), logger);
 
     Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 0.398574;
@@ -92,7 +92,7 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(10, 1, 5000, 10000, 100, 100, spherocylinderTraits, std::move(collector), logger);
+    simulation.integrate(10, 1, 5000, 10000, 100, 100, spherocylinderTraits, std::move(collector), logger);
 
     Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 0.0956448;
@@ -121,7 +121,7 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(100, 200, 2000, 2000, 20, 20, sphereTraits, std::move(collector), logger);
+    simulation.integrate(100, 200, 2000, 2000, 20, 20, sphereTraits, std::move(collector), logger);
 
     Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 1.6637139014398628;
@@ -150,7 +150,7 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(1, 2, 10000, 5000, 100, 100, kmerTraits, std::move(collector), logger);
+    simulation.integrate(1, 2, 10000, 5000, 100, 100, kmerTraits, std::move(collector), logger);
 
     Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 0.3043317608769238;
@@ -180,7 +180,7 @@ TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(1, 7.5, 5000, 5000, 100, 100, kmerTraits, std::move(collector), logger);
+    simulation.integrate(1, 7.5, 5000, 5000, 100, 100, kmerTraits, std::move(collector), logger);
 
     Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 0.43451;
@@ -207,7 +207,7 @@ TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.perform(1, 1, 10000, 15000, 1000, 1000, sphereTraits, std::move(collector), logger);
+    simulation.integrate(1, 1, 10000, 15000, 1000, 1000, sphereTraits, std::move(collector), logger);
 
     Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 0.398574;

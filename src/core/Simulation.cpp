@@ -69,10 +69,10 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep,
     }
 }
 
-void Simulation::perform(double temperature_, double pressure_, std::size_t thermalisationCycles,
-                         std::size_t averagingCycles, std::size_t averagingEvery, std::size_t snapshotEvery,
-                         const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
-                         Logger &logger, std::size_t cycleOffset)
+void Simulation::integrate(double temperature_, double pressure_, std::size_t thermalisationCycles,
+                           std::size_t averagingCycles, std::size_t averagingEvery, std::size_t snapshotEvery,
+                           const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
+                           Logger &logger, std::size_t cycleOffset)
 {
     Expects(temperature_ > 0);
     Expects(pressure_ > 0);

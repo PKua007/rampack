@@ -274,9 +274,9 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
-    simulation.perform(runParams.temperature, runParams.pressure, runParams.thermalisationCycles,
-                       runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
-                       shapeTraits, std::move(collector), logger, cycleOffset);
+    simulation.integrate(runParams.temperature, runParams.pressure, runParams.thermalisationCycles,
+                         runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
+                         shapeTraits, std::move(collector), logger, cycleOffset);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
     this->logger.info();
