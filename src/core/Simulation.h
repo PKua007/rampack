@@ -57,6 +57,7 @@ private:
     double domainDecompositionMicroseconds{};
     double totalMicroseconds{};
     bool shouldAdjustStepSize{};
+    bool areOverlapsCounted{};
     std::size_t performedCycles{};
     std::size_t totalCycles{};
 

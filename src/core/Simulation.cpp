@@ -94,6 +94,7 @@ void Simulation::perform(double temperature_, double pressure_, std::size_t ther
 
     this->packing->setupForInteraction(interaction);
     this->packing->toggleOverlapCounting(false, interaction);
+    this->areOverlapsCounted = false;
 
     this->shouldAdjustStepSize = true;
     loggerAdditionalTextAppender.setAdditionalText("th");
@@ -168,6 +169,7 @@ void Simulation::relaxOverlaps(double temperature_, double pressure_, std::size_
 
     this->packing->setupForInteraction(interaction);
     this->packing->toggleOverlapCounting(true, interaction);
+    this->areOverlapsCounted = true;
 
     this->shouldAdjustStepSize = true;
     loggerAdditionalTextAppender.setAdditionalText("ov");
@@ -366,8 +368,9 @@ bool Simulation::tryScaling(const Interaction &interaction) {
     double factor = newV/oldV;
 
     auto N = static_cast<double>(this->packing->size());
-    if (interaction.hasSoftPart()) {
-        // Soft interaction present - we have a nontrivial energy change, and we always need to try scaling
+    if (interaction.hasSoftPart() || this->areOverlapsCounted) {
+        // Soft interaction present - we have a nontrivial energy change, and we always need to try scaling.
+        // Same if only hard part, but overlaps are counted, so non-negative energy changes are not guaranteed.
         double dE = this->packing->tryScaling(newBox, interaction);
         double exponent = N * log(factor) - dE / this->temperature - this->pressure * deltaV / this->temperature;
         if (this->unitIntervalDistribution(mt) <= std::exp(exponent)) {

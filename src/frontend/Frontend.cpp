@@ -400,17 +400,18 @@ void Frontend::printPerformanceInfo(const Simulation &simulation) {
     this->logger << "Average neighbours per centre   : " << simulatedPacking.getAverageNumberOfNeighbours();
     this->logger << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
-    this->logger << "Move time         : " << moveSeconds << " s (" << movePercent << "% total)" << std::endl;
-    this->logger << "Scaling time      : " << scalingSeconds << " s (" << scalingPercent << "% total)" << std::endl;
-    this->logger << "NG rebuild time   : " << ngRebuildSeconds << " s (";
-    this->logger << ngRebuildScalingPercent << "% scaling, " << ngRebuildTotalPercent << "% total)" << std::endl;
-    this->logger << "Dom. decomp. time : " << domainDecompositionSeconds << " s (";
+    this->logger << "Cycles per second   : " << cyclesPerSecond << std::endl;
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+    this->logger << "Total time          : " << std::right << std::setw(11) << totalSeconds << " s" << std::endl;
+    this->logger << "Move time           : " << std::right << std::setw(11) << moveSeconds << " s (" << movePercent << "% total)" << std::endl;
+    this->logger << "Dom. decomp. time   : " << std::right << std::setw(11) << domainDecompositionSeconds << " s (";
     this->logger << domainDecompMovePercent << "% move, " << domainDecompTotalPercent << "% total)" << std::endl;
-    this->logger << "Observables time  : " << observablesSeconds << " s (";
+    this->logger << "Scaling time        : " << std::right << std::setw(11) << scalingSeconds << " s (" << scalingPercent << "% total)" << std::endl;
+    this->logger << "NG rebuild time     : " << std::right << std::setw(11) << ngRebuildSeconds << " s (";
+    this->logger << ngRebuildScalingPercent << "% scaling, " << ngRebuildTotalPercent << "% total)" << std::endl;
+    this->logger << "Observables time    : " << std::right << std::setw(11) << observablesSeconds << " s (";
     this->logger << observablesPercent << "% total)" << std::endl;
-    this->logger << "Other time        : " << otherSeconds << " s (" << otherPercent << "% total)" << std::endl;
-    this->logger << "Total time        : " << totalSeconds << " s" << std::endl;
-    this->logger << "Cycles per second : " << cyclesPerSecond << std::endl;
+    this->logger << "Other time          : " << std::right << std::setw(11) << otherSeconds << " s (" << otherPercent << "% total)" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 }
 
