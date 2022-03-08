@@ -17,6 +17,8 @@
 #include "core/volume_scalers/TriclinicAdapter.h"
 #include "core/ObservablesCollector.h"
 #include "core/observables/NumberDensity.h"
+#include "core/shapes/CompoundShapeTraits.h"
+#include "core/interactions/SquareInverseCoreInteraction.h"
 #include "utils/OMPMacros.h"
 
 
@@ -213,4 +215,42 @@ TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
     INFO("Monte Carlo density: " << density);
     CHECK(density.value == Approx(expected).margin(density.error * 3)); // 3 sigma tolerance
     CHECK(density.error / density.value < 0.03); // up to 3%
+}
+
+TEST_CASE("Simulation: overlap reduction for hard sphere liquid", "[medium]") {
+    auto domainDivisions = GENERATE(std::array<std::size_t, 3>{1, 1, 1}, std::array<std::size_t, 3>{2, 2, 1});
+    std::size_t numDomains = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies<>{});
+
+    DYNAMIC_SECTION("domains: " << numDomains) {
+        omp_set_num_threads(1);
+        auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+        double linearSize = 5;
+        std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
+        auto shapes = OrthorhombicArrangingModel{}.arrange(216, dimensions);    // 6 x 6 x 6
+
+        auto sphereTraits = std::make_unique<SphereTraits>(0.5);
+        auto squareInverseCore = std::make_unique<SquareInverseCoreInteraction>(1, 1);
+        auto helperSphereTraits = std::make_unique<SphereTraits>(0.5, std::move(squareInverseCore));
+        CompoundShapeTraits compoundSphere(std::move(sphereTraits), std::move(helperSphereTraits));
+
+        auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc),
+                                                 compoundSphere.getInteraction(), numDomains, numDomains);
+        auto volumeScaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>());
+        Simulation simulation(std::move(packing), 0.1, 0.1, 1, 1234, std::move(volumeScaler), domainDivisions);
+        auto collector = std::make_unique<ObservablesCollector>();
+        std::ostringstream loggerStream;
+        Logger logger(loggerStream);
+
+        simulation.relaxOverlaps(1, 5, 1000, compoundSphere, std::move(collector), logger);
+
+        double finalDensity = simulation.getPacking().getNumberDensity();
+        std::size_t finalOverlaps = simulation.getPacking().getCachedNumberOfOverlaps();
+        // 0.754 is equilibrium density - overlap reduction shouldn't overexpand the packing
+        double minimalDensity = 0.75;
+        INFO("Minimal density: " << minimalDensity);
+        INFO("Density after overlap reduction: " << finalDensity);
+        INFO("Overlaps afterwards: " << finalOverlaps);
+        CHECK(finalOverlaps == 0);
+        CHECK(finalDensity > minimalDensity);
+    }
 }
