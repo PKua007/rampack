@@ -61,7 +61,7 @@ int Frontend::casino(int argc, char **argv) {
 
     options.add_options()
             ("h,help", "prints help for this mode")
-            ("i,input", "an INI file with parameters. See sample_input.ini for full parameters documentation",
+            ("i,input", "an INI file with parameters. See sample_inputs folder for full parameters documentation",
              cxxopts::value<std::string>(inputFilename))
             ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
                             "error, warn, info, verbose, debug",
@@ -628,7 +628,7 @@ int Frontend::preview(int argc, char **argv) {
 
     options.add_options()
         ("h,help", "prints help for this mode")
-        ("i,input", "an INI file with parameters. See input.ini for parameters description",
+        ("i,input", "an INI file with parameters. See sample_inputs folder for full parameters documentation",
          cxxopts::value<std::string>(inputFilename))
         ("w,wolfram", "if specified, Mathematica notebook with the packing will be generated",
          cxxopts::value<std::string>(wolframFilename))
