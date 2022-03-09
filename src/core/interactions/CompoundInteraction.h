@@ -7,7 +7,10 @@
 
 #include "core/Interaction.h"
 
-
+/**
+ * @brief The class joining two interaction into one Interaction class.
+ * @details Both soft and hard parts are correctly combined.
+ */
 class CompoundInteraction : public Interaction {
 private:
     const Interaction &interaction1;
@@ -22,6 +25,10 @@ private:
     bool hasHardPart2;
 
 public:
+    /**
+     * @brief Creates the object for two given constituent interactions.
+     * @details Both interaction have to have identical interaction centres, otherwise an exception is thrown.
+     */
     CompoundInteraction(const Interaction &interaction1, const Interaction &interaction2);
 
     [[nodiscard]] bool hasHardPart() const override { return this->hasHardPart1 || this->hasHardPart2; }

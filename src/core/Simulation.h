@@ -112,10 +112,10 @@ public:
      * (production) phase.
      * @param temperature_ temperature of the system
      * @param pressure_ system pressure
-     * @param thermalisationCycles_ the number of cycles in thermalization phase
-     * @param averagingCycles_ the number of cycles in averaging (production) phase
-     * @param averagingEvery_ how often to take observables for averaging
-     * @param snapshotEvery_ how often to take observable snapshots
+     * @param thermalisationCycles the number of cycles in thermalization phase
+     * @param averagingCycles the number of cycles in averaging (production) phase
+     * @param averagingEvery how often to take observables for averaging
+     * @param snapshotEvery how often to take observable snapshots
      * @param shapeTraits shape traits describing the simulated molecules
      * @param observablesCollector_ the observables collector with observable capturing configuration
      * @param logger Logger object to display simulation data

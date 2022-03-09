@@ -11,6 +11,11 @@
 #include "core/interactions/CompoundInteraction.h"
 
 
+/**
+ * @brief Construct compound shape traits, where one ShapeTraits instance acts as a base and the second one provides
+ * only additional interaction.
+ * @details For example, shapes are printed according to main ShapeTraits instance.
+ */
 class CompoundShapeTraits : public ShapeTraits {
 private:
     std::shared_ptr<ShapeTraits> mainShapeTraits;
@@ -18,6 +23,10 @@ private:
     CompoundInteraction compoundInteraction;
 
 public:
+    /**
+     * @brief Construct the class with @a mainShapeTraits as main ShapeTraits, while @a auxShapeTraits only provide
+     * additional interaction.
+     */
     CompoundShapeTraits(const std::shared_ptr<ShapeTraits> &mainShapeTraits,
                         const std::shared_ptr<ShapeTraits> &auxShapeTraits)
             : mainShapeTraits{mainShapeTraits}, auxShapeTraits{auxShapeTraits},

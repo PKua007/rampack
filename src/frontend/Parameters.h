@@ -33,6 +33,9 @@ private:
     [[nodiscard]] static std::pair<std::string, std::string> explodeRunSection(const std::string &runSectionName) ;
 
 public:
+    /**
+     * @brief Parameters of the integration (Monte Carlo sampling) run.
+     */
     class IntegrationParameters {
     private:
         void validate() const;
@@ -57,6 +60,9 @@ public:
         void print(Logger &logger) const;
     };
 
+    /**
+     * @brief Parameters of overlap relaxation run.
+     */
     class OverlapRelaxationParameters {
     private:
         void validate() const;
