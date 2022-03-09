@@ -5,13 +5,17 @@
 #include <sstream>
 
 #include "ShapeFactory.h"
+
 #include "utils/Assertions.h"
+
 #include "core/shapes/SphereTraits.h"
 #include "core/shapes/SpherocylinderTraits.h"
 #include "core/shapes/PolysphereBananaTraits.h"
 #include "core/shapes/KMerTraits.h"
 #include "core/shapes/PolyspherocylinderBananaTraits.h"
 #include "core/shapes/PolysphereLollipopTraits.h"
+#include "core/shapes/PolysphereWedgeTraits.h"
+
 #include "core/interactions/LennardJonesInteraction.h"
 #include "core/interactions/RepulsiveLennardJonesInteraction.h"
 #include "core/interactions/SquareInverseCoreInteraction.h"
@@ -55,7 +59,8 @@ namespace {
             );
         } else {
             throw ValidationException(shapeName + " supports interactions: hard, lj (Lennard Jones), repulsive_lj "
-                                                  "(Lennard Jones cut at the minimum)");
+                                                  "(Lennard Jones cut at the minimum), square_inverse_core "
+                                                  "(dipole-like short-range interaction)");
         }
     }
 }
@@ -138,6 +143,21 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         return parse_polysphere_traits<PolysphereLollipopTraits>(shapeName, interactionName, interactionAttrStream,
                                                                  sphereNum, smallSphereRadius, largeSphereRadius,
                                                                  smallSpherePenetration, largeSpherePenetration);
+    } else if (shapeName == "PolysphereWedge") {
+        double smallSphereRadius, largeSphereRadius, spherePenetration;
+        std::size_t sphereNum;
+        shapeAttrStream >> sphereNum >> smallSphereRadius >> largeSphereRadius >> spherePenetration;
+        ValidateMsg(shapeAttrStream, "Malformed PolysphereWedge attributes; expected: "
+                                     "[number of spheres] [small sphere radius] [large sphere radius] "
+                                     "[spheres penetration]");
+        Validate(sphereNum >= 2);
+        Validate(smallSphereRadius > 0);
+        Validate(largeSphereRadius > 0);
+        Validate(spherePenetration < 2*std::min(smallSphereRadius, largeSphereRadius));
+
+        return parse_polysphere_traits<PolysphereWedgeTraits>(shapeName, interactionName, interactionAttrStream,
+                                                              sphereNum, smallSphereRadius, largeSphereRadius,
+                                                              spherePenetration);
     } else if (shapeName == "Spherocylinder") {
         double r, length;
         shapeAttrStream >> length >> r;
