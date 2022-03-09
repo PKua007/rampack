@@ -6,6 +6,12 @@
 #ifndef RAMPACK_NEIGHBOURGRID_H
 #define RAMPACK_NEIGHBOURGRID_H
 
+// Uncomment to sanitize race conditions on cell, i.e. two or more threads altering a single NG cell.
+// Cells automatically recognize which thread altered them for the first time after resetting the sanitizer, and they
+// block access by different threads.
+
+// #define NG_SANITIZE_RACE_CONDITION
+
 #include <vector>
 #include <algorithm>
 #include <array>
@@ -28,6 +34,7 @@ private:
     std::array<std::size_t, 3> cellDivisions{};
     std::array<double, 3> relativeCellSize{};
     std::vector<std::size_t> cellHeads;
+    std::vector<std::size_t> cellOwningThreads;
     std::vector<std::size_t> successors;
     std::array<Vector<3>, 27> translations;
     std::vector<std::size_t> translationIndices;
@@ -44,6 +51,8 @@ private:
     [[nodiscard]] std::size_t realCoordinatesToCellNo(const std::array<std::size_t, 3> &coords) const;
     [[nodiscard]] std::size_t cellNeighbourToCellNo(const std::array<std::size_t, 3> &coords,
                                                     const std::array<int, 3> &neighbour) const;
+    [[nodiscard]] std::array<std::pair<double, double>, 3>
+    cellCoordinatesToCellBounds(const std::array<std::size_t, 3> &coords) const;
 
     /**
      * @brief Returns true if @a cellNo is the reflection of a real cell due to periodic boundary conditions
@@ -61,6 +70,8 @@ private:
     [[nodiscard]] std::vector<std::size_t> getCellVector(std::size_t cellNo) const;
     void setupSizes(const TriclinicBox& newBox, double newCellSize);
     void calculateTranslations();
+
+    void sanitizeRaceCondition(size_t cellNo, const std::string& methodSignature);
 
     friend class NeighboursView;
     friend class NeighboursViewIterator;
@@ -310,6 +321,11 @@ public:
      * @brief Estimates the memory usage of the neighbour grid in bytes.
      */
     [[nodiscard]] std::size_t getMemoryUsage() const;
+
+    /**
+     * @brief Resets race condition sanitizer, i.e. all threads lose the "ownership" of cells.
+     */
+    void resetRaceConditionSanitizer();
 };
 
 #endif //RAMPACK_NEIGHBOURGRID_H

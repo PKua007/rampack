@@ -1108,3 +1108,8 @@ std::size_t Packing::getCachedNumberOfOverlaps() const {
     throw std::runtime_error("Packing: overlap counting is toggled false; number of overlaps is not cached");
 }
 
+void Packing::resetNGRaceConditionSanitizer() {
+    if (this->neighbourGrid.has_value())
+        this->neighbourGrid->resetRaceConditionSanitizer();
+}
+

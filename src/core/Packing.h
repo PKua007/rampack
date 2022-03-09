@@ -414,6 +414,11 @@ public:
      * and debugging purposes).
      */
     friend std::ostream &operator<<(std::ostream &out, const Packing &packing);
+
+    /**
+     * @brief Resets race condition sanitizer for NeighbourGrid, see NeighbourGrid::resetRaceConditionSanitizer.
+     */
+    void resetNGRaceConditionSanitizer();
 };
 
 

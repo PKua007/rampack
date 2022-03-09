@@ -8,6 +8,7 @@
 
 #include "NeighbourGrid.h"
 #include "utils/Utils.h"
+#include "utils/OMPMacros.h"
 
 std::size_t NeighbourGrid::positionToCellNo(const Vector<3> &position) const {
     std::size_t result{};
@@ -148,6 +149,11 @@ NeighbourGrid::NeighbourGrid(const TriclinicBox& box, double cellSize, std::size
     this->translationIndices.resize(this->numCells);
     this->reflectedCells.resize(this->numCells);
 
+    #ifdef NG_SANITIZE_RACE_CONDITION
+        this->cellOwningThreads.resize(this->numCells);
+        std::fill(this->cellOwningThreads.begin(), this->cellOwningThreads.end(), LIST_END);
+    #endif
+
     this->successors.resize(numParticles);
     std::fill(this->successors.begin(), this->successors.end(), NeighbourGrid::LIST_END);
 
@@ -212,17 +218,29 @@ void NeighbourGrid::calculateTranslations() {
 
 void NeighbourGrid::add(std::size_t idx, const Vector<3> &position) {
     std::size_t i = this->positionToCellNo(position);
+    #ifdef NG_SANITIZE_RACE_CONDITION
+        this->sanitizeRaceCondition(i, "NeighbourGrid::add(idx, position)");
+    #endif
+
     this->successors[idx] = this->cellHeads[i];
     this->cellHeads[i] = idx;
 }
 
 void NeighbourGrid::add(std::size_t idx, std::size_t cellNo) {
+    #ifdef NG_SANITIZE_RACE_CONDITION
+        this->sanitizeRaceCondition(cellNo, "NeighbourGrid::add(idx, cellNo)");
+    #endif
+
     this->successors[idx] = this->cellHeads[cellNo];
     this->cellHeads[cellNo] = idx;
 }
 
 void NeighbourGrid::remove(std::size_t idx, const Vector<3> &position) {
     std::size_t i = this->positionToCellNo(position);
+    #ifdef NG_SANITIZE_RACE_CONDITION
+        this->sanitizeRaceCondition(i, "NeighbourGrid::remove(idx, position)");
+    #endif
+
     std::size_t head = this->cellHeads[i];
     if (head == idx) {
         this->cellHeads[i] = this->successors[idx];
@@ -241,6 +259,7 @@ void NeighbourGrid::remove(std::size_t idx, const Vector<3> &position) {
 
 void NeighbourGrid::clear() {
     std::fill(this->cellHeads.begin(), this->cellHeads.end(), LIST_END);
+    std::fill(this->cellOwningThreads.begin(), this->cellOwningThreads.end(), LIST_END);
     std::fill(this->successors.begin(), this->successors.end(), LIST_END);
 }
 
@@ -305,6 +324,9 @@ bool NeighbourGrid::resize(TriclinicBox newBox, double newCellSize) {
     // The resize is needed only if number of cells is to big for allocated memory - otherwise reuse the old structure
     if (oldNumCells < this->numCells) {
         this->cellHeads.resize(this->numCells);
+        #ifdef NG_SANITIZE_RACE_CONDITION
+            this->cellOwningThreads.resize(this->numCells);
+        #endif
         this->translationIndices.resize(this->numCells);
         this->reflectedCells.resize(this->numCells);
     }
@@ -354,11 +376,60 @@ std::array<std::size_t, 3> NeighbourGrid::getCellDivisions() const {
 std::size_t NeighbourGrid::getMemoryUsage() const {
     std::size_t bytes{};
     bytes += get_vector_memory_usage(this->cellHeads);
+    bytes += get_vector_memory_usage(this->cellOwningThreads);
     bytes += get_vector_memory_usage(this->translationIndices);
-    bytes += get_vector_memory_usage(this->cellHeads);
     bytes += get_vector_memory_usage(this->successors);
     bytes += get_vector_memory_usage(this->reflectedCells);
     bytes += get_vector_memory_usage(this->neighbouringCellsOffsets);
     bytes += get_vector_memory_usage(this->positiveNeighbouringCellsOffsets);
     return bytes;
+}
+
+void NeighbourGrid::resetRaceConditionSanitizer() {
+    std::fill(this->cellOwningThreads.begin(), this->cellOwningThreads.end(), LIST_END);
+}
+
+std::array<std::pair<double, double>, 3>
+NeighbourGrid::cellCoordinatesToCellBounds(const std::array<std::size_t, 3> &coords) const
+{
+    std::array<std::pair<double, double>, 3> bounds;
+    for (std::size_t i{}; i < 3; i++) {
+        double beg = (static_cast<double>(coords[i]) - 1) / this->cellDivisions[i];
+        double end = beg + this->relativeCellSize[i];
+        bounds[i] = {beg, end};
+    }
+    return bounds;
+}
+
+void NeighbourGrid::sanitizeRaceCondition(std::size_t cellNo, const std::string &methodSignature) {
+    auto tid = static_cast<std::size_t>(_OMP_THREAD_ID);
+    auto cellThread = this->cellOwningThreads[cellNo];
+    if (cellThread == NeighbourGrid::LIST_END) {
+        this->cellOwningThreads[cellNo] = tid;
+        return;
+    }
+
+    if (cellThread == tid)
+        return;
+
+    #pragma omp critical
+    {
+        std::ostringstream msg;
+        msg << "Race condition encountered during execution of " << methodSignature << std::endl;
+        msg << "Cell index       : " << cellNo << std::endl;
+
+        auto coords = this->cellNoToCoordinates(cellNo);
+        auto bounds = this->cellCoordinatesToCellBounds(coords);
+        for (auto &coord : coords)
+            coord--;
+
+        msg << "Cell coordinates : {" << coords[0] << ", " << coords[1] << ", " << coords[2] << "}" << std::endl;
+        msg << "Rel. cell bounds : {[" << bounds[0].first << ", " << bounds[0].second << "), ";
+        msg << "[" << bounds[1].first << ", " << bounds[1].second << "), ";
+        msg << "[" << bounds[2].first << ", " << bounds[2].second << ")}" << std::endl;
+        msg << "First claimed by : thread #" << cellThread << std::endl;
+        msg << "Insulted by      : thread #" << tid;
+
+        throw std::runtime_error(msg.str());
+    }
 }

@@ -258,6 +258,8 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
     auto end = high_resolution_clock::now();
     this->domainDecompositionMicroseconds += duration<double, std::micro>(end - start).count();
 
+    this->packing->resetNGRaceConditionSanitizer();
+
     #pragma omp declare reduction (+ : Counter : omp_out += omp_in)
     #pragma omp parallel for shared(domainDecomposition, interaction) default(none) collapse(3) \
             reduction(+ : tempMoveCounter) num_threads(this->packing->getMoveThreads())
@@ -279,6 +281,8 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
             }
         }
     }
+
+    this->packing->resetNGRaceConditionSanitizer();
 
     this->moveCounter += tempMoveCounter;
 }
