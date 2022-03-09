@@ -220,11 +220,21 @@ void Simulation::performCycle(Logger &logger, const Interaction &interaction) {
     auto end = high_resolution_clock::now();
     this->moveMicroseconds += duration<double, std::micro>(end - start).count();
 
+    #ifdef SIMULATION_SANITIZE_CACHED_OVERLAPS
+        if (this->areOverlapsCounted)
+            Assert(this->packing->getCachedNumberOfOverlaps() == this->packing->countTotalOverlaps(interaction, false));
+    #endif
+
     start = high_resolution_clock::now();
     bool wasScaled = this->tryScaling(interaction);
     this->scalingCounter.increment(wasScaled);
     end = high_resolution_clock::now();
     this->scalingMicroseconds += duration<double, std::micro>(end - start).count();
+
+    #ifdef SIMULATION_SANITIZE_CACHED_OVERLAPS
+        if (this->areOverlapsCounted)
+            Assert(this->packing->getCachedNumberOfOverlaps() == this->packing->countTotalOverlaps(interaction, false));
+    #endif
 
     if (this->shouldAdjustStepSize)
         this->evaluateCounters(logger);

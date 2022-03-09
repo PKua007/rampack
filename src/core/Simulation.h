@@ -5,6 +5,12 @@
 #ifndef RAMPACK_SIMULATION_H
 #define RAMPACK_SIMULATION_H
 
+
+// Uncomment to sanitize whether cached number of overlaps is consistent with a real one after both molecule moves
+// and scaling moves
+
+// #define SIMULATION_SANITIZE_CACHED_OVERLAPS
+
 #include <random>
 #include <iosfwd>
 #include <optional>

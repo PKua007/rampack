@@ -248,8 +248,10 @@ void Packing::acceptTranslation() {
             this->addInteractionCentresToNeighbourGrid(lastAlteredIdx);
     }
 
-    if (this->overlapCounting)
+    if (this->overlapCounting) {
+        #pragma omp critical
         this->numOverlaps += this->lastMoveOverlapDeltas[_OMP_THREAD_ID];
+    }
 }
 
 void Packing::acceptRotation() {
@@ -264,8 +266,10 @@ void Packing::acceptRotation() {
     if (this->neighbourGrid.has_value() && this->numInteractionCentres != 0)
         this->addInteractionCentresToNeighbourGrid(lastAlteredIdx);
 
-    if (this->overlapCounting)
+    if (this->overlapCounting) {
+        #pragma omp critical
         this->numOverlaps += this->lastMoveOverlapDeltas[_OMP_THREAD_ID];
+    }
 }
 
 void Packing::acceptMove() {
@@ -288,8 +292,10 @@ void Packing::acceptMove() {
             this->addInteractionCentresToNeighbourGrid(lastAlteredIdx);
     }
 
-    if (this->overlapCounting)
+    if (this->overlapCounting) {
+        #pragma omp critical
         this->numOverlaps += this->lastMoveOverlapDeltas[_OMP_THREAD_ID];
+    }
 }
 
 double Packing::calculateMoveOverlapEnergy(size_t particleIdx, size_t tempParticleIdx, const Interaction &interaction) {
