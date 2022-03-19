@@ -150,7 +150,7 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.integrate(1, 2, 10000, 5000, 100, 100, kmerTraits, std::move(collector), logger);
+    simulation.integrate(1, 2, 20000, 20000, 1000, 100, kmerTraits, std::move(collector), logger);
 
     Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 0.3043317608769238;
@@ -161,8 +161,6 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
 }
 
 TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
-    // Value for density remorselessly stolen from
-    // https://github.com/glotzerlab/hoomd-blue/blob/master/hoomd/hpmc/validation/wca_dumbbell.py
     omp_set_num_threads(4);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 500;
@@ -174,16 +172,23 @@ TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), kmerTraits.getInteraction());
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
     auto volumeScaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>());
-    Simulation simulation(std::move(packing), 10, 1, 10, 1234, std::move(volumeScaler));
+    Simulation simulation(std::move(packing), 0.5, 0.15, 15, 1234, std::move(volumeScaler));
     auto collector = std::make_unique<ObservablesCollector>();
     collector->addObservable(std::make_unique<NumberDensity>(), ObservablesCollector::AVERAGING);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.integrate(1, 7.5, 5000, 5000, 100, 100, kmerTraits, std::move(collector), logger);
+    simulation.integrate(1, 7.5, 15000, 15000, 100, 100, kmerTraits, std::move(collector), logger);
 
     Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
-    double expected = 0.43451;
+
+    // Old value for density remorselessly stolen from
+    // https://github.com/glotzerlab/hoomd-blue/blob/master/hoomd/hpmc/validation/wca_dumbbell.py
+    // The value is correct for larger systems - here finite size effects change it slightly
+    //double expected = 0.43451;
+
+    // Value calculated in previous simulations - acts as a regression test
+    double expected = 0.43503541;
     INFO("hoomd-blue density: " << expected);
     INFO("Monte Carlo density: " << density);
     CHECK(density.value == Approx(expected).margin(density.error * 3)); // 3 sigma tolerance
