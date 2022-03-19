@@ -395,28 +395,31 @@ void Simulation::evaluateCounters(Logger &logger) {
         auto &moveSampler = *this->moveSamplers[i];
         auto &moveCounter = this->moveCounters[i];
         std::size_t requestedMoves = moveSampler.getNumOfRequestedMoves(this->packing->size());
+        auto moveName = moveSampler.getName();
+        moveName.front() = static_cast<char>(std::toupper(moveName.front()));
 
         if (moveCounter.getMovesSinceEvaluation() >= 100 * requestedMoves) {
             double rate = moveCounter.getCurrentRate();
             moveCounter.resetCurrent();
             auto oldStepSizes = moveSampler.getStepSizes();
             if (rate > 0.2) {
+                logger.info() << "-- " << moveName << " rate: " << rate << "; ";
                 if (moveSampler.increaseStepSize()) {
-                    logger.info() << "Molecule move step sizes increased: ";
+                    logger << "step sizes increased: ";
                     auto newStepSizes = moveSampler.getStepSizes();
                     Simulation::printStepSizesChange(logger, oldStepSizes, newStepSizes);
                     logger << std::endl;
                 } else {
-                    logger.info() << "The increase of molecule move step sizes aborted" << std::endl;
+                    logger.info() << "increase of step sizes aborted" << std::endl;
                 }
             } else if (rate < 0.1) {
                 if (moveSampler.decreaseStepSize()) {
-                    logger.info() << "Molecule move step sizes decreased: ";
+                    logger.info() << "step sizes decreased: ";
                     auto newStepSizes = moveSampler.getStepSizes();
                     Simulation::printStepSizesChange(logger, oldStepSizes, newStepSizes);
                     logger << std::endl;
                 } else {
-                    logger.info() << "The decrease of molecule move step sizes aborted" << std::endl;
+                    logger.info() << "decrease of step sizes aborted" << std::endl;
                 }
             }
         }
@@ -427,11 +430,11 @@ void Simulation::evaluateCounters(Logger &logger) {
         this->scalingCounter.resetCurrent();
         if (rate > 0.2) {
             this->scalingStep *= 1.1;
-            logger.info() << "Scaling rate: " << rate << ", adjusting: " << (this->scalingStep / 1.1);
+            logger.info() << "-- Scaling rate: " << rate << ", step size increased: " << (this->scalingStep / 1.1);
             logger << " -> " << this->scalingStep << std::endl;
         } else if (rate < 0.1) {
             this->scalingStep /= 1.1;
-            logger.info() << "Scaling rate: " << rate << ", adjusting: " << (this->scalingStep * 1.1);
+            logger.info() << "-- Scaling rate: " << rate << ", step size decreased: " << (this->scalingStep * 1.1);
             logger << " -> " << this->scalingStep << std::endl;
         }
     }
