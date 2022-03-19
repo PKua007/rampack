@@ -21,6 +21,7 @@
 #include "ShapeTraits.h"
 #include "TriclinicBoxScaler.h"
 #include "ObservablesCollector.h"
+#include "MoveSampler.h"
 
 /**
  * @brief A class responsible for performing Monte Carlo sampling.
@@ -52,11 +53,11 @@ private:
     double temperature{};
     double pressure{};
 
-    double translationStep{};
-    double rotationStep{};
+    std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
+
     double scalingStep{};
     std::unique_ptr<TriclinicBoxScaler> boxScaler{};
-    Counter moveCounter;
+    std::vector<Counter> moveCounters;
     Counter scalingCounter;
     double moveMicroseconds{};
     double scalingMicroseconds{};
@@ -77,18 +78,23 @@ private:
 
     std::unique_ptr<ObservablesCollector> observablesCollector;
 
+    static std::vector<std::unique_ptr<MoveSampler>> makeRototranslation(double translationStepSize,
+                                                                         double rotationStepSize);
+    static void accumulateCounters(std::vector<Counter> &out, const std::vector<Counter> &in);
+    static void printStepSizesChange(Logger &logger, const std::vector<std::pair<std::string, double>> &oldStepSizes,
+                                     const std::vector<std::pair<std::string, double>> &newStepSizes);
+
     void performCycle(Logger &logger, const Interaction &interaction);
     void performMovesWithDomainDivision(const Interaction &interaction);
     void performMovesWithoutDomainDivision(const Interaction &interaction);
-    bool tryTranslation(const Interaction &interaction, const std::vector<std::size_t> &particleIndices,
-                        std::optional<ActiveDomain> boundaries = std::nullopt);
-    bool tryRotation(const Interaction &interaction, const std::vector<std::size_t> &particleIndices);
     bool tryMove(const Interaction &interaction, const std::vector<std::size_t> &particleIndices,
+                 std::vector<Counter> &moveCounters_, const std::vector<std::size_t> &moveTypeAccumulations,
                  std::optional<ActiveDomain> boundaries = std::nullopt);
     bool tryScaling(const Interaction &interaction);
     void evaluateCounters(Logger &logger);
     void reset();
     void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger, bool displayOverlaps);
+    [[nodiscard]] std::vector<std::size_t> calculateMoveTypeAccumulations(std::size_t numParticles) const;
 
 public:
     /**
@@ -102,10 +108,13 @@ public:
      * @param domainDivisions domain divisions in each direction to use; {1, 1, 1} disables domain division
      * @param handleSignals if @a true, SIGINT and SIGCONT will be captured
      */
-    Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep, double scalingStep,
-               unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
-               const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1},
-               bool handleSignals = false);
+    Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep,
+               double scalingStep, unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
+               const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1}, bool handleSignals = false);
+
+    Simulation(std::unique_ptr<Packing> packing, std::vector<std::unique_ptr<MoveSampler>> moveSamplers,
+               double scalingStep, unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
+               const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1}, bool handleSignals = false);
 
     /**
      * @brief Performs standard Monte Carlo integration consisting of thermalization (equilibration) phase and averaging
@@ -146,7 +155,7 @@ public:
     /**
      * @brief Returns the ratio of accepted to all molecule moves.
      */
-    [[nodiscard]] double getMoveAcceptanceRate() const { return this->moveCounter.getRate(); }
+    [[nodiscard]] double getMoveAcceptanceRate() const;
 
     /**
      * @brief Returns the ratio of accepted to all scaling moves.
@@ -181,8 +190,6 @@ public:
     [[nodiscard]] double getTotalMicroseconds() const { return this->totalMicroseconds; }
 
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }
-    [[nodiscard]] double getCurrentTranslationStep() const { return this->translationStep; }
-    [[nodiscard]] double getCurrentRotationStep() const { return this->rotationStep; }
     [[nodiscard]] double getCurrentScalingStep() const { return this->scalingStep; }
 
     /**

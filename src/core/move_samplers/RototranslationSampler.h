@@ -19,6 +19,8 @@ public:
 
     [[nodiscard]] std::string getName() const override { return "rototranslation"; }
 
+    [[nodiscard]] std::size_t getNumOfRequestedMoves(std::size_t numParticles) const override { return numParticles; }
+
     MoveData sampleMove(const std::vector<std::size_t> &particleIdxs, std::mt19937 &mt) override;
     bool increaseStepSize() override;
     bool decreaseStepSize() override;

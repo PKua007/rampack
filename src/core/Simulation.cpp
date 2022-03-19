@@ -11,6 +11,7 @@
 #include "Simulation.h"
 #include "DomainDecomposition.h"
 #include "utils/Assertions.h"
+#include "move_samplers/RototranslationSampler.h"
 
 namespace {
     std::atomic<bool> sigint_received = false;
@@ -41,17 +42,15 @@ void sigint_handler([[maybe_unused]] int signal) {
     sigint_received = true;
 }
 
-Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep,
+Simulation::Simulation(std::unique_ptr<Packing> packing, std::vector<std::unique_ptr<MoveSampler>> moveSamplers,
                        double scalingStep, unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
                        const std::array<std::size_t, 3> &domainDivisions, bool handleSignals)
-        : translationStep{translationStep}, rotationStep{rotationStep}, scalingStep{scalingStep},
-          boxScaler{std::move(boxScaler)}, packing{std::move(packing)}, allParticleIndices(this->packing->size()),
-          domainDivisions{domainDivisions}
+        : moveSamplers{std::move(moveSamplers)}, scalingStep{scalingStep}, boxScaler{std::move(boxScaler)},
+          packing{std::move(packing)}, allParticleIndices(this->packing->size()), domainDivisions{domainDivisions}
 {
     Expects(!this->packing->empty());
-    Expects(translationStep > 0);
-    Expects(rotationStep > 0);
     Expects(scalingStep > 0);
+    Expects(!this->moveSamplers.empty());
 
     this->numDomains = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies<>{});
     Expects(this->numDomains > 0);
@@ -61,6 +60,8 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep,
     for (std::size_t i{}; i < this->numDomains; i++)
         this->mts.emplace_back(seed + i);
 
+    this->moveCounters.resize(this->moveSamplers.size());
+
     std::iota(this->allParticleIndices.begin(), this->allParticleIndices.end(), 0);
 
     if (handleSignals) {
@@ -68,6 +69,13 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep,
         std::signal(SIGTERM, sigint_handler);
     }
 }
+
+Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep,
+                       double scalingStep, unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
+                       const std::array<std::size_t, 3> &domainDivisions, bool handleSignals)
+        : Simulation(std::move(packing), Simulation::makeRototranslation(translationStep, rotationStep),
+                     scalingStep, seed, std::move(boxScaler), domainDivisions, handleSignals)
+{ }
 
 void Simulation::integrate(double temperature_, double pressure_, std::size_t thermalisationCycles,
                            std::size_t averagingCycles, std::size_t averagingEvery, std::size_t snapshotEvery,
@@ -197,7 +205,8 @@ void Simulation::relaxOverlaps(double temperature_, double pressure_, std::size_
 
 void Simulation::reset() {
     std::uniform_int_distribution<int>(0, this->packing->size() - 1);
-    this->moveCounter.reset();
+    for (auto &moveCounter : this->moveCounters)
+        moveCounter.reset();
     this->scalingCounter.reset();
     this->packing->resetCounters();
     this->moveMicroseconds = 0;
@@ -244,10 +253,10 @@ void Simulation::performCycle(Logger &logger, const Interaction &interaction) {
 }
 
 void Simulation::performMovesWithoutDomainDivision(const Interaction &interaction) {
-    for (std::size_t i{}; i < this->packing->size(); i++) {
-        bool wasMoved = tryMove(interaction, this->allParticleIndices);
-        this->moveCounter.increment(wasMoved);
-    }
+    auto moveTypeAccumulations = this->calculateMoveTypeAccumulations(this->packing->size());
+    std::size_t numMoves = moveTypeAccumulations.back();
+    for (std::size_t i{}; i < numMoves; i++)
+        this->tryMove(interaction, this->allParticleIndices, this->moveCounters, moveTypeAccumulations);
 }
 
 void Simulation::performMovesWithDomainDivision(const Interaction &interaction) {
@@ -259,7 +268,7 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
                            this->unitIntervalDistribution(mt)};
     randomOrigin = packingBox.relativeToAbsolute(randomOrigin);
     const auto &neighbourGridCellDivisions = this->packing->getNeighbourGridCellDivisions();
-    Counter tempMoveCounter;
+    std::vector<Counter> tempMoveCounters(this->moveCounters.size());
 
     using namespace std::chrono;
     auto start = high_resolution_clock::now();
@@ -270,9 +279,10 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
 
     this->packing->resetNGRaceConditionSanitizer();
 
-    #pragma omp declare reduction (+ : Counter : omp_out += omp_in)
+    #pragma omp declare reduction (+ : std::vector<Counter> : Simulation::accumulateCounters(omp_out, omp_in)) \
+            initializer(omp_priv = omp_orig)
     #pragma omp parallel for shared(domainDecomposition, interaction) default(none) collapse(3) \
-            reduction(+ : tempMoveCounter) num_threads(this->packing->getMoveThreads())
+            reduction(+ : tempMoveCounters) num_threads(this->packing->getMoveThreads())
     for (std::size_t i = 0; i < this->domainDivisions[0]; i++) {
         for (std::size_t j = 0; j < this->domainDivisions[1]; j++) {
             for (std::size_t k = 0; k < this->domainDivisions[2]; k++) {
@@ -283,10 +293,12 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
                 if (domainParticleIndices.empty())
                     continue;
 
-                std::size_t numMoves = this->packing->size() / this->numDomains;
+                std::size_t averageNumParticles = this->packing->size() / this->numDomains;
+                auto moveTypeAccumulations = this->calculateMoveTypeAccumulations(averageNumParticles);
+                std::size_t numMoves = moveTypeAccumulations.back();
                 for (std::size_t x{}; x < numMoves; x++) {
-                    bool wasMoved = tryMove(interaction, domainParticleIndices, activeDomain);
-                    tempMoveCounter.increment(wasMoved);
+                    this->tryMove(interaction, domainParticleIndices, tempMoveCounters, moveTypeAccumulations,
+                                  activeDomain);
                 }
             }
         }
@@ -294,78 +306,49 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
 
     this->packing->resetNGRaceConditionSanitizer();
 
-    this->moveCounter += tempMoveCounter;
-}
-
-bool Simulation::tryTranslation(const Interaction &interaction, const std::vector<std::size_t> &particleIndices,
-                                std::optional<ActiveDomain> boundaries)
-{
-    auto &mt = this->mts[_OMP_THREAD_ID];
-
-    Vector<3> translation{2*this->unitIntervalDistribution(mt) - 1,
-                          2*this->unitIntervalDistribution(mt) - 1,
-                          2*this->unitIntervalDistribution(mt) - 1};
-    translation *= this->translationStep;
-
-    std::uniform_int_distribution<std::size_t> particleDistribution(0, particleIndices.size() - 1);
-    double dE = this->packing->tryTranslation(particleIndices[particleDistribution(mt)], translation, interaction,
-                                              boundaries);
-    if (this->unitIntervalDistribution(mt) <= std::exp(-dE / this->temperature)) {
-        this->packing->acceptTranslation();
-        return true;
-    } else {
-        return false;
-    }
-}
-
-bool Simulation::tryRotation(const Interaction &interaction, const std::vector<std::size_t> &particleIndices) {
-    auto &mt = this->mts[_OMP_THREAD_ID];
-
-    Vector<3> axis;
-    do {
-        axis[0] = 2*this->unitIntervalDistribution(mt) - 1;
-        axis[1] = 2*this->unitIntervalDistribution(mt) - 1;
-        axis[2] = 2*this->unitIntervalDistribution(mt) - 1;
-    } while (axis.norm2() > 1);
-    double angle = (2*this->unitIntervalDistribution(mt) - 1) * this->rotationStep;
-    auto rotation = Matrix<3, 3>::rotation(axis.normalized(), angle);
-
-    std::uniform_int_distribution<std::size_t> particleDistribution(0, particleIndices.size() - 1);
-    double dE = this->packing->tryRotation(particleIndices[particleDistribution(mt)], rotation, interaction);
-    if (this->unitIntervalDistribution(mt) <= std::exp(-dE / this->temperature)) {
-        this->packing->acceptRotation();
-        return true;
-    } else {
-        return false;
-    }
+    Simulation::accumulateCounters(this->moveCounters, tempMoveCounters);
 }
 
 bool Simulation::tryMove(const Interaction &interaction, const std::vector<std::size_t> &particleIndices,
+                         std::vector<Counter> &moveCounters_, const std::vector<std::size_t> &moveTypeAccumulations,
                          std::optional<ActiveDomain> boundaries)
 {
+    Expects(moveCounters_.size() == this->moveSamplers.size());
+    Expects(moveTypeAccumulations.size() == this->moveSamplers.size());
+
+    std::size_t numMoves = moveTypeAccumulations.back();
+    std::uniform_int_distribution<std::size_t> moveDistribution(0, numMoves - 1);
     auto &mt = this->mts[_OMP_THREAD_ID];
+    std::size_t sampledMoveType = moveDistribution(mt);
+    std::size_t moveType{};
+    for (auto moveTypeAccumulation : moveTypeAccumulations) {
+        if (sampledMoveType < moveTypeAccumulation)
+            break;
+        moveType++;
+    }
 
-    Vector<3> translation{2*this->unitIntervalDistribution(mt) - 1,
-                          2*this->unitIntervalDistribution(mt) - 1,
-                          2*this->unitIntervalDistribution(mt) - 1};
-    translation *= this->translationStep;
+    auto &moveSampler = this->moveSamplers[moveType];
+    auto move = moveSampler->sampleMove(particleIndices, mt);
+    double dE{};
+    switch (move.moveType) {
+        case MoveSampler::MoveType::TRANSLATION:
+            dE = this->packing->tryTranslation(move.particleIdx, move.translation, interaction, boundaries);
+            break;
+        case MoveSampler::MoveType::ROTATION:
+            dE = this->packing->tryRotation(move.particleIdx, move.rotation, interaction);
+            break;
+        case MoveSampler::MoveType::ROTOTRANSLATION:
+            dE = this->packing->tryMove(move.particleIdx, move.translation, move.rotation, interaction, boundaries);
+            break;
+    }
 
-    Vector<3> axis;
-    do {
-        axis[0] = 2*this->unitIntervalDistribution(mt) - 1;
-        axis[1] = 2*this->unitIntervalDistribution(mt) - 1;
-        axis[2] = 2*this->unitIntervalDistribution(mt) - 1;
-    } while (axis.norm2() > 1);
-    double angle = (2*this->unitIntervalDistribution(mt) - 1) * std::min(this->rotationStep, M_PI);
-    auto rotation = Matrix<3, 3>::rotation(axis.normalized(), angle);
-
-    std::uniform_int_distribution<std::size_t> particleDistribution(0, particleIndices.size() - 1);
-    double dE = this->packing->tryMove(particleIndices[particleDistribution(mt)], translation, rotation, interaction,
-                                       boundaries);
+    auto &moveCounter = this->moveCounters[moveType];
     if (this->unitIntervalDistribution(mt) <= std::exp(-dE / this->temperature)) {
         this->packing->acceptMove();
+        moveCounter.increment(true);
         return true;
     } else {
+        moveCounter.increment(false);
         return false;
     }
 }
@@ -408,30 +391,34 @@ bool Simulation::tryScaling(const Interaction &interaction) {
 }
 
 void Simulation::evaluateCounters(Logger &logger) {
-    if (this->moveCounter.getMovesSinceEvaluation() >= 100 * this->packing->size()) {
-        double rate = this->moveCounter.getCurrentRate();
-        this->moveCounter.resetCurrent();
-        if (rate > 0.2) {
-            const auto &dimensions = this->packing->getBox().getHeights();
-            double minDimension = *std::min_element(dimensions.begin(), dimensions.end());
-            // Current policy: adjust translations and rotations at the same time - the ratio from the config file
-            // is kept. Translation step can be as large as the packing, but not larger. Rotation step would usually
-            // be > M_PI then anyway
-            if (this->translationStep * 1.1 <= minDimension) {
-                this->translationStep *= 1.1;
-                this->rotationStep *= 1.1;
-                logger.info() << "Translation rate: " << rate << ", adjusting: "  << (this->translationStep / 1.1);
-                logger << " -> " << this->translationStep << std::endl;
-                logger.info() << "Rotation rate: " << rate << ", adjusting: "  << (this->rotationStep / 1.1);
-                logger << " -> " << this->rotationStep << std::endl;
+    for (std::size_t i{}; i < this->moveSamplers.size(); i++) {
+        auto &moveSampler = *this->moveSamplers[i];
+        auto &moveCounter = this->moveCounters[i];
+        std::size_t requestedMoves = moveSampler.getNumOfRequestedMoves(this->packing->size());
+
+        if (moveCounter.getMovesSinceEvaluation() >= 100 * requestedMoves) {
+            double rate = moveCounter.getCurrentRate();
+            moveCounter.resetCurrent();
+            auto oldStepSizes = moveSampler.getStepSizes();
+            if (rate > 0.2) {
+                if (moveSampler.increaseStepSize()) {
+                    logger.info() << "Molecule move step sizes increased: ";
+                    auto newStepSizes = moveSampler.getStepSizes();
+                    Simulation::printStepSizesChange(logger, oldStepSizes, newStepSizes);
+                    logger << std::endl;
+                } else {
+                    logger.info() << "The increase of molecule move step sizes aborted" << std::endl;
+                }
+            } else if (rate < 0.1) {
+                if (moveSampler.decreaseStepSize()) {
+                    logger.info() << "Molecule move step sizes decreased: ";
+                    auto newStepSizes = moveSampler.getStepSizes();
+                    Simulation::printStepSizesChange(logger, oldStepSizes, newStepSizes);
+                    logger << std::endl;
+                } else {
+                    logger.info() << "The decrease of molecule move step sizes aborted" << std::endl;
+                }
             }
-        } else if (rate < 0.1) {
-            this->translationStep /= 1.1;
-            this->rotationStep /= 1.1;
-            logger.info() << "Translation rate: " << rate << ", adjusting: " << (this->translationStep * 1.1);
-            logger << " -> " << this->translationStep << std::endl;
-            logger.info() << "Rotation rate: " << rate << ", adjusting: " << (this->rotationStep * 1.1);
-            logger << " -> " << this->rotationStep << std::endl;
         }
     }
 
@@ -507,4 +494,51 @@ void Simulation::printInlineInfo(std::size_t cycleNumber, const ShapeTraits &tra
 
 bool Simulation::wasInterrupted() const {
     return sigint_received;
+}
+
+double Simulation::getMoveAcceptanceRate() const {
+    double rate = std::accumulate(this->moveCounters.begin(), this->moveCounters.end(), 0.0,
+                                  [](double rate, const Counter &counter) { return rate + counter.getRate(); });
+    return rate / this->moveCounters.size();
+}
+
+void Simulation::accumulateCounters(std::vector<Counter> &out, const std::vector<Counter> &in) {
+    for (std::size_t i{}; i < out.size(); i++)
+        out[i] += in[i];
+}
+
+std::vector<std::size_t> Simulation::calculateMoveTypeAccumulations(std::size_t numParticles) const {
+    std::vector<std::size_t> moveTypeAccumulations;
+    moveTypeAccumulations.reserve(this->moveSamplers.size());
+    std::size_t moveTypeAccumulation = 0;
+    for (const auto &moveSampler : this->moveSamplers) {
+        moveTypeAccumulation += moveSampler->getNumOfRequestedMoves(numParticles);
+        moveTypeAccumulations.push_back(moveTypeAccumulation);
+    }
+
+    return moveTypeAccumulations;
+}
+
+void Simulation::printStepSizesChange(Logger &logger, const std::vector<std::pair<std::string, double>> &oldStepSizes,
+                                      const std::vector<std::pair<std::string, double>> &newStepSizes)
+{
+    Expects(oldStepSizes.size() == newStepSizes.size());
+
+    for (std::size_t i{}; i < oldStepSizes.size(); i++) {
+        auto [oldName, oldStep] = oldStepSizes[i];
+        auto [newName, newStep] = newStepSizes[i];
+        Expects(oldName == newName);
+
+        logger << oldName << ": " << oldStep << " -> " << newStep;
+        if (i < oldStepSizes.size() - 1)
+            logger << ", ";
+    }
+}
+
+std::vector<std::unique_ptr<MoveSampler>> Simulation::makeRototranslation(double translationStepSize,
+                                                                          double rotationStepSize)
+{
+    std::vector<std::unique_ptr<MoveSampler>> result;
+    result.push_back(std::make_unique<RototranslationSampler>(translationStepSize, rotationStepSize));
+    return result;
 }

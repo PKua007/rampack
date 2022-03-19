@@ -359,8 +359,9 @@ void Frontend::storeWolframVisualization(const Simulation &simulation, const Sha
 
 void Frontend::storePacking(const Simulation &simulation, const std::string &packingFilename) {
     std::map<std::string, std::string> auxInfo;
-    auxInfo["translationStep"] = doubleToString(simulation.getCurrentTranslationStep());
-    auxInfo["rotationStep"] = doubleToString(simulation.getCurrentRotationStep());
+    //TODO
+    auxInfo["translationStep"] = doubleToString(0.1);//simulation.getCurrentTranslationStep());
+    auxInfo["rotationStep"] = doubleToString(0.1);//simulation.getCurrentRotationStep());
     auxInfo["scalingStep"] = doubleToString(simulation.getCurrentScalingStep());
     auxInfo["cycles"] = std::to_string(simulation.getTotalCycles());
 
