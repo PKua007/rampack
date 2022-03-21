@@ -342,7 +342,7 @@ bool Simulation::tryMove(const Interaction &interaction, const std::vector<std::
             break;
     }
 
-    auto &moveCounter = this->moveCounters[moveType];
+    auto &moveCounter = moveCounters_[moveType];
     if (this->unitIntervalDistribution(mt) <= std::exp(-dE / this->temperature)) {
         this->packing->acceptMove();
         moveCounter.increment(true);

@@ -215,11 +215,32 @@ TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
     simulation.integrate(1, 1, 10000, 15000, 1000, 1000, sphereTraits, std::move(collector), logger);
 
     Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
+
     double expected = 0.398574;
-    INFO("Carnahan-Starling density: " << expected);
-    INFO("Monte Carlo density: " << density);
-    CHECK(density.value == Approx(expected).margin(density.error * 3)); // 3 sigma tolerance
-    CHECK(density.error / density.value < 0.03); // up to 3%
+
+    {
+        INFO("Carnahan-Starling density: " << expected);
+        INFO("Monte Carlo density: " << density);
+        CHECK(density.value == Approx(expected).margin(density.error * 3)); // 3 sigma tolerance
+        CHECK(density.error / density.value < 0.03); // up to 3%
+    }
+
+    // Second part - check if runs are deterministic w.r.t. to a seed
+
+    auto shapes2 = OrthorhombicArrangingModel{}.arrange(200, dimensions);
+    auto pbc2 = std::make_unique<PeriodicBoundaryConditions>();
+    auto packing2 = std::make_unique<Packing>(dimensions, std::move(shapes2), std::move(pbc2),
+                                             sphereTraits.getInteraction(), 4, 4);
+    auto volumeScaler2 = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>());
+    Simulation simulation2(std::move(packing2), 1, 0.1, 1, 1234, std::move(volumeScaler2), {2, 2, 1});
+    auto collector2 = std::make_unique<ObservablesCollector>();
+    collector2->addObservable(std::make_unique<NumberDensity>(), ObservablesCollector::AVERAGING);
+
+    simulation2.integrate(1, 1, 10000, 15000, 1000, 1000, sphereTraits, std::move(collector2), logger);
+
+    Quantity density2 = simulation2.getObservablesCollector().getFlattenedAverageValues().front().quantity;
+    CHECK(density.value == density2.value);
+    CHECK(density.error == density2.error);
 }
 
 TEST_CASE("Simulation: overlap reduction for hard sphere liquid", "[medium]") {
