@@ -68,3 +68,13 @@ bool RototranslationSampler::decreaseStepSize() {
 std::vector<std::pair<std::string, double>> RototranslationSampler::getStepSizes() const {
     return {{"translation", this->translationStepSize}, {"rotation", this->rotationStepSize}};
 }
+
+void RototranslationSampler::setStepSize(const std::string &stepName, double stepSize) {
+    Expects(stepSize > 0);
+    if (stepName == "translation")
+        this->translationStepSize = stepSize;
+    else if (stepName == "rotation")
+        this->rotationStepSize = stepSize;
+    else
+        throw PreconditionException("Unknown step name: " + stepName);
+}

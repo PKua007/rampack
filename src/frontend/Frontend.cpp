@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <filesystem>
+#include <set>
 
 #include <cxxopts.hpp>
 
@@ -199,7 +200,7 @@ int Frontend::casino(int argc, char **argv) {
         auto auxInfo = packing->restore(packingFile, shapeTraits->getInteraction());
 
         this->overwriteMoveStepSizes(moveSamplers, auxInfo);
-        params.volumeStepSize = std::stod(auxInfo.at("scalingStep"));
+        params.volumeStepSize = std::stod(auxInfo.at("step.scaling.scaling"));
         Validate(params.volumeStepSize > 0);
 
         if (parsedOptions.count("continue")) {
@@ -757,7 +758,36 @@ void Frontend::printMoveStatistics(const Simulation &simulation) const {
 void Frontend::overwriteMoveStepSizes(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
                                       const std::map<std::string, std::string> &packingAuxInfo) const
 {
+    std::set<std::string> notUsedStepSizes;
+    for (const auto &[key, value] : packingAuxInfo) {
+        if (startsWith(key, "step.") && key != "step.scaling.scaling")
+            notUsedStepSizes.insert(key);
+    }
 
+    for (auto &moveSampler : moveSamplers) {
+        auto groupName = moveSampler->getName();
+        for (const auto &[moveName, stepSize] : moveSampler->getStepSizes()) {
+            std::string moveKey = "step.";
+            moveKey += groupName;
+            moveKey += ".";
+            moveKey += moveName;
+            if (packingAuxInfo.find(moveKey) == packingAuxInfo.end()) {
+                this->logger.warn() << "Step size " << moveKey << " not found in *.dat metadata. Falling back to ";
+                this->logger << "input file value " << stepSize << std::endl;
+                continue;
+            }
+
+            notUsedStepSizes.erase(moveKey);
+            moveSampler->setStepSize(moveName, std::stod(packingAuxInfo.at(moveKey)));
+        }
+    }
+
+    if (notUsedStepSizes.empty())
+        return;
+
+    this->logger.warn() << "Packing *.dat file contained metadata for unused move step sizes:" << std::endl;
+    for (const auto &notUsedStepSize : notUsedStepSizes)
+        this->logger << notUsedStepSize << " = " << packingAuxInfo.at(notUsedStepSize) << std::endl;
 }
 
 void Frontend::appendMoveStepSizesToAuxInfo(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,

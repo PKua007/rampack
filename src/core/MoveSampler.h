@@ -37,6 +37,7 @@ public:
     virtual bool increaseStepSize() = 0;
     virtual bool decreaseStepSize() = 0;
     [[nodiscard]] virtual std::vector<std::pair<std::string, double>> getStepSizes() const = 0;
+    virtual void setStepSize(const std::string &stepName, double stepSize) = 0;
 };
 
 
