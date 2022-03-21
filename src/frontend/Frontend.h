@@ -28,7 +28,7 @@ private:
     void overwriteMoveStepSizes(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
                                 const std::map<std::string, std::string> &packingAuxInfo) const;
     void appendMoveStepSizesToAuxInfo(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
-                                      std::map<std::string, std::string> &auxInfo) const;
+                                      double scalingStepSize, std::map<std::string, std::string> &auxInfo) const;
     void setVerbosityLevel(const std::string &verbosityLevelName) const;
 
     void performIntegration(Simulation &simulation, const Parameters::IntegrationParameters &runParams,
@@ -53,6 +53,8 @@ private:
 
     [[nodiscard]] std::array<double, 3> parseDimensions(const std::string &initialDimensions) const;
     static std::string doubleToString(double d);
+    static std::string formatMoveKey(const std::string &groupName, const std::string &moveName);
+    static bool isStepSizeKey(const std::string &key);
 
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }

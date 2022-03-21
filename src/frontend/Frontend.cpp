@@ -200,7 +200,8 @@ int Frontend::casino(int argc, char **argv) {
         auto auxInfo = packing->restore(packingFile, shapeTraits->getInteraction());
 
         this->overwriteMoveStepSizes(moveSamplers, auxInfo);
-        params.volumeStepSize = std::stod(auxInfo.at("step.scaling.scaling"));
+        std::string scalingKey = Frontend::formatMoveKey("scaling", "scaling");
+        params.volumeStepSize = std::stod(auxInfo.at(scalingKey));
         Validate(params.volumeStepSize > 0);
 
         if (parsedOptions.count("continue")) {
@@ -372,12 +373,7 @@ void Frontend::storePacking(const Simulation &simulation, const std::string &pac
     for (const auto &moveStatistics : movesStatistics) {
         auto groupName = moveStatistics.groupName;
         for (const auto &stepSizeData : moveStatistics.stepSizeDatas) {
-            std::string moveKey = "step.";
-            moveKey += groupName;
-            moveKey += ".";
-            moveKey += stepSizeData.moveName;
-            std::replace(moveKey.begin(), moveKey.end(), ' ', '_');
-
+            std::string moveKey = Frontend::formatMoveKey(groupName, stepSizeData.moveName);
             auxInfo[moveKey] = doubleToString(stepSizeData.stepSize);
         }
     }
@@ -686,8 +682,7 @@ int Frontend::preview(int argc, char **argv) {
     // Store packing (if desired)
     if (parsedOptions.count("dat")) {
         std::map<std::string, std::string> auxInfo;
-        this->appendMoveStepSizesToAuxInfo(moveSamplers, auxInfo);
-        auxInfo["step.scaling.scaling"] = Frontend::doubleToString(params.volumeStepSize);
+        this->appendMoveStepSizesToAuxInfo(moveSamplers, params.volumeStepSize, auxInfo);
         auxInfo["cycles"] = "0";
 
         std::ofstream out(datFilename);
@@ -759,18 +754,16 @@ void Frontend::overwriteMoveStepSizes(const std::vector<std::unique_ptr<MoveSamp
                                       const std::map<std::string, std::string> &packingAuxInfo) const
 {
     std::set<std::string> notUsedStepSizes;
+    std::string scalingKey = Frontend::formatMoveKey("scaling", "scaling");
     for (const auto &[key, value] : packingAuxInfo) {
-        if (startsWith(key, "step.") && key != "step.scaling.scaling")
+        if (Frontend::isStepSizeKey(key) && key != scalingKey)
             notUsedStepSizes.insert(key);
     }
 
     for (auto &moveSampler : moveSamplers) {
         auto groupName = moveSampler->getName();
         for (const auto &[moveName, stepSize] : moveSampler->getStepSizes()) {
-            std::string moveKey = "step.";
-            moveKey += groupName;
-            moveKey += ".";
-            moveKey += moveName;
+            std::string moveKey = Frontend::formatMoveKey(groupName, moveName);
             if (packingAuxInfo.find(moveKey) == packingAuxInfo.end()) {
                 this->logger.warn() << "Step size " << moveKey << " not found in *.dat metadata. Falling back to ";
                 this->logger << "input file value " << stepSize << std::endl;
@@ -790,18 +783,28 @@ void Frontend::overwriteMoveStepSizes(const std::vector<std::unique_ptr<MoveSamp
         this->logger << notUsedStepSize << " = " << packingAuxInfo.at(notUsedStepSize) << std::endl;
 }
 
+bool Frontend::isStepSizeKey(const std::string &key) {
+    return startsWith(key, "step.");
+}
+
+std::string Frontend::formatMoveKey(const std::string &groupName, const std::string &moveName) {
+    std::string moveKey = "step.";
+    moveKey += groupName;
+    moveKey += ".";
+    moveKey += moveName;
+    return moveKey;
+}
+
 void Frontend::appendMoveStepSizesToAuxInfo(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
-                                            std::map<std::string, std::string> &auxInfo) const
+                                            double scalingStepSize, std::map<std::string, std::string> &auxInfo) const
 {
     for (const auto &moveSampler : moveSamplers) {
         auto groupName = moveSampler->getName();
         for (auto [moveName, stepSize] : moveSampler->getStepSizes()) {
-            std::string moveKey = "step.";
-            moveKey += groupName;
-            moveKey += ".";
-            moveKey += moveName;
-
+            std::string moveKey = Frontend::formatMoveKey(groupName, moveName);
             auxInfo[moveKey] = Frontend::doubleToString(stepSize);
         }
     }
+    std::string scalingKey = Frontend::formatMoveKey("scaling", "scaling");
+    auxInfo[scalingKey] = Frontend::doubleToString(scalingStepSize);
 }
