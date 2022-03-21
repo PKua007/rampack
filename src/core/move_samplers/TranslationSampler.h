@@ -1,23 +1,23 @@
 //
-// Created by pkua on 18.03.2022.
+// Created by pkua on 21.03.2022.
 //
 
-#ifndef RAMPACK_ROTOTRANSLATIONSAMPLER_H
-#define RAMPACK_ROTOTRANSLATIONSAMPLER_H
+#ifndef RAMPACK_TRANSLATIONSAMPLER_H
+#define RAMPACK_TRANSLATIONSAMPLER_H
+
 
 #include "core/MoveSampler.h"
 
 
-class RototranslationSampler : public MoveSampler {
+class TranslationSampler : public MoveSampler {
 private:
     double translationStepSize{};
-    double rotationStepSize{};
     double maxTranslationStepSize{};
 
 public:
-    RototranslationSampler(double translationStepSize, double rotationStepSize, double maxTranslationStepSize = 0);
+    explicit TranslationSampler(double translationStepSize, double maxTranslationStepSize = 0);
 
-    [[nodiscard]] std::string getName() const override { return "rototranslation"; }
+    [[nodiscard]] std::string getName() const override { return "translation"; }
 
     [[nodiscard]] std::size_t getNumOfRequestedMoves(std::size_t numParticles) const override { return numParticles; }
 
@@ -32,4 +32,4 @@ public:
 };
 
 
-#endif //RAMPACK_ROTOTRANSLATIONSAMPLER_H
+#endif //RAMPACK_TRANSLATIONSAMPLER_H
