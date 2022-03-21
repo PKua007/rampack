@@ -111,7 +111,7 @@ void Simulation::integrate(double temperature_, double pressure_, std::size_t th
     } else {
         logger.info() << "Starting thermalisation..." << std::endl;
         for (std::size_t i{}; i < thermalisationCycles; i++) {
-            this->performCycle(logger, interaction);
+            this->performCycle(logger, shapeTraits);
             if (this->totalCycles % snapshotEvery == 0)
                 this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
             if (this->totalCycles % 100 == 0)
@@ -132,7 +132,7 @@ void Simulation::integrate(double temperature_, double pressure_, std::size_t th
     } else {
         logger.info() << "Starting averaging..." << std::endl;
         for (std::size_t i{}; i < averagingCycles; i++) {
-            this->performCycle(logger, interaction);
+            this->performCycle(logger, shapeTraits);
             if (this->totalCycles % snapshotEvery == 0)
                 this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
             if (this->totalCycles % averagingEvery == 0)
@@ -183,7 +183,7 @@ void Simulation::relaxOverlaps(double temperature_, double pressure_, std::size_
     loggerAdditionalTextAppender.setAdditionalText("ov");
     logger.info() << "Starting overlap relaxation..." << std::endl;
     while (this->packing->getCachedNumberOfOverlaps() > 0) {
-        this->performCycle(logger, interaction);
+        this->performCycle(logger, shapeTraits);
         if (this->totalCycles % snapshotEvery == 0)
             this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
         if (this->totalCycles % 100 == 0)
@@ -219,13 +219,15 @@ void Simulation::reset() {
     sigint_received = false;
 }
 
-void Simulation::performCycle(Logger &logger, const Interaction &interaction) {
+void Simulation::performCycle(Logger &logger, const ShapeTraits &shapeTraits) {
+    const auto &interaction = shapeTraits.getInteraction();
+
     using namespace std::chrono;
     auto start = high_resolution_clock::now();
     if (this->numDomains == 1)
-        this->performMovesWithoutDomainDivision(interaction);
+        this->performMovesWithoutDomainDivision(shapeTraits);
     else
-        this->performMovesWithDomainDivision(interaction);
+        this->performMovesWithDomainDivision(shapeTraits);
     auto end = high_resolution_clock::now();
     this->moveMicroseconds += duration<double, std::micro>(end - start).count();
 
@@ -252,16 +254,17 @@ void Simulation::performCycle(Logger &logger, const Interaction &interaction) {
     this->totalCycles++;
 }
 
-void Simulation::performMovesWithoutDomainDivision(const Interaction &interaction) {
+void Simulation::performMovesWithoutDomainDivision(const ShapeTraits &shapeTraits) {
     auto moveTypeAccumulations = this->calculateMoveTypeAccumulations(this->packing->size());
     std::size_t numMoves = moveTypeAccumulations.back();
     for (std::size_t i{}; i < numMoves; i++)
-        this->tryMove(interaction, this->allParticleIndices, this->moveCounters, moveTypeAccumulations);
+        this->tryMove(shapeTraits, this->allParticleIndices, this->moveCounters, moveTypeAccumulations);
 }
 
-void Simulation::performMovesWithDomainDivision(const Interaction &interaction) {
+void Simulation::performMovesWithDomainDivision(const ShapeTraits &shapeTraits) {
     const auto &packingBox = this->packing->getBox();
     auto &mt = this->mts[_OMP_THREAD_ID];
+    const auto &interaction = shapeTraits.getInteraction();
 
     Vector<3> randomOrigin{this->unitIntervalDistribution(mt),
                            this->unitIntervalDistribution(mt),
@@ -281,7 +284,7 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
 
     #pragma omp declare reduction (+ : std::vector<Counter> : Simulation::accumulateCounters(omp_out, omp_in)) \
             initializer(omp_priv = omp_orig)
-    #pragma omp parallel for shared(domainDecomposition, interaction) default(none) collapse(3) \
+    #pragma omp parallel for shared(domainDecomposition, shapeTraits) default(none) collapse(3) \
             reduction(+ : tempMoveCounters) num_threads(this->packing->getMoveThreads())
     for (std::size_t i = 0; i < this->domainDivisions[0]; i++) {
         for (std::size_t j = 0; j < this->domainDivisions[1]; j++) {
@@ -297,7 +300,7 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
                 auto moveTypeAccumulations = this->calculateMoveTypeAccumulations(averageNumParticles);
                 std::size_t numMoves = moveTypeAccumulations.back();
                 for (std::size_t x{}; x < numMoves; x++) {
-                    this->tryMove(interaction, domainParticleIndices, tempMoveCounters, moveTypeAccumulations,
+                    this->tryMove(shapeTraits, domainParticleIndices, tempMoveCounters, moveTypeAccumulations,
                                   activeDomain);
                 }
             }
@@ -309,7 +312,7 @@ void Simulation::performMovesWithDomainDivision(const Interaction &interaction) 
     Simulation::accumulateCounters(this->moveCounters, tempMoveCounters);
 }
 
-bool Simulation::tryMove(const Interaction &interaction, const std::vector<std::size_t> &particleIndices,
+bool Simulation::tryMove(const ShapeTraits &shapeTraits, const std::vector<std::size_t> &particleIndices,
                          std::vector<Counter> &moveCounters_, const std::vector<std::size_t> &moveTypeAccumulations,
                          std::optional<ActiveDomain> boundaries)
 {
@@ -328,7 +331,8 @@ bool Simulation::tryMove(const Interaction &interaction, const std::vector<std::
     }
 
     auto &moveSampler = this->moveSamplers[moveType];
-    auto move = moveSampler->sampleMove(particleIndices, mt);
+    auto move = moveSampler->sampleMove(*this->packing, shapeTraits, particleIndices, mt);
+    const auto &interaction = shapeTraits.getInteraction();
     double dE{};
     switch (move.moveType) {
         case MoveSampler::MoveType::TRANSLATION:

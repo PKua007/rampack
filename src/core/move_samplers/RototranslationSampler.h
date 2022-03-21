@@ -6,6 +6,8 @@
 #define RAMPACK_ROTOTRANSLATIONSAMPLER_H
 
 #include "core/MoveSampler.h"
+#include "core/Packing.h"
+#include "core/ShapeTraits.h"
 
 
 class RototranslationSampler : public MoveSampler {
@@ -21,7 +23,8 @@ public:
 
     [[nodiscard]] std::size_t getNumOfRequestedMoves(std::size_t numParticles) const override { return numParticles; }
 
-    MoveData sampleMove(const std::vector<std::size_t> &particleIdxs, std::mt19937 &mt) override;
+    MoveData sampleMove(const Packing &packing, const ShapeTraits &shapeTraits,
+                        const std::vector<std::size_t> &particleIdxs, std::mt19937 &mt) override;
     bool increaseStepSize() override;
     bool decreaseStepSize() override;
 

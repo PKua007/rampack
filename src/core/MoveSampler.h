@@ -10,6 +10,8 @@
 
 #include "geometry/Matrix.h"
 #include "geometry/Vector.h"
+#include "core/ShapeTraits.h"
+#include "core/Packing.h"
 
 
 class MoveSampler {
@@ -31,7 +33,8 @@ public:
 
     [[nodiscard]] virtual std::string getName() const = 0;
 
-    virtual MoveData sampleMove(const std::vector<std::size_t> &particleIdxs, std::mt19937 &mt) = 0;
+    virtual MoveData sampleMove(const Packing &packing, const ShapeTraits &shapeTraits,
+                                const std::vector<std::size_t> &particleIdxs, std::mt19937 &mt) = 0;
     [[nodiscard]] virtual std::size_t getNumOfRequestedMoves(std::size_t numParticles) const = 0;
 
     virtual bool increaseStepSize() = 0;

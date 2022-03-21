@@ -113,10 +113,10 @@ private:
     static void printStepSizesChange(Logger &logger, const std::vector<std::pair<std::string, double>> &oldStepSizes,
                                      const std::vector<std::pair<std::string, double>> &newStepSizes);
 
-    void performCycle(Logger &logger, const Interaction &interaction);
-    void performMovesWithDomainDivision(const Interaction &interaction);
-    void performMovesWithoutDomainDivision(const Interaction &interaction);
-    bool tryMove(const Interaction &interaction, const std::vector<std::size_t> &particleIndices,
+    void performCycle(Logger &logger, const ShapeTraits &shapeTraits);
+    void performMovesWithDomainDivision(const ShapeTraits &shapeTraits);
+    void performMovesWithoutDomainDivision(const ShapeTraits &shapeTraits);
+    bool tryMove(const ShapeTraits &shapeTraits, const std::vector<std::size_t> &particleIndices,
                  std::vector<Counter> &moveCounters_, const std::vector<std::size_t> &moveTypeAccumulations,
                  std::optional<ActiveDomain> boundaries = std::nullopt);
     bool tryScaling(const Interaction &interaction);
