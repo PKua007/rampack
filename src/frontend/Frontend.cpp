@@ -27,6 +27,7 @@
 #include "ArrangementFactory.h"
 #include "TriclinicBoxScalerFactory.h"
 #include "core/shapes/CompoundShapeTraits.h"
+#include "MoveSamplerFactory.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -151,6 +152,13 @@ int Frontend::casino(int argc, char **argv) {
     // Parse scaling type
     std::unique_ptr<TriclinicBoxScaler> triclinicBoxScaler = TriclinicBoxScalerFactory::create(params.scalingType);
 
+    // Parse move type
+    auto moveSamplerStrings = explode(params.moveTypes, ',');
+    std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
+    moveSamplers.reserve(moveSamplerStrings.size());
+    std::transform(moveSamplerStrings.begin(), moveSamplerStrings.end(), std::back_inserter(moveSamplers),
+                   [](const auto &moveName) { return MoveSamplerFactory::create(moveName); });
+
     // Find starting run index if specified
     std::size_t startRunIndex{};
     if (parsedOptions.count("start-from")) {
@@ -190,11 +198,8 @@ int Frontend::casino(int argc, char **argv) {
         packing = std::make_unique<Packing>(std::move(bc), scalingThreads, scalingThreads);
         auto auxInfo = packing->restore(packingFile, shapeTraits->getInteraction());
 
-        params.positionStepSize = std::stod(auxInfo.at("translationStep"));
-        params.rotationStepSize = std::stod(auxInfo.at("rotationStep"));
+        this->overwriteMoveStepSizes(moveSamplers, auxInfo);
         params.volumeStepSize = std::stod(auxInfo.at("scalingStep"));
-        Validate(params.positionStepSize > 0);
-        Validate(params.rotationStepSize > 0);
         Validate(params.volumeStepSize > 0);
 
         if (parsedOptions.count("continue")) {
@@ -237,8 +242,8 @@ int Frontend::casino(int argc, char **argv) {
     }
 
     // Perform simulations starting from initial run
-    Simulation simulation(std::move(packing), params.positionStepSize, params.rotationStepSize, params.volumeStepSize,
-                          params.seed, std::move(triclinicBoxScaler), domainDivisions, params.saveOnSignal);
+    Simulation simulation(std::move(packing), std::move(moveSamplers), params.volumeStepSize, params.seed,
+                          std::move(triclinicBoxScaler), domainDivisions, params.saveOnSignal);
 
     for (std::size_t i = startRunIndex; i < params.runsParameters.size(); i++) {
         if (std::holds_alternative<Parameters::IntegrationParameters>(params.runsParameters[i])) {
@@ -359,11 +364,22 @@ void Frontend::storeWolframVisualization(const Simulation &simulation, const Sha
 
 void Frontend::storePacking(const Simulation &simulation, const std::string &packingFilename) {
     std::map<std::string, std::string> auxInfo;
-    //TODO
-    auxInfo["translationStep"] = doubleToString(0.1);//simulation.getCurrentTranslationStep());
-    auxInfo["rotationStep"] = doubleToString(0.1);//simulation.getCurrentRotationStep());
-    auxInfo["scalingStep"] = doubleToString(simulation.getCurrentScalingStep());
+
     auxInfo["cycles"] = std::to_string(simulation.getTotalCycles());
+
+    const auto &movesStatistics = simulation.getMovesStatistics();
+    for (const auto &moveStatistics : movesStatistics) {
+        auto groupName = moveStatistics.groupName;
+        for (const auto &stepSizeData : moveStatistics.stepSizeDatas) {
+            std::string moveKey = "step.";
+            moveKey += groupName;
+            moveKey += ".";
+            moveKey += stepSizeData.moveName;
+            std::replace(moveKey.begin(), moveKey.end(), ' ', '_');
+
+            auxInfo[moveKey] = doubleToString(stepSizeData.stepSize);
+        }
+    }
 
     std::ofstream out(packingFilename);
     ValidateOpenedDesc(out, packingFilename, "to store packing data");
@@ -659,12 +675,18 @@ int Frontend::preview(int argc, char **argv) {
     auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, dimensions, params.initialArrangement,
                                                       std::move(bc), shapeTraits->getInteraction(), 1, 1);
 
+    // Parse move type
+    auto moveSamplerStrings = explode(params.moveTypes, ',');
+    std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
+    moveSamplers.reserve(moveSamplerStrings.size());
+    std::transform(moveSamplerStrings.begin(), moveSamplerStrings.end(), std::back_inserter(moveSamplers),
+                   [](const auto &moveName) { return MoveSamplerFactory::create(moveName); });
+
     // Store packing (if desired)
     if (parsedOptions.count("dat")) {
         std::map<std::string, std::string> auxInfo;
-        auxInfo["translationStep"] = this->doubleToString(params.positionStepSize);
-        auxInfo["rotationStep"] = this->doubleToString(params.rotationStepSize);
-        auxInfo["scalingStep"] = this->doubleToString(params.volumeStepSize);
+        this->appendMoveStepSizesToAuxInfo(moveSamplers, auxInfo);
+        auxInfo["step.scaling.scaling"] = Frontend::doubleToString(params.volumeStepSize);
         auxInfo["cycles"] = "0";
 
         std::ofstream out(datFilename);
@@ -729,5 +751,27 @@ void Frontend::printMoveStatistics(const Simulation &simulation) const {
         }
 
         this->logger << std::endl;
+    }
+}
+
+void Frontend::overwriteMoveStepSizes(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
+                                      const std::map<std::string, std::string> &packingAuxInfo) const
+{
+
+}
+
+void Frontend::appendMoveStepSizesToAuxInfo(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
+                                            std::map<std::string, std::string> &auxInfo) const
+{
+    for (const auto &moveSampler : moveSamplers) {
+        auto groupName = moveSampler->getName();
+        for (auto [moveName, stepSize] : moveSampler->getStepSizes()) {
+            std::string moveKey = "step.";
+            moveKey += groupName;
+            moveKey += ".";
+            moveKey += moveName;
+
+            auxInfo[moveKey] = Frontend::doubleToString(stepSize);
+        }
     }
 }

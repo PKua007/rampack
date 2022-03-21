@@ -90,8 +90,7 @@ public:
     std::string initialDimensions{};
     std::string initialArrangement{};
     std::size_t numOfParticles{};
-    double positionStepSize{};
-    double rotationStepSize{};
+    std::string moveTypes{};
     double volumeStepSize{};
     unsigned long seed{};
     std::string shapeName{};

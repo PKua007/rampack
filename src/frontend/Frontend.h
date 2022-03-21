@@ -25,6 +25,10 @@ private:
     Logger &logger;
 
     Parameters loadParameters(const std::string &inputFilename);
+    void overwriteMoveStepSizes(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
+                                const std::map<std::string, std::string> &packingAuxInfo) const;
+    void appendMoveStepSizesToAuxInfo(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
+                                      std::map<std::string, std::string> &auxInfo) const;
     void setVerbosityLevel(const std::string &verbosityLevelName) const;
 
     void performIntegration(Simulation &simulation, const Parameters::IntegrationParameters &runParams,
@@ -48,7 +52,7 @@ private:
     void printMoveStatistics(const Simulation &simulation) const;
 
     [[nodiscard]] std::array<double, 3> parseDimensions(const std::string &initialDimensions) const;
-    std::string doubleToString(double d);
+    static std::string doubleToString(double d);
 
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }

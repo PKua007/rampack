@@ -21,10 +21,8 @@ Parameters::Parameters(std::istream &input) {
             this->numOfParticles = generalConfig.getUnsignedLong("numOfParticles");
         else if (key == "initialArrangement")
             this->initialArrangement = generalConfig.getString("initialArrangement");
-        else if (key == "positionStepSize")
-            this->positionStepSize = generalConfig.getDouble("positionStepSize");
-        else if (key == "rotationStepSize")
-            this->rotationStepSize = generalConfig.getDouble("rotationStepSize");
+        else if (key == "moveTypes")
+            this->moveTypes = generalConfig.getString("moveTypes");
         else if (key == "volumeStepSize")
             this->volumeStepSize = generalConfig.getDouble("volumeStepSize");
         else if (key == "seed")
@@ -67,8 +65,6 @@ Parameters::Parameters(std::istream &input) {
 
 void Parameters::validate() const {
     Validate(this->numOfParticles > 0);
-    Validate(this->positionStepSize > 0);
-    Validate(this->rotationStepSize > 0);
     Validate(this->volumeStepSize > 0);
     Validate(!this->scalingThreads.empty());
     Validate(!this->domainDivisions.empty());
@@ -79,8 +75,7 @@ void Parameters::print(Logger &logger) const {
     logger.info() << "initialDimensions : " << this->initialDimensions << std::endl;
     logger.info() << "initialArangement : " << this->initialArrangement << std::endl;
     logger.info() << "numOfParticles    : " << this->numOfParticles << std::endl;
-    logger.info() << "positionStepSize  : " << this->positionStepSize << std::endl;
-    logger.info() << "rotationStepSize  : " << this->rotationStepSize << std::endl;
+    logger.info() << "moveTypes         : " << this->moveTypes << std::endl;
     logger.info() << "volumeStepSize    : " << this->volumeStepSize << std::endl;
     logger.info() << "seed              : " << this->seed << std::endl;
     logger.info() << "shapeName         : " << this->shapeName << std::endl;
