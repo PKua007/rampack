@@ -14,6 +14,7 @@
 #include <random>
 #include <iosfwd>
 #include <optional>
+#include <utility>
 
 #include "Packing.h"
 #include "utils/Logger.h"
@@ -29,6 +30,32 @@
  * them. It also does other "higher level" things such as collecting observables, etc.
  */
 class Simulation {
+public:
+    struct StepSizeData {
+        const std::string moveName;
+        const double stepSize{};
+
+        StepSizeData(std::string moveName, double stepSize) : moveName{std::move(moveName)}, stepSize{stepSize} { }
+    };
+
+    struct MoveStatistics {
+        const std::string groupName{};
+        std::size_t totalMoves{};
+        std::size_t acceptedMoves{};
+        const std::vector<StepSizeData> stepSizeDatas{};
+
+        MoveStatistics(std::string groupName, size_t totalMoves, size_t acceptedMoves,
+                       std::vector<StepSizeData> stepSizeDatas)
+                : groupName{std::move(groupName)}, totalMoves{totalMoves}, acceptedMoves{acceptedMoves},
+                  stepSizeDatas{std::move(stepSizeDatas)}
+        { }
+
+        [[nodiscard]] double getRate() const {
+            return static_cast<double>(this->acceptedMoves)
+                   / static_cast<double>(this->totalMoves);
+        }
+    };
+
 private:
     class Counter {
     private:
@@ -43,6 +70,8 @@ private:
         void resetCurrent();
 
         [[nodiscard]] std::size_t getMovesSinceEvaluation() const;
+        [[nodiscard]] std::size_t getMoves() const;
+        [[nodiscard]] std::size_t getAcceptedMoves() const;
         [[nodiscard]] double getCurrentRate() const;
         [[nodiscard]] double getRate() const;
 
@@ -95,6 +124,8 @@ private:
     void reset();
     void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger, bool displayOverlaps);
     [[nodiscard]] std::vector<std::size_t> calculateMoveTypeAccumulations(std::size_t numParticles) const;
+
+    [[nodiscard]] MoveStatistics getScalingStatistics() const;
 
 public:
     /**
@@ -152,15 +183,7 @@ public:
 
     [[nodiscard]] const ObservablesCollector &getObservablesCollector() { return *this->observablesCollector; }
 
-    /**
-     * @brief Returns the ratio of accepted to all molecule moves.
-     */
-    [[nodiscard]] double getMoveAcceptanceRate() const;
-
-    /**
-     * @brief Returns the ratio of accepted to all scaling moves.
-     */
-    [[nodiscard]] double getScalingAcceptanceRate() const { return this->scalingCounter.getRate(); }
+    [[nodiscard]] std::vector<MoveStatistics> getMovesStatistics() const;
 
     /**
      * @brief Returns the total time consumed by molecule moves in microseconds.

@@ -45,6 +45,8 @@ private:
     void storeSnapshots(const ObservablesCollector &observablesCollector, bool isContinuation,
                         const std::string &observableSnapshotFilename) const;
 
+    void printMoveStatistics(const Simulation &simulation) const;
+
     [[nodiscard]] std::array<double, 3> parseDimensions(const std::string &initialDimensions) const;
     std::string doubleToString(double d);
 

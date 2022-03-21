@@ -395,8 +395,8 @@ void Frontend::printPerformanceInfo(const Simulation &simulation) {
     double observablesPercent = observablesSeconds / totalSeconds * 100;
     double otherPercent = otherSeconds / totalSeconds * 100;
 
-    this->logger << "Move acceptance rate            : " << simulation.getMoveAcceptanceRate() << std::endl;
-    this->logger << "Scaling acceptance rate         : " << simulation.getScalingAcceptanceRate() << std::endl;
+    this->printMoveStatistics(simulation);
+    this->logger << "--------------------------------------------------------------------" << std::endl;
     this->logger << "Neighbour grid resizes/rebuilds : " << ngResizes << "/" << ngRebuilds << std::endl;
     this->logger << "Average neighbours per centre   : " << simulatedPacking.getAverageNumberOfNeighbours();
     this->logger << std::endl;
@@ -707,4 +707,27 @@ std::string Frontend::doubleToString(double d) {
     ostr.precision(std::numeric_limits<double>::max_digits10);
     ostr << d;
     return ostr.str();
+}
+
+void Frontend::printMoveStatistics(const Simulation &simulation) const {
+    auto movesStatistics = simulation.getMovesStatistics();
+
+    for (const auto &moveStatistics : movesStatistics) {
+        std::string groupName = moveStatistics.groupName;
+        groupName.front() = static_cast<char>(std::toupper(groupName.front()));
+        this->logger << groupName << " move statistics:" << std::endl;
+        this->logger << "  Rate       : " << moveStatistics.getRate() << " (" << moveStatistics.acceptedMoves << "/";
+        this->logger << moveStatistics.totalMoves << ")" << std::endl;
+        this->logger << "  Step sizes : ";
+
+        const auto &stepSizeDatas = moveStatistics.stepSizeDatas;
+        for (std::size_t i{}; i < stepSizeDatas.size(); i++) {
+            const auto &stepSizeData = stepSizeDatas[i];
+            this->logger << stepSizeData.moveName << ": " << stepSizeData.stepSize;
+            if (i < stepSizeDatas.size() - 1)
+                this->logger << ", ";
+        }
+
+        this->logger << std::endl;
+    }
 }

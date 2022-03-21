@@ -481,6 +481,14 @@ Simulation::Counter &Simulation::Counter::operator+=(const Simulation::Counter &
     return *this;
 }
 
+std::size_t Simulation::Counter::getMoves() const {
+    return this->moves;
+}
+
+std::size_t Simulation::Counter::getAcceptedMoves() const {
+    return this->acceptedMoves;
+}
+
 void Simulation::printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger,
                                  bool displayOverlaps)
 {
@@ -497,12 +505,6 @@ void Simulation::printInlineInfo(std::size_t cycleNumber, const ShapeTraits &tra
 
 bool Simulation::wasInterrupted() const {
     return sigint_received;
-}
-
-double Simulation::getMoveAcceptanceRate() const {
-    double rate = std::accumulate(this->moveCounters.begin(), this->moveCounters.end(), 0.0,
-                                  [](double rate, const Counter &counter) { return rate + counter.getRate(); });
-    return rate / this->moveCounters.size();
 }
 
 void Simulation::accumulateCounters(std::vector<Counter> &out, const std::vector<Counter> &in) {
@@ -544,4 +546,35 @@ std::vector<std::unique_ptr<MoveSampler>> Simulation::makeRototranslation(double
     std::vector<std::unique_ptr<MoveSampler>> result;
     result.push_back(std::make_unique<RototranslationSampler>(translationStepSize, rotationStepSize));
     return result;
+}
+
+Simulation::MoveStatistics Simulation::getScalingStatistics() const {
+    std::size_t total = this->scalingCounter.getMoves();
+    std::size_t accepted = this->scalingCounter.getAcceptedMoves();
+    double stepSize = this->scalingStep;
+
+    return MoveStatistics("scaling", total, accepted, {StepSizeData("scaling", stepSize)});
+}
+
+std::vector<Simulation::MoveStatistics> Simulation::getMovesStatistics() const {
+    std::vector<MoveStatistics> moveGroupsStatistics;
+
+    Assert(this->moveSamplers.size() == this->moveCounters.size());
+    for (std::size_t i{}; i < this->moveSamplers.size(); i++) {
+        const auto &moveSampler = this->moveSamplers[i];
+        const auto &moveCounter  = this->moveCounters[i];
+
+        std::string groupName = moveSampler->getName();
+        std::size_t total = moveCounter.getMoves();
+        std::size_t accepted = moveCounter.getAcceptedMoves();
+        std::vector<StepSizeData> stepSizeData;
+        for (auto [moveName, stepSize] : moveSampler->getStepSizes())
+            stepSizeData.emplace_back(moveName, stepSize);
+
+        moveGroupsStatistics.emplace_back(groupName, total, accepted, stepSizeData);
+    }
+
+    moveGroupsStatistics.push_back(this->getScalingStatistics());
+
+    return moveGroupsStatistics;
 }
