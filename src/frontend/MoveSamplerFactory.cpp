@@ -9,6 +9,7 @@
 #include "core/move_samplers/RototranslationSampler.h"
 #include "core/move_samplers/TranslationSampler.h"
 #include "core/move_samplers/RotationSampler.h"
+#include "core/move_samplers/FlipSampler.h"
 
 
 std::unique_ptr<MoveSampler> MoveSamplerFactory::create(const std::string &moveSamplerString) {
@@ -57,6 +58,19 @@ std::unique_ptr<MoveSampler> MoveSamplerFactory::create(const std::string &moveS
         ValidateMsg(moveSamplerStream, "Malformed move sampler");
         Validate(rotationStep > 0);
         return std::make_unique<RotationSampler>(rotationStep);
+    } else if (moveName == "flip") {
+        std::size_t flipEvery{};
+
+        moveSamplerStream >> std::ws;
+        if (moveSamplerStream.eof()) {
+            flipEvery = 10;
+        } else {
+            moveSamplerStream >> flipEvery;
+            ValidateMsg(moveSamplerStream, "Malformed move sampler");
+            Validate(flipEvery > 0);
+        }
+
+        return std::make_unique<FlipSampler>(flipEvery);
     } else {
         throw ValidationException("Unknown move sampler: " + moveName);
     }

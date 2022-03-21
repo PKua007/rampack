@@ -35,6 +35,13 @@ public:
     }
 
     /**
+     * @brief Returns the secondary (polarization) molecular axis for a given @a shape.
+     */
+    [[nodiscard]] virtual Vector<3> getSecondaryAxis([[maybe_unused]] const Shape &shape) const {
+        throw std::runtime_error("unsupported");
+    }
+
+    /**
      * @brief Returns the ShapePrinter object responsible for shape printing in supported format.
      */
     [[nodiscard]] virtual const ShapePrinter &getPrinter() const = 0;
