@@ -31,14 +31,14 @@ public:
      * @brief Returns the primary (long) molecular axis for a given @a shape.
      */
     [[nodiscard]] virtual Vector<3> getPrimaryAxis([[maybe_unused]] const Shape &shape) const {
-        throw std::runtime_error("unsupported");
+        throw std::runtime_error("ShapeTraits::getPrimaryAxis : unsupported");
     }
 
     /**
      * @brief Returns the secondary (polarization) molecular axis for a given @a shape.
      */
     [[nodiscard]] virtual Vector<3> getSecondaryAxis([[maybe_unused]] const Shape &shape) const {
-        throw std::runtime_error("unsupported");
+        throw std::runtime_error("ShapeTraits::getSecondaryAxis : unsupported");
     }
 
     /**

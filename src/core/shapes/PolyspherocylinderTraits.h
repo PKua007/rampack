@@ -57,6 +57,7 @@ public:
 private:
     std::vector<SpherocylinderData> spherocylinderData;
     Vector<3> primaryAxis;
+    Vector<3> secondaryAxis;
 
     void normalizeMassCentre();
 
@@ -69,7 +70,7 @@ public:
      * is applied
      */
     PolyspherocylinderTraits(const std::vector<SpherocylinderData> &spherocylinderData, const Vector<3> &primaryAxis,
-                             bool shouldNormalizeMassCentre);
+                             const Vector<3> &secondaryAxis, bool shouldNormalizeMassCentre);
 
     [[nodiscard]] bool hasHardPart() const override { return true; }
     [[nodiscard]] bool hasSoftPart() const override { return false; }
@@ -82,6 +83,7 @@ public:
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
     [[nodiscard]] double getVolume() const override;
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
+    [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override;
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
     [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const {
         return this->spherocylinderData;

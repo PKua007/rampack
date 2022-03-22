@@ -33,7 +33,7 @@ public:
                              bool shouldNormalizeMassCentre = true)
             : PolysphereTraits(generateSphereData(sphereNum, smallSphereRadius, largeSphereRadius,
                                                   smallSpherePenetration, largeSpherePenetration),
-                               {1, 0, 0}, shouldNormalizeMassCentre)
+                               {1, 0, 0}, {0, 1, 0}, shouldNormalizeMassCentre)
     { }
 
     /**
@@ -47,7 +47,7 @@ public:
                              bool shouldNormalizeMassCentre = true)
             : PolysphereTraits(generateSphereData(sphereNum, smallSphereRadius, largeSphereRadius,
                                                   smallSpherePenetration, largeSpherePenetration),
-                               std::move(centralInteraction), {1, 0, 0}, shouldNormalizeMassCentre)
+                               std::move(centralInteraction), {1, 0, 0}, {0, 1, 0}, shouldNormalizeMassCentre)
     { }
 };
 

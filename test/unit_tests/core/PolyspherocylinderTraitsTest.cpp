@@ -31,6 +31,7 @@ TEST_CASE("PolyspherocylinderTraits") {
     PolyspherocylinderTraits traits({Data{{0, 0, 0}, {0, 0, 1}, 1},
                                      Data{{0, 0, 2}, {0, 0, 1}, 0.5}},
                                     {0, 0, 1},
+                                    {1, 0, 0},
                                     false);
 
     SECTION("hard interactions") {
@@ -75,6 +76,12 @@ TEST_CASE("PolyspherocylinderTraits") {
         Shape shape({}, Matrix<3, 3>::rotation(0, M_PI / 2, 0));
         CHECK_THAT(traits.getPrimaryAxis(shape), IsApproxEqual({1, 0, 0}, 1e-8));
     }
+
+    SECTION("secondary axis") {
+        // secondary axis X rotated 90 deg around Y axis => secondary axis is -Z
+        Shape shape({}, Matrix<3, 3>::rotation(0, M_PI / 2, 0));
+        CHECK_THAT(traits.getSecondaryAxis(shape), IsApproxEqual({0, 0, -1}, 1e-8));
+    }
 }
 
 TEST_CASE("PolyspherocylinderTraits: tests from SpherocylinderTraits") {
@@ -82,7 +89,7 @@ TEST_CASE("PolyspherocylinderTraits: tests from SpherocylinderTraits") {
     // the intersection criterion
 
     FreeBoundaryConditions fbc;
-    PolyspherocylinderTraits traits({Data{{0, 0, 0}, {1.5, 0, 0}, 2}}, {1, 0, 0}, false);
+    PolyspherocylinderTraits traits({Data{{0, 0, 0}, {1.5, 0, 0}, 2}}, {1, 0, 0}, {0, 1, 0}, false);
     Shape sc1{}, sc2{};
 
     // Cases are found visually using Mathematica. See wolfram/spheroc_test.nb
@@ -187,6 +194,7 @@ TEST_CASE("PolyspherocylnderTraits: mass centre normalization") {
     PolyspherocylinderTraits traits({Data{{0, 0, 0}, {0, 0, 1}, 1},
                                      Data{{0, 0, 6}, {0, 0, 3}, 0.5}},
                                     {0, 0, 1},
+                                    {0, 1, 0},
                                     true);
 
     CHECK(traits.getSpherocylinderData() == std::vector<Data>{Data{{0, 0, -2}, {0, 0, 1}, 1},

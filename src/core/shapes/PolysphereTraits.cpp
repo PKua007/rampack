@@ -32,13 +32,14 @@ std::string PolysphereTraits::toWolfram(const Shape &shape) const {
 
 PolysphereTraits::PolysphereTraits(std::vector<SphereData> sphereData,
                                    std::unique_ptr<CentralInteraction> centralInteraction,
-                                   const Vector<3> &primaryAxis,
+                                   const Vector<3> &primaryAxis, const Vector<3> &secondaryAxis,
                                    bool shouldNormalizeMassCentre)
-        : sphereData{std::move(sphereData)}, primaryAxis{primaryAxis}
+        : sphereData{std::move(sphereData)}, primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}
 {
     Expects(!this->sphereData.empty());
 
     this->primaryAxis = this->primaryAxis.normalized();
+    this->secondaryAxis = this->secondaryAxis.normalized();
 
     if (shouldNormalizeMassCentre)
         this->normalizeMassCentre();
@@ -52,11 +53,12 @@ PolysphereTraits::PolysphereTraits(std::vector<SphereData> sphereData,
 }
 
 PolysphereTraits::PolysphereTraits(const std::vector<SphereData> &sphereData, const Vector<3> &primaryAxis,
-                                   bool shouldNormalizeMassCentre)
-        : sphereData{sphereData}, primaryAxis{primaryAxis}
+                                   const Vector<3> &secondaryAxis, bool shouldNormalizeMassCentre)
+        : sphereData{sphereData}, primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}
 {
     Expects(!sphereData.empty());
     this->primaryAxis = this->primaryAxis.normalized();
+    this->secondaryAxis = this->secondaryAxis.normalized();
     if (shouldNormalizeMassCentre)
         this->normalizeMassCentre();
     this->interaction = std::make_unique<HardInteraction>(this->sphereData);
@@ -91,6 +93,10 @@ void PolysphereTraits::normalizeMassCentre() {
 
 Vector<3> PolysphereTraits::getPrimaryAxis(const Shape &shape) const {
     return shape.getOrientation() * this->primaryAxis;
+}
+
+Vector<3> PolysphereTraits::getSecondaryAxis(const Shape &shape) const {
+    return shape.getOrientation() * this->secondaryAxis;
 }
 
 PolysphereTraits::SphereData::SphereData(const Vector<3> &position, double radius)

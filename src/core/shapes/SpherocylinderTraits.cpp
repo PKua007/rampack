@@ -52,3 +52,7 @@ std::string SpherocylinderTraits::toWolfram(const Shape &shape) const {
 Vector<3> SpherocylinderTraits::getPrimaryAxis(const Shape &shape) const {
     return shape.getOrientation().column(0);
 }
+
+Vector<3> SpherocylinderTraits::getSecondaryAxis(const Shape &shape) const {
+    return shape.getOrientation().column(1);
+}

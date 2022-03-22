@@ -134,3 +134,11 @@ TEST_CASE("Spherocylinder: primary axis") {
     Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2));
     CHECK_THAT(traits.getPrimaryAxis(shape), IsApproxEqual({0, 1, 0}, 1e-8));
 }
+
+TEST_CASE("Spherocylinder: secondary axis") {
+    SpherocylinderTraits traits(3, 2);
+
+    // secondary axis Y rotated 90 deg around z axis => secondary axis is -X
+    Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2));
+    CHECK_THAT(traits.getSecondaryAxis(shape), IsApproxEqual({-1, 0, 0}, 1e-8));
+}

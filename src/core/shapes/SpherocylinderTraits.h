@@ -32,6 +32,7 @@ public:
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
+    [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override;
     [[nodiscard]] double getVolume() const override;
 
     [[nodiscard]] bool hasHardPart() const override { return true; }

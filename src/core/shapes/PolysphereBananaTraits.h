@@ -31,7 +31,7 @@ public:
      */
     PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
                            bool shouldNormalizeMassCentre = true)
-            : PolysphereTraits(generateSphereData(arcRadius, arcAngle, sphereNum, sphereRadius), {0, 1, 0},
+            : PolysphereTraits(generateSphereData(arcRadius, arcAngle, sphereNum, sphereRadius), {0, 1, 0}, {-1, 0, 0},
                                shouldNormalizeMassCentre)
     { }
 
@@ -43,7 +43,7 @@ public:
                            std::unique_ptr<CentralInteraction> centralInteraction,
                            bool shouldNormalizeMassCentre = true)
             : PolysphereTraits(generateSphereData(arcRadius, arcAngle, sphereNum, sphereRadius),
-                               std::move(centralInteraction), {0, 1, 0}, shouldNormalizeMassCentre)
+                               std::move(centralInteraction), {0, 1, 0}, {-1, 0, 0}, shouldNormalizeMassCentre)
     { }
 };
 

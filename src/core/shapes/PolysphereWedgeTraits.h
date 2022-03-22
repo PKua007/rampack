@@ -30,7 +30,7 @@ public:
     PolysphereWedgeTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
                           double spherePenetration, bool shouldNormalizeMassCentre = true)
             : PolysphereTraits(generateSphereData(sphereNum, smallSphereRadius, largeSphereRadius, spherePenetration),
-                               {1, 0, 0}, shouldNormalizeMassCentre)
+                               {1, 0, 0}, {0, 1, 0}, shouldNormalizeMassCentre)
     { }
 
     /**
@@ -41,7 +41,7 @@ public:
                              double spherePenetration, std::unique_ptr<CentralInteraction> centralInteraction,
                              bool shouldNormalizeMassCentre = true)
             : PolysphereTraits(generateSphereData(sphereNum, smallSphereRadius, largeSphereRadius, spherePenetration),
-                               std::move(centralInteraction), {1, 0, 0}, shouldNormalizeMassCentre)
+                               std::move(centralInteraction), {1, 0, 0}, {0, 1, 0}, shouldNormalizeMassCentre)
     { }
 };
 

@@ -30,11 +30,13 @@ std::string PolyspherocylinderTraits::toWolfram(const Shape &shape) const {
 }
 
 PolyspherocylinderTraits::PolyspherocylinderTraits(const std::vector<SpherocylinderData> &spherocylinderData,
-                                                   const Vector<3> &primaryAxis, bool shouldNormalizeMassCentre)
-        : spherocylinderData{spherocylinderData}, primaryAxis{primaryAxis}
+                                                   const Vector<3> &primaryAxis, const Vector<3> &secondaryAxis,
+                                                   bool shouldNormalizeMassCentre)
+        : spherocylinderData{spherocylinderData}, primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}
 {
     Expects(!spherocylinderData.empty());
     this->primaryAxis = this->primaryAxis.normalized();
+    this->secondaryAxis = this->secondaryAxis.normalized();
     if (shouldNormalizeMassCentre)
         this->normalizeMassCentre();
 }
@@ -59,6 +61,10 @@ void PolyspherocylinderTraits::normalizeMassCentre() {
 
 Vector<3> PolyspherocylinderTraits::getPrimaryAxis(const Shape &shape) const {
     return shape.getOrientation() * this->primaryAxis;
+}
+
+Vector<3> PolyspherocylinderTraits::getSecondaryAxis(const Shape &shape) const {
+    return shape.getOrientation() * this->secondaryAxis;
 }
 
 PolyspherocylinderTraits::SpherocylinderData::SpherocylinderData(const Vector<3> &position, const Vector<3> &halfAxis,

@@ -32,7 +32,7 @@ public:
                                    std::size_t subdivisions = 1, bool shouldNormalizeMassCentre = true)
             : PolyspherocylinderTraits(generateSpherocylinderData(arcRadius, arcAngle, segmentsNum,
                                                                   radius, subdivisions),
-                                       {0, 1, 0}, shouldNormalizeMassCentre)
+                                       {0, 1, 0}, {-1, 0, 0}, shouldNormalizeMassCentre)
     { }
 };
 

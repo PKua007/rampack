@@ -40,6 +40,10 @@ public:
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override {
         return this->mainShapeTraits->getPrimaryAxis(shape);
     }
+
+    [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override {
+        return this->mainShapeTraits->getSecondaryAxis(shape);
+    }
 };
 
 

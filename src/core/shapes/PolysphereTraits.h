@@ -59,6 +59,7 @@ private:
     std::vector<SphereData> sphereData;
     std::unique_ptr<Interaction> interaction{};
     Vector<3> primaryAxis;
+    Vector<3> secondaryAxis;
 
     void normalizeMassCentre();
 
@@ -71,18 +72,19 @@ public:
      * applied
      */
     PolysphereTraits(const std::vector<SphereData> &sphereData, const Vector<3> &primaryAxis,
-                     bool shouldNormalizeMassCentre);
+                     const Vector<3> &secondaryAxis, bool shouldNormalizeMassCentre);
 
     /**
      * @brief Similar as PolysphereTraits::PolysphereTraits(const std::vector<SphereData> &, const Vector<3> &, bool),
      * but for soft central interaction given by @a centralInteraction.
      */
     PolysphereTraits(std::vector<SphereData> sphereData, std::unique_ptr<CentralInteraction> centralInteraction,
-                     const Vector<3> &primaryAxis, bool shouldNormalizeMassCentre);
+                     const Vector<3> &primaryAxis, const Vector<3> &secondaryAxis, bool shouldNormalizeMassCentre);
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; }
     [[nodiscard]] double getVolume() const override;
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
+    [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override;
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
 
     [[nodiscard]] std::string toWolfram(const Shape &shape) const override;

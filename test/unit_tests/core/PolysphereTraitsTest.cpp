@@ -17,7 +17,8 @@ namespace {
 }
 
 TEST_CASE("PolysphereTraits: hard interactions") {
-    PolysphereTraits traits({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}}, {1, 0, 0}, false);
+    PolysphereTraits traits({{{0, 0, 0}, 0.5},
+                             {{3, 0, 0}, 1}}, {1, 0, 0}, {0, 1, 0}, false);
 
     SECTION("hard interactions") {
         // Particles look and are placed like this (x - central particle, o - second one):
@@ -64,17 +65,24 @@ TEST_CASE("PolysphereTraits: hard interactions") {
         Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2));
         CHECK_THAT(traits.getPrimaryAxis(shape), IsApproxEqual({0, 1, 0}, 1e-8));
     }
+
+    SECTION("secondary axis") {
+        // secondary axis Y rotated 90 deg around z axis => secondary axis is -X
+        Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2));
+        CHECK_THAT(traits.getSecondaryAxis(shape), IsApproxEqual({-1, 0, 0}, 1e-8));
+    }
 }
 
 TEST_CASE("PolysphereTraits: soft interactions") {
-    PolysphereTraits traits({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}}, std::make_unique<DummyInteraction>(), {1, 0, 0}, false);
+    PolysphereTraits traits({{{0, 0, 0}, 0.5},
+                             {{3, 0, 0}, 1}}, std::make_unique<DummyInteraction>(), {1, 0, 0}, {0, 1, 0}, false);
     const auto &interaction = dynamic_cast<const CentralInteraction &>(traits.getInteraction());
 
     CHECK(interaction.getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}, {3, 0, 0}});
 }
 
 TEST_CASE("PolysphereTraits: mass centre normalization") {
-    PolysphereTraits traits{{{{0, 0, 0}, 1}, {{1, 0, 0}, std::cbrt(3)}}, {1, 0, 0}, true};
+    PolysphereTraits traits{{{{0, 0, 0}, 1}, {{1, 0, 0}, std::cbrt(3)}}, {1, 0, 0}, {0, 1, 0}, true};
 
     CHECK(traits.getSphereData()
           == std::vector<PolysphereTraits::SphereData>{{{-0.75, 0, 0}, 1}, {{0.25, 0, 0}, std::cbrt(3)}});

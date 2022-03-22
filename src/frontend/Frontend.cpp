@@ -157,8 +157,8 @@ int Frontend::casino(int argc, char **argv) {
     auto moveSamplerStrings = explode(params.moveTypes, ',');
     std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
     moveSamplers.reserve(moveSamplerStrings.size());
-    std::transform(moveSamplerStrings.begin(), moveSamplerStrings.end(), std::back_inserter(moveSamplers),
-                   [](const auto &moveName) { return MoveSamplerFactory::create(moveName); });
+    for (const auto &moveSamplerString : moveSamplerStrings)
+        moveSamplers.push_back(MoveSamplerFactory::create(moveSamplerString));
 
     // Find starting run index if specified
     std::size_t startRunIndex{};
@@ -676,8 +676,8 @@ int Frontend::preview(int argc, char **argv) {
     auto moveSamplerStrings = explode(params.moveTypes, ',');
     std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
     moveSamplers.reserve(moveSamplerStrings.size());
-    std::transform(moveSamplerStrings.begin(), moveSamplerStrings.end(), std::back_inserter(moveSamplers),
-                   [](const auto &moveName) { return MoveSamplerFactory::create(moveName); });
+    for (const auto &moveSamplerString : moveSamplerStrings)
+        moveSamplers.push_back(MoveSamplerFactory::create(moveSamplerString));
 
     // Store packing (if desired)
     if (parsedOptions.count("dat")) {
