@@ -7,12 +7,20 @@
 
 #include "core/MoveSampler.h"
 
-
+/**
+ * @brief MoveSampler performing only the rotational moves.
+ * @details Particles are sampled at random. Rotation is performed around a random axis by an angles sampled uniformly
+ * from an interval given by the current step size. Maximal step size is PI. Internally it consists of a single move
+ * named @a rotation. The group name is also @a rotation.
+ */
 class RotationSampler : public MoveSampler {
 private:
     double rotationStepSize{};
 
 public:
+    /**
+     * @brief Constructs the sampler with an initial step size @a rotationStepSize.
+     */
     explicit RotationSampler(double rotationStepSize);
 
     [[nodiscard]] std::string getName() const override { return "rotation"; }

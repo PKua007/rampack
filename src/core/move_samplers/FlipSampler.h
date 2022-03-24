@@ -7,12 +7,19 @@
 
 #include "core/MoveSampler.h"
 
-
+/**
+ * @brief MoveSampler performing 180-degree rotations (flips) around molecule's secondary axis - the main axis changes
+ * the sign. Internally it consists of a single move named @a flip. The group name is also @a flip.
+ */
 class FlipSampler : public MoveSampler {
 private:
     std::size_t flipEvery{};
 
 public:
+    /**
+     * @brief Constructs the class specifying how often to perform a flip (i.e. how many moves should be requested,
+     * calculated by dividing the number of molecules by @a flipEvery).
+     */
     explicit FlipSampler(std::size_t flipEvery);
 
     [[nodiscard]] std::string getName() const override { return "flip"; }

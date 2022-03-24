@@ -7,7 +7,12 @@
 
 #include "core/MoveSampler.h"
 
-
+/**
+ * @brief MoveSampler performing translational and rotation move at the same time.
+ * @details Particles are sampled at random. The way of sampling and step sizes are the same as in TranslationSampler
+ * and RotationSampler, so one is referred to their documentation. Internally it consists of a two moves named
+ * @a translation and @a rotation. The group name is @a rototranslation.
+ */
 class RototranslationSampler : public MoveSampler {
 private:
     double translationStepSize{};

@@ -5,16 +5,26 @@
 #ifndef RAMPACK_TRANSLATIONSAMPLER_H
 #define RAMPACK_TRANSLATIONSAMPLER_H
 
-
 #include "core/MoveSampler.h"
 
 
+/**
+ * @brief MoveSampler performing only the translational moves.
+ * @details Particles are sampled at random and each coordinate of translation vector is sampled independently from a
+ * uniform interval given by the current step size. Internally it consists of a single move named @a translation. The
+ * group name is also @a translation.
+ */
 class TranslationSampler : public MoveSampler {
 private:
     double translationStepSize{};
     double maxTranslationStepSize{};
 
 public:
+    /**
+     * @brief Constructs the sampler.
+     * @param translationStepSize the initial step size (+- endpoids of sampling interval)
+     * @param maxTranslationStepSize maximal allowed value of the step size. If 0, no limit iwll be imposed.
+     */
     explicit TranslationSampler(double translationStepSize, double maxTranslationStepSize = 0);
 
     [[nodiscard]] std::string getName() const override { return "translation"; }

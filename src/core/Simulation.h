@@ -31,17 +31,29 @@
  */
 class Simulation {
 public:
+    /**
+     * @brief Helper struct for named step sizes.
+     */
     struct StepSizeData {
+        /** @brief Name of the move. */
         const std::string moveName;
+        /** @brief Step size of the move. */
         const double stepSize{};
 
         StepSizeData(std::string moveName, double stepSize) : moveName{std::move(moveName)}, stepSize{stepSize} { }
     };
 
+    /**
+     * @brief Move statistics for a whole MoveSampler.
+     */
     struct MoveStatistics {
+        /** @brief Name of the whoile MoveSampler. */
         const std::string groupName{};
+        /** @brief Total number of performed moves (both accepted and rejected). */
         std::size_t totalMoves{};
+        /** @brief Total number of accepted moves. */
         std::size_t acceptedMoves{};
+        /** @brief Vector of step sizes data for all constituent moves of MoveSampler */
         const std::vector<StepSizeData> stepSizeDatas{};
 
         MoveStatistics(std::string groupName, size_t totalMoves, size_t acceptedMoves,
@@ -50,6 +62,9 @@ public:
                   stepSizeDatas{std::move(stepSizeDatas)}
         { }
 
+        /**
+         * @brief Calculates move rate (ratio of accepted to total).
+         */
         [[nodiscard]] double getRate() const {
             return static_cast<double>(this->acceptedMoves)
                    / static_cast<double>(this->totalMoves);
@@ -129,7 +144,7 @@ private:
 
 public:
     /**
-     * @brief Constructs the simulation for given parameters.
+     * @brief Constructs the simulation for given parameters - "legacy" version with hardcoded rototranslation moves.
      * @param packing initial configuration of shapes
      * @param translationStep initial translation step size
      * @param rotationStep initial rotation step size
@@ -143,6 +158,16 @@ public:
                double scalingStep, unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
                const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1}, bool handleSignals = false);
 
+    /**
+     * @brief Constructs the simulation for given parameters - "new" version with programmable molecule moves.
+     * @param packing initial configuration of shapes
+     * @param moveSamplers the list of move samplers to perform molecule moves
+     * @param scalingStep initial volume scaling step
+     * @param seed seed of the RNG
+     * @param boxScaler volume move scaling sampler
+     * @param domainDivisions domain divisions in each direction to use; {1, 1, 1} disables domain division
+     * @param handleSignals if @a true, SIGINT and SIGCONT will be captured
+     */
     Simulation(std::unique_ptr<Packing> packing, std::vector<std::unique_ptr<MoveSampler>> moveSamplers,
                double scalingStep, unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
                const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1}, bool handleSignals = false);
@@ -183,6 +208,9 @@ public:
 
     [[nodiscard]] const ObservablesCollector &getObservablesCollector() { return *this->observablesCollector; }
 
+    /**
+     * @brief Returns move statistics for all MoveSamplers.
+     */
     [[nodiscard]] std::vector<MoveStatistics> getMovesStatistics() const;
 
     /**

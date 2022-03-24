@@ -66,6 +66,7 @@ public:
      * @brief Creates the molecule from a given set of spherocylinders.
      * @param spherocylinderData a set of spherocylinders
      * @param primaryAxis the primary axis of the molecule
+     * @param secondaryAxis the secondary axis of the polymer (should be orthogonal to the primary one)
      * @param shouldNormalizeMassCentre if true, the mass centre will be moved to the origin. Otherwise, no translation
      * is applied
      */

@@ -68,6 +68,7 @@ public:
      * @brief Construct the polymer from the specified @a sphereData.
      * @param sphereData sphere data describing all constituant monomers
      * @param primaryAxis the primary axis of the polymer
+     * @param secondaryAxis the secondary axis of the polymer (should be orthogonal to the primary one)
      * @param shouldNormalizeMassCentre if true, mass centre will be moved to the origin. If false, no translation is
      * applied
      */
