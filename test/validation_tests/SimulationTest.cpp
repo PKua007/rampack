@@ -19,6 +19,9 @@
 #include "core/observables/NumberDensity.h"
 #include "core/shapes/CompoundShapeTraits.h"
 #include "core/interactions/SquareInverseCoreInteraction.h"
+#include "core/move_samplers/RototranslationSampler.h"
+#include "core/move_samplers/TranslationSampler.h"
+#include "core/move_samplers/RotationSampler.h"
 #include "utils/OMPMacros.h"
 
 
@@ -79,27 +82,48 @@ TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
 TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") {
     omp_set_num_threads(1);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    double V = 200;
-    double linearSize = std::cbrt(V);
-    std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
-    auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
-    SpherocylinderTraits spherocylinderTraits(0.5, 0.2);
+    std::array<double, 3> dimensions = {10, 10, 10};
+    auto shapes = OrthorhombicArrangingModel{}.arrange(50, {2, 5, 5}, {5, 2, 2}, dimensions);
+    SpherocylinderTraits spherocylinderTraits(3, 0.5);
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), spherocylinderTraits.getInteraction());
     auto volumeScaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>());
-    Simulation simulation(std::move(packing), 1, 0.1, 1, 1234, std::move(volumeScaler));
     auto collector = std::make_unique<ObservablesCollector>();
     collector->addObservable(std::make_unique<NumberDensity>(), ObservablesCollector::AVERAGING);
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.integrate(10, 1, 5000, 10000, 100, 100, spherocylinderTraits, std::move(collector), logger);
+    // Value from previous simulations, but consulted with 10.1063/1.471343. The values from the paper could not be used
+    // because of finite size effects for such a small system size as used here (to keep test runtime short enough).
+    double expected = 0.0946189;    // mean standard error respecting correlation time: 
 
-    Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
-    double expected = 0.0956448;
-    INFO("Boublik density: " << expected);
-    INFO("Monte Carlo density: " << density);
-    CHECK(density.value == Approx(expected).margin(density.error * 3)); // 3 sigma tolerance
-    CHECK(density.error / density.value < 0.03); // up to 3%
+    SECTION("rototranslation moves") {
+        std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
+        moveSamplers.push_back(std::make_unique<RototranslationSampler>(0.5, 1));
+        Simulation simulation(std::move(packing), std::move(moveSamplers), 10, 1234, std::move(volumeScaler));
+
+        simulation.integrate(1, 0.5, 5000, 10000, 1000, 100, spherocylinderTraits, std::move(collector), logger);
+
+        Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
+        INFO("Boublik density: " << expected);
+        INFO("Monte Carlo density: " << density);
+        CHECK(density.value == Approx(expected).margin(density.error * 3)); // 3 sigma tolerance
+        CHECK(density.error / density.value < 0.03); // up to 3%
+    }
+
+    SECTION("translation + rotation moves") {
+        std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
+        moveSamplers.push_back(std::make_unique<TranslationSampler>(0.5));
+        moveSamplers.push_back(std::make_unique<RotationSampler>(1));
+        Simulation simulation(std::move(packing), std::move(moveSamplers), 10, 1234, std::move(volumeScaler));
+
+        simulation.integrate(1, 0.5, 5000, 10000, 1000, 100, spherocylinderTraits, std::move(collector), logger);
+
+        Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
+        INFO("Boublik density: " << expected);
+        INFO("Monte Carlo density: " << density);
+        CHECK(density.value == Approx(expected).margin(density.error * 3)); // 3 sigma tolerance
+        CHECK(density.error / density.value < 0.03); // up to 3%
+    }
 }
 
 TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
