@@ -98,6 +98,7 @@ private:
     double pressure{};
 
     std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
+    std::vector<bool> adjustmentCancelReported;
 
     double scalingStep{};
     std::unique_ptr<TriclinicBoxScaler> boxScaler{};

@@ -61,6 +61,7 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, std::vector<std::unique
         this->mts.emplace_back(seed + i);
 
     this->moveCounters.resize(this->moveSamplers.size());
+    this->adjustmentCancelReported.resize(this->moveSamplers.size(), false);
 
     std::iota(this->allParticleIndices.begin(), this->allParticleIndices.end(), 0);
 
@@ -208,6 +209,7 @@ void Simulation::reset() {
     for (auto &moveCounter : this->moveCounters)
         moveCounter.reset();
     this->scalingCounter.reset();
+    std::fill(this->adjustmentCancelReported.begin(), this->adjustmentCancelReported.end(), false);
     this->packing->resetCounters();
     this->moveMicroseconds = 0;
     this->scalingMicroseconds = 0;
@@ -398,6 +400,7 @@ void Simulation::evaluateCounters(Logger &logger) {
     for (std::size_t i{}; i < this->moveSamplers.size(); i++) {
         auto &moveSampler = *this->moveSamplers[i];
         auto &moveCounter = this->moveCounters[i];
+        std::vector<bool>::reference cancelReported = this->adjustmentCancelReported[i];
         std::size_t requestedMoves = moveSampler.getNumOfRequestedMoves(this->packing->size());
         auto moveName = moveSampler.getName();
         moveName.front() = static_cast<char>(std::toupper(moveName.front()));
@@ -407,23 +410,32 @@ void Simulation::evaluateCounters(Logger &logger) {
             moveCounter.resetCurrent();
             auto oldStepSizes = moveSampler.getStepSizes();
             if (rate > 0.2) {
-                logger.info() << "-- " << moveName << " rate: " << rate << "; ";
                 if (moveSampler.increaseStepSize()) {
-                    logger << "step sizes increased: ";
+                    logger.info() << "-- " << moveName << " rate: " << rate << "; step sizes increased: ";
                     auto newStepSizes = moveSampler.getStepSizes();
                     Simulation::printStepSizesChange(logger, oldStepSizes, newStepSizes);
                     logger << std::endl;
+                    cancelReported = false;
                 } else {
-                    logger.info() << "increase of step sizes aborted" << std::endl;
+                    if (!cancelReported) {
+                        logger.info() << "-- " << moveName << " rate: " << rate << "; increase of step sizes aborted ";
+                        logger << "(further notices not displayed)" << std::endl;
+                    }
+                    cancelReported = true;
                 }
             } else if (rate < 0.1) {
                 if (moveSampler.decreaseStepSize()) {
-                    logger.info() << "step sizes decreased: ";
+                    logger.info() << "-- " << moveName << " rate: " << rate << "; step sizes decreased: ";
                     auto newStepSizes = moveSampler.getStepSizes();
                     Simulation::printStepSizesChange(logger, oldStepSizes, newStepSizes);
                     logger << std::endl;
+                    cancelReported = false;
                 } else {
-                    logger.info() << "decrease of step sizes aborted" << std::endl;
+                    if (!cancelReported) {
+                        logger.info() << "-- " << moveName << " rate: " << rate << "; decrease of step sizes aborted ";
+                        logger << "(further notices not displayed)" << std::endl;
+                    }
+                    cancelReported = true;
                 }
             }
         }
