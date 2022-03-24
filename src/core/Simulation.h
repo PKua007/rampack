@@ -140,6 +140,7 @@ private:
     void reset();
     void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger, bool displayOverlaps);
     [[nodiscard]] std::vector<std::size_t> calculateMoveTypeAccumulations(std::size_t numParticles) const;
+    void evaluateMoleculeMoveCounter(Logger &logger);
 
     [[nodiscard]] MoveStatistics getScalingStatistics() const;
 
