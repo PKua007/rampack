@@ -94,7 +94,7 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
 
     // Value from previous simulations, but consulted with 10.1063/1.471343. The values from the paper could not be used
     // because of finite size effects for such a small system size as used here (to keep test runtime short enough).
-    double expected = 0.0946189;    // mean standard error respecting correlation time: 
+    double expected = 0.09454087;    // mean standard error respecting correlation time: 0.00005054
 
     SECTION("rototranslation moves") {
         std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
