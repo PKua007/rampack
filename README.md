@@ -111,6 +111,8 @@ interfaces. The examples are:
   `core/ShapePrinter` for Wolfram Mathematica output. One can also implement all three interfaces in a one class.
   The shape parsing is done by `frontend/ShapeFactory`, so new shapes have to be registered there
 * observables implement `core/Observable` interface. They should be registered in `frontend/ObservableCollectorFactory`
+* molecule move sampling schemes (translation, rotation, flip, etc.) are provided by `core/MoveSampler` interface. They
+  are registered in`frontend/MoveSamplerFactory`
 * volume scaling scheme (all dimensions at once vs a single one a time, linear vs logarithmic, etc.) is provided by
   `core/VolumeScaler` and `core/TriclinicBoxScaler` interfaces. They are registered in
   `frontend/TriclinicVolumeScalerFactory`
