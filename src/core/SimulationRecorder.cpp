@@ -38,8 +38,10 @@ void SimulationRecorder::recordSnapshot(const Packing &packing, std::size_t cycl
     Expects(cycle > 0);
     if (this->numSnapshots == 0) {
         this->cycleStep = cycle;
+        this->numParticles = packing.size();
     } else {
         Expects(cycle == (this->numSnapshots + 1) * this->cycleStep);
+        Expects(packing.size() == this->numParticles);
     }
 
     BoxData boxData;
