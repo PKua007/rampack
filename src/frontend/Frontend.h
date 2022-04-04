@@ -30,6 +30,7 @@ private:
     void appendMoveStepSizesToAuxInfo(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
                                       double scalingStepSize, std::map<std::string, std::string> &auxInfo) const;
     void setVerbosityLevel(const std::string &verbosityLevelName) const;
+    std::unique_ptr<SimulationRecorder> loadSimulationRecorder(const std::string &filename, bool &isContinuation) const;
 
     void performIntegration(Simulation &simulation, const Parameters::IntegrationParameters &runParams,
                             const ShapeTraits &shapeTraits, size_t cycleOffset, bool isContinuation);

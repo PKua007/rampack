@@ -29,6 +29,7 @@
 #include "TriclinicBoxScalerFactory.h"
 #include "core/shapes/CompoundShapeTraits.h"
 #include "MoveSamplerFactory.h"
+#include "core/SimulationRecorder.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -280,10 +281,14 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
     runParams.print(this->logger);
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
+    std::unique_ptr<SimulationRecorder> recorder;
+    if (!runParams.recordingFilename.empty())
+        recorder = loadSimulationRecorder(runParams.recordingFilename, isContinuation);
+
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
     simulation.integrate(runParams.temperature, runParams.pressure, runParams.thermalisationCycles,
                          runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
-                         shapeTraits, std::move(collector), logger, cycleOffset);
+                         shapeTraits, std::move(collector), std::move(recorder), logger, cycleOffset);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
     this->logger.info();
@@ -303,6 +308,24 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
         this->storeSnapshots(observablesCollector, isContinuation, runParams.observableSnapshotFilename);
 }
 
+std::unique_ptr<SimulationRecorder> Frontend::loadSimulationRecorder(const std::string &filename,
+                                                                     bool &isContinuation) const {
+    std::unique_ptr<std::fstream> inout;
+
+    if (isContinuation) {
+        inout = std::make_unique<std::fstream>(
+            filename, std::ios_base::in | std::ios_base::out | std::ios_base::binary
+        );
+    } else {
+        inout = std::make_unique<std::fstream>(
+            filename, std::ios_base::in | std::ios_base::out | std::ios_base::binary | std::ios_base::trunc
+        );
+    }
+
+    ValidateOpenedDesc(*inout, filename, "to store packing data");
+    return std::make_unique<SimulationRecorder>(std::move(inout), isContinuation);
+}
+
 void Frontend::performOverlapRelaxation(Simulation &simulation, const std::string &shapeName,
                                         const std::string &shapeAttr,
                                         const Parameters::OverlapRelaxationParameters &runParams,
@@ -317,6 +340,10 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, const std::strin
     runParams.print(this->logger);
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
+    std::unique_ptr<SimulationRecorder> recorder;
+    if (!runParams.recordingFilename.empty())
+        recorder = loadSimulationRecorder(runParams.recordingFilename, isContinuation);
+
     if (!runParams.helperInteraction.empty()) {
         auto helperShape = ShapeFactory::shapeTraitsFor(shapeName, shapeAttr, runParams.helperInteraction);
         shapeTraits = std::make_shared<CompoundShapeTraits>(shapeTraits, helperShape);
@@ -324,7 +351,7 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, const std::strin
 
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
     simulation.relaxOverlaps(runParams.temperature, runParams.pressure, runParams.snapshotEvery, *shapeTraits,
-                             std::move(collector), this->logger, cycleOffset);
+                             std::move(collector), std::move(recorder), this->logger, cycleOffset);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
     this->logger.info();

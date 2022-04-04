@@ -81,7 +81,8 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep,
 void Simulation::integrate(double temperature_, double pressure_, std::size_t thermalisationCycles,
                            std::size_t averagingCycles, std::size_t averagingEvery, std::size_t snapshotEvery,
                            const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
-                           Logger &logger, std::size_t cycleOffset)
+                           std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
+                           std::size_t cycleOffset)
 {
     Expects(temperature_ > 0);
     Expects(pressure_ > 0);
@@ -113,8 +114,11 @@ void Simulation::integrate(double temperature_, double pressure_, std::size_t th
         logger.info() << "Starting thermalisation..." << std::endl;
         for (std::size_t i{}; i < thermalisationCycles; i++) {
             this->performCycle(logger, shapeTraits);
-            if (this->totalCycles % snapshotEvery == 0)
+            if (this->totalCycles % snapshotEvery == 0) {
                 this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
+                if (simulationRecorder != nullptr)
+                    simulationRecorder->recordSnapshot(*this->packing, this->totalCycles);
+            }
             if (this->totalCycles % 100 == 0)
                 this->printInlineInfo(this->totalCycles, shapeTraits, logger, false);
             if (sigint_received) {
@@ -134,8 +138,11 @@ void Simulation::integrate(double temperature_, double pressure_, std::size_t th
         logger.info() << "Starting averaging..." << std::endl;
         for (std::size_t i{}; i < averagingCycles; i++) {
             this->performCycle(logger, shapeTraits);
-            if (this->totalCycles % snapshotEvery == 0)
+            if (this->totalCycles % snapshotEvery == 0) {
                 this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
+                if (simulationRecorder != nullptr)
+                    simulationRecorder->recordSnapshot(*this->packing, this->totalCycles);
+            }
             if (this->totalCycles % averagingEvery == 0)
                 this->observablesCollector->addAveragingValues(*this->packing, shapeTraits);
             if (this->totalCycles % 100 == 0)
@@ -157,7 +164,8 @@ void Simulation::integrate(double temperature_, double pressure_, std::size_t th
 
 void Simulation::relaxOverlaps(double temperature_, double pressure_, std::size_t snapshotEvery,
                                const ShapeTraits &shapeTraits,
-                               std::unique_ptr<ObservablesCollector> observablesCollector_, Logger &logger,
+                               std::unique_ptr<ObservablesCollector> observablesCollector_,
+                               std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
                                std::size_t cycleOffset)
 {
     Expects(temperature_ > 0);
@@ -185,8 +193,11 @@ void Simulation::relaxOverlaps(double temperature_, double pressure_, std::size_
     logger.info() << "Starting overlap relaxation..." << std::endl;
     while (this->packing->getCachedNumberOfOverlaps() > 0) {
         this->performCycle(logger, shapeTraits);
-        if (this->totalCycles % snapshotEvery == 0)
+        if (this->totalCycles % snapshotEvery == 0) {
             this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
+            if (simulationRecorder != nullptr)
+                simulationRecorder->recordSnapshot(*this->packing, this->totalCycles);
+        }
         if (this->totalCycles % 100 == 0)
             this->printInlineInfo(this->totalCycles, shapeTraits, logger, true);
         if (sigint_received) {

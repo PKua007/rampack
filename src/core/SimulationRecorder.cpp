@@ -15,7 +15,7 @@ SimulationRecorder::SimulationRecorder(std::unique_ptr<std::iostream> stream_, b
         this->numParticles = header.numParticles;
 
         this->stream->seekp(0, std::ios_base::end);
-        std::size_t expectedPos = SimulationIO::posForSnapshot(header, this->numSnapshots);
+        std::streamoff expectedPos = SimulationIO::posForSnapshot(header, this->numSnapshots);
         ValidateMsg(this->stream->tellp() == expectedPos, "RAMTRJ append error: broken snapshot structure");
     } else {
         this->stream->seekp(0, std::ios_base::end);

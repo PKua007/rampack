@@ -56,6 +56,7 @@ public:
         std::string wolframFilename{};
         std::string outputFilename{};
         std::string observableSnapshotFilename{};
+        std::string recordingFilename{};
 
         void print(Logger &logger) const;
     };
@@ -80,6 +81,7 @@ public:
         std::string packingFilename{};
         std::string wolframFilename{};
         std::string observableSnapshotFilename{};
+        std::string recordingFilename{};
 
         void print(Logger &logger) const;
     };

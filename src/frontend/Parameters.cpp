@@ -123,6 +123,8 @@ Parameters::IntegrationParameters::IntegrationParameters(const std::string &runN
             this->outputFilename = runConfig.getString("outputFilename");
         else if (key == "observableSnapshotFilename")
             this->observableSnapshotFilename = runConfig.getString("observableSnapshotFilename");
+        else if (key == "recordingFilename")
+            this->recordingFilename = runConfig.getString("recordingFilename");
         else
             throw ParametersParseException("Unknown parameter " + key);
     }
@@ -139,17 +141,18 @@ void Parameters::IntegrationParameters::validate() const {
 }
 
 void Parameters::IntegrationParameters::print(Logger &logger) const {
-    logger.info() << "temperature             : " << this->temperature << std::endl;
-    logger.info() << "pressure                : " << this->pressure << std::endl;
-    logger.info() << "thermalisationCycles    : " << this->thermalisationCycles << std::endl;
-    logger.info() << "averagingCycles         : " << this->averagingCycles << std::endl;
-    logger.info() << "averagingEvery          : " << this->averagingEvery << std::endl;
-    logger.info() << "snapshotEvery           : " << this->snapshotEvery << std::endl;
-    logger.info() << "observables             : " << this->observables << std::endl;
-    logger.info() << "packingFilename         : " << this->packingFilename << std::endl;
-    logger.info() << "wolframFilename         : " << this->wolframFilename << std::endl;
-    logger.info() << "outputFilename          : " << this->outputFilename << std::endl;
+    logger.info() << "temperature                : " << this->temperature << std::endl;
+    logger.info() << "pressure                   : " << this->pressure << std::endl;
+    logger.info() << "thermalisationCycles       : " << this->thermalisationCycles << std::endl;
+    logger.info() << "averagingCycles            : " << this->averagingCycles << std::endl;
+    logger.info() << "averagingEvery             : " << this->averagingEvery << std::endl;
+    logger.info() << "snapshotEvery              : " << this->snapshotEvery << std::endl;
+    logger.info() << "observables                : " << this->observables << std::endl;
+    logger.info() << "packingFilename            : " << this->packingFilename << std::endl;
+    logger.info() << "wolframFilename            : " << this->wolframFilename << std::endl;
+    logger.info() << "outputFilename             : " << this->outputFilename << std::endl;
     logger.info() << "observableSnapshotFilename : " << this->observableSnapshotFilename << std::endl;
+    logger.info() << "recordingFilename          : " << this->recordingFilename << std::endl;
 }
 
 Parameters::OverlapRelaxationParameters::OverlapRelaxationParameters(const std::string &runName, const Config &runConfig) {
@@ -171,6 +174,8 @@ Parameters::OverlapRelaxationParameters::OverlapRelaxationParameters(const std::
             this->packingFilename = runConfig.getString("packingFilename");
         else if (key == "observableSnapshotFilename")
             this->observableSnapshotFilename = runConfig.getString("observableSnapshotFilename");
+        else if (key == "recordingFilename")
+            this->recordingFilename = runConfig.getString("recordingFilename");
         else
             throw ParametersParseException("Unknown parameter " + key);
     }
@@ -184,12 +189,13 @@ void Parameters::OverlapRelaxationParameters::validate() const {
 }
 
 void Parameters::OverlapRelaxationParameters::print(Logger &logger) const {
-    logger.info() << "temperature             : " << this->temperature << std::endl;
-    logger.info() << "pressure                : " << this->pressure << std::endl;
-    logger.info() << "snapshotEvery           : " << this->snapshotEvery << std::endl;
-    logger.info() << "observables             : " << this->observables << std::endl;
-    logger.info() << "helperInteraction       : " << this->helperInteraction << std::endl;
-    logger.info() << "packingFilename         : " << this->packingFilename << std::endl;
-    logger.info() << "wolframFilename         : " << this->wolframFilename << std::endl;
+    logger.info() << "temperature                : " << this->temperature << std::endl;
+    logger.info() << "pressure                   : " << this->pressure << std::endl;
+    logger.info() << "snapshotEvery              : " << this->snapshotEvery << std::endl;
+    logger.info() << "observables                : " << this->observables << std::endl;
+    logger.info() << "helperInteraction          : " << this->helperInteraction << std::endl;
+    logger.info() << "packingFilename            : " << this->packingFilename << std::endl;
+    logger.info() << "wolframFilename            : " << this->wolframFilename << std::endl;
     logger.info() << "observableSnapshotFilename : " << this->observableSnapshotFilename << std::endl;
+    logger.info() << "recordingFilename          : " << this->recordingFilename << std::endl;
 }

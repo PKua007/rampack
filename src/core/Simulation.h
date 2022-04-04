@@ -23,6 +23,7 @@
 #include "TriclinicBoxScaler.h"
 #include "ObservablesCollector.h"
 #include "MoveSampler.h"
+#include "SimulationRecorder.h"
 
 /**
  * @brief A class responsible for performing Monte Carlo sampling.
@@ -190,7 +191,8 @@ public:
      */
     void integrate(double temperature_, double pressure_, std::size_t thermalisationCycles, std::size_t averagingCycles,
                    std::size_t averagingEvery, std::size_t snapshotEvery, const ShapeTraits &shapeTraits,
-                   std::unique_ptr<ObservablesCollector> observablesCollector_, Logger &logger,
+                   std::unique_ptr<ObservablesCollector> observablesCollector_,
+                   std::unique_ptr<SimulationRecorder> simulationRecorder_, Logger &logger,
                    std::size_t cycleOffset = 0);
 
     /**
@@ -206,7 +208,8 @@ public:
      */
     void relaxOverlaps(double temperature_, double pressure_, std::size_t snapshotEvery,
                        const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
-                       Logger &logger, std::size_t cycleOffset = 0);
+                       std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
+                       std::size_t cycleOffset = 0);
 
     [[nodiscard]] const ObservablesCollector &getObservablesCollector() { return *this->observablesCollector; }
 

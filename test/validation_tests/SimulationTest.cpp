@@ -43,7 +43,7 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.integrate(10, 1, 5000, 10000, 100, 100, sphereTraits, std::move(collector), logger);
+    simulation.integrate(10, 1, 5000, 10000, 100, 100, sphereTraits, std::move(collector), nullptr, logger);
 
     Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 0.0999791;
@@ -69,7 +69,7 @@ TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.integrate(1, 1, 5000, 10000, 100, 100, sphereTraits, std::move(collector), logger);
+    simulation.integrate(1, 1, 5000, 10000, 100, 100, sphereTraits, std::move(collector), nullptr, logger);
 
     Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 0.398574;
@@ -101,7 +101,8 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
         moveSamplers.push_back(std::make_unique<RototranslationSampler>(0.5, 1));
         Simulation simulation(std::move(packing), std::move(moveSamplers), 10, 1234, std::move(volumeScaler));
 
-        simulation.integrate(1, 0.5, 5000, 10000, 1000, 100, spherocylinderTraits, std::move(collector), logger);
+        simulation.integrate(1, 0.5, 5000, 10000, 1000, 100, spherocylinderTraits, std::move(collector), nullptr,
+                             logger);
 
         Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
         INFO("Boublik density: " << expected);
@@ -116,7 +117,8 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
         moveSamplers.push_back(std::make_unique<RotationSampler>(1));
         Simulation simulation(std::move(packing), std::move(moveSamplers), 10, 1234, std::move(volumeScaler));
 
-        simulation.integrate(1, 0.5, 5000, 10000, 1000, 100, spherocylinderTraits, std::move(collector), logger);
+        simulation.integrate(1, 0.5, 5000, 10000, 1000, 100, spherocylinderTraits, std::move(collector), nullptr,
+                             logger);
 
         Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
         INFO("Boublik density: " << expected);
@@ -145,7 +147,7 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.integrate(100, 200, 2000, 2000, 20, 20, sphereTraits, std::move(collector), logger);
+    simulation.integrate(100, 200, 2000, 2000, 20, 20, sphereTraits, std::move(collector), nullptr, logger);
 
     Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 1.6637139014398628;
@@ -174,7 +176,7 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.integrate(1, 2, 20000, 20000, 1000, 100, kmerTraits, std::move(collector), logger);
+    simulation.integrate(1, 2, 20000, 20000, 1000, 100, kmerTraits, std::move(collector), nullptr, logger);
 
     Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     double expected = 0.3043317608769238;
@@ -202,7 +204,7 @@ TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.integrate(1, 7.5, 15000, 15000, 100, 100, kmerTraits, std::move(collector), logger);
+    simulation.integrate(1, 7.5, 15000, 15000, 100, 100, kmerTraits, std::move(collector), nullptr, logger);
 
     Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
 
@@ -236,7 +238,7 @@ TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
 
-    simulation.integrate(1, 1, 10000, 15000, 1000, 1000, sphereTraits, std::move(collector), logger);
+    simulation.integrate(1, 1, 10000, 15000, 1000, 1000, sphereTraits, std::move(collector), nullptr, logger);
 
     Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
 
@@ -260,7 +262,7 @@ TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
     auto collector2 = std::make_unique<ObservablesCollector>();
     collector2->addObservable(std::make_unique<NumberDensity>(), ObservablesCollector::AVERAGING);
 
-    simulation2.integrate(1, 1, 10000, 15000, 1000, 1000, sphereTraits, std::move(collector2), logger);
+    simulation2.integrate(1, 1, 10000, 15000, 1000, 1000, sphereTraits, std::move(collector2), nullptr, logger);
 
     Quantity density2 = simulation2.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     CHECK(density.value == density2.value);
@@ -291,7 +293,7 @@ TEST_CASE("Simulation: overlap reduction for hard sphere liquid", "[medium]") {
         std::ostringstream loggerStream;
         Logger logger(loggerStream);
 
-        simulation.relaxOverlaps(1, 5, 1000, compoundSphere, std::move(collector), logger);
+        simulation.relaxOverlaps(1, 5, 1000, compoundSphere, std::move(collector), nullptr, logger);
 
         double finalDensity = simulation.getPacking().getNumberDensity();
         std::size_t finalOverlaps = simulation.getPacking().getCachedNumberOfOverlaps();
