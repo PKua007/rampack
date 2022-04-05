@@ -63,6 +63,7 @@ public:
     int casino(int argc, char **argv);
     int optimize_distance(int argc, char **argv);
     int preview(int argc, char **argv);
+    int trajectory(int argc, char **argv);
 
     int printGeneralHelp(const std::string &cmd);
 };

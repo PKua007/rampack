@@ -9,6 +9,7 @@
 
 #include "SimulationIO.h"
 #include "Packing.h"
+#include "utils/Logger.h"
 
 
 class SimulationPlayer : public SimulationIO {
@@ -25,7 +26,7 @@ public:
     [[nodiscard]] std::size_t getCurrentSnapshotCycles() const;
     void close();
 
-    void dumpHeader(std::ostream &out) const;
+    void dumpHeader(Logger &out) const;
 };
 
 

@@ -40,20 +40,19 @@ void SimulationPlayer::nextSnapshot(Packing &packing, const Interaction &interac
 }
 
 std::size_t SimulationPlayer::getCurrentSnapshotCycles() const {
-    return (this->currentSnapshot + 1) * this->header.cycleStep;
+    return this->currentSnapshot * this->header.cycleStep;
 }
 
 void SimulationPlayer::close() {
     this->in = nullptr;
 }
 
-void SimulationPlayer::dumpHeader(std::ostream &out) const {
-    out << "magic: ";
-    std::copy(std::begin(this->header.magic), std::end(this->header.magic), std::ostream_iterator<char>(out));
-    out << std::endl;
-    out << "version: " << static_cast<int>(this->header.versionMajor) << ".";
+void SimulationPlayer::dumpHeader(Logger &out) const {
+    out.info() << "RAMTRJ: RAMPACK trajectory file" << std::endl;
+    out << "file version            : " << static_cast<int>(this->header.versionMajor) << ".";
     out << static_cast<int>(this->header.versionMinor) << std::endl;
-    out << "num particles: " << this->header.numParticles << std::endl;
-    out << "num snapshots: " << this->header.numSnapshots << std::endl;
-    out << "cycle step: " << this->header.cycleStep << std::endl;
+    out << "number of particles     : " << this->header.numParticles << std::endl;
+    out << "number of snapshots     : " << this->header.numSnapshots << std::endl;
+    out << "cycle step              : " << this->header.cycleStep << std::endl;
+    out << "total number of cycles  : " << (this->header.cycleStep * this->header.numSnapshots) << std::endl;
 }

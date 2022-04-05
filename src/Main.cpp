@@ -8,6 +8,7 @@
 
 #include "frontend/Frontend.h"
 #include "utils/Logger.h"
+#include "core/SimulationPlayer.h"
 
 namespace {
     Logger logger(std::cout);
@@ -23,6 +24,8 @@ namespace {
         std::abort();
     }
 }
+
+#include <fstream>
 
 int main(int argc, char **argv) {
     std::set_terminate(logger_terminate_handler);
@@ -51,6 +54,8 @@ int main(int argc, char **argv) {
         return frontend.optimize_distance(argc, argv);
     else if (mode == "preview")
         return frontend.preview(argc, argv);
+    else if (mode == "trajectory")
+        return frontend.trajectory(argc, argv);
 
     logger.error() << "Unknown mode " << mode << ". See " << cmd << " --help" << std::endl;
     return EXIT_FAILURE;

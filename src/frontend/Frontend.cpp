@@ -30,6 +30,7 @@
 #include "core/shapes/CompoundShapeTraits.h"
 #include "MoveSamplerFactory.h"
 #include "core/SimulationRecorder.h"
+#include "core/SimulationPlayer.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -834,4 +835,96 @@ void Frontend::appendMoveStepSizesToAuxInfo(const std::vector<std::unique_ptr<Mo
     }
     std::string scalingKey = Frontend::formatMoveKey("scaling", "scaling");
     auxInfo[scalingKey] = Frontend::doubleToString(scalingStepSize);
+}
+
+int Frontend::trajectory(int argc, char **argv) {
+    // Prepare and parse options
+    cxxopts::Options options(argv[0], "Recorded trajectories analyzer.");
+
+    std::string inputFilename;
+    std::string trajectoryFilename;
+    std::string outputFilename;
+    std::vector<std::string> observables;
+    std::string verbosity;
+
+    options.add_options()
+        ("h,help", "prints help for this mode")
+        ("i,input", "an INI file with parameters that was used to generate the trajectories. See sample_inputs"
+                    "folder for full parameters documentation",
+         cxxopts::value<std::string>(inputFilename))
+        ("t,trajectory", "a file with recorder trajectory",
+         cxxopts::value<std::string>(trajectoryFilename))
+        ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
+                        "error, warn, info, verbose, debug",
+         cxxopts::value<std::string>(verbosity)->default_value("info"))
+        ("o,output", "output file with the results (depending of a selected mode, for example --observables)",
+         cxxopts::value<std::string>(outputFilename))
+        ("O,observables", "replays the simulation and calculates specified observables (format as in the input file)",
+         cxxopts::value<std::vector<std::string>>(observables))
+        ("l,log-info", "log information about the recorded trajectory");
+
+    auto parsedOptions = options.parse(argc, argv);
+    if (parsedOptions.count("help")) {
+        std::ostream &rawOut = this->logger;
+        rawOut << options.help() << std::endl;
+        return EXIT_SUCCESS;
+    }
+
+    this->setVerbosityLevel(verbosity);
+
+    // Validate parsed options
+    std::string cmd(argv[0]);
+    if (argc != 1)
+        die("Unexpected positional arguments. See " + cmd + " --help", this->logger);
+    if (!parsedOptions.count("input"))
+        die("Input file must be specified with option -i [input file name]", this->logger);
+    if (!parsedOptions.count("trajectory"))
+        die("Trajectory file must be specified with option -t [input file name]", this->logger);
+    if (!parsedOptions.count("observables") && !parsedOptions.count("log-info"))
+        die("At least one of: --observables, --log-info options must be specified", this->logger);
+
+    Parameters params = this->loadParameters(inputFilename);
+    std::array<double, 3> dimensions = this->parseDimensions(params.initialDimensions);
+    auto bc = std::make_unique<PeriodicBoundaryConditions>();
+    auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
+    auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, dimensions, params.initialArrangement,
+                                                      std::move(bc), shapeTraits->getInteraction(), 1, 1);
+
+    auto trajectoryStream = std::make_unique<std::ifstream>(trajectoryFilename,
+                                                                         std::ios_base::in | std::ios_base::binary);
+    ValidateOpenedDesc(*trajectoryStream, trajectoryFilename, "to read trajectory");
+    SimulationPlayer player(std::move(trajectoryStream));
+
+    // Show info (if desired)
+    if (parsedOptions.count("log-info")) {
+        this->logger.info() << "-- " << trajectoryFilename << std::endl;
+        player.dumpHeader(this->logger);
+        this->logger.info() << std::endl;
+    }
+
+    // Replay the simulation and calculate observables (if desired)
+    if (parsedOptions.count("observables")) {
+        if (!parsedOptions.count("output"))
+            die("Output file must be specified with option -o [output file name]", this->logger);
+
+        this->logger.info() << "Starting simulation replay..." << std::endl;
+        auto collector = ObservablesCollectorFactory::create(observables);
+
+        using namespace std::chrono;
+        auto start = high_resolution_clock::now();
+        while (player.hasNext()) {
+            player.nextSnapshot(*packing, shapeTraits->getInteraction());
+            collector->addSnapshot(*packing, player.getCurrentSnapshotCycles(), *shapeTraits);
+            this->logger.info() << "Replayed cycle " << player.getCurrentSnapshotCycles() << "; ";
+            this->logger << collector->generateInlineObservablesString(*packing, *shapeTraits);
+            this->logger << std::endl;
+        }
+        auto end = high_resolution_clock::now();
+        double time = duration<double>(end - start).count();
+
+        this->logger.info() << "Replay finished after " << time << " s." << std::endl;
+        this->storeSnapshots(*collector, false, outputFilename);
+    }
+
+    return EXIT_SUCCESS;
 }
