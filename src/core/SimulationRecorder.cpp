@@ -23,8 +23,7 @@ SimulationRecorder::SimulationRecorder(std::unique_ptr<std::iostream> stream_, b
 
         // Write an uninitialized header to start with
         Header header;
-        this->stream->write(reinterpret_cast<char*>(&header), sizeof(Header));
-        ValidateMsg(*this->stream, "RAMTRJ write error: header");
+        SimulationIO::writeHeader(header, *this->stream);
     }
 }
 
@@ -46,13 +45,14 @@ void SimulationRecorder::recordSnapshot(const Packing &packing, std::size_t cycl
 
     BoxData boxData;
     boxData.fromTriclinicBox(packing.getBox());
-    this->stream->write(reinterpret_cast<char*>(&boxData), sizeof(BoxData));
+    this->stream->write(reinterpret_cast<const char*>(boxData.dimensions), sizeof(boxData.dimensions));
     ValidateMsg(*this->stream, "RAMTRJ write error: shapshot box data");
 
     for (const auto &shape : packing) {
         ParticleData particleData;
         particleData.fromShape(shape);
-        this->stream->write(reinterpret_cast<char*>(&particleData), sizeof(ParticleData));
+        this->stream->write(reinterpret_cast<const char*>(particleData.position), sizeof(particleData.position));
+        this->stream->write(reinterpret_cast<const char*>(particleData.eulerAngles), sizeof(particleData.eulerAngles));
         ValidateMsg(*this->stream, "RAMTRJ write error: shapshot particle data");
     }
 
@@ -70,10 +70,8 @@ void SimulationRecorder::close() {
     header.numSnapshots = this->numSnapshots;
     header.numParticles = this->numParticles;
     header.cycleStep = this->cycleStep;
-
     this->stream->seekp(0);
-    this->stream->write(reinterpret_cast<char*>(&header), sizeof(Header));
-    ValidateMsg(*this->stream, "RAMTRJ write: header");
+    SimulationIO::writeHeader(header, *this->stream);
 
     this->stream = nullptr;
 }

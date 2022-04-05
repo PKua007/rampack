@@ -25,14 +25,15 @@ void SimulationPlayer::nextSnapshot(Packing &packing, const Interaction &interac
     Expects(packing.size() == this->header.numParticles);
 
     BoxData boxData{};
-    this->in->read(reinterpret_cast<char*>(&boxData), sizeof(BoxData));
+    this->in->read(reinterpret_cast<char*>(boxData.dimensions), sizeof(boxData.dimensions));
     ValidateMsg(*this->in, "RAMTRJ read error: snapshot box data");
 
     TriclinicBox box = boxData.toTriclinicBox();
     packing.tryScaling(box, interaction);
     for (std::size_t i{}; i < packing.size(); i++) {
         ParticleData particleData;
-        this->in->read(reinterpret_cast<char*>(&particleData), sizeof(ParticleData));
+        this->in->read(reinterpret_cast<char*>(particleData.position), sizeof(particleData.position));
+        this->in->read(reinterpret_cast<char*>(particleData.eulerAngles), sizeof(particleData.eulerAngles));
         ValidateMsg(*this->in, "RAMTRJ read error: snapshot particle data");
 
         const Shape &oldShape = packing[i];
@@ -53,4 +54,15 @@ std::size_t SimulationPlayer::getCurrentSnapshotCycles() const {
 
 void SimulationPlayer::close() {
     this->in = nullptr;
+}
+
+void SimulationPlayer::dumpHeader(std::ostream &out) const {
+    out << "magic: ";
+    std::copy(std::begin(this->header.magic), std::end(this->header.magic), std::ostream_iterator<char>(out));
+    out << std::endl;
+    out << "version: " << static_cast<int>(this->header.versionMajor) << ".";
+    out << static_cast<int>(this->header.versionMinor) << std::endl;
+    out << "num particles: " << this->header.numParticles << std::endl;
+    out << "num snapshots: " << this->header.numSnapshots << std::endl;
+    out << "cycle step: " << this->header.cycleStep << std::endl;
 }

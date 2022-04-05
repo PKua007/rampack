@@ -24,6 +24,8 @@ public:
     void nextSnapshot(Packing &packing, const Interaction &interaction);
     [[nodiscard]] std::size_t getCurrentSnapshotCycles() const;
     void close();
+
+    void dumpHeader(std::ostream &out) const;
 };
 
 

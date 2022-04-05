@@ -12,10 +12,9 @@
 
 
 class SimulationIO {
-public:
+protected:
     struct Header {
-        char magic[6] = {'R', 'A', 'M', 'T', 'R', 'J'};
-        char newline = '\n';
+        char magic[7] = {'R', 'A', 'M', 'T', 'R', 'J', '\n'};
         unsigned char versionMajor = 1;
         unsigned char versionMinor = 0;
         std::size_t numParticles{};
@@ -38,9 +37,10 @@ public:
         double eulerAngles[3]{};
     };
 
-protected:
     static Header readHeader(std::istream &stream);
+    static void writeHeader(const Header &header, std::ostream &stream);
     static std::streamoff posForSnapshot(const Header &header, std::size_t snapshotNum);
+    static std::size_t getHeaderSize();
 };
 
 
