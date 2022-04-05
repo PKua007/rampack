@@ -18,10 +18,14 @@ SimulationPlayer::SimulationPlayer(std::unique_ptr<std::istream> in) : in{std::m
 }
 
 bool SimulationPlayer::hasNext() const {
+    if (this->in == nullptr)
+        return false;
+
     return this->currentSnapshot < this->header.numSnapshots;
 }
 
 void SimulationPlayer::nextSnapshot(Packing &packing, const Interaction &interaction) {
+    Expects(this->in != nullptr);
     Expects(packing.size() == this->header.numParticles);
 
     TriclinicBox box = SimulationIO::readBox(*this->in);

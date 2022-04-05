@@ -474,6 +474,9 @@ int Frontend::printGeneralHelp(const std::string &cmd) {
     rawOut << "preview" << std::endl;
     rawOut << Fold("Based on the input file generate initial configuration and store Wolfram and/or *.dat packing.")
               .width(80).margin(4) << std::endl;
+    rawOut << "trajectory" << std::endl;
+    rawOut << Fold("Replays recorded simulation trajectory and performs some operations on it.")
+              .width(80).margin(4) << std::endl;
     rawOut << std::endl;
     rawOut << "Type " + cmd + " [mode] --help to get help on the specific mode." << std::endl;
 
@@ -849,7 +852,7 @@ int Frontend::trajectory(int argc, char **argv) {
 
     options.add_options()
         ("h,help", "prints help for this mode")
-        ("i,input", "an INI file with parameters that was used to generate the trajectories. See sample_inputs"
+        ("i,input", "an INI file with parameters that was used to generate the trajectories. See sample_inputs "
                     "folder for full parameters documentation",
          cxxopts::value<std::string>(inputFilename))
         ("t,trajectory", "a file with recorder trajectory",
@@ -859,9 +862,11 @@ int Frontend::trajectory(int argc, char **argv) {
          cxxopts::value<std::string>(verbosity)->default_value("info"))
         ("o,output", "output file with the results (depending of a selected mode, for example --observables)",
          cxxopts::value<std::string>(outputFilename))
-        ("O,observables", "replays the simulation and calculates specified observables (format as in the input file)",
+        ("O,observables", "replays the simulation and calculates specified observables (format as in the input file). "
+                          "Observables can be passed using multiple short options (-o obs1 -o obs2) or comma-separated "
+                          "in a long option (--observables=obs1,obs2)",
          cxxopts::value<std::vector<std::string>>(observables))
-        ("l,log-info", "log information about the recorded trajectory");
+        ("l,log-info", "print basic information about the recorded trajectory on a standard output");
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {

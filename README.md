@@ -19,6 +19,7 @@ Operation modes are:
 * `casino` - Monte Carlo simulation facility
 * `preview` - preview of the initial configuration
 * `optimize-distance` - the optimization of lattice cell dimensions
+* `trajectory` - operations on recorded simulation trajectories
 
 and they are described in detail below.
 
@@ -31,13 +32,13 @@ The `casino` mode is used to perform Monte Carlo simulations. Currently, availab
 and reduction of overlaps. The submodule is optimized for hard-core repulsion, however some soft interaction potentials
 are also available. The parameters of the  simulation are provided within an INI input file and passed using
 `-i [input file]` option. All details regarding the input file and NpT integration are described in an example 
-`sample_input/sample_integration.ini`. Overlap reduction is described in `sample_input/overlap_reduction.ini`. The
-anonymous INI section at the beginning describes the initial conditions of the system, particle model and interaction
-model as well as specifies technical parameters such as number of threads and initial Monte Carlo step extents. Then,
-one or more Monte Carlo runs  are specified. Each run can be either NpT integration or overlap reduction. The runs are
-performed sequentially in the order specified in the input file and the final state of a finished run is used as a
-starting point of the next one (apart from the first run, whose initial configuration is specified in at the beginning).
-Each run corresponds to an INI section named (including the brackets) `[integration.run_name]` for integration and
+`sample_input/integration.ini`. Overlap reduction is described in `sample_input/overlap_reduction.ini`. The anonymous
+INI section at the beginning describes the initial conditions of the system, particle model and interaction model as
+well as specifies technical parameters such as number of threads and initial Monte Carlo step extents. Then, one or more
+Monte Carlo runs  are specified. Each run can be either NpT integration or overlap reduction. The runs are performed
+sequentially in the order specified in the input file and the final state of a finished run is used as a starting point
+of the next one (apart from the first run, whose initial configuration is specified in at the beginning). Each run
+corresponds to an INI section named (including the brackets) `[integration.run_name]` for integration and
 `[overlaps.run_name]` for overlaps reduction. Each of these sections includes the parameters for the specific run.
 Currently, when the run is finished the software can output the following data:
 
@@ -48,10 +49,10 @@ Currently, when the run is finished the software can output the following data:
 * a csv-like table containing values of specified observables taken at given intervals of time (both run types)
 * ensemble-averaged values of some observables (only NpT integration)
 
-The example input file `sample_inputs/sample_integration.ini` describes the simulation of hard-core balls. It starts
-with a gaseous phase, which is then compressed to a degenerate liquid in the second run and in the third one is freezes
-into hcp crystalline structure. Another example input file `sample_inputs/sample_overlap_reduction.ini` performs
-reduction of overlaps of too tightly packed hard spheres followed by NpT run.
+The example input file `sample_inputs/integration.ini` describes the simulation of hard-core balls. It starts with a
+gaseous phase, which is then compressed to a degenerate liquid in the second run and in the third one is freezes into
+hcp crystalline structure. Another example input file `sample_inputs/overlap_reduction.ini` performs  reduction of
+overlaps of too tightly packed hard spheres followed by NpT run.
 
 The behavior of the `casino` mode can be altered using command-line options described in `./rampack casino --help`. For
 example, one can continue a finished run for more cycles or start from any run if the previous run has been finished
@@ -70,6 +71,13 @@ may help to choose the lattice spacing. Using appropriate options (see `./rampac
 produce a clean output making it easier to incorporate into an automated workflow. Please note that long particles may
 interact not only with the nearest neighbors, meaning that the values calculated by this mode may be too low. More
 intelligent optimization, similar to the one done by `initialArrangement` input parameter will be added in the future.
+
+### trajectory
+
+The `optimize-distance` mode is used to analyze trajectories recorded during the simulation (see `recordingFilename`
+parameter description in `sample_inputs/integration.ini`). Using appropriate options (see
+`./rampack optimize-distance --help`) one can for example replay the simulation and calculate some observables which
+were not computed during the original run.
 
 ## Compilation
 
@@ -119,8 +127,8 @@ interfaces. The examples are:
 
 ### Documentation
 
-The code is documented using Doxygen comments (in progress). A user-friendly HTML documentation can be generated using
-Doxygen: `doxygen Doxyfile`
+The code is documented using Doxygen comments. A user-friendly HTML documentation can be generated using Doxygen:
+`doxygen Doxyfile`
 
 ### Contribution
 

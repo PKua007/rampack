@@ -11,8 +11,14 @@
 #include "Shape.h"
 
 
+/**
+ * @brief Base class for storing and restoring simulation trajectories (in a propertiary RAMTRJ format)
+ */
 class SimulationIO {
 protected:
+    /**
+     * @brief Header of RAMTRJ file (as is)
+     */
     struct Header {
         char magic[7] = {'R', 'A', 'M', 'T', 'R', 'J', '\n'};
         unsigned char versionMajor = 1;
@@ -22,15 +28,49 @@ protected:
         std::size_t cycleStep{};
     };
 
+    /**
+     * @brief Reads the header in a binary format from @a in input stream.
+     */
     static Header readHeader(std::istream &in);
+
+    /**
+     * @brief Writes the header in a binary format to @a out output stream.
+     */
     static void writeHeader(const Header &header, std::ostream &out);
+
+    /**
+     * @brief Reads the simulation box dimensions in a binary format from @a in input stream.
+     */
     static TriclinicBox readBox(std::istream &in);
+
+    /**
+     * @brief Writes the simulation box dimensions in a binary format to @a out output stream.
+     */
     static void writeBox(const TriclinicBox &box, std::ostream &out);
+
+    /**
+     * @brief Reads the shape (position and orientation) in a binary format from @a in input stream.
+     */
     static Shape readShape(std::istream &in);
+
+    /**
+     * @brief Writes the shape (position and orientation) in a binary format to @a out output stream.
+     */
     static void writeShape(const Shape &shape, std::ostream &out);
 
+    /**
+     * @brief Returns @a seekp/tellp byte offset of a beginning of a @a snapshotNum snapshot
+     */
     static std::streamoff streamoffForSnapshot(const Header &header, std::size_t snapshotNum);
+
+    /**
+     * @brief Returns the size of header in bytes as stored in the file (different to @a sizeof(Header) due to padding!)
+     */
     static std::size_t getHeaderSize();
+
+    /**
+     * @brief Returns the size of a single snapshot as storef in the file.
+     */
     static std::size_t getSnapshotSize(const SimulationIO::Header &header);
 };
 

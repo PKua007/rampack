@@ -186,6 +186,8 @@ public:
      * @param snapshotEvery how often to take observable snapshots
      * @param shapeTraits shape traits describing the simulated molecules
      * @param observablesCollector_ the observables collector with observable capturing configuration
+     * @param simulationRecorder if not @a nullptr, simulation will be recorder using it (with a snapshot every
+     * @a snapshotEveryr)
      * @param logger Logger object to display simulation data
      * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
      */
@@ -203,6 +205,8 @@ public:
      * @param snapshotEvery how often to take observable snapshots
      * @param shapeTraits shape traits describing the simulated molecules
      * @param observablesCollector_ the observables collector with observable capturing configuration
+     * @param simulationRecorder if not @a nullptr, simulation will be recorder using it (with a snapshot every
+     * @a snapshotEveryr)
      * @param logger  Logger object to display simulation data
      * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
      */
