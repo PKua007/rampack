@@ -12,7 +12,7 @@ SimulationPlayer::SimulationPlayer(std::unique_ptr<std::istream> in) : in{std::m
 
     std::streamoff savePos = this->in->tellg();
     this->in->seekg(0, std::ios_base::end);
-    std::streamoff expectedPos = SimulationIO::posForSnapshot(this->header, this->header.numSnapshots);
+    std::streamoff expectedPos = SimulationIO::streamoffForSnapshot(this->header, this->header.numSnapshots);
     ValidateMsg(this->in->tellg() == expectedPos, "RAMTRJ read error: broken snapshot structure");
     this->in->seekg(savePos);
 }
@@ -24,20 +24,11 @@ bool SimulationPlayer::hasNext() const {
 void SimulationPlayer::nextSnapshot(Packing &packing, const Interaction &interaction) {
     Expects(packing.size() == this->header.numParticles);
 
-    BoxData boxData{};
-    this->in->read(reinterpret_cast<char*>(boxData.dimensions), sizeof(boxData.dimensions));
-    ValidateMsg(*this->in, "RAMTRJ read error: snapshot box data");
-
-    TriclinicBox box = boxData.toTriclinicBox();
+    TriclinicBox box = SimulationIO::readBox(*this->in);
     packing.tryScaling(box, interaction);
     for (std::size_t i{}; i < packing.size(); i++) {
-        ParticleData particleData;
-        this->in->read(reinterpret_cast<char*>(particleData.position), sizeof(particleData.position));
-        this->in->read(reinterpret_cast<char*>(particleData.eulerAngles), sizeof(particleData.eulerAngles));
-        ValidateMsg(*this->in, "RAMTRJ read error: snapshot particle data");
-
         const Shape &oldShape = packing[i];
-        Shape newShape = particleData.toShape();
+        Shape newShape = SimulationIO::readShape(*this->in);
         Vector<3> translation = newShape.getPosition() - oldShape.getPosition();
         Matrix<3, 3> rotation = newShape.getOrientation() * oldShape.getOrientation().inverse();
 

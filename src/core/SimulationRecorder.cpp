@@ -15,7 +15,7 @@ SimulationRecorder::SimulationRecorder(std::unique_ptr<std::iostream> stream_, b
         this->numParticles = header.numParticles;
 
         this->stream->seekp(0, std::ios_base::end);
-        std::streamoff expectedPos = SimulationIO::posForSnapshot(header, this->numSnapshots);
+        std::streamoff expectedPos = SimulationIO::streamoffForSnapshot(header, this->numSnapshots);
         ValidateMsg(this->stream->tellp() == expectedPos, "RAMTRJ append error: broken snapshot structure");
     } else {
         this->stream->seekp(0, std::ios_base::end);
@@ -43,18 +43,9 @@ void SimulationRecorder::recordSnapshot(const Packing &packing, std::size_t cycl
         Expects(packing.size() == this->numParticles);
     }
 
-    BoxData boxData;
-    boxData.fromTriclinicBox(packing.getBox());
-    this->stream->write(reinterpret_cast<const char*>(boxData.dimensions), sizeof(boxData.dimensions));
-    ValidateMsg(*this->stream, "RAMTRJ write error: shapshot box data");
-
-    for (const auto &shape : packing) {
-        ParticleData particleData;
-        particleData.fromShape(shape);
-        this->stream->write(reinterpret_cast<const char*>(particleData.position), sizeof(particleData.position));
-        this->stream->write(reinterpret_cast<const char*>(particleData.eulerAngles), sizeof(particleData.eulerAngles));
-        ValidateMsg(*this->stream, "RAMTRJ write error: shapshot particle data");
-    }
+    SimulationIO::writeBox(packing.getBox(), *this->stream);
+    for (const auto &shape : packing)
+        SimulationIO::writeShape(shape, *this->stream);
 
     this->numSnapshots++;
 }

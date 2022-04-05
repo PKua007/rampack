@@ -22,25 +22,16 @@ protected:
         std::size_t cycleStep{};
     };
 
-    struct BoxData {
-        [[nodiscard]] TriclinicBox toTriclinicBox() const;
-        void fromTriclinicBox(const TriclinicBox &box);
+    static Header readHeader(std::istream &in);
+    static void writeHeader(const Header &header, std::ostream &out);
+    static TriclinicBox readBox(std::istream &in);
+    static void writeBox(const TriclinicBox &box, std::ostream &out);
+    static Shape readShape(std::istream &in);
+    static void writeShape(const Shape &shape, std::ostream &out);
 
-        double dimensions[9]{};
-    };
-
-    struct ParticleData {
-        [[nodiscard]] Shape toShape() const;
-        void fromShape(const Shape &shape);
-
-        double position[3]{};
-        double eulerAngles[3]{};
-    };
-
-    static Header readHeader(std::istream &stream);
-    static void writeHeader(const Header &header, std::ostream &stream);
-    static std::streamoff posForSnapshot(const Header &header, std::size_t snapshotNum);
+    static std::streamoff streamoffForSnapshot(const Header &header, std::size_t snapshotNum);
     static std::size_t getHeaderSize();
+    static std::size_t getSnapshotSize(const SimulationIO::Header &header);
 };
 
 
