@@ -27,8 +27,34 @@ LinearRegression::LinearRegression() {
 }
 
 LinearRegression::~LinearRegression() {
-	this->clear();
+    this->clear();
 }
+
+LinearRegression::LinearRegression(const std::vector<Vector<2>> &points){
+    for (Vector<2> data: points){
+        this->addXY(data[0], data[1]);
+    }
+    this->calculate();
+}
+
+Quantity LinearRegression::getIntercept() const{
+    Quantity res;
+    res.value = this->b;
+    res.error = this->sigmab;
+    return data;
+}
+
+Quantity LinearRegression::getSlope() const{
+    Quantity res;
+    res.value = this->a;
+    res.error = this->sigmaa;
+    return res;
+}
+
+double LinearRegression::getR() const{
+    return this->r;
+}
+
 
 void LinearRegression::clear(){
 	for(DataElement *d: this->data)

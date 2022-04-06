@@ -9,6 +9,8 @@
 #define LINEARREGRESSION_H_
 
 #include <vector>
+#include "Vector.h"
+#include "utils/Quantity.h"
 
 class LinearRegression {
 
@@ -27,9 +29,18 @@ private:
 
 public:
 	LinearRegression();
+    explicit LinearRegression(const std::vector<Vector<2>> &points);
 	virtual ~LinearRegression();
 
-	void clear();
+    [[nodiscard]] Quantity getIntercept() const;
+
+    [[nodiscard]] Quantity getSlope() const;
+
+    [[nodiscard]] double LinearRegression::getR() const;
+
+
+
+    void clear();
 	void addXY(double x, double y, double sigma);
 	void addXY(double x, double y);
 	void calculate(unsigned int from, unsigned int to);
@@ -42,6 +53,7 @@ public:
 	double getSigma();
 	double getR();
 	int size();
+
 };
 
 #endif /* LINEARREGRESSION_H_ */

@@ -9,7 +9,9 @@
 #define EXPONENTIALDECAYREGRESSION_H_
 
 #include <vector>
-#include <utility>
+#include "Vector.h"
+#include "utils/Quantity.h"
+
 
 class ExponentialDecayRegression {
 
@@ -27,11 +29,15 @@ private:
 
 public:
 	double decay;
-	double Sdecay;
+	double sDecay;
 	double initial;
 
 	ExponentialDecayRegression();
-	~ExponentialDecayRegression();
+    ExponentialDecayRegression(const std::vector<Vector<2>> &points);
+
+    [[nodiscard]] Quantity getDecayTime() const;
+
+    ~ExponentialDecayRegression();
 	void clear();
 	void addXY(double x, double y);
 	void calculate();

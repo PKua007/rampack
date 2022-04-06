@@ -15,6 +15,24 @@
 ExponentialDecayRegression::ExponentialDecayRegression() {
 }
 
+ExponentialDecayRegression::ExponentialDecayRegression(const std::vector<Vector<2>> &points){
+    for (Vector<2> data: points){
+        this->addXY(data[0], data[1]);
+    }
+    this->calculate();
+}
+
+
+Quantity ExponentialDecayRegression::getDecayTime() const{
+    Quantity res;
+    res.value = this->decay;
+    res.error = this->sDecay;
+    return res;
+}
+
+
+
+
 ExponentialDecayRegression::~ExponentialDecayRegression() {
 	this->clear();
 }
@@ -52,6 +70,6 @@ void::ExponentialDecayRegression::calculate(){
 	}
 	lr.calculate();
 	this->decay = lr.getA();
-	this->Sdecay = lr.getSA();
+	this->sDecay = lr.getSA();
 }
 
