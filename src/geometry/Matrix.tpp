@@ -4,6 +4,8 @@
 // (C)PKua 2017
 //-----------------------------------------------------------------------------------------------------------------------------
 
+#include "Matrix.h"
+
 template <std::size_t ROWS, std::size_t COLS, typename E>
 Matrix<ROWS, COLS, E>::Matrix() : Matrix<ROWS, COLS, E>(E(0))
 {
@@ -508,4 +510,24 @@ template<size_t ROWS, size_t COLS, typename E>
 void Matrix<ROWS, COLS, E>::copyToArray(E *arr) const {
     for (size_t i = 0; i < ROWS * COLS; i++)
         arr[i] = this->arr[i];
+}
+
+template<std::size_t ROWS, std::size_t COLS, typename E>
+typename Matrix<ROWS, COLS, E>::const_iterator Matrix<ROWS, COLS, E>::begin() const {
+    return std::begin(this->arr);
+}
+
+template<std::size_t ROWS, std::size_t COLS, typename E>
+typename Matrix<ROWS, COLS, E>::const_iterator Matrix<ROWS, COLS, E>::end() const {
+    return std::end(this->arr);
+}
+
+template<std::size_t ROWS, std::size_t COLS, typename E>
+typename Matrix<ROWS, COLS, E>::iterator Matrix<ROWS, COLS, E>::begin() {
+    return std::begin(this->arr);
+}
+
+template<std::size_t ROWS, std::size_t COLS, typename E>
+typename Matrix<ROWS, COLS, E>::iterator Matrix<ROWS, COLS, E>::end() {
+    return std::end(this->arr);
 }

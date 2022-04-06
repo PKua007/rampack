@@ -195,6 +195,8 @@ public:
 
     [[nodiscard]] const TriclinicBox &getBox() const { return this->box; }
 
+    [[nodiscard]] const BoundaryConditions &getBoundaryConditions() const { return *this->bc; }
+
     /**
      * @brief Returns the number of molecule move threads passed in the constructor.
      */

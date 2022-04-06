@@ -91,6 +91,8 @@ private:
     }
 
 public:
+    using iterator = typename decltype(v)::iterator;
+    using const_iterator = typename decltype(v)::const_iterator;
 
     // Default, copy and move ctor, assignment operators
     // Nothing special here, let the Matrix class do the magic
@@ -250,6 +252,24 @@ public:
         std::ostringstream ostr;
         ostr << *this;
         return ostr.str();
+    }
+
+    // Iterators
+
+    [[nodiscard]] const_iterator begin() const {
+        return this->v.begin();
+    }
+
+    [[nodiscard]] const_iterator end() const {
+        return this->v.end();
+    }
+
+    [[nodiscard]] iterator begin() {
+        return this->v.begin();
+    }
+
+    [[nodiscard]] iterator end() {
+        return this->v.end();
     }
 };
 

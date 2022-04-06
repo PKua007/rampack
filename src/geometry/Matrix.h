@@ -176,6 +176,9 @@ private:
     const E & _get(std::size_t row, std::size_t column) const;
 
 public:
+    using iterator = E*;
+    using const_iterator = const E*;
+
     // Default, copy and move ctor, copy and move assingment operation, dtor
     //----------------------------------------------------------------------------------------
 
@@ -516,6 +519,11 @@ public:
      * @param arr a pointer to array to copy matrix to
      */
     inline void copyToArray(E * arr) const;
+
+    [[nodiscard]] inline const_iterator begin() const;
+    [[nodiscard]] inline const_iterator end() const;
+    [[nodiscard]] inline iterator begin();
+    [[nodiscard]] inline iterator end();
 };
 
 
