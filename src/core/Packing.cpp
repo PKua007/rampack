@@ -48,6 +48,7 @@ Packing::Packing(TriclinicBox box, std::vector<Shape> shapes,
     Expects(this->box.getVolume() != 0);
     Expects(this->interactionRange > 0);
     Expects(!this->shapes.empty());
+    Expects(Packing::areShapesWithinBox(this->shapes, this->box));
 
     this->moveThreads = (moveThreads == 0 ? _OMP_MAXTHREADS : moveThreads);
     this->scalingThreads = (scalingThreads == 0 ? _OMP_MAXTHREADS : scalingThreads);
@@ -1117,5 +1118,13 @@ std::size_t Packing::getCachedNumberOfOverlaps() const {
 void Packing::resetNGRaceConditionSanitizer() {
     if (this->neighbourGrid.has_value())
         this->neighbourGrid->resetRaceConditionSanitizer();
+}
+
+bool Packing::areShapesWithinBox(const std::vector<Shape> &shapes, const TriclinicBox &box) {
+    for (const auto &shape : shapes)
+        for (auto posCoord: box.absoluteToRelative(shape.getPosition()))
+            if (posCoord < 0 || posCoord >= 1)
+                return false;
+    return true;
 }
 

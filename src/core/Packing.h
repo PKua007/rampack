@@ -62,6 +62,9 @@ private:
     std::size_t neighbourGridResizes{};
     double neighbourGridRebuildMicroseconds{};
 
+
+    static bool areShapesWithinBox(const std::vector<Shape> &shapes, const TriclinicBox &box);
+
     void rebuildNeighbourGrid();
 
     double calculateMoveOverlapEnergy(size_t particleIdx, size_t tempParticleIdx, const Interaction &interaction);

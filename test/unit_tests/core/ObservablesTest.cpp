@@ -33,7 +33,7 @@ TEST_CASE("Observables") {
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     Shape s1({1, 1, 1}, Matrix<3, 3>::rotation(M_PI/4, 0, 0));
     Shape s2({2, 3, 3}, Matrix<3, 3>::rotation(0, M_PI/4, 0));
-    Shape s3({4, 3, 1}, Matrix<3, 3>::rotation(0, 0, M_PI/4));
+    Shape s3({2.5, 3, 1}, Matrix<3, 3>::rotation(0, 0, M_PI/4));
     Packing packing({3, 4, 5}, {s1, s2, s3}, std::move(pbc), mockShapeTraits.getInteraction(), 1, 1);
 
     SECTION("BoxDimensions") {
@@ -95,7 +95,7 @@ TEST_CASE("Observables") {
         SECTION("negative order") {
             Shape s2_1({1, 1, 1}, Matrix<3, 3>::rotation(0, M_PI/2, 0));
             Shape s2_2({2, 3, 3}, Matrix<3, 3>::rotation(0, -2*M_PI/3, 0));
-            Shape s2_3({4, 3, 1}, Matrix<3, 3>::rotation(0, 0, M_PI/2));
+            Shape s2_3({2.5, 3, 1}, Matrix<3, 3>::rotation(0, 0, M_PI/2));
             Shape s2_4({2, 3, 2}, Matrix<3, 3>::rotation(0, 0, -2*M_PI/3));
             auto pbc2 = std::make_unique<PeriodicBoundaryConditions>();
             Packing packing2({3, 4, 5}, {s2_1, s2_2, s2_3, s2_4}, std::move(pbc2), mockShapeTraits.getInteraction(), 1,

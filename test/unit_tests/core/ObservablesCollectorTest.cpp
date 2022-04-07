@@ -43,7 +43,7 @@ TEST_CASE("ObservablesCollector") {
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     Shape s1({1, 1, 1});
     Shape s2({2, 3, 3});
-    Shape s3({4, 3, 1});
+    Shape s3({2.5, 3, 1});
     Packing packing({3, 4, 5}, {s1, s2, s3}, std::move(pbc), mockShapeTraits.getInteraction(), 1, 1);
 
     ObservablesCollector collector;
