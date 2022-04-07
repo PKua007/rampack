@@ -15,6 +15,7 @@
 #include "core/observables/EnergyFluctuationsPerParticle.h"
 #include "core/observables/NematicOrder.h"
 #include "core/observables/SmecticOrder.h"
+#include "core/observables/BondOrder.h"
 
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
@@ -91,6 +92,31 @@ std::unique_ptr<ObservablesCollector> ObservablesCollectorFactory::create(const 
             } else {
                 collector->addObservable(std::make_unique<SmecticOrder>(), observableType);
             }
+        } else if (observableName == "bondOrder") {
+            std::string layerWavenumberString;
+            observableStream >> layerWavenumberString;
+            auto wavenumberStringExploded = explode(layerWavenumberString, '.');
+            ValidateMsg(wavenumberStringExploded.size() == 3, "Malformed bond order wavenumber; format: nx.ny.nz");
+            std::array<int, 3> layerWavenumber{};
+            auto converter = [](const std::string &wavenumberString) {
+                try {
+                    return std::stoi(wavenumberString);
+                } catch (std::logic_error &e) {
+                    throw ValidationException("Malformed bond order wavenumber; format: nx.ny.nz");
+                }
+            };
+            std::transform(wavenumberStringExploded.begin(), wavenumberStringExploded.end(), layerWavenumber.begin(),
+                           converter);
+            bool anyNonzero = std::any_of(layerWavenumber.begin(), layerWavenumber.end(), [](int i) { return i != 0; });
+            ValidateMsg(anyNonzero, "Bond order: all wavenumbers are equal 0");
+
+            std::vector<std::size_t> ranks;
+            std::copy(std::istream_iterator<std::size_t>(observableStream), std::istream_iterator<std::size_t>{},
+                      std::back_inserter(ranks));
+            bool allRanksOk = std::all_of(ranks.begin(), ranks.end(), [](int rank) { return rank >= 2; });
+            ValidateMsg(allRanksOk, "Bond order: some ranks are not >= 2");
+
+            collector->addObservable(std::make_unique<BondOrder>(ranks, layerWavenumber), observableType);
         } else {
             throw ValidationException("Unknown observable: " + observableName);
         }

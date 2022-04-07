@@ -13,17 +13,17 @@ private:
     std::vector<std::size_t> ranks;
     std::vector<double> psis;
     std::vector<std::string> header;
-    std::array<std::size_t, 3> layerWavenumber;
+    std::array<int, 3> layerWavenumber;
 
     static void insertDistance(std::vector<std::pair<std::size_t, double>> &vector, std::size_t particleIdx,
                                double distance2);
 
 public:
-    BondOrder(std::size_t rank, const std::array<size_t, 3> &layerWavenumber)
+    BondOrder(std::size_t rank, const std::array<int, 3> &layerWavenumber)
             : BondOrder(std::vector<std::size_t>{rank}, layerWavenumber)
     { }
 
-    BondOrder(std::vector<std::size_t> ranks, const std::array<size_t, 3> &layerWavenumber);
+    BondOrder(std::vector<std::size_t> ranks, const std::array<int, 3> &layerWavenumber);
 
     void calculate(const Packing &packing, double temperature, double pressure,
                    const ShapeTraits &shapeTraits) override;

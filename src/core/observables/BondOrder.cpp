@@ -9,7 +9,7 @@
 #include "BondOrder.h"
 
 
-BondOrder::BondOrder(std::vector<std::size_t> ranks, const std::array<size_t, 3> &layerWavenumber)
+BondOrder::BondOrder(std::vector<std::size_t> ranks, const std::array<int, 3> &layerWavenumber)
         : ranks{std::move(ranks)}, layerWavenumber{layerWavenumber}
 {
     Expects(!this->ranks.empty());
