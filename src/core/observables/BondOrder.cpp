@@ -46,7 +46,7 @@ void BondOrder::calculate(const Packing &packing, [[maybe_unused]] double temper
     Vector<3> normalVector;
     for (std::size_t i{}; i < 3; i++)
         normalVector[i] = 2 * M_PI * static_cast<double>(this->layerWavenumber[i]);
-    normalVector = (dimInv * normalVector).normalized();
+    normalVector = (dimInv.transpose() * normalVector).normalized();
 
     std::size_t minIdx = std::min_element(normalVector.begin(), normalVector.end()) - normalVector.begin();
     Vector<3> nonParallel;
@@ -66,7 +66,7 @@ void BondOrder::calculate(const Packing &packing, [[maybe_unused]] double temper
             for (std::size_t neighbourIdx{}; neighbourIdx < rank; neighbourIdx++) {
                 auto neighbourParticleIdx = neighbours[neighbourIdx].first;
                 const auto &neighbourPos = packing[neighbourParticleIdx].getPosition();
-                Vector<3> diff = neighbourPos - particlePos + bc.getTranslation(neighbourPos, particlePos);
+                Vector<3> diff = neighbourPos - particlePos + bc.getTranslation(particlePos, neighbourPos);
 
                 double coord1 = planeVector1 * diff;
                 double coord2 = planeVector2 * diff;
