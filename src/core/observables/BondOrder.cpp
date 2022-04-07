@@ -9,13 +9,14 @@
 #include "BondOrder.h"
 
 
-BondOrder::BondOrder(std::vector<std::size_t> ranks, const std::array<int, 3> &layerWavenumber)
-        : ranks{std::move(ranks)}, layerWavenumber{layerWavenumber}
+BondOrder::BondOrder(std::vector<std::size_t> ranks, const std::array<int, 3> &planeMillerIndices)
+        : ranks{std::move(ranks)}
 {
     Expects(!this->ranks.empty());
     Expects(std::all_of(this->ranks.begin(), this->ranks.end(), [](auto rank) { return rank >= 2; }));
-    Expects(std::any_of(this->layerWavenumber.begin(), this->layerWavenumber.end(), [](auto n) { return n != 0; }));
+    Expects(std::any_of(planeMillerIndices.begin(), planeMillerIndices.end(), [](auto n) { return n != 0; }));
 
+    std::copy(planeMillerIndices.begin(), planeMillerIndices.end(), this->millerIndices.begin());
     std::sort(this->ranks.begin(), this->ranks.end());
     this->psis.resize(this->ranks.size());
     this->header.reserve(this->ranks.size());
@@ -25,10 +26,7 @@ BondOrder::BondOrder(std::vector<std::size_t> ranks, const std::array<int, 3> &l
 
 auto BondOrder::findPlaneVectors(const Packing &packing) {
     auto dimInv = packing.getBox().getDimensions().inverse();
-    Vector<3> normalVector;
-    for (std::size_t i{}; i < 3; i++)
-        normalVector[i] = 2 * M_PI * static_cast<double>(this->layerWavenumber[i]);
-    normalVector = (dimInv.transpose() * normalVector).normalized();
+    Vector<3> normalVector = (dimInv.transpose() * this->millerIndices).normalized();
 
     std::size_t minIdx = std::min_element(normalVector.begin(), normalVector.end()) - normalVector.begin();
     Vector<3> nonParallel;
@@ -52,10 +50,11 @@ void BondOrder::calculate(const Packing &packing, [[maybe_unused]] double temper
 double BondOrder::doCalculateBondOrder(const Packing &packing, std::size_t rank, const std::vector<KnnVector> &knn,
                                        const Vector<3> &planeVector1, const Vector<3> &planeVector2)
 {
-    std::complex<double> psiComplex{};
+    double psi{};
     for (std::size_t particleIdx{}; particleIdx < packing.size(); particleIdx++) {
         const auto &particlePos = packing[particleIdx].getPosition();
         const auto &neighboursIdxs = knn[particleIdx];
+        std::complex<double> localPsi{};
         for (std::size_t neighbourIdx{}; neighbourIdx < rank; neighbourIdx++) {
             auto neighbourParticleIdx = neighboursIdxs[neighbourIdx].first;
             const auto &neighbourPos = packing[neighbourParticleIdx].getPosition();
@@ -67,11 +66,12 @@ double BondOrder::doCalculateBondOrder(const Packing &packing, std::size_t rank,
             double angle = atan2(coord2, coord1);
 
             using namespace std::complex_literals;
-            psiComplex += std::exp(1i * static_cast<double>(rank) * angle);
+            localPsi += std::exp(1i * static_cast<double>(rank) * angle);
         }
+        psi += std::abs(localPsi) / static_cast<double>(rank);
     }
 
-    return std::abs(psiComplex) / static_cast<double>(rank * packing.size());
+    return std::abs(psi) / static_cast<double>(packing.size());
 }
 
 std::vector<BondOrder::KnnVector> BondOrder::constructKnn(const Packing &packing) {

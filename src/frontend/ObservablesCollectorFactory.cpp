@@ -93,30 +93,34 @@ std::unique_ptr<ObservablesCollector> ObservablesCollectorFactory::create(const 
                 collector->addObservable(std::make_unique<SmecticOrder>(), observableType);
             }
         } else if (observableName == "bondOrder") {
-            std::string layerWavenumberString;
-            observableStream >> layerWavenumberString;
-            auto wavenumberStringExploded = explode(layerWavenumberString, '.');
-            ValidateMsg(wavenumberStringExploded.size() == 3, "Malformed bond order wavenumber; format: nx.ny.nz");
-            std::array<int, 3> layerWavenumber{};
+            std::string millerIndicesString;
+            observableStream >> millerIndicesString;
+            auto millerIndicesExploded = explode(millerIndicesString, '.');
+            ValidateMsg(millerIndicesExploded.size() == 3, "Malformed bond order Miller indices; format: nx.ny.nz");
+            std::array<int, 3> millerIndices{};
             auto converter = [](const std::string &wavenumberString) {
                 try {
                     return std::stoi(wavenumberString);
                 } catch (std::logic_error &e) {
-                    throw ValidationException("Malformed bond order wavenumber; format: nx.ny.nz");
+                    throw ValidationException("Malformed bond order Miller indices; format: nx.ny.nz");
                 }
             };
-            std::transform(wavenumberStringExploded.begin(), wavenumberStringExploded.end(), layerWavenumber.begin(),
+            std::transform(millerIndicesExploded.begin(), millerIndicesExploded.end(), millerIndices.begin(),
                            converter);
-            bool anyNonzero = std::any_of(layerWavenumber.begin(), layerWavenumber.end(), [](int i) { return i != 0; });
-            ValidateMsg(anyNonzero, "Bond order: all wavenumbers are equal 0");
+            bool anyNonzero = std::any_of(millerIndices.begin(), millerIndices.end(), [](int i) { return i != 0; });
+            ValidateMsg(anyNonzero, "Bond order: all Miller indices are equal 0");
+
 
             std::vector<std::size_t> ranks;
             std::copy(std::istream_iterator<std::size_t>(observableStream), std::istream_iterator<std::size_t>{},
                       std::back_inserter(ranks));
+            std::sort(ranks.begin(), ranks.end());
             bool allRanksOk = std::all_of(ranks.begin(), ranks.end(), [](int rank) { return rank >= 2; });
             ValidateMsg(allRanksOk, "Bond order: some ranks are not >= 2");
+            bool allUnique = std::adjacent_find(ranks.begin(), ranks.end()) == ranks.end();
+            ValidateMsg(allUnique, "Bond order: some ranks are repeated");
 
-            collector->addObservable(std::make_unique<BondOrder>(ranks, layerWavenumber), observableType);
+            collector->addObservable(std::make_unique<BondOrder>(ranks, millerIndices), observableType);
         } else {
             throw ValidationException("Unknown observable: " + observableName);
         }
