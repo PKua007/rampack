@@ -10,13 +10,19 @@
 
 class BondOrder : public Observable {
 private:
+    using KnnVector = std::vector<std::pair<std::size_t, double>>;
+
     std::vector<std::size_t> ranks;
     std::vector<double> psis;
     std::vector<std::string> header;
     std::array<int, 3> layerWavenumber;
 
-    static void insertDistance(std::vector<std::pair<std::size_t, double>> &vector, std::size_t particleIdx,
-                               double distance2);
+    static void insertDistance(KnnVector &knnVector, std::size_t particleIdx, double distance2);
+
+    std::vector<KnnVector> constructKnn(const Packing &packing);
+    auto findPlaneVectors(const Packing &packing);
+    static double doCalculateBondOrder(const Packing &packing, size_t rank, const std::vector<KnnVector> &knn,
+                                       const Vector<3> &planeVector1, const Vector<3> &planeVector2);
 
 public:
     BondOrder(std::size_t rank, const std::array<int, 3> &layerWavenumber)

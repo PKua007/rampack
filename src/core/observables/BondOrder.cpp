@@ -23,25 +23,7 @@ BondOrder::BondOrder(std::vector<std::size_t> ranks, const std::array<int, 3> &l
                    [](auto rank) { return "psi" + std::to_string(rank); });
 }
 
-void BondOrder::calculate(const Packing &packing, [[maybe_unused]] double temperature, [[maybe_unused]] double pressure,
-                          [[maybe_unused]] const ShapeTraits &shapeTraits)
-{
-    std::size_t highestRank = this->ranks.back();
-    std::vector<std::pair<std::size_t, double>> knnEntry(highestRank, {0, std::numeric_limits<double>::infinity()});
-    std::vector<std::vector<std::pair<std::size_t, double>>> knn(packing.size(), knnEntry);
-
-    const auto &bc = packing.getBoundaryConditions();
-    for (std::size_t i{}; i < packing.size(); i++) {
-        for (std::size_t j = i + 1; j < packing.size(); j++) {
-            const auto &shape1 = packing[i];
-            const auto &shape2 = packing[j];
-            double distance2 = bc.getDistance2(shape1.getPosition(), shape2.getPosition());
-
-            BondOrder::insertDistance(knn[i], j, distance2);
-            BondOrder::insertDistance(knn[j], i, distance2);
-        }
-    }
-
+auto BondOrder::findPlaneVectors(const Packing &packing) {
     auto dimInv = packing.getBox().getDimensions().inverse();
     Vector<3> normalVector;
     for (std::size_t i{}; i < 3; i++)
@@ -55,46 +37,73 @@ void BondOrder::calculate(const Packing &packing, [[maybe_unused]] double temper
     Vector<3> planeVector1 = (normalVector ^ nonParallel).normalized();
     Vector<3> planeVector2 = normalVector ^ planeVector1;
 
-    for (std::size_t i{}; i < this->ranks.size(); i++) {
-        std::size_t rank = this->ranks[i];
-        double &psi = this->psis[i];
-
-        std::complex<double> psiComplex{};
-        for (std::size_t particleIdx{}; particleIdx < packing.size(); particleIdx++) {
-            const auto &particlePos = packing[particleIdx].getPosition();
-            const auto &neighbours = knn[particleIdx];
-            for (std::size_t neighbourIdx{}; neighbourIdx < rank; neighbourIdx++) {
-                auto neighbourParticleIdx = neighbours[neighbourIdx].first;
-                const auto &neighbourPos = packing[neighbourParticleIdx].getPosition();
-                Vector<3> diff = neighbourPos - particlePos + bc.getTranslation(particlePos, neighbourPos);
-
-                double coord1 = planeVector1 * diff;
-                double coord2 = planeVector2 * diff;
-                double angle = std::atan2(coord2, coord1);
-
-                using namespace std::complex_literals;
-                psiComplex += std::exp(1i * static_cast<double>(rank) * angle);
-            }
-
-            psi = std::abs(psiComplex) / static_cast<double>(rank * packing.size());
-        }
-    }
+    return std::make_pair(planeVector1, planeVector2);
 }
 
-void BondOrder::insertDistance(std::vector<std::pair<std::size_t, double>> &vector, std::size_t particleIdx,
-                               double distance2)
+void BondOrder::calculate(const Packing &packing, [[maybe_unused]] double temperature, [[maybe_unused]] double pressure,
+                          [[maybe_unused]] const ShapeTraits &shapeTraits)
 {
-    if (vector.back().second < distance2)
+    std::vector<KnnVector> knn = this->constructKnn(packing);
+    auto [planeVector1, planeVector2] = this->findPlaneVectors(packing);
+    for (std::size_t i{}; i < this->ranks.size(); i++)
+        this->psis[i] = BondOrder::doCalculateBondOrder(packing, this->ranks[i], knn, planeVector1, planeVector2);
+}
+
+double BondOrder::doCalculateBondOrder(const Packing &packing, std::size_t rank, const std::vector<KnnVector> &knn,
+                                       const Vector<3> &planeVector1, const Vector<3> &planeVector2)
+{
+    std::complex<double> psiComplex{};
+    for (std::size_t particleIdx{}; particleIdx < packing.size(); particleIdx++) {
+        const auto &particlePos = packing[particleIdx].getPosition();
+        const auto &neighboursIdxs = knn[particleIdx];
+        for (std::size_t neighbourIdx{}; neighbourIdx < rank; neighbourIdx++) {
+            auto neighbourParticleIdx = neighboursIdxs[neighbourIdx].first;
+            const auto &neighbourPos = packing[neighbourParticleIdx].getPosition();
+            const BoundaryConditions &bc = packing.getBoundaryConditions();
+            Vector<3> diff = neighbourPos - particlePos + bc.getTranslation(particlePos, neighbourPos);
+
+            double coord1 = planeVector1 * diff;
+            double coord2 = planeVector2 * diff;
+            double angle = atan2(coord2, coord1);
+
+            using namespace std::complex_literals;
+            psiComplex += std::exp(1i * static_cast<double>(rank) * angle);
+        }
+    }
+
+    return std::abs(psiComplex) / static_cast<double>(rank * packing.size());
+}
+
+std::vector<BondOrder::KnnVector> BondOrder::constructKnn(const Packing &packing) {
+    std::size_t highestRank = this->ranks.back();
+    KnnVector knnInitalEntry(highestRank, {0, std::numeric_limits<double>::infinity()});
+    std::vector<KnnVector> knn(packing.size(), knnInitalEntry);
+    for (std::size_t i{}; i < packing.size(); i++) {
+        for (std::size_t j = i + 1; j < packing.size(); j++) {
+            const auto &shape1 = packing[i];
+            const auto &shape2 = packing[j];
+            const auto &bc = packing.getBoundaryConditions();
+            double distance2 = bc.getDistance2(shape1.getPosition(), shape2.getPosition());
+
+            insertDistance(knn[i], j, distance2);
+            insertDistance(knn[j], i, distance2);
+        }
+    }
+
+    return knn;
+}
+
+void BondOrder::insertDistance(KnnVector &knnVector, std::size_t particleIdx, double distance2) {
+    if (knnVector.back().second < distance2)
         return;
 
-    vector.back().first = particleIdx;
-    vector.back().second = distance2;
+    knnVector.back().first = particleIdx;
+    knnVector.back().second = distance2;
 
-    for (std::size_t i = vector.size() - 1; i > 0; i--) {
-        if (vector[i].second < vector[i - 1].second)
-            std::swap(vector[i], vector[i - 1]);
+    for (std::size_t i = knnVector.size() - 1; i > 0; i--) {
+        if (knnVector[i].second < knnVector[i - 1].second)
+            std::swap(knnVector[i], knnVector[i - 1]);
         else
             break;
     }
-
 }
