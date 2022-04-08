@@ -30,7 +30,8 @@ MoveSampler::MoveData RototranslationSampler::sampleMove([[maybe_unused]] const 
     URD translationDistribution(-this->translationStepSize, this->translationStepSize);
     moveData.translation = {translationDistribution(mt), translationDistribution(mt), translationDistribution(mt)};
 
-    URD rotationAngleDistribution(-this->rotationStepSize, this->rotationStepSize);
+    double rotationStepSize_ = std::min(this->rotationStepSize, M_PI);
+    URD rotationAngleDistribution(-rotationStepSize_, rotationStepSize_);
     URD plusMinusOneDistribution(-1, 1);
     Vector<3> axis;
     do {
@@ -47,17 +48,13 @@ MoveSampler::MoveData RototranslationSampler::sampleMove([[maybe_unused]] const 
 
 bool RototranslationSampler::increaseStepSize() {
     double oldTranslationStepSize = this->translationStepSize;
-    double oldRotationStepSize = this->rotationStepSize;
-
     this->translationStepSize *= 1.1;
     if (this->maxTranslationStepSize > 0 && this->translationStepSize > this->maxTranslationStepSize)
         this->translationStepSize = this->maxTranslationStepSize;
 
-    this->rotationStepSize *= 1.1;
-    if (this->rotationStepSize > M_PI)
-        this->rotationStepSize = M_PI;
+    this->rotationStepSize *= this->translationStepSize/oldTranslationStepSize;
 
-    return (this->translationStepSize != oldTranslationStepSize || this->rotationStepSize != oldRotationStepSize);
+    return this->translationStepSize != oldTranslationStepSize;
 }
 
 bool RototranslationSampler::decreaseStepSize() {
