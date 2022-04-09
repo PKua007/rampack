@@ -8,11 +8,21 @@
 #include "core/Observable.h"
 
 
+/**
+ * @brief A mean squared Frobenius norm of deviation of shape orientations from perfect rotation matrices.
+ * @details More precisely, for each orientation \f$ R \f$ of a molecule, \f$ M = R R^T - 1 \f$ is calculated,
+ * and the squared Frobenius norm \f$ ||M||^2 = \sum_{i,j} M_{ij}^2 \f$ is averaged over all molecules in the system.
+ * This observable is useful to control the drift of numerical error of shape orientations during the simulation.
+ */
 class RotationMatrixDrift : public Observable {
 private:
     double frobenius2{};
 
 public:
+    /**
+     * @brief Calculates average squared Frobenius norm deviation of orientation in a given @a packing (rest of
+     * parameters are ignored).
+     */
     void calculate(const Packing &packing, double temperature, double pressure,
                    const ShapeTraits &shapeTraits) override;
 
