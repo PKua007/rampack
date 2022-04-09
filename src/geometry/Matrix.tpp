@@ -531,3 +531,18 @@ template<std::size_t ROWS, std::size_t COLS, typename E>
 typename Matrix<ROWS, COLS, E>::iterator Matrix<ROWS, COLS, E>::end() {
     return std::end(this->arr);
 }
+
+template<std::size_t ROWS, std::size_t COLS, typename E>
+template<typename _E>
+std::enable_if_t<std::is_same<_E, double>::value, double> Matrix<ROWS, COLS, E>::norm() const
+{
+    return sqrt(this->norm2());
+}
+
+template<std::size_t ROWS, std::size_t COLS, typename E>
+template<typename _E>
+std::enable_if_t<std::is_same<_E, double>::value, double> Matrix<ROWS, COLS, E>::norm2() const
+{
+    return std::accumulate(this->begin(), this->end(), 0.0,
+                           [](double sum, double el) { return sum + el*el; });
+}

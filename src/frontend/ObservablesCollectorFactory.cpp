@@ -16,6 +16,7 @@
 #include "core/observables/NematicOrder.h"
 #include "core/observables/SmecticOrder.h"
 #include "core/observables/BondOrder.h"
+#include "core/observables/RotationMatrixDrift.h"
 
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
@@ -121,6 +122,8 @@ std::unique_ptr<ObservablesCollector> ObservablesCollectorFactory::create(const 
             ValidateMsg(allUnique, "Bond order: some ranks are repeated");
 
             collector->addObservable(std::make_unique<BondOrder>(ranks, millerIndices), observableType);
+        } else if (observableName == "rotationMatrixDrift") {
+            collector->addObservable(std::make_unique<RotationMatrixDrift>(), observableType);
         } else {
             throw ValidationException("Unknown observable: " + observableName);
         }

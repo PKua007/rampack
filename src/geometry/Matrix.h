@@ -13,6 +13,7 @@
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <numeric>
 
 
 // Forward declare the Vector class for friendship
@@ -333,6 +334,14 @@ public:
      * @return string representation of a matrix
      */
     std::string toString() const;
+
+    template <typename _E = E>
+    std::enable_if_t<std::is_same<_E, double>::value, double>
+    norm() const;
+
+    template <typename _E = E>
+    std::enable_if_t<std::is_same<_E, double>::value, double>
+    norm2() const;
 
     // Identity matrix
     //----------------------------------------------------------------------------------------
