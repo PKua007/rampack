@@ -28,17 +28,13 @@ void SimulationPlayer::nextSnapshot(Packing &packing, const Interaction &interac
     Expects(this->in != nullptr);
     Expects(packing.size() == this->header.numParticles);
 
-    TriclinicBox box = SimulationIO::readBox(*this->in);
-    packing.tryScaling(box, interaction);
-    for (std::size_t i{}; i < packing.size(); i++) {
-        const Shape &oldShape = packing[i];
-        Shape newShape = SimulationIO::readShape(*this->in);
-        Vector<3> translation = newShape.getPosition() - oldShape.getPosition();
-        Matrix<3, 3> rotation = newShape.getOrientation() * oldShape.getOrientation().inverse();
+    TriclinicBox newBox = SimulationIO::readBox(*this->in);
+    std::vector<Shape> newShapes;
+    newShapes.reserve(this->header.numParticles);
+    for (std::size_t i{}; i < packing.size(); i++)
+        newShapes.push_back(SimulationIO::readShape(*this->in));
 
-        packing.tryMove(i, translation, rotation, interaction);
-        packing.acceptMove();
-    }
+    packing.reset(std::move(newShapes), newBox, interaction);
 
     this->currentSnapshot++;
 }
