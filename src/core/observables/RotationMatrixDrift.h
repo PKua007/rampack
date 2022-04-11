@@ -17,6 +17,8 @@
 class RotationMatrixDrift : public Observable {
 private:
     double frobenius2{};
+    double frobenius2max{};
+    double frobenius2min{};
 
 public:
     /**
@@ -26,9 +28,13 @@ public:
     void calculate(const Packing &packing, double temperature, double pressure,
                    const ShapeTraits &shapeTraits) override;
 
-    [[nodiscard]] std::vector<std::string> getIntervalHeader() const override { return {"F^2"}; }
+    [[nodiscard]] std::vector<std::string> getIntervalHeader() const override {
+        return {"F^2", "min(F^2)", "max(F^2)"};
+    }
     [[nodiscard]] std::vector<std::string> getNominalHeader() const override { return {}; }
-    [[nodiscard]] std::vector<double> getIntervalValues() const override { return {this->frobenius2}; }
+    [[nodiscard]] std::vector<double> getIntervalValues() const override {
+        return {this->frobenius2, this->frobenius2min, this->frobenius2max};
+    }
     [[nodiscard]] std::vector<std::string> getNominalValues() const override { return {}; }
     [[nodiscard]] std::string getName() const override { return "rotation matrix drift"; }
 };
