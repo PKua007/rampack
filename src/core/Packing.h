@@ -132,8 +132,8 @@ public:
      * @param moveThreads number of threads used for molecule moves. If 0, all OpenMP threads will be used
      * @param scalingThreads number of threads used for volume moves. If 0, all OpenMP threads will be used
      */
-    explicit Packing(std::unique_ptr<BoundaryConditions> bc, std::size_t moveThreads = 0,
-                     std::size_t scalingThreads = 0);
+    explicit Packing(std::unique_ptr<BoundaryConditions> bc, std::size_t moveThreads = 1,
+                     std::size_t scalingThreads = 1);
     /**
      * @brief Creates a packing from shape vector (TriclinicBox version).
      * @param box triclinic box containing the particles
@@ -143,8 +143,8 @@ public:
      * @param moveThreads number of threads used for molecule moves. If 0, all OpenMP threads will be used
      * @param scalingThreads number of threads used for volume moves. If 0, all OpenMP threads will be used
      */
-    Packing(TriclinicBox box, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
-            const Interaction &interaction, std::size_t moveThreads = 0, std::size_t scalingThreads = 0);
+    Packing(const TriclinicBox &box, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
+            const Interaction &interaction, std::size_t moveThreads = 1, std::size_t scalingThreads = 1);
 
     /**
      * @brief Creates a packing from shape vector (dimensions array version).
@@ -160,6 +160,8 @@ public:
             : Packing(TriclinicBox(dimensions), std::move(shapes), std::move(bc), interaction, moveThreads,
                       scalingThreads)
     { }
+
+    void reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, const Interaction &newInteraction);
 
     /**
      * @brief Return the number of shapes in the packing.

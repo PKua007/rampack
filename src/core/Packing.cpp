@@ -39,25 +39,14 @@ namespace {
     };
 }
 
-Packing::Packing(TriclinicBox box, std::vector<Shape> shapes,
-                 std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction, std::size_t moveThreads,
-                 std::size_t scalingThreads)
-        : shapes{std::move(shapes)}, box{std::move(box)}, bc{std::move(bc)},
-          interactionRange{interaction.getRangeRadius()}
+Packing::Packing(const TriclinicBox &box, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
+                 const Interaction &interaction, std::size_t moveThreads, std::size_t scalingThreads)
+        : bc{std::move(bc)}
 {
-    Expects(this->box.getVolume() != 0);
-    Expects(this->interactionRange > 0);
-    Expects(!this->shapes.empty());
-    Expects(Packing::areShapesWithinBox(this->shapes, this->box));
-
     this->moveThreads = (moveThreads == 0 ? _OMP_MAXTHREADS : moveThreads);
     this->scalingThreads = (scalingThreads == 0 ? _OMP_MAXTHREADS : scalingThreads);
 
-    this->shapes.resize(this->shapes.size() + this->moveThreads);    // temp shapes at the back
-    this->lastAlteredParticleIdx.resize(this->moveThreads, 0);
-    this->lastMoveOverlapDeltas.resize(this->moveThreads, 0);
-    this->bc->setBox(this->box);
-    this->setupForInteraction(interaction);
+    this->reset(std::move(shapes), box, interaction);
 }
 
 Packing::Packing(std::unique_ptr<BoundaryConditions> bc, std::size_t moveThreads, std::size_t scalingThreads)
@@ -68,6 +57,23 @@ Packing::Packing(std::unique_ptr<BoundaryConditions> bc, std::size_t moveThreads
 
     this->lastAlteredParticleIdx.resize(this->moveThreads, 0);
     this->lastMoveOverlapDeltas.resize(this->moveThreads, 0);
+}
+
+void Packing::reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, const Interaction &newInteraction) {
+    Expects(newBox.getVolume() != 0);
+    Expects(newInteraction.getRangeRadius() > 0);
+    Expects(!newShapes.empty());
+    Expects(Packing::areShapesWithinBox(newShapes, newBox));
+
+    this->shapes = std::move(newShapes);
+    this->box = newBox;
+    this->interactionRange = newInteraction.getRangeRadius();
+
+    this->shapes.resize(this->shapes.size() + this->moveThreads);    // temp shapes at the back
+    this->lastAlteredParticleIdx.resize(this->moveThreads, 0);
+    this->lastMoveOverlapDeltas.resize(this->moveThreads, 0);
+    this->bc->setBox(this->box);
+    this->setupForInteraction(newInteraction);
 }
 
 double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction,
@@ -908,6 +914,9 @@ void Packing::setupForInteraction(const Interaction &interaction) {
         this->recalculateAbsoluteInteractionCentres();
     }
     this->rebuildNeighbourGrid();
+
+    if (this->overlapCounting)
+        this->numOverlaps = this->countTotalOverlaps(interaction, false);
 }
 
 double Packing::getVolume() const {
