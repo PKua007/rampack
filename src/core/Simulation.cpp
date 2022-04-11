@@ -114,6 +114,8 @@ void Simulation::integrate(double temperature_, double pressure_, std::size_t th
         logger.info() << "Starting thermalisation..." << std::endl;
         for (std::size_t i{}; i < thermalisationCycles; i++) {
             this->performCycle(logger, shapeTraits);
+            if (this->totalCycles % 10000 == 0)
+                this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
             if (this->totalCycles % snapshotEvery == 0) {
                 this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
                 if (simulationRecorder != nullptr)
@@ -121,6 +123,7 @@ void Simulation::integrate(double temperature_, double pressure_, std::size_t th
             }
             if (this->totalCycles % 100 == 0)
                 this->printInlineInfo(this->totalCycles, shapeTraits, logger, false);
+
             if (sigint_received) {
                 auto end = std::chrono::high_resolution_clock::now();
                 this->totalMicroseconds = std::chrono::duration<double, std::micro>(end - start).count();
@@ -138,6 +141,8 @@ void Simulation::integrate(double temperature_, double pressure_, std::size_t th
         logger.info() << "Starting averaging..." << std::endl;
         for (std::size_t i{}; i < averagingCycles; i++) {
             this->performCycle(logger, shapeTraits);
+            if (this->totalCycles % 10000 == 0)
+                this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
             if (this->totalCycles % snapshotEvery == 0) {
                 this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
                 if (simulationRecorder != nullptr)
@@ -147,6 +152,7 @@ void Simulation::integrate(double temperature_, double pressure_, std::size_t th
                 this->observablesCollector->addAveragingValues(*this->packing, shapeTraits);
             if (this->totalCycles % 100 == 0)
                 this->printInlineInfo(this->totalCycles, shapeTraits, logger, false);
+
             if (sigint_received) {
                 auto end = std::chrono::high_resolution_clock::now();
                 this->totalMicroseconds = std::chrono::duration<double, std::micro>(end - start).count();
@@ -193,6 +199,8 @@ void Simulation::relaxOverlaps(double temperature_, double pressure_, std::size_
     logger.info() << "Starting overlap relaxation..." << std::endl;
     while (this->packing->getCachedNumberOfOverlaps() > 0) {
         this->performCycle(logger, shapeTraits);
+        if (this->totalCycles % 10000 == 0)
+            this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
         if (this->totalCycles % snapshotEvery == 0) {
             this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
             if (simulationRecorder != nullptr)
@@ -200,6 +208,7 @@ void Simulation::relaxOverlaps(double temperature_, double pressure_, std::size_
         }
         if (this->totalCycles % 100 == 0)
             this->printInlineInfo(this->totalCycles, shapeTraits, logger, true);
+
         if (sigint_received) {
             auto end = std::chrono::high_resolution_clock::now();
             this->totalMicroseconds = std::chrono::duration<double, std::micro>(end - start).count();
@@ -609,4 +618,51 @@ std::vector<Simulation::MoveStatistics> Simulation::getMovesStatistics() const {
     moveGroupsStatistics.push_back(this->getScalingStatistics());
 
     return moveGroupsStatistics;
+}
+
+void Simulation::fixRotationMatrices(const Interaction &interaction, Logger &logger) {
+    double maxDeviation = 0;
+    std::size_t numFixes = 0;
+
+    std::vector<Shape> shapes(std::cbegin(*this->packing), std::cend(*this->packing));
+    TriclinicBox box = this->packing->getBox();
+
+    for (auto &shape : shapes) {
+        auto rotation = shape.getOrientation();
+        double deviation = Simulation::getRotationMatrixDeviation(rotation);
+        if (deviation > maxDeviation)
+            maxDeviation = deviation;
+
+        if (deviation > std::pow(1e-14, 2)) {
+            Simulation::fixRotationMatrix(rotation);
+            shape.setOrientation(rotation);
+            numFixes++;
+        }
+    }
+
+    if (numFixes > 0)
+        this->packing->reset(shapes, box, interaction);
+
+    if (this->packing->countTotalOverlaps(interaction) > 0) {
+        logger.error() << "During orientation normalization some overlaps were introduced. Interrupting.";
+        logger << std::endl;
+        sigint_received = true;
+    }
+
+    logger.verbose() << "Orientation normalization was performed. Fixed molecules: " << numFixes << "/";
+    logger << this->packing->size() << "; highest deviation: " << maxDeviation << std::endl;
+}
+
+void Simulation::fixRotationMatrix(Matrix<3, 3> &rotation) {
+    // Iterative algorithm from https://math.stackexchange.com/questions/3292034/normalizing-a-rotation-matrix
+    // At most 3 iterations, however usually 1 is enough
+    for (std::size_t i{}; i < 3; i++) {
+        rotation = 1.5 * rotation - 0.5 * rotation * rotation.transpose() * rotation;
+        if (Simulation::getRotationMatrixDeviation(rotation) < std::pow(1e-15, 2))
+            break;
+    }
+}
+
+double Simulation::getRotationMatrixDeviation(const Matrix<3, 3> &rotation) {
+    return (rotation * rotation.transpose() - Matrix<3, 3>::identity()).norm2();
 }
