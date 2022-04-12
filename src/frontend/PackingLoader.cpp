@@ -72,6 +72,8 @@ std::unique_ptr<Packing> PackingLoader::loadPacking(std::unique_ptr<BoundaryCond
 
         this->logger.info() << "Loaded packing from the run '" << previousPackingFilename << "' as a starting point.";
         this->logger << std::endl;
+
+        this->isRestored_ = true;
     }
 
     return packing;

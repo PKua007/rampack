@@ -165,7 +165,6 @@ int Frontend::casino(int argc, char **argv) {
 
     // Load starting state from a previous or current run packing depending on --start-from and --continue
     // options combination
-    auto bc = std::make_unique<PeriodicBoundaryConditions>();
 
     std::optional<std::string> optionalStartFrom;
     std::optional<std::size_t> optionalContinuationCycles;
@@ -175,6 +174,7 @@ int Frontend::casino(int argc, char **argv) {
         optionalContinuationCycles = continuationCycles;
 
     PackingLoader packingLoader(this->logger, optionalStartFrom, optionalContinuationCycles, params.runsParameters);
+    auto bc = std::make_unique<PeriodicBoundaryConditions>();
     auto packing = packingLoader.loadPacking(std::move(bc), shapeTraits->getInteraction(), scalingThreads,
                                              scalingThreads);
     std::size_t startRunIndex = packingLoader.getStartRunIndex();
@@ -190,6 +190,7 @@ int Frontend::casino(int argc, char **argv) {
     } else {
         std::array<double, 3> dimensions = this->parseDimensions(params.initialDimensions);
         // Same number of scaling and domain threads
+        bc = std::make_unique<PeriodicBoundaryConditions>();
         packing = ArrangementFactory::arrangePacking(params.numOfParticles, dimensions, params.initialArrangement,
                                                      std::move(bc), shapeTraits->getInteraction(), scalingThreads,
                                                      scalingThreads);
