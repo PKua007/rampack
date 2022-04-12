@@ -31,6 +31,7 @@
 #include "MoveSamplerFactory.h"
 #include "core/SimulationRecorder.h"
 #include "core/SimulationPlayer.h"
+#include "PackingLoader.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -162,82 +163,31 @@ int Frontend::casino(int argc, char **argv) {
     for (const auto &moveSamplerString : moveSamplerStrings)
         moveSamplers.push_back(MoveSamplerFactory::create(moveSamplerString));
 
-    // Find starting run index if specified
-    std::size_t startRunIndex{};
-    if (parsedOptions.count("start-from")) {
-        auto runsParameters = params.runsParameters;
-        auto nameMatchesStartFrom = [startFrom](const auto &params) {
-            auto runNameGetter = [](auto &&run) { return run.runName; };
-            return std::visit(runNameGetter, params) == startFrom;
-        };
-        auto it = std::find_if(runsParameters.begin(), runsParameters.end(), nameMatchesStartFrom);
-
-        ValidateMsg(it != runsParameters.end(), "Invalid run name to start from");
-        startRunIndex = it - runsParameters.begin();
-    }
-
     // Load starting state from a previous or current run packing depending on --start-from and --continue
     // options combination
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
-    std::unique_ptr<Packing> packing;
 
-    std::size_t cycleOffset{};  // Non-zero, if continuing previous run
-    bool isContinuation{};
-    if ((parsedOptions.count("start-from") && startRunIndex != 0) || parsedOptions.count("continue")) {
-        auto &runsParameters = params.runsParameters;
-        std::size_t startingPackingRunIndex{};
-        if (parsedOptions.count("continue"))
-            startingPackingRunIndex = startRunIndex;
-        else
-            startingPackingRunIndex = startRunIndex - 1;
-        // A run, whose resulting packing will be the starting point
-        auto &startingPackingRun = runsParameters[startingPackingRunIndex];
+    std::optional<std::string> optionalStartFrom;
+    std::optional<std::size_t> optionalContinuationCycles;
+    if (parsedOptions.count("start-from"))
+        optionalStartFrom = startFrom;
+    if (parsedOptions.count("continue"))
+        optionalContinuationCycles = continuationCycles;
 
-        auto packingFilenameGetter = [](auto &&run) { return run.packingFilename; };
-        std::string previousPackingFilename = std::visit(packingFilenameGetter, startingPackingRun);
-        std::ifstream packingFile(previousPackingFilename);
-        ValidateOpenedDesc(packingFile, previousPackingFilename, "to load previous packing");
-        // Same number of scaling and domain decemposition threads
-        packing = std::make_unique<Packing>(std::move(bc), scalingThreads, scalingThreads);
-        auto auxInfo = packing->restore(packingFile, shapeTraits->getInteraction());
+    PackingLoader packingLoader(this->logger, optionalStartFrom, optionalContinuationCycles, params.runsParameters);
+    auto packing = packingLoader.loadPacking(std::move(bc), shapeTraits->getInteraction(), scalingThreads,
+                                             scalingThreads);
+    std::size_t startRunIndex = packingLoader.getStartRunIndex();
+    std::size_t cycleOffset = packingLoader.getCycleOffset();
+    bool isContinuation = packingLoader.isContinuation();
 
+    if (packingLoader.isRestored()) {
+        const auto &auxInfo = packingLoader.getAuxInfo();
         this->overwriteMoveStepSizes(moveSamplers, auxInfo);
         std::string scalingKey = Frontend::formatMoveKey("scaling", "scaling");
         params.volumeStepSize = std::stod(auxInfo.at(scalingKey));
         Validate(params.volumeStepSize > 0);
-
-        if (parsedOptions.count("continue")) {
-            cycleOffset = std::stoul(auxInfo.at("cycles"));
-            isContinuation = true;
-
-            // Value of continuation cycles is only used in integration mode. For overlaps rejection it is redundant
-            if (std::holds_alternative<Parameters::IntegrationParameters>(startingPackingRun)) {
-                // Because we continue this already finished run
-                auto &startingRun = std::get<Parameters::IntegrationParameters>(startingPackingRun);
-
-                if (continuationCycles == 0)
-                    continuationCycles = startingRun.thermalisationCycles;
-
-                if (continuationCycles <= cycleOffset) {
-                    startingRun.thermalisationCycles = 0;
-                    this->logger.info() << "Thermalisation of the finished run '" << startingRun.runName;
-                    this->logger << "' will be skipped, since " << continuationCycles << " or more cycles were ";
-                    this->logger << "already performed." << std::endl;
-                } else {
-                    startingRun.thermalisationCycles = continuationCycles - cycleOffset;
-                    this->logger.info() << "Thermalisation from the finished run '" << startingRun.runName;
-                    this->logger << "' will be continued up to " << continuationCycles << " cycles (";
-                    this->logger << startingRun.thermalisationCycles << " to go)" << std::endl;
-                }
-            }
-        }
-
-        this->logger.info() << "Loaded packing from the run '" << previousPackingFilename << "' as a starting point.";
-        this->logger << std::endl;
-    }
-
-    // If packing was not loaded from file, arrange it as given in config file
-    if (packing == nullptr) {
+    } else {
         std::array<double, 3> dimensions = this->parseDimensions(params.initialDimensions);
         // Same number of scaling and domain threads
         packing = ArrangementFactory::arrangePacking(params.numOfParticles, dimensions, params.initialArrangement,
