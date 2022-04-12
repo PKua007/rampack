@@ -950,8 +950,7 @@ void Packing::store(std::ostream &out, const std::map<std::string, std::string> 
     }
 }
 
-std::map<std::string, std::string> Packing::restore(std::istream &in, const Interaction &interaction) {
-    // Read aux info map
+std::map<std::string, std::string> Packing::restoreAuxInfo(std::istream &in) {
     std::size_t auxInfoSize{};
     in >> auxInfoSize;
     ValidateMsg(in, "Broken packing file: aux info size");
@@ -964,6 +963,12 @@ std::map<std::string, std::string> Packing::restore(std::istream &in, const Inte
         ValidateMsg(in, "Broken packing file: aux info entry " + std::to_string(i));
         auxInfo[key] = value;
     }
+
+    return auxInfo;
+}
+
+std::map<std::string, std::string> Packing::restore(std::istream &in, const Interaction &interaction) {
+    auto auxInfo = Packing::restoreAuxInfo(in);
 
     // Read box dimensions
     TriclinicBox box_(Packing::restoreDimensions(in));

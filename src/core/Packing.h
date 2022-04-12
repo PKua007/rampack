@@ -126,6 +126,8 @@ private:
 public:
     using const_iterator = decltype(shapes)::const_iterator;
 
+    static std::map<std::string, std::string> restoreAuxInfo(std::istream &in);
+
     /**
      * @brief Creates an empty packing. Packing::restore method can then be used to load shapes.
      * @param bc boundary conditions to use
