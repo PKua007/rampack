@@ -74,7 +74,10 @@ int Frontend::casino(int argc, char **argv) {
             ("s,start-from", "when specified, the simulation will be started from the run with the name given. If not "
                              "used in conjunction with --continue option, the packing will be restored from the "
                              "internal representation file of the preceding run. If --continue is used, the current "
-                             "run, but finished or aborted in the past, will be loaded instead",
+                             "run, but finished or aborted in the past, will be loaded instead. When a special value "
+                             "'.auto' is specified, auto-detection of starting run will be attempted based on internal "
+                             "representation files (all runs in configuration have to output them). If last attempted "
+                             "run was unfinished, --continue option without argument is implicitly added",
              cxxopts::value<std::string>(startFrom))
             ("c,continue", "when specified, the thermalization of previously finished or aborted run will be continued "
                            "for as many more cycles as specified. It can be used together with --start-from to specify "
