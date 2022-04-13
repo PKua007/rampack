@@ -39,8 +39,11 @@ private:
     bool isRestored_{};
     std::unique_ptr<Packing> packing{};
 
-    [[nodiscard]] std::size_t findStartRunIndex();
-    [[nodiscard]] std::size_t autoFindStartRunIndex();
+    void findStartRunIndex();
+    void autoFindStartRunIndex();
+    [[nodiscard]] std::vector<PerformedRunData> gatherRunData() const;
+    void logRunsStatus(const std::vector<PerformedRunData> &runDatas) const;
+    [[nodiscard]] bool allRunsHaveDatOutput() const;
 
 public:
     PackingLoader(Logger &logger, std::optional<std::string> startFrom, std::optional<std::size_t> continuationCycles,
