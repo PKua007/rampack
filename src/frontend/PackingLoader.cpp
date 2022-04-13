@@ -3,6 +3,7 @@
 //
 
 #include <fstream>
+#include <iomanip>
 
 #include "PackingLoader.h"
 
@@ -64,20 +65,21 @@ void PackingLoader::loadPacking(std::unique_ptr<BoundaryConditions> bc, const In
     this->isRestored_ = true;
 }
 
-std::size_t PackingLoader::findStartRunIndex() const {
-    std::size_t startRunIndex_{};
-    if (startFrom.has_value()) {
-        auto nameMatchesStartFrom = [this](const auto &params) {
-            auto runNameGetter = [](auto &&run) { return run.runName; };
-            return std::visit(runNameGetter, params) == startFrom;
-        };
-        auto it = std::find_if(runsParameters.begin(), runsParameters.end(), nameMatchesStartFrom);
+std::size_t PackingLoader::findStartRunIndex() {
+    if (!this->startFrom.has_value())
+        return 0;
 
-        ValidateMsg(it != runsParameters.end(), "Invalid run name to start from");
-        startRunIndex_ = it - runsParameters.begin();
-    }
+    if (this->startFrom == ".auto")
+        return this->autoFindStartRunIndex();
 
-    return startRunIndex_;
+    auto nameMatchesStartFrom = [this](const auto &params) {
+        auto runNameGetter = [](auto &&run) { return run.runName; };
+        return std::visit(runNameGetter, params) == this->startFrom;
+    };
+    auto it = std::find_if(this->runsParameters.begin(), this->runsParameters.end(), nameMatchesStartFrom);
+
+    ValidateMsg(it != this->runsParameters.end(), "Invalid run name to start from");
+    return it - this->runsParameters.begin();
 }
 
 void PackingLoader::reset() {
@@ -87,4 +89,96 @@ void PackingLoader::reset() {
     this->auxInfo.clear();
     this->isRestored_ = false;
     this->startRunIndex = 0;
+}
+
+std::size_t PackingLoader::autoFindStartRunIndex() {
+    auto getDatOutput = [](const auto &params) {
+        auto packingFilenameGetter = [](auto &&run) { return run.packingFilename; };
+        return std::visit(packingFilenameGetter, params);
+    };
+
+    auto hasDatOutput = [getDatOutput](const auto &params) { return !getDatOutput(params).empty(); };
+    ValidateMsg(std::all_of(this->runsParameters.begin(), this->runsParameters.end(), hasDatOutput),
+                "Starting run auto-detect: all runs must be set to output internal packing representation. Aborting.");
+
+    std::vector<PerformedRunData> runDatas;
+    runDatas.reserve(this->runsParameters.size());
+    for (const auto &runParams : this->runsParameters) {
+        auto getRunName = [](const auto &params) {
+            auto runNameGetter = [](auto &&run) { return run.runName; };
+            return std::visit(runNameGetter, params);
+        };
+
+        PerformedRunData runData;
+        runData.runName = getRunName(runParams);
+
+        if (std::holds_alternative<Parameters::IntegrationParameters>(runParams)) {
+            const auto &integrationParams = std::get<Parameters::IntegrationParameters>(runParams);
+            runData.expectedCycles = integrationParams.thermalisationCycles + integrationParams.averagingCycles;
+        } else {
+            runData.expectedCycles = 0;
+        }
+
+        std::ifstream datInput(getDatOutput(runParams));
+        if (datInput) {
+            runData.wasPerformed = true;
+            try {
+                auto auxInfo_ = Packing::restoreAuxInfo(datInput);
+                Validate(auxInfo_.find("cycles") != auxInfo_.end());
+                runData.doneCycles = std::stoul(auxInfo_.at("cycles"));
+            } catch (std::logic_error &) {
+                runData.isCorrupted = true;
+            }
+        } else {
+            runData.wasPerformed = false;
+        }
+        runDatas.push_back(runData);
+    }
+
+    auto runNameLengthComp = [](const auto &run1, const auto &run2) {
+        return run1.runName.length() < run2.runName.length();
+    };
+    std::size_t longestName = std::max_element(runDatas.begin(), runDatas.end(), runNameLengthComp)->runName.length();
+
+    this->logger.info() << "Starting run auto-detect: status of runs:" << std::endl;
+    for (const auto &runData : runDatas) {
+        this->logger << std::left << std::setw(static_cast<int>(longestName)) << runData.runName << " : ";
+        if (runData.isCorrupted) {
+            this->logger << "corrupted" << std::endl;
+        } else if (runData.wasPerformed) {
+            this->logger << (runData.isFinished() ? "finished     " : "unfinished   ");
+            this->logger << " (" << runData.doneCycles << "/" << runData.expectedCycles << " cycles)" << std::endl;
+        } else {
+            this->logger << "not performed" << std::endl;
+        }
+    }
+
+    auto isRunCorrupted = [](const auto &run) { return run.isCorrupted; };
+    auto isRunFinished = [](const auto &run) { return run.isFinished(); };
+    auto isRunPerformed = [](const auto &run) { return run.wasPerformed; };
+
+    auto corruptedRun = std::find_if(runDatas.begin(), runDatas.end(), isRunCorrupted);
+    if (corruptedRun != runDatas.end())
+        throw ValidationException("Starting run auto-detect: one or more runs are corrupted. Aborting.");
+
+    auto firstUnfinished = std::find_if_not(runDatas.begin(), runDatas.end(), isRunFinished);
+    if (firstUnfinished == runDatas.end())
+        throw ValidationException("Starting run auto-detect: all runs were finished. Aborting.");
+
+    auto unexpectedPerformed = std::find_if(std::next(firstUnfinished), runDatas.end(), isRunPerformed);
+    if (unexpectedPerformed != runDatas.end()) {
+        throw ValidationException("Starting run auto-detect: detected alredy performed run: '"
+                                  + unexpectedPerformed->runName + "' after unfinished run: '"
+                                  + firstUnfinished->runName + "'. Aborting.");
+    }
+
+    this->logger.info() << "Starting run auto-detect: detected '" <<  firstUnfinished->runName;
+    this->logger << "' as a first unfinished run." << std::endl;
+
+    if (firstUnfinished->doneCycles == 0)
+        this->continuationCycles = std::nullopt;
+    else
+        this->continuationCycles = 0;
+
+    return firstUnfinished - runDatas.begin();
 }

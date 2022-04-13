@@ -15,6 +15,18 @@
 
 class PackingLoader {
 private:
+    struct PerformedRunData {
+        std::string runName;
+        std::size_t expectedCycles{};
+        bool wasPerformed{};
+        bool isCorrupted{};
+        std::size_t doneCycles{};
+
+        [[nodiscard]] bool isFinished() const {
+            return this->wasPerformed && !this->isCorrupted && this->doneCycles >= this->expectedCycles;
+        }
+    };
+
     Logger &logger;
     std::optional<std::string> startFrom;
     std::optional<std::size_t> continuationCycles;
@@ -27,7 +39,8 @@ private:
     bool isRestored_{};
     std::unique_ptr<Packing> packing{};
 
-    [[nodiscard]] std::size_t findStartRunIndex() const;
+    [[nodiscard]] std::size_t findStartRunIndex();
+    [[nodiscard]] std::size_t autoFindStartRunIndex();
 
 public:
     PackingLoader(Logger &logger, std::optional<std::string> startFrom, std::optional<std::size_t> continuationCycles,
