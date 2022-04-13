@@ -106,6 +106,9 @@ void Simulation::integrate(double temperature_, double pressure_, std::size_t th
     this->packing->toggleOverlapCounting(false, interaction);
     this->areOverlapsCounted = false;
 
+    ValidateMsg(this->packing->countTotalOverlaps(interaction) == 0,
+                "Overlaps are present at the start of integration. Perform overlap reduction beforehand.");
+
     this->shouldAdjustStepSize = true;
     loggerAdditionalTextAppender.setAdditionalText("th");
     if (thermalisationCycles == 0) {
@@ -643,7 +646,7 @@ void Simulation::fixRotationMatrices(const Interaction &interaction, Logger &log
     if (numFixes > 0)
         this->packing->reset(shapes, box, interaction);
 
-    if (this->packing->countTotalOverlaps(interaction) > 0) {
+    if (!this->areOverlapsCounted && this->packing->countTotalOverlaps(interaction) > 0) {
         logger.error() << "During orientation normalization some overlaps were introduced. Interrupting.";
         logger << std::endl;
         sigint_received = true;
