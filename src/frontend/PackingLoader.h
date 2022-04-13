@@ -44,6 +44,7 @@ private:
     [[nodiscard]] std::vector<PerformedRunData> gatherRunData() const;
     void logRunsStatus(const std::vector<PerformedRunData> &runDatas) const;
     [[nodiscard]] bool allRunsHaveDatOutput() const;
+    void warnIfOverlapRelaxation() const;
 
 public:
     PackingLoader(Logger &logger, std::optional<std::string> startFrom, std::optional<std::size_t> continuationCycles,

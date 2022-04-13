@@ -102,6 +102,7 @@ void PackingLoader::autoFindStartRunIndex() {
     std::vector<PerformedRunData> runDatas = this->gatherRunData();
 
     this->logRunsStatus(runDatas);
+    this->warnIfOverlapRelaxation();
 
     auto isRunCorrupted = [](const auto &run) { return run.isCorrupted; };
     auto isRunFinished = [](const auto &run) { return run.isFinished(); };
@@ -131,6 +132,16 @@ void PackingLoader::autoFindStartRunIndex() {
         this->continuationCycles = 0;
 
     this->startRunIndex = firstUnfinished - runDatas.begin();
+}
+
+void PackingLoader::warnIfOverlapRelaxation() const {
+    auto isOverlapReduction = [](const auto &params) {
+        return std::holds_alternative<Parameters::OverlapRelaxationParameters>(params);
+    };
+    if (std::find_if(runsParameters.begin(), runsParameters.end(), isOverlapReduction) != runsParameters.end()) {
+        this->logger.warn() << "Starting run auto-detect: some runs are overlap relaxation; auto-detection may fail";
+        this->logger << std::endl;
+    }
 }
 
 bool PackingLoader::allRunsHaveDatOutput() const {
