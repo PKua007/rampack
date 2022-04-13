@@ -175,13 +175,14 @@ int Frontend::casino(int argc, char **argv) {
 
     PackingLoader packingLoader(this->logger, optionalStartFrom, optionalContinuationCycles, params.runsParameters);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
-    auto packing = packingLoader.loadPacking(std::move(bc), shapeTraits->getInteraction(), scalingThreads,
-                                             scalingThreads);
+    packingLoader.loadPacking(std::move(bc), shapeTraits->getInteraction(), scalingThreads, scalingThreads);
     std::size_t startRunIndex = packingLoader.getStartRunIndex();
     std::size_t cycleOffset = packingLoader.getCycleOffset();
     bool isContinuation = packingLoader.isContinuation();
 
+    std::unique_ptr<Packing> packing;
     if (packingLoader.isRestored()) {
+        packing = packingLoader.releasePacking();
         const auto &auxInfo = packingLoader.getAuxInfo();
         this->overwriteMoveStepSizes(moveSamplers, auxInfo);
         std::string scalingKey = Frontend::formatMoveKey("scaling", "scaling");

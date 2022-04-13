@@ -25,6 +25,9 @@ private:
     bool isContinuation_{};
     std::map<std::string, std::string> auxInfo{};
     bool isRestored_{};
+    std::unique_ptr<Packing> packing{};
+
+    [[nodiscard]] std::size_t findStartRunIndex() const;
 
 public:
     PackingLoader(Logger &logger, std::optional<std::string> startFrom, std::optional<std::size_t> continuationCycles,
@@ -33,15 +36,17 @@ public:
               runsParameters{runsParameters}
     { }
 
-    [[nodiscard]] std::unique_ptr<Packing> loadPacking(std::unique_ptr<BoundaryConditions> bc,
-                                                       const Interaction &interaction, std::size_t moveThreads,
-                                                       std::size_t scalingThreads);
+    void loadPacking(std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction, std::size_t moveThreads,
+                     std::size_t scalingThreads);
 
     [[nodiscard]] std::size_t getStartRunIndex() const { return this->startRunIndex; }
     [[nodiscard]] std::size_t getCycleOffset() const { return this->cycleOffset; }
     [[nodiscard]] bool isContinuation() const { return this->isContinuation_; }
     [[nodiscard]] const std::map<std::string, std::string> &getAuxInfo() const { return this->auxInfo; }
     [[nodiscard]] bool isRestored() const { return this->isRestored_; }
+    [[nodiscard]] std::unique_ptr<Packing> releasePacking() { return std::move(this->packing); }
+
+    void reset();
 };
 
 
