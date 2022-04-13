@@ -162,7 +162,7 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
     // D.J. Tildesley a & W.B. Streett (1980)
     omp_set_num_threads(1);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    double V = 500;
+    double V = 600;
     double linearSize = std::cbrt(V);
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
     auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
