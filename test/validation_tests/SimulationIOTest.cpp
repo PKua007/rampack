@@ -94,4 +94,25 @@ TEST_CASE("Simulation IO: storing and restoring")
 
         assert_equal(packing1, simulation.getPacking());
     }
+
+    SECTION("with continuation from 0 snapshots") {
+        // Initial run
+        auto inout_stream1 = std::make_unique<std::iostream>(&inout_buf);
+        auto recorder1 = std::make_unique<SimulationRecorder>(std::move(inout_stream1), false);
+        recorder1.reset();
+
+        // Continuation
+        auto inout_stream2 = std::make_unique<std::iostream>(&inout_buf);
+        auto recorder2 = std::make_unique<SimulationRecorder>(std::move(inout_stream2), true);
+        auto collector2 = std::make_unique<ObservablesCollector>();
+        simulation.integrate(1, 1, 500, 500, 100, 100, traits, std::move(collector2), std::move(recorder2), logger);
+
+        auto in_stream = std::make_unique<std::istream>(&inout_buf);
+        SimulationPlayer player(std::move(in_stream));
+        while (player.hasNext())
+            player.nextSnapshot(packing1, interaction);
+        player.close();
+
+        assert_equal(packing1, simulation.getPacking());
+    }
 }

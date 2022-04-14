@@ -16,11 +16,11 @@ SimulationIO::Header SimulationIO::readHeader(std::istream &in) {
     ValidateMsg(in && header.versionMajor == 1 && header.versionMinor == 0,
                 "RAMTRJ: only versions up to 1.0 are supported");
     in.read(reinterpret_cast<char*>(&header.numParticles), sizeof(header.numParticles));
-    ValidateMsg(in && header.numParticles > 0, "RAMTRJ read error: num particles");
+    ValidateMsg(in, "RAMTRJ read error: num particles");
     in.read(reinterpret_cast<char*>(&header.numSnapshots), sizeof(header.numSnapshots));
-    ValidateMsg(in && header.numSnapshots > 0, "RAMTRJ read error: num snapshots");
+    ValidateMsg(in, "RAMTRJ read error: num snapshots");
     in.read(reinterpret_cast<char*>(&header.cycleStep), sizeof(header.cycleStep));
-    ValidateMsg(in && header.cycleStep > 0, "RAMTRJ read error: cycle step");
+    ValidateMsg(in, "RAMTRJ read error: cycle step");
     return header;
 }
 
