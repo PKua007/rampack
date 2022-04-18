@@ -140,11 +140,11 @@ public:
      * @brief Removes a givens output. At least one should be left - otherwise exception is thrown.
      */
     void removeOutput(const std::ostream &toRemove) {
-        Expects(this->outs.size() >= 2);
-
         auto outputIt = this->findOutput(toRemove);
-        if (outputIt != this->outs.end())
+        if (outputIt != this->outs.end()) {
+            Expects(this->outs.size() >= 2);
             this->outs.erase(outputIt);
+        }
     }
 
     operator std::ostream&() { return this->outs.front(); }

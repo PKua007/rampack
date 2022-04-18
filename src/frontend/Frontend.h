@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <memory>
+#include <fstream>
 
 #include "core/ObservablesCollector.h"
 #include "utils/Logger.h"
@@ -23,13 +24,16 @@
 class Frontend {
 private:
     Logger &logger;
+    std::ofstream auxOutStream;
 
     Parameters loadParameters(const std::string &inputFilename);
     void overwriteMoveStepSizes(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
                                 const std::map<std::string, std::string> &packingAuxInfo) const;
     void appendMoveStepSizesToAuxInfo(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
                                       double scalingStepSize, std::map<std::string, std::string> &auxInfo) const;
-    void setVerbosityLevel(const std::string &verbosityLevelName) const;
+    void setVerbosityLevel(std::optional<std::string> verbosity, std::optional<std::string> auxOutput,
+                           std::optional<std::string> auxVerbosity);
+    Logger::LogType parseVerbosityLevel(const std::string &verbosityLevelName) const;
     std::unique_ptr<SimulationRecorder> loadSimulationRecorder(const std::string &filename, bool &isContinuation) const;
 
     void performIntegration(Simulation &simulation, const Parameters::IntegrationParameters &runParams,
@@ -59,6 +63,7 @@ private:
 
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }
+    ~Frontend() { this->logger.removeOutput(this->auxOutStream); }
 
     int casino(int argc, char **argv);
     int optimize_distance(int argc, char **argv);

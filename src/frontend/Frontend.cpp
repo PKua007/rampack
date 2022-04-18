@@ -40,19 +40,47 @@ Parameters Frontend::loadParameters(const std::string &inputFilename) {
     return Parameters(paramsFile);
 }
 
-void Frontend::setVerbosityLevel(const std::string &verbosityLevelName) const {
-    if (verbosityLevelName == "error")
-        this->logger.setVerbosityLevel(Logger::ERROR);
-    else if (verbosityLevelName == "warn")
+void Frontend::setVerbosityLevel(std::optional<std::string> verbosity, std::optional<std::string> auxOutput,
+                                 std::optional<std::string> auxVerbosity)
+{
+    if (verbosity.has_value())
+        this->logger.setVerbosityLevel(this->parseVerbosityLevel(*verbosity));
+    else if (auxOutput.has_value())
         this->logger.setVerbosityLevel(Logger::WARN);
-    else if (verbosityLevelName == "info")
+    else
         this->logger.setVerbosityLevel(Logger::INFO);
+
+    if (!auxOutput.has_value())
+        return;
+
+    this->auxOutStream.open(*auxOutput);
+    ValidateOpenedDesc(this->auxOutStream, *auxOutput, "to log messages");
+
+    this->logger.warn() << "Logging output to '" << *auxOutput << "'" << std::endl;
+
+    this->logger.addOutput(this->auxOutStream);
+
+    if (auxVerbosity.has_value())
+        this->logger.setVerbosityLevel(this->parseVerbosityLevel(*auxVerbosity), this->auxOutStream);
+    else
+        this->logger.setVerbosityLevel(Logger::INFO, this->auxOutStream);
+}
+
+Logger::LogType Frontend::parseVerbosityLevel(const std::string &verbosityLevelName) const {
+    if (verbosityLevelName == "error")
+        return Logger::ERROR;
+    else if (verbosityLevelName == "warn")
+        return Logger::WARN;
+    else if (verbosityLevelName == "info")
+        return Logger::INFO;
     else if (verbosityLevelName == "verbose")
-        this->logger.setVerbosityLevel(Logger::VERBOSE);
+        return Logger::VERBOSE;
     else if (verbosityLevelName == "debug")
-        this->logger.setVerbosityLevel(Logger::DEBUG);
+        return Logger::DEBUG;
     else
         die("Unknown verbosity level: " + verbosityLevelName, this->logger);
+
+    return Logger::ERROR;
 }
 
 int Frontend::casino(int argc, char **argv) {
@@ -63,14 +91,17 @@ int Frontend::casino(int argc, char **argv) {
     std::string verbosity;
     std::string startFrom;
     std::size_t continuationCycles;
+    std::string auxOutput;
+    std::string auxVerbosity;
 
     options.add_options()
             ("h,help", "prints help for this mode")
             ("i,input", "an INI file with parameters. See sample_inputs folder for full parameters documentation",
              cxxopts::value<std::string>(inputFilename))
             ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
-                            "error, warn, info, verbose, debug",
-             cxxopts::value<std::string>(verbosity)->default_value("info"))
+                            "error, warn, info, verbose, debug. Defaults to: info if --log-file not specified, "
+                            "otherwise to: warn",
+             cxxopts::value<std::string>(verbosity))
             ("s,start-from", "when specified, the simulation will be started from the run with the name given. If not "
                              "used in conjunction with --continue option, the packing will be restored from the "
                              "internal representation file of the preceding run. If --continue is used, the current "
@@ -84,7 +115,14 @@ int Frontend::casino(int argc, char **argv) {
                            "which run should be continued. If the thermalization phase is already over, the error will "
                            "be reported. If 0 is specified (or left blank, since 0 is the default value), "
                            "total number of thermalization cycles from the input file will not be changed",
-             cxxopts::value<std::size_t>(continuationCycles)->implicit_value("0"));
+             cxxopts::value<std::size_t>(continuationCycles)->implicit_value("0"))
+            ("l,log-file", "if specified, messages will be logged both on the standard output and to this file. "
+                           "Verbosity defaults then to: warn for standard output and to: info for log file, unless "
+                           "changed by --verbosity and/or --log-file-verbosity options",
+             cxxopts::value<std::string>(auxOutput))
+            ("log-file-verbosity", "how verbose the output to the log file should be. Allowed values, with increasing "
+                                   "verbosity: error, warn, info, verbose, debug. Defaults to: info",
+             cxxopts::value<std::string>(auxVerbosity));
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
@@ -93,7 +131,16 @@ int Frontend::casino(int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
-    this->setVerbosityLevel(verbosity);
+    std::optional<std::string> verbosityOptional;
+    if (parsedOptions.count("verbosity"))
+        verbosityOptional = verbosity;
+    std::optional<std::string> auxOutputOptional;
+    if (parsedOptions.count("log-file"))
+        auxOutputOptional = auxOutput;
+    std::optional<std::string> auxVerbosityOptional;
+    if (parsedOptions.count("log-file-verbosity"))
+        auxVerbosityOptional = auxVerbosity;
+    this->setVerbosityLevel(verbosityOptional, auxOutputOptional, auxVerbosityOptional);
 
     // Validate parsed options
     std::string cmd(argv[0]);
@@ -804,6 +851,8 @@ int Frontend::trajectory(int argc, char **argv) {
     std::string outputFilename;
     std::vector<std::string> observables;
     std::string verbosity;
+    std::string auxOutput;
+    std::string auxVerbosity;
 
     options.add_options()
         ("h,help", "prints help for this mode")
@@ -813,15 +862,23 @@ int Frontend::trajectory(int argc, char **argv) {
         ("t,trajectory", "a file with recorder trajectory",
          cxxopts::value<std::string>(trajectoryFilename))
         ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
-                        "error, warn, info, verbose, debug",
-         cxxopts::value<std::string>(verbosity)->default_value("info"))
+                        "error, warn, info, verbose, debug. Defaults to: info if --log-file not specified, "
+                        "otherwise to: warn",
+         cxxopts::value<std::string>(verbosity))
         ("o,output", "output file with the results (depending of a selected mode, for example --observables)",
          cxxopts::value<std::string>(outputFilename))
         ("O,observables", "replays the simulation and calculates specified observables (format as in the input file). "
                           "Observables can be passed using multiple short options (-o obs1 -o obs2) or comma-separated "
                           "in a long option (--observables=obs1,obs2)",
          cxxopts::value<std::vector<std::string>>(observables))
-        ("l,log-info", "print basic information about the recorded trajectory on a standard output");
+        ("I,log-info", "print basic information about the recorded trajectory on a standard output")
+        ("l,log-file", "if specified, messages will be logged both on the standard output and to this file. "
+                       "Verbosity defaults then to: warn for standard output and to: info for log file, unless "
+                       "changed by --verbosity and/or --log-file-verbosity options",
+         cxxopts::value<std::string>(auxOutput))
+        ("log-file-verbosity", "how verbose the output to the log file should be. Allowed values, with increasing "
+                               "verbosity: error, warn, info, verbose, debug. Defaults to: info",
+         cxxopts::value<std::string>(auxVerbosity));
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
@@ -830,7 +887,16 @@ int Frontend::trajectory(int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
-    this->setVerbosityLevel(verbosity);
+    std::optional<std::string> verbosityOptional;
+    if (parsedOptions.count("verbosity"))
+        verbosityOptional = verbosity;
+    std::optional<std::string> auxOutputOptional;
+    if (parsedOptions.count("log-file"))
+        auxOutputOptional = auxOutput;
+    std::optional<std::string> auxVerbosityOptional;
+    if (parsedOptions.count("log-file-verbosity"))
+        auxVerbosityOptional = auxVerbosity;
+    this->setVerbosityLevel(verbosityOptional, auxOutputOptional, auxVerbosityOptional);
 
     // Validate parsed options
     std::string cmd(argv[0]);
