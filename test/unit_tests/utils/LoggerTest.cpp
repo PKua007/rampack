@@ -103,6 +103,18 @@ TEST_CASE("Logger: multiple outputs") {
 
         CHECK(out1.str() == "[   WARN] [date] warn\n");
         CHECK(out2.str() == "[   WARN] [date] warn\n");
+
+        SECTION("removing output") {
+            logger.removeOutput(out1);
+            logger.warn() << "warn2" << std::endl;
+
+            CHECK(out1.str() == "[   WARN] [date] warn\n");
+            CHECK(out2.str() == "[   WARN] [date] warn\n[   WARN] [date] warn2\n");
+
+            SECTION("cannot remove the last one") {
+                CHECK_THROWS(logger.removeOutput(out2));
+            }
+        }
     }
 
     SECTION("setting verbosity for all") {

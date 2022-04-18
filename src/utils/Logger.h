@@ -14,7 +14,7 @@
 
 /**
  * @brief A simple class for logging with log type info and date.
- * @details The behaviour can be best seen in the test: LoggerTest.cpp.
+ * @details The behaviour can be best seen in the test: LoggerTest.cpp. More than one outputs can be passed.
  */
 
 class Logger {
@@ -33,6 +33,8 @@ private:
     LogType currentLogType = INFO;
     std::vector<LogType> maxLogTypes = {INFO};
     std::string additionalText;
+
+    using OutIterator = decltype(outs)::iterator;
 
     Logger &changeLogType(LogType newLogType) {
         if (this->currentLogType == newLogType)
@@ -67,6 +69,12 @@ private:
                 return "  DEBUG";
         }
         return "";
+    }
+
+    [[nodiscard]] OutIterator findOutput(const std::ostream &toFind) {
+        return std::find_if(this->outs.begin(), this->outs.end(), [&toFind](const auto &out) {
+            return std::addressof(toFind) == std::addressof(out.get());
+        });
     }
 
 protected:
@@ -110,19 +118,33 @@ public:
      * @brief Sets the log type with maximal verbosity level, which should be displayed, for a specified output.
      */
     void setVerbosityLevel(LogType maxLogType_, const std::ostream &forOutput) {
-        auto outputIt = std::find_if(this->outs.begin(), this->outs.end(), [&forOutput](const auto &out) {
-            return std::addressof(forOutput) == std::addressof(out.get());
-        });
+        auto outputIt = this->findOutput(forOutput);
         Expects(outputIt != this->outs.end());
 
         std::size_t idx = outputIt - this->outs.begin();
         this->maxLogTypes[idx] = maxLogType_;
     }
 
+    /**
+     * @brief Adds new output to the Logger. Verbosity is copied from the first output.
+     */
     void addOutput(std::ostream &newOutput) {
+        Expects(this->findOutput(newOutput) == this->outs.end());
+
         this->outs.emplace_back(newOutput);
         this->maxLogTypes.push_back(this->maxLogTypes.front());
         this->afterNewlines.push_back(true);
+    }
+
+    /**
+     * @brief Removes a givens output. At least one should be left - otherwise exception is thrown.
+     */
+    void removeOutput(const std::ostream &toRemove) {
+        Expects(this->outs.size() >= 2);
+
+        auto outputIt = this->findOutput(toRemove);
+        if (outputIt != this->outs.end())
+            this->outs.erase(outputIt);
     }
 
     operator std::ostream&() { return this->outs.front(); }
