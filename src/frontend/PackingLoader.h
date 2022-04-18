@@ -38,6 +38,7 @@ private:
     std::map<std::string, std::string> auxInfo{};
     bool isRestored_{};
     std::unique_ptr<Packing> packing{};
+    bool isAllFinished_{};
 
     void findStartRunIndex();
     void autoFindStartRunIndex();
@@ -62,6 +63,7 @@ public:
     [[nodiscard]] const std::map<std::string, std::string> &getAuxInfo() const { return this->auxInfo; }
     [[nodiscard]] bool isRestored() const { return this->isRestored_; }
     [[nodiscard]] std::unique_ptr<Packing> releasePacking() { return std::move(this->packing); }
+    [[nodiscard]] bool isAllFinished() const { return this->isAllFinished_; }
 
     void reset();
 };

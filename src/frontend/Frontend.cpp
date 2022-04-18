@@ -230,6 +230,11 @@ int Frontend::casino(int argc, char **argv) {
     std::size_t cycleOffset = packingLoader.getCycleOffset();
     bool isContinuation = packingLoader.isContinuation();
 
+    if (packingLoader.isAllFinished()) {
+        this->logger.warn() << "No runs left to be performed. Exiting." << std::endl;
+        return EXIT_SUCCESS;
+    }
+
     std::unique_ptr<Packing> packing;
     if (packingLoader.isRestored()) {
         packing = packingLoader.releasePacking();

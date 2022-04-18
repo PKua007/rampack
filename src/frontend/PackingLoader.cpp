@@ -14,6 +14,9 @@ void PackingLoader::loadPacking(std::unique_ptr<BoundaryConditions> bc, const In
     this->reset();
     this->findStartRunIndex();
 
+    if (this->isAllFinished_)
+        return;
+
     if ((!this->startFrom.has_value() || this->startRunIndex == 0) && !this->continuationCycles.has_value())
         return;
 
@@ -93,6 +96,7 @@ void PackingLoader::reset() {
     this->auxInfo.clear();
     this->isRestored_ = false;
     this->startRunIndex = 0;
+    this->isAllFinished_ = false;
 }
 
 void PackingLoader::autoFindStartRunIndex() {
@@ -113,8 +117,15 @@ void PackingLoader::autoFindStartRunIndex() {
         throw ValidationException("Starting run auto-detect: one or more runs are corrupted. Aborting.");
 
     auto firstUnfinished = std::find_if_not(runDatas.begin(), runDatas.end(), isRunFinished);
-    if (firstUnfinished == runDatas.end())
-        throw ValidationException("Starting run auto-detect: all runs were finished. Aborting.");
+    if (firstUnfinished == runDatas.end()) {
+        this->logger.warn() << "Starting run auto-detect: all runs were finished.";
+        this->logger << std::endl;
+
+        this->continuationCycles = std::nullopt;
+        this->startRunIndex = runDatas.size();
+        this->isAllFinished_ = true;
+        return;
+    }
 
     auto unexpectedPerformed = std::find_if(std::next(firstUnfinished), runDatas.end(), isRunPerformed);
     if (unexpectedPerformed != runDatas.end()) {
