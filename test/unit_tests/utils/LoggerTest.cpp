@@ -89,3 +89,41 @@ TEST_CASE("Logger: verbosity level") {
 
     REQUIRE_THAT(out.str(), Catch::StartsWith(verbosity.first));
 }
+
+TEST_CASE("Logger: multiple outputs") {
+    std::ostringstream out1;
+    std::ostringstream out2;
+    LoggerUnderTest logger(out1);
+
+    SECTION("copying verbosity") {
+        logger.setVerbosityLevel(Logger::WARN);
+        logger.addOutput(out2);
+        logger.warn() << "warn" << std::endl;
+        logger.info() << "info" << std::endl;
+
+        CHECK(out1.str() == "[   WARN] [date] warn\n");
+        CHECK(out2.str() == "[   WARN] [date] warn\n");
+    }
+
+    SECTION("setting verbosity for all") {
+        logger.setVerbosityLevel(Logger::ERROR);
+        logger.addOutput(out2);
+        logger.setVerbosityLevel(Logger::WARN);
+        logger.warn() << "warn" << std::endl;
+        logger.info() << "info" << std::endl;
+
+        CHECK(out1.str() == "[   WARN] [date] warn\n");
+        CHECK(out2.str() == "[   WARN] [date] warn\n");
+    }
+
+    SECTION("setting verbosity for individual") {
+        logger.addOutput(out2);
+        logger.setVerbosityLevel(Logger::INFO, out1);
+        logger.setVerbosityLevel(Logger::WARN, out2);
+        logger.warn() << "warn" << std::endl;
+        logger.info() << "info" << std::endl;
+
+        CHECK(out1.str() == "[   WARN] [date] warn\n[   INFO] [date] info\n");
+        CHECK(out2.str() == "[   WARN] [date] warn\n");
+    }
+}

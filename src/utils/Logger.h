@@ -7,6 +7,10 @@
 
 #include <ostream>
 #include <utility>
+#include <algorithm>
+
+#include "Assertions.h"
+
 
 /**
  * @brief A simple class for logging with log type info and date.
@@ -94,12 +98,31 @@ public:
 
     /**
      * @brief Sets the log type with maximal verbosity level, which should be displayed.
-     * @brief Verbosity levels are given by LogType in an ascending order, with LogType::ERROR being the least verbose
+     * @details Verbosity levels are given by LogType in an ascending order, with LogType::ERROR being the least verbose
      * and LogType::DEBUG being the most verbose. Default value is LogType::INFO.
      */
     void setVerbosityLevel(LogType maxLogType_) {
         for (auto &maxLogType : this->maxLogTypes)
             maxLogType = maxLogType_;
+    }
+
+    /**
+     * @brief Sets the log type with maximal verbosity level, which should be displayed, for a specified output.
+     */
+    void setVerbosityLevel(LogType maxLogType_, const std::ostream &forOutput) {
+        auto outputIt = std::find_if(this->outs.begin(), this->outs.end(), [&forOutput](const auto &out) {
+            return std::addressof(forOutput) == std::addressof(out.get());
+        });
+        Expects(outputIt != this->outs.end());
+
+        std::size_t idx = outputIt - this->outs.begin();
+        this->maxLogTypes[idx] = maxLogType_;
+    }
+
+    void addOutput(std::ostream &newOutput) {
+        this->outs.emplace_back(newOutput);
+        this->maxLogTypes.push_back(this->maxLogTypes.front());
+        this->afterNewlines.push_back(true);
     }
 
     operator std::ostream&() { return this->outs.front(); }
