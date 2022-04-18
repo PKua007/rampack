@@ -24,10 +24,10 @@ public:
     };
 
 private:
-    std::ostream &out;
-    bool afterNewline = true;
+    std::vector<std::reference_wrapper<std::ostream>> outs{};
+    std::vector<bool> afterNewlines = {true};
     LogType currentLogType = INFO;
-    LogType maxLogType = INFO;
+    std::vector<LogType> maxLogTypes = {INFO};
     std::string additionalText;
 
     Logger &changeLogType(LogType newLogType) {
@@ -36,9 +36,14 @@ private:
 
         this->currentLogType = newLogType;
 
-        if (!afterNewline) {
-            this->out << std::endl;
-            this->afterNewline = true;
+        for (std::size_t i{}; i < this->outs.size(); i++) {
+            std::vector<bool>::reference afterNewline = this->afterNewlines[i];
+            auto &out = this->outs[i].get();
+
+            if (!afterNewline) {
+                out << std::endl;
+                afterNewline = true;
+            }
         }
 
         return *this;
@@ -78,7 +83,7 @@ protected:
 public:
     using StreamManipulator = std::ostream&(*)(std::ostream&);
 
-    explicit Logger(std::ostream &out) : out{out} { }
+    explicit Logger(std::ostream &out) : outs{out} { }
 
     /**
      * @brief If set to non-empty, after [log type] [date and time] there will be [@a additionalText_].
@@ -92,10 +97,13 @@ public:
      * @brief Verbosity levels are given by LogType in an ascending order, with LogType::ERROR being the least verbose
      * and LogType::DEBUG being the most verbose. Default value is LogType::INFO.
      */
-    void setVerbosityLevel(LogType maxLogType_) { this->maxLogType = maxLogType_; }
+    void setVerbosityLevel(LogType maxLogType_) {
+        for (auto &maxLogType : this->maxLogTypes)
+            maxLogType = maxLogType_;
+    }
 
-    operator std::ostream&() { return this->out; }
-    std::ostream &raw() { return this->out; }
+    operator std::ostream&() { return this->outs.front(); }
+    std::ostream &raw() { return this->outs.front(); }
 
     Logger &info() { return this->changeLogType(INFO); }
     Logger &warn() { return this->changeLogType(WARN); }
@@ -105,28 +113,42 @@ public:
 
     template<typename T>
     Logger &operator<<(T &&t) {
-        if (this->currentLogType > this->maxLogType)
-            return *this;
+        for (std::size_t i{}; i < this->outs.size(); i++) {
+            const auto &maxLogType = this->maxLogTypes[i];
+            std::vector<bool>::reference afterNewline = this->afterNewlines[i];
+            auto &out = this->outs[i].get();
 
-        if (this->afterNewline) {
-            this->out << "[" << this->logTypeText() << "] [" << this->currentDateTime() << "] ";
-            if (!this->additionalText.empty())
-                this->out << "[" << this->additionalText << "] ";
+            if (this->currentLogType > maxLogType)
+                continue;
+
+            if (afterNewline) {
+                out << "[" << this->logTypeText() << "] [" << this->currentDateTime() << "] ";
+                if (!this->additionalText.empty())
+                    out << "[" << this->additionalText << "] ";
+            }
+
+            afterNewline = false;
+            out << std::forward<T>(t);
         }
 
-        this->afterNewline = false;
-        this->out << std::forward<T>(t);
         return *this;
     }
 
     Logger &operator<<(StreamManipulator manipulator) {
-        if (this->currentLogType > this->maxLogType)
-            return *this;
+        for (std::size_t i{}; i < this->outs.size(); i++) {
+            const auto &maxLogType = this->maxLogTypes[i];
+            std::vector<bool>::reference afterNewline = this->afterNewlines[i];
+            auto &out = this->outs[i].get();
 
-        if (manipulator == static_cast<StreamManipulator>(std::endl))
-            this->afterNewline = true;
+            if (this->currentLogType > maxLogType)
+                continue;
 
-        manipulator(this->out);
+            if (manipulator == static_cast<StreamManipulator>(std::endl))
+                afterNewline = true;
+
+            manipulator(out);
+        }
+
         return *this;
     }
 };
