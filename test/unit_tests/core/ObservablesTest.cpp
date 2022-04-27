@@ -81,18 +81,26 @@ TEST_CASE("Observables") {
     }
 
     SECTION("NematicOrder") {
-        NematicOrder nematicOrder;
+        SECTION("positive order with Q-tensor dump") {
+            NematicOrder nematicOrder(true);
 
-        SECTION("positive order") {
             nematicOrder.calculate(packing, 1, 1, mockShapeTraits);
 
-            CHECK(nematicOrder.getIntervalHeader() == std::vector<std::string>{"P2"});
+            CHECK(nematicOrder.getIntervalHeader()
+                  == std::vector<std::string>{"P2", "Q_11", "Q_12", "Q_13", "Q_22", "Q_23", "Q_33"});
             CHECK(nematicOrder.getName() == "nematic order");
-            REQUIRE(nematicOrder.getIntervalValues().size() == 1);
-            CHECK(nematicOrder.getIntervalValues()[0] == Approx(0.6403882032022076));   // Mathematica
+            REQUIRE(nematicOrder.getIntervalValues().size() == 7);
+            CHECK(nematicOrder.getIntervalValues()[0] == Approx(0.6403882032022076)); // Mathematica
+            CHECK(nematicOrder.getIntervalValues()[1] == Approx(0.5));
+            CHECK(nematicOrder.getIntervalValues()[2] == Approx(0.25));
+            CHECK(nematicOrder.getIntervalValues()[3] == Approx(-0.25));
+            CHECK(nematicOrder.getIntervalValues()[4] == Approx(-0.25));
+            CHECK(nematicOrder.getIntervalValues()[5] == Approx(0));
+            CHECK(nematicOrder.getIntervalValues()[6] == Approx(-0.25));
         }
 
-        SECTION("negative order") {
+        SECTION("negative order without Q-tensor dump") {
+            NematicOrder nematicOrder;
             Shape s2_1({1, 1, 1}, Matrix<3, 3>::rotation(0, M_PI/2, 0));
             Shape s2_2({2, 3, 3}, Matrix<3, 3>::rotation(0, -2*M_PI/3, 0));
             Shape s2_3({2.5, 3, 1}, Matrix<3, 3>::rotation(0, 0, M_PI/2));

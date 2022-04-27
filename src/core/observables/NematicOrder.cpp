@@ -9,19 +9,17 @@
 void NematicOrder::calculate(const Packing &packing, [[maybe_unused]] double temperature,
                              [[maybe_unused]] double pressure, const ShapeTraits &shapeTraits)
 {
-    Matrix<3, 3> Qtensor;
+    this->QTensor = Matrix<3, 3>{};
     for (const auto &shape : packing) {
         Vector<3> axis = shapeTraits.getPrimaryAxis(shape);
         for (std::size_t i{}; i < 3; i++)
             for (std::size_t j{}; j < 3; j++)
-                Qtensor(i, j) += axis[i] * axis[j];
+                this->QTensor(i, j) += axis[i] * axis[j];
     }
-    Qtensor /= static_cast<double>(packing.size());
-
-    auto eigenvalues = calculateEigenvalues(Qtensor);
+    this->QTensor /= static_cast<double>(packing.size());
     // Take into account the normalisation of the order parameter
-    for (auto &eigenvalue : eigenvalues)
-        eigenvalue = 0.5*(3*eigenvalue - 1);
+    this->QTensor = 0.5*(3.*this->QTensor - Matrix<3, 3>::identity());
+    auto eigenvalues = calculateEigenvalues(this->QTensor);
 
     // P2 is given by the eigenvalue with the highest magnitude
     this->P2 = *std::max_element(eigenvalues.begin(), eigenvalues.end(), [](double eigval1, double eigval2) {
@@ -54,4 +52,20 @@ std::array<double, 3> NematicOrder::calculateEigenvalues(const Matrix<3, 3> &ten
     return {1./3*(b + 2*sqrt_p*std::cos(Delta/3)),
             1./3*(b + 2*sqrt_p*std::cos((Delta + 2*M_PI)/3)),
             1./3*(b + 2*sqrt_p*std::cos((Delta - 2*M_PI)/3))};
+}
+
+std::vector<std::string> NematicOrder::getIntervalHeader() const {
+    if (this->dumpQTensor)
+        return {"P2", "Q_11", "Q_12", "Q_13", "Q_22", "Q_23", "Q_33"};
+    else
+        return {"P2"};
+}
+
+std::vector<double> NematicOrder::getIntervalValues() const {
+    if (this->dumpQTensor) {
+        return {this->P2, this->QTensor(0, 0), this->QTensor(0, 1), this->QTensor(0, 2), this->QTensor(1, 1),
+                this->QTensor(1, 2), this->QTensor(2, 2)};
+    } else {
+        return {this->P2};
+    }
 }

@@ -16,13 +16,21 @@ class NematicOrder : public Observable {
 private:
     static std::array<double, 3> calculateEigenvalues(const Matrix<3, 3> &tensor);
 
-    double P2;
+    bool dumpQTensor{};
+    Matrix<3, 3> QTensor;
+    double P2{};
 
 public:
+    /**
+     * @brief Creates the class. If @a dumpQTensor_ is @a true, whole Q tensor (upper-triangle part) will be also
+     * dumped.
+     */
+    explicit NematicOrder(bool dumpQTensor_ = false) : dumpQTensor{dumpQTensor_} { }
+
     void calculate(const Packing &packing, double temperature, double pressure,
                    const ShapeTraits &shapeTraits) override;
-    [[nodiscard]] std::vector<std::string> getIntervalHeader() const override { return {"P2"}; };
-    [[nodiscard]] std::vector<double> getIntervalValues() const override { return {this->P2}; };
+    [[nodiscard]] std::vector<std::string> getIntervalHeader() const override;
+    [[nodiscard]] std::vector<double> getIntervalValues() const override;
     [[nodiscard]] std::vector<std::string> getNominalHeader() const override { return {}; }
     [[nodiscard]]  std::vector<std::string> getNominalValues() const override { return {}; }
     [[nodiscard]] std::string getName() const override { return "nematic order"; };

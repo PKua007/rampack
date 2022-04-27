@@ -11,12 +11,12 @@
 #include "core/FreeBoundaryConditions.h"
 #include "core/shapes/SphereTraits.h"
 
-TEST_CASE("SmecticOrder") {
+TEST_CASE("SmecticOrder: with vector dump") {
     SphereTraits traits;
-    SmecticOrder smecticOrder({4, 4, 4});
+    SmecticOrder smecticOrder({4, 4, 4}, true);
 
     SECTION("meta") {
-        CHECK(smecticOrder.getIntervalHeader() == std::vector<std::string>{"tau"});
+        CHECK(smecticOrder.getIntervalHeader() == std::vector<std::string>{"tau", "k_x", "k_y", "k_z"});
         CHECK(smecticOrder.getNominalHeader() == std::vector<std::string>{"k_tau"});
         CHECK(smecticOrder.getName() == "smectic order");
     }
@@ -38,8 +38,18 @@ TEST_CASE("SmecticOrder") {
         auto intervalValues = smecticOrder.getIntervalValues();
         auto nominalValues = smecticOrder.getNominalValues();
 
-        REQUIRE(intervalValues.size() == 1);
+        REQUIRE(intervalValues.size() == 4);
         CHECK(intervalValues[0] == Approx(0.001));
-        REQUIRE(nominalValues == std::vector<std::string>{"3.0.0"});
+        CHECK(intervalValues[1] == Approx(2*M_PI/10));
+        CHECK(intervalValues[2] == Approx(0));
+        CHECK(intervalValues[3] == Approx(0));
+        CHECK(nominalValues == std::vector<std::string>{"3.0.0"});
     }
+}
+
+TEST_CASE("SmecticOrder: without vector dump") {
+    SmecticOrder smecticOrder({4, 4, 4});
+
+    CHECK(smecticOrder.getIntervalHeader() == std::vector<std::string>{"tau"});
+    CHECK(smecticOrder.getNominalHeader() == std::vector<std::string>{"k_tau"});
 }
