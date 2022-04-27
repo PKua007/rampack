@@ -79,19 +79,53 @@ std::unique_ptr<ObservablesCollector> ObservablesCollectorFactory::create(const 
         } else if (observableName == "energyFluctuationsPerParticle") {
             collector->addObservable(std::make_unique<EnergyFluctuationsPerParticle>(), observableType);
         } else if (observableName == "nematicOrder") {
-            collector->addObservable(std::make_unique<NematicOrder>(), observableType);
-        } else if (observableName == "smecticOrder") {
             observableStream >> std::ws;
-            if (!observableStream.eof()) {
-                std::array<int, 3> kTauRanges{};
-                observableStream >> kTauRanges[0] >> kTauRanges[1] >> kTauRanges[2];
-                ValidateMsg(observableStream, "Malformed smectic order, usage: smecticOrder (max_k_x max_k_y max_k_z)");
+            if (observableStream.eof()) {
+                collector->addObservable(std::make_unique<NematicOrder>(), observableType);
+                continue;
+            }
+
+            std::string QTensorString;
+            observableStream >> QTensorString;
+            ValidateMsg(QTensorString == "dumpQTensor", "Malformed nematic order, usage: nematicOrder (dumpQTensor)");
+            collector->addObservable(std::make_unique<NematicOrder>(true), observableType);
+        } else if (observableName == "smecticOrder") {
+            std::vector<std::string> tokens;
+            std::copy(std::istream_iterator<std::string>(observableStream), std::istream_iterator<std::string>{},
+                      std::back_inserter(tokens));
+
+            bool dumpTauVector{};
+            std::string dumpTauVectorString;
+            switch (tokens.size()) {
+                case 0:
+                case 3:
+                    dumpTauVector = false;
+                    break;
+
+                case 1:
+                case 4:
+                    dumpTauVectorString = tokens.back();
+                    if (dumpTauVectorString != "dumpTauVector") {
+                        throw ValidationException("Malformed smectic order, usage: smecticOrder "
+                                                  "([max_k_x] [max_k_y] [max_k_z]) (dumpTauVector)");
+                    }
+                    dumpTauVector = true;
+                    break;
+
+                default:
+                    throw ValidationException("Malformed smectic order, usage: smecticOrder "
+                                              "([max_k_x] [max_k_y] [max_k_z]) (dumpTauVector)");
+                    break;
+            }
+
+            if (tokens.size() >= 3) {
+                std::array<int, 3> kTauRanges{std::stoi(tokens[0]), std::stoi(tokens[1]), std::stoi(tokens[2])};
                 bool anyNonzero = std::any_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i != 0; });
                 bool allNonNegative = std::all_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i >= 0; });
                 ValidateMsg(anyNonzero && allNonNegative, "All tau ranges must be nonzero and some must be positive");
-                collector->addObservable(std::make_unique<SmecticOrder>(kTauRanges), observableType);
+                collector->addObservable(std::make_unique<SmecticOrder>(kTauRanges, dumpTauVector), observableType);
             } else {
-                collector->addObservable(std::make_unique<SmecticOrder>(), observableType);
+                collector->addObservable(std::make_unique<SmecticOrder>(dumpTauVector), observableType);
             }
         } else if (observableName == "bondOrder") {
             std::string millerIndicesString;
