@@ -28,10 +28,15 @@ private:
     std::vector<std::string> header;
     Vector<3> millerIndices;
 
+    Vector<3> kVector;
+    Vector<3> planeVector1;
+    Vector<3> planeVector2;
+    double tauAngle{};
+
     static void insertDistance(KnnVector &knnVector, std::size_t particleIdx, double distance2);
 
     std::vector<KnnVector> constructKnn(const Packing &packing);
-    auto findPlaneVectors(const Packing &packing);
+    void calculateLayerGeometry(const Packing &packing);
     static double doCalculateBondOrder(const Packing &packing, size_t rank, const std::vector<KnnVector> &knn,
                                        const Vector<3> &planeVector1, const Vector<3> &planeVector2);
 

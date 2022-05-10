@@ -69,7 +69,7 @@ TEST_CASE("BondOrder") {
     //packing.toWolfram(std::cout, sphereTraits.getPrinter());
 
     // ... and test the order parameter
-    BondOrder bondOrder({4, 6}, {0, 0, 1});
+    BondOrder bondOrder({4, 6}, {0, 0, 2});
 
     bondOrder.calculate(packing, 1, 1, sphereTraits);
 
