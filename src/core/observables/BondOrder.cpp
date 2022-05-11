@@ -59,6 +59,10 @@ double BondOrder::doCalculateBondOrder(const Packing &packing, std::size_t rank,
     for (std::size_t particleIdx{}; particleIdx < packing.size(); particleIdx++) {
         const auto &particlePos = packing[particleIdx].getPosition();
         const auto &neighboursIdxs = knn[particleIdx];
+        // Skip particles which have too few neighbours - effectively they have psi = 0
+        if (neighboursIdxs.size() < rank)
+            continue;
+
         std::complex<double> localPsi{};
         for (std::size_t neighbourIdx{}; neighbourIdx < rank; neighbourIdx++) {
             auto neighbourParticleIdx = neighboursIdxs[neighbourIdx].first;
