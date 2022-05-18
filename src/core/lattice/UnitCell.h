@@ -20,6 +20,10 @@ private:
 public:
     UnitCell(std::shared_ptr<TriclinicBox> cellShape, std::vector<Shape> molecules);
 
+    UnitCell(const TriclinicBox &cellShape, std::vector<Shape> molecules)
+            : UnitCell(std::make_shared<TriclinicBox>(cellShape), std::move(molecules))
+    { }
+
     std::size_t size() const { return this->molecules.size(); }
     Shape &operator[](std::size_t i) { return this->molecules.at(i); }
     const Shape &operator[](std::size_t i) const { return this->molecules.at(i); }

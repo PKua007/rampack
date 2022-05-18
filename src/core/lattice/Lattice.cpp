@@ -47,3 +47,10 @@ std::size_t Lattice::getCellIndex(std::size_t i, std::size_t j, std::size_t k) c
 
     return i + j*this->dimensions[0] + k*this->dimensions[0]*this->dimensions[1];
 }
+
+TriclinicBox Lattice::getLatticeBox() const {
+    auto boxSides = this->getCellShape().getSides();
+    return TriclinicBox({boxSides[0] * static_cast<double>(this->dimensions[0]),
+                         boxSides[1] * static_cast<double>(this->dimensions[1]),
+                         boxSides[2] * static_cast<double>(this->dimensions[2])});
+}

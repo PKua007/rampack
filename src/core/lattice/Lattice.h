@@ -26,6 +26,9 @@ public:
     const UnitCell &getCell(std::size_t i, std::size_t j, std::size_t k) const;
     UnitCell &modifyCell(std::size_t i, std::size_t j, std::size_t k);
     bool isRegular() const { return this->isRegular_; }
+    TriclinicBox &getCellShape() { return this->cells.front().getCellShape(); }
+    const TriclinicBox &getCellShape() const { return this->cells.front().getCellShape(); }
+    TriclinicBox getLatticeBox() const;
 };
 
 
