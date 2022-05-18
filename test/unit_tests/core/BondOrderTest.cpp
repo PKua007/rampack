@@ -7,7 +7,7 @@
 #include <catch2/catch.hpp>
 
 #include "core/observables/BondOrder.h"
-#include "core/arranging_models/OrthorhombicArrangingModel.h"
+#include "core/lattice/OrthorhombicArrangingModel.h"
 #include "core/FreeBoundaryConditions.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/shapes/SphereTraits.h"

@@ -15,7 +15,7 @@
 #include "core/Shape.h"
 #include "core/BoundaryConditions.h"
 #include "core/Interaction.h"
-#include "core/arranging_models/OrthorhombicArrangingModel.h"
+#include "core/lattice/OrthorhombicArrangingModel.h"
 #include "core/Simulation.h"
 
 /**

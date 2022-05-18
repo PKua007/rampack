@@ -6,7 +6,7 @@
 #include <fstream>
 
 #include "ArrangementFactory.h"
-#include "core/arranging_models/OrthorhombicArrangingModel.h"
+#include "core/lattice/OrthorhombicArrangingModel.h"
 #include "core/DistanceOptimizer.h"
 #include "utils/Assertions.h"
 #include "core/PeriodicBoundaryConditions.h"
