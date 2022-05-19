@@ -10,44 +10,16 @@
 
 #include "core/Shape.h"
 #include "core/BoundaryConditions.h"
+#include "LatticeTraits.h"
 
 /**
  * @brief A class arranging shapes into orthorhombic lattice with a single molecule within a unit cell.
  */
 class OrthorhombicArrangingModel {
 public:
-    /**
-     * @brief Enumeration of coordinate system axes.
-     */
-    enum class Axis {
-        X,
-        Y,
-        Z
-    };
-
-    /**
-     * @brief Enumeration of layer clinicity.
-     */
-    enum class Clinicity {
-        /** @brief Implicit (default) clinicity */
-        IMPLICIT,
-        /** @brief Synclinic (not-alterating) tilt arrangement */
-        SYNCLINIC,
-        /** @brief Anticlinic (alterating) tilt arrangement */
-        ANTICLINIC
-    };
-
-    /**
-     * @brief Enumeration of layer polarization.
-     */
-    enum class Polarization {
-        /** @brief Implicit (default) polarization */
-        IMPLICIT,
-        /** @brief Ferroelectic polar arrangement */
-        FERRO,
-        /** @brief Antiferroelectic (antipolar) polar arrangement */
-        ANTIFERRO
-    };
+    using Axis = LatticeTraits::Axis;
+    using Polarization = LatticeTraits::Polarization;
+    using Clinicity = LatticeTraits::Clinicity;
 
 private:
     Polarization polarization = Polarization::IMPLICIT;

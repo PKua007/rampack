@@ -37,6 +37,4 @@ std::size_t get_vector_memory_usage(const std::vector<T> &vec) {
     return vec.capacity() * sizeof(T);
 }
 
-std::array<std::size_t, 3> parse_axis_order(const std::string &axisOrderString);
-
 #endif //RAMPACK_UTILS_H

@@ -6,6 +6,7 @@
 #define RAMPACK_SERIALPOPULATOR_H
 
 #include "LatticePopulator.h"
+#include "LatticeTraits.h"
 #include "utils/Utils.h"
 
 
@@ -14,7 +15,9 @@ private:
     std::array<std::size_t, 3> axisOrder{};
 
 public:
-    explicit SerialPopulator(const std::string &axisOrderString) : axisOrder{parse_axis_order(axisOrderString)} { }
+    explicit SerialPopulator(const std::string &axisOrderString)
+            : axisOrder{LatticeTraits::parseAxisOrder(axisOrderString)}
+    { }
 
     [[nodiscard]] std::vector<Shape> populateLattice(const Lattice &lattice, std::size_t numOfShapes) const override;
 };

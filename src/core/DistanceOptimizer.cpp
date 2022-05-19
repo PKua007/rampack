@@ -5,7 +5,7 @@
 #include "DistanceOptimizer.h"
 
 #include "utils/Assertions.h"
-#include "utils/Utils.h"
+#include "lattice/LatticeTraits.h"
 #include "FreeBoundaryConditions.h"
 
 double DistanceOptimizer::minimizeForDirection(Shape shape1, Shape shape2, Vector<3> direction,
@@ -67,7 +67,7 @@ void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &inter
     Expects(!isPackingOverlapping(packing, interaction));
 
     // Optimize axis by axis in a given axis order
-    auto axisOrder = parse_axis_order(axisOrderString);
+    auto axisOrder = LatticeTraits::parseAxisOrder(axisOrderString);
     for (std::size_t axisNum : axisOrder) {
         double factorBeg = range * FACTOR_EPSILON / initialDim[axisNum];  // Smallest scaling without self-overlap
         double factorEnd = 1;
