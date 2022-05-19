@@ -54,3 +54,32 @@ TriclinicBox Lattice::getLatticeBox() const {
                          boxSides[1] * static_cast<double>(this->dimensions[1]),
                          boxSides[2] * static_cast<double>(this->dimensions[2])});
 }
+
+std::size_t Lattice::size() const {
+    std::size_t numMolecules{};
+    for (const auto &cell : this->cells)
+        numMolecules += cell.size();
+    return numMolecules;
+}
+
+std::vector<Shape> Lattice::generateShapes() const {
+    std::size_t size_ = this->size();
+
+    std::vector<Shape> shapes;
+    shapes.reserve(size_);
+
+    for (std::size_t i{}; i < this->dimensions[0]; i++) {
+        for (std::size_t j{}; j < this->dimensions[1]; j++) {
+            for (std::size_t k{}; k < this->dimensions[2]; k++) {
+                const auto &cell = this->getCell(i, j, k);
+                for (const auto &shape : cell) {
+                    Vector<3> pos = Vector<3>{static_cast<double>(i), static_cast<double>(j), static_cast<double>(k)};
+                    pos += shape.getPosition();
+                    shapes.emplace_back(cell.getCellShape().relativeToAbsolute(pos), shape.getOrientation());
+                }
+            }
+        }
+    }
+
+    return shapes;
+}

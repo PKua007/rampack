@@ -18,17 +18,24 @@ private:
     std::vector<Shape> molecules;
 
 public:
+    using const_iterator = decltype(molecules)::const_iterator;
+    using iterator = decltype(molecules)::iterator;
+
     UnitCell(std::shared_ptr<TriclinicBox> cellShape, std::vector<Shape> molecules);
 
     UnitCell(const TriclinicBox &cellShape, std::vector<Shape> molecules)
             : UnitCell(std::make_shared<TriclinicBox>(cellShape), std::move(molecules))
     { }
 
-    std::size_t size() const { return this->molecules.size(); }
-    Shape &operator[](std::size_t i) { return this->molecules.at(i); }
-    const Shape &operator[](std::size_t i) const { return this->molecules.at(i); }
-    TriclinicBox &getCellShape() { return *this->cellShape; }
-    const TriclinicBox &getCellShape() const { return *this->cellShape; }
+    [[nodiscard]] std::size_t size() const { return this->molecules.size(); }
+    [[nodiscard]] Shape &operator[](std::size_t i) { return this->molecules.at(i); }
+    [[nodiscard]] const Shape &operator[](std::size_t i) const { return this->molecules.at(i); }
+    [[nodiscard]] TriclinicBox &getCellShape() { return *this->cellShape; }
+    [[nodiscard]] const TriclinicBox &getCellShape() const { return *this->cellShape; }
+    [[nodiscard]] iterator begin() { return this->molecules.begin(); }
+    [[nodiscard]] iterator end() { return this->molecules.end(); }
+    [[nodiscard]] const_iterator begin() const { return this->molecules.begin(); }
+    [[nodiscard]] const_iterator end() const { return this->molecules.end(); }
 };
 
 

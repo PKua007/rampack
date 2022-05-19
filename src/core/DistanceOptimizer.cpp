@@ -5,6 +5,7 @@
 #include "DistanceOptimizer.h"
 
 #include "utils/Assertions.h"
+#include "utils/Utils.h"
 #include "FreeBoundaryConditions.h"
 
 double DistanceOptimizer::minimizeForDirection(Shape shape1, Shape shape2, Vector<3> direction,
@@ -66,7 +67,7 @@ void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &inter
     Expects(!isPackingOverlapping(packing, interaction));
 
     // Optimize axis by axis in a given axis order
-    auto axisOrder = parseAxisOrder(axisOrderString);
+    auto axisOrder = parse_axis_order(axisOrderString);
     for (std::size_t axisNum : axisOrder) {
         double factorBeg = range * FACTOR_EPSILON / initialDim[axisNum];  // Smallest scaling without self-overlap
         double factorEnd = 1;
@@ -98,23 +99,6 @@ std::array<double, 3> DistanceOptimizer::singleAxisScaling(std::size_t axisNum, 
     testFactors.fill(1);
     testFactors[axisNum] = factor;
     return testFactors;
-}
-
-std::array<std::size_t, 3> DistanceOptimizer::parseAxisOrder(const std::string &axisOrderString) {
-    if (axisOrderString == "xyz")
-        return {0, 1, 2};
-    else if (axisOrderString == "xzy")
-        return {0, 2, 1};
-    else if (axisOrderString == "yxz")
-        return {1, 0, 2};
-    else if (axisOrderString == "yzx")
-        return {1, 2, 0};
-    else if (axisOrderString == "zxy")
-        return {2, 0, 1};
-    else if (axisOrderString == "zyx")
-        return {2, 1, 0};
-    else
-        throw PreconditionException("Malformed axis order");
 }
 
 bool DistanceOptimizer::isScaledPackingOverlapping(Packing &packing, const Interaction &interaction,

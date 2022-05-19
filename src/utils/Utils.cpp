@@ -11,6 +11,8 @@
 #include <utility>
 
 #include "Utils.h"
+#include "Assertions.h"
+
 
 // trim from start
 std::string &ltrim(std::string &s) {
@@ -75,4 +77,21 @@ void die(const std::string &reason) {
 void die(const std::string &reason, Logger &logger) {
     logger.error() << reason << std::endl;
     exit(EXIT_FAILURE);
+}
+
+std::array<std::size_t, 3> parse_axis_order(const std::string &axisOrderString) {
+    if (axisOrderString == "xyz")
+        return {0, 1, 2};
+    else if (axisOrderString == "xzy")
+        return {0, 2, 1};
+    else if (axisOrderString == "yxz")
+        return {1, 0, 2};
+    else if (axisOrderString == "yzx")
+        return {1, 2, 0};
+    else if (axisOrderString == "zxy")
+        return {2, 0, 1};
+    else if (axisOrderString == "zyx")
+        return {2, 1, 0};
+    else
+        throw PreconditionException("Malformed axis order");
 }
