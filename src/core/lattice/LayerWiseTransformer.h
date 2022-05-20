@@ -16,7 +16,7 @@ private:
     static std::size_t LCM(std::size_t n1, std::size_t n2);
 
     [[nodiscard]] std::vector<std::pair<double, std::vector<std::size_t>>>
-    getLayerAssiciation(const UnitCell &cell) const;
+    getLayerAssociation(const UnitCell &cell) const;
 
     void recalculateUnitCell(UnitCell &cell,
                              std::vector<std::pair<double, std::vector<std::size_t>>> &layerAssociation,

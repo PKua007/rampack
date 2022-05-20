@@ -12,7 +12,7 @@ void LayerWiseTransformer::transform(Lattice &lattice) const {
     Expects(lattice.isRegular());
 
     auto cell = lattice.getCell(0, 0, 0);
-    auto layerAssociation = this->getLayerAssiciation(cell);
+    auto layerAssociation = this->getLayerAssociation(cell);
     std::size_t requestedNumOfLayers = this->getRequestedNumOfLayers();
     auto dim = lattice.getDimensions();
 
@@ -84,7 +84,7 @@ LayerWiseTransformer::recalculateUnitCell(UnitCell &cell,
 }
 
 std::vector<std::pair<double, std::vector<std::size_t>>>
-LayerWiseTransformer::getLayerAssiciation(const UnitCell &cell) const
+LayerWiseTransformer::getLayerAssociation(const UnitCell &cell) const
 {
     std::size_t axisIdx = LatticeTraits::axisToIndex(this->axis);
     std::vector<std::pair<double, std::vector<std::size_t>>> layerAssociation;
