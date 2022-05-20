@@ -158,7 +158,7 @@ public:
      * @param scalingThreads number of threads used for volume moves. If 0, all OpenMP threads will be used
      */
     Packing(const std::array<double, 3> &dimensions, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
-            const Interaction &interaction, std::size_t moveThreads = 0, std::size_t scalingThreads = 0)
+            const Interaction &interaction, std::size_t moveThreads = 1, std::size_t scalingThreads = 1)
             : Packing(TriclinicBox(dimensions), std::move(shapes), std::move(bc), interaction, moveThreads,
                       scalingThreads)
     { }
