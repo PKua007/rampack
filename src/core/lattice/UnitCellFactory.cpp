@@ -14,9 +14,9 @@ UnitCell UnitCellFactory::createBccCell(const std::array<double, 3> &linearSize)
 
 UnitCell UnitCellFactory::createFccCell(const std::array<double, 3> &linearSize) {
     return UnitCell(TriclinicBox(linearSize), {Shape({0.25, 0.25, 0.25}),
-                                               Shape({0.75, 0.25, 0.25}),
-                                               Shape({0.25, 0.75, 0.25}),
-                                               Shape({0.25, 0.25, 0.75})});
+                                               Shape({0.25, 0.75, 0.75}),
+                                               Shape({0.75, 0.25, 0.75}),
+                                               Shape({0.75, 0.75, 0.25})});
 }
 
 UnitCell UnitCellFactory::createHcpCell(const std::array<double, 3> &cuboidalCellSize) {
