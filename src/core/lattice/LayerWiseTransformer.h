@@ -13,13 +13,23 @@ class LayerWiseTransformer : public LatticeTransformer {
 private:
     LatticeTraits::Axis axis;
 
+    static std::size_t LCM(std::size_t n1, std::size_t n2);
+
+    [[nodiscard]] std::vector<std::pair<double, std::vector<std::size_t>>>
+    getLayerAssiciation(const UnitCell &cell) const;
+
+    void recalculateUnitCell(UnitCell &cell,
+                             std::vector<std::pair<double, std::vector<std::size_t>>> &layerAssociation,
+                             std::array<std::size_t, 3> &dim, std::size_t requestedNumOfLayers) const;
+
 protected:
-    [[nodiscard]] virtual Shape transformShape(const Shape &shape, bool isEven) const = 0;
+    [[nodiscard]] virtual Shape transformShape(const Shape &shape, std::size_t layerIndex) const = 0;
+    [[nodiscard]] virtual std::size_t getRequestedNumOfLayers() const = 0;
 
 public:
     explicit LayerWiseTransformer(LatticeTraits::Axis axis) : axis{axis} { }
 
-    void transform(Lattice &lattice) const override;
+    void transform(Lattice &lattice) const final;
 };
 
 
