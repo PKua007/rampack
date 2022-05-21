@@ -104,6 +104,11 @@ public:
      * The rest of heights are computed similarly by a cyclic permutation of sides.
      */
     [[nodiscard]] std::array<double, 3> getHeights() const;
+
+    /**
+     * @brief Returns true, if the dimensions of the boxes are identical.
+     */
+    friend bool operator==(const TriclinicBox &b1, const TriclinicBox &b2);
 };
 
 

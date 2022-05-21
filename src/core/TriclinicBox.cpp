@@ -49,3 +49,7 @@ std::array<double, 3> TriclinicBox::getHeights() const {
 
     return {h1, h2, h3};
 }
+
+bool operator==(const TriclinicBox &b1, const TriclinicBox &b2) {
+    return b1.dimensions == b2.dimensions;
+}
