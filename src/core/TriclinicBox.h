@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <array>
+#include <ostream>
 
 #include "geometry/Vector.h"
 #include "geometry/Matrix.h"
@@ -109,6 +110,11 @@ public:
      * @brief Returns true, if the dimensions of the boxes are identical.
      */
     friend bool operator==(const TriclinicBox &b1, const TriclinicBox &b2);
+
+    /**
+     * @brief Prints a textual representation of the box into @a out stream.
+     */
+    friend std::ostream &operator<<(std::ostream &out, const TriclinicBox &b);
 };
 
 

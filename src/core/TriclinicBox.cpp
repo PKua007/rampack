@@ -53,3 +53,7 @@ std::array<double, 3> TriclinicBox::getHeights() const {
 bool operator==(const TriclinicBox &b1, const TriclinicBox &b2) {
     return b1.dimensions == b2.dimensions;
 }
+
+std::ostream &operator<<(std::ostream &out, const TriclinicBox &b) {
+    return out << "TriclinicBox{" << b.dimensions << "}";
+}
