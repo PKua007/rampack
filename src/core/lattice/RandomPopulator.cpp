@@ -13,7 +13,7 @@ std::vector<Shape> RandomPopulator::populateLattice(const Lattice &lattice, std:
     std::size_t latticeSize = lattice.size();
     Expects(latticeSize >= numOfShapes);
 
-    auto allShapes = lattice.generateShapes();
+    auto allShapes = lattice.generateMolecules();
     std::vector<std::size_t> idx(latticeSize, 0);
     std::iota(idx.begin(), idx.end(), 0);
     std::shuffle(idx.begin(), idx.end(), this->rng);

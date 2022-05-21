@@ -27,7 +27,7 @@ void ColumnarTransformer::transform(Lattice &lattice) const {
                 std::uniform_real_distribution<double> dist;
                 double shift = dist(this->mt);
                 for (i[axisIdx] = 0; i[axisIdx] < dim[axisIdx]; i[axisIdx]++) {
-                    auto &cell = lattice.modifyCell(i[0], i[1], i[2]);
+                    auto &cell = lattice.modifyCellMolecules(i[0], i[1], i[2]);
                     for (auto cellIdx : column.second) {
                         auto &shape = cell[cellIdx];
                         auto pos = shape.getPosition();

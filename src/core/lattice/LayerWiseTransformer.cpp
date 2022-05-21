@@ -64,7 +64,7 @@ LayerWiseTransformer::recalculateUnitCell(UnitCell &cell,
     layerAssociation = newLayerAssociation;
 
     // Modify cell
-    auto newCellShapeSides = cell.getCellShape().getSides();
+    auto newCellShapeSides = cell.getBox().getSides();
     newCellShapeSides[axisIdx] *= static_cast<double>(factor);
     TriclinicBox newCellShape(newCellShapeSides);
 

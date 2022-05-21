@@ -18,7 +18,8 @@ TEST_CASE("UnitCell") {
         CHECK(unitCell[0] == shape0);
         CHECK(unitCell[1] == shape1);
         CHECK_THROWS(unitCell[2]);
-        CHECK(unitCell.getCellShape() == box);
+        CHECK(unitCell.getBox() == box);
+        CHECK(unitCell.getMolecules() == std::vector<Shape>({shape0, shape1}));
         std::size_t i{};
         for (const auto &shape: unitCell) {
             if (i == 0)
@@ -37,6 +38,12 @@ TEST_CASE("UnitCell") {
         CHECK(unitCell[0] == shape1);
     }
 
+    SECTION("molecules vector modification") {
+        unitCell.getMolecules()[0] = shape1;
+
+        CHECK(unitCell[0] == shape1);
+    }
+
     SECTION("iterator modification") {
         *unitCell.begin() = shape1;
 
@@ -46,8 +53,8 @@ TEST_CASE("UnitCell") {
     SECTION("box modification") {
         TriclinicBox newBox(std::array<double, 3>{1, 2, 8});
 
-        unitCell.getCellShape() = newBox;
+        unitCell.getBox() = newBox;
 
-        CHECK(unitCell.getCellShape() == newBox);
+        CHECK(unitCell.getBox() == newBox);
     }
 }

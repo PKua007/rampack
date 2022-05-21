@@ -16,14 +16,14 @@ void CellOptimizationTransformer::transform(Lattice &lattice) const {
     Expects(lattice.isRegular());
 
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    Packing testPacking(lattice.getLatticeBox(), lattice.generateShapes(), std::move(pbc), this->interaction);
+    Packing testPacking(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), this->interaction);
 
     auto oldBox = testPacking.getBox();
     DistanceOptimizer::shrinkPacking(testPacking, this->interaction, this->axisOrderString);
     auto newBox = testPacking.getBox();
 
     auto cellTransform = newBox.getDimensions() * oldBox.getDimensions().inverse();
-    lattice.getCellShape().transform(cellTransform);
+    lattice.getCellBox().transform(cellTransform);
 }
 
 CellOptimizationTransformer::CellOptimizationTransformer(const Interaction &interaction,

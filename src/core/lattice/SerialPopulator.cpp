@@ -27,7 +27,7 @@ std::vector<Shape> SerialPopulator::populateLattice(const Lattice &lattice, std:
                                               static_cast<double>(i[1]),
                                               static_cast<double>(i[2])};
                     pos += shape.getPosition();
-                    shapes.emplace_back(cell.getCellShape().relativeToAbsolute(pos), shape.getOrientation());
+                    shapes.emplace_back(cell.getBox().relativeToAbsolute(pos), shape.getOrientation());
                 }
             }
         }

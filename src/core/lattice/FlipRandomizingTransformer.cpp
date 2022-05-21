@@ -9,7 +9,7 @@ void FlipRandomizingTransformer::transform(Lattice &lattice) const {
     for (std::size_t i{}; i < dim[0]; i++) {
         for (std::size_t j{}; j < dim[1]; j++) {
             for (std::size_t k{}; k < dim[2]; k++) {
-                for (auto &shape : lattice.modifyCell(i, j, k)) {
+                for (auto &shape : lattice.modifyCellMolecules(i, j, k)) {
                     std::uniform_int_distribution flipOrNot(0, 1);
                     if (flipOrNot(this->rng) == 1) {
                         Vector<3> axis = shape.getOrientation() * this->secondaryAxis;
