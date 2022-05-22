@@ -11,7 +11,7 @@
 void ColumnarTransformer::transform(Lattice &lattice) const {
     Expects(lattice.isRegular());
 
-    const auto &unitCell = lattice.getCell(0, 0, 0);
+    const auto &unitCell = lattice.getSpecificCell(0, 0, 0);
     auto columnAssociation = this->getColumnAssociation(unitCell);
     const auto &dim = lattice.getDimensions();
 
@@ -27,7 +27,7 @@ void ColumnarTransformer::transform(Lattice &lattice) const {
                 std::uniform_real_distribution<double> dist;
                 double shift = dist(this->mt);
                 for (i[axisIdx] = 0; i[axisIdx] < dim[axisIdx]; i[axisIdx]++) {
-                    auto &cell = lattice.modifyCellMolecules(i[0], i[1], i[2]);
+                    auto &cell = lattice.modifySpecificCellMolecules(i[0], i[1], i[2]);
                     for (auto cellIdx : column.second) {
                         auto &shape = cell[cellIdx];
                         auto pos = shape.getPosition();

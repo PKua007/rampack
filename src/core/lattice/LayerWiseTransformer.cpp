@@ -11,7 +11,7 @@
 void LayerWiseTransformer::transform(Lattice &lattice) const {
     Expects(lattice.isRegular());
 
-    auto cell = lattice.getCell(0, 0, 0);
+    auto cell = lattice.getSpecificCell(0, 0, 0);
     auto layerAssociation = this->getLayerAssociation(cell);
     std::size_t requestedNumOfLayers = this->getRequestedNumOfLayers();
     auto dim = lattice.getDimensions();

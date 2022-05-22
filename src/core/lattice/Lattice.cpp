@@ -10,22 +10,25 @@
 
 
 Lattice::Lattice(const UnitCell &unitCell, const std::array<std::size_t, 3> &dimensions)
-        : dimensions{dimensions}, isRegular_{true}
+        : cells{unitCell}, dimensions{dimensions}, isRegular_{true}
 {
     Expects(std::all_of(dimensions.begin(), dimensions.end(), [](std::size_t dim) { return dim > 0; }));
-
-    std::size_t length = std::accumulate(this->dimensions.begin(), this->dimensions.end(), 1, std::multiplies<>{});
-    this->cells.reserve(length);
-    for (std::size_t i{}; i < length; i++)
-        this->cells.emplace_back(unitCell);
+    this->numCells = std::accumulate(this->dimensions.begin(), this->dimensions.end(), 1, std::multiplies<>{});
 }
 
-const UnitCell &Lattice::getCell(std::size_t i, std::size_t j, std::size_t k) const {
-    return this->cells[this->getCellIndex(i, j, k)];
+const UnitCell &Lattice::getSpecificCell(std::size_t i, std::size_t j, std::size_t k) const {
+    if (this->isRegular_)
+        return this->cells.front();
+    else
+        return this->cells[this->getCellIndex(i, j, k)];
 }
 
-std::vector<Shape> &Lattice::modifyCellMolecules(std::size_t i, std::size_t j, std::size_t k) {
-    this->isRegular_ = false;
+std::vector<Shape> &Lattice::modifySpecificCellMolecules(std::size_t i, std::size_t j, std::size_t k) {
+    if (this->isRegular_) {
+        this->isRegular_ = false;
+        this->cells.resize(this->numCells, this->cells.front());
+    }
+
     return this->cells[this->getCellIndex(i, j, k)].getMolecules();
 }
 
@@ -45,10 +48,14 @@ TriclinicBox Lattice::getLatticeBox() const {
 }
 
 std::size_t Lattice::size() const {
-    std::size_t numMolecules{};
-    for (const auto &cell : this->cells)
-        numMolecules += cell.size();
-    return numMolecules;
+    if (this->isRegular_) {
+        return this->numCells * this->cells.front().size();
+    } else {
+        std::size_t numMolecules{};
+        for (const auto &cell: this->cells)
+            numMolecules += cell.size();
+        return numMolecules;
+    }
 }
 
 std::vector<Shape> Lattice::generateMolecules() const {
@@ -60,7 +67,7 @@ std::vector<Shape> Lattice::generateMolecules() const {
     for (std::size_t i{}; i < this->dimensions[0]; i++) {
         for (std::size_t j{}; j < this->dimensions[1]; j++) {
             for (std::size_t k{}; k < this->dimensions[2]; k++) {
-                const auto &cell = this->getCell(i, j, k);
+                const auto &cell = this->getSpecificCell(i, j, k);
                 for (const auto &shape : cell) {
                     Vector<3> pos = Vector<3>{static_cast<double>(i), static_cast<double>(j), static_cast<double>(k)};
                     pos += shape.getPosition();
@@ -71,4 +78,22 @@ std::vector<Shape> Lattice::generateMolecules() const {
     }
 
     return shapes;
+}
+
+const UnitCell &Lattice::getUnitCell() const {
+    Expects(this->isRegular_);
+    return this->cells.front();
+}
+
+const std::vector<Shape> &Lattice::getSpecificCellMolecules(std::size_t i, std::size_t j, std::size_t k) const {
+    return this->getSpecificCell(i, j, k).getMolecules();
+}
+
+const std::vector<Shape> &Lattice::getUnitCellMolecules() const {
+    return this->getUnitCell().getMolecules();
+}
+
+std::vector<Shape> &Lattice::modifyUnitCellMolecules() {
+    Expects(this->isRegular_);
+    return this->cells.front().getMolecules();
 }

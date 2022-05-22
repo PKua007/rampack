@@ -16,7 +16,7 @@ TEST_CASE("LayerRotationTransformer: alternating") {
 
     layerRotationTransformer.transform(lattice);
 
-    const auto &molecules = lattice.getCell(0, 0, 0).getMolecules();
+    const auto &molecules = lattice.getSpecificCell(0, 0, 0).getMolecules();
     CHECK(molecules[0].getPosition() == Vector<3>{0, 0.5, 0.25});
     CHECK_THAT(molecules[0].getOrientation(), IsApproxEqual(Matrix<3, 3>::rotation(M_PI/2, 0, 0), 1e-12));
     CHECK(molecules[1].getPosition() == Vector<3>{0.5, 0.5, 0.25});
@@ -32,7 +32,7 @@ TEST_CASE("LayerRotationTransformer: non-alternating") {
 
     layerRotationTransformer.transform(lattice);
 
-    const auto &molecules = lattice.getCell(0, 0, 0).getMolecules();
+    const auto &molecules = lattice.getSpecificCell(0, 0, 0).getMolecules();
     CHECK(molecules[0].getPosition() == Vector<3>{0, 0.5, 0.25});
     CHECK_THAT(molecules[0].getOrientation(), IsApproxEqual(Matrix<3, 3>::rotation(M_PI/2, 0, 0), 1e-12));
     CHECK(molecules[1].getPosition() == Vector<3>{0.5, 0.5, 0.25});

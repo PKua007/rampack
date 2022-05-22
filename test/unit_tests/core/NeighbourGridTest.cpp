@@ -89,7 +89,7 @@ TEST_CASE("NeighbourGrid") {
             }
         }
 
-        SECTION("getCell") {
+        SECTION("getSpecificCell") {
             REQUIRE_THAT(make_vector(neighbourGrid.getCell(Vector<3>{3, 7, 3})),
                          Catch::UnorderedEquals(std::vector<std::size_t>{0, 1}));
             REQUIRE(make_vector(neighbourGrid.getCell(Vector<3>{6, 1, 3})).empty());

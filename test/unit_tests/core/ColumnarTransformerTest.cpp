@@ -15,9 +15,9 @@ TEST_CASE("ColumnarTransformer") {
     transformer.transform(lattice);
 
     CHECK_FALSE(lattice.isRegular());
-    const auto &cell000 = lattice.getCell(0, 0, 0);
-    const auto &cell001 = lattice.getCell(0, 0, 1);
-    const auto &cell110 = lattice.getCell(1, 1, 0);
+    const auto &cell000 = lattice.getSpecificCell(0, 0, 0);
+    const auto &cell001 = lattice.getSpecificCell(0, 0, 1);
+    const auto &cell110 = lattice.getSpecificCell(1, 1, 0);
     double intraCellColDistance = cell000[1].getPosition()[2] - cell000[0].getPosition()[2];
     CHECK((intraCellColDistance == Approx(0.5) || intraCellColDistance == Approx(-0.5)));
     CHECK(cell000[0].getPosition()[0] == 0);

@@ -19,7 +19,7 @@ std::vector<Shape> SerialPopulator::populateLattice(const Lattice &lattice, std:
     for (i[this->axisOrder[0]] = 0; i[this->axisOrder[0]] < dim[this->axisOrder[0]]; i[this->axisOrder[0]]++) {
         for (i[this->axisOrder[1]] = 0; i[this->axisOrder[1]] < dim[this->axisOrder[1]]; i[this->axisOrder[1]]++) {
             for (i[this->axisOrder[2]] = 0; i[this->axisOrder[2]] < dim[this->axisOrder[2]]; i[this->axisOrder[2]]++) {
-                const auto &cell = lattice.getCell(i[0], i[1], i[2]);
+                const auto &cell = lattice.getSpecificCell(i[0], i[1], i[2]);
                 for (const auto &shape : cell) {
                     if (shapes.size() == numOfShapes)
                         return shapes;

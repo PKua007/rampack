@@ -23,7 +23,7 @@ void CellOptimizationTransformer::transform(Lattice &lattice) const {
     auto newBox = testPacking.getBox();
 
     auto cellTransform = newBox.getDimensions() * oldBox.getDimensions().inverse();
-    lattice.getCellBox().transform(cellTransform);
+    lattice.modifyCellBox().transform(cellTransform);
 }
 
 CellOptimizationTransformer::CellOptimizationTransformer(const Interaction &interaction,
