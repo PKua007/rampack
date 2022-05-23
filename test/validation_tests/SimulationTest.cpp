@@ -6,7 +6,7 @@
 #include <sstream>
 
 #include "core/Simulation.h"
-#include "core/arranging_models/OrthorhombicArrangingModel.h"
+#include "core/lattice/OrthorhombicArrangingModel.h"
 #include "core/shapes/SphereTraits.h"
 #include "core/shapes/SpherocylinderTraits.h"
 #include "core/shapes/KMerTraits.h"

@@ -850,6 +850,14 @@ void Packing::rebuildNeighbourGrid() {
         return;
     }
 
+    // If minCellSize makes the cell larger than the box (for example for very few particles in a box very elongated in
+    // 2 directions and very narrow in the 3rd one), abort creating NG
+    static constexpr double CELL_SIZE_EPSILON = 1 + 1e-12;
+    if (cellSize * CELL_SIZE_EPSILON > *std::min_element(boxHeights.begin(), boxHeights.end())) {
+        this->neighbourGrid = std::nullopt;
+        return;
+    }
+
     std::size_t totalInteractionCentres{};
     if (this->numInteractionCentres == 0)
         totalInteractionCentres = this->size();

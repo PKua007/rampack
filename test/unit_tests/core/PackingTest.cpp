@@ -490,3 +490,21 @@ TEST_CASE("Packing: multiple interaction center overlap counting") {
         CHECK(packing.getCachedNumberOfOverlaps() == 1);
     }
 }
+
+TEST_CASE("Packing: too big NG cell bug") {
+    // Previous behaviour:
+    // 100 x 100 x 1.1 packing forced too big NG cell - volume=11000, so the cell size set to give "at most 5^3 cells
+    // per molecule" was more than the box height resulting in NG throwing exception that the cell is too big.
+    //
+    // New, correct behaviour:
+    // If that happens, neighbour grid is prevented from being created.
+
+    double radius = 0.5;
+    SphereHardCoreInteraction hardCore(radius);
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    std::vector<Shape> shapes;
+    shapes.emplace_back(Vector<3>{0.5, 25, 25});
+    shapes.emplace_back(Vector<3>{0.5, 75, 75});
+
+    REQUIRE_NOTHROW(Packing({1.1, 100, 100}, std::move(shapes), std::move(pbc), hardCore));
+}

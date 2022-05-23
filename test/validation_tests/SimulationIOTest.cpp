@@ -14,7 +14,7 @@
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/volume_scalers/DeltaVolumeScaler.h"
 #include "core/volume_scalers/TriclinicAdapter.h"
-#include "core/arranging_models/OrthorhombicArrangingModel.h"
+#include "core/lattice/OrthorhombicArrangingModel.h"
 #include "core/move_samplers/RototranslationSampler.h"
 
 
