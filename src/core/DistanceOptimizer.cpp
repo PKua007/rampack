@@ -58,34 +58,41 @@ void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &inter
     Expects(interaction.hasHardPart());
 
     const double range = interaction.getTotalRangeRadius();
-    const auto &initialDim = packing.getBox().getHeights();
+    const auto &initialHeights = packing.getBox().getHeights();
     constexpr double FACTOR_EPSILON = 1 + 1e-12;
 
     // Verify initial dimensions whether they are large enough
     // range (plus epsilon), since we don't want self intersections through PBC
-    Expects(std::all_of(initialDim.begin(), initialDim.end(), [range](double d) { return d > FACTOR_EPSILON*range; }));
-    Expects(!isPackingOverlapping(packing, interaction));
+    Expects(std::all_of(initialHeights.begin(), initialHeights.end(), [range](double d) { return d > FACTOR_EPSILON*range; }));
+    Expects(!packing.countTotalOverlaps(interaction));
 
     // Optimize axis by axis in a given axis order
     auto axisOrder = LatticeTraits::parseAxisOrder(axisOrderString);
     for (std::size_t axisNum : axisOrder) {
-        double factorBeg = range * FACTOR_EPSILON / initialDim[axisNum];  // Smallest scaling without self-overlap
+        double factorBeg = range * FACTOR_EPSILON / initialHeights[axisNum];  // Smallest scaling without self-overlap
         double factorEnd = 1;
+        auto endBox = packing.getBox().getDimensions();
+        auto begBox = packing.getBox().getDimensions();
+        for (std::size_t i{}; i < 3; i++)
+            begBox(i, axisNum) *= factorBeg;
 
-        std::array<double, 3> testFactors = singleAxisScaling(axisNum, factorBeg);
-        ExpectsMsg(isScaledPackingOverlapping(packing, interaction, testFactors),
-                   "Maximally shrunk packing (avoiding self overlaps) is not overlapping - to little particles");
+        ExpectsMsg(isScaledPackingOverlapping(packing, interaction, TriclinicBox(begBox)),
+                   "Maximally shrunk packing (avoiding self overlaps) is not overlapping - the lattice is too small");
 
         do {
             double factorMid = (factorBeg + factorEnd) / 2;
-            if (isScaledPackingOverlapping(packing, interaction, singleAxisScaling(axisNum, factorMid)))
+            auto midBox = (begBox + endBox) / 2.;
+            if (isScaledPackingOverlapping(packing, interaction, TriclinicBox(midBox))) {
                 factorBeg = factorMid;
-            else
+                begBox = midBox;
+            } else {
                 factorEnd = factorMid;
+                endBox = midBox;
+            }
         } while (std::abs(factorEnd - factorBeg) > EPSILON);
 
         // Finally, apply the factor found
-        double finalEnergy = packing.tryScaling(singleAxisScaling(axisNum, factorEnd), interaction);
+        double finalEnergy = packing.tryScaling(TriclinicBox(endBox), interaction);
         Assert(finalEnergy != INF);
     }
 }
@@ -102,9 +109,9 @@ std::array<double, 3> DistanceOptimizer::singleAxisScaling(std::size_t axisNum, 
 }
 
 bool DistanceOptimizer::isScaledPackingOverlapping(Packing &packing, const Interaction &interaction,
-                                                   const std::array<double, 3> &factors)
+                                                   const TriclinicBox &newBox)
 {
-    bool isOverlapping = (packing.tryScaling(factors, interaction) == INF);
+    bool isOverlapping = (packing.tryScaling(newBox, interaction) == INF);
     packing.revertScaling();
     return isOverlapping;
 }

@@ -9,6 +9,7 @@
 #include "core/DistanceOptimizer.h"
 
 #include "core/shapes/SpherocylinderTraits.h"
+#include "core/shapes/SphereTraits.h"
 #include "core/lattice/Lattice.h"
 #include "core/PeriodicBoundaryConditions.h"
 
@@ -48,4 +49,20 @@ TEST_CASE("DistanceOptimizer: shrink packing - layer orthorhombic") {
     double Ly = 4;
     double Lz = 4;
     CHECK_THAT(packing.getBox().getDimensions(), IsApproxEqual(Matrix<3, 3>{Lx, 0, 0, 0, Ly, 0, 0, 0, Lz}, 1e-12));
+}
+
+TEST_CASE("DistanceOptimizer: shrink packing - hexagonal") {
+    Matrix<3, 3> unitCellBox{1,              0.5, 0,
+                             0, 0.5*std::sqrt(3), 0,
+                             0,                0, 1};
+    UnitCell unitCell(TriclinicBox(5. * unitCellBox), {Shape({0.5, 0.5, 0.5})});
+    Lattice lattice(unitCell, {4, 4, 4});
+    auto shapes = lattice.generateMolecules();
+    SphereTraits sphereTraits(0.5);
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    Packing packing(lattice.getLatticeBox(), shapes, std::move(pbc), sphereTraits.getInteraction());
+
+    DistanceOptimizer::shrinkPacking(packing, sphereTraits.getInteraction(), "xyz");
+
+    CHECK_THAT(packing.getBox().getDimensions(), IsApproxEqual(4. * unitCellBox, 1e-12));
 }

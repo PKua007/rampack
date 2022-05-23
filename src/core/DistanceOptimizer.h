@@ -22,13 +22,13 @@ private:
     static std::array<double, 3> singleAxisScaling(size_t axisNum, double factor);
     static bool isPackingOverlapping(Packing &packing, const Interaction &interaction);
     static bool isScaledPackingOverlapping(Packing &packing, const Interaction &interaction,
-                                           const std::array<double, 3> &factors);
+                                           const TriclinicBox &newBox);
 
     static constexpr double INF = std::numeric_limits<double>::infinity();
 
 public:
     /**
-     * @brief The precision to which the minimal distances will be found/
+     * @brief The precision to which the minimal distances will be found
      */
     static constexpr double EPSILON = 1e-12;
 
