@@ -7,7 +7,7 @@
 
 #include "ArrangementFactory.h"
 #include "core/lattice/OrthorhombicArrangingModel.h"
-#include "core/DistanceOptimizer.h"
+#include "core/lattice/DistanceOptimizer.h"
 #include "utils/Assertions.h"
 #include "core/PeriodicBoundaryConditions.h"
 

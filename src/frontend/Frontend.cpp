@@ -24,7 +24,7 @@
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/Packing.h"
 #include "utils/OMPMacros.h"
-#include "core/DistanceOptimizer.h"
+#include "core/lattice/DistanceOptimizer.h"
 #include "ArrangementFactory.h"
 #include "TriclinicBoxScalerFactory.h"
 #include "core/shapes/CompoundShapeTraits.h"

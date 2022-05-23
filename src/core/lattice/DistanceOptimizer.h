@@ -8,9 +8,9 @@
 #include <array>
 #include <limits>
 
-#include "Shape.h"
-#include "Packing.h"
-#include "Interaction.h"
+#include "core/Shape.h"
+#include "core/Packing.h"
+#include "core/Interaction.h"
 #include "geometry/Vector.h"
 
 /**

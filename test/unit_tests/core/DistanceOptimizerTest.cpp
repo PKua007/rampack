@@ -6,7 +6,7 @@
 
 #include "matchers/MatrixApproxMatcher.h"
 
-#include "core/DistanceOptimizer.h"
+#include "core/lattice/DistanceOptimizer.h"
 
 #include "core/shapes/SpherocylinderTraits.h"
 #include "core/shapes/SphereTraits.h"

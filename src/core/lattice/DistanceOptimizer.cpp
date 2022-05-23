@@ -5,8 +5,8 @@
 #include "DistanceOptimizer.h"
 
 #include "utils/Assertions.h"
-#include "lattice/LatticeTraits.h"
-#include "FreeBoundaryConditions.h"
+#include "LatticeTraits.h"
+#include "core/FreeBoundaryConditions.h"
 
 double DistanceOptimizer::minimizeForDirection(Shape shape1, Shape shape2, Vector<3> direction,
                                                const Interaction &interaction)
