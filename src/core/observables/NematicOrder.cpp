@@ -11,7 +11,7 @@ void NematicOrder::calculate(const Packing &packing, [[maybe_unused]] double tem
 {
     this->QTensor = Matrix<3, 3>{};
     for (const auto &shape : packing) {
-        Vector<3> axis = shapeTraits.getPrimaryAxis(shape);
+        Vector<3> axis = shapeTraits.getGeometry().getPrimaryAxis(shape);
         for (std::size_t i{}; i < 3; i++)
             for (std::size_t j{}; j < 3; j++)
                 this->QTensor(i, j) += axis[i] * axis[j];

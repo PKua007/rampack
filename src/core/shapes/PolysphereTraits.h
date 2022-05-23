@@ -14,7 +14,7 @@
 /**
  * @brief A polymer consisting of identical or different hard of soft-interacting spheres.
  */
-class PolysphereTraits : public ShapeTraits, public ShapePrinter {
+class PolysphereTraits : public ShapeTraits, public ShapePrinter, public ShapeGeometry {
 public:
     /**
      * @brief A helper class describing a single spherical bead.
@@ -86,6 +86,7 @@ public:
     [[nodiscard]] double getVolume() const override;
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
     [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override;
+    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
 
     [[nodiscard]] std::string toWolfram(const Shape &shape) const override;

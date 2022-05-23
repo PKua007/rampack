@@ -19,7 +19,7 @@ public:
     void calculate(const Packing &packing, [[maybe_unused]] double temperature, [[maybe_unused]] double pressure,
                    const ShapeTraits &shapeTraits) override
     {
-        this->packingFraction = packing.getPackingFraction(shapeTraits.getVolume());
+        this->packingFraction = packing.getPackingFraction(shapeTraits.getGeometry().getVolume());
     }
 
     [[nodiscard]] std::vector<std::string> getIntervalHeader() const override { return {"theta"}; }

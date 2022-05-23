@@ -8,6 +8,7 @@
 #include "Shape.h"
 #include "Interaction.h"
 #include "ShapePrinter.h"
+#include "ShapeGeometry.h"
 #include "geometry/Vector.h"
 
 /**
@@ -18,28 +19,14 @@ public:
     virtual ~ShapeTraits() = default;
 
     /**
-     * @brief Returns the Interaction object describing the interaction of the shape (hard of soft).
+     * @brief Returns the Interaction object describing the interaction of the shape.
      */
     [[nodiscard]] virtual const Interaction &getInteraction() const = 0;
 
     /**
-     * @brief Returns the volume of the shape.
+     * @brief Returns the ShapePrinter object describing the geometry of the shape.
      */
-    [[nodiscard]] virtual double getVolume() const = 0;
-
-    /**
-     * @brief Returns the primary (long) molecular axis for a given @a shape.
-     */
-    [[nodiscard]] virtual Vector<3> getPrimaryAxis([[maybe_unused]] const Shape &shape) const {
-        throw std::runtime_error("ShapeTraits::getPrimaryAxis : unsupported");
-    }
-
-    /**
-     * @brief Returns the secondary (polarization) molecular axis for a given @a shape.
-     */
-    [[nodiscard]] virtual Vector<3> getSecondaryAxis([[maybe_unused]] const Shape &shape) const {
-        throw std::runtime_error("ShapeTraits::getSecondaryAxis : unsupported");
-    }
+    [[nodiscard]] virtual const ShapeGeometry &getGeometry() const = 0;
 
     /**
      * @brief Returns the ShapePrinter object responsible for shape printing in supported format.

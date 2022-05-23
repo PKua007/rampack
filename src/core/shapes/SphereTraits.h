@@ -13,7 +13,7 @@
 /**
  * @brief Spherical molecules with hard of soft interactions.
  */
-class SphereTraits : public ShapeTraits, public ShapePrinter {
+class SphereTraits : public ShapeTraits, public ShapePrinter, public ShapeGeometry {
 private:
     class HardInteraction : public Interaction {
     private:
@@ -46,6 +46,7 @@ public:
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; };
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
+    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
     [[nodiscard]] double getVolume() const override;
 
     [[nodiscard]] std::string toWolfram(const Shape &shape) const override;

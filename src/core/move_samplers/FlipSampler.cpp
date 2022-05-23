@@ -25,7 +25,7 @@ MoveSampler::MoveData FlipSampler::sampleMove(const Packing &packing, const Shap
     moveData.particleIdx = particleIdxs[particleDistribution(mt)];
 
     const Shape &shape = packing[moveData.particleIdx];
-    Vector<3> axis = shapeTraits.getSecondaryAxis(shape);
+    Vector<3> axis = shapeTraits.getGeometry().getSecondaryAxis(shape);
     moveData.rotation = Matrix<3, 3>::rotation(axis.normalized(), M_PI);
 
     return moveData;

@@ -10,7 +10,7 @@
 /**
  * @brief Hard spherocylinder.
  */
-class SpherocylinderTraits : public ShapeTraits, public ShapePrinter, public Interaction {
+class SpherocylinderTraits : public ShapeTraits, public ShapePrinter, public Interaction, public ShapeGeometry {
 private:
     double length{};    // distance between two spherical caps centres
     double radius{};    // radius of spherical caps
@@ -30,6 +30,7 @@ public:
     SpherocylinderTraits(double length, double radius);
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
+    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
     [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override;

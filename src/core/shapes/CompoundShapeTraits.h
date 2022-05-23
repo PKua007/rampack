@@ -34,16 +34,8 @@ public:
     { }
 
     [[nodiscard]] const Interaction &getInteraction() const override { return this->compoundInteraction; }
-    [[nodiscard]] double getVolume() const override { return this->mainShapeTraits->getVolume(); }
+    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->mainShapeTraits->getGeometry(); }
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return this->mainShapeTraits->getPrinter(); }
-
-    [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override {
-        return this->mainShapeTraits->getPrimaryAxis(shape);
-    }
-
-    [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override {
-        return this->mainShapeTraits->getSecondaryAxis(shape);
-    }
 };
 
 

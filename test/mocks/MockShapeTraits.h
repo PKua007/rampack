@@ -10,9 +10,10 @@
 #include "core/ShapeTraits.h"
 #include "core/Interaction.h"
 
-class MockShapeTraits : public ShapeTraits, public Interaction {
+class MockShapeTraits : public ShapeTraits, public Interaction, public ShapeGeometry {
 public:
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; };
+    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; };
     MAKE_CONST_MOCK0(getVolume, double(), override);
     MAKE_CONST_MOCK1(getPrimaryAxis, Vector<3>(const Shape &), override);
     MAKE_CONST_MOCK0(getPrinter, const ShapePrinter &(), override);

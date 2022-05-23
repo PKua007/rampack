@@ -13,7 +13,7 @@
 /**
  * @brief A class analogous to PolysphereTraits, but for hard spherocylinders.
  */
-class PolyspherocylinderTraits : public ShapeTraits, public ShapePrinter, public Interaction {
+class PolyspherocylinderTraits : public ShapeTraits, public ShapePrinter, public Interaction, public ShapeGeometry {
 public:
     /**
      * @brief A single building spherocylinder data.
@@ -85,6 +85,7 @@ public:
     [[nodiscard]] double getVolume() const override;
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
     [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override;
+    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
     [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const {
         return this->spherocylinderData;
