@@ -14,7 +14,7 @@
 /**
  * @brief A polymer consisting of identical or different hard of soft-interacting spheres.
  */
-class PolysphereTraits : public ShapeTraits, public ShapePrinter, public ShapeGeometry {
+class PolysphereTraits : public ShapeTraits, public ShapePrinter {
 public:
     /**
      * @brief A helper class describing a single spherical bead.
@@ -37,6 +37,39 @@ public:
         }
     };
 
+    /**
+     * @brief A helper class defining a whole particle.
+     */
+    class PolysphereGeometry : public ShapeGeometry {
+    private:
+        std::vector<SphereData> sphereData;
+        Vector<3> primaryAxis;
+        Vector<3> secondaryAxis;
+        Vector<3> geometricOrigin;
+
+    public:
+        PolysphereGeometry(std::vector<SphereData> sphereData, const Vector<3> &primaryAxis,
+                           const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin);
+
+        [[nodiscard]] double getVolume() const override;
+
+        [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override {
+            return shape.getOrientation() * this->primaryAxis;
+        }
+
+        [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override {
+            return shape.getOrientation() * this->secondaryAxis;
+        }
+
+        [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const override {
+            return shape.getOrientation() * this->geometricOrigin;
+        }
+
+        [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->sphereData; }
+
+        void normalizeMassCentre();
+    };
+
 private:
     class HardInteraction : public Interaction {
     private:
@@ -56,12 +89,8 @@ private:
         [[nodiscard]] double getRangeRadius() const override;
     };
 
-    std::vector<SphereData> sphereData;
+    PolysphereGeometry geometry;
     std::unique_ptr<Interaction> interaction{};
-    Vector<3> primaryAxis;
-    Vector<3> secondaryAxis;
-
-    void normalizeMassCentre();
 
 public:
     /**
@@ -72,26 +101,21 @@ public:
      * @param shouldNormalizeMassCentre if true, mass centre will be moved to the origin. If false, no translation is
      * applied
      */
-    PolysphereTraits(const std::vector<SphereData> &sphereData, const Vector<3> &primaryAxis,
-                     const Vector<3> &secondaryAxis, bool shouldNormalizeMassCentre);
+    explicit PolysphereTraits(PolysphereGeometry geometry);
 
     /**
      * @brief Similar as PolysphereTraits::PolysphereTraits(const std::vector<SphereData> &, const Vector<3> &, bool),
      * but for soft central interaction given by @a centralInteraction.
      */
-    PolysphereTraits(std::vector<SphereData> sphereData, std::unique_ptr<CentralInteraction> centralInteraction,
-                     const Vector<3> &primaryAxis, const Vector<3> &secondaryAxis, bool shouldNormalizeMassCentre);
+    PolysphereTraits(PolysphereGeometry geometry, std::unique_ptr<CentralInteraction> centralInteraction);
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; }
-    [[nodiscard]] double getVolume() const override;
-    [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
-    [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override;
-    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
+    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->geometry; }
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
 
     [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
 
-    [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->sphereData; }
+    [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->geometry.getSphereData(); }
 };
 
 

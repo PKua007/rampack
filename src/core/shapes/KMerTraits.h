@@ -12,7 +12,7 @@
  */
 class KMerTraits : public PolysphereTraits {
 private:
-    static std::vector<SphereData> generateSphereData(std::size_t sphereNum, double sphereRadius, double distance);
+    static PolysphereGeometry generateGeometry(std::size_t sphereNum, double sphereRadius, double distance);
 
 public:
     /**
@@ -22,7 +22,7 @@ public:
      * @param distance the distance between adjacent spheres' centres
      */
     KMerTraits(std::size_t sphereNum, double sphereRadius, double distance)
-            : PolysphereTraits(generateSphereData(sphereNum, sphereRadius, distance), {1, 0, 0}, {0, 1, 0}, true)
+            : PolysphereTraits(generateGeometry(sphereNum, sphereRadius, distance))
     { }
 
     /**
@@ -31,8 +31,7 @@ public:
      */
     KMerTraits(std::size_t sphereNum, double sphereRadius, double distance,
                std::unique_ptr<CentralInteraction> centralInteraction)
-            : PolysphereTraits(generateSphereData(sphereNum, sphereRadius, distance), std::move(centralInteraction),
-                               {1, 0, 0}, {0, 1, 0}, true)
+            : PolysphereTraits(generateGeometry(sphereNum, sphereRadius, distance), std::move(centralInteraction))
     { }
 };
 

@@ -14,9 +14,9 @@
  */
 class PolysphereLollipopTraits : public PolysphereTraits {
 private:
-    static std::vector<SphereData> generateSphereData(std::size_t sphereNum, double smallSphereRadius,
-                                                      double largeSphereRadius, double smallSpherePenetration,
-                                                      double largeSpherePenetration);
+    static PolysphereGeometry generateGeometry(std::size_t sphereNum, double smallSphereRadius,
+                                               double largeSphereRadius, double smallSpherePenetration,
+                                               double largeSpherePenetration, bool normalizeMassCentre);
 
 public:
     /**
@@ -26,14 +26,13 @@ public:
      * @param largeSphereRadius radius of a large sphere
      * @param smallSpherePenetration how much small spheres overlap (in particular 0 means tangent spheres)
      * @param largeSpherePenetration hom much the large sphere overlaps with the last small
-     * @param shouldNormalizeMassCentre if @a true, particle origin will be placed in its mass centre
+     * @param normalizeMassCentre if @a true, particle origin will be placed in its mass centre
      */
     PolysphereLollipopTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
                              double smallSpherePenetration, double largeSpherePenetration,
-                             bool shouldNormalizeMassCentre = true)
-            : PolysphereTraits(generateSphereData(sphereNum, smallSphereRadius, largeSphereRadius,
-                                                  smallSpherePenetration, largeSpherePenetration),
-                               {1, 0, 0}, {0, 1, 0}, shouldNormalizeMassCentre)
+                             bool normalizeMassCentre = true)
+            : PolysphereTraits(generateGeometry(sphereNum, smallSphereRadius, largeSphereRadius,
+                                                smallSpherePenetration, largeSpherePenetration, normalizeMassCentre))
     { }
 
     /**
@@ -44,10 +43,10 @@ public:
     PolysphereLollipopTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
                              double smallSpherePenetration, double largeSpherePenetration,
                              std::unique_ptr<CentralInteraction> centralInteraction,
-                             bool shouldNormalizeMassCentre = true)
-            : PolysphereTraits(generateSphereData(sphereNum, smallSphereRadius, largeSphereRadius,
-                                                  smallSpherePenetration, largeSpherePenetration),
-                               std::move(centralInteraction), {1, 0, 0}, {0, 1, 0}, shouldNormalizeMassCentre)
+                             bool normalizeMassCentre = true)
+            : PolysphereTraits(generateGeometry(sphereNum, smallSphereRadius, largeSphereRadius,
+                                                smallSpherePenetration, largeSpherePenetration, normalizeMassCentre),
+                               std::move(centralInteraction))
     { }
 };
 

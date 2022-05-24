@@ -9,94 +9,37 @@
 #include "PolysphereTraits.h"
 #include "utils/Assertions.h"
 
-double PolysphereTraits::getVolume() const {
-    auto volumeAccumulator = [](double volume, const SphereData &data) {
-        return volume + 4*M_PI/3 * data.radius * data.radius * data.radius;
-    };
-    return std::accumulate(this->sphereData.begin(), this->sphereData.end(), 0., volumeAccumulator);
-}
 
 std::string PolysphereTraits::toWolfram(const Shape &shape) const {
     std::ostringstream out;
     out << std::fixed;
     out << "{";
-    for (std::size_t i{}; i < this->sphereData.size() - 1; i++) {
-        const auto &data = this->sphereData[i];
+    const auto &sphereData = this->getSphereData();
+    for (std::size_t i{}; i < sphereData.size() - 1; i++) {
+        const auto &data = sphereData[i];
         data.toWolfram(out, shape);
         out << ",";
     }
-    this->sphereData.back().toWolfram(out, shape);
+   sphereData.back().toWolfram(out, shape);
     out << "}";
     return out.str();
 }
 
-PolysphereTraits::PolysphereTraits(std::vector<SphereData> sphereData,
-                                   std::unique_ptr<CentralInteraction> centralInteraction,
-                                   const Vector<3> &primaryAxis, const Vector<3> &secondaryAxis,
-                                   bool shouldNormalizeMassCentre)
-        : sphereData{std::move(sphereData)}, primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}
+PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry,
+                                   std::unique_ptr<CentralInteraction> centralInteraction)
+        : geometry{std::move(geometry)}
 {
-    Expects(!this->sphereData.empty());
-
-    this->primaryAxis = this->primaryAxis.normalized();
-    this->secondaryAxis = this->secondaryAxis.normalized();
-
-    if (shouldNormalizeMassCentre)
-        this->normalizeMassCentre();
-
+    const auto &sphereData = this->getSphereData();
     std::vector<Vector<3>> centres;
-    centres.reserve(this->sphereData.size());
-    std::transform(this->sphereData.begin(), this->sphereData.end(), std::back_inserter(centres),
+    centres.reserve(sphereData.size());
+    std::transform(sphereData.begin(), sphereData.end(), std::back_inserter(centres),
                    [](const SphereData &data) { return data.position; });
     centralInteraction->installOnCentres(centres);
     this->interaction = std::move(centralInteraction);
 }
 
-PolysphereTraits::PolysphereTraits(const std::vector<SphereData> &sphereData, const Vector<3> &primaryAxis,
-                                   const Vector<3> &secondaryAxis, bool shouldNormalizeMassCentre)
-        : sphereData{sphereData}, primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}
-{
-    Expects(!sphereData.empty());
-    this->primaryAxis = this->primaryAxis.normalized();
-    this->secondaryAxis = this->secondaryAxis.normalized();
-    if (shouldNormalizeMassCentre)
-        this->normalizeMassCentre();
-    this->interaction = std::make_unique<HardInteraction>(this->sphereData);
-}
-
-void PolysphereTraits::normalizeMassCentre() {
-    auto massCentreAccumulator = [](const Vector<3> &sum, const SphereData &data) {
-        double r = data.radius;
-        return sum + (r*r*r) * data.position;
-    };
-
-    auto weightAccumulator = [](double sum, const SphereData &data) {
-        double r = data.radius;
-        return sum + r*r*r;
-    };
-
-    Vector<3> massCentre = std::accumulate(this->sphereData.begin(), this->sphereData.end(), Vector<3>{},
-                                           massCentreAccumulator);
-    double weightSum = std::accumulate(this->sphereData.begin(), this->sphereData.end(), 0., weightAccumulator);
-    massCentre /= weightSum;
-
-    auto massCentreShifter = [massCentre](const SphereData &data) {
-        return SphereData(data.position - massCentre, data.radius);
-    };
-
-    std::vector<SphereData> newSphereData;
-    newSphereData.reserve(this->sphereData.size());
-    std::transform(this->sphereData.begin(), this->sphereData.end(), std::back_inserter(newSphereData),
-                   massCentreShifter);
-    this->sphereData = std::move(newSphereData);
-}
-
-Vector<3> PolysphereTraits::getPrimaryAxis(const Shape &shape) const {
-    return shape.getOrientation() * this->primaryAxis;
-}
-
-Vector<3> PolysphereTraits::getSecondaryAxis(const Shape &shape) const {
-    return shape.getOrientation() * this->secondaryAxis;
+PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry) : geometry{std::move(geometry)} {
+    this->interaction = std::make_unique<HardInteraction>(this->getSphereData());
 }
 
 PolysphereTraits::SphereData::SphereData(const Vector<3> &position, double radius)
@@ -141,6 +84,51 @@ double PolysphereTraits::HardInteraction::getRangeRadius() const {
 
 PolysphereTraits::HardInteraction::HardInteraction(std::vector<SphereData> sphereData)
         : sphereData{std::move(sphereData)}
+{
+    Expects(!this->sphereData.empty());
+}
+
+double PolysphereTraits::PolysphereGeometry::getVolume() const {
+    auto volumeAccumulator = [](double volume, const SphereData &data) {
+        return volume + 4*M_PI/3 * data.radius * data.radius * data.radius;
+    };
+    return std::accumulate(this->sphereData.begin(), this->sphereData.end(), 0., volumeAccumulator);
+}
+
+void PolysphereTraits::PolysphereGeometry::normalizeMassCentre() {
+    auto massCentreAccumulator = [](const Vector<3> &sum, const SphereData &data) {
+        double r = data.radius;
+        return sum + (r*r*r) * data.position;
+    };
+
+    auto weightAccumulator = [](double sum, const SphereData &data) {
+        double r = data.radius;
+        return sum + r*r*r;
+    };
+
+    Vector<3> massCentre = std::accumulate(this->sphereData.begin(), this->sphereData.end(), Vector<3>{},
+                                           massCentreAccumulator);
+    double weightSum = std::accumulate(this->sphereData.begin(), this->sphereData.end(), 0., weightAccumulator);
+    massCentre /= weightSum;
+
+    auto massCentreShifter = [massCentre](const SphereData &data) {
+        return SphereData(data.position - massCentre, data.radius);
+    };
+
+    std::vector<SphereData> newSphereData;
+    newSphereData.reserve(this->sphereData.size());
+    std::transform(this->sphereData.begin(), this->sphereData.end(), std::back_inserter(newSphereData),
+                   massCentreShifter);
+
+    this->sphereData = std::move(newSphereData);
+    this->geometricOrigin -= massCentre;
+}
+
+PolysphereTraits::PolysphereGeometry::PolysphereGeometry(std::vector<SphereData> sphereData,
+                                                         const Vector<3> &primaryAxis, const Vector<3> &secondaryAxis,
+                                                         const Vector<3> &geometricOrigin)
+        : sphereData{std::move(sphereData)}, primaryAxis{primaryAxis.normalized()},
+          secondaryAxis{secondaryAxis.normalized()}, geometricOrigin{geometricOrigin}
 {
     Expects(!this->sphereData.empty());
 }

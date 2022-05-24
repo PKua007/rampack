@@ -12,8 +12,8 @@
  */
 class PolysphereBananaTraits : public PolysphereTraits {
 private:
-    static std::vector<SphereData> generateSphereData(double arcRadius, double arcAngle, std::size_t sphereNum,
-                                                      double sphereRadius);
+    static PolysphereGeometry generateGeometry(double arcRadius, double arcAngle, std::size_t sphereNum,
+                                               double sphereRadius, bool normalizeMassCentre);
 
 public:
     /**
@@ -26,13 +26,12 @@ public:
      * @param sphereNum number of spheres to be equidistantly placed on the arc. First and last sphere centres are arc
      * endpoints
      * @param sphereRadius the radius of each sphere
-     * @param shouldNormalizeMassCentre if true, the mass centre will be moved to the origin. If false, no mass centre
+     * @param normalizeMassCentre if true, the mass centre will be moved to the origin. If false, no mass centre
      * normalization will be done
      */
     PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
-                           bool shouldNormalizeMassCentre = true)
-            : PolysphereTraits(generateSphereData(arcRadius, arcAngle, sphereNum, sphereRadius), {0, 1, 0}, {-1, 0, 0},
-                               shouldNormalizeMassCentre)
+                           bool normalizeMassCentre = true)
+            : PolysphereTraits(generateGeometry(arcRadius, arcAngle, sphereNum, sphereRadius, normalizeMassCentre))
     { }
 
     /**
@@ -41,9 +40,9 @@ public:
      */
     PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
                            std::unique_ptr<CentralInteraction> centralInteraction,
-                           bool shouldNormalizeMassCentre = true)
-            : PolysphereTraits(generateSphereData(arcRadius, arcAngle, sphereNum, sphereRadius),
-                               std::move(centralInteraction), {0, 1, 0}, {-1, 0, 0}, shouldNormalizeMassCentre)
+                           bool normalizeMassCentre = true)
+            : PolysphereTraits(generateGeometry(arcRadius, arcAngle, sphereNum, sphereRadius, normalizeMassCentre),
+                               std::move(centralInteraction))
     { }
 };
 

@@ -5,8 +5,7 @@
 #include "KMerTraits.h"
 #include "utils/Assertions.h"
 
-std::vector<KMerTraits::SphereData> KMerTraits::generateSphereData(std::size_t sphereNum, double sphereRadius,
-                                                                   double distance)
+KMerTraits::PolysphereGeometry KMerTraits::generateGeometry(std::size_t sphereNum, double sphereRadius, double distance)
 {
     Expects(sphereNum >= 2);
     Expects(sphereRadius > 0);
@@ -19,5 +18,7 @@ std::vector<KMerTraits::SphereData> KMerTraits::generateSphereData(std::size_t s
         data.emplace_back(SphereData({sphereX, 0, 0}, sphereRadius));
         sphereX += distance;
     }
-    return data;
+    PolysphereGeometry geometry(std::move(data), {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
+    geometry.normalizeMassCentre();
+    return geometry;
 }

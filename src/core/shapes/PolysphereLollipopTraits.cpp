@@ -6,11 +6,10 @@
 
 #include "utils/Assertions.h"
 
-std::vector<PolysphereTraits::SphereData> PolysphereLollipopTraits::generateSphereData(std::size_t sphereNum,
-                                                                                       double smallSphereRadius,
-                                                                                       double largeSphereRadius,
-                                                                                       double smallSpherePenetration,
-                                                                                       double largeSpherePenetration)
+PolysphereLollipopTraits::PolysphereGeometry
+PolysphereLollipopTraits::generateGeometry(std::size_t sphereNum, double smallSphereRadius,
+                                           double largeSphereRadius, double smallSpherePenetration,
+                                           double largeSpherePenetration, bool normalizeMassCentre)
 {
     Expects(sphereNum >= 2);
     Expects(smallSphereRadius > 0);
@@ -30,5 +29,8 @@ std::vector<PolysphereTraits::SphereData> PolysphereLollipopTraits::generateSphe
     centrePos += smallSphereRadius + largeSphereRadius - largeSpherePenetration;
     data.emplace_back(Vector<3>{centrePos, 0, 0}, largeSphereRadius);
 
-    return data;
+    PolysphereGeometry geometry(std::move(data), {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
+    if (normalizeMassCentre)
+        geometry.normalizeMassCentre();
+    return geometry;
 }

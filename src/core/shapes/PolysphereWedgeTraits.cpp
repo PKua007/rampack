@@ -5,10 +5,9 @@
 #include "PolysphereWedgeTraits.h"
 #include "utils/Assertions.h"
 
-std::vector<PolysphereTraits::SphereData> PolysphereWedgeTraits::generateSphereData(std::size_t sphereNum,
-                                                                                    double smallSphereRadius,
-                                                                                    double largeSphereRadius,
-                                                                                    double spherePenetration)
+PolysphereWedgeTraits::PolysphereGeometry
+PolysphereWedgeTraits::generateGeometry(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
+                                        double spherePenetration, bool normalizeMassCentre)
 {
     Expects(sphereNum >= 2);
     Expects(smallSphereRadius > 0);
@@ -26,5 +25,8 @@ std::vector<PolysphereTraits::SphereData> PolysphereWedgeTraits::generateSphereD
         currentRadius += radiusDelta;
     }
 
-    return data;
+    PolysphereGeometry geometry(std::move(data), {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
+    if (normalizeMassCentre)
+        geometry.normalizeMassCentre();
+    return geometry;
 }
