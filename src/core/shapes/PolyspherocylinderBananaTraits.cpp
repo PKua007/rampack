@@ -6,9 +6,9 @@
 
 #include "utils/Assertions.h"
 
-std::vector<PolyspherocylinderTraits::SpherocylinderData>
-PolyspherocylinderBananaTraits::generateSpherocylinderData(double arcRadius, double arcAngle, std::size_t segmentsNum,
-                                                           double radius, std::size_t subdivisions)
+PolyspherocylinderBananaTraits::PolyspherocylinderGeometry
+PolyspherocylinderBananaTraits::generateGeometry(double arcRadius, double arcAngle, std::size_t segmentsNum,
+                                                 double radius, std::size_t subdivisions, bool normalizeMassCentre)
 {
     Expects(arcRadius > 0);
     Expects(arcAngle > 0);
@@ -34,5 +34,8 @@ PolyspherocylinderBananaTraits::generateSpherocylinderData(double arcRadius, dou
         angle += angleStep;
     }
 
-    return spherocylinderData;
+    PolyspherocylinderGeometry geometry(std::move(spherocylinderData), {0, 1, 0}, {-1, 0, 0}, {0, 0, 0});
+    if (normalizeMassCentre)
+        geometry.normalizeMassCentre();
+    return geometry;
 }

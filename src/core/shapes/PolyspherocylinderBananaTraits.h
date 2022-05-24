@@ -12,9 +12,10 @@
  */
 class PolyspherocylinderBananaTraits : public PolyspherocylinderTraits {
 private:
-    static std::vector<PolyspherocylinderTraits::SpherocylinderData>
-    generateSpherocylinderData(double arcRadius, double arcAngle, std::size_t segmentsNum,
-                               double radius, std::size_t subdivisions);
+    static PolyspherocylinderTraits::PolyspherocylinderGeometry generateGeometry(double arcRadius, double arcAngle,
+                                                                                 std::size_t segmentsNum, double radius,
+                                                                                 std::size_t subdivisions,
+                                                                                 bool normalizeMassCentre);
 
 public:
     /**
@@ -26,13 +27,12 @@ public:
      * @param radius radius (half-length) of spherocylinder
      * @param subdivisions additional divisions of spherocylinders. It does not change the shape, but decreases the
      * interaction range of a single interaction centre, so it may increase the speed
-     * @param shouldNormalizeMassCentre see PolysphereBananaTraits
+     * @param normalizeMassCentre see PolysphereBananaTraits
      */
     PolyspherocylinderBananaTraits(double arcRadius, double arcAngle, std::size_t segmentsNum, double radius,
-                                   std::size_t subdivisions = 1, bool shouldNormalizeMassCentre = true)
-            : PolyspherocylinderTraits(generateSpherocylinderData(arcRadius, arcAngle, segmentsNum,
-                                                                  radius, subdivisions),
-                                       {0, 1, 0}, {-1, 0, 0}, shouldNormalizeMassCentre)
+                                   std::size_t subdivisions = 1, bool normalizeMassCentre = true)
+            : PolyspherocylinderTraits(generateGeometry(arcRadius, arcAngle, segmentsNum, radius, subdivisions,
+                                                        normalizeMassCentre))
     { }
 };
 

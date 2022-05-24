@@ -28,11 +28,10 @@ TEST_CASE("PolyspherocylinderTraits") {
     // C - cap centres of spherocylinders (non common)
     // X - common cap of both spherocylinders
 
-    PolyspherocylinderTraits traits({Data{{0, 0, 0}, {0, 0, 1}, 1},
-                                     Data{{0, 0, 2}, {0, 0, 1}, 0.5}},
-                                    {0, 0, 1},
-                                    {1, 0, 0},
-                                    false);
+    PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({Data{{0, 0, 0}, {0, 0, 1}, 1},
+                                                                   Data{{0, 0, 2}, {0, 0, 1}, 0.5}},
+                                                                  {0, 0, 1}, {1, 0, 0}, {0, 0, 0});
+    PolyspherocylinderTraits traits(std::move(geometry));
 
     SECTION("hard interactions") {
         const Interaction &interaction = traits.getInteraction();
@@ -74,13 +73,13 @@ TEST_CASE("PolyspherocylinderTraits") {
     SECTION("primary axis") {
         // primary axis Z rotated 90 deg around Y axis => primary axis is X
         Shape shape({}, Matrix<3, 3>::rotation(0, M_PI / 2, 0));
-        CHECK_THAT(traits.getPrimaryAxis(shape), IsApproxEqual({1, 0, 0}, 1e-8));
+        CHECK_THAT(traits.getGeometry().getPrimaryAxis(shape), IsApproxEqual({1, 0, 0}, 1e-8));
     }
 
     SECTION("secondary axis") {
         // secondary axis X rotated 90 deg around Y axis => secondary axis is -Z
         Shape shape({}, Matrix<3, 3>::rotation(0, M_PI / 2, 0));
-        CHECK_THAT(traits.getSecondaryAxis(shape), IsApproxEqual({0, 0, -1}, 1e-8));
+        CHECK_THAT(traits.getGeometry().getSecondaryAxis(shape), IsApproxEqual({0, 0, -1}, 1e-8));
     }
 }
 
@@ -89,7 +88,9 @@ TEST_CASE("PolyspherocylinderTraits: tests from SpherocylinderTraits") {
     // the intersection criterion
 
     FreeBoundaryConditions fbc;
-    PolyspherocylinderTraits traits({Data{{0, 0, 0}, {1.5, 0, 0}, 2}}, {1, 0, 0}, {0, 1, 0}, false);
+    PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({Data{{0, 0, 0}, {1.5, 0, 0}, 2}},
+                                                                  {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
+    PolyspherocylinderTraits traits(std::move(geometry));
     Shape sc1{}, sc2{};
 
     // Cases are found visually using Mathematica. See wolfram/spheroc_test.nb
@@ -191,11 +192,11 @@ TEST_CASE("PolyspherocylinderTraits: tests from SpherocylinderTraits") {
 
 TEST_CASE("PolyspherocylnderTraits: mass centre normalization") {
     // First spherocylinder has 2 times bigger volume than the second
-    PolyspherocylinderTraits traits({Data{{0, 0, 0}, {0, 0, 1}, 1},
-                                     Data{{0, 0, 6}, {0, 0, 3}, 0.5}},
-                                    {0, 0, 1},
-                                    {0, 1, 0},
-                                    true);
+    PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({Data{{0, 0, 0}, {0, 0, 1}, 1},
+                                                                   Data{{0, 0, 6}, {0, 0, 3}, 0.5}},
+                                                                  {0, 0, 1}, {0, 1, 0}, {0, 0, 0});
+    geometry.normalizeMassCentre();
+    PolyspherocylinderTraits traits(std::move(geometry));
 
     CHECK(traits.getSpherocylinderData() == std::vector<Data>{Data{{0, 0, -2}, {0, 0, 1}, 1},
                                                               Data{{0, 0, 4}, {0, 0, 3}, 0.5}});

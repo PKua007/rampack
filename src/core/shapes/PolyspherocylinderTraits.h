@@ -13,7 +13,7 @@
 /**
  * @brief A class analogous to PolysphereTraits, but for hard spherocylinders.
  */
-class PolyspherocylinderTraits : public ShapeTraits, public ShapePrinter, public Interaction, public ShapeGeometry {
+class PolyspherocylinderTraits : public ShapeTraits, public ShapePrinter, public Interaction {
 public:
     /**
      * @brief A single building spherocylinder data.
@@ -54,12 +54,41 @@ public:
         }
     };
 
-private:
-    std::vector<SpherocylinderData> spherocylinderData;
-    Vector<3> primaryAxis;
-    Vector<3> secondaryAxis;
+    /**
+     * @brief A helper class defining a whole particle.
+     */
+    class PolyspherocylinderGeometry : public ShapeGeometry {
+    private:
+        std::vector<SpherocylinderData> spherocylinderData;
+        Vector<3> primaryAxis;
+        Vector<3> secondaryAxis;
+        Vector<3> geometricOrigin;
 
-    void normalizeMassCentre();
+    public:
+        PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, const Vector<3> &primaryAxis,
+                                   const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin);
+
+        [[nodiscard]] double getVolume() const override;
+
+        [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override {
+            return shape.getOrientation() * this->primaryAxis;
+        }
+
+        [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override {
+            return shape.getOrientation() * this->secondaryAxis;
+        }
+
+        [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const override {
+            return shape.getOrientation() * this->geometricOrigin;
+        }
+
+        [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const { return this->spherocylinderData; }
+
+        void normalizeMassCentre();
+    };
+
+private:
+    PolyspherocylinderGeometry geometry;
 
 public:
     /**
@@ -70,8 +99,7 @@ public:
      * @param shouldNormalizeMassCentre if true, the mass centre will be moved to the origin. Otherwise, no translation
      * is applied
      */
-    PolyspherocylinderTraits(const std::vector<SpherocylinderData> &spherocylinderData, const Vector<3> &primaryAxis,
-                             const Vector<3> &secondaryAxis, bool shouldNormalizeMassCentre);
+    explicit PolyspherocylinderTraits(PolyspherocylinderGeometry geometry) : geometry{std::move(geometry)} { }
 
     [[nodiscard]] bool hasHardPart() const override { return true; }
     [[nodiscard]] bool hasSoftPart() const override { return false; }
@@ -82,13 +110,10 @@ public:
     [[nodiscard]] double getRangeRadius() const override;
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
-    [[nodiscard]] double getVolume() const override;
-    [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
-    [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override;
-    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
+    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->geometry; }
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
     [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const {
-        return this->spherocylinderData;
+        return this->geometry.getSpherocylinderData();
     }
 
     [[nodiscard]] std::string toWolfram(const Shape &shape) const override;

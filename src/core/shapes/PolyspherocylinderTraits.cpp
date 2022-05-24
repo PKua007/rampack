@@ -10,38 +10,36 @@
 #include "utils/Assertions.h"
 #include "geometry/SegmentDistanceCalculator.h"
 
-double PolyspherocylinderTraits::getVolume() const {
+double PolyspherocylinderTraits::PolyspherocylinderGeometry::getVolume() const {
     return std::accumulate(this->spherocylinderData.begin(), this->spherocylinderData.end(), 0.,
                            [](double volume, const SpherocylinderData &data) { return volume + data.getVolume(); });
+}
+
+PolyspherocylinderTraits::PolyspherocylinderGeometry
+    ::PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, const Vector<3> &primaryAxis,
+                                 const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin)
+        : spherocylinderData{std::move(spherocylinderData)}, primaryAxis{primaryAxis.normalized()},
+          secondaryAxis{secondaryAxis.normalized()}, geometricOrigin{geometricOrigin}
+{
+    Expects(!this->spherocylinderData.empty());
 }
 
 std::string PolyspherocylinderTraits::toWolfram(const Shape &shape) const {
     std::ostringstream out;
     out << std::fixed;
     out << "{";
-    for (std::size_t i{}; i < this->spherocylinderData.size() - 1; i++) {
-        const auto &data = this->spherocylinderData[i];
+    const auto spherocylinderData = this->getSpherocylinderData();
+    for (std::size_t i{}; i < spherocylinderData.size() - 1; i++) {
+        const auto &data = spherocylinderData[i];
         data.toWolfram(out, shape);
         out << ",";
     }
-    this->spherocylinderData.back().toWolfram(out, shape);
+    spherocylinderData.back().toWolfram(out, shape);
     out << "}";
     return out.str();
 }
 
-PolyspherocylinderTraits::PolyspherocylinderTraits(const std::vector<SpherocylinderData> &spherocylinderData,
-                                                   const Vector<3> &primaryAxis, const Vector<3> &secondaryAxis,
-                                                   bool shouldNormalizeMassCentre)
-        : spherocylinderData{spherocylinderData}, primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}
-{
-    Expects(!spherocylinderData.empty());
-    this->primaryAxis = this->primaryAxis.normalized();
-    this->secondaryAxis = this->secondaryAxis.normalized();
-    if (shouldNormalizeMassCentre)
-        this->normalizeMassCentre();
-}
-
-void PolyspherocylinderTraits::normalizeMassCentre() {
+void PolyspherocylinderTraits::PolyspherocylinderGeometry::normalizeMassCentre() {
     auto massCentreAccumulator = [](const Vector<3> &sum, const SpherocylinderData &data) {
         return sum + data.getVolume() * data.position;
     };
@@ -57,14 +55,7 @@ void PolyspherocylinderTraits::normalizeMassCentre() {
     std::transform(this->spherocylinderData.begin(), this->spherocylinderData.end(),
                    std::back_inserter(newSpherocylinderData), massCentreShifter);
     this->spherocylinderData = std::move(newSpherocylinderData);
-}
-
-Vector<3> PolyspherocylinderTraits::getPrimaryAxis(const Shape &shape) const {
-    return shape.getOrientation() * this->primaryAxis;
-}
-
-Vector<3> PolyspherocylinderTraits::getSecondaryAxis(const Shape &shape) const {
-    return shape.getOrientation() * this->secondaryAxis;
+    this->geometricOrigin -= massCentre;
 }
 
 PolyspherocylinderTraits::SpherocylinderData::SpherocylinderData(const Vector<3> &position, const Vector<3> &halfAxis,
@@ -102,8 +93,9 @@ bool PolyspherocylinderTraits::overlapBetween(const Vector<3> &pos1, const Matri
                                               const Vector<3> &pos2, const Matrix<3, 3> &orientation2, std::size_t idx2,
                                               const BoundaryConditions &bc) const
 {
-    const auto &data1 = this->spherocylinderData[idx1];
-    const auto &data2 = this->spherocylinderData[idx2];
+    const auto &spherocylinderData = this->getSpherocylinderData();
+    const auto &data1 = spherocylinderData[idx1];
+    const auto &data2 = spherocylinderData[idx2];
 
     Vector<3> pos2bc = pos2 + bc.getTranslation(pos1, pos2);
     double distance2 = (pos2bc - pos1).norm2();
@@ -124,8 +116,9 @@ bool PolyspherocylinderTraits::overlapBetween(const Vector<3> &pos1, const Matri
 
 std::vector<Vector<3>> PolyspherocylinderTraits::getInteractionCentres() const {
     std::vector<Vector<3>> centres;
-    centres.reserve(this->spherocylinderData.size());
-    for (const auto &data : this->spherocylinderData)
+    const auto &spherocylinderData = this->getSpherocylinderData();
+    centres.reserve(spherocylinderData.size());
+    for (const auto &data : spherocylinderData)
         centres.push_back(data.position);
     return centres;
 }
@@ -134,7 +127,8 @@ double PolyspherocylinderTraits::getRangeRadius() const {
     auto comparator = [](const SpherocylinderData &sd1, const SpherocylinderData &sd2) {
         return sd1.circumsphereRadius < sd2.circumsphereRadius;
     };
-    auto maxIt = std::max_element(this->spherocylinderData.begin(), this->spherocylinderData.end(), comparator);
+    const auto &spherocylinderData = this->getSpherocylinderData();
+    auto maxIt = std::max_element(spherocylinderData.begin(), spherocylinderData.end(), comparator);
     return 2 * maxIt->circumsphereRadius;
 }
 
