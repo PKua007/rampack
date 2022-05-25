@@ -24,4 +24,5 @@ TEST_CASE("PolysphereWedgeTraits") {
     CHECK_THAT(data[0].position, IsApproxEqual({0, 0, 0}, 1e-12));
     CHECK_THAT(data[1].position, IsApproxEqual({4, 0, 0}, 1e-12));
     CHECK_THAT(data[2].position, IsApproxEqual({10, 0, 0}, 1e-12));
+    CHECK_THAT(traits.getGeometry().getGeometricOrigin(Shape{}), IsApproxEqual({6, 0, 0}, 1e-12));
 }

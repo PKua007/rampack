@@ -17,7 +17,8 @@ namespace {
 }
 
 TEST_CASE("PolysphereTraits: hard interactions") {
-    PolysphereTraits::PolysphereGeometry geometry({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}}, {1, 0, 0}, {0, 1, 0}, {0,0,0});
+    PolysphereTraits::PolysphereGeometry geometry({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}},
+                                                  {1, 0, 0}, {0, 1, 0}, {0.5, 0, 0});
     PolysphereTraits traits(std::move(geometry));
 
     SECTION("hard interactions") {
@@ -71,6 +72,11 @@ TEST_CASE("PolysphereTraits: hard interactions") {
         Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2));
         CHECK_THAT(traits.getGeometry().getSecondaryAxis(shape), IsApproxEqual({-1, 0, 0}, 1e-8));
     }
+
+    SECTION("geometric origin") {
+        Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2));
+        CHECK_THAT(traits.getGeometry().getGeometricOrigin(shape), IsApproxEqual({0, 0.5, 0}, 1e-8));
+    }
 }
 
 TEST_CASE("PolysphereTraits: soft interactions") {
@@ -83,10 +89,11 @@ TEST_CASE("PolysphereTraits: soft interactions") {
 
 TEST_CASE("PolysphereTraits: mass centre normalization") {
     PolysphereTraits::PolysphereGeometry geometry({{{0, 0, 0}, 1}, {{1, 0, 0}, std::cbrt(3)}},
-                                                  {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
+                                                  {1, 0, 0}, {0, 1, 0}, {1, 0, 0});
     geometry.normalizeMassCentre();
     PolysphereTraits traits(std::move(geometry));
 
     CHECK(traits.getSphereData()
           == std::vector<PolysphereTraits::SphereData>{{{-0.75, 0, 0}, 1}, {{0.25, 0, 0}, std::cbrt(3)}});
+    CHECK_THAT(traits.getGeometry().getGeometricOrigin(Shape{}), IsApproxEqual(Vector<3>{0.25, 0, 0}, 1e-12));
 }

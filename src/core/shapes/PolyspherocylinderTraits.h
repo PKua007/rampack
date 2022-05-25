@@ -85,6 +85,8 @@ public:
         [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const { return this->spherocylinderData; }
 
         void normalizeMassCentre();
+        [[nodiscard]] Vector<3> calculateMassCentre() const;
+        void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
     };
 
 private:

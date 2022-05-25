@@ -21,6 +21,21 @@ TEST_CASE("PolyspherocylinderBananaTraits") {
         CHECK_THAT(data[0].halfAxis, IsApproxEqual({-1, -1, 0}, 1e-12));
         CHECK_THAT(data[1].position, IsApproxEqual({-1, -1, 0}, 1e-12));
         CHECK_THAT(data[1].halfAxis, IsApproxEqual({1, -1, 0}, 1e-12));
+        CHECK_THAT(traits.getGeometry().getGeometricOrigin(Shape{}), IsApproxEqual({-1, 0, 0}, 1e-12));
+    }
+
+    SECTION("without subdivisions normalized") {
+        PolyspherocylinderBananaTraits traits(2, M_PI, 2, 1, 1, true);
+
+        const auto &data = traits.getSpherocylinderData();
+        REQUIRE(data.size() == 2);
+        CHECK(data[0].radius == 1);
+        CHECK(data[1].radius == 1);
+        CHECK_THAT(data[0].position, IsApproxEqual({0, 1, 0}, 1e-12));
+        CHECK_THAT(data[0].halfAxis, IsApproxEqual({-1, -1, 0}, 1e-12));
+        CHECK_THAT(data[1].position, IsApproxEqual({0, -1, 0}, 1e-12));
+        CHECK_THAT(data[1].halfAxis, IsApproxEqual({1, -1, 0}, 1e-12));
+        CHECK(traits.getGeometry().getGeometricOrigin(Shape{}) == Vector<3>{0, 0, 0});
     }
 
     SECTION("with subdivisions") {
@@ -40,5 +55,6 @@ TEST_CASE("PolyspherocylinderBananaTraits") {
         CHECK_THAT(data[2].halfAxis, IsApproxEqual({0.5, -0.5, 0}, 1e-12));
         CHECK_THAT(data[3].position, IsApproxEqual({-0.5, -1.5, 0}, 1e-12));
         CHECK_THAT(data[3].halfAxis, IsApproxEqual({0.5, -0.5, 0}, 1e-12));
+        CHECK_THAT(traits.getGeometry().getGeometricOrigin(Shape{}), IsApproxEqual({-1, 0, 0}, 1e-12));
     }
 }

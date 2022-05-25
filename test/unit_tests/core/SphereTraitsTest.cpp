@@ -50,3 +50,12 @@ TEST_CASE("Sphere: toWolfram") {
 
     CHECK(sphereTraits.getPrinter().toWolfram(sphere) == "Sphere[{2, 4, 6},2]");
 }
+
+TEST_CASE("Sphere: geometry") {
+    SphereTraits sphereTraits(2);
+
+    CHECK_THROWS(sphereTraits.getGeometry().getPrimaryAxis(Shape{}));
+    CHECK_THROWS(sphereTraits.getGeometry().getSecondaryAxis(Shape{}));
+    CHECK(sphereTraits.getGeometry().getGeometricOrigin(Shape{}) == Vector<3>{0, 0, 0});
+    CHECK(sphereTraits.getVolume() == Approx(32./3*M_PI));
+}

@@ -40,13 +40,7 @@ std::string PolyspherocylinderTraits::toWolfram(const Shape &shape) const {
 }
 
 void PolyspherocylinderTraits::PolyspherocylinderGeometry::normalizeMassCentre() {
-    auto massCentreAccumulator = [](const Vector<3> &sum, const SpherocylinderData &data) {
-        return sum + data.getVolume() * data.position;
-    };
-    Vector<3> massCentre = std::accumulate(this->spherocylinderData.begin(), this->spherocylinderData.end(), Vector<3>{},
-                                           massCentreAccumulator);
-    massCentre /= this->getVolume();
-
+    Vector<3> massCentre = this->calculateMassCentre();
     std::vector<SpherocylinderData> newSpherocylinderData;
     newSpherocylinderData.reserve(this->spherocylinderData.size());
     auto massCentreShifter = [massCentre](const SpherocylinderData &data) {
@@ -56,6 +50,16 @@ void PolyspherocylinderTraits::PolyspherocylinderGeometry::normalizeMassCentre()
                    std::back_inserter(newSpherocylinderData), massCentreShifter);
     this->spherocylinderData = std::move(newSpherocylinderData);
     this->geometricOrigin -= massCentre;
+}
+
+Vector<3> PolyspherocylinderTraits::PolyspherocylinderGeometry::calculateMassCentre() const {
+    auto massCentreAccumulator = [](const Vector<3> &sum, const SpherocylinderData &data) {
+        return sum + data.getVolume() * data.position;
+    };
+    Vector<3> massCentre = std::accumulate(this->spherocylinderData.begin(), this->spherocylinderData.end(), Vector<3>{},
+                                           massCentreAccumulator);
+    massCentre /= this->getVolume();
+    return massCentre;
 }
 
 PolyspherocylinderTraits::SpherocylinderData::SpherocylinderData(const Vector<3> &position, const Vector<3> &halfAxis,

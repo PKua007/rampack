@@ -18,7 +18,8 @@ KMerTraits::PolysphereGeometry KMerTraits::generateGeometry(std::size_t sphereNu
         data.emplace_back(SphereData({sphereX, 0, 0}, sphereRadius));
         sphereX += distance;
     }
-    PolysphereGeometry geometry(std::move(data), {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
+    PolysphereGeometry geometry(std::move(data), {1, 0, 0}, {0, 1, 0});
     geometry.normalizeMassCentre();
+    geometry.setGeometricOrigin({0, 0, 0});
     return geometry;
 }

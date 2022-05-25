@@ -142,3 +142,9 @@ TEST_CASE("Spherocylinder: secondary axis") {
     Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2));
     CHECK_THAT(traits.getSecondaryAxis(shape), IsApproxEqual({-1, 0, 0}, 1e-8));
 }
+
+TEST_CASE("Spherocylinder: geometric origin") {
+    SpherocylinderTraits traits(3, 2);
+
+    CHECK(traits.getGeometry().getGeometricOrigin(Shape{}) == Vector<3>{0, 0, 0});
+}

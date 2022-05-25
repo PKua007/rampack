@@ -96,20 +96,7 @@ double PolysphereTraits::PolysphereGeometry::getVolume() const {
 }
 
 void PolysphereTraits::PolysphereGeometry::normalizeMassCentre() {
-    auto massCentreAccumulator = [](const Vector<3> &sum, const SphereData &data) {
-        double r = data.radius;
-        return sum + (r*r*r) * data.position;
-    };
-
-    auto weightAccumulator = [](double sum, const SphereData &data) {
-        double r = data.radius;
-        return sum + r*r*r;
-    };
-
-    Vector<3> massCentre = std::accumulate(this->sphereData.begin(), this->sphereData.end(), Vector<3>{},
-                                           massCentreAccumulator);
-    double weightSum = std::accumulate(this->sphereData.begin(), this->sphereData.end(), 0., weightAccumulator);
-    massCentre /= weightSum;
+    Vector<3> massCentre = this->calculateMassCentre();
 
     auto massCentreShifter = [massCentre](const SphereData &data) {
         return SphereData(data.position - massCentre, data.radius);
@@ -131,4 +118,22 @@ PolysphereTraits::PolysphereGeometry::PolysphereGeometry(std::vector<SphereData>
           secondaryAxis{secondaryAxis.normalized()}, geometricOrigin{geometricOrigin}
 {
     Expects(!this->sphereData.empty());
+}
+
+Vector<3> PolysphereTraits::PolysphereGeometry::calculateMassCentre() const {
+    auto massCentreAccumulator = [](const Vector<3> &sum, const SphereData &data) {
+        double r = data.radius;
+        return sum + (r*r*r) * data.position;
+    };
+
+    auto weightAccumulator = [](double sum, const SphereData &data) {
+        double r = data.radius;
+        return sum + r*r*r;
+    };
+
+    Vector<3> massCentre = std::accumulate(this->sphereData.begin(), this->sphereData.end(), Vector<3>{},
+                                           massCentreAccumulator);
+    double weightSum = std::accumulate(this->sphereData.begin(), this->sphereData.end(), 0., weightAccumulator);
+    massCentre /= weightSum;
+    return massCentre;
 }

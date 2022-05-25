@@ -25,8 +25,12 @@ PolysphereBananaTraits::generateGeometry(double arcRadius, double arcAngle, std:
         sphereData.emplace_back(pos, sphereRadius);
     }
 
-    PolysphereGeometry geometry(std::move(sphereData), {0, 1, 0}, {-1, 0, 0}, {0, 0, 0});
-    if (normalizeMassCentre)
+    PolysphereGeometry geometry(std::move(sphereData), {0, 1, 0}, {-1, 0, 0});
+    if (normalizeMassCentre) {
         geometry.normalizeMassCentre();
+        geometry.setGeometricOrigin({0, 0, 0});
+    } else {
+        geometry.setGeometricOrigin(geometry.calculateMassCentre());
+    }
     return geometry;
 }

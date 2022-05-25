@@ -49,7 +49,7 @@ public:
 
     public:
         PolysphereGeometry(std::vector<SphereData> sphereData, const Vector<3> &primaryAxis,
-                           const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin);
+                           const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin = {0, 0, 0});
 
         [[nodiscard]] double getVolume() const override;
 
@@ -68,6 +68,8 @@ public:
         [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->sphereData; }
 
         void normalizeMassCentre();
+        [[nodiscard]] Vector<3> calculateMassCentre() const;
+        void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
     };
 
 private:

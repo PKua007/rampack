@@ -35,7 +35,11 @@ PolyspherocylinderBananaTraits::generateGeometry(double arcRadius, double arcAng
     }
 
     PolyspherocylinderGeometry geometry(std::move(spherocylinderData), {0, 1, 0}, {-1, 0, 0}, {0, 0, 0});
-    if (normalizeMassCentre)
+    if (normalizeMassCentre) {
         geometry.normalizeMassCentre();
+        geometry.setGeometricOrigin({0, 0, 0});
+    } else {
+        geometry.setGeometricOrigin(geometry.calculateMassCentre());
+    }
     return geometry;
 }

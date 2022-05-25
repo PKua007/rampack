@@ -29,8 +29,11 @@ PolysphereLollipopTraits::generateGeometry(std::size_t sphereNum, double smallSp
     centrePos += smallSphereRadius + largeSphereRadius - largeSpherePenetration;
     data.emplace_back(Vector<3>{centrePos, 0, 0}, largeSphereRadius);
 
-    PolysphereGeometry geometry(std::move(data), {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
+    PolysphereGeometry geometry(std::move(data), {1, 0, 0}, {0, 1, 0});
     if (normalizeMassCentre)
         geometry.normalizeMassCentre();
+    double end1 = geometry.getSphereData().front().position[0];
+    double end2 = geometry.getSphereData().back().position[0];
+    geometry.setGeometricOrigin({(end2 + largeSphereRadius + end1 - smallSphereRadius)/2, 0, 0});
     return geometry;
 }
