@@ -19,6 +19,8 @@ private:
     bool isRegular_{};
 
     [[nodiscard]] std::size_t getCellIndex(std::size_t i, std::size_t j, std::size_t k) const;
+    void normalizeRegular();
+    void normalizeIrregular();
 
 public:
     Lattice(const UnitCell &unitCell, const std::array<std::size_t, 3> &dimensions);

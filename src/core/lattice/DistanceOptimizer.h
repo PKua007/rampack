@@ -19,8 +19,6 @@
  */
 class DistanceOptimizer {
 private:
-    static std::array<double, 3> singleAxisScaling(size_t axisNum, double factor);
-    static bool isPackingOverlapping(Packing &packing, const Interaction &interaction);
     static bool isScaledPackingOverlapping(Packing &packing, const Interaction &interaction,
                                            const TriclinicBox &newBox);
 

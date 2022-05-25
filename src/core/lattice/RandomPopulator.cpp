@@ -14,15 +14,15 @@ std::vector<Shape> RandomPopulator::populateLattice(const Lattice &lattice, std:
     Expects(latticeSize >= numOfShapes);
 
     auto allShapes = lattice.generateMolecules();
-    std::vector<std::size_t> idx(latticeSize, 0);
-    std::iota(idx.begin(), idx.end(), 0);
-    std::shuffle(idx.begin(), idx.end(), this->rng);
-    idx.erase(idx.begin() + static_cast<std::ptrdiff_t>(numOfShapes), idx.end());
-    std::sort(idx.begin(), idx.end());
+    std::vector<std::size_t> moleculeIdxs(latticeSize, 0);
+    std::iota(moleculeIdxs.begin(), moleculeIdxs.end(), 0);
+    std::shuffle(moleculeIdxs.begin(), moleculeIdxs.end(), this->rng);
+    moleculeIdxs.erase(moleculeIdxs.begin() + static_cast<std::ptrdiff_t>(numOfShapes), moleculeIdxs.end());
+    std::sort(moleculeIdxs.begin(), moleculeIdxs.end());
 
     std::vector<Shape> shapes;
     shapes.reserve(numOfShapes);
-    for (auto i : idx)
+    for (auto i : moleculeIdxs)
         shapes.push_back(allShapes[i]);
 
     return shapes;

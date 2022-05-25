@@ -69,43 +69,33 @@ void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &inter
     // Optimize axis by axis in a given axis order
     auto axisOrder = LatticeTraits::parseAxisOrder(axisOrderString);
     for (std::size_t axisNum : axisOrder) {
-        double factorBeg = range * FACTOR_EPSILON / initialHeights[axisNum];  // Smallest scaling without self-overlap
-        double factorEnd = 1;
+        // Bisection interval beginning and end
+        double begFactor = range * FACTOR_EPSILON / initialHeights[axisNum];  // Smallest scaling without self-overlap
+        double endFactor = 1;
         auto endBox = packing.getBox().getDimensions();
         auto begBox = packing.getBox().getDimensions();
         for (std::size_t i{}; i < 3; i++)
-            begBox(i, axisNum) *= factorBeg;
+            begBox(i, axisNum) *= begFactor;
 
         ExpectsMsg(isScaledPackingOverlapping(packing, interaction, TriclinicBox(begBox)),
                    "Maximally shrunk packing (avoiding self overlaps) is not overlapping - the lattice is too small");
 
         do {
-            double factorMid = (factorBeg + factorEnd) / 2;
+            double factorMid = (begFactor + endFactor) / 2;
             auto midBox = (begBox + endBox) / 2.;
             if (isScaledPackingOverlapping(packing, interaction, TriclinicBox(midBox))) {
-                factorBeg = factorMid;
+                begFactor = factorMid;
                 begBox = midBox;
             } else {
-                factorEnd = factorMid;
+                endFactor = factorMid;
                 endBox = midBox;
             }
-        } while (std::abs(factorEnd - factorBeg) > EPSILON);
+        } while (std::abs(endFactor - begFactor) > EPSILON);
 
         // Finally, apply the factor found
         double finalEnergy = packing.tryScaling(TriclinicBox(endBox), interaction);
         Assert(finalEnergy != INF);
     }
-}
-
-bool DistanceOptimizer::isPackingOverlapping(Packing &packing, const Interaction &interaction) {
-    return packing.tryScaling(1, interaction) == INF;
-}
-
-std::array<double, 3> DistanceOptimizer::singleAxisScaling(std::size_t axisNum, double factor) {
-    std::array<double, 3> testFactors{};
-    testFactors.fill(1);
-    testFactors[axisNum] = factor;
-    return testFactors;
 }
 
 bool DistanceOptimizer::isScaledPackingOverlapping(Packing &packing, const Interaction &interaction,

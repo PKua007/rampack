@@ -20,7 +20,7 @@ void LayerWiseTransformer::transform(Lattice &lattice) const {
     Assert(layerAssociation.size() % requestedNumOfLayers == 0);
     std::size_t numOfLayers = layerAssociation.size();
 
-    for (std::size_t layerIdx{}; layerIdx < numOfLayers; layerIdx++){
+    for (std::size_t layerIdx{}; layerIdx < numOfLayers; layerIdx++) {
         const auto &layerShapes = layerAssociation[layerIdx].second;
         for (auto shapeIdx : layerShapes) {
             auto &cellShape = cell[shapeIdx];
@@ -32,49 +32,54 @@ void LayerWiseTransformer::transform(Lattice &lattice) const {
     lattice = newLattice;
 }
 
-void
-LayerWiseTransformer::recalculateUnitCell(UnitCell &cell,
-                                          std::vector<std::pair<double, std::vector<std::size_t>>> &layerAssociation,
-                                          std::array<std::size_t, 3> &dim, std::size_t requestedNumOfLayers) const
+void LayerWiseTransformer::recalculateUnitCell(UnitCell &cell, LayerAssociation &layerAssociation,
+                                               std::array<std::size_t, 3> &latticeDim,
+                                               std::size_t requestedNumOfLayers) const
 {
     std::size_t numOfLayers = layerAssociation.size();
+    // As many cells will be merged as is needed to contain requested number of layers preserving periodicity
     std::size_t newNumOfLayers = LayerWiseTransformer::LCM(numOfLayers, requestedNumOfLayers);
-    std::size_t factor = newNumOfLayers / numOfLayers;
+    std::size_t cellFactor = newNumOfLayers / numOfLayers;
     std::size_t axisIdx = LatticeTraits::axisToIndex(this->axis);
 
     // Modify dimensions
-    ExpectsMsg(dim[axisIdx] % factor == 0, "Lattice dimensions incompatible with the requested number of layers");
-    dim[axisIdx] /= factor;
+    ExpectsMsg(latticeDim[axisIdx] % cellFactor == 0,
+               "Lattice dimensions incompatible with the requested number of layers");
+    latticeDim[axisIdx] /= cellFactor;
 
-    // Modify layerAssociation
+    // Modify layerAssociation - as many unit cells are joined, we have to replicate layers "cellFactor" times
+    // The distance between adjacent layer coords will also be scaled by "cellFactor", because it is relative to the
+    // cell size
     std::vector<std::pair<double, std::vector<std::size_t>>> newLayerAssociation;
     newLayerAssociation.reserve(newNumOfLayers);
-    std::size_t cellSize = cell.size();
-    for (std::size_t i{}; i < factor; i++) {
+    std::size_t numMoleculesInCell = cell.size();
+    for (std::size_t i{}; i < cellFactor; i++) {
         for (const auto &layer : layerAssociation) {
-            double newCoord = layer.first;
-            newCoord += static_cast<double>(i);
-            newCoord += static_cast<double>(factor);
-            auto newIdxs = layer.second;
-            for (auto &newIdx : newIdxs)
-                newIdx += i * cellSize;
-            newLayerAssociation.emplace_back(newCoord, newIdxs);
+            double newLayerCoord = layer.first;
+            newLayerCoord += static_cast<double>(i);
+            newLayerCoord += static_cast<double>(cellFactor);
+            auto newMoleculeIdxs = layer.second;
+            // Indices of replicated molecules are shifted according to replica number preserving the order
+            for (auto &newIdx : newMoleculeIdxs)
+                newIdx += i * numMoleculesInCell;
+            newLayerAssociation.emplace_back(newLayerCoord, newMoleculeIdxs);
         }
     }
     layerAssociation = newLayerAssociation;
 
-    // Modify cell
+    // Modify cell - similarly as for layer association, molecules have to be replicated "cellFactor" times with
+    // appropriate scaling of relative coordinates (cell gets bigger)
     auto newCellShapeSides = cell.getBox().getSides();
-    newCellShapeSides[axisIdx] *= static_cast<double>(factor);
+    newCellShapeSides[axisIdx] *= static_cast<double>(cellFactor);
     TriclinicBox newCellShape(newCellShapeSides);
 
     std::vector<Shape> newCellShapes;
-    newCellShapes.reserve(factor*cellSize);
-    for (std::size_t i{}; i < factor; i++) {
+    newCellShapes.reserve(cellFactor * numMoleculesInCell);
+    for (std::size_t i{}; i < cellFactor; i++) {
         for (auto shape : cell) {
             auto pos = shape.getPosition();
             pos[axisIdx] += static_cast<double>(i);
-            pos[axisIdx] /= static_cast<double>(factor);
+            pos[axisIdx] /= static_cast<double>(cellFactor);
             shape.setPosition(pos);
             newCellShapes.push_back(shape);
         }
@@ -83,23 +88,21 @@ LayerWiseTransformer::recalculateUnitCell(UnitCell &cell,
     cell = UnitCell(newCellShape, newCellShapes);
 }
 
-std::vector<std::pair<double, std::vector<std::size_t>>>
-LayerWiseTransformer::getLayerAssociation(const UnitCell &cell) const
-{
+LayerWiseTransformer::LayerAssociation LayerWiseTransformer::getLayerAssociation(const UnitCell &cell) const {
     std::size_t axisIdx = LatticeTraits::axisToIndex(this->axis);
-    std::vector<std::pair<double, std::vector<std::size_t>>> layerAssociation;
+    LayerAssociation layerAssociation;
 
     for (std::size_t i{}; i < cell.size(); i++) {
         const auto &shape = cell[i];
-        double coord = shape.getPosition()[axisIdx];
+        double axisPosElem = shape.getPosition()[axisIdx];
 
-        auto coordFinder = [coord](const auto &bin) {
+        auto layerCoordFinder = [axisPosElem](const auto &bin) {
             constexpr double EPSILON = 1e-10;
-            return std::abs(bin.first - coord) < EPSILON;
+            return std::abs(bin.first - axisPosElem) < EPSILON;
         };
-        auto it = std::find_if(layerAssociation.begin(), layerAssociation.end(), coordFinder);
+        auto it = std::find_if(layerAssociation.begin(), layerAssociation.end(), layerCoordFinder);
         if (it == layerAssociation.end()) {
-            layerAssociation.emplace_back(coord, std::vector<std::size_t>{});
+            layerAssociation.emplace_back(axisPosElem, LayerIndices{});
             it = layerAssociation.end() - 1;
         }
         it->second.push_back(i);

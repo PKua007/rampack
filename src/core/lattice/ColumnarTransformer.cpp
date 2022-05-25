@@ -11,7 +11,7 @@
 void ColumnarTransformer::transform(Lattice &lattice) const {
     Expects(lattice.isRegular());
 
-    const auto &unitCell = lattice.getSpecificCell(0, 0, 0);
+    const auto &unitCell = lattice.getUnitCell();
     auto columnAssociation = this->getColumnAssociation(unitCell);
     const auto &dim = lattice.getDimensions();
 
@@ -24,8 +24,8 @@ void ColumnarTransformer::transform(Lattice &lattice) const {
     for (i[idx1] = 0; i[idx1] < dim[idx1]; i[idx1]++) {
         for (i[idx2] = 0; i[idx2] < dim[idx2]; i[idx2]++) {
             for (const auto &column : columnAssociation) {
-                std::uniform_real_distribution<double> dist;
-                double shift = dist(this->mt);
+                std::uniform_real_distribution<double> zeroToOne;
+                double shift = zeroToOne(this->rng);
                 for (i[axisIdx] = 0; i[axisIdx] < dim[axisIdx]; i[axisIdx]++) {
                     auto &cell = lattice.modifySpecificCellMolecules(i[0], i[1], i[2]);
                     for (auto cellIdx : column.second) {
@@ -44,29 +44,27 @@ void ColumnarTransformer::transform(Lattice &lattice) const {
     }
 }
 
-std::vector<std::pair<std::array<double, 2>, std::vector<std::size_t>>>
-ColumnarTransformer::getColumnAssociation(const UnitCell &cell) const
-{
+ColumnarTransformer::ColumnAssociation ColumnarTransformer::getColumnAssociation(const UnitCell &cell) const {
     std::size_t axisIdx = LatticeTraits::axisToIndex(this->columnAxis);
     std::size_t idx1 = (axisIdx + 1) % 3;
     std::size_t idx2 = (axisIdx + 2) % 3;
-    std::vector<std::pair<std::array<double, 2>, std::vector<std::size_t>>> columnsAssociation;
+    ColumnAssociation columnsAssociation;
 
-    for (std::size_t i{}; i < cell.size(); i++) {
-        const auto &shape = cell[i];
+    for (std::size_t shapeIdx{}; shapeIdx < cell.size(); shapeIdx++) {
+        const auto &shape = cell[shapeIdx];
         const auto &pos = shape.getPosition();
-        std::array<double, 2> coord{pos[idx1], pos[idx2]};
+        ColumnCoord columnCoord{pos[idx1], pos[idx2]};
 
-        auto coordFinder = [coord](const auto &bin) {
+        auto columnCoordFinder = [columnCoord](const auto &bin) {
             constexpr double EPSILON = 1e-10;
-            return std::abs(bin.first[0] - coord[0]) < EPSILON && std::abs(bin.first[1] - coord[1]) < EPSILON;
+            return std::abs(bin.first[0]-columnCoord[0]) < EPSILON && std::abs(bin.first[1]-columnCoord[1]) < EPSILON;
         };
-        auto it = std::find_if(columnsAssociation.begin(), columnsAssociation.end(), coordFinder);
+        auto it = std::find_if(columnsAssociation.begin(), columnsAssociation.end(), columnCoordFinder);
         if (it == columnsAssociation.end()) {
-            columnsAssociation.emplace_back(coord, std::vector<std::size_t>{});
+            columnsAssociation.emplace_back(columnCoord, ColumnIndices{});
             it = columnsAssociation.end() - 1;
         }
-        it->second.push_back(i);
+        it->second.push_back(shapeIdx);
     }
     return columnsAssociation;
 }

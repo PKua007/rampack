@@ -15,15 +15,18 @@
 
 class ColumnarTransformer : public LatticeTransformer {
 private:
-    LatticeTraits::Axis columnAxis{};
-    mutable std::mt19937 mt;
+    using ColumnCoord = std::array<double, 2>;
+    using ColumnIndices = std::vector<std::size_t>;
+    using ColumnAssociation = std::vector<std::pair<ColumnCoord, ColumnIndices>>;
 
-    [[nodiscard]] std::vector<std::pair<std::array<double, 2>, std::vector<std::size_t>>>
-    getColumnAssociation(const UnitCell &cell) const;
+    LatticeTraits::Axis columnAxis{};
+    mutable std::mt19937 rng;
+
+    [[nodiscard]] ColumnAssociation getColumnAssociation(const UnitCell &cell) const;
 
 public:
     ColumnarTransformer(LatticeTraits::Axis columnAxis, unsigned long seed)
-            : columnAxis{columnAxis}, mt{seed}
+            : columnAxis{columnAxis}, rng{seed}
     { }
 
     void transform(Lattice &lattice) const override;

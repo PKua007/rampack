@@ -22,13 +22,11 @@ public:
 
     static UnitCell createHcpCell(const std::array<double, 3> &cuboidalCellSize,
                                   LatticeTraits::Axis axis = LatticeTraits::Axis::Z);
-    static UnitCell createHcpCell(double ballDiameter,
-                                  LatticeTraits::Axis axis = LatticeTraits::Axis::Z);
+    static UnitCell createHcpCell(double ballDiameter, LatticeTraits::Axis axis = LatticeTraits::Axis::Z);
 
     static UnitCell createHexagonalCell(const std::array<double, 3> &cuboidalCellSize,
                                         LatticeTraits::Axis axis = LatticeTraits::Axis::Z);
-    static UnitCell createHexagonalCell(double ballDiameter,
-                                        LatticeTraits::Axis axis = LatticeTraits::Axis::Z);
+    static UnitCell createHexagonalCell(double ballDiameter, LatticeTraits::Axis axis = LatticeTraits::Axis::Z);
 };
 
 
