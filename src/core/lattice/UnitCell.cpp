@@ -10,5 +10,12 @@ UnitCell::UnitCell(std::shared_ptr<TriclinicBox> cellShape, std::vector<Shape> m
         : cellShape{std::move(cellShape)}, molecules{std::move(molecules)}
 {
     Expects(this->cellShape != nullptr);
-    Expects(!this->molecules.empty());
+}
+
+bool UnitCell::isNormalized() const {
+    for (const auto &shape : this->molecules)
+        for (double coord : shape.getPosition())
+            if (coord < 0 || coord >= 1)
+                return false;
+    return true;
 }

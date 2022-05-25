@@ -97,3 +97,48 @@ std::vector<Shape> &Lattice::modifyUnitCellMolecules() {
     Expects(this->isRegular_);
     return this->cells.front().getMolecules();
 }
+
+void Lattice::normalize() {
+    if (this->isNormalized())
+        return;
+
+    if (this->isRegular_) {
+        auto &molecules = this->modifyUnitCellMolecules();
+        for (auto &molecule : molecules) {
+            Vector<3> pos = molecule.getPosition();
+            for (auto &coord : pos) {
+                while (coord < 0)
+                    coord += 1;
+                while (coord >= 1)
+                    coord -= 1;
+            }
+            molecule.setPosition(pos);
+        }
+    } else {
+        const TriclinicBox &cellBox = this->getCellBox();
+        Lattice newLattice(UnitCell(cellBox, {}), this->dimensions);
+        for (auto molecule : this->generateMolecules()) {
+            Vector<3> relativeCoord = cellBox.absoluteToRelative(molecule.getPosition());
+            Vector<3> floorCoord;
+            std::transform(relativeCoord.begin(), relativeCoord.end(), floorCoord.begin(),
+                           [](double coord) { return std::floor(coord); });
+            std::array<std::size_t, 3> intCoord{};
+            for (std::size_t i{}; i < 3; i++) {
+                int dim = static_cast<int>(this->dimensions[i]);
+                int coord = static_cast<int>(floorCoord[i]);
+                intCoord[i] = (coord % dim + dim) % dim;
+            }
+            Vector<3> remainderCoord = relativeCoord - floorCoord;
+
+            auto &newMolecules = newLattice.modifySpecificCellMolecules(intCoord[0], intCoord[1], intCoord[2]);
+            molecule.setPosition(remainderCoord);
+            newMolecules.push_back(molecule);
+        }
+
+        *this = newLattice;
+    }
+}
+
+bool Lattice::isNormalized() const {
+    return std::all_of(this->cells.begin(), this->cells.end(), [](const auto &cell) { return cell.isNormalized(); });
+}

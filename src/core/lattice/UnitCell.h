@@ -38,6 +38,7 @@ public:
     [[nodiscard]] iterator end() { return this->molecules.end(); }
     [[nodiscard]] const_iterator begin() const { return this->molecules.begin(); }
     [[nodiscard]] const_iterator end() const { return this->molecules.end(); }
+    [[nodiscard]] bool isNormalized() const;
 };
 
 

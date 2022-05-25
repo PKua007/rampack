@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <iterator>
 
+#include "matchers/VectorApproxMatcher.h"
+
 #include "core/lattice/Lattice.h"
 
 TEST_CASE("Lattice") {
@@ -26,6 +28,7 @@ TEST_CASE("Lattice") {
         CHECK(lattice.getLatticeBox() == TriclinicBox(std::array<double, 3>{2, 6, 3}));
         CHECK(lattice.size() == 12);
         CHECK(lattice.getDimensions() == std::array<std::size_t, 3>{2, 3, 1});
+        CHECK(lattice.isNormalized());
 
         // Should still be regular after those operations
         CHECK(lattice.isRegular());
@@ -89,6 +92,67 @@ TEST_CASE("Lattice") {
             CHECK_THROWS(lattice.getUnitCell());
             CHECK_THROWS(lattice.getUnitCellMolecules());
             CHECK_THROWS(lattice.modifyUnitCellMolecules());
+        }
+    }
+}
+
+TEST_CASE("Lattice: not normalized") {
+    SECTION("regular") {
+        TriclinicBox cellBox(std::array<double, 3>{1, 2, 3});
+        std::vector<Shape> molecules{Shape({0, -0.25, 0.5}), Shape({0.25, 0.5, 0.75})};
+        UnitCell unitCell(cellBox, molecules);
+        Lattice lattice(unitCell, {2, 3, 1});
+
+        REQUIRE_FALSE(lattice.isNormalized());
+
+        SECTION("normalization") {
+            lattice.normalize();
+
+            REQUIRE(lattice.isRegular());
+            CHECK(lattice.getCellBox() == cellBox);
+            std::vector<Shape> expectedShapes = std::vector<Shape>{Shape({0, 0.75, 0.5}), Shape({0.25, 0.5, 0.75})};
+            CHECK_THAT(lattice.getUnitCellMolecules(), Catch::UnorderedEquals(expectedShapes));
+            CHECK(lattice.size() == 12);
+            CHECK(lattice.getDimensions() == std::array<std::size_t, 3>{2, 3, 1});
+            CHECK(lattice.isNormalized());
+        }
+    }
+
+    SECTION("irregular") {
+        // +-----+-----+
+        // |  X  |     |
+        // +-----+-----+
+        // | X   |  XX |
+        // +-----+-----+
+        TriclinicBox cellBox(std::array<double, 3>{1, 2, 3});
+        UnitCell unitCell(cellBox, {Shape({0.5, 0.5, 0.5})});
+        Lattice lattice(unitCell, {2, 2, 1});
+        lattice.modifySpecificCellMolecules(0, 0, 0)[0].setPosition({-0.25, 0.5, 0.5});
+        lattice.modifySpecificCellMolecules(1, 1, 0)[0].setPosition({1.25, -0.5, 0.5});
+
+        REQUIRE_FALSE(lattice.isNormalized());
+
+        SECTION("normalization") {
+            lattice.normalize();
+
+            CHECK(lattice.getCellBox() == cellBox);
+            const auto &molecules000 = lattice.getSpecificCellMolecules(0, 0, 0);
+            const auto &molecules100 = lattice.getSpecificCellMolecules(1, 0, 0);
+            const auto &molecules010 = lattice.getSpecificCellMolecules(0, 1, 0);
+            const auto &molecules110 = lattice.getSpecificCellMolecules(1, 1, 0);
+            REQUIRE(molecules000.size() == 1);
+            CHECK_THAT(molecules000[0].getPosition(), IsApproxEqual(Vector<3>{0.25, 0.5, 0.5}, 1e-12));
+            REQUIRE(molecules100.size() == 2);
+            CHECK_THAT(molecules100[0].getPosition(), IsApproxEqual(Vector<3>{0.5, 0.5, 0.5}, 1e-12)
+                                                      || IsApproxEqual(Vector<3>{0.75, 0.5, 0.5}, 1e-12));
+            CHECK_THAT(molecules100[1].getPosition(), IsApproxEqual(Vector<3>{0.5, 0.5, 0.5}, 1e-12)
+                                                      || IsApproxEqual(Vector<3>{0.75, 0.5, 0.5}, 1e-12));
+            CHECK_THAT(molecules100[0].getPosition(), !IsApproxEqual(molecules100[1].getPosition(), 1e-12));
+            REQUIRE(molecules010.size() == 1);
+            CHECK_THAT(molecules010[0].getPosition(), IsApproxEqual(Vector<3>{0.5, 0.5, 0.5}, 1e-12));
+            REQUIRE(molecules110.empty());
+            CHECK(lattice.getDimensions() == std::array<std::size_t, 3>{2, 2, 1});
+            CHECK(lattice.isNormalized());
         }
     }
 }

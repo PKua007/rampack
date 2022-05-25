@@ -20,6 +20,7 @@ TEST_CASE("UnitCell") {
         CHECK_THROWS(unitCell[2]);
         CHECK(unitCell.getBox() == box);
         CHECK(unitCell.getMolecules() == std::vector<Shape>({shape0, shape1}));
+        CHECK(unitCell.isNormalized());
         std::size_t i{};
         for (const auto &shape: unitCell) {
             if (i == 0)
@@ -56,5 +57,21 @@ TEST_CASE("UnitCell") {
         unitCell.getBox() = newBox;
 
         CHECK(unitCell.getBox() == newBox);
+    }
+}
+
+TEST_CASE("UnitCell: not normalized") {
+    TriclinicBox box(std::array<double, 3>{1, 2, 4});
+
+    SECTION("coord < 0") {
+        UnitCell unitCell(box, {Shape({-0.25, 0.5, 0.75})});
+
+        CHECK_FALSE(unitCell.isNormalized());
+    }
+
+    SECTION("coord >= 1") {
+        UnitCell unitCell(box, {Shape({0.25, 0.5, 1.0})});
+
+        CHECK_FALSE(unitCell.isNormalized());
     }
 }
