@@ -8,15 +8,16 @@
 #include <random>
 
 #include "LatticeTransformer.h"
+#include "core/ShapeGeometry.h"
 
 
 class FlipRandomizingTransformer : public LatticeTransformer {
 private:
-    Vector<3> secondaryAxis{};
+    const ShapeGeometry &geometry;
     mutable std::default_random_engine rng;
 
 public:
-    FlipRandomizingTransformer(const Vector<3> &secondaryAxis, unsigned long seed);
+    FlipRandomizingTransformer(const ShapeGeometry &geometry, unsigned long seed) : geometry{geometry}, rng(seed) { }
 
     void transform(Lattice &lattice) const override;
 };
