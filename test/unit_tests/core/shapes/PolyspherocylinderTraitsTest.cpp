@@ -2,7 +2,7 @@
 // Created by Piotr Kubala on 27/04/2021.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
 #include "matchers/VectorApproxMatcher.h"
 
