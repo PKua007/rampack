@@ -16,6 +16,8 @@ public:
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; };
     MAKE_CONST_MOCK0(getVolume, double(), override);
     MAKE_CONST_MOCK1(getPrimaryAxis, Vector<3>(const Shape &), override);
+    MAKE_CONST_MOCK1(getSecondaryAxis, Vector<3>(const Shape &), override);
+    MAKE_CONST_MOCK1(getGeometricOrigin, Vector<3>(const Shape &), override);
     MAKE_CONST_MOCK0(getPrinter, const ShapePrinter &(), override);
     MAKE_CONST_MOCK0(hasHardPart, bool(), override);
     MAKE_CONST_MOCK0(hasSoftPart, bool(), override);
