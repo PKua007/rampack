@@ -6,6 +6,8 @@
 #include "core/FreeBoundaryConditions.h"
 
 void FlipRandomizingTransformer::transform(Lattice &lattice) const {
+    bool wasNormalized = lattice.isNormalized();
+
     const auto &dim = lattice.getDimensions();
     FreeBoundaryConditions fbc;
     for (std::size_t i{}; i < dim[0]; i++) {
@@ -25,4 +27,7 @@ void FlipRandomizingTransformer::transform(Lattice &lattice) const {
             }
         }
     }
+
+    if (wasNormalized)
+        lattice.normalize();
 }

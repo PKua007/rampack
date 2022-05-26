@@ -10,6 +10,7 @@
 
 void ColumnarTransformer::transform(Lattice &lattice) const {
     Expects(lattice.isRegular());
+    Expects(lattice.isNormalized());
 
     const auto &unitCell = lattice.getUnitCell();
     auto columnAssociation = this->getColumnAssociation(unitCell);

@@ -10,6 +10,7 @@
 
 void LayerWiseTransformer::transform(Lattice &lattice) const {
     Expects(lattice.isRegular());
+    Expects(lattice.isNormalized());
 
     auto cell = lattice.getSpecificCell(0, 0, 0);
     auto layerAssociation = this->getLayerAssociation(cell);

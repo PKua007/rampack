@@ -15,7 +15,7 @@
 
 /**
  * @brief An auxiliary class with a couple of static methods enabling one to find the minimal distances between
- * single particles or even whole packings.
+ * single particles or even optimizing whole packings.
  */
 class DistanceOptimizer {
 private:
@@ -48,7 +48,7 @@ public:
      * @brief The function scales positions of molecules in a given Packing in all directions so that the particles
      * are tangent.
      * @details The scaling is done axis-by-axis in the order given by @a axisOrderString, so it is essentially
-     * a single step of "coord descent" optimization scheme.
+     * a single step of "coord descent" optimization scheme. The angles between Packing faces are preserved.
      * @param packing the packing to shrink
      * @param interaction the interaction between the molecules in the packing
      * @param axisOrderString in which order the axes should be shrunk - for eaxmple @a "xzy" means that x axis will

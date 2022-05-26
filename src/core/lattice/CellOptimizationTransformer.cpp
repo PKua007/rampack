@@ -14,7 +14,7 @@
 
 
 void CellOptimizationTransformer::transform(Lattice &lattice) const {
-    Expects(lattice.isRegular());
+    Expects(lattice.isNormalized());
 
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     Packing testPacking(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), this->interaction);
