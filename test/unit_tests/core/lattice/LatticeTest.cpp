@@ -10,7 +10,7 @@
 
 #include "core/lattice/Lattice.h"
 
-TEST_CASE("Lattice") {
+TEST_CASE("Lattice: operations") {
     TriclinicBox cellBox(std::array<double, 3>{1, 2, 3});
     std::vector<Shape> molecules{Shape({0, 0.25, 0.5}), Shape({0.25, 0.5, 0.75})};
     UnitCell unitCell(cellBox, molecules);
@@ -155,4 +155,13 @@ TEST_CASE("Lattice: not normalized") {
             CHECK(lattice.isNormalized());
         }
     }
+}
+
+TEST_CASE("Lattice: performing deep copy of a unit cell") {
+    auto boxPtr = std::make_shared<TriclinicBox>(std::array<double, 3>{1, 2, 3});
+    Lattice lattice(UnitCell(boxPtr, {Shape({0.5, 0.5, 0.5})}), {2, 3, 1});
+
+    *boxPtr = TriclinicBox(std::array<double, 3>{1, 2, 6});
+
+    CHECK(lattice.getCellBox() == TriclinicBox(std::array<double, 3>{1, 2, 3}));
 }

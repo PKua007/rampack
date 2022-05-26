@@ -19,3 +19,7 @@ bool UnitCell::isNormalized() const {
                 return false;
     return true;
 }
+
+UnitCell UnitCell::deepCopy() const {
+    return UnitCell(std::make_shared<TriclinicBox>(*this->cellShape), this->molecules);
+}

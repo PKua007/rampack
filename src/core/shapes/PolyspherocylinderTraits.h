@@ -65,6 +65,13 @@ public:
         Vector<3> geometricOrigin;
 
     public:
+        /**
+         * @brief ...
+         * @param spherocylinderData set of spherocylinders
+         * @param primaryAxis the primary axis of the molecule
+         * @param secondaryAxis the secondary axis of the polymer (should be orthogonal to the primary one)
+         * @param geometricOrigin geometric origin of the molecule which can be different that the mass centre
+         */
         PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, const Vector<3> &primaryAxis,
                                    const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin);
 
@@ -95,11 +102,7 @@ private:
 public:
     /**
      * @brief Creates the molecule from a given set of spherocylinders.
-     * @param spherocylinderData a set of spherocylinders
-     * @param primaryAxis the primary axis of the molecule
-     * @param secondaryAxis the secondary axis of the polymer (should be orthogonal to the primary one)
-     * @param shouldNormalizeMassCentre if true, the mass centre will be moved to the origin. Otherwise, no translation
-     * is applied
+     * @param geometry PolyspherocylinderGeometry describing the shape
      */
     explicit PolyspherocylinderTraits(PolyspherocylinderGeometry geometry) : geometry{std::move(geometry)} { }
 

@@ -75,3 +75,21 @@ TEST_CASE("UnitCell: not normalized") {
         CHECK_FALSE(unitCell.isNormalized());
     }
 }
+
+TEST_CASE("UnitCell: box modification via std::shared_ptr") {
+    auto boxPtr = std::make_shared<TriclinicBox>(std::array<double, 3>{1, 2, 4});
+    UnitCell unitCell(boxPtr, {Shape({0.5, 0.5, 0.5})});
+
+    SECTION("modification") {
+        *boxPtr = TriclinicBox(std::array<double, 3>{1, 2, 8});
+
+        REQUIRE(unitCell.getBox() == TriclinicBox(std::array<double, 3>{1, 2, 8}));
+    }
+
+    SECTION("deep copy") {
+        auto newCell = unitCell.deepCopy();
+        *boxPtr = TriclinicBox(std::array<double, 3>{1, 2, 16});
+
+        CHECK_FALSE(newCell.getBox() == TriclinicBox(std::array<double, 3>{1, 2, 8}));
+    }
+}

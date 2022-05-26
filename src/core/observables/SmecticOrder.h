@@ -28,13 +28,13 @@ public:
     /**
      * @brief Constructor with @a kTauRanges - a specified range of integer multiples of 2 pi/(box length) to construct
      * wavevectors.
-     * @detail If @a dumpTauVector_ is @a true, components of tau wavevector will also be dumped as interval values.
+     * @details If @a dumpTauVector_ is @a true, components of tau wavevector will also be dumped as interval values.
      */
     explicit SmecticOrder(const std::array<int, 3> &kTauRanges, bool dumpTauVector_ = false);
 
     /**
      * @brief Constructor with a default range of integer multiples of 2 pi/(box length) to construct wavevectors.
-     * @detail If @a dumpTauVector_ is @a true, components of tau wavevector will also be dumped as interval values.
+     * @details If @a dumpTauVector_ is @a true, components of tau wavevector will also be dumped as interval values.
      */
     explicit SmecticOrder(bool dumpTauVector_ = false) : SmecticOrder({5, 5, 5}, dumpTauVector_) { }
 

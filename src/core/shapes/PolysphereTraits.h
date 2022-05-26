@@ -48,6 +48,13 @@ public:
         Vector<3> geometricOrigin;
 
     public:
+        /**
+         * @brief ...
+         * @param sphereData sphere data describing all constituent monomers
+         * @param primaryAxis the primary axis of the polymer
+         * @param secondaryAxis the secondary axis of the polymer (should be orthogonal to the primary one)
+         * @param geometricOrigin geometric origin of the molecule which can be different that the mass centre
+         */
         PolysphereGeometry(std::vector<SphereData> sphereData, const Vector<3> &primaryAxis,
                            const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin = {0, 0, 0});
 
@@ -97,11 +104,7 @@ private:
 public:
     /**
      * @brief Construct the polymer from the specified @a sphereData.
-     * @param sphereData sphere data describing all constituant monomers
-     * @param primaryAxis the primary axis of the polymer
-     * @param secondaryAxis the secondary axis of the polymer (should be orthogonal to the primary one)
-     * @param shouldNormalizeMassCentre if true, mass centre will be moved to the origin. If false, no translation is
-     * applied
+     * @param geometry PolysphereGeometry describing the molecule.
      */
     explicit PolysphereTraits(PolysphereGeometry geometry);
 
