@@ -8,7 +8,11 @@
 #include "PolysphereTraits.h"
 
 /**
- * @brief A banana-shaped polymer of spheres.
+ * @brief The banana-shaped hard polymer built by placing spheres on an arc. The sphere can be tangent or overlapping,
+ * depending on the parameters.
+ * @details The arc lies in the xy plane with x = 0, y = 0 origin, symmetric w.r.t. x axis and lying in negative
+ * x half-plane. The primary (molecular) axis is thus y axis, while secondary (polarization) axis is negative x
+ * axis. Geometric origin is placed in the mass centre.
  */
 class PolysphereBananaTraits : public PolysphereTraits {
 private:
@@ -17,17 +21,14 @@ private:
 
 public:
     /**
-     * @brief The hard polymer built by placing spheres on an arc. The sphere can be tangent or overlapping, depending
-     * on the parameters.
-     * @details The arc lies in the xy plane with x = 0, y = 0 origin, symmetric w.r.t. x axis and lying in negative
-     * x half-plane. The primary (molecular) axis is thus y axis.
+     * @brief Constructs the shape.
      * @param arcRadius the radius of the arc
      * @param arcAngle the arc angle
      * @param sphereNum number of spheres to be equidistantly placed on the arc. First and last sphere centres are arc
      * endpoints
      * @param sphereRadius the radius of each sphere
-     * @param normalizeMassCentre if true, the mass centre will be moved to the origin. If false, no mass centre
-     * normalization will be done
+     * @param normalizeMassCentre if @a true, mass centre will be normalized as per
+     * PolysphereTraits::PolysphereGeometry::normalizeMassCentre()
      */
     PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
                            bool normalizeMassCentre = true)

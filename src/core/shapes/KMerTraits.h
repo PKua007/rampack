@@ -9,6 +9,9 @@
 
 /**
  * @brief A class representing linear k-polymer.
+ * @details The polymer lies on X axis (which consequently is its primary axis). Secondary axis is Y axis - formally
+ * it is degenerate in YZ plane, but was arbitrarily chosen to enable flip moves. Geometric centre coincides with
+ * mass centre (endpoint spheres have opposite x coordinates).
  */
 class KMerTraits : public PolysphereTraits {
 private:

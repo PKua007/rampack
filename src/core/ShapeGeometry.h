@@ -9,6 +9,9 @@
 #include "Shape.h"
 
 
+/**
+ * @brief An interface describing geometric properties of the shape.
+ */
 class ShapeGeometry {
 public:
     /**
@@ -31,7 +34,7 @@ public:
     }
 
     /**
-     * @brief Returns the geometric origin a given @a shape.
+     * @brief Returns the geometric origin a given @a shape which is usually the center of its bounding box.
      * @brief Geometric origin may be different from mass center (which is always {0, 0, 0}). It is used for example for
      * flip moves.
      */

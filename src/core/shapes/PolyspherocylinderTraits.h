@@ -66,7 +66,7 @@ public:
 
     public:
         /**
-         * @brief ...
+         * @brief Constructs the object.
          * @param spherocylinderData set of spherocylinders
          * @param primaryAxis the primary axis of the molecule
          * @param secondaryAxis the secondary axis of the polymer (should be orthogonal to the primary one)
@@ -91,8 +91,18 @@ public:
 
         [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const { return this->spherocylinderData; }
 
+        /**
+         * @brief Calculates mass centre and moves it to {0, 0, 0} (geometric origin is moved accordingly).
+         * @details Overlaps are not accounted for.
+         */
         void normalizeMassCentre();
+
+        /**
+         * @brief Calculates and returns mass centre.
+         * @details Overlaps are not accounted for.
+         */
         [[nodiscard]] Vector<3> calculateMassCentre() const;
+
         void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
     };
 

@@ -8,7 +8,8 @@
 #include "core/ShapeTraits.h"
 
 /**
- * @brief Hard spherocylinder.
+ * @brief Hard spherocylinder spanned on X axis.
+ * @details Primary axisaxis is naturally x axis. Mass centre coincides with geometric origin.
  */
 class SpherocylinderTraits : public ShapeTraits, public ShapePrinter, public Interaction, public ShapeGeometry {
 private:
@@ -33,7 +34,6 @@ public:
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
-    [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override;
     [[nodiscard]] double getVolume() const override;
 
     [[nodiscard]] bool hasHardPart() const override { return true; }

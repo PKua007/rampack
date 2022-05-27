@@ -8,7 +8,8 @@
 #include "PolyspherocylinderTraits.h"
 
 /**
- * @brief A bent shaped molecule build of hard spherocylinders placed on an arc.
+ * @brief A bent shaped molecule build of hard spherocylinders placed on an arc. The construction is analogous to
+ * PolysphereBananaTraits.
  */
 class PolyspherocylinderBananaTraits : public PolyspherocylinderTraits {
 private:
@@ -27,7 +28,8 @@ public:
      * @param radius radius (half-length) of spherocylinder
      * @param subdivisions additional divisions of spherocylinders. It does not change the shape, but decreases the
      * interaction range of a single interaction centre, so it may increase the speed
-     * @param normalizeMassCentre see PolysphereBananaTraits
+     * @param normalizeMassCentre if @a true, mass centre will be normalized as per
+     * PolyspherocylinderTraits::PolyspherocylinderGeometry::normalizeMassCentre()
      */
     PolyspherocylinderBananaTraits(double arcRadius, double arcAngle, std::size_t segmentsNum, double radius,
                                    std::size_t subdivisions = 1, bool normalizeMassCentre = true)
