@@ -162,13 +162,14 @@ namespace {
             std::istringstream shapeStream(shapeString);
             auto tokens = tokenize<double>(shapeStream);
             ValidateMsg(!shapeStream.fail(), "Malformed shape. Usage: [pos. x] [y] [z] ([angle x deg] [y] [z])");
+            constexpr double f = M_PI / 180;
             switch (tokens.size()) {
                 case 3:
                     shapes.emplace_back(Vector<3>{tokens[0], tokens[1], tokens[2]});
                     break;
                 case 6:
                     shapes.emplace_back(Vector<3>{tokens[0], tokens[1], tokens[2]},
-                                        Matrix<3, 3>::rotation(tokens[3], tokens[4], tokens[5]));
+                                        Matrix<3, 3>::rotation(f*tokens[3], f*tokens[4], f*tokens[5]));
                     break;
                 default:
                     throw ValidationException("Malformed shape. Usage: [pos. x] [y] [z] ([angle x deg] [y] [z])");
@@ -246,7 +247,8 @@ namespace {
                             "If 'ncell' field not present, 'default' should be specified");
                 ValidateMsg(fieldMap["default"].empty(), "Unexpected token: " + fieldMap["default"]);
 
-                auto ncell = static_cast<std::size_t>(std::floor(std::cbrt(numParticles)));
+                double allCells = std::ceil(static_cast<double>(numParticles) / static_cast<double>(cell->size()));
+                auto ncell = static_cast<std::size_t>(std::ceil(std::cbrt(allCells)));
                 latticeDim = {ncell, ncell, ncell};
             } else {
                 ValidateMsg(fieldMap.find("default") == fieldMap.end(),
