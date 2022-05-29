@@ -17,7 +17,7 @@
 
 class ArrangementFactory {
 public:
-    static std::unique_ptr<Packing> arrangePacking(std::size_t distance, std::array<double, 3> boxDimensions,
+    static std::unique_ptr<Packing> arrangePacking(std::size_t distance,  const std::string &boxString,
                                                    const std::string &arrangementString,
                                                    std::unique_ptr<BoundaryConditions> bc,
                                                    const Interaction &interaction,

@@ -21,6 +21,24 @@
                            "[polarization] := {polar|antipolar} [polarization axis]"
 
 namespace {
+    std::array<double, 3> parse_box_dimensions(const std::string &initialDimensions) {
+        std::istringstream dimensionsStream(initialDimensions);
+        std::array<double, 3> dimensions{};
+        if (initialDimensions.find("auto") != std::string::npos) {
+            std::string autoStr;
+            dimensionsStream >> autoStr;
+            ValidateMsg(dimensionsStream && autoStr == "auto", "Invalid packing dimensions format. "
+                                                               "Expected: {auto|[dim x] [dim y] [dim z]}");
+            return {0, 0, 0};
+        } else {
+            dimensionsStream >> dimensions[0] >> dimensions[1] >> dimensions[2];
+            ValidateMsg(dimensionsStream, "Invalid packing dimensions format. "
+                                          "Expected: {auto|[dim x] [dim y] [dim z]}");
+            Validate(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
+            return dimensions;
+        }
+    }
+
     OrthorhombicArrangingModel::Axis parse_axis(const std::string &axisStr) {
         OrthorhombicArrangingModel::Axis tiltAxis;
         if (axisStr == "x")
@@ -176,8 +194,8 @@ namespace {
         return model.arrange(numOfParticles, particlesInLine, cellDimensions, boxDimensions);
     }
 
-    std::vector<Shape> arrange_orthorhombic_shapes(std::size_t numOfParticles,
-                                                   std::array<double, 3> &boxDimensions, const Interaction &interaction,
+    std::vector<Shape> arrange_orthorhombic_shapes(std::size_t numOfParticles, std::array<double, 3> &boxDimensions,
+                                                   const Interaction &interaction,
                                                    std::istringstream &arrangementStream)
     {
         auto [clinicity, tiltAxis, tiltAngle] = parse_tilt(arrangementStream);
@@ -191,18 +209,17 @@ namespace {
         }
 
         OrthorhombicArrangingModel model(polarization, polarAxis, clinicity, tiltAxis, tiltAngle);
-        if (arrangementStream.str().find(" default") != std::string::npos) {
+        std::vector<Shape> shapes;
+        if (arrangementStream.str().find(" default") != std::string::npos)
             return parse_default(arrangementStream, numOfParticles, boxDimensions, model);
-        } else if (arrangementStream.str().find(" spacing ") != std::string::npos) {
+        else if (arrangementStream.str().find(" spacing ") != std::string::npos)
             return parse_spacing(arrangementStream, numOfParticles, boxDimensions, interaction, model);
-        } else {
+        else
             return parse_explicit_sizes(arrangementStream, numOfParticles, boxDimensions, model);
-        }
     }
 }
 
-std::unique_ptr<Packing> ArrangementFactory::arrangePacking(std::size_t numOfParticles,
-                                                            std::array<double, 3> boxDimensions,
+std::unique_ptr<Packing> ArrangementFactory::arrangePacking(std::size_t numOfParticles, const std::string &boxString,
                                                             const std::string &arrangementString,
                                                             std::unique_ptr<BoundaryConditions> bc,
                                                             const Interaction &interaction, std::size_t moveThreads,
@@ -214,6 +231,7 @@ std::unique_ptr<Packing> ArrangementFactory::arrangePacking(std::size_t numOfPar
     ValidateMsg(arrangementStream, "Malformed arrangement. Usage: [type: orthorhombic, presimulated] "
                                    "(type dependent parameters)");
     if (type == "orthorhombic" || type == "lattice") {
+        auto boxDimensions = parse_box_dimensions(boxString);
         auto shapes = arrange_orthorhombic_shapes(numOfParticles, boxDimensions, interaction, arrangementStream);
         return std::make_unique<Packing>(boxDimensions, std::move(shapes), std::move(bc), interaction, moveThreads,
                                          scalingThreads);

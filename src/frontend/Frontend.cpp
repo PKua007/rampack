@@ -244,12 +244,11 @@ int Frontend::casino(int argc, char **argv) {
         params.volumeStepSize = std::stod(auxInfo.at(scalingKey));
         Validate(params.volumeStepSize > 0);
     } else {
-        std::array<double, 3> dimensions = this->parseDimensions(params.initialDimensions);
         // Same number of scaling and domain threads
         bc = std::make_unique<PeriodicBoundaryConditions>();
-        packing = ArrangementFactory::arrangePacking(params.numOfParticles, dimensions, params.initialArrangement,
-                                                     std::move(bc), shapeTraits->getInteraction(), scalingThreads,
-                                                     scalingThreads);
+        packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
+                                                     params.initialArrangement, std::move(bc),
+                                                     shapeTraits->getInteraction(), scalingThreads, scalingThreads);
     }
 
     // Perform simulations starting from initial run
@@ -704,11 +703,11 @@ int Frontend::preview(int argc, char **argv) {
         die("At least one of: --wolfram, --dat options must be specified", this->logger);
 
     Parameters params = this->loadParameters(inputFilename);
-    std::array<double, 3> dimensions = this->parseDimensions(params.initialDimensions);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
-    auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, dimensions, params.initialArrangement,
-                                                      std::move(bc), shapeTraits->getInteraction(), 1, 1);
+    auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
+                                                      params.initialArrangement, std::move(bc),
+                                                      shapeTraits->getInteraction(), 1, 1);
 
     // Parse move type
     auto moveSamplerStrings = explode(params.moveTypes, ',');
@@ -738,24 +737,6 @@ int Frontend::preview(int argc, char **argv) {
     }
 
     return EXIT_SUCCESS;
-}
-
-std::array<double, 3> Frontend::parseDimensions(const std::string &initialDimensions) const {
-    std::istringstream dimensionsStream(initialDimensions);
-    std::array<double, 3> dimensions{};
-    if (initialDimensions.find("auto") != std::string::npos) {
-        std::string autoStr;
-        dimensionsStream >> autoStr;
-        ValidateMsg(dimensionsStream && autoStr == "auto", "Invalid packing dimensions format. "
-                                                           "Expected: {auto|[dim x] [dim y] [dim z]}");
-        dimensions.fill(0);
-    } else {
-        dimensionsStream >> dimensions[0] >> dimensions[1] >> dimensions[2];
-        ValidateMsg(dimensionsStream, "Invalid packing dimensions format. "
-                                      "Expected: {auto|[dim x] [dim y] [dim z]}");
-        Validate(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
-    }
-    return dimensions;
 }
 
 std::string Frontend::doubleToString(double d) {
@@ -915,11 +896,11 @@ int Frontend::trajectory(int argc, char **argv) {
         die("At least one of: --observables, --log-info options must be specified", this->logger);
 
     Parameters params = this->loadParameters(inputFilename);
-    std::array<double, 3> dimensions = this->parseDimensions(params.initialDimensions);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
-    auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, dimensions, params.initialArrangement,
-                                                      std::move(bc), shapeTraits->getInteraction(), 1, 1);
+    auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
+                                                      params.initialArrangement, std::move(bc),
+                                                      shapeTraits->getInteraction(), 1, 1);
 
     auto trajectoryStream = std::make_unique<std::ifstream>(trajectoryFilename,
                                                                          std::ios_base::in | std::ios_base::binary);

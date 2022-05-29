@@ -56,7 +56,6 @@ private:
 
     void printMoveStatistics(const Simulation &simulation) const;
 
-    [[nodiscard]] std::array<double, 3> parseDimensions(const std::string &initialDimensions) const;
     static std::string doubleToString(double d);
     static std::string formatMoveKey(const std::string &groupName, const std::string &moveName);
     static bool isStepSizeKey(const std::string &key);
