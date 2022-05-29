@@ -10,6 +10,7 @@
 #include "core/lattice/DistanceOptimizer.h"
 #include "utils/Assertions.h"
 #include "core/PeriodicBoundaryConditions.h"
+#include "LatticeBuilder.h"
 
 
 #define ORTHORHOMBIC_USAGE "Malformed orthorhombic arrangement. Usage alternatives:\n" \
@@ -222,7 +223,8 @@ namespace {
 std::unique_ptr<Packing> ArrangementFactory::arrangePacking(std::size_t numOfParticles, const std::string &boxString,
                                                             const std::string &arrangementString,
                                                             std::unique_ptr<BoundaryConditions> bc,
-                                                            const Interaction &interaction, std::size_t moveThreads,
+                                                            const Interaction &interaction,
+                                                            const ShapeGeometry &geometry, std::size_t moveThreads,
                                                             std::size_t scalingThreads)
 {
     std::istringstream arrangementStream(arrangementString);
@@ -247,6 +249,12 @@ std::unique_ptr<Packing> ArrangementFactory::arrangePacking(std::size_t numOfPar
         packing->restore(packingFile, interaction);
         return packing;
     } else {
-        throw ValidationException("Unknown arrangement type: " + type + ". Available: orthorhombic, presimulated");
+        const auto &supportedTypes = LatticeBuilder::getSupportedCellTypes();
+        if (std::find(supportedTypes.begin(), supportedTypes.end(), type) != supportedTypes.end()) {
+            return LatticeBuilder::buildPacking(numOfParticles, boxString, arrangementString, std::move(bc),
+                                                interaction, geometry, moveThreads, scalingThreads);
+        } else {
+            throw ValidationException("Unknown arrangement type: " + type + ". Available: orthorhombic, presimulated");
+        }
     }
 }

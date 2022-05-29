@@ -4,22 +4,45 @@
 
 #include "UnitCellFactory.h"
 
+
+UnitCell UnitCellFactory::createScCell(const TriclinicBox &box) {
+    return UnitCell(box, {Shape({0.5, 0.5, 0.5})});
+}
+
 UnitCell UnitCellFactory::createScCell(const std::array<double, 3> &linearSize) {
     return UnitCell(TriclinicBox(linearSize), {Shape({0.5, 0.5, 0.5})});
+}
+
+UnitCell UnitCellFactory::createScCell(double linearSize) {
+    return UnitCellFactory::createScCell({linearSize, linearSize, linearSize});
 }
 
 UnitCell UnitCellFactory::createBccCell(const std::array<double, 3> &linearSize) {
     return UnitCell(TriclinicBox(linearSize), {Shape({0.25, 0.25, 0.25}), Shape({0.75, 0.75, 0.75})});
 }
 
-UnitCell UnitCellFactory::createFccCell(const std::array<double, 3> &linearSize) {
-    return UnitCell(TriclinicBox(linearSize), {Shape({0.25, 0.25, 0.25}),
-                                               Shape({0.25, 0.75, 0.75}),
-                                               Shape({0.75, 0.25, 0.75}),
-                                               Shape({0.75, 0.75, 0.25})});
+UnitCell UnitCellFactory::createBccCell(const TriclinicBox &box) {
+    return UnitCell(box, {Shape({0.25, 0.25, 0.25}), Shape({0.75, 0.75, 0.75})});
 }
 
-UnitCell UnitCellFactory::createHcpCell(const std::array<double, 3> &cuboidalCellSize, LatticeTraits::Axis axis) {
+UnitCell UnitCellFactory::createBccCell(double linearSize) {
+    return UnitCellFactory::createBccCell({linearSize, linearSize, linearSize});
+}
+
+UnitCell UnitCellFactory::createFccCell(const TriclinicBox &box) {
+    return UnitCell(box, {Shape({0.25, 0.25, 0.25}), Shape({0.25, 0.75, 0.75}),
+                          Shape({0.75, 0.25, 0.75}), Shape({0.75, 0.75, 0.25})});
+}
+
+UnitCell UnitCellFactory::createFccCell(const std::array<double, 3> &linearSize) {
+    return UnitCellFactory::createFccCell(TriclinicBox(linearSize));
+}
+
+UnitCell UnitCellFactory::createFccCell(double linearSize) {
+    return UnitCellFactory::createFccCell(TriclinicBox(linearSize));
+}
+
+UnitCell UnitCellFactory::createHcpCell(const TriclinicBox &box, LatticeTraits::Axis axis) {
     std::vector<Shape> shapes{Shape({0,    0,   0}), Shape({0.5,  0.5,   0}),
                               Shape({0, 1./3, 0.5}), Shape({0.5, 5./6, 0.5})};
     // Center shapes in the cell
@@ -41,31 +64,11 @@ UnitCell UnitCellFactory::createHcpCell(const std::array<double, 3> &cuboidalCel
         shape.setPosition(newPos);
     }
 
-    return UnitCell(TriclinicBox(cuboidalCellSize), std::move(shapes));
+    return UnitCell(box, std::move(shapes));
 }
 
-UnitCell UnitCellFactory::createHexagonalCell(const std::array<double, 3> &cuboidalCellSize, LatticeTraits::Axis axis) {
-    switch (axis) {
-        case LatticeTraits::Axis::X:
-            return UnitCell(TriclinicBox(cuboidalCellSize), {Shape({0.5, 0.25, 0.25}), Shape({0.5, 0.75, 0.75})});
-        case LatticeTraits::Axis::Y:
-            return UnitCell(TriclinicBox(cuboidalCellSize), {Shape({0.25, 0.5, 0.25}), Shape({0.75, 0.5, 0.75})});
-        case LatticeTraits::Axis::Z:
-            return UnitCell(TriclinicBox(cuboidalCellSize), {Shape({0.25, 0.25, 0.5}), Shape({0.75, 0.75, 0.5})});
-    }
-    throw AssertionException("");
-}
-
-UnitCell UnitCellFactory::createScCell(double linearSize) {
-    return UnitCellFactory::createScCell({linearSize, linearSize, linearSize});
-}
-
-UnitCell UnitCellFactory::createBccCell(double linearSize) {
-    return UnitCellFactory::createBccCell({linearSize, linearSize, linearSize});
-}
-
-UnitCell UnitCellFactory::createFccCell(double linearSize) {
-    return UnitCellFactory::createFccCell({linearSize, linearSize, linearSize});
+UnitCell UnitCellFactory::createHcpCell(const std::array<double, 3> &cuboidalCellSize, LatticeTraits::Axis axis) {
+    return UnitCellFactory::createHcpCell(TriclinicBox(cuboidalCellSize), axis);
 }
 
 UnitCell UnitCellFactory::createHcpCell(double ballDiameter, LatticeTraits::Axis axis) {
@@ -81,7 +84,22 @@ UnitCell UnitCellFactory::createHcpCell(double ballDiameter, LatticeTraits::Axis
             return UnitCellFactory::createHcpCell({a, b, c}, axis);
     }
     throw AssertionException("");
+}
 
+UnitCell UnitCellFactory::createHexagonalCell(const TriclinicBox &box, LatticeTraits::Axis axis) {
+    switch (axis) {
+        case LatticeTraits::Axis::X:
+            return UnitCell(box, {Shape({0.5, 0.25, 0.25}), Shape({0.5, 0.75, 0.75})});
+        case LatticeTraits::Axis::Y:
+            return UnitCell(box, {Shape({0.25, 0.5, 0.25}), Shape({0.75, 0.5, 0.75})});
+        case LatticeTraits::Axis::Z:
+            return UnitCell(box, {Shape({0.25, 0.25, 0.5}), Shape({0.75, 0.75, 0.5})});
+    }
+    throw AssertionException("");
+}
+
+UnitCell UnitCellFactory::createHexagonalCell(const std::array<double, 3> &cuboidalCellSize, LatticeTraits::Axis axis) {
+    return UnitCellFactory::createHexagonalCell(TriclinicBox(cuboidalCellSize), axis);
 }
 
 UnitCell UnitCellFactory::createHexagonalCell(double ballDiameter, LatticeTraits::Axis axis) {

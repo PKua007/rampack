@@ -248,7 +248,8 @@ int Frontend::casino(int argc, char **argv) {
         bc = std::make_unique<PeriodicBoundaryConditions>();
         packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
                                                      params.initialArrangement, std::move(bc),
-                                                     shapeTraits->getInteraction(), scalingThreads, scalingThreads);
+                                                     shapeTraits->getInteraction(), shapeTraits->getGeometry(),
+                                                     scalingThreads, scalingThreads);
     }
 
     // Perform simulations starting from initial run
@@ -707,7 +708,7 @@ int Frontend::preview(int argc, char **argv) {
     auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
     auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
                                                       params.initialArrangement, std::move(bc),
-                                                      shapeTraits->getInteraction(), 1, 1);
+                                                      shapeTraits->getInteraction(), shapeTraits->getGeometry(), 1, 1);
 
     // Parse move type
     auto moveSamplerStrings = explode(params.moveTypes, ',');
@@ -900,7 +901,7 @@ int Frontend::trajectory(int argc, char **argv) {
     auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
     auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
                                                       params.initialArrangement, std::move(bc),
-                                                      shapeTraits->getInteraction(), 1, 1);
+                                                      shapeTraits->getInteraction(), shapeTraits->getGeometry(), 1, 1);
 
     auto trajectoryStream = std::make_unique<std::ifstream>(trajectoryFilename,
                                                                          std::ios_base::in | std::ios_base::binary);

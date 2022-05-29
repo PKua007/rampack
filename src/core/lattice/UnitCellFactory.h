@@ -14,6 +14,8 @@
  */
 class UnitCellFactory {
 public:
+    static UnitCell createScCell(const TriclinicBox &box);
+
     /**
      * @brief Creates a simple cubic cell with a single particle in the middle, however of a possible cuboidal shape
      * with dimensions @a linearSize.
@@ -24,6 +26,9 @@ public:
      * @brief Creates a simple cubic cell with a single particle in the middle, with a cube side length @a linearSize.
      */
     static UnitCell createScCell(double linearSize);
+
+
+    static UnitCell createBccCell(const TriclinicBox &box);
 
     /**
      * @brief Creates a body centered cubic cell with two particles, however of a possible cuboidal shape with
@@ -40,6 +45,9 @@ public:
      */
     static UnitCell createBccCell(double linearSize);
 
+
+    static UnitCell createFccCell(const TriclinicBox &box);
+
     /**
      * @brief Creates a face centered cubic cell with four particles, however of a possible cuboidal shape with
      * dimensions @a linearSize.
@@ -54,6 +62,9 @@ public:
      * {0.25, 0.75, 0.75}, {0.75, 0.25, 0.75} and {0.75, 0.75, 0.25}).
      */
     static UnitCell createFccCell(double linearSize);
+
+
+    static UnitCell createHcpCell(const TriclinicBox &box, LatticeTraits::Axis axis = LatticeTraits::Axis::Z);
 
     /**
      * @brief Creates a hexagonal close packed unit cell with four molecules within a cuboid of side lengths
@@ -75,6 +86,9 @@ public:
      * createHcpCell(const std::array<double, 3>&, LatticeTraits::Axis).
      */
     static UnitCell createHcpCell(double ballDiameter, LatticeTraits::Axis axis = LatticeTraits::Axis::Z);
+
+
+    static UnitCell createHexagonalCell(const TriclinicBox &box, LatticeTraits::Axis axis = LatticeTraits::Axis::Z);
 
     /**
      * @brief Creates a hexagonal cell giving stacked honeycombs, but not alternating as for hcp lattice.

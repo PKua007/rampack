@@ -7,3 +7,6 @@
 [submodule "extern/cxxopts"]
 	path = extern/cxxopts
 	url = https://github.com/jarro2783/cxxopts.git
+[submodule "extern/ZipIterator"]
+	path = extern/ZipIterator
+	url = https://github.com/dpellegr/ZipIterator.git
