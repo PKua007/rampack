@@ -66,6 +66,11 @@ void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &inter
     Expects(std::all_of(initialHeights.begin(), initialHeights.end(), [range](double d) { return d > FACTOR_EPSILON*range; }));
     Expects(!packing.countTotalOverlaps(interaction));
 
+    std::vector<Shape> relShapes(std::begin(packing), std::end(packing));
+    const auto &originalBox = packing.getBox();
+    for (auto &shape : relShapes)
+        shape.setPosition(originalBox.absoluteToRelative(shape.getPosition()));
+
     // Optimize axis by axis in a given axis order
     auto axisOrder = LatticeTraits::parseAxisOrder(axisOrderString);
     for (std::size_t axisNum : axisOrder) {
@@ -76,32 +81,39 @@ void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &inter
         auto begBox = packing.getBox().getDimensions();
         for (std::size_t i{}; i < 3; i++)
             begBox(i, axisNum) *= begFactor;
+        auto endShapes = DistanceOptimizer::generateAbsoluteShapes(relShapes, endBox);
+        auto begShapes = DistanceOptimizer::generateAbsoluteShapes(relShapes, begBox);
 
-        ExpectsMsg(isScaledPackingOverlapping(packing, interaction, TriclinicBox(begBox)),
+        packing.reset(begShapes, TriclinicBox(begBox), interaction);
+        ExpectsMsg(packing.countTotalOverlaps(interaction),
                    "Maximally shrunk packing (avoiding self overlaps) is not overlapping - the lattice is too small");
 
         do {
             double factorMid = (begFactor + endFactor) / 2;
             auto midBox = (begBox + endBox) / 2.;
-            if (isScaledPackingOverlapping(packing, interaction, TriclinicBox(midBox))) {
+            auto midShapes = DistanceOptimizer::generateAbsoluteShapes(relShapes, midBox);
+            packing.reset(midShapes, TriclinicBox(midBox), interaction);
+            if (packing.countTotalOverlaps(interaction)) {
                 begFactor = factorMid;
+                begShapes = std::move(midShapes);
                 begBox = midBox;
             } else {
                 endFactor = factorMid;
+                endShapes = std::move(midShapes);
                 endBox = midBox;
             }
         } while (std::abs(endFactor - begFactor) > EPSILON);
 
         // Finally, apply the factor found
-        double finalEnergy = packing.tryScaling(TriclinicBox(endBox), interaction);
-        Assert(finalEnergy != INF);
+        packing.reset(endShapes, TriclinicBox(endBox), interaction);
+        Assert(!packing.countTotalOverlaps(interaction));
     }
 }
 
-bool DistanceOptimizer::isScaledPackingOverlapping(Packing &packing, const Interaction &interaction,
-                                                   const TriclinicBox &newBox)
+std::vector<Shape> DistanceOptimizer::generateAbsoluteShapes(std::vector<Shape> relShapes,
+                                                             const Matrix<3, 3> &boxMatrix)
 {
-    bool isOverlapping = (packing.tryScaling(newBox, interaction) == INF);
-    packing.revertScaling();
-    return isOverlapping;
+    for (auto &shape : relShapes)
+        shape.setPosition(boxMatrix * shape.getPosition());
+    return relShapes;
 }

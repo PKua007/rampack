@@ -19,8 +19,7 @@
  */
 class DistanceOptimizer {
 private:
-    static bool isScaledPackingOverlapping(Packing &packing, const Interaction &interaction,
-                                           const TriclinicBox &newBox);
+    static std::vector<Shape> generateAbsoluteShapes(std::vector<Shape> relShapes, const Matrix<3, 3> &boxMatrix);
 
     static constexpr double INF = std::numeric_limits<double>::infinity();
 
