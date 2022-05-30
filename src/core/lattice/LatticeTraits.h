@@ -29,6 +29,9 @@ public:
         Z
     };
 
+    /**
+     * @brief Exception thrown by parseAxisOrder() if argument is invalid.
+     */
     struct AxisOrderParseException : public std::runtime_error {
         explicit AxisOrderParseException(const std::string &what) : std::runtime_error(what) { }
     };
@@ -61,6 +64,7 @@ public:
      * @brief Converts a string of length 3 with names of axes to their 0-2 indices.
      * @details Namely, for example "zxy" will be converted to an array with elements {2, 0, 1}. Incorrect string
      * throw an exception.
+     * @throws AxisOrderParseException if @a axisOrderString is invalid.
      */
     static std::array<std::size_t, 3> parseAxisOrder(const std::string &axisOrderString);
 
