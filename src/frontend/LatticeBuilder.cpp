@@ -108,6 +108,22 @@ namespace {
         }
     }
 
+    /* It parses tokenized string to a key=>value map. Allowed fields are given by 'fields'. Values of fields are
+     * all tokens that follow a token equal to the field name, up to the end or another field token (they are joined
+     * using spaces). If one of allowed fields is "", then everything before "named" fields is regarded as "" field's
+     * value.
+     *
+     * Example: for fields "", "pear", "plum" and "apple", tokens:
+     *
+     * 1 2 3 apple 4 5 6 pear plum 7 8 9
+     *
+     * will be parsed into:
+     *
+     * ""      => "1 2 3"
+     * "apple" => "4 5 6"
+     * "pear"  => ""
+     * "plum"  => "7 8 9"
+     * */
     std::map<std::string, std::string> parse_fields(const std::vector<std::string> &fields,
                                                     const std::vector<std::string> &tokens)
     {
@@ -167,14 +183,14 @@ namespace {
             std::istringstream shapeStream(shapeString);
             auto tokens = tokenize<double>(shapeStream);
             ValidateMsg(!shapeStream.fail(), "Malformed shape. Usage: [pos. x] [y] [z] ([angle x deg] [y] [z])");
-            constexpr double f = M_PI / 180;
+            constexpr double toRad = M_PI / 180;
             switch (tokens.size()) {
                 case 3:
                     shapes.emplace_back(Vector<3>{tokens[0], tokens[1], tokens[2]});
                     break;
                 case 6:
                     shapes.emplace_back(Vector<3>{tokens[0], tokens[1], tokens[2]},
-                                        Matrix<3, 3>::rotation(f*tokens[3], f*tokens[4], f*tokens[5]));
+                                        Matrix<3, 3>::rotation(toRad*tokens[3], toRad*tokens[4], toRad*tokens[5]));
                     break;
                 default:
                     throw ValidationException("Malformed shape. Usage: [pos. x] [y] [z] ([angle x deg] [y] [z])");
@@ -183,7 +199,7 @@ namespace {
         return shapes;
     }
 
-    std::array<std::size_t, 3> parse_ncell(const std::string &ncellString) {
+    std::array<std::size_t, 3> parse_lattice_dim(const std::string &ncellString) {
         std::istringstream dimStream(ncellString);
         auto latticeDimTokens = tokenize<std::size_t>(dimStream);
         ValidateMsg(!dimStream.fail() && latticeDimTokens.size() == 3, "Malformed 'ncell'");
@@ -195,88 +211,169 @@ namespace {
         return latticeDim;
     }
 
-    Lattice prepare_lattice(std::size_t numParticles, std::optional<TriclinicBox> requestedBox,
-                            const std::string &cellDefinition)
+    UnitCell parse_unit_cell(const std::string &cellType, const std::map<std::string, std::string> &fieldMap) {
+        if (cellType == "sc") {
+            return std::visit([](const auto &&arg) { return UnitCellFactory::createScCell(arg); },
+                              parse_cell_dim(value_or_default(fieldMap, "dim", "1")));
+        } else if (cellType == "bcc") {
+            return std::visit([](const auto &&arg) { return UnitCellFactory::createBccCell(arg); },
+                              parse_cell_dim(value_or_default(fieldMap, "dim", "1")));
+        } else if (cellType == "fcc") {
+            return std::visit([](const auto &&arg) { return UnitCellFactory::createFccCell(arg); },
+                              parse_cell_dim(value_or_default(fieldMap, "dim", "1")));
+        } else if (cellType == "hcp") {
+            LatticeTraits::Axis axis = LatticeTraits::Axis::Z;
+            if (fieldMap.find("axis") != fieldMap.end())
+                axis = parse_axis(fieldMap.at("axis"));
+            return std::visit([axis](const auto &&arg) { return UnitCellFactory::createHcpCell(arg, axis); },
+                              parse_cell_dim(value_or_default(fieldMap, "dim", "1")));
+        } else if (cellType == "hexagonal") {
+            LatticeTraits::Axis axis = LatticeTraits::Axis::Z;
+            if (fieldMap.find("axis") != fieldMap.end())
+                axis = parse_axis(fieldMap.at("axis"));
+            return std::visit([axis](const auto &&arg) { return UnitCellFactory::createHexagonalCell(arg, axis); },
+                              parse_cell_dim(value_or_default(fieldMap, "dim", "1")));
+        } else if (cellType == "custom") {
+            if (fieldMap.find("shapes") == fieldMap.end())
+                throw ValidationException("Shapes have to be specified for the custom unit cell");
+            auto shapes = parse_shapes(fieldMap.at("shapes"));
+            auto box = std::visit([](const auto &&arg) { return TriclinicBox(arg); },
+                                  parse_cell_dim(value_or_default(fieldMap, "dim", "1")));
+            return UnitCell(box, shapes);
+        } else {
+            throw ValidationException("Unknown cell type: " + cellType);
+        }
+    }
+
+    auto calculate_lattice_dim(std::size_t numParticles, std::optional<TriclinicBox> requestedBox, const UnitCell &cell,
+                               const std::map<std::string, std::string> &fieldMap)
+    {
+        if (fieldMap.find("dim") != fieldMap.end()) {
+            ValidateMsg(!requestedBox.has_value(), "If explicit cell size is specified, box size should be 'auto'");
+            ValidateMsg(fieldMap.find("ncell") != fieldMap.end(), "'ncell' must be specified together with 'dim'");
+            ValidateMsg(fieldMap.find("default") == fieldMap.end(),
+                        "'default' cannot be specified together with 'dim'");
+            return std::make_pair(parse_lattice_dim(fieldMap.at("ncell")), cell.getBox());
+        }
+
+        ValidateMsg(requestedBox.has_value(),
+                    "Automatic box size not supported if either of: 'dim', 'ncell' is not specified");
+
+        std::array<std::size_t, 3> latticeDim{};
+        if (fieldMap.find("ncell") == fieldMap.end()) {
+            ValidateMsg(fieldMap.find("default") != fieldMap.end(),
+                        "If 'ncell' field not present, 'default' should be specified");
+            ValidateMsg(fieldMap.at("default").empty(), "Unexpected token: " + fieldMap.at("default"));
+
+            double allCells = ceil(static_cast<double>(numParticles) / static_cast<double>(cell.size()));
+            auto ncell = static_cast<std::size_t>(ceil(cbrt(allCells)));
+            latticeDim = {ncell, ncell, ncell};
+        } else {
+            ValidateMsg(fieldMap.find("default") == fieldMap.end(),
+                        "'default' cannot be specified together with 'ncell'");
+            latticeDim = parse_lattice_dim(fieldMap.at("ncell"));
+        }
+
+        auto cellSides = requestedBox->getSides();
+        std::transform(cellSides.begin(), cellSides.end(), latticeDim.begin(), cellSides.begin(),
+                       [](const auto &cellSide, auto dim) { return cellSide / static_cast<double>(dim); });
+        return std::make_pair(latticeDim, TriclinicBox(cellSides));
+    }
+
+    Lattice parse_lattice(std::size_t numParticles, std::optional<TriclinicBox> requestedBox,
+                          const std::string &cellDefinition)
     {
         auto tokens = tokenize<std::string>(cellDefinition);
         std::string cellType = tokens.front();
         tokens.erase(tokens.begin());
 
-        std::map<std::string, std::string> fieldMap;
-        std::optional<UnitCell> cell;
-        if (cellType == "sc") {
-            fieldMap = parse_fields({"ncell", "dim", "default"}, tokens);
-            cell = std::visit([](const auto &&arg) { return UnitCellFactory::createScCell(arg); },
-                              parse_cell_dim(value_or_default(fieldMap, "dim", "1")));
-        } else if (cellType == "bcc") {
-            fieldMap = parse_fields({"ncell", "dim", "default"}, tokens);
-            cell = std::visit([](const auto &&arg) { return UnitCellFactory::createBccCell(arg); },
-                              parse_cell_dim(value_or_default(fieldMap, "dim", "1")));
-        } else if (cellType == "fcc") {
-            fieldMap = parse_fields({"ncell", "dim", "default"}, tokens);
-            cell = std::visit([](const auto &&arg) { return UnitCellFactory::createFccCell(arg); },
-                              parse_cell_dim(value_or_default(fieldMap, "dim", "1")));
-        } else if (cellType == "hcp") {
-            fieldMap = parse_fields({"ncell", "dim", "default", "axis"}, tokens);
-            LatticeTraits::Axis axis = LatticeTraits::Axis::Z;
-            if (fieldMap.find("axis") != fieldMap.end())
-                axis = parse_axis(fieldMap["axis"]);
-            cell = std::visit([axis](const auto &&arg) { return UnitCellFactory::createHcpCell(arg, axis); },
-                              parse_cell_dim(value_or_default(fieldMap, "dim", "1")));
-        } else if (cellType == "hexagonal") {
-            fieldMap = parse_fields({"ncell", "dim", "default", "axis"}, tokens);
-            LatticeTraits::Axis axis = LatticeTraits::Axis::Z;
-            if (fieldMap.find("axis") != fieldMap.end())
-                axis = parse_axis(fieldMap["axis"]);
-            cell = std::visit([axis](const auto &&arg) { return UnitCellFactory::createHexagonalCell(arg, axis); },
-                              parse_cell_dim(value_or_default(fieldMap, "dim", "1")));
-        } else if (cellType == "custom") {
-            fieldMap = parse_fields({"ncell", "dim", "default", "shapes"}, tokens);
-            if (fieldMap.find("shapes") == fieldMap.end())
-                throw ValidationException("Shapes have to be specified for the custom unit cell");
-            auto shapes = parse_shapes(fieldMap["shapes"]);
-            cell = UnitCell(std::visit([](const auto &&arg) { return TriclinicBox(arg); },
-                                       parse_cell_dim(value_or_default(fieldMap, "dim", "1"))),
-                            shapes);
-        } else {
-            throw ValidationException("Unknown cell type: " + cellType);
-        }
+        auto fieldMap = parse_fields({"ncell", "dim", "default", "axis", "shapes"}, tokens);
+        auto cell = parse_unit_cell(cellType, fieldMap);
+        auto [latticeDim, newCellBox] = calculate_lattice_dim(numParticles, requestedBox, cell, fieldMap);
+        cell.getBox() = newCellBox;
 
-        std::array<std::size_t, 3> latticeDim{};
-
-        if (fieldMap.find("dim") == fieldMap.end()) {
-            ValidateMsg(requestedBox.has_value(),
-                        "Automatic box size not supported if either of: 'dim', 'ncell' is not specified");
-            if (fieldMap.find("ncell") == fieldMap.end()) {
-                ValidateMsg(fieldMap.find("default") != fieldMap.end(),
-                            "If 'ncell' field not present, 'default' should be specified");
-                ValidateMsg(fieldMap["default"].empty(), "Unexpected token: " + fieldMap["default"]);
-
-                double allCells = std::ceil(static_cast<double>(numParticles) / static_cast<double>(cell->size()));
-                auto ncell = static_cast<std::size_t>(std::ceil(std::cbrt(allCells)));
-                latticeDim = {ncell, ncell, ncell};
-            } else {
-                ValidateMsg(fieldMap.find("default") == fieldMap.end(),
-                            "'default' cannot be specified together with 'ncell'");
-                latticeDim = parse_ncell(fieldMap["ncell"]);
-            }
-
-            auto cellSides = requestedBox->getSides();
-            std::transform(cellSides.begin(), cellSides.end(), latticeDim.begin(), cellSides.begin(),
-                           [](const auto &cellSide, auto dim) { return cellSide / static_cast<double>(dim); });
-            cell->getBox() = TriclinicBox(cellSides);
-        } else {
-            ValidateMsg(!requestedBox.has_value(), "If explicit cell size is specified, box size should be 'auto'");
-            ValidateMsg(fieldMap.find("ncell") != fieldMap.end(), "'ncell' must be specified together with 'dim'");
-            ValidateMsg(fieldMap.find("default") == fieldMap.end(), "'default' cannot be specified together with 'dim'");
-            latticeDim = parse_ncell(fieldMap["ncell"]);
-        }
-
-        return Lattice(*cell, latticeDim);
+        return Lattice(cell, latticeDim);
     }
 
-    auto prepare_operations(const std::vector<std::string> &latticeOperations, const Interaction &interaction,
-                            const ShapeGeometry &geometry)
+    std::unique_ptr<LatticePopulator> parse_populator(std::istringstream &operationStream) {
+        std::string populatorType;
+        operationStream >> populatorType;
+        ValidateMsg(operationStream, "Populator type has to be specified: serial, random");
+
+        if (populatorType == "random") {
+            unsigned long seed{};
+            operationStream >> seed;
+            ValidateMsg(operationStream, "Malformed random populator. Usage: populate random [rng seed]");
+            return std::make_unique<RandomPopulator>(seed);
+        } else if (populatorType == "serial") {
+            std::string axisOrder;
+            operationStream >> axisOrder;
+            if (!operationStream)
+                axisOrder = "xyz";
+
+            try {
+                return std::make_unique<SerialPopulator>(axisOrder);
+            } catch (const LatticeTraits::AxisOrderParseException &) {
+                throw ValidationException("Malformed serial populator axis order. Usage: populate serial "
+                                          "[axis order]");
+            }
+        } else {
+            throw ValidationException("Unknown populator type: " + populatorType + ". Use: serial, random");
+        }
+    }
+
+    std::unique_ptr<LatticeTransformer> parse_transformer(const std::string &operationType,
+                                                          std::istringstream &operationStream,
+                                                          const Interaction &interaction, const ShapeGeometry &geometry)
+    {
+        if (operationType == "optimizeCell") {
+            double spacing{};
+            std::string axisOrder;
+            operationStream >> spacing >> axisOrder;
+            ValidateMsg(operationStream, "Malformed transformation. Usage: optimizeCell [spacing] "
+                                         "[axis order]");
+            return std::make_unique<CellOptimizationTransformer>(interaction, axisOrder, spacing);
+        } else if (operationType == "columnar") {
+            std::string axisStr;
+            unsigned long seed{};
+            operationStream >> axisStr >> seed;
+            ValidateMsg(operationStream, "Malformed transformation. Usage: columnar [column axis] [rng seed]");
+            auto axis = parse_axis(axisStr);
+            return std::make_unique<ColumnarTransformer>(axis, seed);
+        } else if (operationType == "randomizeFlip") {
+            unsigned long seed{};
+            operationStream >> seed;
+            ValidateMsg(operationStream, "Malformed transformation. Usage: randomizeFlip [rng seed]");
+            return std::make_unique<FlipRandomizingTransformer>(geometry, seed);
+        } else if (operationType == "layerRotate") {
+            std::string layerAxisStr;
+            std::string rotAxisStr;
+            double angle;
+            operationStream >> layerAxisStr >> rotAxisStr >> angle;
+            ValidateMsg(operationStream, "Malformed transformation. Usage: layerRotate "
+                                         "[layer axis] [rot. axis] [rot. angle] (alternating)");
+            auto layerAxis = parse_axis(layerAxisStr);
+            auto rotAxis = parse_axis(rotAxisStr);
+
+            bool isAlternating = false;
+            std::string alternatingStr;
+            operationStream >> alternatingStr;
+            if (operationStream) {
+                ValidateMsg(alternatingStr == "alternating",
+                            "Malformed transformation. Usage: layerRotate "
+                            "[layer axis] [rot. axis] [rot. angle] (alternating)");
+                isAlternating = true;
+            }
+
+            return std::make_unique<LayerRotationTransformer>(layerAxis, rotAxis, angle/180*M_PI, isAlternating);
+        } else {
+            throw ValidationException("Unknown transformation type: " + operationType + ". Supported: "
+                                      + "optimizeCell, columnar, randomizeFlip, layerRotate");
+        }
+    }
+
+    auto parse_operations(const std::vector<std::string> &latticeOperations, const Interaction &interaction,
+                          const ShapeGeometry &geometry)
     {
         std::vector<std::unique_ptr<LatticeTransformer>> transformers;
         std::unique_ptr<LatticePopulator> populator;
@@ -288,82 +385,11 @@ namespace {
             ValidateMsg(operationStream, "Lattice transformation cannot be empty");
             if (operationType == "populate") {
                 ValidateMsg(populator == nullptr, "Redefinition of lattice populator type");
-
-                std::string populatorType;
-                operationStream >> populatorType;
-                ValidateMsg(operationStream, "Populator type has to be specified: serial, random");
-
-                if (populatorType == "random") {
-                    unsigned long seed{};
-                    operationStream >> seed;
-                    ValidateMsg(operationStream, "Malformed random populator. Usage: populate random [rng seed]");
-                    populator = std::make_unique<RandomPopulator>(seed);
-                } else if (populatorType == "serial") {
-                    std::string axisOrder;
-                    operationStream >> axisOrder;
-                    if (!operationStream)
-                        axisOrder = "xyz";
-
-                    try {
-                        populator = std::make_unique<SerialPopulator>(axisOrder);
-                    } catch (const LatticeTraits::AxisOrderParseException &) {
-                        throw ValidationException("Malformed serial populator axis order. Usage: populate serial "
-                                                  "[axis order]");
-                    }
-                } else {
-                    throw ValidationException("Unknown populator type: " + populatorType + ". Use: serial, random");
-                }
+                populator = parse_populator(operationStream);
             } else {
                 ValidateMsg(populator == nullptr, "Cannot apply further transformations after populating the lattice");
-
-                if (operationType == "optimizeCell") {
-                    double spacing{};
-                    std::string axisOrder;
-                    operationStream >> spacing >> axisOrder;
-                    ValidateMsg(operationStream, "Malformed transformation. Usage: optimizeCell [spacing] "
-                                                 "[axis order]");
-                    transformers.push_back(std::make_unique<CellOptimizationTransformer>(
-                        interaction, axisOrder, spacing
-                    ));
-                } else if (operationType == "columnar") {
-                    std::string axisStr;
-                    unsigned long seed{};
-                    operationStream >> axisStr >> seed;
-                    ValidateMsg(operationStream, "Malformed transformation. Usage: columnar [column axis] [rng seed]");
-                    auto axis = parse_axis(axisStr);
-                    transformers.push_back(std::make_unique<ColumnarTransformer>(axis, seed));
-                } else if (operationType == "randomizeFlip") {
-                    unsigned long seed{};
-                    operationStream >> seed;
-                    ValidateMsg(operationStream, "Malformed transformation. Usage: randomizeFlip [rng seed]");
-                    transformers.push_back(std::make_unique<FlipRandomizingTransformer>(geometry, seed));
-                } else if (operationType == "layerRotate") {
-                    std::string layerAxisStr;
-                    std::string rotAxisStr;
-                    double angle;
-                    operationStream >> layerAxisStr >> rotAxisStr >> angle;
-                    ValidateMsg(operationStream, "Malformed transformation. Usage: layerRotate "
-                                                 "[layer axis] [rot. axis] [rot. angle] (alternating)");
-                    auto layerAxis = parse_axis(layerAxisStr);
-                    auto rotAxis = parse_axis(rotAxisStr);
-
-                    bool isAlternating = false;
-                    std::string alternatingStr;
-                    operationStream >> alternatingStr;
-                    if (operationStream) {
-                        ValidateMsg(alternatingStr == "alternating",
-                                    "Malformed transformation. Usage: layerRotate "
-                                    "[layer axis] [rot. axis] [rot. angle] (alternating)");
-                        isAlternating = true;
-                    }
-
-                    transformers.push_back(std::make_unique<LayerRotationTransformer>(
-                        layerAxis, rotAxis, angle/180*M_PI, isAlternating
-                    ));
-                } else {
-                    throw ValidationException("Unknown transformation type: " + operationType + ". Supported: "
-                                              + "optimizeCell, columnar, randomizeFlip, layerRotate");
-                }
+                auto trans = parse_transformer(operationType, operationStream, interaction, geometry);
+                transformers.push_back(std::move(trans));
             }
         }
 
@@ -390,8 +416,8 @@ std::unique_ptr<Packing> LatticeBuilder::buildPacking(std::size_t numParticles, 
     std::string cellDefinition = latticeOperations.front();
     latticeOperations.erase(latticeOperations.begin());
 
-    auto lattice = prepare_lattice(numParticles, requestedBox, cellDefinition);
-    auto [transformers, populator] = prepare_operations(latticeOperations, interaction, geometry);
+    auto lattice = parse_lattice(numParticles, requestedBox, cellDefinition);
+    auto [transformers, populator] = parse_operations(latticeOperations, interaction, geometry);
 
     for (const auto &transformer : transformers)
         transformer->transform(lattice);
