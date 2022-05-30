@@ -19,6 +19,10 @@
 #include "core/lattice/UnitCellFactory.h"
 #include "core/lattice/RandomPopulator.h"
 #include "core/lattice/SerialPopulator.h"
+#include "core/lattice/CellOptimizationTransformer.h"
+#include "core/lattice/ColumnarTransformer.h"
+#include "core/lattice/FlipRandomizingTransformer.h"
+#include "core/lattice/LayerRotationTransformer.h"
 
 
 #define BOX_DIMENSIONS_USAGE "Malformed box dimensions. Usage alternatives: \n" \
@@ -304,7 +308,7 @@ namespace {
                         populator = std::make_unique<SerialPopulator>(axisOrder);
                     } catch (const LatticeTraits::AxisOrderParseException &) {
                         throw ValidationException("Malformed serial populator axis order. Usage: populate serial "
-                                                  "[axis order: xyz, yxz, etc.]");
+                                                  "[axis order]");
                     }
                 } else {
                     throw ValidationException("Unknown populator type: " + populatorType + ". Use: serial, random");
@@ -312,7 +316,54 @@ namespace {
             } else {
                 ValidateMsg(populator == nullptr, "Cannot apply further transformations after populating the lattice");
 
-                throw ValidationException("not implemented");
+                if (operationType == "optimizeCell") {
+                    double spacing{};
+                    std::string axisOrder;
+                    operationStream >> spacing >> axisOrder;
+                    ValidateMsg(operationStream, "Malformed transformation. Usage: optimizeCell [spacing] "
+                                                 "[axis order]");
+                    transformers.push_back(std::make_unique<CellOptimizationTransformer>(
+                        interaction, axisOrder, spacing
+                    ));
+                } else if (operationType == "columnar") {
+                    std::string axisStr;
+                    unsigned long seed{};
+                    operationStream >> axisStr >> seed;
+                    ValidateMsg(operationStream, "Malformed transformation. Usage: columnar [column axis] [rng seed]");
+                    auto axis = parse_axis(axisStr);
+                    transformers.push_back(std::make_unique<ColumnarTransformer>(axis, seed));
+                } else if (operationType == "randomizeFlip") {
+                    unsigned long seed{};
+                    operationStream >> seed;
+                    ValidateMsg(operationStream, "Malformed transformation. Usage: randomizeFlip [rng seed]");
+                    transformers.push_back(std::make_unique<FlipRandomizingTransformer>(geometry, seed));
+                } else if (operationType == "layerRotate") {
+                    std::string layerAxisStr;
+                    std::string rotAxisStr;
+                    double angle;
+                    operationStream >> layerAxisStr >> rotAxisStr >> angle;
+                    ValidateMsg(operationStream, "Malformed transformation. Usage: layerRotate "
+                                                 "[layer axis] [rot. axis] [rot. angle] (alternating)");
+                    auto layerAxis = parse_axis(layerAxisStr);
+                    auto rotAxis = parse_axis(rotAxisStr);
+
+                    bool isAlternating = false;
+                    std::string alternatingStr;
+                    operationStream >> alternatingStr;
+                    if (operationStream) {
+                        ValidateMsg(alternatingStr == "alternating",
+                                    "Malformed transformation. Usage: layerRotate "
+                                    "[layer axis] [rot. axis] [rot. angle] (alternating)");
+                        isAlternating = true;
+                    }
+
+                    transformers.push_back(std::make_unique<LayerRotationTransformer>(
+                        layerAxis, rotAxis, angle/180*M_PI, isAlternating
+                    ));
+                } else {
+                    throw ValidationException("Unknown transformation type: " + operationType + ". Supported: "
+                                              + "optimizeCell, columnar, randomizeFlip, layerRotate");
+                }
             }
         }
 
@@ -344,6 +395,7 @@ std::unique_ptr<Packing> LatticeBuilder::buildPacking(std::size_t numParticles, 
 
     for (const auto &transformer : transformers)
         transformer->transform(lattice);
+    lattice.normalize();
     auto shapes = populator->populateLattice(lattice, numParticles);
     auto latticeBox = lattice.getLatticeBox();
 
