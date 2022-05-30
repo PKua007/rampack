@@ -7,6 +7,7 @@
 
 #include <array>
 #include <string>
+#include <stdexcept>
 
 #include "utils/Assertions.h"
 
@@ -26,6 +27,10 @@ public:
         Y,
         /** @brief Z axis */
         Z
+    };
+
+    struct AxisOrderParseException : public std::runtime_error {
+        explicit AxisOrderParseException(const std::string &what) : std::runtime_error(what) { }
     };
 
     /**

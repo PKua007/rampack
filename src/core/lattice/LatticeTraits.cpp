@@ -19,7 +19,7 @@ std::array<std::size_t, 3> LatticeTraits::parseAxisOrder(const std::string &axis
     else if (axisOrderString == "zyx")
         return {2, 1, 0};
     else
-        throw PreconditionException("Malformed axis order");
+        throw AxisOrderParseException("Malformed axis order");
 }
 
 std::size_t LatticeTraits::axisToIndex(LatticeTraits::Axis axis) {

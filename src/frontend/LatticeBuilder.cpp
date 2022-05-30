@@ -18,6 +18,7 @@
 #include "core/lattice/LatticePopulator.h"
 #include "core/lattice/UnitCellFactory.h"
 #include "core/lattice/RandomPopulator.h"
+#include "core/lattice/SerialPopulator.h"
 
 
 #define BOX_DIMENSIONS_USAGE "Malformed box dimensions. Usage alternatives: \n" \
@@ -274,7 +275,50 @@ namespace {
                             const ShapeGeometry &geometry)
     {
         std::vector<std::unique_ptr<LatticeTransformer>> transformers;
-        std::unique_ptr<LatticePopulator> populator = std::make_unique<RandomPopulator>(1234);
+        std::unique_ptr<LatticePopulator> populator;
+
+        for (const auto &operation : latticeOperations) {
+            std::istringstream operationStream(operation);
+            std::string operationType;
+            operationStream >> operationType;
+            ValidateMsg(operationStream, "Lattice transformation cannot be empty");
+            if (operationType == "populate") {
+                ValidateMsg(populator == nullptr, "Redefinition of lattice populator type");
+
+                std::string populatorType;
+                operationStream >> populatorType;
+                ValidateMsg(operationStream, "Populator type has to be specified: serial, random");
+
+                if (populatorType == "random") {
+                    unsigned long seed{};
+                    operationStream >> seed;
+                    ValidateMsg(operationStream, "Malformed random populator. Usage: populate random [rng seed]");
+                    populator = std::make_unique<RandomPopulator>(seed);
+                } else if (populatorType == "serial") {
+                    std::string axisOrder;
+                    operationStream >> axisOrder;
+                    if (!operationStream)
+                        axisOrder = "xyz";
+
+                    try {
+                        populator = std::make_unique<SerialPopulator>(axisOrder);
+                    } catch (const LatticeTraits::AxisOrderParseException &) {
+                        throw ValidationException("Malformed serial populator axis order. Usage: populate serial "
+                                                  "[axis order: xyz, yxz, etc.]");
+                    }
+                } else {
+                    throw ValidationException("Unknown populator type: " + populatorType + ". Use: serial, random");
+                }
+            } else {
+                ValidateMsg(populator == nullptr, "Cannot apply further transformations after populating the lattice");
+
+                throw ValidationException("not implemented");
+            }
+        }
+
+        if (populator == nullptr)
+            populator = std::make_unique<SerialPopulator>("xyz");
+
         return std::make_pair(std::move(transformers), std::move(populator));
     }
 }
