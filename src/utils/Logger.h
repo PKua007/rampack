@@ -8,6 +8,7 @@
 #include <ostream>
 #include <utility>
 #include <algorithm>
+#include <functional>
 
 #include "Assertions.h"
 

@@ -19,6 +19,8 @@ if(OpenMP_CXX_FOUND)
     link_libraries(OpenMP::OpenMP_CXX)
 endif()
 
+link_libraries(stdc++fs)
+
 # Now we can safely add submodule subdirectories
 add_subdirectory(extern/Catch2)
 add_subdirectory(extern/trompeloeil)
