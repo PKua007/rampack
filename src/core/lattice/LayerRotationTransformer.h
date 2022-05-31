@@ -28,8 +28,8 @@ public:
      * @param layerAxis axis along which to create layers
      * @param rotationAxis axis along which to perform rotations
      * @param rotationAngle angle by which to perform rotations
-     * @param isAlternating if @a true, molecules in even layers will be rotated clockwise and anti-clockwise in odd
-     * layers. If @a false, all molecules will be rotated clockwise
+     * @param isAlternating if @a true, molecules in even layers will be rotated counter-clockwise and clockwise in odd
+     * layers. If @a false, all molecules will be rotated counter-clockwise
      */
     LayerRotationTransformer(LatticeTraits::Axis layerAxis, LatticeTraits::Axis rotationAxis, double rotationAngle,
                              bool isAlternating = true);

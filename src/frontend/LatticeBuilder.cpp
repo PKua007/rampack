@@ -78,9 +78,9 @@ namespace {
                             "Box side lengths must be > 0");
                 return TriclinicBox(std::array<double, 3>{tokens[0], tokens[1], tokens[2]});
             case 9:
-                return TriclinicBox(Matrix<3, 3>{tokens[0], tokens[1], tokens[2],
-                                                 tokens[3], tokens[4], tokens[5],
-                                                 tokens[6], tokens[7], tokens[8]});
+                return TriclinicBox(Matrix<3, 3>{tokens[0], tokens[3], tokens[6],
+                                                 tokens[1], tokens[4], tokens[7],
+                                                 tokens[2], tokens[5], tokens[8]});
             default:
                 throw ValidationException(BOX_DIMENSIONS_USAGE);
         }
@@ -100,9 +100,9 @@ namespace {
                             "Cell side lengths must be > 0");
                 return std::array<double, 3>{tokens[0], tokens[1], tokens[2]};
             case 9:
-                return TriclinicBox(Matrix<3, 3>{tokens[0], tokens[1], tokens[2],
-                                                 tokens[3], tokens[4], tokens[5],
-                                                 tokens[6], tokens[7], tokens[8]});
+                return TriclinicBox(Matrix<3, 3>{tokens[0], tokens[3], tokens[6],
+                                                 tokens[1], tokens[4], tokens[7],
+                                                 tokens[2], tokens[5], tokens[8]});
             default:
                 throw ValidationException(CELL_DIMENSIONS_USAGE);
         }
