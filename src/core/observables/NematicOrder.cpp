@@ -27,15 +27,15 @@ void NematicOrder::calculate(const Packing &packing, [[maybe_unused]] double tem
     });
 }
 
-std::array<double, 3> NematicOrder::calculateEigenvalues(const Matrix<3, 3> &tensor) {
+std::array<double, 3> NematicOrder::calculateEigenvalues(const Matrix<3, 3> &matrix) {
     // A trival method from arXiv:1306.6291 based on the Cardano equation
 
-    double A11 = tensor(0, 0);
-    double A12 = tensor(0, 1);
-    double A13 = tensor(0, 2);
-    double A22 = tensor(1, 1);
-    double A23 = tensor(1, 2);
-    double A33 = tensor(2, 2);
+    double A11 = matrix(0, 0);
+    double A12 = matrix(0, 1);
+    double A13 = matrix(0, 2);
+    double A22 = matrix(1, 1);
+    double A23 = matrix(1, 2);
+    double A33 = matrix(2, 2);
 
     double b = A11 + A22 + A33;
     double c = A11*A22 + A11*A33 + A22*A33 - A12*A12 - A13*A13 - A23*A23;
@@ -46,7 +46,12 @@ std::array<double, 3> NematicOrder::calculateEigenvalues(const Matrix<3, 3> &ten
     double sqrt_p = std::sqrt(p);
     double q = 2*b*b*b - 9*b*c - 27*d;
     double ratio = q / 2 / (sqrt_p*sqrt_p*sqrt_p);
-    Assert(std::abs(ratio) <= 1);
+
+    if (std::abs(ratio) > 1) {
+        Assert(std::abs(ratio) <= 1 + 1e-15);
+        ratio = ratio < 0 ? -1 : 1;
+    }
+
     double Delta = std::acos(ratio);
 
     return {1./3*(b + 2*sqrt_p*std::cos(Delta/3)),

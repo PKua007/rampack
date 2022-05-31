@@ -14,13 +14,16 @@
  */
 class NematicOrder : public Observable {
 private:
-    static std::array<double, 3> calculateEigenvalues(const Matrix<3, 3> &tensor);
-
     bool dumpQTensor{};
     Matrix<3, 3> QTensor;
     double P2{};
 
 public:
+    /**
+     * @brief Returns eigenvalues of a given @a matrix.
+     */
+    static std::array<double, 3> calculateEigenvalues(const Matrix<3, 3> &matrix);
+
     /**
      * @brief Creates the class. If @a dumpQTensor_ is @a true, whole Q tensor (upper-triangle part) will be also
      * dumped.

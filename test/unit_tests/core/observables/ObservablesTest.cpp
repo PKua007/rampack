@@ -113,6 +113,15 @@ TEST_CASE("Observables") {
             REQUIRE(nematicOrder.getIntervalValues().size() == 1);
             CHECK(nematicOrder.getIntervalValues()[0] == Approx(-13./32));   // Mathematica
         }
+
+        SECTION("bug: numerical stability of eigenvalues") {
+            Matrix<3, 3> problematicMatrix{0.99999999906141479, -1.3709884701805501e-07, 1.7691093732719609e-07,
+                                           -1.3709884701805501e-07, -0.49999999981461402, 3.6863738798600002e-10,
+                                           -1.7691093732719609e-07, 3.6863738798600002e-10, -0.49999999924680083};
+
+            // It would throw because an argument of cos is 1 + 2e-16 due to a numerical error
+            CHECK_NOTHROW(NematicOrder::calculateEigenvalues(problematicMatrix));
+        }
     }
 
     SECTION("NumberDensity") {
