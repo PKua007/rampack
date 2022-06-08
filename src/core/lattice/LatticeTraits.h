@@ -10,6 +10,7 @@
 #include <stdexcept>
 
 #include "utils/Assertions.h"
+#include "UnitCell.h"
 
 
 /**
@@ -60,6 +61,12 @@ public:
         ANTIFERRO
     };
 
+    using LayerIndices = std::vector<std::size_t>;
+    using LayerAssociation = std::vector<std::pair<double, LayerIndices>>;
+    using ColumnCoord = std::array<double, 2>;
+    using ColumnIndices = std::vector<std::size_t>;
+    using ColumnAssociation = std::vector<std::pair<ColumnCoord, ColumnIndices>>;
+
     /**
      * @brief Converts a string of length 3 with names of axes to their 0-2 indices.
      * @details Namely, for example "zxy" will be converted to an array with elements {2, 0, 1}. Incorrect string
@@ -73,6 +80,9 @@ public:
      * @details For example, Axis::Y will be converted to 1.
      */
     static std::size_t axisToIndex(Axis axis);
+
+    static LayerAssociation getLayerAssociation(const UnitCell &cell, Axis layerAxis);
+    static ColumnAssociation getColumnAssociation(const UnitCell &cell, Axis columnAxis);
 };
 
 

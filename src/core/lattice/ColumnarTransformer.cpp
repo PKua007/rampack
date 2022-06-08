@@ -6,6 +6,7 @@
 #include <algorithm>
 
 #include "ColumnarTransformer.h"
+#include "LatticeTraits.h"
 
 
 void ColumnarTransformer::transform(Lattice &lattice) const {
@@ -13,7 +14,7 @@ void ColumnarTransformer::transform(Lattice &lattice) const {
     Expects(lattice.isNormalized());
 
     const auto &unitCell = lattice.getUnitCell();
-    auto columnAssociation = this->getColumnAssociation(unitCell);
+    auto columnAssociation = LatticeTraits::getColumnAssociation(unitCell, this->columnAxis);
     const auto &dim = lattice.getDimensions();
 
     std::size_t axisIdx = LatticeTraits::axisToIndex(this->columnAxis);
@@ -43,29 +44,4 @@ void ColumnarTransformer::transform(Lattice &lattice) const {
             }
         }
     }
-}
-
-ColumnarTransformer::ColumnAssociation ColumnarTransformer::getColumnAssociation(const UnitCell &cell) const {
-    std::size_t axisIdx = LatticeTraits::axisToIndex(this->columnAxis);
-    std::size_t idx1 = (axisIdx + 1) % 3;
-    std::size_t idx2 = (axisIdx + 2) % 3;
-    ColumnAssociation columnsAssociation;
-
-    for (std::size_t shapeIdx{}; shapeIdx < cell.size(); shapeIdx++) {
-        const auto &shape = cell[shapeIdx];
-        const auto &pos = shape.getPosition();
-        ColumnCoord columnCoord{pos[idx1], pos[idx2]};
-
-        auto columnCoordFinder = [columnCoord](const auto &bin) {
-            constexpr double EPSILON = 1e-10;
-            return std::abs(bin.first[0]-columnCoord[0]) < EPSILON && std::abs(bin.first[1]-columnCoord[1]) < EPSILON;
-        };
-        auto it = std::find_if(columnsAssociation.begin(), columnsAssociation.end(), columnCoordFinder);
-        if (it == columnsAssociation.end()) {
-            columnsAssociation.emplace_back(columnCoord, ColumnIndices{});
-            it = columnsAssociation.end() - 1;
-        }
-        it->second.push_back(shapeIdx);
-    }
-    return columnsAssociation;
 }

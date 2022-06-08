@@ -17,17 +17,13 @@
  */
 class LayerWiseTransformer : public LatticeTransformer {
 private:
-    using LayerIndices = std::vector<std::size_t>;
-    using LayerAssociation = std::vector<std::pair<double, LayerIndices>>;
 
     LatticeTraits::Axis axis;
 
     static std::size_t LCM(std::size_t n1, std::size_t n2);
 
-    [[nodiscard]] LayerAssociation getLayerAssociation(const UnitCell &cell) const;
-
-    void recalculateUnitCell(UnitCell &cell, LayerAssociation &layerAssociation, std::array<std::size_t, 3> &latticeDim,
-                             std::size_t requestedNumOfLayers) const;
+    void recalculateUnitCell(UnitCell &cell, LatticeTraits::LayerAssociation &layerAssociation,
+                             std::array<std::size_t, 3> &latticeDim, std::size_t requestedNumOfLayers) const;
 
 protected:
     /**

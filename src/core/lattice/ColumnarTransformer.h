@@ -19,14 +19,8 @@
  */
 class ColumnarTransformer : public LatticeTransformer {
 private:
-    using ColumnCoord = std::array<double, 2>;
-    using ColumnIndices = std::vector<std::size_t>;
-    using ColumnAssociation = std::vector<std::pair<ColumnCoord, ColumnIndices>>;
-
     LatticeTraits::Axis columnAxis{};
     mutable std::mt19937 rng;
-
-    [[nodiscard]] ColumnAssociation getColumnAssociation(const UnitCell &cell) const;
 
 public:
     /**

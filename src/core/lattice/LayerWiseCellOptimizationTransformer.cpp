@@ -3,3 +3,7 @@
 //
 
 #include "LayerWiseCellOptimizationTransformer.h"
+
+void LayerWiseCellOptimizationTransformer::transform(Lattice &lattice) const {
+
+}

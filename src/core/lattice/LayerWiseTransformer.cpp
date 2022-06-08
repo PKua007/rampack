@@ -13,7 +13,7 @@ void LayerWiseTransformer::transform(Lattice &lattice) const {
     Expects(lattice.isNormalized());
 
     auto cell = lattice.getSpecificCell(0, 0, 0);
-    auto layerAssociation = this->getLayerAssociation(cell);
+    auto layerAssociation = LatticeTraits::getLayerAssociation(cell, this->axis);
     std::size_t requestedNumOfLayers = this->getRequestedNumOfLayers();
     auto dim = lattice.getDimensions();
 
@@ -33,7 +33,7 @@ void LayerWiseTransformer::transform(Lattice &lattice) const {
     lattice = newLattice;
 }
 
-void LayerWiseTransformer::recalculateUnitCell(UnitCell &cell, LayerAssociation &layerAssociation,
+void LayerWiseTransformer::recalculateUnitCell(UnitCell &cell, LatticeTraits::LayerAssociation &layerAssociation,
                                                std::array<std::size_t, 3> &latticeDim,
                                                std::size_t requestedNumOfLayers) const
 {
@@ -87,28 +87,6 @@ void LayerWiseTransformer::recalculateUnitCell(UnitCell &cell, LayerAssociation 
     }
 
     cell = UnitCell(newCellShape, newCellShapes);
-}
-
-LayerWiseTransformer::LayerAssociation LayerWiseTransformer::getLayerAssociation(const UnitCell &cell) const {
-    std::size_t axisIdx = LatticeTraits::axisToIndex(this->axis);
-    LayerAssociation layerAssociation;
-
-    for (std::size_t i{}; i < cell.size(); i++) {
-        const auto &shape = cell[i];
-        double axisPosElem = shape.getPosition()[axisIdx];
-
-        auto layerCoordFinder = [axisPosElem](const auto &bin) {
-            constexpr double EPSILON = 1e-10;
-            return std::abs(bin.first - axisPosElem) < EPSILON;
-        };
-        auto it = std::find_if(layerAssociation.begin(), layerAssociation.end(), layerCoordFinder);
-        if (it == layerAssociation.end()) {
-            layerAssociation.emplace_back(axisPosElem, LayerIndices{});
-            it = layerAssociation.end() - 1;
-        }
-        it->second.push_back(i);
-    }
-    return layerAssociation;
 }
 
 std::size_t LayerWiseTransformer::LCM(std::size_t n1, std::size_t n2) {
