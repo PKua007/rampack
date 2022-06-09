@@ -50,7 +50,51 @@ void LayerWiseCellOptimizationTransformer::transform(Lattice &lattice) const {
                 cellShapes = std::move(midShapes);
             }
         } while (std::abs(end - beg) > EPSILON);
+
+        for (std::size_t i : it->second) {
+            auto &shape = cellShapes[i];
+            Vector<3> pos = shape.getPosition();
+            pos[axisIdx] += EPSILON;
+            shape.setPosition(pos);
+        }
     }
+
+    double range = this->interaction.getTotalRangeRadius();
+    const auto &boxHeights = lattice.getLatticeBox().getHeights();
+    constexpr double FACTOR_EPSILON = 1 + 1e-12;
+    // Verify initial dimensions whether they are large enough
+    // range (plus epsilon), since we don't want self intersections through PBC
+    Expects(std::all_of(boxHeights.begin(), boxHeights.end(), [range](double d) { return d > FACTOR_EPSILON * range; }));
+    const auto &cellBoxHeights = cellBox.getHeights();
+
+    auto initialShapes = cellShapes;
+    auto initialCellBox = cellBox;
+    double begFactor = range * FACTOR_EPSILON / cellBoxHeights[axisIdx];  // Smallest scaling without self-overlap
+    double endFactor = 1;
+
+    do {
+        double midFactor = (begFactor + endFactor) / 2;
+        auto midBoxSides = initialCellBox.getSides();
+        midBoxSides[axisIdx] *= midFactor;
+
+        auto midShapes = initialShapes;
+        for (auto &shape : midShapes) {
+            Vector<3> pos = shape.getPosition();
+            pos[axisIdx] /= midFactor;
+            shape.setPosition(pos);
+        }
+
+        Lattice testLattice(UnitCell(TriclinicBox(midBoxSides), midShapes), lattice.getDimensions());
+        testLattice.normalize();
+        testPacking.reset(testLattice.generateMolecules(), testLattice.getLatticeBox(), this->interaction);
+        if (testPacking.countTotalOverlaps(this->interaction)) {
+            begFactor = midFactor;
+        } else {
+            endFactor = midFactor;
+            cellShapes = std::move(midShapes);
+            cellBox = TriclinicBox(midBoxSides);
+        }
+    } while (std::abs(endFactor - begFactor) > EPSILON);
 
     lattice.normalize();
 }
