@@ -49,6 +49,11 @@ LatticeTraits::LayerAssociation LatticeTraits::getLayerAssociation(const UnitCel
         }
         it->second.push_back(i);
     }
+
+    std::sort(layerAssociation.begin(), layerAssociation.end(), [](const auto &l1, const auto &l2) {
+        return l1.first < l2.first;
+    });
+
     return layerAssociation;
 }
 

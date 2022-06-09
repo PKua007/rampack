@@ -7,15 +7,17 @@
 
 #include "LatticeTransformer.h"
 #include "LatticeTraits.h"
+#include "core/Interaction.h"
 
 
 class LayerWiseCellOptimizationTransformer : public LatticeTransformer {
 private:
-    std::size_t axisIdx{};
+    LatticeTraits::Axis layerAxis;
+    const Interaction &interaction;
 
 public:
-    explicit LayerWiseCellOptimizationTransformer(LatticeTraits::Axis layerAxis)
-            : axisIdx{LatticeTraits::axisToIndex(layerAxis)}
+    explicit LayerWiseCellOptimizationTransformer(LatticeTraits::Axis layerAxis, const Interaction &interaction)
+            : layerAxis{layerAxis}, interaction{interaction}
     { }
 
     void transform(Lattice &lattice) const override;
