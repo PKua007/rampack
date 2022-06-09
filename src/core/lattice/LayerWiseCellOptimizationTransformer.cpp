@@ -96,5 +96,12 @@ void LayerWiseCellOptimizationTransformer::transform(Lattice &lattice) const {
         }
     } while (std::abs(endFactor - begFactor) > EPSILON);
 
+    double cellMiddle = (cellShapes.front().getPosition()[axisIdx] + cellShapes.back().getPosition()[axisIdx]) / 2;
+    for (auto &shape : cellShapes) {
+        Vector<3> pos = shape.getPosition();
+        pos[axisIdx] += (0.5 - cellMiddle);
+        shape.setPosition(pos);
+    }
+
     lattice.normalize();
 }
