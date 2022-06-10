@@ -8,40 +8,91 @@
 #include "core/Packing.h"
 
 
+LayerWiseCellOptimizationTransformer::LayerWiseCellOptimizationTransformer(const Interaction &interaction,
+                                                                           LatticeTraits::Axis layerAxis,
+                                                                           double spacing)
+        : interaction{interaction}, layerAxis{layerAxis}, spacing{spacing}
+{
+    Assert(this->interaction.hasHardPart());
+}
+
 void LayerWiseCellOptimizationTransformer::transform(Lattice &lattice) const {
     Expects(lattice.isRegular());
     Expects(lattice.isNormalized());
-
-    auto layerAssociation = LatticeTraits::getLayerAssociation(lattice.getUnitCell(), this->layerAxis);
-    Expects(!layerAssociation.empty());
-    auto &cellBox = lattice.modifyCellBox();
-    auto &cellShapes = lattice.modifyUnitCellMolecules();
 
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     Packing testPacking(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), this->interaction);
     Expects(!testPacking.countTotalOverlaps(this->interaction));
 
-    this->optimizeLayers(layerAssociation, cellBox, cellShapes, lattice.getDimensions(), testPacking);
-    this->optimizeCell(cellBox, cellShapes, lattice, testPacking);
-    this->centerShapesInCell(cellShapes);
+    this->optimizeLayers(lattice, testPacking);
+    this->optimizeCell(lattice, testPacking);
+    this->introduceSpacing(lattice);
+    this->centerShapesInCell(lattice.modifyUnitCellMolecules());
 
     lattice.normalize();
 }
 
-void LayerWiseCellOptimizationTransformer::centerShapesInCell(std::vector<Shape> &cellShapes) const {
+bool LayerWiseCellOptimizationTransformer::areShapesOverlapping(const TriclinicBox &box,
+                                                                const std::vector<Shape> &shapes,
+                                                                const std::array<std::size_t, 3> &latticeDim,
+                                                                Packing &testPacking) const
+{
+    Lattice testLattice(UnitCell(box, shapes), latticeDim);
+    testLattice.normalize();
+    testPacking.reset(testLattice.generateMolecules(), testLattice.getLatticeBox(), this->interaction);
+    return testPacking.countTotalOverlaps(this->interaction);
+}
+
+void LayerWiseCellOptimizationTransformer::optimizeLayers(Lattice &lattice, Packing &testPacking) const {
+    auto layerAssociation = LatticeTraits::getLayerAssociation(lattice.getUnitCell(), this->layerAxis);
+    Expects(!layerAssociation.empty());
+    const auto &cellBox = lattice.getCellBox();
+    auto &cellShapes = lattice.modifyUnitCellMolecules();
     std::size_t axisIdx = LatticeTraits::axisToIndex(this->layerAxis);
-    double cellMiddle = (cellShapes.front().getPosition()[axisIdx] + cellShapes.back().getPosition()[axisIdx]) / 2;
-    for (auto &shape : cellShapes) {
-        Vector<3> pos = shape.getPosition();
-        pos[axisIdx] += (0.5 - cellMiddle);
-        shape.setPosition(pos);
+
+    // Optimize starting from the second layer, then third, etc. First layer remains untouched. So does the cell box.
+    for (auto layer = std::next(layerAssociation.begin()); layer != layerAssociation.end(); layer++) {
+        auto prevLayer = std::prev(layer);
+        double begLayerCoord = prevLayer->first;
+        double endLayerCoord = layer->first;
+
+        constexpr double EPSILON = 1e-12;
+        do {
+            double midLayerCoord = (begLayerCoord + endLayerCoord) / 2;
+            std::vector<Shape> midShapes = cellShapes;
+            for (std::size_t i : layer->second) {
+                auto &shape = midShapes[i];
+                Vector<3> pos = shape.getPosition();
+                pos[axisIdx] = midLayerCoord;
+                shape.setPosition(pos);
+            }
+
+            if (this->areShapesOverlapping(cellBox, midShapes, lattice.getDimensions(), testPacking)) {
+                begLayerCoord = midLayerCoord;
+            } else {
+                endLayerCoord = midLayerCoord;
+                cellShapes = std::move(midShapes);
+            }
+        } while (std::abs(endLayerCoord - begLayerCoord) > EPSILON);
+
+        // Move a bit optimized layer for greater numerical stability in cell optimization procedure - in essence
+        // make sure that the margins is always between EPSILON and 2*EPSILON (which would be 0 to EPSILON without this
+        // step - bisection may find the tangent position arbitrarily close "by accident")
+        for (std::size_t i : layer->second) {
+            auto &shape = cellShapes[i];
+            Vector<3> pos = shape.getPosition();
+            pos[axisIdx] += EPSILON;
+            shape.setPosition(pos);
+        }
     }
 }
 
-void LayerWiseCellOptimizationTransformer::optimizeCell(TriclinicBox &cellBox, std::vector<Shape> &cellShapes,
-                                                        const Lattice &lattice, Packing &testPacking) const
-{
+void LayerWiseCellOptimizationTransformer::optimizeCell(Lattice &lattice, Packing &testPacking) const {
     double range = this->interaction.getTotalRangeRadius();
+    std::size_t axisIdx = LatticeTraits::axisToIndex(this->layerAxis);
+    auto &cellBox = lattice.modifyCellBox();
+    auto &cellShapes = lattice.modifyUnitCellMolecules();
+
     const auto &boxHeights = lattice.getLatticeBox().getHeights();
     constexpr double FACTOR_EPSILON = 1 + 1e-12;
     // Verify initial dimensions whether they are large enough
@@ -49,7 +100,6 @@ void LayerWiseCellOptimizationTransformer::optimizeCell(TriclinicBox &cellBox, s
     Expects(std::all_of(boxHeights.begin(), boxHeights.end(),
                         [range](double d) { return d > FACTOR_EPSILON * range; }));
     const auto &cellBoxHeights = cellBox.getHeights();
-    std::size_t axisIdx = LatticeTraits::axisToIndex(this->layerAxis);
 
     // Bisectively move "upper" face of the cell until the shapes are tangent. Absolute shape coordinates should not
     // change in the process, so they relative ones are rescaled appropriately
@@ -81,57 +131,16 @@ void LayerWiseCellOptimizationTransformer::optimizeCell(TriclinicBox &cellBox, s
     } while (std::abs(endFactor - begFactor) > EPSILON);
 }
 
-void LayerWiseCellOptimizationTransformer::optimizeLayers(LatticeTraits::LayerAssociation &layerAssociation,
-                                                          const TriclinicBox &cellBox, std::vector<Shape> &cellShapes,
-                                                          const std::array<std::size_t, 3> &dimensions,
-                                                          Packing &testPacking) const
-{
-    std::size_t axisIdx = LatticeTraits::axisToIndex(this->layerAxis);
+void LayerWiseCellOptimizationTransformer::introduceSpacing(Lattice &lattice) const {
 
-    // Optimize starting from the second layer, then third, etc. First layer remains untouched. So does the cell box.
-    for (auto layer = std::next(layerAssociation.begin()); layer != layerAssociation.end(); layer++) {
-        auto prevLayer = std::prev(layer);
-        double begLayerCoord = prevLayer->first;
-        double endLayerCoord = layer->first;
-
-        constexpr double EPSILON = 1e-12;
-        do {
-            double midLayerCoord = (begLayerCoord + endLayerCoord) / 2;
-            std::vector<Shape> midShapes = cellShapes;
-            for (std::size_t i : layer->second) {
-                auto &shape = midShapes[i];
-                Vector<3> pos = shape.getPosition();
-                pos[axisIdx] = midLayerCoord;
-                shape.setPosition(pos);
-            }
-
-            if (this->areShapesOverlapping(cellBox, midShapes, dimensions, testPacking)) {
-                begLayerCoord = midLayerCoord;
-            } else {
-                endLayerCoord = midLayerCoord;
-                cellShapes = std::move(midShapes);
-            }
-        } while (std::abs(endLayerCoord - begLayerCoord) > EPSILON);
-
-        // Move a bit optimized layer for greater numerical stability in cell optimization procedure - in essence
-        // make sure that the margins is always between EPSILON and 2*EPSILON (which would be 0 to EPSILON without this
-        // step - bisection may find the tangent position arbitrarily close "by accident")
-        for (std::size_t i : layer->second) {
-            auto &shape = cellShapes[i];
-            Vector<3> pos = shape.getPosition();
-            pos[axisIdx] += EPSILON;
-            shape.setPosition(pos);
-        }
-    }
 }
 
-bool LayerWiseCellOptimizationTransformer::areShapesOverlapping(const TriclinicBox &box,
-                                                                const std::vector<Shape> &shapes,
-                                                                const std::array<std::size_t, 3> &latticeDim,
-                                                                Packing &testPacking) const
-{
-    Lattice testLattice(UnitCell(box, shapes), latticeDim);
-    testLattice.normalize();
-    testPacking.reset(testLattice.generateMolecules(), testLattice.getLatticeBox(), this->interaction);
-    return testPacking.countTotalOverlaps(this->interaction);
+void LayerWiseCellOptimizationTransformer::centerShapesInCell(std::vector<Shape> &cellShapes) const {
+    std::size_t axisIdx = LatticeTraits::axisToIndex(this->layerAxis);
+    double cellMiddle = (cellShapes.front().getPosition()[axisIdx] + cellShapes.back().getPosition()[axisIdx]) / 2;
+    for (auto &shape : cellShapes) {
+        Vector<3> pos = shape.getPosition();
+        pos[axisIdx] += (0.5 - cellMiddle);
+        shape.setPosition(pos);
+    }
 }

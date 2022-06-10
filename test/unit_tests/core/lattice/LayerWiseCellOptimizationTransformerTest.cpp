@@ -17,7 +17,7 @@ TEST_CASE("LayerWiseCellOptimizationTransformer: 3 layers") {
                                      Shape({0.1, 0.1, 0.8}), Shape({0.1, 0.5, 0.8})};
     TriclinicBox initialBox(5);
     Lattice lattice(UnitCell(initialBox, initialShapes), {3, 3, 3});
-    LayerWiseCellOptimizationTransformer transformer(LatticeTraits::Axis::Z, sphere.getInteraction());
+    LayerWiseCellOptimizationTransformer transformer(sphere.getInteraction(), LatticeTraits::Axis::Z, 0);
 
     transformer.transform(lattice);
 
