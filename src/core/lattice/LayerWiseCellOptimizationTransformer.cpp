@@ -20,13 +20,16 @@ void LayerWiseCellOptimizationTransformer::transform(Lattice &lattice) const {
     Expects(lattice.isRegular());
     Expects(lattice.isNormalized());
 
+    auto layerAssociation = LatticeTraits::getLayerAssociation(lattice.getUnitCell(), this->layerAxis);
+    Expects(!layerAssociation.empty());
+
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     Packing testPacking(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), this->interaction);
     Expects(!testPacking.countTotalOverlaps(this->interaction));
 
-    this->optimizeLayers(lattice, testPacking);
+    this->optimizeLayers(lattice, layerAssociation, testPacking);
     this->optimizeCell(lattice, testPacking);
-    this->introduceSpacing(lattice);
+    this->introduceSpacing(lattice, layerAssociation);
     this->centerShapesInCell(lattice.modifyUnitCellMolecules());
 
     lattice.normalize();
@@ -43,9 +46,10 @@ bool LayerWiseCellOptimizationTransformer::areShapesOverlapping(const TriclinicB
     return testPacking.countTotalOverlaps(this->interaction);
 }
 
-void LayerWiseCellOptimizationTransformer::optimizeLayers(Lattice &lattice, Packing &testPacking) const {
-    auto layerAssociation = LatticeTraits::getLayerAssociation(lattice.getUnitCell(), this->layerAxis);
-    Expects(!layerAssociation.empty());
+void LayerWiseCellOptimizationTransformer::optimizeLayers(Lattice &lattice,
+                                                          const LatticeTraits::LayerAssociation &layerAssociation,
+                                                          Packing &testPacking) const
+{
     const auto &cellBox = lattice.getCellBox();
     auto &cellShapes = lattice.modifyUnitCellMolecules();
     std::size_t axisIdx = LatticeTraits::axisToIndex(this->layerAxis);
@@ -131,8 +135,30 @@ void LayerWiseCellOptimizationTransformer::optimizeCell(Lattice &lattice, Packin
     } while (std::abs(endFactor - begFactor) > EPSILON);
 }
 
-void LayerWiseCellOptimizationTransformer::introduceSpacing(Lattice &lattice) const {
+void
+LayerWiseCellOptimizationTransformer::introduceSpacing(Lattice &lattice,
+                                                       const LatticeTraits::LayerAssociation &layerAssociation) const
+{
+    auto &cellBox = lattice.modifyCellBox();
+    auto &cellShapes = lattice.modifyUnitCellMolecules();
+    const auto &cellHeights = cellBox.getHeights();
+    std::size_t axisIdx = LatticeTraits::axisToIndex(this->layerAxis);
+    double cellFactor = (cellHeights[axisIdx] + static_cast<double>(layerAssociation.size())*this->spacing)
+                        / cellHeights[axisIdx];
+    Expects(cellFactor > 0);
 
+    auto cellSides = cellBox.getSides();
+    cellSides[axisIdx] *= cellFactor;
+    cellBox = TriclinicBox(cellSides);
+
+    for (std::size_t i{}; i < layerAssociation.size(); i++) {
+        for (std::size_t shapeIdx : layerAssociation[i].second) {
+            auto &shape = cellShapes[shapeIdx];
+            Vector<3> pos = shape.getPosition();
+            pos[axisIdx] = (pos[axisIdx] + static_cast<double>(i)*this->spacing/cellHeights[axisIdx]) / cellFactor;
+            shape.setPosition(pos);
+        }
+    }
 }
 
 void LayerWiseCellOptimizationTransformer::centerShapesInCell(std::vector<Shape> &cellShapes) const {

@@ -24,9 +24,9 @@ void CellOptimizationTransformer::transform(Lattice &lattice) const {
     auto newBox = testPacking.getBox();
 
     const auto &newHeights = newBox.getHeights();
-    for (std::size_t i{}; i < 3; i++)
-        Expects(newHeights[i] + this->spacings[i] > 0);
     const auto &dim = lattice.getDimensions();
+    for (std::size_t i{}; i < 3; i++)
+        Expects(newHeights[i] + this->spacings[i] * static_cast<double>(dim[i]) > 0);
     auto newSides = newBox.getSides();
     for (std::size_t i{}; i < 3; i++) {
         double scaleFactor = (newHeights[i] + spacings[i] * static_cast<double>(dim[i])) / newHeights[i];

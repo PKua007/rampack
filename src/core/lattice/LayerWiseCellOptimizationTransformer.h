@@ -19,9 +19,10 @@ private:
 
     bool areShapesOverlapping(const TriclinicBox &box, const std::vector<Shape> &shapes,
                               const std::array<std::size_t, 3> &latticeDim, Packing &testPacking) const;
-    void optimizeLayers(Lattice &lattice, Packing &testPacking) const;
+    void optimizeLayers(Lattice &lattice, const LatticeTraits::LayerAssociation &layerAssociation,
+                        Packing &testPacking) const;
     void optimizeCell(Lattice &lattice, Packing &testPacking) const;
-    void introduceSpacing(Lattice &lattice) const;
+    void introduceSpacing(Lattice &lattice, const LatticeTraits::LayerAssociation &layerAssociation) const;
     void centerShapesInCell(std::vector<Shape> &cellShapes) const;
 
 public:
