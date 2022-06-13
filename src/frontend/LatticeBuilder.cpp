@@ -23,6 +23,7 @@
 #include "core/lattice/ColumnarTransformer.h"
 #include "core/lattice/FlipRandomizingTransformer.h"
 #include "core/lattice/LayerRotationTransformer.h"
+#include "core/lattice/LayerWiseCellOptimizationTransformer.h"
 
 
 #define BOX_DIMENSIONS_USAGE "Malformed box dimensions. Usage alternatives: \n" \
@@ -330,9 +331,15 @@ namespace {
             double spacing{};
             std::string axisOrder;
             operationStream >> spacing >> axisOrder;
-            ValidateMsg(operationStream, "Malformed transformation. Usage: optimizeCell [spacing] "
-                                         "[axis order]");
+            ValidateMsg(operationStream, "Malformed transformation. Usage: optimizeCell [spacing] [axis order]");
             return std::make_unique<CellOptimizationTransformer>(interaction, axisOrder, spacing);
+        } else if (operationType == "optimizeLayers") {
+            double spacing{};
+            std::string axisStr;
+            operationStream >> spacing >> axisStr;
+            LatticeTraits::Axis axis = parse_axis(axisStr);
+            ValidateMsg(operationStream, "Malformed transformation. Usage: optimizeLayers [spacing] [axis]");
+            return std::make_unique<LayerWiseCellOptimizationTransformer>(interaction, axis, spacing);
         } else if (operationType == "columnar") {
             std::string axisStr;
             unsigned long seed{};
@@ -368,7 +375,7 @@ namespace {
             return std::make_unique<LayerRotationTransformer>(layerAxis, rotAxis, angle/180*M_PI, isAlternating);
         } else {
             throw ValidationException("Unknown transformation type: " + operationType + ". Supported: "
-                                      + "optimizeCell, columnar, randomizeFlip, layerRotate");
+                                      + "optimizeCell, optimizeLayers, columnar, randomizeFlip, layerRotate");
         }
     }
 
