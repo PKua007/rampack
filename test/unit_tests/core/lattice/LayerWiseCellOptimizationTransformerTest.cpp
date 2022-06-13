@@ -38,7 +38,7 @@ TEST_CASE("LayerWiseCellOptimizationTransformer: 3 layers") {
                                      Shape({0.1, 0.1, 0.5}, rotated), Shape({0.1, 0.5, 0.5}, rotated),
                                      Shape({0.1, 0.1, 0.8}), Shape({0.1, 0.5, 0.8})};
     TriclinicBox initialBox(30);
-    Lattice lattice(UnitCell(initialBox, initialShapes), {3, 3, 2});
+    Lattice lattice(UnitCell(initialBox, initialShapes), {2, 2, 2});
     double spacing = 2;
     LayerWiseCellOptimizationTransformer transformer(traits.getInteraction(), LatticeTraits::Axis::Z, spacing);
 

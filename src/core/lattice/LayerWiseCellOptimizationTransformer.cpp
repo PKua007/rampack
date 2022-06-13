@@ -116,16 +116,19 @@ void LayerWiseCellOptimizationTransformer::optimizeCell(Lattice &lattice, Packin
     constexpr double FACTOR_EPSILON = 1 + 1e-12;
     // Verify initial dimensions whether they are large enough
     // range (plus epsilon), since we don't want self intersections through PBC
-    Expects(std::all_of(boxHeights.begin(), boxHeights.end(),
-                        [range](double d) { return d > FACTOR_EPSILON * range; }));
-    const auto &cellBoxHeights = cellBox.getHeights();
+    ExpectsMsg(std::all_of(boxHeights.begin(), boxHeights.end(),
+                           [range](double d) { return d > FACTOR_EPSILON * range; }),
+               "Maximally shrunk cell (without self-overlaps) is too large. Use more lattice cells.");
 
     // Bisectively move "upper" face of the cell until the shapes are tangent. Absolute shape coordinates should not
     // change in the process, so they relative ones are rescaled appropriately
     auto initialShapes = cellShapes;
     auto initialCellBox = cellBox;
-    double begFactor = range * FACTOR_EPSILON / cellBoxHeights[axisIdx];  // Smallest scaling without self-overlap
+    double begFactor = range * FACTOR_EPSILON / boxHeights[axisIdx];  // Smallest scaling without self-overlap
     double endFactor = 1;
+    auto [begBox, begShapes] = this->rescaleCell(initialCellBox, initialShapes, begFactor);
+    ExpectsMsg(this->areShapesOverlapping(begBox, begShapes, lattice.getDimensions(), testPacking),
+               "Maximally shrunk cell (without self-overlaps) is not overlapping. Use more lattice cells.");
 
     constexpr double EPSILON = 1e-12;
     do {
