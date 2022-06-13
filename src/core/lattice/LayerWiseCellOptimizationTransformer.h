@@ -11,23 +11,31 @@
 #include "core/Packing.h"
 
 
+/**
+ * @brief A Transformer which optimizes distances between all layers, together with cell dimension, in a given
+ * direction.
+ */
 class LayerWiseCellOptimizationTransformer : public LatticeTransformer {
 private:
     const Interaction &interaction;
     LatticeTraits::Axis layerAxis;
     double spacing;
 
-    bool areShapesOverlapping(const TriclinicBox &box, const std::vector<Shape> &shapes,
-                              const std::array<std::size_t, 3> &latticeDim, Packing &testPacking) const;
+    [[nodiscard]] bool areShapesOverlapping(const TriclinicBox &box, const std::vector<Shape> &shapes,
+                                            const std::array<std::size_t, 3> &latticeDim, Packing &testPacking) const;
     void optimizeLayers(Lattice &lattice, const LatticeTraits::LayerAssociation &layerAssociation,
                         Packing &testPacking) const;
-    auto rescaleCell(const TriclinicBox &oldBox, const std::vector<Shape> &oldShapes,
-                     double factor) const;
+    [[nodiscard]] auto rescaleCell(const TriclinicBox &oldBox, const std::vector<Shape> &oldShapes,
+                                   double factor) const;
     void optimizeCell(Lattice &lattice, Packing &testPacking) const;
     void introduceSpacing(Lattice &lattice, const LatticeTraits::LayerAssociation &layerAssociation) const;
     void centerShapesInCell(std::vector<Shape> &cellShapes) const;
 
 public:
+    /**
+     * @brief Prepares the class for a given @a interaction, which will optimize layers and cell dimension in the
+     * direction given by @a layerAxis and then space all layers by @a spacing (as measured by cell box heights).
+     */
     explicit LayerWiseCellOptimizationTransformer(const Interaction &interaction, LatticeTraits::Axis layerAxis,
                                                   double spacing);
 
