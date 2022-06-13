@@ -66,3 +66,34 @@ TEST_CASE("LayerWiseCellOptimizationTransformer: 3 layers") {
     CHECK(molecules[4].getPosition()[2] == Approx(10./12));
     CHECK(molecules[5].getPosition()[2] == Approx(10./12));
 }
+
+TEST_CASE("LayerWiseCellOptimizationTransformer: 1 layer") {
+    // This test also tests for the bug where the maximally shrunk end of cell size bisection was incorrect due to
+    // wrong calculation of a shrinking factor - it happened when a range of interaction was bigger than optimal
+    // distance and initial cell was already small (but not optimal)
+
+    // Dimer, but mass centre in a middle of a monomer => total range = 3
+    PolysphereTraits::PolysphereGeometry geometry({{{0, 0, 0}, 0.5}, {{0, 0, 1}, 0.5}},
+                                                  {0, 0, 1}, {0, 1, 0}, {0, 0, 0});
+    PolysphereTraits traits(std::move(geometry));
+    TriclinicBox initialBox(std::array<double, 3>{5, 5, 3});
+    Lattice lattice(UnitCell(initialBox, {Shape({0.5, 0.5, 0.5})}), {2, 2, 2});
+    double spacing = 0.5;
+    LayerWiseCellOptimizationTransformer transformer(traits.getInteraction(), LatticeTraits::Axis::Z, spacing);
+
+    transformer.transform(lattice);
+
+    CHECK(lattice.isRegular());
+    CHECK(lattice.isNormalized());
+    const auto &initialBoxSides = initialBox.getSides();
+    const auto &finalBoxSides = lattice.getCellBox().getSides();
+    // Strictly equal, not approximately (x and y axes should not be altered)
+    CHECK(finalBoxSides[0] == initialBoxSides[0]);
+    CHECK(finalBoxSides[1] == initialBoxSides[1]);
+    CHECK_THAT(finalBoxSides[2], IsApproxEqual(Vector<3>{0, 0, 2.5}, 1e-10));
+    const auto &molecules = lattice.getUnitCellMolecules();
+    REQUIRE(molecules.size() == 1);
+    CHECK(molecules[0].getPosition()[0] == 0.5);
+    CHECK(molecules[0].getPosition()[1] == 0.5);
+    CHECK(molecules[0].getPosition()[2] == Approx(0.5));
+}

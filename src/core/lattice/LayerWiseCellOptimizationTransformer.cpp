@@ -91,6 +91,21 @@ void LayerWiseCellOptimizationTransformer::optimizeLayers(Lattice &lattice,
     }
 }
 
+auto LayerWiseCellOptimizationTransformer::rescaleCell(const TriclinicBox &oldBox, const std::vector<Shape> &oldShapes,
+                                                       double factor) const
+{
+    std::size_t axisIdx = LatticeTraits::axisToIndex(this->layerAxis);
+    std::array<Vector<3>, 3> newCellSides = oldBox.getSides();
+    std::vector<Shape> newShapes = oldShapes;
+    newCellSides[axisIdx] *= factor;
+    for (auto &shape : newShapes) {
+        Vector<3> pos = shape.getPosition();
+        pos[axisIdx] /= factor;
+        shape.setPosition(pos);
+    }
+    return std::make_pair(TriclinicBox(newCellSides), newShapes);
+}
+
 void LayerWiseCellOptimizationTransformer::optimizeCell(Lattice &lattice, Packing &testPacking) const {
     double range = this->interaction.getTotalRangeRadius();
     std::size_t axisIdx = LatticeTraits::axisToIndex(this->layerAxis);
@@ -115,22 +130,14 @@ void LayerWiseCellOptimizationTransformer::optimizeCell(Lattice &lattice, Packin
     constexpr double EPSILON = 1e-12;
     do {
         double midFactor = (begFactor + endFactor) / 2;
-        auto midBoxSides = initialCellBox.getSides();
-        midBoxSides[axisIdx] *= midFactor;
+        auto [midBox, midShapes] = this->rescaleCell(initialCellBox, initialShapes, midFactor);
 
-        auto midShapes = initialShapes;
-        for (auto &shape : midShapes) {
-            Vector<3> pos = shape.getPosition();
-            pos[axisIdx] /= midFactor;
-            shape.setPosition(pos);
-        }
-
-        if (this->areShapesOverlapping(TriclinicBox(midBoxSides), midShapes, lattice.getDimensions(), testPacking)) {
+        if (this->areShapesOverlapping(midBox, midShapes, lattice.getDimensions(), testPacking)) {
             begFactor = midFactor;
         } else {
             endFactor = midFactor;
             cellShapes = std::move(midShapes);
-            cellBox = TriclinicBox(midBoxSides);
+            cellBox = midBox;
         }
     } while (std::abs(endFactor - begFactor) > EPSILON);
 }

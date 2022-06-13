@@ -21,6 +21,8 @@ private:
                               const std::array<std::size_t, 3> &latticeDim, Packing &testPacking) const;
     void optimizeLayers(Lattice &lattice, const LatticeTraits::LayerAssociation &layerAssociation,
                         Packing &testPacking) const;
+    auto rescaleCell(const TriclinicBox &oldBox, const std::vector<Shape> &oldShapes,
+                     double factor) const;
     void optimizeCell(Lattice &lattice, Packing &testPacking) const;
     void introduceSpacing(Lattice &lattice, const LatticeTraits::LayerAssociation &layerAssociation) const;
     void centerShapesInCell(std::vector<Shape> &cellShapes) const;
