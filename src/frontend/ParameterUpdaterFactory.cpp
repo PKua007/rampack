@@ -13,6 +13,19 @@
 #include "core/parameter_updaters/PiecewiseParameterUpdater.h"
 
 
+namespace {
+    bool fully_parsed(std::istream &in) {
+        if (in.fail())
+            return false;
+        if (in.eof())
+            return true;
+        in >> std::ws;
+        if (in.fail() || !in.eof())
+            return false;
+        return true;
+    }
+}
+
 std::unique_ptr<ParameterUpdater> ParameterUpdaterFactory::create(std::string updaterString) {
     ValidateMsg(!trim(updaterString).empty(), "Dynamic parameter cannot be empty");
 
@@ -23,25 +36,27 @@ std::unique_ptr<ParameterUpdater> ParameterUpdaterFactory::create(std::string up
 
     // First trying reading it as an ordinary number
     try {
-        return std::make_unique<ConstantParameterUpdater>(convert_string<double>(updaterName));
+        auto constantUpdater = std::make_unique<ConstantParameterUpdater>(convert_string<double>(updaterName));
+        ValidateMsg(fully_parsed(updaterStream), "Unexpected tokens after parameter value");
+        return constantUpdater;
     } catch (StringConversionException&) { }
 
     if (updaterName == "const") {
         double value{};
         updaterStream >> value;
-        ValidateMsg(updaterStream, "Malformed const parameter. Usage: const [value]");
+        ValidateMsg(fully_parsed(updaterStream), "Malformed const parameter. Usage: const [value]");
         return std::make_unique<ConstantParameterUpdater>(value);
     } else if (updaterName == "linear") {
         double initialValue{}, slope{};
         updaterStream >> initialValue >> slope;
-        ValidateMsg(updaterStream, "Malformed linear parameter. Usage: const [initial value] [slope]; "
-                                   "value = [initial value] + slope * [cycle]");
+        ValidateMsg(fully_parsed(updaterStream), "Malformed linear parameter. Usage: const [initial value] [slope]; "
+                                                 "value = [initial value] + slope * [cycle]");
         return std::make_unique<LinearParameterUpdater>(slope, initialValue);
     } else if (updaterName == "exp") {
         double initialValue{}, rate{};
         updaterStream >> initialValue >> rate;
-        ValidateMsg(updaterStream, "Malformed exp parameter. Usage: const [initial value] [rate]; "
-                                   "value = [initial value] * exp(rate * [cycle])");
+        ValidateMsg(fully_parsed(updaterStream), "Malformed exp parameter. Usage: const [initial value] [rate]; "
+                                                 "value = [initial value] * exp(rate * [cycle])");
         return std::make_unique<ExponentialParameterUpdater>(initialValue, rate);
     } else if (updaterName == "piecewise") {
         PiecewiseParameterUpdater::UpdaterList list;
@@ -57,7 +72,7 @@ std::unique_ptr<ParameterUpdater> ParameterUpdaterFactory::create(std::string up
             try {
                 list.emplace_back(cycle, ParameterUpdaterFactory::create(underlyingUpdater));
             } catch (ValidationException &validationException) {
-                throw ValidationException("Malformed parameter '" + underlyingUpdater + "'in piecewise parameter: "
+                throw ValidationException("Malformed parameter '" + underlyingUpdater + "' within piecewise parameter: "
                                           + validationException.what());
             }
         }

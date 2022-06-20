@@ -121,6 +121,10 @@ void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::siz
         logger.info() << "Starting thermalisation..." << std::endl;
         for (std::size_t i{}; i < thermalisationCycles; i++) {
             this->performCycle(logger, shapeTraits);
+            this->temperature = temperature_.updater->getValueForCycle(this->totalCycles, maxCycles);
+            this->pressure = pressure_.updater->getValueForCycle(this->totalCycles, maxCycles);
+            this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
+
             if (this->totalCycles % 10000 == 0)
                 this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
             if (this->totalCycles % snapshotEvery == 0) {
@@ -130,10 +134,6 @@ void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::siz
             }
             if (this->totalCycles % 100 == 0)
                 this->printInlineInfo(this->totalCycles, shapeTraits, logger, false);
-
-            this->temperature = temperature_.updater->getValueForCycle(this->totalCycles, maxCycles);
-            this->pressure = pressure_.updater->getValueForCycle(this->totalCycles, maxCycles);
-            this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
 
             if (sigint_received) {
                 auto end = std::chrono::high_resolution_clock::now();
@@ -208,6 +208,10 @@ void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std:
     logger.info() << "Starting overlap relaxation..." << std::endl;
     while (this->packing->getCachedNumberOfOverlaps() > 0) {
         this->performCycle(logger, shapeTraits);
+        this->temperature = temperature_.updater->getValueForCycle(this->totalCycles, maxCycles);
+        this->pressure = pressure_.updater->getValueForCycle(this->totalCycles, maxCycles);
+        this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
+
         if (this->totalCycles % 10000 == 0)
             this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
         if (this->totalCycles % snapshotEvery == 0) {
@@ -217,10 +221,6 @@ void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std:
         }
         if (this->totalCycles % 100 == 0)
             this->printInlineInfo(this->totalCycles, shapeTraits, logger, true);
-
-        this->temperature = temperature_.updater->getValueForCycle(this->totalCycles, maxCycles);
-        this->pressure = pressure_.updater->getValueForCycle(this->totalCycles, maxCycles);
-        this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
 
         if (sigint_received) {
             auto end = std::chrono::high_resolution_clock::now();
