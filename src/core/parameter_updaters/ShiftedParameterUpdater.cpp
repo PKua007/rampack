@@ -14,5 +14,8 @@ ShiftedParameterUpdater::ShiftedParameterUpdater(std::size_t cycleShift,
 }
 
 double ShiftedParameterUpdater::getValueForCycle(std::size_t currentCycle, std::size_t totalCycles) const {
+    Expects(currentCycle >= this->cycleShift);
+    Expects(totalCycles >= this->cycleShift);
+
     return this->underlyingUpdater->getValueForCycle(currentCycle - this->cycleShift, totalCycles - this->cycleShift);
 }

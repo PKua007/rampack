@@ -23,9 +23,16 @@ PiecewiseParameterUpdater::PiecewiseParameterUpdater(PiecewiseParameterUpdater::
 }
 
 double PiecewiseParameterUpdater::getValueForCycle(std::size_t currentCycle, std::size_t totalCycles) const {
+    Expects(currentCycle <= totalCycles);
+    Expects(totalCycles >= this->updaters.back().first);
+
     auto cycleComp = [](std::size_t cycle, const auto &updater) { return cycle < updater.first; };
-    auto updaterIt = std::prev(std::upper_bound(this->updaters.begin(), this->updaters.end(), currentCycle, cycleComp));
+    auto nextUpdaterIt = std::upper_bound(this->updaters.begin(), this->updaters.end(), currentCycle, cycleComp);
+    std::size_t piecewiseTotalCycles = totalCycles;
+    if (nextUpdaterIt != this->updaters.end())
+        piecewiseTotalCycles = nextUpdaterIt->first;
+    auto updaterIt = std::prev(nextUpdaterIt);
     const auto &updater = *(updaterIt->second);
 
-    return updater.getValueForCycle(currentCycle, totalCycles);
+    return updater.getValueForCycle(currentCycle, piecewiseTotalCycles);
 }
