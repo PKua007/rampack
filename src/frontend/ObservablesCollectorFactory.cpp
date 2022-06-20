@@ -17,6 +17,8 @@
 #include "core/observables/SmecticOrder.h"
 #include "core/observables/BondOrder.h"
 #include "core/observables/RotationMatrixDrift.h"
+#include "core/observables/Temperature.h"
+#include "core/observables/Pressure.h"
 
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
@@ -158,6 +160,10 @@ std::unique_ptr<ObservablesCollector> ObservablesCollectorFactory::create(const 
             collector->addObservable(std::make_unique<BondOrder>(ranks, millerIndices), observableType);
         } else if (observableName == "rotationMatrixDrift") {
             collector->addObservable(std::make_unique<RotationMatrixDrift>(), observableType);
+        } else if (observableName == "temperature") {
+            collector->addObservable(std::make_unique<Temperature>(), observableType);
+        } else if (observableName == "pressure") {
+            collector->addObservable(std::make_unique<Pressure>(), observableType);
         } else {
             throw ValidationException("Unknown observable: " + observableName);
         }
