@@ -92,7 +92,7 @@ void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::siz
     if (averagingCycles > 0)
         Expects(averagingEvery > 0 && averagingEvery < averagingCycles);
 
-    std::size_t maxCycles = cycleOffset + thermalisationCycles + averagingCycles;
+    std::size_t maxCycles = cycleOffset + thermalisationCycles;
     this->temperature = temperature_.updater->getValueForCycle(cycleOffset, maxCycles);
     this->pressure = pressure_.updater->getValueForCycle(cycleOffset, maxCycles);
     this->observablesCollector = std::move(observablesCollector_);
@@ -133,6 +133,7 @@ void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::siz
 
             this->temperature = temperature_.updater->getValueForCycle(this->totalCycles, maxCycles);
             this->pressure = pressure_.updater->getValueForCycle(this->totalCycles, maxCycles);
+            this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
 
             if (sigint_received) {
                 auto end = std::chrono::high_resolution_clock::now();
@@ -162,9 +163,6 @@ void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::siz
                 this->observablesCollector->addAveragingValues(*this->packing, shapeTraits);
             if (this->totalCycles % 100 == 0)
                 this->printInlineInfo(this->totalCycles, shapeTraits, logger, false);
-
-            this->temperature = temperature_.updater->getValueForCycle(this->totalCycles, maxCycles);
-            this->pressure = pressure_.updater->getValueForCycle(this->totalCycles, maxCycles);
 
             if (sigint_received) {
                 auto end = std::chrono::high_resolution_clock::now();
@@ -222,6 +220,7 @@ void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std:
 
         this->temperature = temperature_.updater->getValueForCycle(this->totalCycles, maxCycles);
         this->pressure = pressure_.updater->getValueForCycle(this->totalCycles, maxCycles);
+        this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
 
         if (sigint_received) {
             auto end = std::chrono::high_resolution_clock::now();

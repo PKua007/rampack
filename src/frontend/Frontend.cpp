@@ -32,6 +32,7 @@
 #include "core/SimulationRecorder.h"
 #include "core/SimulationPlayer.h"
 #include "PackingLoader.h"
+#include "ParameterUpdaterFactory.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -293,8 +294,10 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
     if (!runParams.recordingFilename.empty())
         recorder = loadSimulationRecorder(runParams.recordingFilename, isContinuation);
 
+    auto temperatureUpdater = ParameterUpdaterFactory::create(runParams.temperature);
+    auto pressureUpdater = ParameterUpdaterFactory::create(runParams.pressure);
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
-    simulation.integrate(runParams.temperature, runParams.pressure, runParams.thermalisationCycles,
+    simulation.integrate(std::move(temperatureUpdater), std::move(pressureUpdater), runParams.thermalisationCycles,
                          runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
                          shapeTraits, std::move(collector), std::move(recorder), logger, cycleOffset);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
@@ -309,8 +312,8 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
     if (!runParams.wolframFilename.empty())
         this->storeWolframVisualization(simulation, shapeTraits, runParams.wolframFilename);
     if (!runParams.outputFilename.empty()) {
-        this->storeAverageValues(runParams.outputFilename, observablesCollector, runParams.temperature,
-                                 runParams.pressure);
+        this->storeAverageValues(runParams.outputFilename, observablesCollector, simulation.getCurrentTemperature(),
+                                 simulation.getCurrentPressure());
     }
     if (!runParams.observableSnapshotFilename.empty())
         this->storeSnapshots(observablesCollector, isContinuation, runParams.observableSnapshotFilename);
@@ -357,9 +360,11 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, const std::strin
         shapeTraits = std::make_shared<CompoundShapeTraits>(shapeTraits, helperShape);
     }
 
+    auto temperatureUpdater = ParameterUpdaterFactory::create(runParams.temperature);
+    auto pressureUpdater = ParameterUpdaterFactory::create(runParams.pressure);
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
-    simulation.relaxOverlaps(runParams.temperature, runParams.pressure, runParams.snapshotEvery, *shapeTraits,
-                             std::move(collector), std::move(recorder), this->logger, cycleOffset);
+    simulation.relaxOverlaps(std::move(temperatureUpdater), std::move(pressureUpdater), runParams.snapshotEvery,
+                             *shapeTraits, std::move(collector), std::move(recorder), this->logger, cycleOffset);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
     this->logger.info();

@@ -102,9 +102,9 @@ Parameters::IntegrationParameters::IntegrationParameters(const std::string &runN
     this->runName = runName;
     for (const auto &key : runConfig.getKeys()) {
         if (key == "temperature")
-            this->temperature = runConfig.getDouble("temperature");
+            this->temperature = runConfig.getString("temperature");
         else if (key == "pressure")
-            this->pressure = runConfig.getDouble("pressure");
+            this->pressure = runConfig.getString("pressure");
         else if (key == "thermalisationCycles")
             this->thermalisationCycles = runConfig.getUnsignedLong("thermalisationCycles");
         else if (key == "averagingCycles")
@@ -132,8 +132,6 @@ Parameters::IntegrationParameters::IntegrationParameters(const std::string &runN
 }
 
 void Parameters::IntegrationParameters::validate() const {
-    Validate(this->temperature > 0);
-    Validate(this->pressure > 0);
     Validate(this->thermalisationCycles > 0);
     Validate(this->averagingCycles > 0);
     Validate(this->averagingEvery > 0);
@@ -159,9 +157,9 @@ Parameters::OverlapRelaxationParameters::OverlapRelaxationParameters(const std::
     this->runName = runName;
     for (const auto &key : runConfig.getKeys()) {
         if (key == "temperature")
-            this->temperature = runConfig.getDouble("temperature");
+            this->temperature = runConfig.getString("temperature");
         else if (key == "pressure")
-            this->pressure = runConfig.getDouble("pressure");
+            this->pressure = runConfig.getString("pressure");
         else if (key == "snapshotEvery")
             this->snapshotEvery = runConfig.getUnsignedLong("snapshotEvery");
         else if (key == "observables")
@@ -183,8 +181,6 @@ Parameters::OverlapRelaxationParameters::OverlapRelaxationParameters(const std::
 }
 
 void Parameters::OverlapRelaxationParameters::validate() const {
-    Validate(this->temperature > 0);
-    Validate(this->pressure > 0);
     Validate(this->snapshotEvery > 0);
 }
 

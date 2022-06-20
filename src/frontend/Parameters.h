@@ -45,8 +45,8 @@ public:
         IntegrationParameters(const std::string &runName, const Config &runConfig);
 
         std::string runName{};
-        double temperature{};
-        double pressure{};
+        std::string temperature{};
+        std::string pressure{};
         std::size_t thermalisationCycles{};
         std::size_t averagingCycles{};
         std::size_t averagingEvery{};
@@ -73,8 +73,8 @@ public:
         OverlapRelaxationParameters(const std::string &runName, const Config &runConfig);
 
         std::string runName{};
-        double temperature{};
-        double pressure{};
+        std::string temperature{};
+        std::string pressure{};
         std::size_t snapshotEvery{};
         std::string observables{};
         std::string helperInteraction{};

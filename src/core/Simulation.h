@@ -282,6 +282,9 @@ public:
      * @brief Returns true if the current run was interrupted by SIGCONT or SIGINT.
      */
     [[nodiscard]] bool wasInterrupted() const;
+
+    [[nodiscard]] double getCurrentTemperature() const { return this->temperature; }
+    [[nodiscard]] double getCurrentPressure() const { return this->pressure; }
 };
 
 
