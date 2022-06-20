@@ -15,6 +15,7 @@
 #include <iosfwd>
 #include <optional>
 #include <utility>
+#include <variant>
 
 #include "Packing.h"
 #include "utils/Logger.h"
@@ -24,6 +25,7 @@
 #include "ObservablesCollector.h"
 #include "MoveSampler.h"
 #include "SimulationRecorder.h"
+#include "ParameterUpdater.h"
 
 /**
  * @brief A class responsible for performing Monte Carlo sampling.
@@ -70,6 +72,17 @@ public:
             return static_cast<double>(this->acceptedMoves)
                    / static_cast<double>(this->totalMoves);
         }
+    };
+
+    class Parameter {
+    private:
+        friend class Simulation;
+
+        std::unique_ptr<ParameterUpdater> updater;
+
+    public:
+        Parameter(double value);
+        Parameter(std::unique_ptr<ParameterUpdater> updater) : updater{std::move(updater)} { }
     };
 
 private:
@@ -194,7 +207,7 @@ public:
      * @param logger Logger object to display simulation data
      * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
      */
-    void integrate(double temperature_, double pressure_, std::size_t thermalisationCycles, std::size_t averagingCycles,
+    void integrate(Parameter temperature_, Parameter pressure_, std::size_t thermalisationCycles, std::size_t averagingCycles,
                    std::size_t averagingEvery, std::size_t snapshotEvery, const ShapeTraits &shapeTraits,
                    std::unique_ptr<ObservablesCollector> observablesCollector_,
                    std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
@@ -213,7 +226,7 @@ public:
      * @param logger  Logger object to display simulation data
      * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
      */
-    void relaxOverlaps(double temperature_, double pressure_, std::size_t snapshotEvery,
+    void relaxOverlaps(Parameter temperature_, Parameter pressure_, std::size_t snapshotEvery,
                        const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
                        std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
                        std::size_t cycleOffset = 0);
