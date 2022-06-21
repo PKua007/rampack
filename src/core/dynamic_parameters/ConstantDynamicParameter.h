@@ -8,6 +8,10 @@
 #include "core/DynamicParameter.h"
 
 
+/**
+ * @brief Constant parameter, which always returns the same value passed in the constructor, regardless of the cycle
+ * number.
+ */
 class ConstantDynamicParameter : public DynamicParameter {
 private:
     double value{};

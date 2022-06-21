@@ -7,7 +7,11 @@
 
 #include "core/DynamicParameter.h"
 
-
+/**
+ * @brief Dynamic parameter changing linearly with the cycle number.
+ * @details More precisely, the value is calculated as @a initialValue + @a slope * @a currentCycle). @a totalCycles is
+ * ignored.
+ */
 class LinearDynamicParameter : public DynamicParameter {
 private:
     double slope{};

@@ -74,6 +74,13 @@ public:
         }
     };
 
+    /**
+     * @brief A helper class holding a DynamicParameter.
+     * @brief It is used for arguments of simulation procedures to provide both backwards compatibility (when an
+     * ordinary value is passed as a parameter) as well as enable the use of a DynamicParameter. Both types of
+     * parameters are implicitly converted into this class, so a user can just skip specifying Parameter type
+     * explicitly.
+     */
     class Parameter {
     private:
         friend class Simulation;
@@ -194,8 +201,8 @@ public:
     /**
      * @brief Performs standard Monte Carlo integration consisting of thermalization (equilibration) phase and averaging
      * (production) phase.
-     * @param temperature_ temperature of the system
-     * @param pressure_ system pressure
+     * @param temperature_ temperature of the system (single value or DynamicParameter)
+     * @param pressure_ system pressure (single value or DynamicParameter)
      * @param thermalisationCycles the number of cycles in thermalization phase
      * @param averagingCycles the number of cycles in averaging (production) phase
      * @param averagingEvery how often to take observables for averaging
@@ -216,8 +223,8 @@ public:
     /**
      * @brief Perform overlap reduction scheme - overlap counting is turned on and moves are continued until there is no
      * overlaps in the system.
-     * @param temperature_ temperature of the system
-     * @param pressure_ system pressure
+     * @param temperature_ temperature of the system (single value or DynamicParameter)
+     * @param pressure_ system pressure (single value or DynamicParameter)
      * @param snapshotEvery how often to take observable snapshots
      * @param shapeTraits shape traits describing the simulated molecules
      * @param observablesCollector_ the observables collector with observable capturing configuration
@@ -283,7 +290,14 @@ public:
      */
     [[nodiscard]] bool wasInterrupted() const;
 
+    /**
+     * @brief Returns a current temperature of the system.
+     */
     [[nodiscard]] double getCurrentTemperature() const { return this->temperature; }
+
+    /**
+     * @brief Returns a current pressure of the system.
+     */
     [[nodiscard]] double getCurrentPressure() const { return this->pressure; }
 };
 

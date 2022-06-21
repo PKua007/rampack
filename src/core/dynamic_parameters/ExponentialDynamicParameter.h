@@ -10,6 +10,11 @@
 #include "core/DynamicParameter.h"
 
 
+/**
+ * @brief Dynamic parameter changing exponentially with the cycle number.
+ * @details More precisely, the value is calculated as @a initialValue * exp(@a rate * @a currentCycle). @a totalCycles
+ * is ignored.
+ */
 class ExponentialDynamicParameter : public DynamicParameter {
 private:
     double initialValue{};

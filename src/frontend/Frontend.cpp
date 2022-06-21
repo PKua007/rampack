@@ -32,7 +32,7 @@
 #include "core/SimulationRecorder.h"
 #include "core/SimulationPlayer.h"
 #include "PackingLoader.h"
-#include "DynamicParameterFactory.h"
+#include "ParameterUpdaterFactory.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -294,8 +294,8 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
     if (!runParams.recordingFilename.empty())
         recorder = loadSimulationRecorder(runParams.recordingFilename, isContinuation);
 
-    auto temperatureUpdater = DynamicParameterFactory::create(runParams.temperature);
-    auto pressureUpdater = DynamicParameterFactory::create(runParams.pressure);
+    auto temperatureUpdater = ParameterUpdaterFactory::create(runParams.temperature);
+    auto pressureUpdater = ParameterUpdaterFactory::create(runParams.pressure);
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
     simulation.integrate(std::move(temperatureUpdater), std::move(pressureUpdater), runParams.thermalisationCycles,
                          runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
@@ -360,8 +360,8 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, const std::strin
         shapeTraits = std::make_shared<CompoundShapeTraits>(shapeTraits, helperShape);
     }
 
-    auto temperatureUpdater = DynamicParameterFactory::create(runParams.temperature);
-    auto pressureUpdater = DynamicParameterFactory::create(runParams.pressure);
+    auto temperatureUpdater = ParameterUpdaterFactory::create(runParams.temperature);
+    auto pressureUpdater = ParameterUpdaterFactory::create(runParams.pressure);
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
     simulation.relaxOverlaps(std::move(temperatureUpdater), std::move(pressureUpdater), runParams.snapshotEvery,
                              *shapeTraits, std::move(collector), std::move(recorder), this->logger, cycleOffset);

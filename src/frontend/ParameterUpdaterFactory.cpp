@@ -4,7 +4,7 @@
 
 #include <sstream>
 
-#include "DynamicParameterFactory.h"
+#include "ParameterUpdaterFactory.h"
 #include "utils/Assertions.h"
 #include "utils/Utils.h"
 #include "core/dynamic_parameters/ConstantDynamicParameter.h"
@@ -26,7 +26,7 @@ namespace {
     }
 }
 
-std::unique_ptr<DynamicParameter> DynamicParameterFactory::create(std::string updaterString) {
+std::unique_ptr<DynamicParameter> ParameterUpdaterFactory::create(std::string updaterString) {
     ValidateMsg(!trim(updaterString).empty(), "Dynamic parameter cannot be empty");
 
     std::istringstream paramStream(updaterString);
@@ -71,7 +71,7 @@ std::unique_ptr<DynamicParameter> DynamicParameterFactory::create(std::string up
                                                            "[cycle 1] [dynamic parameter 1] , ...; [cycle 1] should "
                                                            "be equal 0");
             try {
-                list.emplace_back(cycle, DynamicParameterFactory::create(underlyingParam));
+                list.emplace_back(cycle, ParameterUpdaterFactory::create(underlyingParam));
             } catch (ValidationException &validationException) {
                 throw ValidationException("Malformed parameter '" + underlyingParam + "' within piecewise parameter: "
                                           + validationException.what());
