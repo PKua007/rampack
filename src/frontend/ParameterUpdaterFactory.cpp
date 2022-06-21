@@ -68,7 +68,8 @@ std::unique_ptr<ParameterUpdater> ParameterUpdaterFactory::create(std::string up
             underlyingUpdaterDataStream >> cycle;
             std::getline(underlyingUpdaterDataStream, underlyingUpdater);
             ValidateMsg(!underlyingUpdaterDataStream.fail(), "Malformed piecewise parameter. Usage: piecewise "
-                                                             "[cycle 1] [dynamic parameter 1] , ...");
+                                                             "[cycle 1] [dynamic parameter 1] , ...; [cycle 1] should "
+                                                             "be equal 0");
             try {
                 list.emplace_back(cycle, ParameterUpdaterFactory::create(underlyingUpdater));
             } catch (ValidationException &validationException) {
@@ -81,6 +82,6 @@ std::unique_ptr<ParameterUpdater> ParameterUpdaterFactory::create(std::string up
                                    "[cycle 1] [dynamic parameter 1] , ...");
         return std::make_unique<PiecewiseParameterUpdater>(std::move(list));
     } else {
-        throw ValidationException("Unknown dynamic parameter: " + updaterName);
+        throw ValidationException("Unknown or malformed dynamic parameter: " + updaterName);
     }
 }
