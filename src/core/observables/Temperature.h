@@ -8,6 +8,9 @@
 #include "core/Observable.h"
 
 
+/**
+ * @brief An observable representing current temperature of the system.
+ */
 class Temperature : public Observable {
 private:
     double temperature_{};

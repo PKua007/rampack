@@ -13,6 +13,8 @@
 #include "core/observables/NematicOrder.h"
 #include "core/observables/NumberDensity.h"
 #include "core/observables/PackingFraction.h"
+#include "core/observables/Temperature.h"
+#include "core/observables/Pressure.h"
 
 #include "core/ShapeTraits.h"
 #include "core/PeriodicBoundaryConditions.h"
@@ -144,5 +146,25 @@ TEST_CASE("Observables") {
         CHECK(packingFraction.getName() == "packing fraction");
         REQUIRE(packingFraction.getIntervalValues().size() == 1);
         CHECK(packingFraction.getIntervalValues()[0] == Approx(0.1));
+    }
+
+    SECTION("Temperature") {
+        Temperature temperature;
+
+        temperature.calculate(packing, 2, 3, mockShapeTraits);
+
+        CHECK(temperature.getIntervalHeader() == std::vector<std::string>{"T"});
+        CHECK(temperature.getName() == "temperature");
+        CHECK(temperature.getIntervalValues() == std::vector<double>{2});
+    }
+
+    SECTION("Pressure") {
+        Pressure pressure;
+
+        pressure.calculate(packing, 2, 3, mockShapeTraits);
+
+        CHECK(pressure.getIntervalHeader() == std::vector<std::string>{"p"});
+        CHECK(pressure.getName() == "pressure");
+        CHECK(pressure.getIntervalValues() == std::vector<double>{3});
     }
 }

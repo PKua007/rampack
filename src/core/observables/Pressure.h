@@ -8,6 +8,9 @@
 #include "core/Observable.h"
 
 
+/**
+ * @brief An observable representing current pressure of the system.
+ */
 class Pressure : public Observable {
 private:
     double pressure_{};
