@@ -12,11 +12,12 @@
 
 class ShiftedParameterUpdater : public ParameterUpdater {
 private:
-    std::size_t cycleShift;
+    bool isShiftNegative{};
+    std::size_t cycleShift{};
     std::unique_ptr<ParameterUpdater> underlyingUpdater;
 
 public:
-    explicit ShiftedParameterUpdater(std::size_t cycleShift, std::unique_ptr<ParameterUpdater> underlyingUpdater);
+    explicit ShiftedParameterUpdater(long cycleShift, std::unique_ptr<ParameterUpdater> underlyingUpdater);
 
     [[nodiscard]] double getValueForCycle(std::size_t currentCycle, std::size_t totalCycles) const override;
 };
