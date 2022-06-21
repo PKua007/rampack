@@ -12,7 +12,7 @@
 #include "DomainDecomposition.h"
 #include "utils/Assertions.h"
 #include "move_samplers/RototranslationSampler.h"
-#include "parameter_updaters/ConstantParameterUpdater.h"
+#include "dynamic_parameters/ConstantDynamicParameter.h"
 
 namespace {
     std::atomic<bool> sigint_received = false;
@@ -43,7 +43,7 @@ void sigint_handler([[maybe_unused]] int signal) {
     sigint_received = true;
 }
 
-Simulation::Parameter::Parameter(double value) : updater{std::make_unique<ConstantParameterUpdater>(value)} {
+Simulation::Parameter::Parameter(double value) : parameter{std::make_unique<ConstantDynamicParameter>(value)} {
 
 }
 
@@ -93,8 +93,8 @@ void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::siz
         Expects(averagingEvery > 0 && averagingEvery < averagingCycles);
 
     std::size_t maxCycles = cycleOffset + thermalisationCycles;
-    this->temperature = temperature_.updater->getValueForCycle(cycleOffset, maxCycles);
-    this->pressure = pressure_.updater->getValueForCycle(cycleOffset, maxCycles);
+    this->temperature = temperature_.parameter->getValueForCycle(cycleOffset, maxCycles);
+    this->pressure = pressure_.parameter->getValueForCycle(cycleOffset, maxCycles);
     this->observablesCollector = std::move(observablesCollector_);
     this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
     this->reset();
@@ -121,8 +121,8 @@ void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::siz
         logger.info() << "Starting thermalisation..." << std::endl;
         for (std::size_t i{}; i < thermalisationCycles; i++) {
             this->performCycle(logger, shapeTraits);
-            this->temperature = temperature_.updater->getValueForCycle(this->totalCycles, maxCycles);
-            this->pressure = pressure_.updater->getValueForCycle(this->totalCycles, maxCycles);
+            this->temperature = temperature_.parameter->getValueForCycle(this->totalCycles, maxCycles);
+            this->pressure = pressure_.parameter->getValueForCycle(this->totalCycles, maxCycles);
             this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
 
             if (this->totalCycles % 10000 == 0)
@@ -186,8 +186,8 @@ void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std:
                                std::size_t cycleOffset)
 {
     std::size_t maxCycles = std::numeric_limits<std::size_t>::max();
-    this->temperature = temperature_.updater->getValueForCycle(cycleOffset, maxCycles);
-    this->pressure = pressure_.updater->getValueForCycle(cycleOffset, maxCycles);
+    this->temperature = temperature_.parameter->getValueForCycle(cycleOffset, maxCycles);
+    this->pressure = pressure_.parameter->getValueForCycle(cycleOffset, maxCycles);
     this->observablesCollector = std::move(observablesCollector_);
     this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
     this->reset();
@@ -208,8 +208,8 @@ void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std:
     logger.info() << "Starting overlap relaxation..." << std::endl;
     while (this->packing->getCachedNumberOfOverlaps() > 0) {
         this->performCycle(logger, shapeTraits);
-        this->temperature = temperature_.updater->getValueForCycle(this->totalCycles, maxCycles);
-        this->pressure = pressure_.updater->getValueForCycle(this->totalCycles, maxCycles);
+        this->temperature = temperature_.parameter->getValueForCycle(this->totalCycles, maxCycles);
+        this->pressure = pressure_.parameter->getValueForCycle(this->totalCycles, maxCycles);
         this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
 
         if (this->totalCycles % 10000 == 0)

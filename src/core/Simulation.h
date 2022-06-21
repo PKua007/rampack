@@ -25,7 +25,7 @@
 #include "ObservablesCollector.h"
 #include "MoveSampler.h"
 #include "SimulationRecorder.h"
-#include "ParameterUpdater.h"
+#include "DynamicParameter.h"
 
 /**
  * @brief A class responsible for performing Monte Carlo sampling.
@@ -78,11 +78,11 @@ public:
     private:
         friend class Simulation;
 
-        std::unique_ptr<ParameterUpdater> updater;
+        std::unique_ptr<DynamicParameter> parameter;
 
     public:
         Parameter(double value);
-        Parameter(std::unique_ptr<ParameterUpdater> updater) : updater{std::move(updater)} { }
+        Parameter(std::unique_ptr<DynamicParameter> updater) : parameter{std::move(updater)} { }
     };
 
 private:

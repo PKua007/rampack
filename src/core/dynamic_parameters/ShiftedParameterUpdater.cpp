@@ -4,12 +4,12 @@
 
 #include <limits>
 
-#include "ShiftedParameterUpdater.h"
+#include "ShiftedDynamicParameter.h"
 #include "utils/Assertions.h"
 
 
-ShiftedParameterUpdater::ShiftedParameterUpdater(long cycleShift, std::unique_ptr<ParameterUpdater> underlyingUpdater)
-        : underlyingUpdater{std::move(underlyingUpdater)}
+ShiftedDynamicParameter::ShiftedDynamicParameter(long cycleShift, std::unique_ptr<DynamicParameter> underlyingParameter)
+        : underlyingParameter{std::move(underlyingParameter)}
 {
     if (cycleShift > 0) {
         this->isShiftNegative = false;
@@ -19,10 +19,10 @@ ShiftedParameterUpdater::ShiftedParameterUpdater(long cycleShift, std::unique_pt
         this->cycleShift = -cycleShift;
     }
 
-    Expects(this->underlyingUpdater != nullptr);
+    Expects(this->underlyingParameter != nullptr);
 }
 
-double ShiftedParameterUpdater::getValueForCycle(std::size_t currentCycle, std::size_t totalCycles) const {
+double ShiftedDynamicParameter::getValueForCycle(std::size_t currentCycle, std::size_t totalCycles) const {
     if (this->isShiftNegative) {
         Expects(currentCycle <= std::numeric_limits<std::size_t>::max() - this->cycleShift);
         std::size_t newTotalCycles{};
@@ -30,11 +30,11 @@ double ShiftedParameterUpdater::getValueForCycle(std::size_t currentCycle, std::
             newTotalCycles = std::numeric_limits<std::size_t>::max();
         else
             newTotalCycles = totalCycles + this->cycleShift;
-        return this->underlyingUpdater->getValueForCycle(currentCycle + this->cycleShift, newTotalCycles);
+        return this->underlyingParameter->getValueForCycle(currentCycle + this->cycleShift, newTotalCycles);
     } else {
         Expects(currentCycle >= this->cycleShift);
         Expects(totalCycles >= this->cycleShift);
-        return this->underlyingUpdater->getValueForCycle(currentCycle - this->cycleShift,
+        return this->underlyingParameter->getValueForCycle(currentCycle - this->cycleShift,
                                                          totalCycles - this->cycleShift);
     }
 }

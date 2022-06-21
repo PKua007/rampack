@@ -2,19 +2,19 @@
 // Created by pkua on 20.06.22.
 //
 
-#ifndef RAMPACK_LINEARPARAMETERUPDATER_H
-#define RAMPACK_LINEARPARAMETERUPDATER_H
+#ifndef RAMPACK_LINEARDYNAMICPARAMETER_H
+#define RAMPACK_LINEARDYNAMICPARAMETER_H
 
-#include "core/ParameterUpdater.h"
+#include "core/DynamicParameter.h"
 
 
-class LinearParameterUpdater : public ParameterUpdater {
+class LinearDynamicParameter : public DynamicParameter {
 private:
     double slope{};
     double initialValue{};
 
 public:
-    LinearParameterUpdater(double slope, double initialValue) : slope{slope}, initialValue{initialValue} { }
+    LinearDynamicParameter(double slope, double initialValue) : slope{slope}, initialValue{initialValue} { }
 
     [[nodiscard]] double getValueForCycle(std::size_t currentCycle,
                                           [[maybe_unused]] std::size_t totalCycles) const override
@@ -24,4 +24,4 @@ public:
 };
 
 
-#endif //RAMPACK_LINEARPARAMETERUPDATER_H
+#endif //RAMPACK_LINEARDYNAMICPARAMETER_H

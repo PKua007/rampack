@@ -2,18 +2,18 @@
 // Created by pkua on 20.06.22.
 //
 
-#ifndef RAMPACK_CONSTANTPARAMETERUPDATER_H
-#define RAMPACK_CONSTANTPARAMETERUPDATER_H
+#ifndef RAMPACK_CONSTANTDYNAMICPARAMETER_H
+#define RAMPACK_CONSTANTDYNAMICPARAMETER_H
 
-#include "core/ParameterUpdater.h"
+#include "core/DynamicParameter.h"
 
 
-class ConstantParameterUpdater : public ParameterUpdater {
+class ConstantDynamicParameter : public DynamicParameter {
 private:
     double value{};
 
 public:
-    explicit ConstantParameterUpdater(double value) : value{value} { }
+    explicit ConstantDynamicParameter(double value) : value{value} { }
 
     [[nodiscard]] double getValueForCycle([[maybe_unused]] std::size_t currentCycle,
                                           [[maybe_unused]] std::size_t totalCycles) const override
@@ -23,4 +23,4 @@ public:
 };
 
 
-#endif //RAMPACK_CONSTANTPARAMETERUPDATER_H
+#endif //RAMPACK_CONSTANTDYNAMICPARAMETER_H

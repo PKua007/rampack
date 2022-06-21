@@ -4,11 +4,11 @@
 
 #include <catch2/catch.hpp>
 
-#include "core/parameter_updaters/ConstantParameterUpdater.h"
+#include "core/dynamic_parameters/ConstantDynamicParameter.h"
 
 
 TEST_CASE("ConstantParameterUpdater") {
-    ConstantParameterUpdater updater(5);
+    ConstantDynamicParameter updater(5);
 
     CHECK(updater.getValueForCycle(0, 1000) == 5);
     CHECK(updater.getValueForCycle(500, 1000) == 5);

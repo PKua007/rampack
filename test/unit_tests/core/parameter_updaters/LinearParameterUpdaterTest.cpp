@@ -4,11 +4,11 @@
 
 #include <catch2/catch.hpp>
 
-#include "core/parameter_updaters/LinearParameterUpdater.h"
+#include "core/dynamic_parameters/LinearDynamicParameter.h"
 
 
 TEST_CASE("LinearParameterUpdater") {
-    LinearParameterUpdater updater(0.01, 3.0);
+    LinearDynamicParameter updater(0.01, 3.0);
 
     CHECK(updater.getValueForCycle(0, 1000) == Approx(3));
     CHECK(updater.getValueForCycle(100, 1000) == Approx(4));

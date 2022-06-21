@@ -4,11 +4,11 @@
 
 #include <catch2/catch.hpp>
 
-#include "core/parameter_updaters/ExponentialParameterUpdater.h"
+#include "core/dynamic_parameters/ExponentialDynamicParameter.h"
 
 
 TEST_CASE("ExponentialParameterUpdater") {
-    ExponentialParameterUpdater updater(3, std::log(2.)/100);
+    ExponentialDynamicParameter updater(3, std::log(2.) / 100);
 
     CHECK(updater.getValueForCycle(0, 1000) == Approx(3));
     CHECK(updater.getValueForCycle(100, 1000) == Approx(6));

@@ -2,17 +2,18 @@
 // Created by pkua on 20.06.22.
 //
 
-#ifndef RAMPACK_PARAMETERUPDATER_H
-#define RAMPACK_PARAMETERUPDATER_H
+#ifndef RAMPACK_DYNAMICPARAMETER_H
+#define RAMPACK_DYNAMICPARAMETER_H
 
 #include <cstddef>
 
-class ParameterUpdater {
+
+class DynamicParameter {
 public:
-    virtual ~ParameterUpdater() = default;
+    virtual ~DynamicParameter() = default;
 
     [[nodiscard]] virtual double getValueForCycle(std::size_t currentCycle, std::size_t totalCycles) const = 0;
 };
 
 
-#endif //RAMPACK_PARAMETERUPDATER_H
+#endif //RAMPACK_DYNAMICPARAMETER_H

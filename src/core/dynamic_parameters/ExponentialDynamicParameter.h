@@ -2,21 +2,21 @@
 // Created by pkua on 20.06.22.
 //
 
-#ifndef RAMPACK_EXPONENTIALPARAMETERUPDATER_H
-#define RAMPACK_EXPONENTIALPARAMETERUPDATER_H
+#ifndef RAMPACK_EXPONENTIALDYNAMICPARAMETER_H
+#define RAMPACK_EXPONENTIALDYNAMICPARAMETER_H
 
 #include <cmath>
 
-#include "core/ParameterUpdater.h"
+#include "core/DynamicParameter.h"
 
 
-class ExponentialParameterUpdater : public ParameterUpdater {
+class ExponentialDynamicParameter : public DynamicParameter {
 private:
     double initialValue{};
     double rate{};
 
 public:
-    ExponentialParameterUpdater(double initialValue, double rate) : initialValue{initialValue}, rate{rate} { }
+    ExponentialDynamicParameter(double initialValue, double rate) : initialValue{initialValue}, rate{rate} { }
 
     [[nodiscard]] double getValueForCycle(std::size_t currentCycle,
                                           [[maybe_unused]] std::size_t totalCycles) const override
@@ -26,4 +26,4 @@ public:
 };
 
 
-#endif //RAMPACK_EXPONENTIALPARAMETERUPDATER_H
+#endif //RAMPACK_EXPONENTIALDYNAMICPARAMETER_H

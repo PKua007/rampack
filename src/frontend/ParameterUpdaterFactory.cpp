@@ -4,13 +4,13 @@
 
 #include <sstream>
 
-#include "ParameterUpdaterFactory.h"
+#include "DynamicParameterFactory.h"
 #include "utils/Assertions.h"
 #include "utils/Utils.h"
-#include "core/parameter_updaters/ConstantParameterUpdater.h"
-#include "core/parameter_updaters/LinearParameterUpdater.h"
-#include "core/parameter_updaters/ExponentialParameterUpdater.h"
-#include "core/parameter_updaters/PiecewiseParameterUpdater.h"
+#include "core/dynamic_parameters/ConstantDynamicParameter.h"
+#include "core/dynamic_parameters/LinearDynamicParameter.h"
+#include "core/dynamic_parameters/ExponentialDynamicParameter.h"
+#include "core/dynamic_parameters/PiecewiseDynamicParameter.h"
 
 
 namespace {
@@ -26,62 +26,62 @@ namespace {
     }
 }
 
-std::unique_ptr<ParameterUpdater> ParameterUpdaterFactory::create(std::string updaterString) {
+std::unique_ptr<DynamicParameter> DynamicParameterFactory::create(std::string updaterString) {
     ValidateMsg(!trim(updaterString).empty(), "Dynamic parameter cannot be empty");
 
-    std::istringstream updaterStream(updaterString);
-    std::string updaterName;
-    updaterStream >> updaterName;
-    ValidateMsg(updaterStream, "Malformed dynamic parameter");
+    std::istringstream paramStream(updaterString);
+    std::string paramType;
+    paramStream >> paramType;
+    ValidateMsg(paramStream, "Malformed dynamic parameter");
 
     // First trying reading it as an ordinary number
     try {
-        auto constantUpdater = std::make_unique<ConstantParameterUpdater>(convert_string<double>(updaterName));
-        ValidateMsg(fully_parsed(updaterStream), "Unexpected tokens after parameter value");
-        return constantUpdater;
+        auto constParam = std::make_unique<ConstantDynamicParameter>(convert_string<double>(paramType));
+        ValidateMsg(fully_parsed(paramStream), "Unexpected tokens after parameter value");
+        return constParam;
     } catch (StringConversionException&) { }
 
-    if (updaterName == "const") {
+    if (paramType == "const") {
         double value{};
-        updaterStream >> value;
-        ValidateMsg(fully_parsed(updaterStream), "Malformed const parameter. Usage: const [value]");
-        return std::make_unique<ConstantParameterUpdater>(value);
-    } else if (updaterName == "linear") {
+        paramStream >> value;
+        ValidateMsg(fully_parsed(paramStream), "Malformed const parameter. Usage: const [value]");
+        return std::make_unique<ConstantDynamicParameter>(value);
+    } else if (paramType == "linear") {
         double initialValue{}, slope{};
-        updaterStream >> initialValue >> slope;
-        ValidateMsg(fully_parsed(updaterStream), "Malformed linear parameter. Usage: const [initial value] [slope]; "
+        paramStream >> initialValue >> slope;
+        ValidateMsg(fully_parsed(paramStream), "Malformed linear parameter. Usage: const [initial value] [slope]; "
                                                  "value = [initial value] + slope * [cycle]");
-        return std::make_unique<LinearParameterUpdater>(slope, initialValue);
-    } else if (updaterName == "exp") {
+        return std::make_unique<LinearDynamicParameter>(slope, initialValue);
+    } else if (paramType == "exp") {
         double initialValue{}, rate{};
-        updaterStream >> initialValue >> rate;
-        ValidateMsg(fully_parsed(updaterStream), "Malformed exp parameter. Usage: const [initial value] [rate]; "
+        paramStream >> initialValue >> rate;
+        ValidateMsg(fully_parsed(paramStream), "Malformed exp parameter. Usage: const [initial value] [rate]; "
                                                  "value = [initial value] * exp(rate * [cycle])");
-        return std::make_unique<ExponentialParameterUpdater>(initialValue, rate);
-    } else if (updaterName == "piecewise") {
-        PiecewiseParameterUpdater::UpdaterList list;
-        std::string underlyingUpdaterData;
-        while (std::getline(updaterStream, underlyingUpdaterData, ',')) {
-            std::istringstream underlyingUpdaterDataStream(underlyingUpdaterData);
+        return std::make_unique<ExponentialDynamicParameter>(initialValue, rate);
+    } else if (paramType == "piecewise") {
+        PiecewiseDynamicParameter::ParameterList list;
+        std::string underlyingParamData;
+        while (std::getline(paramStream, underlyingParamData, ',')) {
+            std::istringstream underlyingParamDataStream(underlyingParamData);
             std::size_t cycle{};
-            std::string underlyingUpdater;
-            underlyingUpdaterDataStream >> cycle;
-            std::getline(underlyingUpdaterDataStream, underlyingUpdater);
-            ValidateMsg(!underlyingUpdaterDataStream.fail(), "Malformed piecewise parameter. Usage: piecewise "
-                                                             "[cycle 1] [dynamic parameter 1] , ...; [cycle 1] should "
-                                                             "be equal 0");
+            std::string underlyingParam;
+            underlyingParamDataStream >> cycle;
+            std::getline(underlyingParamDataStream, underlyingParam);
+            ValidateMsg(!underlyingParamDataStream.fail(), "Malformed piecewise parameter. Usage: piecewise "
+                                                           "[cycle 1] [dynamic parameter 1] , ...; [cycle 1] should "
+                                                           "be equal 0");
             try {
-                list.emplace_back(cycle, ParameterUpdaterFactory::create(underlyingUpdater));
+                list.emplace_back(cycle, DynamicParameterFactory::create(underlyingParam));
             } catch (ValidationException &validationException) {
-                throw ValidationException("Malformed parameter '" + underlyingUpdater + "' within piecewise parameter: "
+                throw ValidationException("Malformed parameter '" + underlyingParam + "' within piecewise parameter: "
                                           + validationException.what());
             }
         }
 
         ValidateMsg(!list.empty(), "Malformed piecewise parameter. Usage: piecewise "
                                    "[cycle 1] [dynamic parameter 1] , ...");
-        return std::make_unique<PiecewiseParameterUpdater>(std::move(list));
+        return std::make_unique<PiecewiseDynamicParameter>(std::move(list));
     } else {
-        throw ValidationException("Unknown or malformed dynamic parameter: " + updaterName);
+        throw ValidationException("Unknown or malformed dynamic parameter: " + paramType);
     }
 }
