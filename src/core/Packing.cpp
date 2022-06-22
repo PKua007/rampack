@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <chrono>
 #include <atomic>
+#include <functional>
 
 #include "Packing.h"
 #include "utils/Assertions.h"
@@ -425,6 +426,10 @@ std::size_t Packing::countParticleOverlaps(std::size_t originalParticleIdx, std:
             overlapsCounted += particlesOverlaps;
         }
     }
+
+    if (this->hasAnyWalls)
+        overlapsCounted += this->countParticleWallOverlaps(tempParticleIdx, interaction, earlyExit);
+
     return overlapsCounted;
 }
 
@@ -1147,5 +1152,63 @@ bool Packing::areShapesWithinBox(const std::vector<Shape> &shapes, const Triclin
             if (posCoord < 0 || posCoord >= 1)
                 return false;
     return true;
+}
+
+void Packing::toggleWall(std::size_t wallAxis, bool trueOrFalse) {
+    Expects(wallAxis < 3);
+    this->hasWall[wallAxis] = trueOrFalse;
+    this->hasAnyWalls = std::find(this->hasWall.begin(), this->hasWall.end(), true) != this->hasWall.end();
+}
+
+std::size_t Packing::countParticleWallOverlaps(std::size_t particleIdx, const Interaction &interaction,
+                                               bool earlyExit) const
+{
+    std::size_t countedOverlaps{};
+    const auto &sides = this->box.getSides();
+    Vector<3> origin{};
+    Vector<3> furtherOrigin = std::accumulate(sides.begin(), sides.end(), origin);
+    double halfTotalRangeRadius = interaction.getTotalRangeRadius();
+    for (std::size_t i{}; i < 3; i++) {
+        if (!this->hasWall[i])
+            continue;
+
+        std::size_t nextCoord = (i + 1) % 3;
+        std::size_t nextNextCoord = (i + 2) % 3;
+        Vector<3> wallVector = (sides[nextCoord] ^ sides[nextNextCoord]).normalized();
+        const auto &shapePos = this->shapes[particleIdx].getPosition();
+        const auto &shapeRot = this->shapes[particleIdx].getOrientation();
+        if (shapePos * wallVector < halfTotalRangeRadius) {
+            if (this->numInteractionCentres == 0) {
+                if (interaction.overlapWithWall(shapePos, shapeRot, 0, origin, wallVector)) {
+                    if (earlyExit) return 1;
+                    countedOverlaps++;
+                }
+            } else {
+                for (std::size_t centre{}; centre < this->numInteractionCentres; centre++) {
+                    Vector<3> centrePos = shapePos + this->interactionCentres[centre];
+                    if (interaction.overlapWithWall(centrePos, shapeRot, centre, origin, wallVector)) {
+                        if (earlyExit) return 1;
+                        countedOverlaps++;
+                    }
+                }
+            }
+        } else if ((furtherOrigin - shapePos) * wallVector < halfTotalRangeRadius) {
+            if (this->numInteractionCentres == 0) {
+                if (interaction.overlapWithWall(shapePos, shapeRot, 0, furtherOrigin, -wallVector)) {
+                    if (earlyExit) return 1;
+                    countedOverlaps++;
+                }
+            } else {
+                for (std::size_t centre{}; centre < this->numInteractionCentres; centre++) {
+                    Vector<3> centrePos = shapePos + this->interactionCentres[centre];
+                    if (interaction.overlapWithWall(centrePos, shapeRot, centre, furtherOrigin, -wallVector)) {
+                        if (earlyExit) return 1;
+                        countedOverlaps++;
+                    }
+                }
+            }
+        }
+    }
+    return countedOverlaps;
 }
 

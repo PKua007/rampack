@@ -49,6 +49,9 @@ private:
     std::size_t moveThreads{};
     std::size_t scalingThreads{};
 
+    bool hasAnyWalls{};
+    std::array<bool, 3> hasWall{};
+
     bool overlapCounting{};
     std::size_t numOverlaps{};
 
@@ -104,6 +107,8 @@ private:
     // Helper method for a single NG cell when checking all particles
     [[nodiscard]] std::size_t countTotalOverlapsNGCellHelper(const std::array<std::size_t, 3> &coord,
                                                              const Interaction &interaction, bool earlyExit) const;
+    [[nodiscard]] std::size_t countParticleWallOverlaps(std::size_t particleIdx, const Interaction &interaction,
+                                                        bool earlyExit) const;
 
     // Analogous helper methods as for overlaps but for energy
     [[nodiscard]] double calculateParticleEnergy(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
@@ -227,7 +232,9 @@ public:
      * performed in methods like Packing::tryMove and Packing::tryScaling when the first overlap is found.
      * @details When toggled @a false, move methods work faster, however number of overlaps is not tracked.
      */
-     void toggleOverlapCounting(bool countOverlaps, const Interaction &interaction);
+    void toggleOverlapCounting(bool countOverlaps, const Interaction &interaction);
+
+    void toggleWall(std::size_t wallAxis, bool trueOrFalse);
 
     [[nodiscard]] double getVolume() const;
 
