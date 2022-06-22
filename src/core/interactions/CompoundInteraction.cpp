@@ -50,11 +50,11 @@ bool CompoundInteraction::overlapBetween(const Vector<3> &pos1, const Matrix<3, 
 }
 
 bool CompoundInteraction::overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation, std::size_t idx,
-                                          std::size_t wallAxis, double wallPos, bool isWallPositive) const
+                                          const Vector<3> &wallOrigin,  const Vector<3> &wallVector) const
 {
-    if (this->hasWallPart1 && interaction1.overlapWithWall(pos, orientation, idx, wallAxis, wallPos, isWallPositive))
+    if (this->hasWallPart1 && this->interaction1.overlapWithWall(pos, orientation, idx, wallOrigin, wallVector))
         return true;
-    if (this->hasWallPart2 && interaction2.overlapWithWall(pos, orientation, idx, wallAxis, wallPos, isWallPositive))
+    if (this->hasWallPart2 && this->interaction2.overlapWithWall(pos, orientation, idx, wallOrigin, wallVector))
         return true;
     return false;
 }

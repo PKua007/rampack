@@ -117,9 +117,8 @@ TEST_CASE("CompoundInteraction") {
     Vector<3> pos1{1, 2, 3}, pos2{4, 5, 6};
     Matrix<3, 3> rot1{1, 0, 0, 0, 1, 0, 0, 0, 1}, rot2{0, 1, 0, 0, 0, 1, 1, 0, 0};
     std::size_t idx1{1}, idx2{2};
-    std::size_t wallAxis{1};
-    double wallCoord{5.5};
-    bool isWallPositive{true};
+    Vector<3> wallOrigin{0, 0, 0};
+    Vector<3> wallVector{0, 0, 1};
     PeriodicBoundaryConditions bc;
 
     SECTION("hard + soft overlap and energy") {
@@ -157,11 +156,11 @@ TEST_CASE("CompoundInteraction") {
                                            std::make_tuple(true, true, true));
 
         DYNAMIC_SECTION(std::boolalpha << ov1 << " and " << ov2 << " give " << result) {
-            ALLOW_CALL(wall, overlapWithWall(pos1, rot1, idx1, wallAxis, wallCoord, isWallPositive)).RETURN(ov1);
-            ALLOW_CALL(wall2, overlapWithWall(pos1, rot1, idx1, wallAxis, wallCoord, isWallPositive)).RETURN(ov2);
+            ALLOW_CALL(wall, overlapWithWall(pos1, rot1, idx1, wallOrigin, wallVector)).RETURN(ov1);
+            ALLOW_CALL(wall2, overlapWithWall(pos1, rot1, idx1, wallOrigin, wallVector)).RETURN(ov2);
             CompoundInteraction compound(wall, wall2);
 
-            CHECK(compound.overlapWithWall(pos1, rot1, idx1, wallAxis, wallCoord, isWallPositive) == result);
+            CHECK(compound.overlapWithWall(pos1, rot1, idx1, wallOrigin, wallVector) == result);
         }
     }
 

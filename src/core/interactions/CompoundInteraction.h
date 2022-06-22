@@ -50,7 +50,7 @@ public:
                                       const BoundaryConditions &bc) const override;
 
     [[nodiscard]] bool overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation, std::size_t idx,
-                                       std::size_t wallAxis, double wallPos, bool isWallPositive) const override;
+                                       const Vector<3> &wallOrigin, const Vector<3> &wallVector) const override;
 };
 
 

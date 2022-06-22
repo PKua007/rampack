@@ -21,8 +21,8 @@ public:
     MAKE_CONST_MOCK7(overlapBetween, bool(const Vector<3> &, const Matrix<3, 3> &, std::size_t, const Vector<3> &,
                                           const Matrix<3, 3> &, std::size_t, const BoundaryConditions &),
                      override);
-    MAKE_CONST_MOCK6(overlapWithWall, bool(const Vector<3> &, const Matrix<3, 3> &, std::size_t, std::size_t, double,
-                                           bool),
+    MAKE_CONST_MOCK5(overlapWithWall, bool(const Vector<3> &, const Matrix<3, 3> &, std::size_t, const Vector<3> &,
+                                           const Vector<3> &),
                      override);
     MAKE_CONST_MOCK0(getRangeRadius, double(), override);
     MAKE_CONST_MOCK0(getInteractionCentres, std::vector<Vector<3>>(), override);

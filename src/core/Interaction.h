@@ -84,9 +84,8 @@ public:
     [[nodiscard]] virtual bool overlapWithWall([[maybe_unused]] const Vector<3> &pos,
                                                [[maybe_unused]] const Matrix<3, 3> &orientation,
                                                [[maybe_unused]] std::size_t idx,
-                                               [[maybe_unused]] std::size_t wallAxis,
-                                               [[maybe_unused]] double wallPos,
-                                               [[maybe_unused]] bool isWallPositive) const
+                                               [[maybe_unused]] const Vector<3> &wallOrigin,
+                                               [[maybe_unused]] const Vector<3> &wallVector) const
     {
         return false;
     }
