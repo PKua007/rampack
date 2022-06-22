@@ -1,15 +1,17 @@
 # rampack
 
 Random And Maximal PACKing PACKage - the software enabling simulation of particle systems using different packing
-methods.  Currently, it supports only Monte Carlo sampling, however more algorithms are coming in the future. The
-package includes also some utility tools. The current interface is not final and is subject to change, so this
-description will provide only a general overview and often instruct to inspect the example input file
-`sample_integration.ini` and other sample input files in `sample_inputs` directory, as well as the `--help` option.
+methods. Currently, it supports elastic and extensible monodisperse Monte Carlo sampling (with features such as full
+isobaric-isotension relaxation in a triclinic boc, many types of molecule moves, overlap relaxation, etc.) and more
+algorithms are coming the future (eg. Torquato-Jiao MRJ scheme). The package includes also some utility tools. The
+current interface is not final and is subject to change, so this description will provide only a general overview and
+often instruct to inspect the example input file `sample_integration.ini` and other sample input files in
+`sample_inputs` directory, as well as the `--help` option.
 
 ## Operation modes
 
-A whole functionality is provided within a single compiled binary. The operation mode can be selected using the first
-command line argument:
+The whole functionality is provided within a single compiled binary. A C++ static linked library and Python bindings are
+coming in the future. The operation mode can be selected using the first command line argument:
 
 ```shell
 ./rampack [mode] (mode-specific arguments and options)
@@ -30,12 +32,12 @@ A general built-in help is available under `./rampack --help`. Mode-specific gui
 
 The `casino` mode is used to perform Monte Carlo simulations. Currently, available simulation types are NpT integration
 and reduction of overlaps. The submodule is optimized for hard-core repulsion, however some soft interaction potentials
-are also available. The parameters of the  simulation are provided within an INI input file and passed using
-`-i [input file]` option. All details regarding the input file and NpT integration are described in an example 
-`sample_input/integration.ini`. Overlap reduction is described in `sample_input/overlap_reduction.ini`. The anonymous
-INI section at the beginning describes the initial conditions of the system, particle model and interaction model as
-well as specifies technical parameters such as number of threads and initial Monte Carlo step extents. Then, one or more
-Monte Carlo runs  are specified. Each run can be either NpT integration or overlap reduction. The runs are performed
+are also available. The parameters of the simulation are provided within an INI input file and are passed using
+`-i [input file]` option. All details regarding the input file and NpT integration are described in an exemplary input 
+file `sample_input/integration.ini`. Overlap reduction is described in `sample_input/overlap_reduction.ini`. The
+anonymous INI section at the beginning describes the initial conditions of the system, particle model and interaction
+model as well as specifies technical parameters such as number of threads and initial Monte Carlo step extents. Then,
+one or more Monte Carlo runs are specified. Each run can be either NpT integration or overlap reduction. The runs are performed
 sequentially in the order specified in the input file and the final state of a finished run is used as a starting point
 of the next one (apart from the first run, whose initial configuration is specified in at the beginning). Each run
 corresponds to an INI section named (including the brackets) `[integration.run_name]` for integration and
@@ -48,11 +50,13 @@ Currently, when the run is finished the software can output the following data:
   the contents and manually paste in an empty Mathematica notebook) (both run types)
 * a csv-like table containing values of specified observables taken at given intervals of time (both run types)
 * ensemble-averaged values of some observables (only NpT integration)
+* a compact, binary recording of a simulation (trajectories), which can be used later for example to recalculate  
+  observable averages (both run types)
 
 The example input file `sample_inputs/integration.ini` describes the simulation of hard-core balls. It starts with a
 gaseous phase, which is then compressed to a degenerate liquid in the second run and in the third one is freezes into
 hcp crystalline structure. Another example input file `sample_inputs/overlap_reduction.ini` performs  reduction of
-overlaps of too tightly packed hard spheres followed by NpT run.
+overlaps of too tightly packed hard spheres followed by an NpT run to gather averages.
 
 The behavior of the `casino` mode can be altered using command-line options described in `./rampack casino --help`. For
 example, one can continue a finished run for more cycles or start from any run if the previous run has been finished
@@ -61,8 +65,8 @@ in the past and the internal packing representation `*.dat` file has been stored
 ### preview
 
 The `preview` mode enables one to create the initial configuration from a given input file specified by `-i` option
-and export it to internal and/or Wolfram Mathematica format. It may prove useful if one wants to eg. tweak the lattice
-parameters using a visual inspection. The options are described in `./rampack preview --help`.
+and export it to internal and/or Wolfram Mathematica format. It may prove itself useful if one wants to eg. tweak the
+lattice parameters using a visual inspection. The options are described in `./rampack preview --help`.
 
 ### optimize-distance
 
@@ -74,10 +78,10 @@ intelligent optimization, similar to the one done by `initialArrangement` input 
 
 ### trajectory
 
-The `optimize-distance` mode is used to analyze trajectories recorded during the simulation (see `recordingFilename`
-parameter description in `sample_inputs/integration.ini`). Using appropriate options (see
-`./rampack optimize-distance --help`) one can for example replay the simulation and calculate some observables which
-were not computed during the original run.
+The `trajectory` mode is used to analyze trajectories recorded during the simulation (see `recordingFilename` parameter
+description in `sample_inputs/integration.ini`). Using appropriate options (see `./rampack optimize-distance --help`)
+one can for example replay the simulation and calculate some observables which were not computed during the original
+run.
 
 ## Compilation
 
@@ -90,9 +94,9 @@ cd build
 cmake ../ -DCMAKE_BUILD_TYPE=Release
 ```
 
-GCC with C++17 support is required (version 7). If gcc and g++ commands are aliased to a lower version, or to clang
-(the default behaviour on macOS), you have to specify the path manually using cmake options `-DCMAKE_C_COMPILER=...`,
-`-DCMAKE_CXX_COMPILER=...`.
+GCC with C++17 support is required (at least version 7). If gcc and g++ commands are aliased to a lower version, or to
+clang (the default behaviour on macOS), you have to specify the path manually using cmake options
+`-DCMAKE_C_COMPILER=...`, `-DCMAKE_CXX_COMPILER=...`.
 
 Now, in the build folder, you can use `make rampack` to build the program (the binary will appear in `src` subfolder).
 You can use `-j` option with a number of threads for a parallel compilation. 
@@ -115,15 +119,18 @@ The package is designed in an OOP fashion and many elements are tweakable and ex
 interfaces. The examples are:
 
 * additional shapes can be added by extending `core/ShapeTraits` class. The class itself presents an interface
-  `core/Interaction` to further abstract away the interaction (and enables the support of many of them) and
-  `core/ShapePrinter` for Wolfram Mathematica output. One can also implement all three interfaces in a one class.
-  The shape parsing is done by `frontend/ShapeFactory`, so new shapes have to be registered there
+  `core/Interaction` to further abstract away the interaction (and enables the support of many of them), 
+  `core/ShapeGeometry` to represent geometric properties of a shape and `core/ShapePrinter` for Wolfram Mathematica
+  output. One can implement all three interfaces in a one class. The shape parsing is done by `frontend/ShapeFactory`,
+  so new shapes have to be registered there
 * observables implement `core/Observable` interface. They should be registered in `frontend/ObservableCollectorFactory`
 * molecule move sampling schemes (translation, rotation, flip, etc.) are provided by `core/MoveSampler` interface. They
   are registered in`frontend/MoveSamplerFactory`
 * volume scaling scheme (all dimensions at once vs a single one a time, linear vs logarithmic, etc.) is provided by
   `core/VolumeScaler` and `core/TriclinicBoxScaler` interfaces. They are registered in
   `frontend/TriclinicVolumeScalerFactory`
+* dynamic parameters (changing with a current cycle number) used for non-constant temperature and/or pressure are
+  provided by `core/DynamicParameter` interface. They are registered in `frontend/DynamicParameterFactory`
 
 ### Documentation
 
@@ -146,5 +153,8 @@ guidelines are provided at the moment, but the general rules are:
   should be passed using constant references. Not following it in one place can cause problems in many other parts of
   the code down the line
 * symbols should be named expressively
+* one should use GSL-like preconditions and postconditions (`Expects` and `Ensures`) to validate method parameters
+  and/or method output. Macros are available in `utils/Assertions.h` header. There is also `Validate` macro, which can
+  be conveniently used to verify user input
 * some performance may be sacrificed for readability, however with C++ it is almost always possible to write code which
   is both rapid and clean
