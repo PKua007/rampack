@@ -2,11 +2,11 @@
 
 Random And Maximal PACKing PACKage - the software enabling simulation of particle systems using different packing
 methods. Currently, it supports elastic and extensible monodisperse Monte Carlo sampling (with features such as full
-isobaric-isotension relaxation in a triclinic boc, many types of molecule moves, overlap relaxation, etc.) and more
+isobaric-isotension relaxation in a triclinic box, many types of molecule moves, overlap relaxation, etc.) and more
 algorithms are coming the future (eg. Torquato-Jiao MRJ scheme). The package includes also some utility tools. The
 current interface is not final and is subject to change, so this description will provide only a general overview and
-often instruct to inspect the example input file `sample_integration.ini` and other sample input files in
-`sample_inputs` directory, as well as the `--help` option.
+often instruct to inspect the example input file `integration.ini` and other sample input files in `sample_inputs`
+directory, as well as the `--help` option.
 
 ## Operation modes
 
