@@ -51,6 +51,7 @@ public:
     void installOnCentres(const std::vector<Vector<3>> &centres) { this->potentialCentres = centres; }
 
     [[nodiscard]] bool hasHardPart() const final { return false; }
+    [[nodiscard]] bool hasWallPart() const final { return false; }
     [[nodiscard]] bool hasSoftPart() const final { return true; }
 
     [[nodiscard]] double calculateEnergyBetween(const Vector<3> &pos1,

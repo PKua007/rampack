@@ -22,6 +22,7 @@ namespace {
         [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return this->interactionCentres; }
         [[nodiscard]] bool hasHardPart() const override { return false; }
         [[nodiscard]] bool hasSoftPart() const override { return false; }
+        [[nodiscard]] bool hasWallPart() const override { return false; }
     };
 }
 

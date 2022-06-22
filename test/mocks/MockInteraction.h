@@ -13,12 +13,16 @@ class MockInteraction : public Interaction {
 public:
     MAKE_CONST_MOCK0(hasHardPart, bool(), override);
     MAKE_CONST_MOCK0(hasSoftPart, bool(), override);
+    MAKE_CONST_MOCK0(hasWallPart, bool(), override);
     MAKE_CONST_MOCK7(calculateEnergyBetween, double(const Vector<3> &, const Matrix<3, 3> &, std::size_t,
                                                     const Vector<3> &, const Matrix<3, 3> &, std::size_t,
                                                     const BoundaryConditions &),
                      override);
     MAKE_CONST_MOCK7(overlapBetween, bool(const Vector<3> &, const Matrix<3, 3> &, std::size_t, const Vector<3> &,
                                           const Matrix<3, 3> &, std::size_t, const BoundaryConditions &),
+                     override);
+    MAKE_CONST_MOCK6(overlapWithWall, bool(const Vector<3> &, const Matrix<3, 3> &, std::size_t, std::size_t, double,
+                                           bool),
                      override);
     MAKE_CONST_MOCK0(getRangeRadius, double(), override);
     MAKE_CONST_MOCK0(getInteractionCentres, std::vector<Vector<3>>(), override);

@@ -22,6 +22,7 @@ namespace {
 
         [[nodiscard]] bool hasHardPart() const override { return true; }
         [[nodiscard]] bool hasSoftPart() const override { return false; }
+        [[nodiscard]] bool hasWallPart() const override { return false; }
 
         [[nodiscard]] bool overlapBetween(const Vector<3> &pos1,
                                           [[maybe_unused]] const Matrix<3, 3> &orientaton1,
@@ -41,6 +42,7 @@ namespace {
     public:
         [[nodiscard]] bool hasHardPart() const override { return false; }
         [[nodiscard]] bool hasSoftPart() const override { return true; }
+        [[nodiscard]] bool hasWallPart() const override { return false; }
 
         [[nodiscard]] double calculateEnergyBetween(const Vector<3> &pos1,
                                                     [[maybe_unused]] const Matrix<3, 3> &orientaton1,

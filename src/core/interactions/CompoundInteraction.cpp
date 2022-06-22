@@ -18,6 +18,8 @@ CompoundInteraction::CompoundInteraction(const Interaction &interaction1, const 
     this->hasHardPart2 = this->interaction2.hasHardPart();
     this->hasSoftPart1 = this->interaction1.hasSoftPart();
     this->hasSoftPart2 = this->interaction2.hasSoftPart();
+    this->hasWallPart1 = this->interaction1.hasWallPart();
+    this->hasWallPart2 = this->interaction2.hasWallPart();
     this->rangeRadius = std::max(this->interaction1.getRangeRadius(), this->interaction2.getRangeRadius());
     this->totalRangeRadius = std::max(this->interaction1.getTotalRangeRadius(),
                                       this->interaction2.getTotalRangeRadius());
@@ -43,6 +45,16 @@ bool CompoundInteraction::overlapBetween(const Vector<3> &pos1, const Matrix<3, 
     if (this->hasHardPart1 && this->interaction1.overlapBetween(pos1, orientation1, idx1, pos2, orientation2, idx2, bc))
         return true;
     if (this->hasHardPart2 && this->interaction2.overlapBetween(pos1, orientation1, idx1, pos2, orientation2, idx2, bc))
+        return true;
+    return false;
+}
+
+bool CompoundInteraction::overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation, std::size_t idx,
+                                          std::size_t wallAxis, double wallPos, bool isWallPositive) const
+{
+    if (this->hasWallPart1 && interaction1.overlapWithWall(pos, orientation, idx, wallAxis, wallPos, isWallPositive))
+        return true;
+    if (this->hasWallPart2 && interaction2.overlapWithWall(pos, orientation, idx, wallAxis, wallPos, isWallPositive))
         return true;
     return false;
 }

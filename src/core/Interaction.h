@@ -32,6 +32,8 @@ public:
      */
     [[nodiscard]] virtual bool hasSoftPart() const = 0;
 
+    [[nodiscard]] virtual bool hasWallPart() const = 0;
+
     /**
      * @brief Returns the soft interaction energy between two interaction centers of two molecules (for example two
      * Lennard-Jones interaction centres in a complex molecule)
@@ -74,6 +76,17 @@ public:
                                               [[maybe_unused]] const Matrix<3, 3> &orientation2,
                                               [[maybe_unused]] std::size_t idx2,
                                               [[maybe_unused]] const BoundaryConditions &bc) const
+    {
+        return false;
+    }
+
+
+    [[nodiscard]] virtual bool overlapWithWall([[maybe_unused]] const Vector<3> &pos,
+                                               [[maybe_unused]] const Matrix<3, 3> &orientation,
+                                               [[maybe_unused]] std::size_t idx,
+                                               [[maybe_unused]] std::size_t wallAxis,
+                                               [[maybe_unused]] double wallPos,
+                                               [[maybe_unused]] bool isWallPositive) const
     {
         return false;
     }

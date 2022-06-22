@@ -23,6 +23,8 @@ private:
     bool hasSoftPart2;
     bool hasHardPart1;
     bool hasHardPart2;
+    bool hasWallPart1;
+    bool hasWallPart2;
 
 public:
     /**
@@ -33,6 +35,7 @@ public:
 
     [[nodiscard]] bool hasHardPart() const override { return this->hasHardPart1 || this->hasHardPart2; }
     [[nodiscard]] bool hasSoftPart() const override { return this->hasSoftPart1 || this->hasSoftPart2; }
+    [[nodiscard]] bool hasWallPart() const override { return this->hasWallPart1 || this->hasWallPart2; }
     [[nodiscard]] double getRangeRadius() const override { return this->rangeRadius; }
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return this->interactionCentres; }
     [[nodiscard]] double getTotalRangeRadius() const override { return this->totalRangeRadius; }
@@ -45,6 +48,9 @@ public:
     [[nodiscard]] bool overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1, std::size_t idx1,
                                       const Vector<3> &pos2, const Matrix<3, 3> &orientation2, std::size_t idx2,
                                       const BoundaryConditions &bc) const override;
+
+    [[nodiscard]] bool overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation, std::size_t idx,
+                                       std::size_t wallAxis, double wallPos, bool isWallPositive) const override;
 };
 
 
