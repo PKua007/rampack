@@ -522,9 +522,10 @@ std::size_t Packing::countTotalOverlapsNGCellHelper(const std::array<std::size_t
 }
 
 std::size_t Packing::countTotalOverlaps(const Interaction &interaction, bool earlyExit) const {
+    std::size_t overlapsCounted{};
+
     if (this->neighbourGrid.has_value()) {
         std::atomic<bool> overlapFound = false;
-        std::size_t overlapsCounted{};
         auto cellDivisions = this->neighbourGrid->getCellDivisions();
         #pragma omp parallel for collapse(3) default(none) shared(overlapFound, interaction, cellDivisions) \
                 firstprivate(earlyExit) reduction(+ : overlapsCounted) num_threads(this->scalingThreads)
@@ -544,9 +545,9 @@ std::size_t Packing::countTotalOverlaps(const Interaction &interaction, bool ear
             }
         }
 
-        return overlapsCounted;
+        if (earlyExit && overlapsCounted)
+            return 1;
     } else {
-        std::size_t overlapsCounted{};
         for (std::size_t i{}; i < this->size(); i++) {
             for (std::size_t j = i + 1; j < this->size(); j++) {
                 std::size_t particleOverlaps = this->countOverlapsBetweenParticlesWithoutNG(i, j, interaction,
@@ -557,8 +558,26 @@ std::size_t Packing::countTotalOverlaps(const Interaction &interaction, bool ear
                 overlapsCounted += particleOverlaps;
             }
         }
-        return overlapsCounted;
     }
+
+    if (!this->hasAnyWalls)
+        return overlapsCounted;
+
+    std::atomic<bool> overlapFound = false;
+    #pragma omp parallel default(none) shared(overlapFound, interaction) firstprivate(earlyExit) \
+            reduction(+ : overlapsCounted) num_threads(this->scalingThreads)
+    for (std::size_t i{}; i < this->size(); i++) {
+        if (earlyExit && overlapFound.load(std::memory_order_relaxed))
+            continue;
+
+        std::size_t particleWallOverlaps = this->countParticleWallOverlaps(i, interaction, earlyExit);
+        if (earlyExit && particleWallOverlaps > 0)
+            overlapFound.store(true, std::memory_order_relaxed);
+
+        overlapsCounted += particleWallOverlaps;
+    }
+
+    return overlapsCounted;
 }
 
 std::size_t Packing::countOverlapsBetweenParticlesWithoutNG(std::size_t tempParticleIdx, std::size_t anotherParticleIdx,
