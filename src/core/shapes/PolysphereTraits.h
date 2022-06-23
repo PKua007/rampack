@@ -99,10 +99,12 @@ private:
 
         [[nodiscard]] bool hasHardPart() const override { return true; }
         [[nodiscard]] bool hasSoftPart() const override { return false; }
-        [[nodiscard]] bool hasWallPart() const override { return false; }
+        [[nodiscard]] bool hasWallPart() const override { return true; }
         [[nodiscard]] bool overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1, std::size_t idx1,
                                           const Vector<3> &pos2, const Matrix<3, 3> &orientation2, std::size_t idx2,
                                           const BoundaryConditions &bc) const override;
+        [[nodiscard]] bool overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation, std::size_t idx,
+                                           const Vector<3> &wallOrigin, const Vector<3> &wallVector) const override;
 
         [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override;
 

@@ -25,7 +25,7 @@ TEST_CASE("PolyspherocylinderTraits") {
     // -2 -  #######
     //
     // O - middles of spherocylinders
-    // C - cap centres of spherocylinders (non common)
+    // C - cap centres of spherocylinders (non-common)
     // X - common cap of both spherocylinders
 
     PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({Data{{0, 0, 0}, {0, 0, 1}, 1},
@@ -83,8 +83,29 @@ TEST_CASE("PolyspherocylinderTraits") {
     }
 }
 
+TEST_CASE("PolyspherocylinderTraits: wall overlap") {
+    // It is V-shaped molecule with center at a common cap and rotated 45 degrees
+    PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({Data{{0.5, 0.5, 0}, {0.5, 0.5, 0}, 0.5},
+                                                                   Data{{0.5, -0.5, 0}, {0.5, -0.5, 0}, 0.5}},
+                                                                  {0, 1, 0}, {1, 0, 0}, {0, 0, 0});
+    PolyspherocylinderTraits traits(std::move(geometry));
+    const Interaction &interaction = traits.getInteraction();
+
+    CHECK(interaction.hasWallPart());
+
+    SECTION("overlapping") {
+        Shape shape({1.1, 1.1, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/4));
+        CHECK(interaction.overlapWithWallForShape(shape, {0, M_SQRT2 + 1.5, 0}, {0, -1, 0}));
+    }
+
+    SECTION("non-overlapping") {
+        Shape shape({0.9, 0.9, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/4));
+        CHECK_FALSE(interaction.overlapWithWallForShape(shape, {0, M_SQRT2 + 1.5, 0}, {0, -1, 0}));
+    }
+}
+
 TEST_CASE("PolyspherocylinderTraits: tests from SpherocylinderTraits") {
-    // There ase test cases shamelessly copied from SpherocylinderTraitsTest.cpp used to evaluate more thoroughly
+    // There are test cases shamelessly copied from SpherocylinderTraitsTest.cpp used to evaluate more thoroughly
     // the intersection criterion
 
     FreeBoundaryConditions fbc;

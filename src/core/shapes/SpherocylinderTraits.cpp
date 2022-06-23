@@ -52,3 +52,22 @@ std::string SpherocylinderTraits::toWolfram(const Shape &shape) const {
 Vector<3> SpherocylinderTraits::getPrimaryAxis(const Shape &shape) const {
     return shape.getOrientation().column(0);
 }
+
+bool SpherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation,
+                                           [[maybe_unused]] std::size_t idx, const Vector<3> &wallOrigin,
+                                           const Vector<3> &wallVector) const
+{
+    Vector<3> halfAxis = orientation.column(0) * (this->length/2);
+
+    Vector<3> cap1 = pos + halfAxis;
+    double dotProduct1 = wallVector * (cap1 - wallOrigin);
+    if (dotProduct1 < this->radius)
+        return true;
+
+    Vector<3> cap2 = pos - halfAxis;
+    double dotProduct2 = wallVector * (cap2 - wallOrigin);
+    if (dotProduct2 < this->radius)
+        return true;
+
+    return false;
+}

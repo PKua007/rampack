@@ -112,6 +112,23 @@ TEST_CASE("Spherocylinder: overlap") {
     }
 }
 
+TEST_CASE("Spherocylinder: wall overlap") {
+    SpherocylinderTraits traits(1, 0.5);
+    const Interaction &interaction = traits.getInteraction();
+
+    CHECK(interaction.hasWallPart());
+
+    SECTION("overlapping") {
+        Shape sc({1.1, 1.1, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/4));
+        CHECK(interaction.overlapWithWallForShape(sc, {0, 1.5 + M_SQRT2/4, 0}, {0, -1, 0}));
+    }
+
+    SECTION("non-overlapping") {
+        Shape sc({0.9, 0.9, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/4));
+        CHECK_FALSE(interaction.overlapWithWallForShape(sc, {0, 1.5 + M_SQRT2/4, 0}, {0, -1, 0}));
+    }
+}
+
 TEST_CASE("Spherocylinder: getVolume") {
     SpherocylinderTraits traits(3, 2);
 

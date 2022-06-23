@@ -68,3 +68,19 @@ double Interaction::getTotalRangeRadius() const {
 
     return 2*std::sqrt(maxRadius2) + range;
 }
+
+bool Interaction::overlapWithWallForShape(const Shape &shape, const Vector<3> &wallOrigin,
+                                          const Vector<3> &wallVector) const
+{
+    auto centres = this->getInteractionCentres();
+    if (centres.empty()) {
+        return this->overlapWithWall(shape.getPosition(), shape.getOrientation(), 0, wallOrigin, wallVector);
+    } else {
+        for (std::size_t i{}; i < centres.size(); i++) {
+            auto pos = Interaction::getCentrePositionForShape(shape, centres[i]);
+            if (this->overlapWithWall(pos, shape.getOrientation(), i, wallOrigin, wallVector))
+                return true;
+        }
+        return false;
+    }
+}

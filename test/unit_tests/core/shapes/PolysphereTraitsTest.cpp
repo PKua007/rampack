@@ -49,6 +49,22 @@ TEST_CASE("PolysphereTraits: hard interactions") {
         }
     }
 
+    SECTION("overlap with wall") {
+        const Interaction &interaction = traits.getInteraction();
+
+        CHECK(interaction.hasWallPart());
+
+        SECTION("overlapping") {
+            Shape shape({1.1, 1.1, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/2));
+            CHECK(interaction.overlapWithWallForShape(shape, {0, 5, 0}, {0, -1, 0}));
+        }
+
+        SECTION("non-overlapping") {
+            Shape shape({0.9, 0.9, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/2));
+            CHECK_FALSE(interaction.overlapWithWallForShape(shape, {0, 5, 0}, {0, -1, 0}));
+        }
+    }
+
     SECTION("toWolfram") {
         Shape shape({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0));
 

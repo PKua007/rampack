@@ -136,3 +136,23 @@ double PolyspherocylinderTraits::getRangeRadius() const {
     return 2 * maxIt->circumsphereRadius;
 }
 
+bool PolyspherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation, std::size_t idx,
+                                               const Vector<3> &wallOrigin, const Vector<3> &wallVector) const
+{
+    const auto &spherocylinderData = this->getSpherocylinderData()[idx];
+    Vector<3> halfAxis = orientation * spherocylinderData.halfAxis;
+    double radius = spherocylinderData.radius;
+
+    Vector<3> cap1 = pos - halfAxis;
+    double dotProduct1 = wallVector * (cap1 - wallOrigin);
+    if (dotProduct1 < radius)
+        return true;
+
+    Vector<3> cap2 = pos + halfAxis;
+    double dotProduct2 = wallVector * (cap2 - wallOrigin);
+    if (dotProduct2 < radius)
+        return true;
+
+    return false;
+}
+

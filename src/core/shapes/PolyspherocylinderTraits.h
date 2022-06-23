@@ -20,7 +20,7 @@ public:
      * @details Spherocylinder cap centers are given by @a posision +/- @a halfAxis
      */
     struct SpherocylinderData {
-        /** @brief Position of the mass centre of the spheroculinder. */
+        /** @brief Position of the mass centre of the spherocylinder. */
         const Vector<3> position;
         /** @brief The vector joining mass centre with one of the caps. */
         const Vector<3> halfAxis;
@@ -118,10 +118,13 @@ public:
 
     [[nodiscard]] bool hasHardPart() const override { return true; }
     [[nodiscard]] bool hasSoftPart() const override { return false; }
-    [[nodiscard]] bool hasWallPart() const override { return false; }
+    [[nodiscard]] bool hasWallPart() const override { return true; }
     [[nodiscard]] bool overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1, std::size_t idx1,
                                       const Vector<3> &pos2, const Matrix<3, 3> &orientation2, std::size_t idx2,
                                       const BoundaryConditions &bc) const override;
+    [[nodiscard]] bool overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation, std::size_t idx,
+                                       const Vector<3> &wallOrigin, const Vector<3> &wallVector) const override;
+
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override;
     [[nodiscard]] double getRangeRadius() const override;
 

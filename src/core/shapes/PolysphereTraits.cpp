@@ -88,6 +88,15 @@ PolysphereTraits::HardInteraction::HardInteraction(std::vector<SphereData> spher
     Expects(!this->sphereData.empty());
 }
 
+bool PolysphereTraits::HardInteraction::overlapWithWall(const Vector<3> &pos,
+                                                        [[maybe_unused]] const Matrix<3, 3> &orientation,
+                                                        std::size_t idx, const Vector<3> &wallOrigin,
+                                                        const Vector<3> &wallVector) const
+{
+    double dotProduct = wallVector * (pos - wallOrigin);
+    return dotProduct < this->sphereData[idx].radius;
+}
+
 double PolysphereTraits::PolysphereGeometry::getVolume() const {
     auto volumeAccumulator = [](double volume, const SphereData &data) {
         return volume + 4*M_PI/3 * data.radius * data.radius * data.radius;

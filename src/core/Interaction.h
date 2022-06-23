@@ -124,6 +124,10 @@ public:
      */
     [[nodiscard]] bool overlapBetweenShapes(const Shape &shape1, const Shape &shape2,
                                             const BoundaryConditions &bc) const;
+
+
+    [[nodiscard]] bool overlapWithWallForShape(const Shape &shape, const Vector<3> &wallOrigin,
+                                               const Vector<3> &wallVector) const;
 };
 
 

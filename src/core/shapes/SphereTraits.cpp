@@ -40,3 +40,13 @@ bool SphereTraits::HardInteraction::overlapBetween(const Vector<3> &pos1,
 {
     return bc.getDistance2(pos1, pos2) < std::pow(2 * this->radius, 2);
 }
+
+bool SphereTraits::HardInteraction::overlapWithWall(const Vector<3> &pos,
+                                                    [[maybe_unused]] const Matrix<3, 3> &orientation,
+                                                    [[maybe_unused]] std::size_t idx,
+                                                    const Vector<3> &wallOrigin,
+                                                    const Vector<3> &wallVector) const
+{
+    double dotProduct = wallVector * (pos - wallOrigin);
+    return dotProduct < this->radius;
+}

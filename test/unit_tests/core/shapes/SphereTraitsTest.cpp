@@ -43,6 +43,23 @@ TEST_CASE("Sphere: overlap") {
     }
 }
 
+TEST_CASE("Sphere: wall overlap") {
+    SphereTraits sphereTraits(0.5);
+    const Interaction &interaction = sphereTraits.getInteraction();
+
+    CHECK(interaction.hasWallPart());
+
+    SECTION("overlapping") {
+        Shape sphere({0.4 + M_SQRT2/4, 0.4 + M_SQRT2/4, 5});
+        CHECK(interaction.overlapWithWallForShape(sphere, {0, 1, 0}, {M_SQRT1_2, M_SQRT1_2, 0}));
+    }
+
+    SECTION("non-overlapping") {
+        Shape sphere({0.6 + M_SQRT2/4, 0.6 + M_SQRT2/4, 5});
+        CHECK_FALSE(interaction.overlapWithWallForShape(sphere, {0, 1, 0}, {M_SQRT1_2, M_SQRT1_2, 0}));
+    }
+}
+
 TEST_CASE("Sphere: toWolfram") {
     SphereTraits sphereTraits(2);
     PeriodicBoundaryConditions pbc(10);
