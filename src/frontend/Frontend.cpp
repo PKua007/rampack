@@ -253,6 +253,8 @@ int Frontend::casino(int argc, char **argv) {
                                                      scalingThreads, scalingThreads);
     }
 
+    this->createWalls(*packing, params.walls);
+
     // Perform simulations starting from initial run
     Simulation simulation(std::move(packing), std::move(moveSamplers), params.volumeStepSize, params.seed,
                           std::move(triclinicBoxScaler), domainDivisions, params.saveOnSignal);
@@ -714,6 +716,7 @@ int Frontend::preview(int argc, char **argv) {
     auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
                                                       params.initialArrangement, std::move(bc),
                                                       shapeTraits->getInteraction(), shapeTraits->getGeometry(), 1, 1);
+    this->createWalls(*packing, params.walls);
 
     // Parse move type
     auto moveSamplerStrings = explode(params.moveTypes, ',');
@@ -907,6 +910,7 @@ int Frontend::trajectory(int argc, char **argv) {
     auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
                                                       params.initialArrangement, std::move(bc),
                                                       shapeTraits->getInteraction(), shapeTraits->getGeometry(), 1, 1);
+    this->createWalls(*packing, params.walls);
 
     auto trajectoryStream = std::make_unique<std::ifstream>(trajectoryFilename,
                                                                          std::ios_base::in | std::ios_base::binary);
@@ -945,4 +949,17 @@ int Frontend::trajectory(int argc, char **argv) {
     }
 
     return EXIT_SUCCESS;
+}
+
+void Frontend::createWalls(Packing &packing, const std::string &walls) {
+    for (char c : walls) {
+        if (std::isspace(c))
+            continue;
+        switch (std::tolower(c)) {
+            case 'x':   packing.toggleWall(0, true);    break;
+            case 'y':   packing.toggleWall(1, true);    break;
+            case 'z':   packing.toggleWall(2, true);    break;
+            default:    throw ValidationException("unknown wall axis: " + std::string{c});
+        }
+    }
 }

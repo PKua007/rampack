@@ -35,6 +35,7 @@ private:
                            std::optional<std::string> auxVerbosity);
     Logger::LogType parseVerbosityLevel(const std::string &verbosityLevelName) const;
     std::unique_ptr<SimulationRecorder> loadSimulationRecorder(const std::string &filename, bool &isContinuation) const;
+    void createWalls(Packing &packing, const std::string &walls);
 
     void performIntegration(Simulation &simulation, const Parameters::IntegrationParameters &runParams,
                             const ShapeTraits &shapeTraits, size_t cycleOffset, bool isContinuation);

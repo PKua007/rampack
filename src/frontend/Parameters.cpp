@@ -21,6 +21,8 @@ Parameters::Parameters(std::istream &input) {
             this->numOfParticles = generalConfig.getUnsignedLong("numOfParticles");
         else if (key == "initialArrangement")
             this->initialArrangement = generalConfig.getString("initialArrangement");
+        else if (key == "walls")
+            this->walls = generalConfig.getString("walls");
         else if (key == "moveTypes")
             this->moveTypes = generalConfig.getString("moveTypes");
         else if (key == "volumeStepSize")
@@ -75,6 +77,7 @@ void Parameters::print(Logger &logger) const {
     logger.info() << "initialDimensions : " << this->initialDimensions << std::endl;
     logger.info() << "initialArangement : " << this->initialArrangement << std::endl;
     logger.info() << "numOfParticles    : " << this->numOfParticles << std::endl;
+    logger.info() << "walls             : " << this->walls << std::endl;
     logger.info() << "moveTypes         : " << this->moveTypes << std::endl;
     logger.info() << "volumeStepSize    : " << this->volumeStepSize << std::endl;
     logger.info() << "seed              : " << this->seed << std::endl;

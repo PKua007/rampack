@@ -92,6 +92,7 @@ public:
     std::string initialDimensions{};
     std::string initialArrangement{};
     std::size_t numOfParticles{};
+    std::string walls{};
     std::string moveTypes{};
     double volumeStepSize{};
     unsigned long seed{};
