@@ -21,10 +21,11 @@ public:
     explicit TriclinicAdapter(std::unique_ptr<VolumeScaler> volumeScaler) : volumeScaler{std::move(volumeScaler)} { }
 
     TriclinicBox updateBox(const TriclinicBox &oldBox, double scalingStepSize, std::mt19937 &mt) const override {
-        TriclinicBox newBox = oldBox;
         auto heights = oldBox.getHeights();
-        newBox.scale(this->volumeScaler->sampleScalingFactors(heights, scalingStepSize, mt));
-        return newBox;
+        auto factors = this->volumeScaler->sampleScalingFactors(heights, scalingStepSize, mt);
+        auto sides = oldBox.getSides();
+        std::transform(sides.begin(), sides.end(), factors.begin(), sides.begin(), std::multiplies<>{});
+        return TriclinicBox(sides);
     }
 };
 
