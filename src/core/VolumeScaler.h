@@ -13,22 +13,6 @@
  */
 class VolumeScaler {
 public:
-    /**
-     * @brief A helper enum class representing independent scaling directions.
-     */
-    enum class ScalingDirection {
-        /** @brief All directions scaled by the same random number. */
-        ISOTROPIC,
-        /** @brief x direction scaled by a different random number than y and z directions. */
-        ANISOTROPIC_X,
-        /** @brief y direction scaled by a different random number than x and z directions. */
-        ANISOTROPIC_Y,
-        /** @brief z direction scaled by a different random number than x and z directions. */
-        ANISOTROPIC_Z,
-        /** @brief All directions scaled by different random numbers. */
-        ANISOTROPIC_XYZ
-    };
-
     virtual ~VolumeScaler() = default;
 
     /**

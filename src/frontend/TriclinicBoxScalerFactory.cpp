@@ -7,45 +7,51 @@
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
 #include "core/volume_scalers/DeltaVolumeScaler.h"
-#include "core/volume_scalers/LinearVolumeScaler.h"
-#include "core/volume_scalers/LogVolumeScaler.h"
+#include "core/volume_scalers/AnisotropicVolumeScaler.h"
+#include "core/volume_scalers/LinearScalingFactorSampler.h"
+#include "core/volume_scalers/LogScalingFactorSampler.h"
 #include "core/volume_scalers/TriclinicAdapter.h"
 #include "core/volume_scalers/TriclinicDeltaScaler.h"
 
 namespace {
     std::unique_ptr<VolumeScaler> create_volume_scaler(std::string scalingType) {
         std::string independentString = "independent ";
-        bool scaleTogether = !startsWith(scalingType, independentString);
-        if (!scaleTogether)
+        bool independent = startsWith(scalingType, independentString);
+        if (independent)
             scalingType = scalingType.substr(independentString.length());
 
-        using ScalingDirection = VolumeScaler::ScalingDirection;
+        const auto &X = AnisotropicVolumeScaler::X;
+        const auto &Y = AnisotropicVolumeScaler::Y;
+        const auto &Z = AnisotropicVolumeScaler::Z;
+
+        auto linear = std::make_unique<LinearScalingFactorSampler>();
+        auto log = std::make_unique<LogScalingFactorSampler>();
 
         // Old delta V scaling
         if (scalingType == "delta V")
             return std::make_unique<DeltaVolumeScaler>();
         // Linear scaling
         else if (scalingType == "linear isotropic")
-            return std::make_unique<LinearVolumeScaler>(ScalingDirection::ISOTROPIC);
+            return std::make_unique<AnisotropicVolumeScaler>(std::move(linear), X && Y && Z, independent);
         else if (scalingType == "linear anisotropic x")
-            return std::make_unique<LinearVolumeScaler>(ScalingDirection::ANISOTROPIC_X);
+            return std::make_unique<AnisotropicVolumeScaler>(std::move(linear), X || (Y && Z), independent);
         else if (scalingType == "linear anisotropic y")
-            return std::make_unique<LinearVolumeScaler>(ScalingDirection::ANISOTROPIC_Y);
+            return std::make_unique<AnisotropicVolumeScaler>(std::move(linear), Y || (Z && X), independent);
         else if (scalingType == "linear anisotropic z")
-            return std::make_unique<LinearVolumeScaler>(ScalingDirection::ANISOTROPIC_Z);
+            return std::make_unique<AnisotropicVolumeScaler>(std::move(linear), Z || (X && Y), independent);
         else if (scalingType == "linear anisotropic xyz")
-            return std::make_unique<LinearVolumeScaler>(ScalingDirection::ANISOTROPIC_XYZ);
+            return std::make_unique<AnisotropicVolumeScaler>(std::move(linear), X || Y || Z, independent);
         // Log scaling
         else if (scalingType == "log isotropic")
-            return std::make_unique<LogVolumeScaler>(ScalingDirection::ISOTROPIC, scaleTogether);
+            return std::make_unique<AnisotropicVolumeScaler>(std::move(log), X && Y && Z, independent);
         else if (scalingType == "log anisotropic x")
-            return std::make_unique<LogVolumeScaler>(ScalingDirection::ANISOTROPIC_X, scaleTogether);
+            return std::make_unique<AnisotropicVolumeScaler>(std::move(log), X || (Y && Z), independent);
         else if (scalingType == "log anisotropic y")
-            return std::make_unique<LogVolumeScaler>(ScalingDirection::ANISOTROPIC_Y, scaleTogether);
+            return std::make_unique<AnisotropicVolumeScaler>(std::move(log), Y || (Z && X), independent);
         else if (scalingType == "log anisotropic z")
-            return std::make_unique<LogVolumeScaler>(ScalingDirection::ANISOTROPIC_Z, scaleTogether);
+            return std::make_unique<AnisotropicVolumeScaler>(std::move(log), Z || (X && Y), independent);
         else if (scalingType == "log anisotropic xyz")
-            return std::make_unique<LogVolumeScaler>(ScalingDirection::ANISOTROPIC_XYZ, scaleTogether);
+            return std::make_unique<AnisotropicVolumeScaler>(std::move(log), X || Y || Z, independent);
         else
             throw ValidationException("Unknown scaling type: " + scalingType);
     }
