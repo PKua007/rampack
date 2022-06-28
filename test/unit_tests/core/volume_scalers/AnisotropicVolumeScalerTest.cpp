@@ -25,7 +25,7 @@ TEST_CASE("AnisotropicVolumeScaler") {
         SECTION("isotropic") {
             ALLOW_CALL(*factorSampler, sampleFactors(ba{true, true, true}, da{1, 2, 3}, 4, _)).RETURN(da{5, 6, 7});
 
-            AnisotropicVolumeScaler scaler(std::move(factorSampler), X && Y && Z, false);
+            AnisotropicVolumeScaler scaler(std::move(factorSampler), X & Y & Z, false);
 
             CHECK(scaler.sampleScalingFactors({1, 2, 3}, 4, mt) == da{5, 6, 7});
         };
@@ -34,7 +34,7 @@ TEST_CASE("AnisotropicVolumeScaler") {
             ALLOW_CALL(*factorSampler, sampleFactors(ba{true, false, false}, da{1, 2, 3}, 4, _)).RETURN(da{5, 6, 7});
             ALLOW_CALL(*factorSampler, sampleFactors(ba{false, true, true}, da{1, 2, 3}, 4, _)).RETURN(da{8, 9, 10});
 
-            AnisotropicVolumeScaler scaler(std::move(factorSampler), X || (Y && Z), false);
+            AnisotropicVolumeScaler scaler(std::move(factorSampler), X | (Y & Z), false);
 
             CHECK(scaler.sampleScalingFactors({1, 2, 3}, 4, mt) == da{40, 54, 70});
         };
@@ -44,7 +44,7 @@ TEST_CASE("AnisotropicVolumeScaler") {
             ALLOW_CALL(*factorSampler, sampleFactors(ba{false, true, false}, da{1, 2, 3}, 4, _)).RETURN(da{8, 9, 10});
             ALLOW_CALL(*factorSampler, sampleFactors(ba{false, false, true}, da{1, 2, 3}, 4, _)).RETURN(da{1, 2, 3});
 
-            AnisotropicVolumeScaler scaler(std::move(factorSampler), X || Y || Z, false);
+            AnisotropicVolumeScaler scaler(std::move(factorSampler), X | Y | Z, false);
 
             CHECK(scaler.sampleScalingFactors({1, 2, 3}, 4, mt) == da{40, 108, 210});
         };
@@ -55,7 +55,7 @@ TEST_CASE("AnisotropicVolumeScaler") {
             ALLOW_CALL(*factorSampler, sampleFactors(ba{true, false, false}, da{1, 2, 3}, 4, _)).RETURN(da{5, 6, 7});
             ALLOW_CALL(*factorSampler, sampleFactors(ba{false, true, true}, da{1, 2, 3}, 4, _)).RETURN(da{8, 9, 10});
 
-            AnisotropicVolumeScaler scaler(std::move(factorSampler), X || (Y && Z), true);
+            AnisotropicVolumeScaler scaler(std::move(factorSampler), X | (Y & Z), true);
 
             auto factors = scaler.sampleScalingFactors({1, 2, 3}, 4, mt);
             CHECK((factors == da{5, 6, 7} || factors == da{8, 9, 10}));
@@ -66,7 +66,7 @@ TEST_CASE("AnisotropicVolumeScaler") {
             ALLOW_CALL(*factorSampler, sampleFactors(ba{false, true, false}, da{1, 2, 3}, 4, _)).RETURN(da{8, 9, 10});
             ALLOW_CALL(*factorSampler, sampleFactors(ba{false, false, true}, da{1, 2, 3}, 4, _)).RETURN(da{1, 2, 3});
 
-            AnisotropicVolumeScaler scaler(std::move(factorSampler), X || Y || Z, true);
+            AnisotropicVolumeScaler scaler(std::move(factorSampler), X | Y | Z, true);
 
             auto factors = scaler.sampleScalingFactors({1, 2, 3}, 4, mt);
             CHECK((factors == da{5, 6, 7} || factors == da{8, 9, 10} || factors == da{1, 2, 3}));

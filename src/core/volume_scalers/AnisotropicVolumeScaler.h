@@ -27,8 +27,13 @@ public:
         [[nodiscard]] bool empty() const { return this->directions.empty(); }
 
     public:
-        friend ScalingDirection operator||(const ScalingDirection &sd1, const ScalingDirection &sd2);
-        friend ScalingDirection operator&&(const ScalingDirection &sd1, const ScalingDirection &sd2);
+        ScalingDirection() = default;
+
+        friend ScalingDirection operator|(const ScalingDirection &sd1, const ScalingDirection &sd2);
+        friend ScalingDirection operator&(const ScalingDirection &sd1, const ScalingDirection &sd2);
+
+        ScalingDirection &operator|=(const ScalingDirection &sd2) { return *this = *this | sd2; };
+        ScalingDirection &operator&=(const ScalingDirection &sd2) { return *this = *this & sd2; };
     };
 
 private:

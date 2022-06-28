@@ -31,8 +31,8 @@ std::array<double, 3> AnisotropicVolumeScaler::sampleScalingFactors(const std::a
     }
 }
 
-AnisotropicVolumeScaler::ScalingDirection operator||(const AnisotropicVolumeScaler::ScalingDirection &sd1,
-                                                     const AnisotropicVolumeScaler::ScalingDirection &sd2)
+AnisotropicVolumeScaler::ScalingDirection operator|(const AnisotropicVolumeScaler::ScalingDirection &sd1,
+                                                    const AnisotropicVolumeScaler::ScalingDirection &sd2)
 {
     AnisotropicVolumeScaler::ScalingDirection result = sd1;
     for (const auto &elem2 : sd2.directions)
@@ -41,9 +41,14 @@ AnisotropicVolumeScaler::ScalingDirection operator||(const AnisotropicVolumeScal
     return result;
 }
 
-AnisotropicVolumeScaler::ScalingDirection operator&&(const AnisotropicVolumeScaler::ScalingDirection &sd1,
-                                                     const AnisotropicVolumeScaler::ScalingDirection &sd2)
+AnisotropicVolumeScaler::ScalingDirection operator&(const AnisotropicVolumeScaler::ScalingDirection &sd1,
+                                                    const AnisotropicVolumeScaler::ScalingDirection &sd2)
 {
+    if (sd1.empty() && sd2.size() == 1)
+        return sd2;
+    if (sd2.empty() && sd1.size() == 1)
+        return sd1;
+
     Expects(sd1.size() == 1);
     Expects(sd2.size() == 1);
 
