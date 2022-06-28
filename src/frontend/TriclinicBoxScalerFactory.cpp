@@ -38,7 +38,63 @@ namespace {
         }
     }
 
-    std::unique_ptr<VolumeScaler> create_volume_scaler(std::string scalingType) {
+    void register_scaling_direction(char direction, std::array<bool, 3> &isDirectionUsed) {
+        if (direction < 'x' && direction > 'z')
+            throw ValidationException(SCALING_USAGE);
+        std::size_t directionIdx = direction - 'x';
+        if (isDirectionUsed[directionIdx])
+            throw ValidationException("Duplicated occurrence of " + std::string{direction} + " direction");
+        isDirectionUsed[directionIdx] = true;
+    }
+
+    std::string parse_brackets(char opening, char closing, const std::string &str, std::size_t &idx) {
+        std::size_t closingIdx = str.find(closing, idx);
+        if (closingIdx == std::string::npos)
+            throw ValidationException("Unmatched '" + std::string{opening} + "' in scaling direction");
+        std::string content = str.substr(idx + 1, closingIdx - idx - 1);
+        idx = closingIdx;
+        return content;
+    }
+
+    AnisotropicVolumeScaler::ScalingDirection parse_scaling_directions(const std::string &scalingDirectionStr) {
+        AnisotropicVolumeScaler::ScalingDirection scalingDirection;
+        std::array<bool, 3> isDirectionUsed{};
+        for (std::size_t i{}; i < scalingDirectionStr.length(); i++) {
+            char c = scalingDirectionStr[i];
+            switch (c) {
+                case 'x':
+                case 'y':
+                case 'z':
+                    register_scaling_direction(c, isDirectionUsed);
+                    scalingDirection |= char_to_scaling_direction(c);
+                    break;
+
+                case '(': {
+                    AnisotropicVolumeScaler::ScalingDirection groupedScalingDirection;
+                    for (char direction : parse_brackets('(', ')', scalingDirectionStr, i)) {
+                        register_scaling_direction(direction, isDirectionUsed);
+                        groupedScalingDirection &= char_to_scaling_direction(direction);
+                    }
+                    scalingDirection |= groupedScalingDirection;
+                    break;
+                }
+
+                case '[':
+                    for (char direction : parse_brackets('[', ']', scalingDirectionStr, i))
+                        register_scaling_direction(direction, isDirectionUsed);
+                    break;
+
+                default:
+                    throw ValidationException(SCALING_USAGE);
+            }
+        }
+
+        ValidateMsg(std::find(isDirectionUsed.begin(), isDirectionUsed.end(), false) == isDirectionUsed.end(),
+                    "The behaviour of one or more scaling directions is unspecified");
+        return scalingDirection;
+    }
+
+    std::unique_ptr<VolumeScaler> create_volume_scaler(const std::string &scalingType) {
         if (scalingType == "delta V")
             return std::make_unique<DeltaVolumeScaler>();
 
@@ -80,67 +136,7 @@ namespace {
         else if (scalingDirectionStr == "anisotropic xyz")
             return std::make_unique<AnisotropicVolumeScaler>(std::move(factorSampler), X | Y | Z, independent);
 
-        AnisotropicVolumeScaler::ScalingDirection scalingDirection;
-        std::array<bool, 3> directionUsed{};
-        for (std::size_t i{}; i < scalingDirectionStr.length(); i++) {
-            char c = scalingDirectionStr[i];
-            switch (c) {
-                case 'x':
-                case 'y':
-                case 'z': {
-                    std::size_t directionIdx = c - 'x';
-                    if (directionUsed[directionIdx])
-                        throw ValidationException("Duplicated occurrence of " + std::string{c} + " direction");
-                    directionUsed[directionIdx] = true;
-                    scalingDirection |= char_to_scaling_direction(c);
-                    break;
-                }
-                case '(': {
-                    std::size_t closingIdx = scalingDirectionStr.find(')', i);
-                    if (closingIdx == std::string::npos)
-                        throw ValidationException("Unmatched '(' in scaling direction");
-                    std::string groupedDirections = scalingDirectionStr.substr(i + 1, closingIdx - i - 1);
-                    i = closingIdx;
-
-                    AnisotropicVolumeScaler::ScalingDirection groupedScalingDirection;
-                    for (char direction : groupedDirections) {
-                        if (direction < 'x' && direction > 'z')
-                            throw ValidationException(SCALING_USAGE);
-                        std::size_t directionIdx = direction - 'x';
-                        if (directionUsed[directionIdx])
-                            throw ValidationException("Duplicated occurrence of " + std::string{direction} + " direction");
-                        directionUsed[directionIdx] = true;
-                        groupedScalingDirection &= char_to_scaling_direction(direction);
-                    }
-                    scalingDirection |= groupedScalingDirection;
-                    break;
-                }
-
-                case '[': {
-                    std::size_t closingIdx = scalingDirectionStr.find(']', i);
-                    if (closingIdx == std::string::npos)
-                        throw ValidationException("Unmatched '[' in scaling direction");
-                    std::string groupedDirections = scalingDirectionStr.substr(i + 1, closingIdx - i - 1);
-                    i = closingIdx;
-
-                    for (char direction : groupedDirections) {
-                        if (direction < 'x' && direction > 'z')
-                            throw ValidationException(SCALING_USAGE);
-                        std::size_t directionIdx = direction - 'x';
-                        if (directionUsed[directionIdx])
-                            throw ValidationException("Duplicated occurrence of " + std::string{direction} + " direction");
-                        directionUsed[directionIdx] = true;
-                    }
-                    break;
-                }
-                default:
-                    throw ValidationException(SCALING_USAGE);
-            }
-        }
-
-        ValidateMsg(std::find(directionUsed.begin(), directionUsed.end(), false) == directionUsed.end(),
-                    "The behaviour of one or more scaling directions is unspecified");
-
+        AnisotropicVolumeScaler::ScalingDirection scalingDirection = parse_scaling_directions(scalingDirectionStr);
         return std::make_unique<AnisotropicVolumeScaler>(std::move(factorSampler), scalingDirection, independent);
     }
 }
