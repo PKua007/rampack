@@ -168,6 +168,9 @@ double Packing::tryScaling(const TriclinicBox &newBox, const Interaction &intera
     Expects(newBox.getVolume() != 0);
     Expects(interaction.getRangeRadius() <= this->interactionRange);
     this->lastBox = this->box;
+    this->lastShapes = this->shapes;
+    if (this->numInteractionCentres != 0)
+        this->lastAbsoluteInteractionCentres = this->absoluteInteractionCentres;
 
     double initialEnergy = this->getTotalEnergy(interaction);
     this->lastScalingNumOverlaps = this->numOverlaps;
@@ -365,14 +368,12 @@ void Packing::rotateTempInteractionCentres(const Matrix<3, 3> &rotation) {
 }
 
 void Packing::revertScaling() {
-    for (auto &shape : *this)
-        shape.setPosition(this->lastBox.relativeToAbsolute(this->box.absoluteToRelative(shape.getPosition())));
-
+    this->shapes = this->lastShapes;
     this->box = this->lastBox;
     this->bc->setBox(this->box);
     std::swap(this->neighbourGrid, this->tempNeighbourGrid);
     if (this->numInteractionCentres != 0)
-        this->recalculateAbsoluteInteractionCentres();
+        this->absoluteInteractionCentres = this->lastAbsoluteInteractionCentres;
     this->numOverlaps = this->lastScalingNumOverlaps;
 }
 

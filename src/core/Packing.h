@@ -43,7 +43,6 @@ private:
     TriclinicBox box;
     std::unique_ptr<BoundaryConditions> bc;
     std::optional<NeighbourGrid> neighbourGrid;
-    std::optional<NeighbourGrid> tempNeighbourGrid;     // temp ng is used for swapping in volume moves
     double interactionRange{};
     std::size_t numInteractionCentres{};
 
@@ -57,6 +56,9 @@ private:
     std::vector<int> lastMoveOverlapDeltas{};
     std::size_t lastScalingNumOverlaps{};
     TriclinicBox lastBox;
+    std::vector<Shape> lastShapes;
+    std::vector<Vector<3>> lastAbsoluteInteractionCentres;
+    std::optional<NeighbourGrid> tempNeighbourGrid;     // temp ng is used for swapping in volume moves
 
     std::size_t neighbourGridRebuilds{};
     std::size_t neighbourGridResizes{};
