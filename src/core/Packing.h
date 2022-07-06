@@ -57,7 +57,6 @@ private:
     std::size_t lastScalingNumOverlaps{};
     TriclinicBox lastBox;
     std::vector<Shape> lastShapes;
-    std::vector<Vector<3>> lastAbsoluteInteractionCentres;
     std::optional<NeighbourGrid> tempNeighbourGrid;     // temp ng is used for swapping in volume moves
 
     std::size_t neighbourGridRebuilds{};
