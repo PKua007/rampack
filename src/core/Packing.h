@@ -234,6 +234,11 @@ public:
      */
     void toggleOverlapCounting(bool countOverlaps, const Interaction &interaction);
 
+    /**
+     * @brief Toggles true or false (@a trueOfFalse) hard walls intersected by axis @a wallAxis
+     * @param wallAxis
+     * @param trueOrFalse
+     */
     void toggleWall(std::size_t wallAxis, bool trueOrFalse);
 
     [[nodiscard]] double getVolume() const;
@@ -259,13 +264,20 @@ public:
     [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;
 
     /**
-     * @brief Calculated the number of overlaps in the packing for @a interaction.
+     * @brief Calculates the number of overlaps in the packing (including wall overlaps if walls are toggled on) for
+     * @a interaction.
      * @details If @a earlyExit is @a true, the method will return after the first overlap is found. Even is overlap
      * counting is toggled @a true, this method will actually perform overlap check, not use the cached value as
      * Packing::getCachedNumberOfOverlaps().
      */
     [[nodiscard]] std::size_t countTotalOverlaps(const Interaction &interaction, bool earlyExit = true) const;
 
+    /**
+     * @brief Calculated the number of overlaps with walls in the packing for @a interaction.
+     * @details If @a earlyExit is @a true, the method will return after the first overlap is found. Even is overlap
+     * counting is toggled @a true, this method will actually perform overlap check, not use the cached value as
+     * Packing::getCachedNumberOfOverlaps().
+     */
     [[nodiscard]] std::size_t countWallOverlaps(const Interaction &interaction, bool earlyExit) const;
 
     /**

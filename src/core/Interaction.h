@@ -32,6 +32,9 @@ public:
      */
     [[nodiscard]] virtual bool hasSoftPart() const = 0;
 
+    /**
+     * @brief Returns @a true, if the interaction includes a wall part
+     */
     [[nodiscard]] virtual bool hasWallPart() const = 0;
 
     /**
@@ -81,6 +84,16 @@ public:
     }
 
 
+    /**
+     * @brief Returns @a true, if a given interaction center overlaps a wall defined by @a wallOrigin and @a wallVector.
+     * @param pos position of the interaction center (not the center of particle)
+     * @param orientation orientation of the molecule
+     * @param idx the index of the interaction center within a molecule
+     * @param wallOrigin arbitrary point lying on the plane of a wall
+     * @param wallVector vector normal to the wall (with a unit norm); the direction it points in is in front of a wall,
+     * while the opposite direction is behind the wall
+     * @return @a true, if any part of the interaction centre lies behind the wall
+     */
     [[nodiscard]] virtual bool overlapWithWall([[maybe_unused]] const Vector<3> &pos,
                                                [[maybe_unused]] const Matrix<3, 3> &orientation,
                                                [[maybe_unused]] std::size_t idx,
