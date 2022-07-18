@@ -502,52 +502,56 @@ TEST_CASE("Packing: multiple interaction center overlap counting") {
 }
 
 TEST_CASE("Packing: single interaction centre wall overlap") {
-    double radius = 0.5;
-    SphereHardCoreInteraction hardCore(radius);
-    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    std::vector<Shape> shapes;
-    shapes.emplace_back(Vector<3>{1, 1, 1});
-    shapes.emplace_back(Vector<3>{2.5, 2.5, 2.5});
-    shapes.emplace_back(Vector<3>{4, 4, 4});
-    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
-    packing.toggleWall(0, true);
-    packing.toggleWall(2, true);
+    auto scalingThreads = GENERATE(1, 2);
 
-    constexpr double INF = std::numeric_limits<double>::infinity();
+    DYNAMIC_SECTION("scaling threads: " << scalingThreads) {
+        double radius = 0.5;
+        SphereHardCoreInteraction hardCore(radius);
+        auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+        std::vector<Shape> shapes;
+        shapes.emplace_back(Vector<3>{1, 1, 1});
+        shapes.emplace_back(Vector<3>{2.5, 2.5, 2.5});
+        shapes.emplace_back(Vector<3>{4, 4, 4});
+        Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore, 1, scalingThreads);
+        packing.toggleWall(0, true);
+        packing.toggleWall(2, true);
 
-    SECTION("without overlaps counting") {
-        CHECK(packing.tryTranslation(0, {0, 0, -0.4}, hardCore) == 0);
-        CHECK(packing.tryTranslation(0, {0, 0, -0.6}, hardCore) == INF);
-        CHECK(packing.tryTranslation(2, {0, 0, 0.4}, hardCore) == 0);
-        CHECK(packing.tryTranslation(2, {0, 0, 0.6}, hardCore) == INF);
+        constexpr double INF = std::numeric_limits<double>::infinity();
 
-        CHECK(packing.tryTranslation(0, {0, -0.6, 0}, hardCore) == 0);
-        CHECK(packing.tryTranslation(2, {0, -0.6, 0}, hardCore) == 0);
+        SECTION("without overlaps counting") {
+            CHECK(packing.tryTranslation(0, {0, 0, -0.4}, hardCore) == 0);
+            CHECK(packing.tryTranslation(0, {0, 0, -0.6}, hardCore) == INF);
+            CHECK(packing.tryTranslation(2, {0, 0, 0.4}, hardCore) == 0);
+            CHECK(packing.tryTranslation(2, {0, 0, 0.6}, hardCore) == INF);
 
-        CHECK(packing.tryTranslation(0, {-0.4, 0, 0}, hardCore) == 0);
-        CHECK(packing.tryTranslation(0, {-0.6, 0, 0}, hardCore) == INF);
-        CHECK(packing.tryTranslation(2, {0.4, 0, 0}, hardCore) == 0);
-        CHECK(packing.tryTranslation(2, {0.6, 0, 0}, hardCore) == INF);
-    }
+            CHECK(packing.tryTranslation(0, {0, -0.6, 0}, hardCore) == 0);
+            CHECK(packing.tryTranslation(2, {0, -0.6, 0}, hardCore) == 0);
 
-    SECTION("with overlaps counting") {
-        packing.toggleOverlapCounting(true, hardCore);
+            CHECK(packing.tryTranslation(0, {-0.4, 0, 0}, hardCore) == 0);
+            CHECK(packing.tryTranslation(0, {-0.6, 0, 0}, hardCore) == INF);
+            CHECK(packing.tryTranslation(2, {0.4, 0, 0}, hardCore) == 0);
+            CHECK(packing.tryTranslation(2, {0.6, 0, 0}, hardCore) == INF);
+        }
 
-        // Move molecule into a corner with 2 walls (new pos: {0.4, 1, 0.4}, overlaps: 2)
-        CHECK(packing.tryTranslation(0, {-0.6, 0, -0.6}, hardCore) == INF);
-        packing.acceptTranslation();
-        CHECK(packing.getCachedNumberOfOverlaps() == 2);
-        CHECK(packing.countTotalOverlaps(hardCore, false) == 2);
-        // Move molecule into a corner to collide with only 1 wall (new pos: {0.6, 1, 0.4}, overlaps: 2)
-        CHECK(packing.tryTranslation(0, {0.2, 0, 0}, hardCore) == -INF);
-        packing.acceptTranslation();
-        CHECK(packing.getCachedNumberOfOverlaps() == 1);
-        CHECK(packing.countTotalOverlaps(hardCore, false) == 1);
-        // Move molecule out of walls into another molecule (new pos: {2.5, 2.5, 1.6}, overlaps: 2)
-        CHECK(packing.tryTranslation(0, {1.9, 1.5, 1.2}, hardCore) == 0);
-        packing.acceptTranslation();
-        CHECK(packing.getCachedNumberOfOverlaps() == 1);
-        CHECK(packing.countTotalOverlaps(hardCore, false) == 1);
+        SECTION("with overlaps counting") {
+            packing.toggleOverlapCounting(true, hardCore);
+
+            // Move molecule into a corner with 2 walls (new pos: {0.4, 1, 0.4}, overlaps: 2)
+            CHECK(packing.tryTranslation(0, {-0.6, 0, -0.6}, hardCore) == INF);
+            packing.acceptTranslation();
+            CHECK(packing.getCachedNumberOfOverlaps() == 2);
+            CHECK(packing.countTotalOverlaps(hardCore, false) == 2);
+            // Move molecule into a corner to collide with only 1 wall (new pos: {0.6, 1, 0.4}, overlaps: 2)
+            CHECK(packing.tryTranslation(0, {0.2, 0, 0}, hardCore) == -INF);
+            packing.acceptTranslation();
+            CHECK(packing.getCachedNumberOfOverlaps() == 1);
+            CHECK(packing.countTotalOverlaps(hardCore, false) == 1);
+            // Move molecule out of walls into another molecule (new pos: {2.5, 2.5, 1.6}, overlaps: 2)
+            CHECK(packing.tryTranslation(0, {1.9, 1.5, 1.2}, hardCore) == 0);
+            packing.acceptTranslation();
+            CHECK(packing.getCachedNumberOfOverlaps() == 1);
+            CHECK(packing.countTotalOverlaps(hardCore, false) == 1);
+        }
     }
 }
 

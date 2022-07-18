@@ -1188,7 +1188,7 @@ std::size_t Packing::countParticleWallOverlaps(std::size_t particleIdx, const In
     const auto &sides = this->box.getSides();
     Vector<3> origin{};
     Vector<3> furtherOrigin = std::accumulate(sides.begin(), sides.end(), origin);
-    double halfTotalRangeRadius = interaction.getTotalRangeRadius();
+    double halfTotalRangeRadius = interaction.getTotalRangeRadius() / 2;
     for (std::size_t i{}; i < 3; i++) {
         if (!this->hasWall[i])
             continue;
