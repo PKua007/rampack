@@ -266,6 +266,8 @@ public:
      */
     [[nodiscard]] std::size_t countTotalOverlaps(const Interaction &interaction, bool earlyExit = true) const;
 
+    [[nodiscard]] std::size_t countWallOverlaps(const Interaction &interaction, bool earlyExit) const;
+
     /**
      * @brief For overlap counting toggled @a true it returns cached number of overlaps, i.e. no overlap check are
      * actually performed and the method consumes only a couple of CPU cycles.

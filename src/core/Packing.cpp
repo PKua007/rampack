@@ -561,25 +561,28 @@ std::size_t Packing::countTotalOverlaps(const Interaction &interaction, bool ear
         }
     }
 
+    return overlapsCounted + this->countWallOverlaps(interaction, earlyExit);
+}
+
+std::size_t Packing::countWallOverlaps(const Interaction &interaction, bool earlyExit) const {
     if (!this->hasAnyWalls)
-        return overlapsCounted;
+        return 0;
 
     std::atomic<bool> overlapFound = false;
     std::size_t wallOverlaps{};
     #pragma omp parallel for default(none) shared(overlapFound, interaction) firstprivate(earlyExit) \
             reduction(+ : wallOverlaps) num_threads(this->scalingThreads)
-    for (std::size_t i = 0; i < this->size(); i++) {
+    for (std::size_t i = 0; i < size(); i++) {
         if (earlyExit && overlapFound.load(std::memory_order_relaxed))
             continue;
 
-        std::size_t particleWallOverlaps = this->countParticleWallOverlaps(i, interaction, earlyExit);
+        std::size_t particleWallOverlaps = countParticleWallOverlaps(i, interaction, earlyExit);
         if (earlyExit && particleWallOverlaps > 0)
             overlapFound.store(true, std::memory_order_relaxed);
 
         wallOverlaps += particleWallOverlaps;
     }
-
-    return overlapsCounted + wallOverlaps;
+    return wallOverlaps;
 }
 
 std::size_t Packing::countOverlapsBetweenParticlesWithoutNG(std::size_t tempParticleIdx, std::size_t anotherParticleIdx,
@@ -1185,46 +1188,49 @@ std::size_t Packing::countParticleWallOverlaps(std::size_t particleIdx, const In
                                                bool earlyExit) const
 {
     std::size_t countedOverlaps{};
-    const auto &sides = this->box.getSides();
-    Vector<3> origin{};
-    Vector<3> furtherOrigin = std::accumulate(sides.begin(), sides.end(), origin);
+    const auto &boxSides = this->box.getSides();
+    Vector<3> boxOrigin{};
+    Vector<3> furtherBoxOrigin = std::accumulate(boxSides.begin(), boxSides.end(), boxOrigin);
     double halfTotalRangeRadius = interaction.getTotalRangeRadius() / 2;
+
     for (std::size_t i{}; i < 3; i++) {
         if (!this->hasWall[i])
             continue;
 
         std::size_t nextCoord = (i + 1) % 3;
         std::size_t nextNextCoord = (i + 2) % 3;
-        Vector<3> wallVector = (sides[nextCoord] ^ sides[nextNextCoord]).normalized();
+        Vector<3> wallVector = (boxSides[nextCoord] ^ boxSides[nextNextCoord]).normalized();
         const auto &shapePos = this->shapes[particleIdx].getPosition();
         const auto &shapeRot = this->shapes[particleIdx].getOrientation();
         if (shapePos * wallVector < halfTotalRangeRadius) {
+            // Nearer wall
             if (this->numInteractionCentres == 0) {
-                if (interaction.overlapWithWall(shapePos, shapeRot, 0, origin, wallVector)) {
+                if (interaction.overlapWithWall(shapePos, shapeRot, 0, boxOrigin, wallVector)) {
                     if (earlyExit) return 1;
                     countedOverlaps++;
                 }
             } else {
-                std::size_t centreOrigin = particleIdx * this->numInteractionCentres;
+                std::size_t centreIdxOrigin = particleIdx * this->numInteractionCentres;
                 for (std::size_t centre{}; centre < this->numInteractionCentres; centre++) {
-                    Vector<3> centrePos = shapePos + this->interactionCentres[centreOrigin + centre];
-                    if (interaction.overlapWithWall(centrePos, shapeRot, centre, origin, wallVector)) {
+                    Vector<3> centrePos = shapePos + this->interactionCentres[centreIdxOrigin + centre];
+                    if (interaction.overlapWithWall(centrePos, shapeRot, centre, boxOrigin, wallVector)) {
                         if (earlyExit) return 1;
                         countedOverlaps++;
                     }
                 }
             }
-        } else if ((furtherOrigin - shapePos) * wallVector < halfTotalRangeRadius) {
+        } else if ((furtherBoxOrigin - shapePos) * wallVector < halfTotalRangeRadius) {
+            // Further wall
             if (this->numInteractionCentres == 0) {
-                if (interaction.overlapWithWall(shapePos, shapeRot, 0, furtherOrigin, -wallVector)) {
+                if (interaction.overlapWithWall(shapePos, shapeRot, 0, furtherBoxOrigin, -wallVector)) {
                     if (earlyExit) return 1;
                     countedOverlaps++;
                 }
             } else {
-                std::size_t centreOrigin = particleIdx * this->numInteractionCentres;
+                std::size_t centreIdxOrigin = particleIdx * this->numInteractionCentres;
                 for (std::size_t centre{}; centre < this->numInteractionCentres; centre++) {
-                    Vector<3> centrePos = shapePos + this->interactionCentres[centreOrigin + centre];
-                    if (interaction.overlapWithWall(centrePos, shapeRot, centre, furtherOrigin, -wallVector)) {
+                    Vector<3> centrePos = shapePos + this->interactionCentres[centreIdxOrigin + centre];
+                    if (interaction.overlapWithWall(centrePos, shapeRot, centre, furtherBoxOrigin, -wallVector)) {
                         if (earlyExit) return 1;
                         countedOverlaps++;
                     }
@@ -1232,6 +1238,7 @@ std::size_t Packing::countParticleWallOverlaps(std::size_t particleIdx, const In
             }
         }
     }
+
     return countedOverlaps;
 }
 
