@@ -12,6 +12,8 @@
 
 /**
  * @brief Class transforming old-fashioned VolumeScaler into new TriclinicBoxScaler.
+ * @details Factors from VolumeScaler are translated into elongations/shrinking of corresponding triclinic box axes,
+ * preserving the angles between box faces.
  */
 class TriclinicAdapter : public TriclinicBoxScaler {
 private:
