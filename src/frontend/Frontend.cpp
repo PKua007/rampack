@@ -718,24 +718,9 @@ int Frontend::preview(int argc, char **argv) {
                                                       shapeTraits->getInteraction(), shapeTraits->getGeometry(), 1, 1);
     this->createWalls(*packing, params.walls);
 
-    // Parse move type
-    auto moveSamplerStrings = explode(params.moveTypes, ',');
-    std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
-    moveSamplers.reserve(moveSamplerStrings.size());
-    for (const auto &moveSamplerString : moveSamplerStrings)
-        moveSamplers.push_back(MoveSamplerFactory::create(moveSamplerString));
-
     // Store packing (if desired)
-    if (parsedOptions.count("dat")) {
-        std::map<std::string, std::string> auxInfo;
-        this->appendMoveStepSizesToAuxInfo(moveSamplers, params.volumeStepSize, auxInfo);
-        auxInfo["cycles"] = "0";
-
-        std::ofstream out(datFilename);
-        ValidateOpenedDesc(out, datFilename, "to store packing data");
-        packing->store(out, auxInfo);
-        this->logger.info() << "Packing stored to " + datFilename << std::endl;
-    }
+    if (parsedOptions.count("dat"))
+        this->generateDatFile(*packing, params, datFilename);
 
     // Store Mathematica packing (if desired)
     if (parsedOptions.count("wolfram")) {
@@ -746,6 +731,26 @@ int Frontend::preview(int argc, char **argv) {
     }
 
     return EXIT_SUCCESS;
+}
+
+void Frontend::generateDatFile(const Packing &packing, const Parameters &params, const std::string &datFilename,
+                               std::size_t cycles)
+{
+    // Parse move type
+    auto moveSamplerStrings = explode(params.moveTypes, ',');
+    std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
+    moveSamplers.reserve(moveSamplerStrings.size());
+    for (const auto &moveSamplerString : moveSamplerStrings)
+        moveSamplers.push_back(MoveSamplerFactory::create(moveSamplerString));
+
+    std::map<std::string, std::string> auxInfo;
+    appendMoveStepSizesToAuxInfo(moveSamplers, params.volumeStepSize, auxInfo);
+    auxInfo["cycles"] = std::to_string(cycles);
+
+    std::ofstream out(datFilename);
+    ValidateOpenedDesc(out, datFilename, "to store packing data");
+    packing.store(out, auxInfo);
+    this->logger.info() << "Packing stored to " + datFilename << std::endl;
 }
 
 std::string Frontend::doubleToString(double d) {
@@ -845,6 +850,7 @@ int Frontend::trajectory(int argc, char **argv) {
     std::string trajectoryFilename;
     std::string outputFilename;
     std::vector<std::string> observables;
+    std::string datFilename;
     std::string verbosity;
     std::string auxOutput;
     std::string auxVerbosity;
@@ -866,6 +872,8 @@ int Frontend::trajectory(int argc, char **argv) {
                           "Observables can be passed using multiple short options (-o obs1 -o obs2) or comma-separated "
                           "in a long option (--observables=obs1,obs2)",
          cxxopts::value<std::vector<std::string>>(observables))
+        ("d,generate-dat", "reads the last snapshot and recreates *.dat file from it",
+         cxxopts::value<std::string>(datFilename))
         ("I,log-info", "print basic information about the recorded trajectory on a standard output")
         ("l,log-file", "if specified, messages will be logged both on the standard output and to this file. "
                        "Verbosity defaults then to: warn for standard output and to: info for log file, unless "
@@ -901,8 +909,8 @@ int Frontend::trajectory(int argc, char **argv) {
         die("Input file must be specified with option -i [input file name]", this->logger);
     if (!parsedOptions.count("trajectory"))
         die("Trajectory file must be specified with option -t [input file name]", this->logger);
-    if (!parsedOptions.count("observables") && !parsedOptions.count("log-info"))
-        die("At least one of: --observables, --log-info options must be specified", this->logger);
+    if (!parsedOptions.count("observables") && !parsedOptions.count("log-info") && !parsedOptions.count("generate-dat"))
+        die("At least one of: --observables, --log-info, --generate-dat options must be specified", this->logger);
 
     Parameters params = this->loadParameters(inputFilename);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
@@ -946,6 +954,15 @@ int Frontend::trajectory(int argc, char **argv) {
 
         this->logger.info() << "Replay finished after " << time << " s." << std::endl;
         this->storeSnapshots(*collector, false, outputFilename);
+    }
+
+    // Recreate dat file from the last snapshot (if desired)
+    if (parsedOptions.count("generate-dat")) {
+        this->logger.info() << "Reading last snapshot... " << std::flush;
+        player.lastSnapshot(*packing, shapeTraits->getInteraction());
+        this->logger.info() << "cycles: " << player.getCurrentSnapshotCycles() << std::endl;
+
+        this->generateDatFile(*packing, params, datFilename, player.getCurrentSnapshotCycles());
     }
 
     return EXIT_SUCCESS;
