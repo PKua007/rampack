@@ -39,6 +39,16 @@ void SimulationPlayer::nextSnapshot(Packing &packing, const Interaction &interac
     this->currentSnapshot++;
 }
 
+void SimulationPlayer::lastSnapshot(Packing &packing, const Interaction &interaction) {
+    Expects(this->in != nullptr);
+    Expects(this->header.numSnapshots > 0);
+
+    this->currentSnapshot = this->header.numSnapshots - 1;
+    auto offset = SimulationIO::streamoffForSnapshot(this->header, this->currentSnapshot);
+    this->in->seekg(offset);
+    this->nextSnapshot(packing, interaction);
+}
+
 std::size_t SimulationPlayer::getCurrentSnapshotCycles() const {
     return this->currentSnapshot * this->header.cycleStep;
 }

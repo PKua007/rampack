@@ -35,9 +35,14 @@ public:
     [[nodiscard]] bool hasNext() const;
 
     /**
-     * @brief Moves to the next snapshot (the first one on an original invocation) and prints it on @a packing.\
+     * @brief Moves to the next snapshot (the first one is an original invocation) and prints it on @a packing.
      */
     void nextSnapshot(Packing &packing, const Interaction &interaction);
+
+    /**
+     * @brief Moves to the last snapshot and prints it on @a packing.
+     */
+    void lastSnapshot(Packing &packing, const Interaction &interaction);
 
     /**
      * @brief Returns number of cycles for a current snapshot (which was recently moved to using

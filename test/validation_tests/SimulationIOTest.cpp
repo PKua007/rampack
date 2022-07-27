@@ -65,11 +65,21 @@ TEST_CASE("Simulation IO: storing and restoring")
 
         auto in_stream = std::make_unique<std::istream>(&inout_buf);
         SimulationPlayer player(std::move(in_stream));
-        while (player.hasNext())
-            player.nextSnapshot(packing1, interaction);
-        player.close();
+        
+        SECTION("whole replay") {
+            while (player.hasNext())
+                player.nextSnapshot(packing1, interaction);
+            player.close();
 
-        assert_equal(packing1, simulation.getPacking());
+            assert_equal(packing1, simulation.getPacking());
+        }
+
+        SECTION("only last") {
+            player.lastSnapshot(packing1, interaction);
+            player.close();
+
+            assert_equal(packing1, simulation.getPacking());
+        }
     }
 
     SECTION("with continuation") {
