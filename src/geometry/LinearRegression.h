@@ -11,49 +11,40 @@
 #include <vector>
 #include "Vector.h"
 #include "utils/Quantity.h"
+#include "utils/Assertions.h"
+
 
 class LinearRegression {
-
-	class DataElement{
-	public:
-		double x, y, sigma;
-	};
-
 private:
+    class DataPoint {
+    public:
+        DataPoint() = default;
+        DataPoint(double x, double y, double sigma) : x{x}, y{y}, sigma{sigma} { }
 
+        double x{};
+        double y{};
+        double sigma{};
+    };
 
-	std::vector<DataElement *> data;
+    std::vector<DataPoint> data;
 
-	double s, sx, sy, sxx, sxy, syy, delta;
-	double a, b, sigmay, sigmaa, sigmab, r;
+    double a{}, b{}, sigmaY{}, sigmaA{}, sigmaB{}, r{};
 
 public:
-	LinearRegression();
+    LinearRegression() = default;
     explicit LinearRegression(const std::vector<Vector<2>> &points);
-	virtual ~LinearRegression();
 
     [[nodiscard]] Quantity getIntercept() const;
-
     [[nodiscard]] Quantity getSlope() const;
+    [[nodiscard]] double getR() const { return this->r; }
 
-    [[nodiscard]] double LinearRegression::getR() const;
+    void clear() { this->data.clear(); }
+    [[nodiscard]] std::size_t size() const { return this->data.size(); }
 
-
-
-    void clear();
-	void addXY(double x, double y, double sigma);
-	void addXY(double x, double y);
-	void calculate(unsigned int from, unsigned int to);
-	void calculate();
-	void removeDistantPoints(double multiplier);
-	double getA();
-	double getSA();
-	double getB();
-	double getSB();
-	double getSigma();
-	double getR();
-	int size();
-
+    void addPoint(double x, double y, double sigma);
+    void addPoint(double x, double y);
+    void recalculate(std::size_t fromIdx, std::size_t toIdx);
+    void recalculate() { this->recalculate(0, this->data.size()); }
 };
 
 #endif /* LINEARREGRESSION_H_ */

@@ -14,37 +14,35 @@
 
 
 class ExponentialDecayRegression {
-
-	class DataElement{
-	public:
-		double x, y;
-
-		bool operator< (const DataElement& d){
-		        return (this->x < d.x);
-		}
-	};
-
 private:
-	std::vector<DataElement *> data;
+    class DataPoint {
+    public:
+        DataPoint() = default;
+        DataPoint(double x, double y) : x{x}, y{y} { }
+
+        double x{};
+        double y{};
+
+        friend bool operator<(const DataPoint &d1, const DataPoint &d2) { return d1.x < d2.x; }
+    };
+
+	std::vector<DataPoint> data;
 
 public:
-	double decay;
-	double sDecay;
-	double initial;
+	double decay{};
+	double sDecay{};
+	double initial{};
 
-	ExponentialDecayRegression();
-    ExponentialDecayRegression(const std::vector<Vector<2>> &points);
+	ExponentialDecayRegression() = default;
+    explicit ExponentialDecayRegression(const std::vector<Vector<2>> &points);
 
     [[nodiscard]] Quantity getDecayTime() const;
 
-    ~ExponentialDecayRegression();
-	void clear();
-	void addXY(double x, double y);
-	void calculate();
-	double getDecayTime();
-	double getInitialValue();
-	int size();
+	void clear() { this->data.clear(); }
+    [[nodiscard]] std::size_t size() const { return this->data.size(); }
 
+	void addPoint(double x, double y);
+	void recalculate();
 };
 
 #endif /* EXPONENTIALDECAYREGRESSION_H_ */
