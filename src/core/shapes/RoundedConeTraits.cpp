@@ -6,8 +6,11 @@
 #include "geometry/xenocollide/BodyBuilder.h"
 
 
-MapPtr<CollideGeometry> RoundedConeTraits::createShapeModel(double r, double l) {
-    double R = 1;
+MapPtr<CollideGeometry> RoundedConeTraits::createShapeModel(double R, double r, double l) {
+    Expects(R > 0);
+    Expects(r > 0);
+    Expects(l > 0);
+    Expects(R >= r);
 
     BodyBuilder bb;
     bb.sphere(R);
@@ -28,12 +31,12 @@ double RoundedConeTraits::getVolume(double R, double r, double l) {
             )/(3*l*l*l);
 }
 
-RoundedConeTraits::RoundedConeTraits(double r, double l)
+RoundedConeTraits::RoundedConeTraits(double R, double r, double l)
         : XenoCollideTraits({0, 0, 1}, {1, 0, 0}, {0, 0, 0},
-                            RoundedConeTraits::getVolume(1, r, l),
-                            RoundedConeTraits::createShapeModel(r, l),
+                            RoundedConeTraits::getVolume(R, r, l),
+                            RoundedConeTraits::createShapeModel(R, r, l),
                             l + 2*std::max(1., r)),
-          R{1.0}, r{r}, l{l}
+          R{R}, r{r}, l{l}
 {
 
 }
