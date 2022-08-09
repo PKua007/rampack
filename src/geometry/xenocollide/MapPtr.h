@@ -105,10 +105,15 @@ public:
 		return m_pointer;
 	}
 
-	operator T*()
-	{
-		return m_pointer;
-	}
+    operator T*()
+    {
+        return m_pointer;
+    }
+
+    operator T*() const
+    {
+        return m_pointer;
+    }
 
 	T* operator -> ()
 	{
