@@ -10,9 +10,8 @@
 
 
 XenoCollideTraits::XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v, const std::string &attr)
-        : primaryAxis{pa}, secondaryAxis{sa}, geometricOrigin{cm}
+        : primaryAxis{pa}, secondaryAxis{sa}, geometricOrigin{cm}, volume{v}
 {
-    this->volume = v;
     std::stringstream ss(attr);
     std::string commands;
     std::getline(ss, commands, '\0');
@@ -22,6 +21,14 @@ XenoCollideTraits::XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, d
     bb.ProcessCommand(script);
     this->shapeModel = bb.getCollideGeometry();
     this->rangeRadius = 2*bb.getMaxRadius();
+}
+
+XenoCollideTraits::XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v,
+                                     MapPtr<CollideGeometry> shapeModel, double rangeRadius)
+        : primaryAxis{pa}, secondaryAxis{sa}, geometricOrigin{cm}, volume{v}, rangeRadius{rangeRadius},
+          shapeModel{shapeModel}
+{
+
 }
 
 bool XenoCollideTraits::overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1,

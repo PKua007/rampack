@@ -12,15 +12,19 @@
 
 class XenoCollideTraits : public ShapeTraits, public Interaction, public ShapeGeometry {
 private:
-    MapPtr<CollideGeometry> shapeModel;
     Vector<3> primaryAxis;
     Vector<3> secondaryAxis;
     Vector<3> geometricOrigin;
     double volume{};
     double rangeRadius{};
 
+protected:
+    MapPtr<CollideGeometry> shapeModel;
+
 public:
     XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v, const std::string &attr);
+    XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v, MapPtr<CollideGeometry> shapeModel,
+                      double rangeRadius);
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
