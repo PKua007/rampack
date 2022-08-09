@@ -14,11 +14,13 @@ private:
     double r{};
     double l{};
 
-    static MapPtr<CollideGeometry> createShapeModel(double r, double l);
+    static MapPtr<CollideGeometry> createShapeModel(double R, double r, double l);
     static double getVolume(double R, double r, double l);
 
 public:
-    RoundedConeTraits(double r, double l);
+    RoundedConeTraits(double R, double r, double l);
+
+    [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
 
     [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
 };
