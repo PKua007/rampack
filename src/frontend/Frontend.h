@@ -52,7 +52,7 @@ private:
     void storeAverageValues(const std::string &filename, const ObservablesCollector &collector, double temperature,
                             double pressure) const;
     void storePacking(const Simulation &simulation, const std::string &packingFilename);
-    void storeWolframVisualization(const Simulation &simulation, const ShapeTraits &shapeTraits,
+    void storeWolframVisualization(const Packing &packing, const ShapePrinter &shapePrinter,
                                    const std::string &wolframFilename) const;
     void storeSnapshots(const ObservablesCollector &observablesCollector, bool isContinuation,
                         const std::string &observableSnapshotFilename) const;
@@ -73,6 +73,7 @@ public:
     int trajectory(int argc, char **argv);
 
     int printGeneralHelp(const std::string &cmd);
+
 };
 
 

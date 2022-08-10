@@ -312,7 +312,7 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
     if (!runParams.packingFilename.empty())
         this->storePacking(simulation, runParams.packingFilename);
     if (!runParams.wolframFilename.empty())
-        this->storeWolframVisualization(simulation, shapeTraits, runParams.wolframFilename);
+        this->storeWolframVisualization(simulation.getPacking(), shapeTraits.getPrinter(), runParams.wolframFilename);
     if (!runParams.outputFilename.empty()) {
         this->storeAverageValues(runParams.outputFilename, observablesCollector, simulation.getCurrentTemperature(),
                                  simulation.getCurrentPressure());
@@ -376,7 +376,7 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, const std::strin
     if (!runParams.packingFilename.empty())
         this->storePacking(simulation, runParams.packingFilename);
     if (!runParams.wolframFilename.empty())
-        this->storeWolframVisualization(simulation, *shapeTraits, runParams.wolframFilename);
+        this->storeWolframVisualization(simulation.getPacking(), shapeTraits->getPrinter(), runParams.wolframFilename);
     if (!runParams.observableSnapshotFilename.empty())
         this->storeSnapshots(observablesCollector, isContinuation, runParams.observableSnapshotFilename);
 }
@@ -397,12 +397,12 @@ void Frontend::storeSnapshots(const ObservablesCollector &observablesCollector, 
     this->logger.info() << "Observable snapshots stored to " + observableSnapshotFilename << std::endl;
 }
 
-void Frontend::storeWolframVisualization(const Simulation &simulation, const ShapeTraits &shapeTraits,
+void Frontend::storeWolframVisualization(const Packing &packing, const ShapePrinter &shapePrinter,
                                          const std::string &wolframFilename) const
 {
     std::ofstream out(wolframFilename);
     ValidateOpenedDesc(out, wolframFilename, "to store Wolfram packing");
-    simulation.getPacking().toWolfram(out, shapeTraits.getPrinter());
+    packing.toWolfram(out, shapePrinter);
     this->logger.info() << "Wolfram packing stored to " + wolframFilename << std::endl;
 }
 
@@ -723,12 +723,8 @@ int Frontend::preview(int argc, char **argv) {
         this->generateDatFile(*packing, params, datFilename);
 
     // Store Mathematica packing (if desired)
-    if (parsedOptions.count("wolfram")) {
-        std::ofstream out(wolframFilename);
-        ValidateOpenedDesc(out, wolframFilename, "to store Wolfram packing");
-        packing->toWolfram(out, shapeTraits->getPrinter());
-        this->logger.info() << "Wolfram packing stored to " + wolframFilename << std::endl;
-    }
+    if (parsedOptions.count("wolfram"))
+        this->storeWolframVisualization(*packing, shapeTraits->getPrinter(), wolframFilename);
 
     return EXIT_SUCCESS;
 }
@@ -851,6 +847,7 @@ int Frontend::trajectory(int argc, char **argv) {
     std::string outputFilename;
     std::vector<std::string> observables;
     std::string datFilename;
+    std::string wolframFilename;
     std::string verbosity;
     std::string auxOutput;
     std::string auxVerbosity;
@@ -874,6 +871,8 @@ int Frontend::trajectory(int argc, char **argv) {
          cxxopts::value<std::vector<std::string>>(observables))
         ("d,generate-dat", "reads the last snapshot and recreates *.dat file from it",
          cxxopts::value<std::string>(datFilename))
+        ("w,generate-wolfram", "reads the last snapshot and recreates Wolfram Mathematica file from it",
+         cxxopts::value<std::string>(wolframFilename))
         ("I,log-info", "print basic information about the recorded trajectory on a standard output")
         ("l,log-file", "if specified, messages will be logged both on the standard output and to this file. "
                        "Verbosity defaults then to: warn for standard output and to: info for log file, unless "
@@ -909,8 +908,12 @@ int Frontend::trajectory(int argc, char **argv) {
         die("Input file must be specified with option -i [input file name]", this->logger);
     if (!parsedOptions.count("trajectory"))
         die("Trajectory file must be specified with option -t [input file name]", this->logger);
-    if (!parsedOptions.count("observables") && !parsedOptions.count("log-info") && !parsedOptions.count("generate-dat"))
-        die("At least one of: --observables, --log-info, --generate-dat options must be specified", this->logger);
+    if (!parsedOptions.count("observables") && !parsedOptions.count("log-info") && !parsedOptions.count("generate-dat")
+        && !parsedOptions.count("generate-wolfram"))
+    {
+        die("At least one of: --observables, --log-info, --generate-dat, --generate-wolfram options must be specified",
+            this->logger);
+    }
 
     Parameters params = this->loadParameters(inputFilename);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
@@ -957,12 +960,15 @@ int Frontend::trajectory(int argc, char **argv) {
     }
 
     // Recreate dat file from the last snapshot (if desired)
-    if (parsedOptions.count("generate-dat")) {
+    if (parsedOptions.count("generate-dat") || parsedOptions.count("generate-wolfram")) {
         this->logger.info() << "Reading last snapshot... " << std::flush;
         player.lastSnapshot(*packing, shapeTraits->getInteraction());
         this->logger.info() << "cycles: " << player.getCurrentSnapshotCycles() << std::endl;
 
-        this->generateDatFile(*packing, params, datFilename, player.getCurrentSnapshotCycles());
+        if (parsedOptions.count("generate-dat"))
+            this->generateDatFile(*packing, params, datFilename, player.getCurrentSnapshotCycles());
+        if (parsedOptions.count("generate-wolfram"))
+            this->storeWolframVisualization(*packing, shapeTraits->getPrinter(), wolframFilename);
     }
 
     return EXIT_SUCCESS;
