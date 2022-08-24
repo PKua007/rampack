@@ -127,7 +127,8 @@ std::unique_ptr<ObservablesCollector> ObservablesCollectorFactory::create(const 
                 ValidateMsg(anyNonzero && allNonNegative, "All tau ranges must be nonzero and some must be positive");
                 collector->addObservable(std::make_unique<SmecticOrder>(kTauRanges, dumpTauVector), observableType);
             } else {
-                collector->addObservable(std::make_unique<SmecticOrder>(dumpTauVector), observableType);
+                collector->addObservable(std::make_unique<SmecticOrder>(std::array<int, 3>{5, 5, 5}, dumpTauVector),
+                                         observableType);
             }
         } else if (observableName == "bondOrder") {
             std::string millerIndicesString;

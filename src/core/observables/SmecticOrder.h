@@ -17,12 +17,14 @@
 class SmecticOrder : public Observable {
 private:
     bool dumpTauVector{};
+    std::string focalPoint{};
     std::complex<double> tau{};
     std::array<int, 3> kTau{0, 0, 0};
     Vector<3> kTauVector{};
     std::array<int, 3> kTauRanges{};
 
-    static auto calculateTau(const std::array<int, 3> &kTau_, const Packing &packing);
+    [[nodiscard]] auto calculateTau(const std::array<int, 3> &kTau_, const Packing &packing,
+                                    const ShapeGeometry &geometry);
 
 public:
     /**
@@ -30,13 +32,8 @@ public:
      * wavevectors.
      * @details If @a dumpTauVector_ is @a true, components of tau wavevector will also be dumped as interval values.
      */
-    explicit SmecticOrder(const std::array<int, 3> &kTauRanges, bool dumpTauVector_ = false);
-
-    /**
-     * @brief Constructor with a default range of integer multiples of 2 pi/(box length) to construct wavevectors.
-     * @details If @a dumpTauVector_ is @a true, components of tau wavevector will also be dumped as interval values.
-     */
-    explicit SmecticOrder(bool dumpTauVector_ = false) : SmecticOrder({5, 5, 5}, dumpTauVector_) { }
+    explicit SmecticOrder(const std::array<int, 3> &kTauRanges = {5, 5, 5}, bool dumpTauVector_ = false,
+                          std::string focalPoint = "cm");
 
     void calculate(const Packing &packing, double temperature, double pressure,
                    const ShapeTraits &shapeTraits) override;

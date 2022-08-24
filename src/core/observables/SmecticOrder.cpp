@@ -5,10 +5,12 @@
 #include <sstream>
 #include <algorithm>
 #include <numeric>
+#include <utility>
 
 #include "SmecticOrder.h"
 
-auto SmecticOrder::calculateTau(const std::array<int, 3> &kTau_, const Packing &packing) {
+auto SmecticOrder::calculateTau(const std::array<int, 3> &kTau_, const Packing &packing, const ShapeGeometry &geometry)
+{
     auto dimInv = packing.getBox().getDimensions().inverse();
     Vector<3> kTauVector;
     for (std::size_t i{}; i < 3; i++)
@@ -16,9 +18,9 @@ auto SmecticOrder::calculateTau(const std::array<int, 3> &kTau_, const Packing &
     kTauVector = dimInv.transpose() * kTauVector;
     double volume = packing.getVolume();
 
-    auto tauAccumulator = [kTauVector](std::complex<double> tau_, const Shape &shape) {
+    auto tauAccumulator = [kTauVector, &geometry, this](std::complex<double> tau_, const Shape &shape) {
         using namespace std::complex_literals;
-        return tau_ + std::exp(1i * (kTauVector * shape.getPosition()));
+        return tau_ + std::exp(1i * (kTauVector * geometry.getNamedPoint(this->focalPoint, shape)));
     };
     auto tau = std::accumulate(packing.begin(), packing.end(), std::complex<double>{0}, tauAccumulator) / volume;
 
@@ -37,7 +39,7 @@ void SmecticOrder::calculate(const Packing &packing, [[maybe_unused]] double tem
             int czBeg = ((cx == 0 && cy == 0) ? 1 : -this->kTauRanges[2]);
             for (int cz = czBeg; cz < this->kTauRanges[2]; cz++) {
                 std::array<int, 3> kTau_{cx, cy, cz};
-                auto [tau_, kTauVector_] = calculateTau(kTau_, packing);
+                auto [tau_, kTauVector_] = calculateTau(kTau_, packing, shapeTraits.getGeometry());
                 if (std::abs(tau_) > std::abs(this->tau)) {
                     this->tau = tau_;
                     this->kTau = kTau_;
@@ -54,8 +56,8 @@ std::vector<std::string> SmecticOrder::getNominalValues() const {
     return {ostr.str()};
 }
 
-SmecticOrder::SmecticOrder(const std::array<int, 3> &kTauRanges, bool dumpTauVector_)
-        : dumpTauVector{dumpTauVector_}, kTauRanges{kTauRanges}
+SmecticOrder::SmecticOrder(const std::array<int, 3> &kTauRanges, bool dumpTauVector_, std::string focalPoint)
+        : dumpTauVector{dumpTauVector_}, focalPoint{std::move(focalPoint)}, kTauRanges{kTauRanges}
 {
     Expects(std::any_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i != 0; }));
     Expects(std::all_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i >= 0; }));

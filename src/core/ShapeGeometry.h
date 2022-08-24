@@ -23,14 +23,14 @@ public:
      * @brief Returns the primary (long) molecular axis for a given @a shape.
      */
     [[nodiscard]] virtual Vector<3> getPrimaryAxis([[maybe_unused]] const Shape &shape) const {
-        throw std::runtime_error("ShapeTraits::getPrimaryAxis : unsupported");
+        throw std::runtime_error("ShapeGeometry::getPrimaryAxis : unsupported");
     }
 
     /**
      * @brief Returns the secondary (polarization) molecular axis for a given @a shape.
      */
     [[nodiscard]] virtual Vector<3> getSecondaryAxis([[maybe_unused]] const Shape &shape) const {
-        throw std::runtime_error("ShapeTraits::getSecondaryAxis : unsupported");
+        throw std::runtime_error("ShapeGeometry::getSecondaryAxis : unsupported");
     }
 
     /**
@@ -40,6 +40,15 @@ public:
      */
     [[nodiscard]] virtual Vector<3> getGeometricOrigin([[maybe_unused]] const Shape &shape) const {
         return {0, 0, 0};
+    }
+
+    [[nodiscard]] virtual Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const {
+        if (pointName == "cm")
+            return shape.getPosition();
+        else if (pointName == "o")
+            return this->getGeometricOrigin(shape);
+        else
+            throw std::runtime_error("ShapeGeometry::getNamedPoint : unknown point name '" + pointName + "'");
     }
 };
 

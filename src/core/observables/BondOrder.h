@@ -28,6 +28,9 @@ private:
     std::vector<std::string> header;
     Vector<3> millerIndices;
 
+    std::string layeringPointName;
+    std::string bondOrderPointName;
+
     Vector<3> kVector;
     Vector<3> planeVector1;
     Vector<3> planeVector2;
@@ -35,10 +38,10 @@ private:
 
     static void insertDistance(KnnVector &knnVector, std::size_t particleIdx, double distance2);
 
-    std::vector<KnnVector> constructKnn(const Packing &packing);
-    void calculateLayerGeometry(const Packing &packing);
-    static double doCalculateBondOrder(const Packing &packing, size_t rank, const std::vector<KnnVector> &knn,
-                                       const Vector<3> &planeVector1, const Vector<3> &planeVector2);
+    [[nodiscard]] std::vector<KnnVector> constructKnn(const Packing &packing, const ShapeGeometry &geometry);
+    void calculateLayerGeometry(const Packing &packing, const ShapeGeometry &geometry);
+    [[nodiscard]] double doCalculateBondOrder(const Packing &packing, size_t rank, const std::vector<KnnVector> &knn,
+                                              const ShapeGeometry &geometry);
 
 public:
     /**
@@ -47,8 +50,9 @@ public:
      * @param planeMillerIndices parameter specifying the plane in which bond order should be computed. It is given as
      * Miller indices with respect to simulation box.
      */
-    BondOrder(std::size_t rank, const std::array<int, 3> &planeMillerIndices)
-            : BondOrder(std::vector<std::size_t>{rank}, planeMillerIndices)
+    BondOrder(std::size_t rank, const std::array<int, 3> &planeMillerIndices,
+              const std::string &layeringPointName = "cm", const std::string &bondOrderPointName = "cm")
+            : BondOrder(std::vector<std::size_t>{rank}, planeMillerIndices, layeringPointName, bondOrderPointName)
     { }
 
     /**
@@ -57,7 +61,8 @@ public:
      * @param planeMillerIndices parameter specifying the plane in which bond order should be computed. It is given as
      * Miller indices with respect to simulation box.
      */
-    BondOrder(std::vector<std::size_t> ranks, const std::array<int, 3> &planeMillerIndices);
+    BondOrder(std::vector<std::size_t> ranks, const std::array<int, 3> &planeMillerIndices,
+              std::string layeringPointName = "cm", std::string bondOrderPointName = "cm");
 
     /**
      * @brief Computes the bond order parameter(s) for given @a packing. Rest of parameters are ignored.
