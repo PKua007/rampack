@@ -3,6 +3,7 @@
 //
 
 #include <cmath>
+#include <random>
 
 #include <catch2/catch.hpp>
 
@@ -11,8 +12,8 @@
 #include "core/FreeBoundaryConditions.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/shapes/SphereTraits.h"
+#include "core/shapes/SpherocylinderTraits.h"
 
-#include <iostream>
 
 TEST_CASE("BondOrder: hexatic") {
     // We are creating a packing with 2 layers. Each layer has (n1 x n2) unit cells and is a perfect honeycomb which
@@ -65,9 +66,6 @@ TEST_CASE("BondOrder: hexatic") {
     // ... tilt it to create triclinic box
     packing.tryScaling(TriclinicBox({boxVector1, boxVector2, 2.*shift}), sphereTraits.getInteraction());
 
-    //std::cout << packing.getBox().getDimensions() << std::endl;
-    //packing.toWolfram(std::cout, sphereTraits.getPrinter());
-
     // ... and test the order parameter
     BondOrder bondOrder({4, 6}, {0, 0, 2});
 
@@ -100,6 +98,47 @@ TEST_CASE("BondOrder: distance within layer") {
     BondOrder bondOrder(4, {0, 0, 2});
 
     bondOrder.calculate(packing, 1, 1, sphereTraits);
+
+    CHECK(bondOrder.getIntervalValues()[0] == Approx(1));
+}
+
+TEST_CASE("BondOrder: non-standard layering and bond order points") {
+    // Bond order points, which are spherocylinder caps' origins, create a perfect tetragonal order in two layers,
+    // however spherodylinders are randomly rotated. Still, the order should be perfect. Box is very long to make sure
+    // That layers are identified correctly
+    SpherocylinderTraits spherocylinderTraits(2, 0.1);
+    std::vector<Shape> shapes;
+
+    std::mt19937 mt(1234ul); // NOLINT(cert-msc51-cpp)
+    auto randomRotation = [&mt]() {
+        std::uniform_real_distribution<double> unif(0, 1);
+        return Matrix<3, 3>::rotation(2 * M_PI * unif(mt), std::asin(2 * unif(mt) - 1), 2 * M_PI * unif(mt));
+    };
+
+    TriclinicBox box(std::array<double, 3>{20, 5, 5});
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>(box);
+    Vector<3> scAxis{1, 0, 0};
+    for (std::size_t i{}; i < 5; i++) {
+        for (std::size_t j{}; j < 5; j++) {
+            Vector<3> posLayer1{0.1, static_cast<double>(i) + 0.5, static_cast<double>(j) + 0.5};
+            auto rot1 = randomRotation();
+            auto pos1 = posLayer1 - rot1 * scAxis;
+            pos1 += pbc->getCorrection(pos1);
+            shapes.emplace_back(pos1, rot1);
+
+            Vector<3> posLayer2 = posLayer1;
+            posLayer2[0] = 10.1;
+            auto rot2 = randomRotation();
+            auto pos2 = posLayer2 - rot2 * scAxis;
+            pos2 += pbc->getCorrection(pos2);
+            shapes.emplace_back(pos2, rot2);
+        }
+    }
+
+    Packing packing(box, shapes, std::move(pbc), spherocylinderTraits.getInteraction(), 1, 1);
+    BondOrder bondOrder(4, {2, 0, 0}, "cm", "cap2");
+
+    bondOrder.calculate(packing, 1, 1, spherocylinderTraits);
 
     CHECK(bondOrder.getIntervalValues()[0] == Approx(1));
 }

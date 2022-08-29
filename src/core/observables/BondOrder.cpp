@@ -91,19 +91,24 @@ std::vector<BondOrder::KnnVector> BondOrder::constructKnn(const Packing &packing
     KnnVector knnInitalEntry(highestRank, {0, std::numeric_limits<double>::infinity()});
     std::vector<KnnVector> knn(packing.size(), knnInitalEntry);
     Vector<3> kVectorNormalized = this->kVector.normalized();
+    const auto &bc = packing.getBoundaryConditions();
     for (std::size_t i{}; i < packing.size(); i++) {
         for (std::size_t j = i + 1; j < packing.size(); j++) {
-            const auto &pos1 = geometry.getNamedPoint(this->layeringPointName, packing[i]);
-            auto pos2 = geometry.getNamedPoint(this->layeringPointName, packing[j]);
-            const auto &bc = packing.getBoundaryConditions();
-            pos2 += bc.getTranslation(pos1, pos2);
+            // Layer recognition and PBC translations are done using layeringPointName
+            const auto &layerPos1 = geometry.getNamedPoint(this->layeringPointName, packing[i]);
+            auto layerPos2 = geometry.getNamedPoint(this->layeringPointName, packing[j]);
+            layerPos2 += bc.getTranslation(layerPos1, layerPos2);
 
-            double layer1 = std::round((pos1 * this->kVector - this->tauAngle) / (2 * M_PI));
-            double layer2 = std::round((pos2 * this->kVector - this->tauAngle) / (2 * M_PI));
+            double layer1 = std::round((layerPos1 * this->kVector - this->tauAngle) / (2 * M_PI));
+            double layer2 = std::round((layerPos2 * this->kVector - this->tauAngle) / (2 * M_PI));
             if (layer1 != layer2)
                 continue;
 
-            Vector<3> diff = pos2 - pos1;
+            // Finding neighbours are done using bondOrderPointName
+            const auto &bondOrderPos1 = geometry.getNamedPoint(this->bondOrderPointName, packing[i]);
+            auto bondOrderPos2 = geometry.getNamedPoint(this->bondOrderPointName, packing[j]);
+            bondOrderPos2 += bc.getTranslation(bondOrderPos1, bondOrderPos2);
+            Vector<3> diff = bondOrderPos2 - bondOrderPos1;
             double distance2 = diff.norm2() - std::pow(diff * kVectorNormalized, 2);   // Subtract normal component
             distance2 = std::max(0.0, distance2);   // Make sure it is not < 0 due to numerical precision
 
