@@ -55,6 +55,77 @@ namespace {
 
         return std::make_pair(observableName, observableType);
     }
+
+    std::unique_ptr<SmecticOrder> parse_smectic_order(std::istringstream &observableStream) {
+        std::vector<std::string> tokens;
+        std::copy(std::istream_iterator<std::string>(observableStream), std::istream_iterator<std::string>{},
+                  std::back_inserter(tokens));
+
+        bool dumpTauVector{};
+        std::string dumpTauVectorString;
+        switch (tokens.size()) {
+            case 0:
+            case 3:
+                dumpTauVector = false;
+                break;
+
+            case 1:
+            case 4:
+                dumpTauVectorString = tokens.back();
+                if (dumpTauVectorString != "dumpTauVector") {
+                    throw ValidationException("Malformed smectic order, usage: smecticOrder "
+                                              "([max_k_x] [max_k_y] [max_k_z]) (dumpTauVector)");
+                }
+                dumpTauVector = true;
+                break;
+
+            default:
+                throw ValidationException("Malformed smectic order, usage: smecticOrder "
+                                          "([max_k_x] [max_k_y] [max_k_z]) (dumpTauVector)");
+                break;
+        }
+
+        if (tokens.size() >= 3) {
+            std::array<int, 3> kTauRanges{std::stoi(tokens[0]), std::stoi(tokens[1]), std::stoi(tokens[2])};
+            bool anyNonzero = std::any_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i != 0; });
+            bool allNonNegative = std::all_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i >= 0; });
+            ValidateMsg(anyNonzero && allNonNegative, "All tau ranges must be nonzero and some must be positive");
+            return std::make_unique<SmecticOrder>(kTauRanges, dumpTauVector);
+        } else {
+            return std::make_unique<SmecticOrder>(std::array<int, 3>{5, 5, 5});
+        }
+    }
+
+    std::unique_ptr<BondOrder> parse_bond_order(std::istringstream &observableStream) {
+        std::string millerIndicesString;
+        observableStream >> millerIndicesString;
+        auto millerIndicesExploded = explode(millerIndicesString, '.');
+        ValidateMsg(millerIndicesExploded.size() == 3, "Malformed bond order Miller indices; format: nx.ny.nz");
+        std::array<int, 3> millerIndices{};
+        auto converter = [](const std::string &wavenumberString) {
+            try {
+                return std::stoi(wavenumberString);
+            } catch (std::logic_error &e) {
+                throw ValidationException("Malformed bond order Miller indices; format: nx.ny.nz");
+            }
+        };
+        std::transform(millerIndicesExploded.begin(), millerIndicesExploded.end(), millerIndices.begin(),
+                       converter);
+        bool anyNonzero = std::any_of(millerIndices.begin(), millerIndices.end(), [](int i) { return i != 0; });
+        ValidateMsg(anyNonzero, "Bond order: all Miller indices are equal 0");
+
+
+        std::vector<std::size_t> ranks;
+        std::copy(std::istream_iterator<std::size_t>(observableStream), std::istream_iterator<std::size_t>{},
+                  std::back_inserter(ranks));
+        std::sort(ranks.begin(), ranks.end());
+        bool allRanksOk = std::all_of(ranks.begin(), ranks.end(), [](int rank) { return rank >= 2; });
+        ValidateMsg(allRanksOk, "Bond order: some ranks are not >= 2");
+        bool allUnique = std::adjacent_find(ranks.begin(), ranks.end()) == ranks.end();
+        ValidateMsg(allUnique, "Bond order: some ranks are repeated");
+
+        return std::make_unique<BondOrder>(ranks, millerIndices);
+    }
 }
 
 std::unique_ptr<ObservablesCollector> ObservablesCollectorFactory::create(const std::vector<std::string> &observables) {
@@ -92,73 +163,9 @@ std::unique_ptr<ObservablesCollector> ObservablesCollectorFactory::create(const 
             ValidateMsg(QTensorString == "dumpQTensor", "Malformed nematic order, usage: nematicOrder (dumpQTensor)");
             collector->addObservable(std::make_unique<NematicOrder>(true), observableType);
         } else if (observableName == "smecticOrder") {
-            std::vector<std::string> tokens;
-            std::copy(std::istream_iterator<std::string>(observableStream), std::istream_iterator<std::string>{},
-                      std::back_inserter(tokens));
-
-            bool dumpTauVector{};
-            std::string dumpTauVectorString;
-            switch (tokens.size()) {
-                case 0:
-                case 3:
-                    dumpTauVector = false;
-                    break;
-
-                case 1:
-                case 4:
-                    dumpTauVectorString = tokens.back();
-                    if (dumpTauVectorString != "dumpTauVector") {
-                        throw ValidationException("Malformed smectic order, usage: smecticOrder "
-                                                  "([max_k_x] [max_k_y] [max_k_z]) (dumpTauVector)");
-                    }
-                    dumpTauVector = true;
-                    break;
-
-                default:
-                    throw ValidationException("Malformed smectic order, usage: smecticOrder "
-                                              "([max_k_x] [max_k_y] [max_k_z]) (dumpTauVector)");
-                    break;
-            }
-
-            if (tokens.size() >= 3) {
-                std::array<int, 3> kTauRanges{std::stoi(tokens[0]), std::stoi(tokens[1]), std::stoi(tokens[2])};
-                bool anyNonzero = std::any_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i != 0; });
-                bool allNonNegative = std::all_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i >= 0; });
-                ValidateMsg(anyNonzero && allNonNegative, "All tau ranges must be nonzero and some must be positive");
-                collector->addObservable(std::make_unique<SmecticOrder>(kTauRanges, dumpTauVector), observableType);
-            } else {
-                collector->addObservable(std::make_unique<SmecticOrder>(std::array<int, 3>{5, 5, 5}, dumpTauVector),
-                                         observableType);
-            }
+            collector->addObservable(parse_smectic_order(observableStream), observableType);
         } else if (observableName == "bondOrder") {
-            std::string millerIndicesString;
-            observableStream >> millerIndicesString;
-            auto millerIndicesExploded = explode(millerIndicesString, '.');
-            ValidateMsg(millerIndicesExploded.size() == 3, "Malformed bond order Miller indices; format: nx.ny.nz");
-            std::array<int, 3> millerIndices{};
-            auto converter = [](const std::string &wavenumberString) {
-                try {
-                    return std::stoi(wavenumberString);
-                } catch (std::logic_error &e) {
-                    throw ValidationException("Malformed bond order Miller indices; format: nx.ny.nz");
-                }
-            };
-            std::transform(millerIndicesExploded.begin(), millerIndicesExploded.end(), millerIndices.begin(),
-                           converter);
-            bool anyNonzero = std::any_of(millerIndices.begin(), millerIndices.end(), [](int i) { return i != 0; });
-            ValidateMsg(anyNonzero, "Bond order: all Miller indices are equal 0");
-
-
-            std::vector<std::size_t> ranks;
-            std::copy(std::istream_iterator<std::size_t>(observableStream), std::istream_iterator<std::size_t>{},
-                      std::back_inserter(ranks));
-            std::sort(ranks.begin(), ranks.end());
-            bool allRanksOk = std::all_of(ranks.begin(), ranks.end(), [](int rank) { return rank >= 2; });
-            ValidateMsg(allRanksOk, "Bond order: some ranks are not >= 2");
-            bool allUnique = std::adjacent_find(ranks.begin(), ranks.end()) == ranks.end();
-            ValidateMsg(allUnique, "Bond order: some ranks are repeated");
-
-            collector->addObservable(std::make_unique<BondOrder>(ranks, millerIndices), observableType);
+            collector->addObservable(parse_bond_order(observableStream), observableType);
         } else if (observableName == "rotationMatrixDrift") {
             collector->addObservable(std::make_unique<RotationMatrixDrift>(), observableType);
         } else if (observableName == "temperature") {
