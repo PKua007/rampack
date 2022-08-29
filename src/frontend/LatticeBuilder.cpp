@@ -8,8 +8,8 @@
 #include <iterator>
 #include <variant>
 
-#include <ZipIterator.hpp>
 
+#include "ParseUtils.h"
 #include "LatticeBuilder.h"
 #include "core/TriclinicBox.h"
 #include "utils/Utils.h"
@@ -40,34 +40,13 @@
 namespace {
     using CellDimensions = std::variant<double, std::array<double, 3>, TriclinicBox>;
 
-
-    template <typename T>
-    std::vector<T> tokenize(std::istream &in) {
-        std::vector<T> tokens;
-        in >> std::ws;
-        while (in.good()) {
-            T token;
-            in >> token;
-            if (in.good())
-                in >> std::ws;
-            tokens.push_back(token);
-        }
-        return tokens;
-    }
-
-    template <typename T>
-    std::vector<T> tokenize(const std::string &str) {
-        std::istringstream in(str);
-        return tokenize<T>(in);
-    }
-
     std::optional<TriclinicBox> parse_box(std::string boxString) {
         trim(boxString);
         if (boxString == "auto")
             return std::nullopt;
 
         std::istringstream boxStream(boxString);
-        auto tokens = tokenize<double>(boxStream);
+        auto tokens = ParseUtils::tokenize<double>(boxStream);
         ValidateMsg(!boxStream.fail(), BOX_DIMENSIONS_USAGE);
 
         switch (tokens.size()) {
@@ -89,7 +68,7 @@ namespace {
 
     CellDimensions parse_cell_dim(const std::string &dim) {
         std::istringstream boxStream(dim);
-        auto tokens = tokenize<double>(boxStream);
+        auto tokens = ParseUtils::tokenize<double>(boxStream);
         ValidateMsg(!boxStream.fail(), BOX_DIMENSIONS_USAGE);
 
         switch (tokens.size()) {
@@ -107,51 +86,6 @@ namespace {
             default:
                 throw ValidationException(CELL_DIMENSIONS_USAGE);
         }
-    }
-
-    /* It parses tokenized string to a key=>value map. Allowed fields are given by 'fields'. Values of fields are
-     * all tokens that follow a token equal to the field name, up to the end or another field token (they are joined
-     * using spaces). If one of allowed fields is "", then everything before "named" fields is regarded as "" field's
-     * value.
-     *
-     * Example: for fields "", "pear", "plum" and "apple", tokens:
-     *
-     * 1 2 3 apple 4 5 6 pear plum 7 8 9
-     *
-     * will be parsed into:
-     *
-     * ""      => "1 2 3"
-     * "apple" => "4 5 6"
-     * "pear"  => ""
-     * "plum"  => "7 8 9"
-     * */
-    std::map<std::string, std::string> parse_fields(const std::vector<std::string> &fields,
-                                                    const std::vector<std::string> &tokens)
-    {
-        std::map<std::string, std::string> fieldMap;
-        auto currField = fieldMap.end();
-        for (const auto &token : tokens) {
-            if (std::find(fields.begin(), fields.end(), token) != fields.end()) {
-                if (fieldMap.find(token) != fieldMap.end())
-                    throw ValidationException("Redefined field: " + token);
-                currField = fieldMap.insert({token, ""}).first;
-            } else {
-                if (currField == fieldMap.end()) {
-                    if (std::find(fields.begin(), fields.end(), "") == fields.end())
-                        throw ValidationException("Empty field name is not supported in this context");
-                    currField = fieldMap.insert({"", ""}).first;
-                }
-
-                auto &value = currField->second;
-                if (value.empty()) {
-                    value = token;
-                } else {
-                    value += " ";
-                    value += token;
-                }
-            }
-        }
-        return fieldMap;
     }
 
     std::string value_or_default(const std::map<std::string, std::string> &map, const std::string &key,
@@ -182,7 +116,7 @@ namespace {
         shapes.reserve(shapesExploded.size());
         for (const auto &shapeString : shapesExploded) {
             std::istringstream shapeStream(shapeString);
-            auto tokens = tokenize<double>(shapeStream);
+            auto tokens = ParseUtils::tokenize<double>(shapeStream);
             ValidateMsg(!shapeStream.fail(), "Malformed shape. Usage: [pos. x] [y] [z] ([angle x deg] [y] [z])");
             constexpr double toRad = M_PI / 180;
             switch (tokens.size()) {
@@ -202,7 +136,7 @@ namespace {
 
     std::array<std::size_t, 3> parse_lattice_dim(const std::string &ncellString) {
         std::istringstream dimStream(ncellString);
-        auto latticeDimTokens = tokenize<std::size_t>(dimStream);
+        auto latticeDimTokens = ParseUtils::tokenize<std::size_t>(dimStream);
         ValidateMsg(!dimStream.fail() && latticeDimTokens.size() == 3, "Malformed 'ncell'");
         auto greaterThanZero = [](auto dim) { return dim > 0; };
         ValidateMsg(std::all_of(latticeDimTokens.begin(), latticeDimTokens.end(), greaterThanZero),
@@ -284,11 +218,11 @@ namespace {
     Lattice parse_lattice(std::size_t numParticles, std::optional<TriclinicBox> requestedBox,
                           const std::string &cellDefinition)
     {
-        auto tokens = tokenize<std::string>(cellDefinition);
+        auto tokens = ParseUtils::tokenize<std::string>(cellDefinition);
         std::string cellType = tokens.front();
         tokens.erase(tokens.begin());
 
-        auto fieldMap = parse_fields({"ncell", "dim", "default", "axis", "shapes"}, tokens);
+        auto fieldMap = ParseUtils::parseFields({"ncell", "dim", "default", "axis", "shapes"}, tokens);
         auto cell = parse_unit_cell(cellType, fieldMap);
         auto [latticeDim, newCellBox] = calculate_lattice_dim(numParticles, requestedBox, cell, fieldMap);
         cell.getBox() = newCellBox;
