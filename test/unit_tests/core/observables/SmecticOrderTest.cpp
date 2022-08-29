@@ -10,6 +10,8 @@
 #include "core/observables/SmecticOrder.h"
 #include "core/FreeBoundaryConditions.h"
 #include "core/shapes/SphereTraits.h"
+#include "core/shapes/SpherocylinderTraits.h"
+
 
 TEST_CASE("SmecticOrder: with vector dump") {
     SphereTraits traits;
@@ -52,4 +54,27 @@ TEST_CASE("SmecticOrder: without vector dump") {
 
     CHECK(smecticOrder.getIntervalHeader() == std::vector<std::string>{"tau"});
     CHECK(smecticOrder.getNominalHeader() == std::vector<std::string>{"k_tau"});
+}
+
+TEST_CASE("SmecticOrder: non-standard focal point") {
+    SpherocylinderTraits traits(1, 0.5);
+    SmecticOrder smecticOrder({3, 3, 3,}, false, "cap2");
+
+    // Two layers along x, where second (positive) spherocylinders' caps perfectly meet on x coordinate. y and z
+    // coordinates have worse order
+    auto rotated = Matrix<3, 3>::rotation(0, M_PI, 0);
+    auto notRotated = Matrix<3, 3>::identity();
+    std::vector<Shape> shapes = {{{1.5, 2, 2}, notRotated}, {{2.5, 2, 5}, rotated},
+                                 {{1.5, 5, 5}, notRotated}, {{2.5, 5, 2}, rotated},
+                                 {{5.5, 2, 2}, notRotated}, {{6.5, 2, 5}, rotated},
+                                 {{5.5, 5, 5}, notRotated}, {{6.5, 5, 2}, rotated}};
+    auto fbc = std::make_unique<FreeBoundaryConditions>();
+    Packing packing({8, 8, 8}, shapes, std::move(fbc), traits.getInteraction());
+
+    smecticOrder.calculate(packing, 1, 1, traits);
+    auto intervalValues = smecticOrder.getIntervalValues();
+    auto nominalValues = smecticOrder.getNominalValues();
+
+    CHECK(intervalValues[0] == Approx(8/(8.0*8*8)));
+    CHECK(nominalValues == std::vector<std::string>{"2.0.0"});
 }

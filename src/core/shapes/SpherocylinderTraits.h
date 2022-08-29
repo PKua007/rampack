@@ -25,7 +25,7 @@ public:
     SpherocylinderTraits() : length{1}, radius{1} { }
 
     /**
-     * @brief Creates a spherocylinder spanned on x axis with @a lenght distance between cap centers and @a radius
+     * @brief Creates a spherocylinder spanned on x axis with @a length distance between cap centers and @a radius
      * radius.
      */
     SpherocylinderTraits(double length, double radius);
@@ -35,6 +35,7 @@ public:
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
     [[nodiscard]] double getVolume() const override;
+    [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const override;
 
     [[nodiscard]] bool hasHardPart() const override { return true; }
     [[nodiscard]] bool hasWallPart() const override { return true; }
