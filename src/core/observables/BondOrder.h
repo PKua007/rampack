@@ -38,10 +38,12 @@ private:
 
     static void insertDistance(KnnVector &knnVector, std::size_t particleIdx, double distance2);
 
-    [[nodiscard]] std::vector<KnnVector> constructKnn(const Packing &packing, const ShapeGeometry &geometry);
-    void calculateLayerGeometry(const Packing &packing, const ShapeGeometry &geometry);
-    [[nodiscard]] double doCalculateBondOrder(const Packing &packing, size_t rank, const std::vector<KnnVector> &knn,
-                                              const ShapeGeometry &geometry);
+    [[nodiscard]] std::vector<KnnVector> constructKnn(const std::vector<Vector<3>> &layeringPoints,
+                                                      const std::vector<Vector<3>> &bondOrderPoints,
+                                                      const BoundaryConditions &bc);
+    void calculateLayerGeometry(const Packing &packing, const std::vector<Vector<3>> &layeringPoints);
+    [[nodiscard]] double doCalculateBondOrder(const std::vector<Vector<3>> &bondOrderPoints, std::size_t rank,
+                                              const std::vector<KnnVector> &knn, const BoundaryConditions &bc);
 
 public:
     /**

@@ -15,6 +15,7 @@
 #include "BoundaryConditions.h"
 #include "Interaction.h"
 #include "ShapePrinter.h"
+#include "ShapeGeometry.h"
 #include "NeighbourGrid.h"
 #include "ActiveDomain.h"
 #include "utils/OMPMacros.h"
@@ -450,6 +451,9 @@ public:
      * @brief Resets race condition sanitizer for NeighbourGrid, see NeighbourGrid::resetRaceConditionSanitizer.
      */
     void resetNGRaceConditionSanitizer();
+
+    [[nodiscard]] std::vector<Vector<3>> dumpNamedPoints(const ShapeGeometry &geometry,
+                                                         const std::string &pointName) const;
 };
 
 

@@ -32,7 +32,7 @@ auto SmecticOrder::calculateTau(const std::array<int, 3> &kTau_, const Packing &
 void SmecticOrder::calculate(const Packing &packing, [[maybe_unused]] double temperature,
                              [[maybe_unused]] double pressure, [[maybe_unused]] const ShapeTraits &shapeTraits)
 {
-    auto focalPoints = this->calculateFocalPoints(packing, shapeTraits.getGeometry());
+    auto focalPoints = packing.dumpNamedPoints(shapeTraits.getGeometry(), this->focalPoint);
 
     this->tau = 0;
     this->kTau = {0, 0, 0};
@@ -79,14 +79,4 @@ std::vector<double> SmecticOrder::getIntervalValues() const {
         return {std::abs(this->tau), this->kTauVector[0], this->kTauVector[1], this->kTauVector[2]};
     else
         return {std::abs(this->tau)};
-}
-
-std::vector<Vector<3>> SmecticOrder::calculateFocalPoints(const Packing &packing, const ShapeGeometry &geometry) const {
-    std::vector<Vector<3>> focalPoints;
-    focalPoints.reserve(packing.size());
-    auto focalPointCaculator = [this, &geometry](const Shape &shape) {
-        return geometry.getNamedPoint(this->focalPoint, shape);
-    };
-    std::transform(packing.begin(), packing.end(), std::back_inserter(focalPoints), focalPointCaculator);
-    return focalPoints;
 }

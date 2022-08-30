@@ -26,9 +26,6 @@ private:
     static auto calculateTau(const std::array<int, 3> &kTau_, const Packing &focalPoint_,
                              const std::vector<Vector<3>> &focalPoints);
 
-    [[nodiscard]] std::vector<Vector<3>> calculateFocalPoints(const Packing &packing,
-                                                              const ShapeGeometry &geometry) const;
-
 public:
     /**
      * @brief Constructor with @a kTauRanges - a specified range of integer multiples of 2 pi/(box length) to construct

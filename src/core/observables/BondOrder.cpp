@@ -27,7 +27,7 @@ BondOrder::BondOrder(std::vector<std::size_t> ranks, const std::array<int, 3> &p
                    [](auto rank) { return "psi" + std::to_string(rank); });
 }
 
-void BondOrder::calculateLayerGeometry(const Packing &packing, const ShapeGeometry &geometry) {
+void BondOrder::calculateLayerGeometry(const Packing &packing, const std::vector<Vector<3>> &layeringPoints) {
     auto dimInv = packing.getBox().getDimensions().inverse();
     this->kVector = 2*M_PI*(dimInv.transpose() * this->millerIndices);
 
@@ -38,29 +38,33 @@ void BondOrder::calculateLayerGeometry(const Packing &packing, const ShapeGeomet
     this->planeVector1 = (this->kVector ^ nonParallel).normalized();
     this->planeVector2 = (this->kVector ^ this->planeVector1).normalized();
 
-    auto tauAccumulator = [this, &geometry](std::complex<double> tau_, const Shape &shape) {
+    auto tauAccumulator = [this](std::complex<double> tau_, const Vector<3> &point) {
         using namespace std::complex_literals;
-        return tau_ + std::exp(1i * (this->kVector * geometry.getNamedPoint(this->layeringPointName, shape)));
+        return tau_ + std::exp(1i * (this->kVector * point));
     };
-    auto tau = std::accumulate(packing.begin(), packing.end(), std::complex<double>{0}, tauAccumulator);
+    auto tau = std::accumulate(layeringPoints.begin(), layeringPoints.end(), std::complex<double>{0}, tauAccumulator);
     this->tauAngle = std::arg(tau);
 }
 
 void BondOrder::calculate(const Packing &packing, [[maybe_unused]] double temperature, [[maybe_unused]] double pressure,
                           [[maybe_unused]] const ShapeTraits &shapeTraits)
 {
-    this->calculateLayerGeometry(packing, shapeTraits.getGeometry());
-    std::vector<KnnVector> knn = this->constructKnn(packing, shapeTraits.getGeometry());
+    auto layeringPoints = packing.dumpNamedPoints(shapeTraits.getGeometry(), this->layeringPointName);
+    auto bondOrderPoints = packing.dumpNamedPoints(shapeTraits.getGeometry(), this->bondOrderPointName);
+
+    this->calculateLayerGeometry(packing, layeringPoints);
+    const auto &bc = packing.getBoundaryConditions();
+    std::vector<KnnVector> knn = this->constructKnn(layeringPoints, bondOrderPoints, bc);
     for (std::size_t i{}; i < this->ranks.size(); i++)
-        this->psis[i] = BondOrder::doCalculateBondOrder(packing, this->ranks[i], knn, shapeTraits.getGeometry());
+        this->psis[i] = BondOrder::doCalculateBondOrder(bondOrderPoints, this->ranks[i], knn, bc);
 }
 
-double BondOrder::doCalculateBondOrder(const Packing &packing, std::size_t rank, const std::vector<KnnVector> &knn,
-                                       const ShapeGeometry &geometry)
+double BondOrder::doCalculateBondOrder(const std::vector<Vector<3>> &bondOrderPoints, std::size_t rank,
+                                       const std::vector<KnnVector> &knn, const BoundaryConditions &bc)
 {
     double psi{};
-    for (std::size_t particleIdx{}; particleIdx < packing.size(); particleIdx++) {
-        const auto &particlePos = geometry.getNamedPoint(this->bondOrderPointName, packing[particleIdx]);
+    for (std::size_t particleIdx{}; particleIdx < bondOrderPoints.size(); particleIdx++) {
+        const auto &particlePos = bondOrderPoints[particleIdx];
         const auto &neighboursIdxs = knn[particleIdx];
         // Skip particles which have too few neighbours - effectively they have psi = 0
         if (neighboursIdxs.size() < rank)
@@ -69,8 +73,7 @@ double BondOrder::doCalculateBondOrder(const Packing &packing, std::size_t rank,
         std::complex<double> localPsi{};
         for (std::size_t neighbourIdx{}; neighbourIdx < rank; neighbourIdx++) {
             auto neighbourParticleIdx = neighboursIdxs[neighbourIdx].first;
-            const auto &neighbourPos = geometry.getNamedPoint(this->bondOrderPointName, packing[neighbourParticleIdx]);
-            const BoundaryConditions &bc = packing.getBoundaryConditions();
+            const auto &neighbourPos = bondOrderPoints[neighbourParticleIdx];
             Vector<3> diff = neighbourPos - particlePos + bc.getTranslation(particlePos, neighbourPos);
 
             double coord1 = this->planeVector1 * diff;
@@ -83,20 +86,24 @@ double BondOrder::doCalculateBondOrder(const Packing &packing, std::size_t rank,
         psi += std::abs(localPsi) / static_cast<double>(rank);
     }
 
-    return std::abs(psi) / static_cast<double>(packing.size());
+    return std::abs(psi) / static_cast<double>(bondOrderPoints.size());
 }
 
-std::vector<BondOrder::KnnVector> BondOrder::constructKnn(const Packing &packing, const ShapeGeometry &geometry) {
+std::vector<BondOrder::KnnVector> BondOrder::constructKnn(const std::vector<Vector<3>> &layeringPoints,
+                                                          const std::vector<Vector<3>> &bondOrderPoints,
+                                                          const BoundaryConditions &bc)
+{
+    Expects(layeringPoints.size() == bondOrderPoints.size());
+    std::size_t size = layeringPoints.size();
+
     std::size_t highestRank = this->ranks.back();
     KnnVector knnInitalEntry(highestRank, {0, std::numeric_limits<double>::infinity()});
-    std::vector<KnnVector> knn(packing.size(), knnInitalEntry);
+    std::vector<KnnVector> knn(size, knnInitalEntry);
     Vector<3> kVectorNormalized = this->kVector.normalized();
-    const auto &bc = packing.getBoundaryConditions();
-    for (std::size_t i{}; i < packing.size(); i++) {
-        for (std::size_t j = i + 1; j < packing.size(); j++) {
-            // Layer recognition and PBC translations are done using layeringPointName
-            const auto &layerPos1 = geometry.getNamedPoint(this->layeringPointName, packing[i]);
-            auto layerPos2 = geometry.getNamedPoint(this->layeringPointName, packing[j]);
+    for (std::size_t i{}; i < size; i++) {
+        for (std::size_t j = i + 1; j < size; j++) {
+            const auto &layerPos1 = layeringPoints[i];
+            auto layerPos2 = layeringPoints[j];
             layerPos2 += bc.getTranslation(layerPos1, layerPos2);
 
             double layer1 = std::round((layerPos1 * this->kVector - this->tauAngle) / (2 * M_PI));
@@ -104,9 +111,8 @@ std::vector<BondOrder::KnnVector> BondOrder::constructKnn(const Packing &packing
             if (layer1 != layer2)
                 continue;
 
-            // Finding neighbours are done using bondOrderPointName
-            const auto &bondOrderPos1 = geometry.getNamedPoint(this->bondOrderPointName, packing[i]);
-            auto bondOrderPos2 = geometry.getNamedPoint(this->bondOrderPointName, packing[j]);
+            const auto &bondOrderPos1 = bondOrderPoints[i];
+            auto bondOrderPos2 = bondOrderPoints[j];
             bondOrderPos2 += bc.getTranslation(bondOrderPos1, bondOrderPos2);
             Vector<3> diff = bondOrderPos2 - bondOrderPos1;
             double distance2 = diff.norm2() - std::pow(diff * kVectorNormalized, 2);   // Subtract normal component
