@@ -7,8 +7,10 @@
 
 
 #include <ostream>
+#include <map>
 
 #include "core/ShapeTraits.h"
+
 
 /**
  * @brief A class analogous to PolysphereTraits, but for hard spherocylinders.
@@ -63,6 +65,7 @@ public:
         Vector<3> primaryAxis;
         Vector<3> secondaryAxis;
         Vector<3> geometricOrigin;
+        std::map<std::string, Vector<3>> namedPoints;
 
     public:
         /**
@@ -73,7 +76,8 @@ public:
          * @param geometricOrigin geometric origin of the molecule which can be different that the mass centre
          */
         PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, const Vector<3> &primaryAxis,
-                                   const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin);
+                                   const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin = {0, 0, 0},
+                                   std::map<std::string, Vector<3>> namedPoints = {});
 
         [[nodiscard]] double getVolume() const override;
 
@@ -89,13 +93,21 @@ public:
             return shape.getOrientation() * this->geometricOrigin;
         }
 
-        [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const { return this->spherocylinderData; }
+        [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const override;
+
+        [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const {
+            return this->spherocylinderData;
+        }
 
         /**
          * @brief Calculates mass centre and moves it to {0, 0, 0} (geometric origin is moved accordingly).
          * @details Overlaps are not accounted for.
          */
         void normalizeMassCentre();
+
+        void setNamedPoints(std::map<std::string, Vector<3>> namedPoints_) {
+            this->namedPoints = std::move(namedPoints_);
+        }
 
         /**
          * @brief Calculates and returns mass centre.

@@ -17,9 +17,11 @@ double PolyspherocylinderTraits::PolyspherocylinderGeometry::getVolume() const {
 
 PolyspherocylinderTraits::PolyspherocylinderGeometry
     ::PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, const Vector<3> &primaryAxis,
-                                 const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin)
+                                 const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin,
+                                 std::map<std::string, Vector<3>> namedPoints)
         : spherocylinderData{std::move(spherocylinderData)}, primaryAxis{primaryAxis.normalized()},
-          secondaryAxis{secondaryAxis.normalized()}, geometricOrigin{geometricOrigin}
+          secondaryAxis{secondaryAxis.normalized()}, geometricOrigin{geometricOrigin},
+          namedPoints{std::move(namedPoints)}
 {
     Expects(!this->spherocylinderData.empty());
 }
@@ -50,6 +52,8 @@ void PolyspherocylinderTraits::PolyspherocylinderGeometry::normalizeMassCentre()
                    std::back_inserter(newSpherocylinderData), massCentreShifter);
     this->spherocylinderData = std::move(newSpherocylinderData);
     this->geometricOrigin -= massCentre;
+    for (auto &namedPoint : this->namedPoints)
+        namedPoint.second -= massCentre;
 }
 
 Vector<3> PolyspherocylinderTraits::PolyspherocylinderGeometry::calculateMassCentre() const {
@@ -156,3 +160,39 @@ bool PolyspherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matri
     return false;
 }
 
+Vector<3> PolyspherocylinderTraits::PolyspherocylinderGeometry::getNamedPoint(const std::string &pointName,
+                                                                              const Shape &shape) const
+{
+    auto it = this->namedPoints.find(pointName);
+    if (it != this->namedPoints.end())
+        return shape.getPosition() + shape.getOrientation() * it->second;
+
+    if (pointName.length() < 2)
+        return ShapeGeometry::getNamedPoint(pointName, shape);
+
+    switch (pointName[0]) {
+        case 'o': case 'b': case 'e':
+            break;
+        default:
+            return ShapeGeometry::getNamedPoint(pointName, shape);
+    }
+
+    if (!std::all_of(std::next(pointName.begin()), pointName.end(), isdigit))
+        return ShapeGeometry::getNamedPoint(pointName, shape);
+
+    std::size_t idx = std::strtoul(pointName.c_str() + 1, nullptr, 0);
+    if (idx >= this->spherocylinderData.size())
+        return ShapeGeometry::getNamedPoint(pointName, shape);
+
+    const auto &scData = this->spherocylinderData[idx];
+    switch (pointName[0]) {
+        case 'o':
+            return scData.centreForShape(shape);
+        case 'b':
+            return scData.centreForShape(shape) - scData.halfAxisForShape(shape);
+        case 'e':
+            return scData.centreForShape(shape) + scData.halfAxisForShape(shape);
+        default:
+            throw std::runtime_error("This shouldn't happen");
+    }
+}

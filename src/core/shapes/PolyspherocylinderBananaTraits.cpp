@@ -41,5 +41,8 @@ PolyspherocylinderBananaTraits::generateGeometry(double arcRadius, double arcAng
     } else {
         geometry.setGeometricOrigin(geometry.calculateMassCentre());
     }
+    const auto &scData = geometry.getSpherocylinderData();
+    geometry.setNamedPoints({{"sbeg", scData.front().position - scData.front().halfAxis},
+                             {"send", scData.front().position + scData.front().halfAxis}});
     return geometry;
 }
