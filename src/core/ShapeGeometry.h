@@ -46,7 +46,7 @@ public:
         if (pointName == "cm")
             return shape.getPosition();
         else if (pointName == "o")
-            return this->getGeometricOrigin(shape);
+            return shape.getPosition() + this->getGeometricOrigin(shape);
         else
             throw std::runtime_error("ShapeGeometry::getNamedPoint : unknown point name '" + pointName + "'");
     }
