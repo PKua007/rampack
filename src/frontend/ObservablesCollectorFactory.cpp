@@ -64,45 +64,33 @@ namespace {
         return std::make_pair(observableName, observableType);
     }
 
-    std::unique_ptr<SmecticOrder> parse_smectic_order_old_syntax(const std::vector<std::string> &tokens) {
-        bool dumpTauVector{};
-        std::string dumpTauVectorString;
+    std::map<std::string, std::string> parse_smectic_order_old_syntax(const std::vector<std::string> &tokens) {
         switch (tokens.size()) {
-            case 0:
-            case 3:
-                dumpTauVector = false;
+            case 0: case 1: case 3: case 4:
                 break;
-
-            case 1:
-            case 4:
-                dumpTauVectorString = tokens.back();
-                if (dumpTauVectorString != "dumpTauVector")
-                    throw ValidationException(SMECTIC_ORDER_USAGE);
-
-                dumpTauVector = true;
-                break;
-
             default:
                 throw ValidationException(SMECTIC_ORDER_USAGE);
-                break;
         }
 
-        if (tokens.size() >= 3) {
-            std::array<int, 3> kTauRanges{std::stoi(tokens[0]), std::stoi(tokens[1]), std::stoi(tokens[2])};
-            bool anyNonzero = std::any_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i != 0; });
-            bool allNonNegative = std::all_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i >= 0; });
-            ValidateMsg(anyNonzero && allNonNegative, "All tau ranges must be nonzero and some must be positive");
-            return std::make_unique<SmecticOrder>(kTauRanges, dumpTauVector);
-        } else {
-            return std::make_unique<SmecticOrder>(std::array<int, 3>{5, 5, 5});
+        std::map<std::string, std::string> fieldMap;
+
+        if (tokens.size() == 1 || tokens.size() == 4) {
+            if (tokens.back() != "dumpTauVector")
+                throw ValidationException(SMECTIC_ORDER_USAGE);
+            fieldMap["dumpTauVector"] = "";
         }
+
+        if (tokens.size() == 3 || tokens.size() == 4)
+            fieldMap["max_k"] = tokens[0] + " " + tokens[1] + " " + tokens[2];
+
+        return fieldMap;
     }
 
     std::unique_ptr<SmecticOrder> parse_smectic_order(std::istringstream &observableStream) {
         std::vector<std::string> tokens = ParseUtils::tokenize<std::string>(observableStream);
         auto fieldMap = ParseUtils::parseFields({"", "max_k", "dumpTauVector", "focalPoint"}, tokens);
         if (fieldMap.find("") != fieldMap.end())
-            return parse_smectic_order_old_syntax(tokens);
+            fieldMap = parse_smectic_order_old_syntax(tokens);
 
         std::array<int, 3> kTauRanges{5, 5, 5};
         if (fieldMap.find("max_k") != fieldMap.end()) {
