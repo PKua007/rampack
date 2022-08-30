@@ -23,8 +23,11 @@ private:
     Vector<3> kTauVector{};
     std::array<int, 3> kTauRanges{};
 
-    [[nodiscard]] auto calculateTau(const std::array<int, 3> &kTau_, const Packing &packing,
-                                    const ShapeGeometry &geometry);
+    static auto calculateTau(const std::array<int, 3> &kTau_, const Packing &focalPoint_,
+                             const std::vector<Vector<3>> &focalPoints);
+
+    [[nodiscard]] std::vector<Vector<3>> calculateFocalPoints(const Packing &packing,
+                                                              const ShapeGeometry &geometry) const;
 
 public:
     /**

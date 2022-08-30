@@ -9,27 +9,31 @@
 
 #include "SmecticOrder.h"
 
-auto SmecticOrder::calculateTau(const std::array<int, 3> &kTau_, const Packing &packing, const ShapeGeometry &geometry)
+
+auto SmecticOrder::calculateTau(const std::array<int, 3> &kTau_, const Packing &packing, const std::vector<Vector<3>> &focalPoints)
 {
     auto dimInv = packing.getBox().getDimensions().inverse();
-    Vector<3> kTauVector;
+    Vector<3> kTauVector_;
     for (std::size_t i{}; i < 3; i++)
-        kTauVector[i] = 2 * M_PI * kTau_[i];
-    kTauVector = dimInv.transpose() * kTauVector;
+        kTauVector_[i] = 2 * M_PI * kTau_[i];
+    kTauVector_ = dimInv.transpose() * kTauVector_;
     double volume = packing.getVolume();
 
-    auto tauAccumulator = [kTauVector, &geometry, this](std::complex<double> tau_, const Shape &shape) {
+    auto tauAccumulator = [kTauVector_](std::complex<double> tau_, const Vector<3> &focalPoint_) {
         using namespace std::complex_literals;
-        return tau_ + std::exp(1i * (kTauVector * geometry.getNamedPoint(this->focalPoint, shape)));
+        return tau_ + std::exp(1i * (kTauVector_ * focalPoint_));
     };
-    auto tau = std::accumulate(packing.begin(), packing.end(), std::complex<double>{0}, tauAccumulator) / volume;
+    auto tau_= std::accumulate(focalPoints.begin(), focalPoints.end(), std::complex<double>{0}, tauAccumulator);
+    tau_ /= volume;
 
-    return std::make_pair(tau, kTauVector);
+    return std::make_pair(tau_, kTauVector_);
 }
 
 void SmecticOrder::calculate(const Packing &packing, [[maybe_unused]] double temperature,
                              [[maybe_unused]] double pressure, [[maybe_unused]] const ShapeTraits &shapeTraits)
 {
+    auto focalPoints = this->calculateFocalPoints(packing, shapeTraits.getGeometry());
+
     this->tau = 0;
     this->kTau = {0, 0, 0};
 
@@ -39,7 +43,7 @@ void SmecticOrder::calculate(const Packing &packing, [[maybe_unused]] double tem
             int czBeg = ((cx == 0 && cy == 0) ? 1 : -this->kTauRanges[2]);
             for (int cz = czBeg; cz < this->kTauRanges[2]; cz++) {
                 std::array<int, 3> kTau_{cx, cy, cz};
-                auto [tau_, kTauVector_] = calculateTau(kTau_, packing, shapeTraits.getGeometry());
+                auto [tau_, kTauVector_] = calculateTau(kTau_, packing, focalPoints);
                 if (std::abs(tau_) > std::abs(this->tau)) {
                     this->tau = tau_;
                     this->kTau = kTau_;
@@ -75,4 +79,14 @@ std::vector<double> SmecticOrder::getIntervalValues() const {
         return {std::abs(this->tau), this->kTauVector[0], this->kTauVector[1], this->kTauVector[2]};
     else
         return {std::abs(this->tau)};
+}
+
+std::vector<Vector<3>> SmecticOrder::calculateFocalPoints(const Packing &packing, const ShapeGeometry &geometry) const {
+    std::vector<Vector<3>> focalPoints;
+    focalPoints.reserve(packing.size());
+    auto focalPointCaculator = [this, &geometry](const Shape &shape) {
+        return geometry.getNamedPoint(this->focalPoint, shape);
+    };
+    std::transform(packing.begin(), packing.end(), std::back_inserter(focalPoints), focalPointCaculator);
+    return focalPoints;
 }
