@@ -30,6 +30,11 @@
                             "NEW SYNTAX: smecticOrder (max_k {[x=y=z] | [x] [y] [z]}) (dumpTauVector) " \
                             "(focalPoint [point name])"
 
+#define BOND_ORDER_USAGE "Malformed bond order, usage:\n" \
+                         "OLD SYNTAX: bondOrder [nx].[ny].[nz] [rank 1] [rank 2] ...\n" \
+                         "NEW SYNTAX: bondOrder millerIdx [nx].[ny].[nz] ranks [rank 1] [rank 2] ... " \
+                         "(layeringPoint [point name]) (bondOrderPoint [point name])"
+
 
 namespace {
     auto parse_observable_name_and_type(std::istringstream &observableStream, const std::regex &typePattern) {
@@ -122,10 +127,26 @@ namespace {
             return std::make_unique<SmecticOrder>(kTauRanges, dumpTauVector);
     }
 
+    std::map<std::string, std::string> parse_bond_order_old_syntax(const std::vector<std::string> &tokens) {
+        ValidateMsg(tokens.size() >= 2, BOND_ORDER_USAGE);
+
+        std::map<std::string, std::string> fieldMap;
+        fieldMap["millerIdx"] = tokens[0];
+        auto imploder = [](const auto &ranksStr, const auto &nextRankStr) { return ranksStr + " " + nextRankStr; };
+        fieldMap["ranks"] = std::accumulate(std::next(tokens.begin()), tokens.end(), std::string{}, imploder);
+        return fieldMap;
+    }
+
     std::unique_ptr<BondOrder> parse_bond_order(std::istringstream &observableStream) {
-        std::string millerIndicesString;
-        observableStream >> millerIndicesString;
-        auto millerIndicesExploded = explode(millerIndicesString, '.');
+        std::vector<std::string> tokens = ParseUtils::tokenize<std::string>(observableStream);
+        auto fieldMap = ParseUtils::parseFields({"", "millerIdx", "ranks", "layeringPoint", "bondOrderPoint"}, tokens);
+        if (fieldMap.find("") != fieldMap.end())
+            fieldMap = parse_bond_order_old_syntax(tokens);
+
+        ValidateMsg(fieldMap.find("millerIdx") != fieldMap.end() && fieldMap.find("ranks") != fieldMap.end(),
+                    BOND_ORDER_USAGE);
+
+        auto millerIndicesExploded = explode(fieldMap["millerIdx"], '.');
         ValidateMsg(millerIndicesExploded.size() == 3, "Malformed bond order Miller indices; format: nx.ny.nz");
         std::array<int, 3> millerIndices{};
         auto converter = [](const std::string &wavenumberString) {
@@ -140,17 +161,22 @@ namespace {
         bool anyNonzero = std::any_of(millerIndices.begin(), millerIndices.end(), [](int i) { return i != 0; });
         ValidateMsg(anyNonzero, "Bond order: all Miller indices are equal 0");
 
-
-        std::vector<std::size_t> ranks;
-        std::copy(std::istream_iterator<std::size_t>(observableStream), std::istream_iterator<std::size_t>{},
-                  std::back_inserter(ranks));
+        std::vector<std::size_t> ranks = ParseUtils::tokenize<std::size_t>(fieldMap["ranks"]);
         std::sort(ranks.begin(), ranks.end());
         bool allRanksOk = std::all_of(ranks.begin(), ranks.end(), [](int rank) { return rank >= 2; });
         ValidateMsg(allRanksOk, "Bond order: some ranks are not >= 2");
         bool allUnique = std::adjacent_find(ranks.begin(), ranks.end()) == ranks.end();
         ValidateMsg(allUnique, "Bond order: some ranks are repeated");
 
-        return std::make_unique<BondOrder>(ranks, millerIndices);
+        std::string layeringPoint = "cm";
+        if (fieldMap.find("layeringPoint") != fieldMap.end())
+            layeringPoint = fieldMap["layeringPoint"];
+
+        std::string bondOrderPoint = "cm";
+        if (fieldMap.find("bondOrderPoint") != fieldMap.end())
+            bondOrderPoint = fieldMap["bondOrderPoint"];
+
+        return std::make_unique<BondOrder>(ranks, millerIndices, layeringPoint, bondOrderPoint);
     }
 }
 
