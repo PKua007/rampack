@@ -7,6 +7,9 @@
 #include <sstream>
 
 #include "matchers/PackingApproxPositionsCatchMatcher.h"
+#include "matchers/VectorApproxMatcher.h"
+
+#include "mocks/MockShapeGeometry.h"
 
 #include "core/Packing.h"
 #include "core/PeriodicBoundaryConditions.h"
@@ -596,7 +599,6 @@ TEST_CASE("Packing: multiple interaction centres wall overlap") {
     }
 }
 
-
 TEST_CASE("Packing: too big NG cell bug") {
     // Previous behaviour:
     // 100 x 100 x 1.1 packing forced too big NG cell - volume=11000, so the cell size set to give "at most 5^3 cells
@@ -613,4 +615,21 @@ TEST_CASE("Packing: too big NG cell bug") {
     shapes.emplace_back(Vector<3>{0.5, 75, 75});
 
     REQUIRE_NOTHROW(Packing({1.1, 100, 100}, std::move(shapes), std::move(pbc), hardCore));
+}
+
+TEST_CASE("Packing: named points dumping") {
+    double radius = 0.5;
+    SphereHardCoreInteraction hardCore(radius);
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    std::vector<Shape> shapes{Shape{{0.5, 0.5, 0.5}}, Shape{{0.5, 3.5, 0.5}, Matrix<3, 3>::rotation(0, 0, M_PI/2)}};
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
+    using trompeloeil::_;
+    MockShapeGeometry geometry;
+    ALLOW_CALL(geometry, getNamedPoint("point", _)).RETURN(_2.getPosition() + _2.getOrientation() * Vector<3>{1, 0, 0});
+
+    auto points = packing.dumpNamedPoints(geometry, "point");
+
+    REQUIRE(points.size() == 2);
+    CHECK_THAT(points[0], IsApproxEqual({1.5, 0.5, 0.5}, 1e-12));
+    CHECK_THAT(points[1], IsApproxEqual({0.5, 4.5, 0.5}, 1e-12));
 }

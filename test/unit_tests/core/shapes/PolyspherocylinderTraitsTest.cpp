@@ -30,8 +30,9 @@ TEST_CASE("PolyspherocylinderTraits") {
 
     PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({Data{{0, 0, 0}, {0, 0, 1}, 1},
                                                                    Data{{0, 0, 2}, {0, 0, 1}, 0.5}},
-                                                                  {0, 0, 1}, {1, 0, 0}, {0, 0, 0});
-    PolyspherocylinderTraits traits(std::move(geometry));
+                                                                  {0, 0, 1}, {1, 0, 0}, {0, 1, 0},
+                                                                  {{"point1", {0, 1, 0}}});
+    PolyspherocylinderTraits traits(geometry);
 
     SECTION("hard interactions") {
         const Interaction &interaction = traits.getInteraction();
@@ -70,16 +71,20 @@ TEST_CASE("PolyspherocylinderTraits") {
                  ",Tube[{{2.000000, 0.000000, 0.000000},{0.000000, 0.000000, 0.000000}},0.500000]}");
     }
 
-    SECTION("primary axis") {
-        // primary axis Z rotated 90 deg around Y axis => primary axis is X
-        Shape shape({}, Matrix<3, 3>::rotation(0, M_PI / 2, 0));
-        CHECK_THAT(traits.getGeometry().getPrimaryAxis(shape), IsApproxEqual({1, 0, 0}, 1e-8));
-    }
+    SECTION("geometry") {
+        Shape shape({1, 2, 3}, Matrix<3, 3>::rotation(0, M_PI/2, 0));
 
-    SECTION("secondary axis") {
-        // secondary axis X rotated 90 deg around Y axis => secondary axis is -Z
-        Shape shape({}, Matrix<3, 3>::rotation(0, M_PI / 2, 0));
-        CHECK_THAT(traits.getGeometry().getSecondaryAxis(shape), IsApproxEqual({0, 0, -1}, 1e-8));
+        CHECK_THAT(geometry.getPrimaryAxis(shape), IsApproxEqual({1, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.getSecondaryAxis(shape), IsApproxEqual({0, 0, -1}, 1e-8));
+        CHECK_THAT(geometry.getGeometricOrigin(shape), IsApproxEqual({0, 1, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPoint("o0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPoint("b0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{-1, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPoint("e0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPoint("o1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{2, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPoint("b1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPoint("e1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{3, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPoint("o", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPoint("cm", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-8));
     }
 }
 
@@ -117,8 +122,8 @@ TEST_CASE("PolyspherocylinderTraits: tests from SpherocylinderTraits") {
     // Cases are found visually using Mathematica. See wolfram/spheroc_test.nb
     SECTION("sphere-sphere") {
         sc1.rotate({  0.92669949443125, -0.3009522885099318,   0.2250683608628711,
-                      0.3235062902233933,   0.943614995716347, -0.07024542721869537,
-                      -0.191237358292679,  0.1379074323590797,    0.971807497858173});
+                    0.3235062902233933,   0.943614995716347, -0.07024542721869537,
+                    -0.191237358292679,  0.1379074323590797,    0.971807497858173});
         sc2.rotate({0.1017126282787795, -0.2093565370521866,  0.972535028491077,
                     0.5191108031629524,   0.845122866944617,  0.127637431056981,
                     -0.848633322046771,  0.4918711011645504, 0.1946389081120092});
@@ -142,11 +147,11 @@ TEST_CASE("PolyspherocylinderTraits: tests from SpherocylinderTraits") {
 
     SECTION("sphere-cylinder") {
         sc1.rotate({   0.936848795202308, -0.03157560239884583,  0.34830635403497,
-                       -0.03157560239884583,    0.984212198800577, 0.174153177017485,
+                    -0.03157560239884583,    0.984212198800577, 0.174153177017485,
                        -0.34830635403497,   -0.174153177017485, 0.921060994002885});
         sc2.rotate({0.07918504528890558, 0.3698006820181268, -0.925730621823391,
                     -0.2008438095940726,  0.915521563787973,  0.348542723904781,
-                    0.976417683550607, 0.1583278933673811, 0.1467677942585273});
+                      0.976417683550607, 0.1583278933673811, 0.1467677942585273});
 
         SECTION("overlap") {
             sc1.translate(Vector<3>{1, 2, 3} * 0.95, fbc);
@@ -167,11 +172,11 @@ TEST_CASE("PolyspherocylinderTraits: tests from SpherocylinderTraits") {
 
     SECTION("cylinder-cylinder") {
         sc1.rotate({  0.921060994002885,   0.1446263415347036,    0.361565853836759,
-                      -0.1446263415347036,    0.989111861241777, -0.02722034689555686,
-                      -0.361565853836759, -0.02722034689555686,    0.931949132761108});
+                    -0.1446263415347036,    0.989111861241777, -0.02722034689555686,
+                     -0.361565853836759, -0.02722034689555686,    0.931949132761108});
         sc2.rotate({ 0.4161880560663263, 0.5570946854720225, -0.7186327388914037,
                      -0.902545539870646, 0.1570999152673587, -0.4009129145869377,
-                     -0.1104493116652922,  0.815453939865286,  0.5681864320017205});
+                    -0.1104493116652922,  0.815453939865286,  0.5681864320017205});
 
         SECTION("overlap") {
             sc1.translate(Vector<3>{1, 2, 3} * 0.95, fbc);
@@ -215,10 +220,13 @@ TEST_CASE("PolyspherocylnderTraits: mass centre normalization") {
     // First spherocylinder has 2 times bigger volume than the second
     PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({Data{{0, 0, 0}, {0, 0, 1}, 1},
                                                                    Data{{0, 0, 6}, {0, 0, 3}, 0.5}},
-                                                                  {0, 0, 1}, {0, 1, 0}, {0, 0, 0});
+                                                                  {0, 0, 1}, {0, 1, 0}, {1, 0, 0},
+                                                                  {{"point1", {1, 0, 0}}});
     geometry.normalizeMassCentre();
-    PolyspherocylinderTraits traits(std::move(geometry));
+    PolyspherocylinderTraits traits(geometry);
 
-    CHECK(traits.getSpherocylinderData() == std::vector<Data>{Data{{0, 0, -2}, {0, 0, 1}, 1},
-                                                              Data{{0, 0, 4}, {0, 0, 3}, 0.5}});
+    const auto &scData = traits.getSpherocylinderData();
+    CHECK(scData == std::vector<Data>{Data{{0, 0, -2}, {0, 0, 1}, 1}, Data{{0, 0, 4}, {0, 0, 3}, 0.5}});
+    CHECK_THAT(geometry.getGeometricOrigin({}), IsApproxEqual({1, 0, -2}, 1e-12));
+    CHECK_THAT(geometry.getNamedPoint("point1", {}), IsApproxEqual({1, 0, -2}, 1e-12));
 }

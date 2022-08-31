@@ -155,14 +155,14 @@ TEST_CASE("Spherocylinder: primary axis") {
 TEST_CASE("Spherocylinder: geometric origin") {
     SpherocylinderTraits traits(3, 2);
 
-    CHECK(traits.getGeometry().getGeometricOrigin(Shape{}) == Vector<3>{0, 0, 0});
+    CHECK(traits.getGeometry().getGeometricOrigin({}) == Vector<3>{0, 0, 0});
 }
 
 TEST_CASE("Spherocylinder: named points") {
     SpherocylinderTraits traits(3, 2);
 
-    CHECK(traits.getGeometry().getNamedPoint("cap1", Shape{}) == Vector<3>{-1.5, 0, 0});
-    CHECK(traits.getGeometry().getNamedPoint("cap2", Shape{}) == Vector<3>{1.5, 0, 0});
-    CHECK(traits.getGeometry().getNamedPoint("cm", Shape{}) == Vector<3>{0, 0, 0});
-    CHECK(traits.getGeometry().getNamedPoint("o", Shape{}) == Vector<3>{0, 0, 0});
+    CHECK(traits.getGeometry().getNamedPoint("cap1", {}) == Vector<3>{-1.5, 0, 0});
+    CHECK(traits.getGeometry().getNamedPoint("cap2", {}) == Vector<3>{1.5, 0, 0});
+    CHECK(traits.getGeometry().getNamedPoint("cm", {}) == Vector<3>{0, 0, 0});
+    CHECK(traits.getGeometry().getNamedPoint("o", {}) == Vector<3>{0, 0, 0});
 }
