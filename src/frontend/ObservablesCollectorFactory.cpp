@@ -91,25 +91,33 @@ namespace {
         return fieldMap;
     }
 
+    std::array<int, 3> parse_smectic_order_max_k(const std::map<std::string, std::string> &fieldMap) {
+        if (!(fieldMap.find("max_k") != fieldMap.end()))
+            return {5, 5, 5};
+
+        auto maxKToneks = ParseUtils::tokenize<int>(fieldMap.at("max_k"));
+        ValidateMsg(maxKToneks.size() == 1 || maxKToneks.size() == 3, "smectic order: max_k should be 1 or 3 ints");
+        std::array<int, 3> maxK{};
+        if (maxKToneks.size() == 1)
+            maxK = {maxKToneks[0], maxKToneks[0], maxKToneks[0]};
+        else // maxKToneks.size() == 3
+            maxK = {maxKToneks[0], maxKToneks[1], maxKToneks[2]};
+
+        bool anyNonzero = std::any_of(maxK.begin(), maxK.end(), [](int i) { return i != 0; });
+        bool allNonNegative = std::all_of(maxK.begin(), maxK.end(), [](int i) { return i >= 0; });
+        ValidateMsg(anyNonzero && allNonNegative, "All k ranges must be nonzero and some must be positive");
+
+        return maxK;
+    }
+
     std::unique_ptr<SmecticOrder> parse_smectic_order(std::istringstream &observableStream) {
         std::vector<std::string> tokens = ParseUtils::tokenize<std::string>(observableStream);
         auto fieldMap = ParseUtils::parseFields({"", "max_k", "dumpTauVector", "focalPoint"}, tokens);
+
         if (fieldMap.find("") != fieldMap.end())
             fieldMap = parse_smectic_order_old_syntax(tokens);
 
-        std::array<int, 3> kTauRanges{5, 5, 5};
-        if (fieldMap.find("max_k") != fieldMap.end()) {
-            auto maxK = ParseUtils::tokenize<int>(fieldMap["max_k"]);
-            ValidateMsg(maxK.size() == 1 || maxK.size() == 3, "smectic order: max_k should be 1 or 3 ints");
-            if (maxK.size() == 1)
-                kTauRanges = {maxK[0], maxK[0], maxK[0]};
-            else // maxK == 3
-                kTauRanges = {maxK[0], maxK[1], maxK[2]};
-
-            bool anyNonzero = std::any_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i != 0; });
-            bool allNonNegative = std::all_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i >= 0; });
-            ValidateMsg(anyNonzero && allNonNegative, "All tau ranges must be nonzero and some must be positive");
-        }
+        std::array<int, 3> maxK = parse_smectic_order_max_k(fieldMap);
 
         bool dumpTauVector = false;
         if (fieldMap.find("dumpTauVector") != fieldMap.end()) {
@@ -117,14 +125,11 @@ namespace {
             dumpTauVector = true;
         }
 
-        std::optional<std::string> focalPoint;
+        std::string focalPoint = "cm";
         if (fieldMap.find("focalPoint") != fieldMap.end())
             focalPoint = fieldMap["focalPoint"];
 
-        if (focalPoint.has_value())
-            return std::make_unique<SmecticOrder>(kTauRanges, dumpTauVector, *focalPoint);
-        else
-            return std::make_unique<SmecticOrder>(kTauRanges, dumpTauVector);
+        return std::make_unique<SmecticOrder>(maxK, dumpTauVector, focalPoint);
     }
 
     std::map<std::string, std::string> parse_bond_order_old_syntax(const std::vector<std::string> &tokens) {
@@ -132,21 +137,13 @@ namespace {
 
         std::map<std::string, std::string> fieldMap;
         fieldMap["millerIdx"] = tokens[0];
-        auto imploder = [](const auto &ranksStr, const auto &nextRankStr) { return ranksStr + " " + nextRankStr; };
-        fieldMap["ranks"] = std::accumulate(std::next(tokens.begin()), tokens.end(), std::string{}, imploder);
+        auto spaceImplode = [](const auto &ranksStr, const auto &nextRankStr) { return ranksStr + " " + nextRankStr; };
+        fieldMap["ranks"] = std::accumulate(std::next(tokens.begin()), tokens.end(), std::string{}, spaceImplode);
         return fieldMap;
     }
 
-    std::unique_ptr<BondOrder> parse_bond_order(std::istringstream &observableStream) {
-        std::vector<std::string> tokens = ParseUtils::tokenize<std::string>(observableStream);
-        auto fieldMap = ParseUtils::parseFields({"", "millerIdx", "ranks", "layeringPoint", "bondOrderPoint"}, tokens);
-        if (fieldMap.find("") != fieldMap.end())
-            fieldMap = parse_bond_order_old_syntax(tokens);
-
-        ValidateMsg(fieldMap.find("millerIdx") != fieldMap.end() && fieldMap.find("ranks") != fieldMap.end(),
-                    BOND_ORDER_USAGE);
-
-        auto millerIndicesExploded = explode(fieldMap["millerIdx"], '.');
+    std::array<int, 3> parse_bond_order_miller_indices(const std::map<std::string, std::string> &fieldMap) {
+        auto millerIndicesExploded = explode(fieldMap.at("millerIdx"), '.');
         ValidateMsg(millerIndicesExploded.size() == 3, "Malformed bond order Miller indices; format: nx.ny.nz");
         std::array<int, 3> millerIndices{};
         auto converter = [](const std::string &wavenumberString) {
@@ -160,13 +157,31 @@ namespace {
                        converter);
         bool anyNonzero = std::any_of(millerIndices.begin(), millerIndices.end(), [](int i) { return i != 0; });
         ValidateMsg(anyNonzero, "Bond order: all Miller indices are equal 0");
+        return millerIndices;
+    }
 
-        std::vector<std::size_t> ranks = ParseUtils::tokenize<std::size_t>(fieldMap["ranks"]);
+    std::vector<size_t> parse_bond_order_ranks(const std::map<std::string, std::string> &fieldMap) {
+        std::vector<std::size_t> ranks = ParseUtils::tokenize<std::size_t>(fieldMap.at("ranks"));
         std::sort(ranks.begin(), ranks.end());
         bool allRanksOk = std::all_of(ranks.begin(), ranks.end(), [](int rank) { return rank >= 2; });
         ValidateMsg(allRanksOk, "Bond order: some ranks are not >= 2");
         bool allUnique = std::adjacent_find(ranks.begin(), ranks.end()) == ranks.end();
         ValidateMsg(allUnique, "Bond order: some ranks are repeated");
+        return ranks;
+    }
+
+    std::unique_ptr<BondOrder> parse_bond_order(std::istringstream &observableStream) {
+        std::vector<std::string> tokens = ParseUtils::tokenize<std::string>(observableStream);
+        auto fieldMap = ParseUtils::parseFields({"", "millerIdx", "ranks", "layeringPoint", "bondOrderPoint"}, tokens);
+
+        if (fieldMap.find("") != fieldMap.end())
+            fieldMap = parse_bond_order_old_syntax(tokens);
+
+        ValidateMsg(fieldMap.find("millerIdx") != fieldMap.end() && fieldMap.find("ranks") != fieldMap.end(),
+                    BOND_ORDER_USAGE);
+
+        std::array<int, 3> millerIndices = parse_bond_order_miller_indices(fieldMap);
+        std::vector<size_t> ranks = parse_bond_order_ranks(fieldMap);
 
         std::string layeringPoint = "cm";
         if (fieldMap.find("layeringPoint") != fieldMap.end())
