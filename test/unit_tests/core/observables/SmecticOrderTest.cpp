@@ -19,7 +19,7 @@ TEST_CASE("SmecticOrder: with vector dump") {
 
     SECTION("meta") {
         CHECK(smecticOrder.getIntervalHeader() == std::vector<std::string>{"tau", "k_x", "k_y", "k_z"});
-        CHECK(smecticOrder.getNominalHeader() == std::vector<std::string>{"k_tau"});
+        CHECK(smecticOrder.getNominalHeader() == std::vector<std::string>{"n_tau"});
         CHECK(smecticOrder.getName() == "smectic order");
     }
 
@@ -53,7 +53,7 @@ TEST_CASE("SmecticOrder: without vector dump") {
     SmecticOrder smecticOrder({4, 4, 4});
 
     CHECK(smecticOrder.getIntervalHeader() == std::vector<std::string>{"tau"});
-    CHECK(smecticOrder.getNominalHeader() == std::vector<std::string>{"k_tau"});
+    CHECK(smecticOrder.getNominalHeader() == std::vector<std::string>{"n_tau"});
 }
 
 TEST_CASE("SmecticOrder: non-standard focal point") {

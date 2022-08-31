@@ -19,29 +19,29 @@ private:
     bool dumpTauVector{};
     std::string focalPoint{};
     std::complex<double> tau{};
-    std::array<int, 3> kTau{0, 0, 0};
+    std::array<int, 3> nTau{0, 0, 0};
     Vector<3> kTauVector{};
-    std::array<int, 3> kTauRanges{};
+    std::array<int, 3> nTauRanges{};
 
-    static auto calculateTau(const std::array<int, 3> &kTau_, const Packing &packing,
+    static auto calculateTau(const std::array<int, 3> &nTau_, const Packing &packing,
                              const std::vector<Vector<3>> &focalPoints);
 
 public:
     /**
-     * @brief Constructor with @a kTauRanges - a specified range of integer multiples of 2 pi/(box length) to construct
+     * @brief Constructor with @a nRanges - a specified range of integer multiples of 2 pi/(box length) to construct
      * wavevectors.
      * @details If @a dumpTauVector_ is @a true, components of tau wavevector will also be dumped as interval values.
      * Moreover, @a focalPoint specifies which named point (see ShapeGeometry::getNamedPoint) should be used to
      * calculate smectic order.
      */
-    explicit SmecticOrder(const std::array<int, 3> &kTauRanges = {5, 5, 5}, bool dumpTauVector_ = false,
+    explicit SmecticOrder(const std::array<int, 3> &nTauRanges = {5, 5, 5}, bool dumpTauVector_ = false,
                           std::string focalPoint = "cm");
 
     void calculate(const Packing &packing, double temperature, double pressure,
                    const ShapeTraits &shapeTraits) override;
 
     [[nodiscard]] std::vector<std::string> getIntervalHeader() const override;
-    [[nodiscard]] std::vector<std::string> getNominalHeader() const override { return {"k_tau"}; }
+    [[nodiscard]] std::vector<std::string> getNominalHeader() const override { return {"n_tau"}; }
     [[nodiscard]] std::vector<double> getIntervalValues() const override;
     [[nodiscard]] std::vector<std::string> getNominalValues() const override;
     [[nodiscard]] std::string getName() const override { return "smectic order"; }

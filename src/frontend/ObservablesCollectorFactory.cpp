@@ -26,8 +26,8 @@
 
 
 #define SMECTIC_ORDER_USAGE "Malformed smectic order, usage:\n" \
-                            "OLD SYNTAX: smecticOrder ([max_k x] [max_k y] [max_k z]) (dumpTauVector)\n" \
-                            "NEW SYNTAX: smecticOrder (max_k {[x=y=z] | [x] [y] [z]}) (dumpTauVector) " \
+                            "OLD SYNTAX: smecticOrder ([max_n x] [max_n y] [max_n z]) (dumpTauVector)\n" \
+                            "NEW SYNTAX: smecticOrder (max_n {[x=y=z] | [x] [y] [z]}) (dumpTauVector) " \
                             "(focalPoint [point name])"
 
 #define BOND_ORDER_USAGE "Malformed bond order, usage:\n" \
@@ -91,33 +91,33 @@ namespace {
         return fieldMap;
     }
 
-    std::array<int, 3> parse_smectic_order_max_k(const std::map<std::string, std::string> &fieldMap) {
-        if (!(fieldMap.find("max_k") != fieldMap.end()))
+    std::array<int, 3> parse_smectic_order_max_n(const std::map<std::string, std::string> &fieldMap) {
+        if (!(fieldMap.find("max_n") != fieldMap.end()))
             return {5, 5, 5};
 
-        auto maxKToneks = ParseUtils::tokenize<int>(fieldMap.at("max_k"));
-        ValidateMsg(maxKToneks.size() == 1 || maxKToneks.size() == 3, "smectic order: max_k should be 1 or 3 ints");
-        std::array<int, 3> maxK{};
-        if (maxKToneks.size() == 1)
-            maxK = {maxKToneks[0], maxKToneks[0], maxKToneks[0]};
+        auto maxNToneks = ParseUtils::tokenize<int>(fieldMap.at("max_n"));
+        ValidateMsg(maxNToneks.size() == 1 || maxNToneks.size() == 3, "smectic order: max_n should be 1 or 3 ints");
+        std::array<int, 3> maxN{};
+        if (maxNToneks.size() == 1)
+            maxN = {maxNToneks[0], maxNToneks[0], maxNToneks[0]};
         else // maxKToneks.size() == 3
-            maxK = {maxKToneks[0], maxKToneks[1], maxKToneks[2]};
+            maxN = {maxNToneks[0], maxNToneks[1], maxNToneks[2]};
 
-        bool anyNonzero = std::any_of(maxK.begin(), maxK.end(), [](int i) { return i != 0; });
-        bool allNonNegative = std::all_of(maxK.begin(), maxK.end(), [](int i) { return i >= 0; });
-        ValidateMsg(anyNonzero && allNonNegative, "All k ranges must be nonzero and some must be positive");
+        bool anyNonzero = std::any_of(maxN.begin(), maxN.end(), [](int i) { return i != 0; });
+        bool allNonNegative = std::all_of(maxN.begin(), maxN.end(), [](int i) { return i >= 0; });
+        ValidateMsg(anyNonzero && allNonNegative, "All n ranges must be nonzero and some must be positive");
 
-        return maxK;
+        return maxN;
     }
 
     std::unique_ptr<SmecticOrder> parse_smectic_order(std::istringstream &observableStream) {
         std::vector<std::string> tokens = ParseUtils::tokenize<std::string>(observableStream);
-        auto fieldMap = ParseUtils::parseFields({"", "max_k", "dumpTauVector", "focalPoint"}, tokens);
+        auto fieldMap = ParseUtils::parseFields({"", "max_n", "dumpTauVector", "focalPoint"}, tokens);
 
         if (fieldMap.find("") != fieldMap.end())
             fieldMap = parse_smectic_order_old_syntax(tokens);
 
-        std::array<int, 3> maxK = parse_smectic_order_max_k(fieldMap);
+        std::array<int, 3> maxN = parse_smectic_order_max_n(fieldMap);
 
         bool dumpTauVector = false;
         if (fieldMap.find("dumpTauVector") != fieldMap.end()) {
@@ -129,7 +129,7 @@ namespace {
         if (fieldMap.find("focalPoint") != fieldMap.end())
             focalPoint = fieldMap["focalPoint"];
 
-        return std::make_unique<SmecticOrder>(maxK, dumpTauVector, focalPoint);
+        return std::make_unique<SmecticOrder>(maxN, dumpTauVector, focalPoint);
     }
 
     std::map<std::string, std::string> parse_bond_order_old_syntax(const std::vector<std::string> &tokens) {

@@ -10,13 +10,13 @@
 #include "SmecticOrder.h"
 
 
-auto SmecticOrder::calculateTau(const std::array<int, 3> &kTau_, const Packing &packing,
+auto SmecticOrder::calculateTau(const std::array<int, 3> &nTau_, const Packing &packing,
                                 const std::vector<Vector<3>> &focalPoints)
 {
     auto dimInv = packing.getBox().getDimensions().inverse();
     Vector<3> kTauVector_;
     for (std::size_t i{}; i < 3; i++)
-        kTauVector_[i] = 2 * M_PI * kTau_[i];
+        kTauVector_[i] = 2 * M_PI * nTau_[i];
     kTauVector_ = dimInv.transpose() * kTauVector_;
     double volume = packing.getVolume();
 
@@ -36,18 +36,18 @@ void SmecticOrder::calculate(const Packing &packing, [[maybe_unused]] double tem
     auto focalPoints = packing.dumpNamedPoints(shapeTraits.getGeometry(), this->focalPoint);
 
     this->tau = 0;
-    this->kTau = {0, 0, 0};
+    this->nTau = {0, 0, 0};
 
-    for (int cx{}; cx <= this->kTauRanges[0]; cx++) {
-        int cyBeg = (cx == 0 ? 0 : -this->kTauRanges[1]);
-        for (int cy = cyBeg; cy <= this->kTauRanges[1]; cy++) {
-            int czBeg = ((cx == 0 && cy == 0) ? 1 : -this->kTauRanges[2]);
-            for (int cz = czBeg; cz < this->kTauRanges[2]; cz++) {
-                std::array<int, 3> kTau_{cx, cy, cz};
-                auto [tau_, kTauVector_] = calculateTau(kTau_, packing, focalPoints);
+    for (int cx{}; cx <= this->nTauRanges[0]; cx++) {
+        int cyBeg = (cx == 0 ? 0 : -this->nTauRanges[1]);
+        for (int cy = cyBeg; cy <= this->nTauRanges[1]; cy++) {
+            int czBeg = ((cx == 0 && cy == 0) ? 1 : -this->nTauRanges[2]);
+            for (int cz = czBeg; cz < this->nTauRanges[2]; cz++) {
+                std::array<int, 3> nTau_{cx, cy, cz};
+                auto [tau_, kTauVector_] = calculateTau(nTau_, packing, focalPoints);
                 if (std::abs(tau_) > std::abs(this->tau)) {
                     this->tau = tau_;
-                    this->kTau = kTau_;
+                    this->nTau = nTau_;
                     this->kTauVector = kTauVector_;
                 }
             }
@@ -57,15 +57,15 @@ void SmecticOrder::calculate(const Packing &packing, [[maybe_unused]] double tem
 
 std::vector<std::string> SmecticOrder::getNominalValues() const {
     std::ostringstream ostr;
-    ostr << this->kTau[0] << "." << this->kTau[1] << "." << this->kTau[2];
+    ostr << this->nTau[0] << "." << this->nTau[1] << "." << this->nTau[2];
     return {ostr.str()};
 }
 
-SmecticOrder::SmecticOrder(const std::array<int, 3> &kTauRanges, bool dumpTauVector_, std::string focalPoint)
-        : dumpTauVector{dumpTauVector_}, focalPoint{std::move(focalPoint)}, kTauRanges{kTauRanges}
+SmecticOrder::SmecticOrder(const std::array<int, 3> &nTauRanges, bool dumpTauVector_, std::string focalPoint)
+        : dumpTauVector{dumpTauVector_}, focalPoint{std::move(focalPoint)}, nTauRanges{nTauRanges}
 {
-    Expects(std::any_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i != 0; }));
-    Expects(std::all_of(kTauRanges.begin(), kTauRanges.end(), [](int i) { return i >= 0; }));
+    Expects(std::any_of(nTauRanges.begin(), nTauRanges.end(), [](int i) { return i != 0; }));
+    Expects(std::all_of(nTauRanges.begin(), nTauRanges.end(), [](int i) { return i >= 0; }));
 }
 
 std::vector<std::string> SmecticOrder::getIntervalHeader() const {

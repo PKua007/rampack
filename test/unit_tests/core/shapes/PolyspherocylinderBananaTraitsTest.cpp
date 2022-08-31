@@ -32,9 +32,9 @@ TEST_CASE("PolyspherocylinderBananaTraits") {
             CHECK_THAT(geometry.getGeometricOrigin({}), IsApproxEqual({-1, 0, 0}, 1e-12));
             CHECK_THAT(geometry.getNamedPoint("o0", {}), IsApproxEqual({-1, 1, 0}, 1e-12));
             CHECK_THAT(geometry.getNamedPoint("b0", {}), IsApproxEqual({0, 2, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPoint("sbeg", {}), IsApproxEqual({0, 2, 0}, 1e-12));
+            CHECK_THAT(geometry.getNamedPoint("beg", {}), IsApproxEqual({0, 2, 0}, 1e-12));
             CHECK_THAT(geometry.getNamedPoint("e1", {}), IsApproxEqual({0, -2, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPoint("send", {}), IsApproxEqual({0, -2, 0}, 1e-12));
+            CHECK_THAT(geometry.getNamedPoint("end", {}), IsApproxEqual({0, -2, 0}, 1e-12));
             CHECK_THAT(geometry.getNamedPoint("o", {}), IsApproxEqual({-1, 0, 0}, 1e-12));
             CHECK_THAT(geometry.getNamedPoint("cm", {}), IsApproxEqual({0, 0, 0}, 1e-12));
         }

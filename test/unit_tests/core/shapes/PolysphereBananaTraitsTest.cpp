@@ -30,9 +30,9 @@ TEST_CASE("PolysphereBananaTraits") {
             CHECK_THAT(geometry.getSecondaryAxis({}), IsApproxEqual({-1, 0, 0}, 1e-12));
             CHECK_THAT(geometry.getGeometricOrigin({}), IsApproxEqual({4./3 - 2*M_SQRT2/3, 0, 0}, 1e-12));
             CHECK_THAT(geometry.getNamedPoint("s0", {}), IsApproxEqual({2 - M_SQRT2, -M_SQRT2, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPoint("sbeg", {}), IsApproxEqual({2 - M_SQRT2, -M_SQRT2, 0}, 1e-12));
+            CHECK_THAT(geometry.getNamedPoint("beg", {}), IsApproxEqual({2 - M_SQRT2, -M_SQRT2, 0}, 1e-12));
             CHECK_THAT(geometry.getNamedPoint("s2", {}), IsApproxEqual({2 - M_SQRT2, +M_SQRT2, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPoint("send", {}), IsApproxEqual({2 - M_SQRT2, +M_SQRT2, 0}, 1e-12));
+            CHECK_THAT(geometry.getNamedPoint("end", {}), IsApproxEqual({2 - M_SQRT2, +M_SQRT2, 0}, 1e-12));
             CHECK_THAT(geometry.getNamedPoint("o", {}), IsApproxEqual({4./3 - 2*M_SQRT2/3, 0, 0}, 1e-12));
             CHECK_THAT(geometry.getNamedPoint("cm", {}), IsApproxEqual({0, 0, 0}, 1e-12));
         }
