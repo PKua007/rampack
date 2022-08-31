@@ -10,7 +10,8 @@
 #include "SmecticOrder.h"
 
 
-auto SmecticOrder::calculateTau(const std::array<int, 3> &kTau_, const Packing &packing, const std::vector<Vector<3>> &focalPoints)
+auto SmecticOrder::calculateTau(const std::array<int, 3> &kTau_, const Packing &packing,
+                                const std::vector<Vector<3>> &focalPoints)
 {
     auto dimInv = packing.getBox().getDimensions().inverse();
     Vector<3> kTauVector_;

@@ -21,7 +21,7 @@ KMerTraits::PolysphereGeometry KMerTraits::generateGeometry(std::size_t sphereNu
     PolysphereGeometry geometry(std::move(data), {1, 0, 0}, {0, 1, 0});
     geometry.normalizeMassCentre();
     geometry.setGeometricOrigin({0, 0, 0});
-    geometry.setNamedPoints({{"sbeg", geometry.getSphereData().front().position},
-                             {"send", geometry.getSphereData().back().position}});
+    const auto &newSphereData = geometry.getSphereData();
+    geometry.setCustomNamedPoints({{"sbeg", newSphereData.front().position}, {"send", newSphereData.back().position}});
     return geometry;
 }

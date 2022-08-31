@@ -48,7 +48,7 @@ public:
         Vector<3> primaryAxis;
         Vector<3> secondaryAxis;
         Vector<3> geometricOrigin;
-        std::map<std::string, Vector<3>> namedPoints;
+        std::map<std::string, Vector<3>> customNamedPoints;
 
     public:
         /**
@@ -60,7 +60,7 @@ public:
          */
         PolysphereGeometry(std::vector<SphereData> sphereData, const Vector<3> &primaryAxis,
                            const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin = {0, 0, 0},
-                           std::map<std::string, Vector<3>> namedPoints = {});
+                           std::map<std::string, Vector<3>> customNamedPoints = {});
 
         [[nodiscard]] double getVolume() const override;
 
@@ -92,8 +92,8 @@ public:
 
         void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
 
-        void setNamedPoints(std::map<std::string, Vector<3>> namedPoints_) {
-            this->namedPoints = std::move(namedPoints_);
+        void setCustomNamedPoints(std::map<std::string, Vector<3>> customNamedPoints_) {
+            this->customNamedPoints = std::move(customNamedPoints_);
         }
 
         [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const override;

@@ -35,7 +35,7 @@ PolysphereLollipopTraits::generateGeometry(std::size_t sphereNum, double smallSp
     double end1 = geometry.getSphereData().front().position[0];
     double end2 = geometry.getSphereData().back().position[0];
     geometry.setGeometricOrigin({(end2 + largeSphereRadius + end1 - smallSphereRadius)/2, 0, 0});
-    geometry.setNamedPoints({{"ss", geometry.getSphereData().front().position},
-                             {"sl", geometry.getSphereData().back().position}});
+    const auto &newSphereData = geometry.getSphereData();
+    geometry.setCustomNamedPoints({{"ss", newSphereData.front().position}, {"sl", newSphereData.back().position}});
     return geometry;
 }

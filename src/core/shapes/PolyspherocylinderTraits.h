@@ -65,7 +65,7 @@ public:
         Vector<3> primaryAxis;
         Vector<3> secondaryAxis;
         Vector<3> geometricOrigin;
-        std::map<std::string, Vector<3>> namedPoints;
+        std::map<std::string, Vector<3>> customNamedPoints;
 
     public:
         /**
@@ -77,7 +77,7 @@ public:
          */
         PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, const Vector<3> &primaryAxis,
                                    const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin = {0, 0, 0},
-                                   std::map<std::string, Vector<3>> namedPoints = {});
+                                   std::map<std::string, Vector<3>> customNamedPoints = {});
 
         [[nodiscard]] double getVolume() const override;
 
@@ -105,8 +105,8 @@ public:
          */
         void normalizeMassCentre();
 
-        void setNamedPoints(std::map<std::string, Vector<3>> namedPoints_) {
-            this->namedPoints = std::move(namedPoints_);
+        void setCustomNamedPoints(std::map<std::string, Vector<3>> customNamedPoints_) {
+            this->customNamedPoints = std::move(customNamedPoints_);
         }
 
         /**
