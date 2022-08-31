@@ -57,6 +57,8 @@ public:
          * @param primaryAxis the primary axis of the polymer
          * @param secondaryAxis the secondary axis of the polymer (should be orthogonal to the primary one)
          * @param geometricOrigin geometric origin of the molecule which can be different that the mass centre
+         * @param customNamedPoints custom named points in addition to default ones (see
+         * PolysphereGeometry::getNamedPoint)
          */
         PolysphereGeometry(std::vector<SphereData> sphereData, const Vector<3> &primaryAxis,
                            const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin = {0, 0, 0},
@@ -96,6 +98,11 @@ public:
             this->customNamedPoints = std::move(customNamedPoints_);
         }
 
+        /**
+         * @brief Returns named point @a pointName for a @a shape.
+         * @details In addition to the ones inherited from ShapeGeometry, all spheres are named "sx", where @a x is the
+         * index of the sphere, starting from 0. Additional named points are provided in the constructor.
+         */
         [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const override;
     };
 

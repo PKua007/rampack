@@ -51,6 +51,10 @@ public:
      * @param rank rank compute (usually equal 3, 4 or 6)
      * @param planeMillerIndices parameter specifying the plane in which bond order should be computed. It is given as
      * Miller indices with respect to simulation box.
+     * @param layeringPointName named point (see ShapeGeometry::getNamedPoint) which should be used to assign shapes
+     * to layers
+     * @param bondOrderPointName named point (see ShapeGeometry::getNamedPoint) which should be used to calculate
+     * nearest neighbours and bond order
      */
     BondOrder(std::size_t rank, const std::array<int, 3> &planeMillerIndices,
               const std::string &layeringPointName = "cm", const std::string &bondOrderPointName = "cm")
@@ -62,6 +66,10 @@ public:
      * @param ranks ranks to compute (usually one or more of: 3, 4 and 6)
      * @param planeMillerIndices parameter specifying the plane in which bond order should be computed. It is given as
      * Miller indices with respect to simulation box.
+     * @param layeringPointName named point (see ShapeGeometry::getNamedPoint) which should be used to assign shapes
+     * to layers
+     * @param bondOrderPointName named point (see ShapeGeometry::getNamedPoint) which should be used to calculate
+     * nearest neighbours and bond order
      */
     BondOrder(std::vector<std::size_t> ranks, const std::array<int, 3> &planeMillerIndices,
               std::string layeringPointName = "cm", std::string bondOrderPointName = "cm");

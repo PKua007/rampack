@@ -452,6 +452,10 @@ public:
      */
     void resetNGRaceConditionSanitizer();
 
+    /**
+     * @brief Returns the list of named points with name @a pointName specified in ShapeGeometry  @a geometryof all
+     * molecules in the packing.
+     */
     [[nodiscard]] std::vector<Vector<3>> dumpNamedPoints(const ShapeGeometry &geometry,
                                                          const std::string &pointName) const;
 };

@@ -12,7 +12,8 @@
  * depending on the parameters.
  * @details The arc lies in the xy plane with x = 0, y = 0 origin, symmetric w.r.t. x axis and lying in negative
  * x half-plane. The primary (molecular) axis is thus y axis, while secondary (polarization) axis is negative x
- * axis. Geometric origin is placed in the mass centre.
+ * axis. Geometric origin is placed in the mass centre. The class specifies custom named points "sbeg" and "send"
+ * for first and last spheres, together with the ones inherited from PolysphereTraits.
  */
 class PolysphereBananaTraits : public PolysphereTraits {
 private:

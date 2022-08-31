@@ -58,7 +58,7 @@ TEST_CASE("SmecticOrder: without vector dump") {
 
 TEST_CASE("SmecticOrder: non-standard focal point") {
     SpherocylinderTraits traits(1, 0.5);
-    SmecticOrder smecticOrder({3, 3, 3,}, false, "cap2");
+    SmecticOrder smecticOrder({3, 3, 3,}, false, "end");
 
     // Two layers along x, where second (positive) spherocylinders' caps perfectly meet on x coordinate. y and z
     // coordinates have worse order

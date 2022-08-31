@@ -14,7 +14,8 @@
  * constructors), the center lies in the first sphere's center. Primary axis is naturally x axis (positive,
  * towards the largest sphere). Secondary axis is Y axis - formally it is degenerate in YZ plane, but was arbitrarily
  * chosen to enable flip moves. Geometric centre lies in the centre of a bounding box (it coincides with the mass centre
- * only if all spheres have the same radius and mass centre is normalized).
+ * only if all spheres have the same radius and mass centre is normalized). The class specifies custom named points "ss"
+ * and "sl" for first (small) and last (large) spheres, together with once inherited from PolysphereTraits.
  */
 class PolysphereWedgeTraits : public PolysphereTraits {
 private:

@@ -31,6 +31,8 @@ public:
      * @brief Constructor with @a kTauRanges - a specified range of integer multiples of 2 pi/(box length) to construct
      * wavevectors.
      * @details If @a dumpTauVector_ is @a true, components of tau wavevector will also be dumped as interval values.
+     * Moreover, @a focalPoint specifies which named point (see ShapeGeometry::getNamedPoint) should be used to
+     * calculate smectic order.
      */
     explicit SmecticOrder(const std::array<int, 3> &kTauRanges = {5, 5, 5}, bool dumpTauVector_ = false,
                           std::string focalPoint = "cm");

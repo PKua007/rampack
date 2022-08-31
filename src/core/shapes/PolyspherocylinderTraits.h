@@ -74,6 +74,8 @@ public:
          * @param primaryAxis the primary axis of the molecule
          * @param secondaryAxis the secondary axis of the polymer (should be orthogonal to the primary one)
          * @param geometricOrigin geometric origin of the molecule which can be different that the mass centre
+         * @param customNamedPoints custom named points in addition to default ones (see
+         * PolyspherocylinderGeometry::getNamedPoint)
          */
         PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, const Vector<3> &primaryAxis,
                                    const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin = {0, 0, 0},
@@ -93,6 +95,12 @@ public:
             return shape.getOrientation() * this->geometricOrigin;
         }
 
+        /**
+         * @brief Returns named point @a pointName for a @a shape.
+         * @details In addition to the ones inherited from ShapeGeometry, all spherocylinders origins, first caps and
+         * second caps are named, respectively "ox", "bx", "ex", where @a x is the index of the spherocylinder, starting
+         * from 0. Additional named points are provided in the constructor.
+         */
         [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const override;
 
         [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const {

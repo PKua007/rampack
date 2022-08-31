@@ -10,6 +10,8 @@
 /**
  * @brief A bent shaped molecule build of hard spherocylinders placed on an arc. The construction is analogous to
  * PolysphereBananaTraits.
+ * @details The class specifies custom named points "sbeg" and "send" for endpoints of the banana, together with the
+ * ones inherited from PolysphereTraits.
  */
 class PolyspherocylinderBananaTraits : public PolyspherocylinderTraits {
 private:

@@ -73,9 +73,9 @@ bool SpherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matrix<3,
 }
 
 Vector<3> SpherocylinderTraits::getNamedPoint(const std::string &pointName, const Shape &shape) const {
-    if (pointName == "cap1")
+    if (pointName == "beg")
         return this->getCapCentre(-1, shape);
-    else if (pointName == "cap2")
+    else if (pointName == "end")
         return this->getCapCentre(1, shape);
     else
         return ShapeGeometry::getNamedPoint(pointName, shape);

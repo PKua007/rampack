@@ -35,6 +35,12 @@ public:
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
     [[nodiscard]] double getVolume() const override;
+
+    /**
+     * @brief Returns named point @a pointName for a @a shape.
+     * @details In addition to the ones inherited from ShapeGeometry, it provides named points "beg" and "end" for
+     * origins of spherocylinder's caps on its both ends.
+     */
     [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const override;
 
     [[nodiscard]] bool hasHardPart() const override { return true; }

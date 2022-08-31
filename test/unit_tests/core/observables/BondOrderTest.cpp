@@ -136,7 +136,7 @@ TEST_CASE("BondOrder: non-standard layering and bond order points") {
     }
 
     Packing packing(box, shapes, std::move(pbc), spherocylinderTraits.getInteraction(), 1, 1);
-    BondOrder bondOrder(4, {2, 0, 0}, "cm", "cap2");
+    BondOrder bondOrder(4, {2, 0, 0}, "cm", "end");
 
     bondOrder.calculate(packing, 1, 1, spherocylinderTraits);
 
