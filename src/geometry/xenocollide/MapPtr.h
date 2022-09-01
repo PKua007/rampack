@@ -29,6 +29,7 @@ not be misrepresented as being the original software.
 // when the number of references drop to zero.
 
 #include <unordered_map>
+#include <cstdlib>
 
 class MapPtrBase
 {
