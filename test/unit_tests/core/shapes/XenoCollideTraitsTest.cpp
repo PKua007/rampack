@@ -37,7 +37,8 @@ namespace {
 
         XenoCollideSpherocylinderTraits(double l, double r)
                 : XenoCollideTraits({1, 0, 0}, {0, 0, 1}, {0, 0, 0}, getStaticVolume(l, r), createShapeModel(l, r),
-                                    l + 2*r),
+                                    l + 2*r,
+                                    {{"beg", {-l/2, 0, 0}}, {"end", {l/2, 0, 0}}}),
                   r{r}, l{l}
         { }
 
@@ -186,15 +187,11 @@ TEST_CASE("XenoCollide: basic features") {
         CHECK(traits.getInteraction().getRangeRadius() == expectedRange);
         CHECK(traits.getInteraction().getTotalRangeRadius() == expectedRange);
     }
-}
 
-/*
-TEST_CASE("Spherocylinder: named points") {
-    SpherocylinderTraits traits(3, 2);
-
-    CHECK(traits.getGeometry().getNamedPoint("beg", {}) == Vector<3>{-1.5, 0, 0});
-    CHECK(traits.getGeometry().getNamedPoint("end", {}) == Vector<3>{1.5, 0, 0});
-    CHECK(traits.getGeometry().getNamedPoint("cm", {}) == Vector<3>{0, 0, 0});
-    CHECK(traits.getGeometry().getNamedPoint("o", {}) == Vector<3>{0, 0, 0});
+    SECTION("named points") {
+        CHECK(traits.getGeometry().getNamedPoint("beg", {}) == Vector<3>{-1.5, 0, 0});
+        CHECK(traits.getGeometry().getNamedPoint("end", {}) == Vector<3>{1.5, 0, 0});
+        CHECK(traits.getGeometry().getNamedPoint("cm", {}) == Vector<3>{0, 0, 0});
+        CHECK(traits.getGeometry().getNamedPoint("o", {}) == Vector<3>{0, 0, 0});
+    }
 }
-*/
