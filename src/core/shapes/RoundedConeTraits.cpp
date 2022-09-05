@@ -41,10 +41,6 @@ RoundedConeTraits::RoundedConeTraits(double R, double r, double l)
 
 }
 
-double RoundedConeTraits::getVolume() {
-    return RoundedConeTraits::getVolume(this->R, this->r, this->l);
-}
-
 std::string RoundedConeTraits::toWolfram(const Shape &shape) const {
     Vector<3> pos = shape.getPosition();
     Matrix<3, 3> orientation = shape.getOrientation();
