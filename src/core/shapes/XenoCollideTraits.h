@@ -29,19 +29,19 @@ public:
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
 
-    [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override {
+    [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const final {
         return shape.getOrientation() * this->primaryAxis;
     }
 
-    [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override {
+    [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const final {
         return shape.getOrientation() * this->secondaryAxis;
     }
 
-    [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const override {
+    [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const final {
         return shape.getOrientation() * this->geometricOrigin;
     }
 
-    [[nodiscard]] double getVolume() const override { return this->volume; }
+    [[nodiscard]] double getVolume() const final { return this->volume; }
 
     [[nodiscard]] bool hasHardPart() const override { return true; }
     [[nodiscard]] bool hasWallPart() const override { return false; }

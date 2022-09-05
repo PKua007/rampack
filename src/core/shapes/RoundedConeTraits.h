@@ -20,8 +20,6 @@ private:
 public:
     RoundedConeTraits(double R, double r, double l);
 
-    double getVolume();
-
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
 
     [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
