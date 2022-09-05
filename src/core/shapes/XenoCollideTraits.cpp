@@ -9,8 +9,10 @@
 #include "geometry/xenocollide/BodyBuilder.h"
 
 
-XenoCollideTraits::XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v, const std::string &attr)
-        : primaryAxis{pa}, secondaryAxis{sa}, geometricOrigin{cm}, volume{v}
+XenoCollideTraits::XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v, const std::string &attr,
+                                     std::map<std::string, Vector<3>> customNamedPoints)
+        : primaryAxis{pa}, secondaryAxis{sa}, geometricOrigin{cm}, volume{v},
+          customNamedPoints{std::move(customNamedPoints)}
 {
     std::stringstream ss(attr);
     std::string commands;
@@ -24,9 +26,10 @@ XenoCollideTraits::XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, d
 }
 
 XenoCollideTraits::XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v,
-                                     MapPtr<CollideGeometry> shapeModel, double rangeRadius)
+                                     MapPtr<CollideGeometry> shapeModel, double rangeRadius,
+                                     std::map<std::string, Vector<3>> customNamedPoints)
         : primaryAxis{pa}, secondaryAxis{sa}, geometricOrigin{cm}, volume{v}, rangeRadius{rangeRadius},
-          shapeModel{shapeModel}
+          customNamedPoints{std::move(customNamedPoints)}, shapeModel{shapeModel}
 {
 
 }
@@ -41,4 +44,12 @@ bool XenoCollideTraits::overlapBetween(const Vector<3> &pos1, const Matrix<3, 3>
     Quat q2(orientation2);
     bool result = Collide::Intersect(*(this->shapeModel), q1, pos1, *(this->shapeModel), q2, pos2bc, 1.0e-12);
     return result;
+}
+
+Vector<3> XenoCollideTraits::getNamedPoint(const std::string &pointName, const Shape &shape) const {
+    auto namedPoint = this->customNamedPoints.find(pointName);
+    if (namedPoint == this->customNamedPoints.end())
+        return ShapeGeometry::getNamedPoint(pointName, shape);
+
+    return namedPoint->second;
 }

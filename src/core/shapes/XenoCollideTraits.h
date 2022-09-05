@@ -5,6 +5,8 @@
 #ifndef RAMPACK_XENOCOLLIDETRAITS_H
 #define RAMPACK_XENOCOLLIDETRAITS_H
 
+#include <map>
+
 #include "core/ShapeTraits.h"
 #include "geometry/xenocollide/CollideGeometry.h"
 #include "geometry/xenocollide/MapPtr.h"
@@ -17,14 +19,16 @@ private:
     Vector<3> geometricOrigin;
     double volume{};
     double rangeRadius{};
+    std::map<std::string, Vector<3>> customNamedPoints{};
 
 protected:
     MapPtr<CollideGeometry> shapeModel;
 
 public:
-    XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v, const std::string &attr);
+    XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v, const std::string &attr,
+                      std::map<std::string, Vector<3>> customNamedPoints = {});
     XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v, MapPtr<CollideGeometry> shapeModel,
-                      double rangeRadius);
+                      double rangeRadius, std::map<std::string, Vector<3>> customNamedPoints = {});
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
@@ -51,6 +55,8 @@ public:
                                       const BoundaryConditions &bc) const override;
 
     [[nodiscard]] double getRangeRadius() const override { return this->rangeRadius; }
+
+    [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const override;
 };
 
 
