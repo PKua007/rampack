@@ -46,10 +46,23 @@ bool XenoCollideTraits::overlapBetween(const Vector<3> &pos1, const Matrix<3, 3>
     return result;
 }
 
+bool XenoCollideTraits::overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation, [[maybe_unused]] std::size_t idx,
+                                   const Vector<3> &wallOrigin, const Vector<3> &wallVector) const{
+
+    Quat q(orientation);
+    Vector<3> origin = q.Rotate(wallOrigin - pos);
+    Vector<3> normalVector = q.Rotate(wallVector);
+    Vector<3> sp = (*(this->shapeModel)).GetSupportPoint(-normalVector);
+    if (std::abs(origin*normalVector) > std::abs(sp*normalVector))
+        return false;
+    return true;
+}
+
+
 Vector<3> XenoCollideTraits::getNamedPoint(const std::string &pointName, const Shape &shape) const {
     auto namedPoint = this->customNamedPoints.find(pointName);
     if (namedPoint == this->customNamedPoints.end())
         return ShapeGeometry::getNamedPoint(pointName, shape);
 
-    return namedPoint->second;
+    return shape.getPosition() + shape.getOrientation() * namedPoint->second;
 }

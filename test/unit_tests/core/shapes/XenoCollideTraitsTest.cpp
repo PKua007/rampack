@@ -156,6 +156,26 @@ TEST_CASE("XenoCollide: overlap") {
     }
 }
 
+TEST_CASE("XenoColllide: wall overlap") {
+    double l = 1.0, r = 0.5;
+    XenoCollideSpherocylinderTraits traits(l, r);
+
+    const Interaction &interaction = traits.getInteraction();
+
+    CHECK(interaction.hasWallPart());
+
+    SECTION("overlapping") {
+        Shape sc({1.1, 1.1, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/4));
+        CHECK(interaction.overlapWithWallForShape(sc, {0, 1.5 + M_SQRT2/4, 0}, {0, -1, 0}));
+    }
+
+    SECTION("non-overlapping") {
+        Shape sc({0.9, 0.9, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/4));
+        CHECK_FALSE(interaction.overlapWithWallForShape(sc, {0, 1.5 + M_SQRT2/4, 0}, {0, -1, 0}));
+    }
+}
+
+
 TEST_CASE("XenoCollide: basic features") {
     double l = 3, r = 2;
     XenoCollideSpherocylinderTraits traits(l, r);
