@@ -22,9 +22,10 @@ private:
     std::map<std::string, Vector<3>> customNamedPoints{};
 
 protected:
-    MapPtr<CollideGeometry> shapeModel;
 
 public:
+    MapPtr<CollideGeometry> shapeModel;
+
     XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v, const std::string &attr,
                       std::map<std::string, Vector<3>> customNamedPoints = {});
     XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v, MapPtr<CollideGeometry> shapeModel,

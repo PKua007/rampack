@@ -50,10 +50,12 @@ bool XenoCollideTraits::overlapWithWall(const Vector<3> &pos, const Matrix<3, 3>
                                    const Vector<3> &wallOrigin, const Vector<3> &wallVector) const{
 
     Quat q(orientation);
-    Vector<3> origin = q.Rotate(wallOrigin - pos);
-    Vector<3> normalVector = q.Rotate(wallVector);
+    Vector<3> normalVector = (~q).Rotate(wallVector);
     Vector<3> sp = (*(this->shapeModel)).GetSupportPoint(-normalVector);
-    if (std::abs(origin*normalVector) > std::abs(sp*normalVector))
+    Vector<3> origin = (~q).Rotate(wallOrigin - pos);
+    double distanceSupport = -sp*normalVector;  // minus sign because we count distance along -normalVector
+    double distanceWall = -origin*normalVector;
+    if (distanceWall > distanceSupport)
         return false;
     return true;
 }

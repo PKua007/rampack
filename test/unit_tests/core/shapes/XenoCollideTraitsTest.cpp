@@ -50,6 +50,32 @@ namespace {
     };
 }
 
+TEST_CASE("XenoCollide: support points") {
+    double l = 12.0, r = 3;
+    XenoCollideSpherocylinderTraits traits(l, r);
+
+    Shape sc({0, 0, 0}, Matrix<3, 3>::identity());
+
+    SECTION("left") {
+        CHECK((*(traits.shapeModel)).GetSupportPoint({1, 0, 0})[0]==l/2+r);
+    }
+    SECTION("right") {
+        CHECK((*(traits.shapeModel)).GetSupportPoint({-1, 0, 0})[0]==-l/2-r);
+    }
+    SECTION("up") {
+        CHECK((*(traits.shapeModel)).GetSupportPoint({0, 1, 0})[1]==r);
+    }
+    SECTION("down") {
+        CHECK((*(traits.shapeModel)).GetSupportPoint({0, -1, 0})[1]==-r);
+    }
+    SECTION("front") {
+        CHECK((*(traits.shapeModel)).GetSupportPoint({0, 0, 1})[2]==r);
+    }
+    SECTION("back") {
+        CHECK((*(traits.shapeModel)).GetSupportPoint({0, 0, -1})[2]==-r);
+    }
+}
+
 
 TEST_CASE("XenoCollide: overlap") {
     FreeBoundaryConditions fbc;
@@ -164,6 +190,16 @@ TEST_CASE("XenoColllide: wall overlap") {
     CHECK(interaction.hasWallPart());
 
     SECTION("overlapping") {
+        SECTION("without translation and rotation, near") {
+            Shape sc({0, 0, 0}, Matrix<3, 3>::identity());
+            CHECK(interaction.overlapWithWallForShape(sc, {l/2, 0, 0}, {-1, 0, 0}));
+        }
+
+        SECTION("without translation and rotation, far") {
+            Shape sc({0, 0, 0}, Matrix<3, 3>::identity());
+            CHECK(interaction.overlapWithWallForShape(sc, {-10*l, 0, 0}, {-1, 0, 0}));
+        }
+
         SECTION("near") {
             Shape sc({1.1, 1.1, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI / 4));
             CHECK(interaction.overlapWithWallForShape(sc, {0, 1.5 + M_SQRT2 / 4, 0}, {0, -1, 0}));
@@ -176,6 +212,15 @@ TEST_CASE("XenoColllide: wall overlap") {
     }
 
     SECTION("non-overlapping") {
+        SECTION("without translation and rotation, near") {
+            Shape sc({0, 0, 0}, Matrix<3, 3>::identity());
+            CHECK_FALSE(interaction.overlapWithWallForShape(sc, {l+r, 0, 0}, {-1, 0, 0}));
+        }
+
+        SECTION("without translation and rotation, far") {
+            Shape sc({0, 0, 0}, Matrix<3, 3>::identity());
+            CHECK_FALSE(interaction.overlapWithWallForShape(sc, {10*l+r, 0, 0}, {-1, 0, 0}));
+        }
         SECTION("near") {
             Shape sc({0.9, 0.9, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI / 4));
             CHECK_FALSE(interaction.overlapWithWallForShape(sc, {0, 1.5 + M_SQRT2 / 4, 0}, {0, -1, 0}));
