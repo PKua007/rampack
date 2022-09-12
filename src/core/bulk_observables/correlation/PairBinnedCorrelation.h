@@ -22,8 +22,9 @@ private:
 
 public:
     PairBinnedCorrelation(std::unique_ptr<PairEnumerator> pairEnumerator,
-                          std::unique_ptr<CorrelationFunction> correlationFunction)
-            : pairEnumerator{std::move(pairEnumerator)}, correlationFunction{std::move(correlationFunction)}
+                          std::unique_ptr<CorrelationFunction> correlationFunction, double maxR, std::size_t numBins)
+            : pairEnumerator{std::move(pairEnumerator)}, correlationFunction{std::move(correlationFunction)},
+              histogram(0, maxR, numBins)
     { }
 
     void addSnapshot(const Packing &packing, double temperature, double pressure,

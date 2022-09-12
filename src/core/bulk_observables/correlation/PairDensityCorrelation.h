@@ -19,8 +19,8 @@ private:
     Histogram histogram;
 
 public:
-    explicit PairDensityCorrelation(std::unique_ptr<PairEnumerator> pairEnumerator)
-            : pairEnumerator{std::move(pairEnumerator)}
+    explicit PairDensityCorrelation(std::unique_ptr<PairEnumerator> pairEnumerator, double maxR, std::size_t numBins)
+            : pairEnumerator{std::move(pairEnumerator)}, histogram(0, maxR, numBins)
     { }
 
     void addSnapshot(const Packing &packing, double temperature, double pressure,
