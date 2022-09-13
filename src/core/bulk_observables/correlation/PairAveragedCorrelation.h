@@ -2,8 +2,8 @@
 // Created by pkua on 12.09.22.
 //
 
-#ifndef RAMPACK_PAIRBINNEDCORRELATION_H
-#define RAMPACK_PAIRBINNEDCORRELATION_H
+#ifndef RAMPACK_PAIRAVERAGEDCORRELATION_H
+#define RAMPACK_PAIRAVERAGEDCORRELATION_H
 
 #include <memory>
 
@@ -14,15 +14,16 @@
 #include "CorrelationFunction.h"
 
 
-class PairBinnedCorrelation : public BulkObservable, public PairConsumer {
+class PairAveragedCorrelation : public BulkObservable, public PairConsumer {
 private:
     std::unique_ptr<PairEnumerator> pairEnumerator;
     std::unique_ptr<CorrelationFunction> correlationFunction;
     Histogram histogram;
+    const ShapeTraits *lastTraits{};
 
 public:
-    PairBinnedCorrelation(std::unique_ptr<PairEnumerator> pairEnumerator,
-                          std::unique_ptr<CorrelationFunction> correlationFunction, double maxR, std::size_t numBins)
+    PairAveragedCorrelation(std::unique_ptr<PairEnumerator> pairEnumerator,
+                            std::unique_ptr<CorrelationFunction> correlationFunction, double maxR, std::size_t numBins)
             : pairEnumerator{std::move(pairEnumerator)}, correlationFunction{std::move(correlationFunction)},
               histogram(0, maxR, numBins)
     { }
@@ -36,4 +37,4 @@ public:
 };
 
 
-#endif //RAMPACK_PAIRBINNEDCORRELATION_H
+#endif //RAMPACK_PAIRAVERAGEDCORRELATION_H
