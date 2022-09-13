@@ -5,20 +5,27 @@
 #include "PairDensityCorrelation.h"
 
 
-void PairDensityCorrelation::addSnapshot(const Packing &packing, double temperature, double pressure,
-                                         const ShapeTraits &shapeTraits)
+void PairDensityCorrelation::addSnapshot(const Packing &packing, [[maybe_unused]] double temperature,
+                                         [[maybe_unused]] double pressure,
+                                         [[maybe_unused]]const ShapeTraits &shapeTraits)
 {
     this->pairEnumerator->enumeratePairs(packing, *this);
     this->histogram.nextSnapshot();
 }
 
 void PairDensityCorrelation::print(std::ostream &out) const {
-    for (auto [x, y] : this->histogram.dumpValues(Histogram::ReductionMethod::AVERAGE))
+    for (auto [x, y] : this->histogram.dumpValues(Histogram::ReductionMethod::SUM))
         out << x << " " << y << std::endl;
 }
 
-void PairDensityCorrelation::consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
+void PairDensityCorrelation::consumePair([[maybe_unused]] const Packing &packing,
+                                         [[maybe_unused]] const std::pair<std::size_t, std::size_t> &idxPair,
                                          double distance, double jacobian)
 {
+    if (jacobian == 0)
+        return;
+    if (distance > this->histogram.getMax())
+        return;
 
+    this->histogram.add(1./(jacobian * this->histogram.getBinSize()), distance);
 }
