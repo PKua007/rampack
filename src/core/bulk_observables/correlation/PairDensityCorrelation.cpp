@@ -6,10 +6,9 @@
 
 
 void PairDensityCorrelation::addSnapshot(const Packing &packing, [[maybe_unused]] double temperature,
-                                         [[maybe_unused]] double pressure,
-                                         [[maybe_unused]] const ShapeTraits &shapeTraits)
+                                         [[maybe_unused]] double pressure, const ShapeTraits &shapeTraits)
 {
-    this->pairEnumerator->enumeratePairs(packing, *this);
+    this->pairEnumerator->enumeratePairs(packing, shapeTraits, *this);
     this->histogram.nextSnapshot();
 }
 

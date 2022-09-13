@@ -9,8 +9,14 @@
 
 
 class RadialEnumerator : public PairEnumerator {
+private:
+    std::string focalPoint;
+
 public:
-    void enumeratePairs(const Packing &packing, PairConsumer &pairConsumer) const override;
+    explicit RadialEnumerator(std::string focalPoint = "cm") : focalPoint{std::move(focalPoint)} { }
+
+    void enumeratePairs(const Packing &packing, const ShapeTraits &shapeTraits,
+                        PairConsumer &pairConsumer) const override;
 };
 
 

@@ -7,13 +7,15 @@
 
 #include "core/Packing.h"
 #include "PairConsumer.h"
+#include "core/ShapeTraits.h"
 
 
 class PairEnumerator {
 public:
     virtual ~PairEnumerator() = default;
 
-    virtual void enumeratePairs(const Packing &packing, PairConsumer &pairConsumer) const = 0;
+    virtual void enumeratePairs(const Packing &packing, const ShapeTraits &traits,
+                                PairConsumer &pairConsumer) const = 0;
 };
 
 

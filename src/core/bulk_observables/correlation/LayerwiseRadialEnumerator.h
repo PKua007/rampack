@@ -5,12 +5,21 @@
 #ifndef RAMPACK_LAYERWISERADIALENUMERATOR_H
 #define RAMPACK_LAYERWISERADIALENUMERATOR_H
 
+#include <array>
+
 #include "PairEnumerator.h"
 
 
 class LayerwiseRadialEnumerator : public PairEnumerator {
+private:
+    Vector<3> millerIndices{};
+    std::string focalPoint{};
+
 public:
-    void enumeratePairs(const Packing &packing, PairConsumer &pairConsumer) const override;
+    explicit LayerwiseRadialEnumerator(const std::array<std::size_t, 3> &millerIndices, std::string focalPoint = "cm");
+
+    void enumeratePairs(const Packing &packing, const ShapeTraits &shapeTraits,
+                        PairConsumer &pairConsumer) const override;
 };
 
 

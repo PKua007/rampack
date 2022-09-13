@@ -5,12 +5,15 @@
 #include "RadialEnumerator.h"
 
 
-void RadialEnumerator::enumeratePairs(const Packing &packing, PairConsumer &pairConsumer) const {
+void RadialEnumerator::enumeratePairs(const Packing &packing, const ShapeTraits &shapeTraits,
+                                      PairConsumer &pairConsumer) const
+{
     const auto &bc = packing.getBoundaryConditions();
+    auto focalPoints = packing.dumpNamedPoints(shapeTraits.getGeometry(), this->focalPoint);
     for (std::size_t i{}; i < packing.size(); i++) {
         for (std::size_t j = i; j < packing.size(); j++) {
-            const Vector<3> &pos1 = packing[i].getPosition();
-            Vector<3> pos2 = packing[j].getPosition();
+            const Vector<3> &pos1 = focalPoints[i];
+            Vector<3> pos2 = focalPoints[j];
             pos2 += bc.getTranslation(pos1, pos2);
 
             double distance2 = (pos2 - pos1).norm2();

@@ -10,7 +10,7 @@ void PairAveragedCorrelation::addSnapshot(const Packing &packing, [[maybe_unused
                                           [[maybe_unused]] const ShapeTraits &shapeTraits)
 {
     this->lastTraits = &shapeTraits;
-    this->pairEnumerator->enumeratePairs(packing, *this);
+    this->pairEnumerator->enumeratePairs(packing, shapeTraits, *this);
     this->histogram.nextSnapshot();
     this->lastTraits = nullptr;
 }
