@@ -17,6 +17,7 @@ public:
                              const ShapeTraits &shapeTraits) = 0;
     virtual void print(std::ostream &out) const = 0;
     virtual void clear() = 0;
+    [[nodiscard]] virtual std::string getSignatureName() const = 0;
 };
 
 

@@ -29,6 +29,10 @@ public:
     void clear() override { this->histogram.clear(); }
     void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair, double distance,
                      double jacobian) override;
+
+    [[nodiscard]] std::string getSignatureName() const override {
+        return "rho_" + this->pairEnumerator->getSignatureName();
+    }
 };
 
 

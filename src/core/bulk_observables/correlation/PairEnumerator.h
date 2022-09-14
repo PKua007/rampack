@@ -16,6 +16,7 @@ public:
 
     virtual void enumeratePairs(const Packing &packing, const ShapeTraits &traits,
                                 PairConsumer &pairConsumer) const = 0;
+    [[nodiscard]] virtual std::string getSignatureName() const = 0;
 };
 
 

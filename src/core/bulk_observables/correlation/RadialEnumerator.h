@@ -17,6 +17,7 @@ public:
 
     void enumeratePairs(const Packing &packing, const ShapeTraits &shapeTraits,
                         PairConsumer &pairConsumer) const override;
+    [[nodiscard]] std::string getSignatureName() const override { return "r"; }
 };
 
 

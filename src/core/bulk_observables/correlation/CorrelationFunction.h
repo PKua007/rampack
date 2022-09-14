@@ -15,6 +15,7 @@ public:
 
     [[nodiscard]] virtual double calculate(const Shape &shape1, const Shape &shape2,
                                            const ShapeTraits &shapeTraits) const = 0;
+    [[nodiscard]] virtual std::string getSignatureName() const = 0;
 };
 
 

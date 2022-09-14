@@ -23,6 +23,8 @@ public:
 
     [[nodiscard]] double calculate(const Shape &shape1, const Shape &shape2,
                                    const ShapeTraits &shapeTraits) const override;
+
+    [[nodiscard]] std::string getSignatureName() const override { return "S110"; }
 };
 
 
