@@ -28,5 +28,5 @@ void PairAveragedCorrelation::consumePair(const Packing &packing, const std::pai
 
     const auto &shape1 = packing[idxPair.first];
     const auto &shape2 = packing[idxPair.second];
-    this->histogram.add(this->correlationFunction->calculate(shape1, shape2, *this->lastTraits), distance);
+    this->histogram.add(distance, this->correlationFunction->calculate(shape1, shape2, *this->lastTraits));
 }

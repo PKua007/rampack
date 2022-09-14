@@ -39,6 +39,23 @@ private:
     std::vector<double> binValues{};
 
 public:
+    struct BinValue {
+        double binMiddle{};
+        double value{};
+
+        friend bool operator==(const BinValue &lhs, const BinValue &rhs) {
+            return std::tie(lhs.binMiddle, lhs.value) == std::tie(rhs.binMiddle, rhs.value);
+        }
+
+        friend bool operator!=(const BinValue &lhs, const BinValue &rhs) {
+            return !(rhs == lhs);
+        }
+
+        friend std::ostream &operator<<(std::ostream &out, const BinValue &bin) {
+            return out << bin.binMiddle << " " << bin.value;
+        }
+    };
+
     enum class ReductionMethod {
         SUM,
         AVERAGE
@@ -46,9 +63,9 @@ public:
 
     explicit Histogram(double min, double max, std::size_t numBins);
 
-    void add(double value, double pos);
+    void add(double pos, double value);
     void nextSnapshot();
-    [[nodiscard]] std::vector<std::pair<double, double>> dumpValues(ReductionMethod reductionMethod) const;
+    [[nodiscard]] std::vector<BinValue> dumpValues(ReductionMethod reductionMethod) const;
     void clear();
     [[nodiscard]] std::size_t size() const { return this->histogram.size(); }
     [[nodiscard]] double getBinSize() const { return this->step; }

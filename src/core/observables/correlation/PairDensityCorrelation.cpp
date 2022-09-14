@@ -26,5 +26,5 @@ void PairDensityCorrelation::consumePair([[maybe_unused]] const Packing &packing
     if (distance > this->histogram.getMax())
         return;
 
-    this->histogram.add(1./(jacobian * this->histogram.getBinSize()), distance);
+    this->histogram.add(distance, 1. / (jacobian * this->histogram.getBinSize()));
 }

@@ -9,12 +9,12 @@
 #include "utils/Assertions.h"
 
 
-void Histogram::add(double value, double pos) {
+void Histogram::add(double pos, double value) {
     Expects(pos >= this->min);
     Expects(pos <= this->max);
 
-    auto binIdx = static_cast<std::size_t>(std::floor((value - this->min)/this->step));
-    if (binIdx < this->size())
+    auto binIdx = static_cast<std::size_t>(std::floor((pos - this->min)/this->step));
+    if (binIdx >= this->size())
         binIdx = this->size() - 1;
 
     this->currentHistogram.bins[binIdx].addPoint(value);
@@ -32,14 +32,14 @@ void Histogram::clear() {
     this->numSnapshots = 0;
 }
 
-std::vector<std::pair<double, double>> Histogram::dumpValues(Histogram::ReductionMethod reductionMethod) const {
-    std::vector<std::pair<double, double>> result(this->size());
+std::vector<Histogram::BinValue> Histogram::dumpValues(Histogram::ReductionMethod reductionMethod) const {
+    std::vector<BinValue> result(this->size());
     switch (reductionMethod) {
         case ReductionMethod::SUM:
             std::transform(this->histogram.bins.begin(), this->histogram.bins.end(), this->binValues.begin(),
                            result.begin(),
                            [this](const BinData &binData, double binValue) {
-                                return std::pair{binValue, binData.value / this->numSnapshots};
+                                return BinValue{binValue, binData.value / this->numSnapshots};
                            });
             break;
 
@@ -47,7 +47,7 @@ std::vector<std::pair<double, double>> Histogram::dumpValues(Histogram::Reductio
             std::transform(this->histogram.bins.begin(), this->histogram.bins.end(), this->binValues.begin(),
                            result.begin(),
                            [](const BinData &binData, double binValue) {
-                               return std::pair{binValue, binData.value / binData.numPoints};
+                               return BinValue{binValue, binData.value / binData.numPoints};
                            });
             break;
 
