@@ -10,7 +10,7 @@
 #include "core/BulkObservable.h"
 #include "PairConsumer.h"
 #include "PairEnumerator.h"
-#include "Histogram.h"
+#include "HistogramBuilder.h"
 #include "CorrelationFunction.h"
 
 
@@ -18,7 +18,7 @@ class PairAveragedCorrelation : public BulkObservable, public PairConsumer {
 private:
     std::unique_ptr<PairEnumerator> pairEnumerator;
     std::unique_ptr<CorrelationFunction> correlationFunction;
-    Histogram histogram;
+    HistogramBuilder histogram;
     const ShapeTraits *lastTraits{};
 
 public:

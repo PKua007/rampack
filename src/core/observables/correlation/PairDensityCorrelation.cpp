@@ -9,11 +9,16 @@ void PairDensityCorrelation::addSnapshot(const Packing &packing, [[maybe_unused]
                                          [[maybe_unused]] double pressure, const ShapeTraits &shapeTraits)
 {
     this->pairEnumerator->enumeratePairs(packing, shapeTraits, *this);
+    auto binDividers = this->histogram.getBinDividers();
+    auto expectedMolecules = this->pairEnumerator->getExpectedNumOfMoleculesInShells(packing, binDividers);
+    for (auto &em : expectedMolecules)
+        em = 1./em;
+    this->histogram.renormalizeBins(expectedMolecules);
     this->histogram.nextSnapshot();
 }
 
 void PairDensityCorrelation::print(std::ostream &out) const {
-    for (auto [x, y] : this->histogram.dumpValues(Histogram::ReductionMethod::SUM))
+    for (auto [x, y] : this->histogram.dumpValues(HistogramBuilder::ReductionMethod::SUM))
         out << x << " " << y << std::endl;
 }
 

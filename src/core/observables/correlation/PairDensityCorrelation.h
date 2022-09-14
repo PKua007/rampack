@@ -10,13 +10,13 @@
 #include "core/BulkObservable.h"
 #include "PairConsumer.h"
 #include "PairEnumerator.h"
-#include "Histogram.h"
+#include "HistogramBuilder.h"
 
 
 class PairDensityCorrelation : public BulkObservable, public PairConsumer {
 private:
     std::unique_ptr<PairEnumerator> pairEnumerator;
-    Histogram histogram;
+    HistogramBuilder histogram;
 
 public:
     explicit PairDensityCorrelation(std::unique_ptr<PairEnumerator> pairEnumerator, double maxR, std::size_t numBins)

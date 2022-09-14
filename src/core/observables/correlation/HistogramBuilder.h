@@ -2,14 +2,14 @@
 // Created by pkua on 12.09.22.
 //
 
-#ifndef RAMPACK_HISTOGRAM_H
-#define RAMPACK_HISTOGRAM_H
+#ifndef RAMPACK_HISTOGRAMBUILDER_H
+#define RAMPACK_HISTOGRAMBUILDER_H
 
 #include <ostream>
 #include <vector>
 
 
-class Histogram {
+class HistogramBuilder {
 private:
     struct BinData {
         double value{};
@@ -18,14 +18,16 @@ private:
         void addPoint(double newValue);
 
         BinData &operator+=(const BinData &other);
+        BinData &operator*=(double factor);
     };
 
-    struct HistogramData {
+    struct Histogram {
         std::vector<BinData> bins;
 
-        explicit HistogramData(std::size_t numBins) : bins(numBins) { }
+        explicit Histogram(std::size_t numBins) : bins(numBins) { }
 
-        HistogramData &operator+=(const HistogramData &otherData);
+        Histogram &operator+=(const Histogram &otherData);
+        void renormalizeBins(const std::vector<double> &factors);
         [[nodiscard]] std::size_t size() const { return bins.size(); }
         void clear();
     };
@@ -34,8 +36,8 @@ private:
     double max{};
     double step{};
     std::size_t numSnapshots{};
-    HistogramData histogram;
-    HistogramData currentHistogram;
+    Histogram histogram;
+    Histogram currentHistogram;
     std::vector<double> binValues{};
 
 public:
@@ -61,7 +63,7 @@ public:
         AVERAGE
     };
 
-    explicit Histogram(double min, double max, std::size_t numBins);
+    explicit HistogramBuilder(double min, double max, std::size_t numBins);
 
     void add(double pos, double value);
     void nextSnapshot();
@@ -71,7 +73,9 @@ public:
     [[nodiscard]] double getBinSize() const { return this->step; }
     [[nodiscard]] double getMin() const { return this->min; }
     [[nodiscard]] double getMax() const { return this->max; }
+    [[nodiscard]] std::vector<double> getBinDividers() const;
+    void renormalizeBins(const std::vector<double> &factors) { this->currentHistogram.renormalizeBins(factors); }
 };
 
 
-#endif //RAMPACK_HISTOGRAM_H
+#endif //RAMPACK_HISTOGRAMBUILDER_H
