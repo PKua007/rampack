@@ -13,10 +13,14 @@
 #include "HistogramBuilder.h"
 
 
-class PairDensityCorrelation : public BulkObservable, public PairConsumer {
+class PairDensityCorrelation : public BulkObservable, protected PairConsumer {
 private:
     std::unique_ptr<PairEnumerator> pairEnumerator;
     HistogramBuilder histogram;
+
+protected:
+    void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
+                     double distance) override;
 
 public:
     explicit PairDensityCorrelation(std::unique_ptr<PairEnumerator> pairEnumerator, double maxR, std::size_t numBins)
@@ -27,8 +31,6 @@ public:
                      const ShapeTraits &shapeTraits) override;
     void print(std::ostream &out) const override;
     void clear() override { this->histogram.clear(); }
-    void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
-                     double distance) override;
 
     [[nodiscard]] std::string getSignatureName() const override {
         return "rho_" + this->pairEnumerator->getSignatureName();
