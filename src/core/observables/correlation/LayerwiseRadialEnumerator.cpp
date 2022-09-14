@@ -4,23 +4,27 @@
 
 #include <algorithm>
 #include <complex>
+#include <iterator>
 #include <utility>
+#include <numeric>
 
 #include "LayerwiseRadialEnumerator.h"
 #include "utils/Assertions.h"
 
 
-void LayerwiseRadialEnumerator::enumeratePairs(const Packing &packing, const ShapeTraits &shapeTraits,
+Vector<3> LayerwiseRadialEnumerator::calculateK(const Packing &packing) const {
+    auto dimInv = packing.getBox().getDimensions().inverse();
+    Vector<3> kVector = 2*M_PI*(dimInv.transpose() * millerIndices);
+    return kVector;
+}
+
+void LayerwiseRadialEnumerator::enumeratePairs(const Packing &packing, const ShapeTraits &traits,
                                                PairConsumer &pairConsumer) const
 {
-    auto dimInv = packing.getBox().getDimensions().inverse();
-    Vector<3> kVector = 2*M_PI*(dimInv.transpose() * this->millerIndices);
+    Vector<3> kVector = this->calculateK(packing);
     Vector<3> kVectorNorm = kVector.normalized();
 
-    double layerDistance = 2*M_PI/kVector.norm();
-    double areaDensity = packing.getNumberDensity() * layerDistance;
-
-    auto focalPoints = packing.dumpNamedPoints(shapeTraits.getGeometry(), this->focalPoint);
+    auto focalPoints = packing.dumpNamedPoints(traits.getGeometry(), this->focalPoint);
     auto tauAccumulator = [kVector](std::complex<double> tau_, const Vector<3> &point) {
         using namespace std::complex_literals;
         return tau_ + std::exp(1i * (kVector * point));
@@ -44,8 +48,7 @@ void LayerwiseRadialEnumerator::enumeratePairs(const Packing &packing, const Sha
             double distance2 = diff.norm2() - std::pow(diff * kVectorNorm, 2);   // Subtract normal component
             distance2 = std::max(0.0, distance2);   // Make sure it is not < 0 due to numerical precision
             double distance = std::sqrt(distance2);
-            double jacobian = 2 * M_PI * distance * areaDensity;
-            pairConsumer.consumePair(packing, {i, j}, distance, jacobian);
+            pairConsumer.consumePair(packing, {i, j}, distance);
         }
     }
 }
@@ -55,4 +58,28 @@ LayerwiseRadialEnumerator::LayerwiseRadialEnumerator(const std::array<int, 3> &m
 {
     Expects(std::any_of(millerIndices.begin(), millerIndices.end(), [](auto i) { return i != 0; }));
     std::copy(millerIndices.begin(), millerIndices.end(), this->millerIndices.begin());
+}
+
+std::vector<double>
+LayerwiseRadialEnumerator::getExpectedNumOfMoleculesInShells(const Packing &packing,
+                                                             const std::vector<double> &radiiBounds) const
+{
+    Expects(radiiBounds.size() >= 2);
+    Expects(std::is_sorted(radiiBounds.begin(), radiiBounds.end()));
+
+    Vector<3> kVector = this->calculateK(packing);
+    double layerDistance = 2*M_PI/kVector.norm();
+    double areaDensity = packing.getNumberDensity() * layerDistance;
+
+    std::vector<double> molecules;
+    molecules.reserve(radiiBounds.size());
+    auto moleculesInDisk = [areaDensity](double r) { return M_PI * r*r * areaDensity; };
+    std::transform(radiiBounds.begin(), radiiBounds.end(), std::back_inserter(molecules), moleculesInDisk);
+
+    std::vector<double> result;
+    result.reserve(radiiBounds.size() - 1);
+    std::transform(std::next(molecules.begin()), molecules.end(), molecules.begin(), std::back_inserter(result),
+                   std::minus<>{});
+
+    return result;
 }

@@ -13,7 +13,7 @@ public:
     virtual ~PairConsumer() = default;
 
     virtual void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
-                             double distance, double jacobian) = 0;
+                             double distance) = 0;
 };
 
 

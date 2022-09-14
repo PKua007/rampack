@@ -15,12 +15,16 @@ private:
     Vector<3> millerIndices{};
     std::string focalPoint{};
 
+    [[nodiscard]] Vector<3> calculateK(const Packing &packing) const;
+
 public:
     explicit LayerwiseRadialEnumerator(const std::array<int, 3> &millerIndices, std::string focalPoint = "cm");
 
-    void enumeratePairs(const Packing &packing, const ShapeTraits &shapeTraits,
-                        PairConsumer &pairConsumer) const override;
+    [[nodiscard]] std::vector<double>
+    getExpectedNumOfMoleculesInShells(const Packing &packing, const std::vector<double> &radiiBounds) const override;
+    void enumeratePairs(const Packing &packing, const ShapeTraits &traits, PairConsumer &pairConsumer) const override;
     [[nodiscard]] std::string getSignatureName() const override { return "lr"; }
+
 };
 
 

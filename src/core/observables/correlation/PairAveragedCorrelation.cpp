@@ -21,7 +21,7 @@ void PairAveragedCorrelation::print(std::ostream &out) const {
 }
 
 void PairAveragedCorrelation::consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
-                                          double distance, [[maybe_unused]] double jacobian)
+                                          double distance)
 {
     if (distance > this->histogram.getMax())
         return;

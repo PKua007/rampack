@@ -19,12 +19,12 @@ void PairDensityCorrelation::print(std::ostream &out) const {
 
 void PairDensityCorrelation::consumePair([[maybe_unused]] const Packing &packing,
                                          [[maybe_unused]] const std::pair<std::size_t, std::size_t> &idxPair,
-                                         double distance, double jacobian)
+                                         double distance)
 {
-    if (jacobian == 0)
+    if (idxPair.first == idxPair.second)
         return;
     if (distance > this->histogram.getMax())
         return;
 
-    this->histogram.add(distance, 1. / (jacobian * this->histogram.getBinSize()));
+    this->histogram.add(distance, 1);
 }

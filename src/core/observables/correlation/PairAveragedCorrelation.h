@@ -32,8 +32,8 @@ public:
                      const ShapeTraits &shapeTraits) override;
     void print(std::ostream &out) const override;
     void clear() override { this->histogram.clear(); }
-    void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair, double distance,
-                     double jacobian) override;
+    void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
+                     double distance) override;
 
     [[nodiscard]] std::string getSignatureName() const override {
         return this->correlationFunction->getSignatureName() + "_" + this->pairEnumerator->getSignatureName();

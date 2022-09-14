@@ -19,10 +19,9 @@ namespace {
         PairMap pairData;
 
         void consumePair([[maybe_unused]] const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
-                         double distance, double jacobian) override
+                         double distance) override
         {
             CHECK(this->pairData.find(idxPair) == this->pairData.end());
-            CHECK(jacobian == Approx(4 * M_PI * distance * distance * (3. / 1000.)));
             this->pairData[idxPair] = distance;
         }
     };
@@ -45,16 +44,32 @@ TEST_CASE("RadialEnumerator") {
     ALLOW_CALL(traits, getNamedPoint(_, _)).LR_RETURN(traits.ShapeGeometry::getNamedPoint(_1, _2));
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     Packing packing(box, shapes, std::move(bc), traits.getInteraction());
-    RadialEnumerator radialEnumerator;
-    PairCollector collector;
+    RadialEnumerator enumerator;
 
-    radialEnumerator.enumeratePairs(packing, traits, collector);
+    SECTION("pair enumerating") {
+        PairCollector collector;
 
-    REQUIRE(collector.pairData.size() == 6);
-    CHECK(collector.pairData.at({0, 0}) == 0);
-    CHECK(collector.pairData.at({0, 1}) == Approx(2));
-    CHECK(collector.pairData.at({0, 2}) == Approx(std::sqrt(12)));
-    CHECK(collector.pairData.at({1, 2}) == Approx(std::sqrt(24)));
-    CHECK(collector.pairData.at({1, 1}) == 0);
-    CHECK(collector.pairData.at({2, 2}) == 0);
+        enumerator.enumeratePairs(packing, traits, collector);
+
+        REQUIRE(collector.pairData.size() == 6);
+        CHECK(collector.pairData.at({0, 0}) == 0);
+        CHECK(collector.pairData.at({0, 1}) == Approx(2));
+        CHECK(collector.pairData.at({0, 2}) == Approx(std::sqrt(12)));
+        CHECK(collector.pairData.at({1, 2}) == Approx(std::sqrt(24)));
+        CHECK(collector.pairData.at({1, 1}) == 0);
+        CHECK(collector.pairData.at({2, 2}) == 0);
+    }
+
+    SECTION("number of molecules in shells") {
+        auto molecules = enumerator.getExpectedNumOfMoleculesInShells(packing, {1, 2, 3});
+
+        double numberDensity = packing.getNumberDensity();
+        std::vector<double> expectedMolecules = {4./3 * M_PI * (2*2*2 - 1*1*1) * numberDensity,
+                                                 4./3 * M_PI * (3*3*3 - 2*2*2) * numberDensity};
+        CHECK_THAT(molecules, Catch::Matchers::Approx(expectedMolecules));
+    }
+
+    SECTION("signature name") {
+        CHECK(enumerator.getSignatureName() == "r");
+    }
 }

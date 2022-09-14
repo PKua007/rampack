@@ -16,6 +16,10 @@ public:
 
     virtual void enumeratePairs(const Packing &packing, const ShapeTraits &traits,
                                 PairConsumer &pairConsumer) const = 0;
+
+    [[nodiscard]] virtual std::vector<double>
+    getExpectedNumOfMoleculesInShells(const Packing &packing, const std::vector<double> &radiiBounds) const = 0;
+
     [[nodiscard]] virtual std::string getSignatureName() const = 0;
 };
 

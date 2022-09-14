@@ -15,6 +15,9 @@ private:
 public:
     explicit RadialEnumerator(std::string focalPoint = "cm") : focalPoint{std::move(focalPoint)} { }
 
+    [[nodiscard]] std::vector<double>
+    getExpectedNumOfMoleculesInShells(const Packing &packing, const std::vector<double> &radiiBounds) const override;
+
     void enumeratePairs(const Packing &packing, const ShapeTraits &shapeTraits,
                         PairConsumer &pairConsumer) const override;
     [[nodiscard]] std::string getSignatureName() const override { return "r"; }
