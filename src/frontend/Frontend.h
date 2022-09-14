@@ -56,6 +56,8 @@ private:
                                    const std::string &wolframFilename) const;
     void storeSnapshots(const ObservablesCollector &observablesCollector, bool isContinuation,
                         const std::string &observableSnapshotFilename) const;
+    void storeBulkObservables(const ObservablesCollector &observablesCollector,
+                              std::string bulkObservableFilenamePattern) const;
 
     void printMoveStatistics(const Simulation &simulation) const;
 

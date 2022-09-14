@@ -19,6 +19,11 @@
 #include "core/observables/RotationMatrixDrift.h"
 #include "core/observables/Temperature.h"
 #include "core/observables/Pressure.h"
+#include "core/observables/correlation/RadialEnumerator.h"
+#include "core/observables/correlation/LayerwiseRadialEnumerator.h"
+#include "core/observables/correlation/PairDensityCorrelation.h"
+#include "core/observables/correlation/PairAveragedCorrelation.h"
+#include "core/observables/correlation/S110Correlation.h"
 
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
@@ -35,6 +40,29 @@
                          "NEW SYNTAX: bondOrder millerIdx [nx].[ny].[nz] ranks [rank 1] [rank 2] ... " \
                          "(layeringPoint [point name]) (bondOrderPoint [point name])"
 
+#define BINNING_SPEC_ALTERNATIVES "1. radial [focal point = cm]\n" \
+                                  "2. layerwiseRadial [nx].[ny].[nz] [focal point = cm]"
+
+#define BINNING_SPEC_USAGE "Malformed binning specifications. Available alternatives:\n" \
+                           BINNING_SPEC_ALTERNATIVES
+
+#define PAIR_DENSITY_CORRELATION_USAGE "Malformed pair density correlation, usage:\n" \
+                                       "pairDensityCorrelation [max distance] [num bins] [binning specification] \n" \
+                                       "[binning specification] :=\n"\
+                                       BINNING_SPEC_ALTERNATIVES
+
+#define CORR_FUN_ALTERNATIVES "1. S100 (primary|secondary)"
+
+#define CORR_FUN_USAGE "Malformed correlation funtions. Available alternatives:\n" \
+                       CORR_FUN_ALTERNATIVES
+
+#define PAIR_AVERAGED_CORRELATION_USAGE "Malformed pair averaged correlation, usage:\n" \
+                                        "pairAveragedCorrelation [correlation function] [max distance] [num bins] " \
+                                        "[binning specification] \n" \
+                                        "[binning specification] :=\n" \
+                                        BINNING_SPEC_ALTERNATIVES "\n" \
+                                        "[correlation function] :=\n" \
+                                        "1. S110 (primary|secondary)"
 
 namespace {
     auto parse_observable_name_and_type(std::istringstream &observableStream, const std::regex &typePattern) {
@@ -142,21 +170,21 @@ namespace {
         return fieldMap;
     }
 
-    std::array<int, 3> parse_bond_order_miller_indices(const std::map<std::string, std::string> &fieldMap) {
-        auto millerIndicesExploded = explode(fieldMap.at("millerIdx"), '.');
-        ValidateMsg(millerIndicesExploded.size() == 3, "Malformed bond order Miller indices; format: nx.ny.nz");
+    std::array<int, 3> parse_miller_indices(const std::string &millerString) {
+        auto millerIndicesExploded = explode(millerString, '.');
+        ValidateMsg(millerIndicesExploded.size() == 3, "Malformed Miller indices; format: nx.ny.nz");
         std::array<int, 3> millerIndices{};
         auto converter = [](const std::string &wavenumberString) {
             try {
                 return std::stoi(wavenumberString);
             } catch (std::logic_error &e) {
-                throw ValidationException("Malformed bond order Miller indices; format: nx.ny.nz");
+                throw ValidationException("Malformed Miller indices; format: nx.ny.nz");
             }
         };
         std::transform(millerIndicesExploded.begin(), millerIndicesExploded.end(), millerIndices.begin(),
                        converter);
         bool anyNonzero = std::any_of(millerIndices.begin(), millerIndices.end(), [](int i) { return i != 0; });
-        ValidateMsg(anyNonzero, "Bond order: all Miller indices are equal 0");
+        ValidateMsg(anyNonzero, "All Miller indices are equal 0");
         return millerIndices;
     }
 
@@ -180,7 +208,7 @@ namespace {
         ValidateMsg(fieldMap.find("millerIdx") != fieldMap.end() && fieldMap.find("ranks") != fieldMap.end(),
                     BOND_ORDER_USAGE);
 
-        std::array<int, 3> millerIndices = parse_bond_order_miller_indices(fieldMap);
+        std::array<int, 3> millerIndices = parse_miller_indices(fieldMap.at("millerIdx"));
         std::vector<size_t> ranks = parse_bond_order_ranks(fieldMap);
 
         std::string layeringPoint = "cm";
@@ -193,9 +221,68 @@ namespace {
 
         return std::make_unique<BondOrder>(ranks, millerIndices, layeringPoint, bondOrderPoint);
     }
+
+    bool is_anything_left(std::istringstream &observableStream) {
+        if (!observableStream)
+            return false;
+        observableStream >> std::ws;
+        return observableStream.good();
+    }
+
+    std::unique_ptr<PairEnumerator> parse_pair_enumerator(std::istringstream &observableStream) {
+        std::string name;
+        observableStream >> name;
+        ValidateMsg(observableStream, BINNING_SPEC_USAGE);
+
+        if (name == "radial") {
+            std::string focalPoint = "cm";
+            if (is_anything_left(observableStream))
+                observableStream >> focalPoint;
+            ValidateMsg(!observableStream.fail(), BINNING_SPEC_USAGE);
+
+            return std::make_unique<RadialEnumerator>(focalPoint);
+        } else if (name == "layerwiseRadial") {
+            std::string millerString;
+            observableStream >> millerString;
+            ValidateMsg(observableStream, BINNING_SPEC_USAGE);
+            auto millerIndices = parse_miller_indices(millerString);
+
+            std::string focalPoint = "cm";
+            if (is_anything_left(observableStream))
+                observableStream >> focalPoint;
+            ValidateMsg(!observableStream.fail(), BINNING_SPEC_USAGE);
+
+            return std::make_unique<LayerwiseRadialEnumerator>(millerIndices, focalPoint);
+        } else {
+            throw ValidationException("Unknown binning specification: " + name);
+        }
+    }
+
+    std::unique_ptr<CorrelationFunction> parse_correlation_function(std::istringstream &observableStream) {
+        std::string name;
+        observableStream >> name;
+        ValidateMsg(observableStream, BINNING_SPEC_USAGE);
+
+        if (name == "S110") {
+            std::string axisName;
+            observableStream >> axisName;
+            ValidateMsg(observableStream, CORR_FUN_USAGE);
+            if (axisName == "primary")
+                return std::make_unique<S110Correlation>(S110Correlation::Axis::PRIMARY_AXIS);
+            else if (axisName == "secondary")
+                return std::make_unique<S110Correlation>(S110Correlation::Axis::SECONDARY_AXIS);
+            else
+                throw ValidationException(CORR_FUN_USAGE);
+        } else {
+            throw ValidationException("Unknown correlation function: " + name);
+        }
+    }
 }
 
-std::unique_ptr<ObservablesCollector> ObservablesCollectorFactory::create(const std::vector<std::string> &observables) {
+std::unique_ptr<ObservablesCollector>
+ObservablesCollectorFactory::create(const std::vector<std::string> &observables,
+                                    const std::vector<std::string> &bulkObservables)
+{
     auto collector = std::make_unique<ObservablesCollector>();
 
     std::regex typePattern(R"(^(?:inline|snapshot|averaging)(?:\/(?:inline|snapshot|averaging))*$)");
@@ -239,6 +326,42 @@ std::unique_ptr<ObservablesCollector> ObservablesCollectorFactory::create(const 
             collector->addObservable(std::make_unique<Temperature>(), observableType);
         } else if (observableName == "pressure") {
             collector->addObservable(std::make_unique<Pressure>(), observableType);
+        } else {
+            throw ValidationException("Unknown observable: " + observableName);
+        }
+    }
+
+    for (const auto &observable : bulkObservables) {
+        std::istringstream observableStream(observable);
+        std::string observableName;
+        observableStream >> observableName;
+        ValidateMsg(observableStream, "Malformed bulk observable, usage: [observable name] (parameters)");
+
+        if (observableName == "pairDensityCorrelation") {
+            double maxDistance{};
+            std::size_t numBins{};
+            observableStream >> maxDistance >> numBins;
+            ValidateMsg(observableStream, PAIR_DENSITY_CORRELATION_USAGE);
+            Validate(maxDistance > 0);
+            Validate(numBins >= 2);
+
+            auto pairEnumerator = parse_pair_enumerator(observableStream);
+            auto rhoCorr = std::make_unique<PairDensityCorrelation>(std::move(pairEnumerator), maxDistance, numBins);
+            collector->addBulkObservable(std::move(rhoCorr));
+        } else if (observableName == "pairAveragedCorrelation") {
+            double maxDistance{};
+            std::size_t numBins{};
+            observableStream >> maxDistance >> numBins;
+            ValidateMsg(observableStream, PAIR_DENSITY_CORRELATION_USAGE);
+            Validate(maxDistance > 0);
+            Validate(numBins >= 2);
+
+            auto correlationFunction = parse_correlation_function(observableStream);
+            auto pairEnumerator = parse_pair_enumerator(observableStream);
+            auto avgCorr = std::make_unique<PairAveragedCorrelation>(
+                std::move(pairEnumerator), std::move(correlationFunction), maxDistance, numBins
+            );
+            collector->addBulkObservable(std::move(avgCorr));
         } else {
             throw ValidationException("Unknown observable: " + observableName);
         }

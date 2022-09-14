@@ -13,7 +13,8 @@
 
 class ObservablesCollectorFactory {
 public:
-    static std::unique_ptr<ObservablesCollector> create(const std::vector<std::string> &observables);
+    static std::unique_ptr<ObservablesCollector> create(const std::vector<std::string> &observables,
+                                                        const std::vector<std::string> &bulkObservables);
 };
 
 

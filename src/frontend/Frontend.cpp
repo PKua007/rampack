@@ -298,7 +298,8 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
 
     auto temperatureUpdater = ParameterUpdaterFactory::create(runParams.temperature);
     auto pressureUpdater = ParameterUpdaterFactory::create(runParams.pressure);
-    auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
+    auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','),
+                                                         explode(runParams.bulkObservables, ','));
     simulation.integrate(std::move(temperatureUpdater), std::move(pressureUpdater), runParams.thermalisationCycles,
                          runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
                          shapeTraits, std::move(collector), std::move(recorder), logger, cycleOffset);
@@ -319,6 +320,8 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
     }
     if (!runParams.observableSnapshotFilename.empty())
         this->storeSnapshots(observablesCollector, isContinuation, runParams.observableSnapshotFilename);
+    if (!runParams.bulkObservableFilenamePattern.empty())
+        this->storeBulkObservables(observablesCollector, runParams.bulkObservableFilenamePattern);
 }
 
 std::unique_ptr<SimulationRecorder> Frontend::loadSimulationRecorder(const std::string &filename,
@@ -364,7 +367,8 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, const std::strin
 
     auto temperatureUpdater = ParameterUpdaterFactory::create(runParams.temperature);
     auto pressureUpdater = ParameterUpdaterFactory::create(runParams.pressure);
-    auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','));
+    auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','),
+                                                         explode(runParams.bulkObservables, ','));
     simulation.relaxOverlaps(std::move(temperatureUpdater), std::move(pressureUpdater), runParams.snapshotEvery,
                              *shapeTraits, std::move(collector), std::move(recorder), this->logger, cycleOffset);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
@@ -379,6 +383,8 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, const std::strin
         this->storeWolframVisualization(simulation.getPacking(), shapeTraits->getPrinter(), runParams.wolframFilename);
     if (!runParams.observableSnapshotFilename.empty())
         this->storeSnapshots(observablesCollector, isContinuation, runParams.observableSnapshotFilename);
+    if (!runParams.bulkObservableFilenamePattern.empty())
+        this->storeBulkObservables(observablesCollector, runParams.bulkObservableFilenamePattern);
 }
 
 void Frontend::storeSnapshots(const ObservablesCollector &observablesCollector, bool isContinuation,
@@ -846,6 +852,7 @@ int Frontend::trajectory(int argc, char **argv) {
     std::string trajectoryFilename;
     std::string outputFilename;
     std::vector<std::string> observables;
+    std::vector<std::string> bulkObservables;
     std::string datFilename;
     std::string wolframFilename;
     std::string verbosity;
@@ -941,7 +948,7 @@ int Frontend::trajectory(int argc, char **argv) {
             die("Output file must be specified with option -o [output file name]", this->logger);
 
         this->logger.info() << "Starting simulation replay..." << std::endl;
-        auto collector = ObservablesCollectorFactory::create(observables);
+        auto collector = ObservablesCollectorFactory::create(observables, bulkObservables);
 
         using namespace std::chrono;
         auto start = high_resolution_clock::now();
@@ -985,4 +992,21 @@ void Frontend::createWalls(Packing &packing, const std::string &walls) {
             default:    throw ValidationException("unknown wall axis: " + std::string{c});
         }
     }
+}
+
+void Frontend::storeBulkObservables(const ObservablesCollector &observablesCollector,
+                                    std::string bulkObservableFilenamePattern) const
+{
+    std::regex pattern(R"(\{\})");
+    if (std::regex_search(bulkObservableFilenamePattern, pattern) == false)
+        bulkObservableFilenamePattern = bulkObservableFilenamePattern + "_{}.txt";
+
+    observablesCollector.visitBulkObservables([&](const BulkObservable &bulkObservable) {
+        std::string observableName = bulkObservable.getSignatureName();
+        std::string filename = std::regex_replace(bulkObservableFilenamePattern, pattern, observableName);
+        std::ofstream out(filename);
+        ValidateOpenedDesc(out, filename, "to store bulk observable");
+        bulkObservable.print(out);
+        this->logger.info() << "Bulk observable " << observableName << " stored to " << filename << std::endl;
+    });
 }

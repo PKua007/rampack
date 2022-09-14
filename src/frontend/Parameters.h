@@ -52,10 +52,12 @@ public:
         std::size_t averagingEvery{};
         std::size_t snapshotEvery{};
         std::string observables{};
+        std::string bulkObservables{};
         std::string packingFilename{};
         std::string wolframFilename{};
         std::string outputFilename{};
         std::string observableSnapshotFilename{};
+        std::string bulkObservableFilenamePattern{};
         std::string recordingFilename{};
 
         void print(Logger &logger) const;
@@ -77,10 +79,12 @@ public:
         std::string pressure{};
         std::size_t snapshotEvery{};
         std::string observables{};
+        std::string bulkObservables{};
         std::string helperInteraction{};
         std::string packingFilename{};
         std::string wolframFilename{};
         std::string observableSnapshotFilename{};
+        std::string bulkObservableFilenamePattern{};
         std::string recordingFilename{};
 
         void print(Logger &logger) const;
