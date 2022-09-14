@@ -16,7 +16,7 @@ private:
     std::string focalPoint{};
 
 public:
-    explicit LayerwiseRadialEnumerator(const std::array<std::size_t, 3> &millerIndices, std::string focalPoint = "cm");
+    explicit LayerwiseRadialEnumerator(const std::array<int, 3> &millerIndices, std::string focalPoint = "cm");
 
     void enumeratePairs(const Packing &packing, const ShapeTraits &shapeTraits,
                         PairConsumer &pairConsumer) const override;
