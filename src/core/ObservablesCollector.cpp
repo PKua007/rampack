@@ -38,6 +38,10 @@ void ObservablesCollector::addObservable(std::unique_ptr<Observable> observable,
         this->inlineObservablesIndices.push_back(observableIndex);
 }
 
+void ObservablesCollector::addBulkObservable(std::unique_ptr<BulkObservable> observable) {
+    this->bulkObservables.push_back(std::move(observable));
+}
+
 void ObservablesCollector::addSnapshot(const Packing &packing, std::size_t cycleNumber, const ShapeTraits &shapeTraits)
 {
     auto start = std::chrono::high_resolution_clock::now();
@@ -66,6 +70,9 @@ void ObservablesCollector::addSnapshot(const Packing &packing, std::size_t cycle
         }
     }
     Assert(valueIndex == this->snapshotValues.size());
+
+    for (const auto &bulkObservable : this->bulkObservables)
+        bulkObservable->addSnapshot(packing, this->temperature, this->pressure, shapeTraits);
 
     auto end = std::chrono::high_resolution_clock::now();
     this->computationMicroseconds += std::chrono::duration<double, std::micro>(end - start).count();
@@ -153,6 +160,8 @@ void ObservablesCollector::clear() {
         singleSet.clear();
     for (auto &singleSet : this->averagingValues)
         singleSet.clear();
+    for (const auto &bulkObservable : this->bulkObservables)
+        bulkObservable->clear();
     this->computationMicroseconds = 0;
 }
 
@@ -224,4 +233,9 @@ std::size_t ObservablesCollector::getMemoryUsage() const {
     for (const auto &vec : this->averagingValues)
         bytes += get_vector_memory_usage(vec);
     return bytes;
+}
+
+void ObservablesCollector::visitBulkObservables(std::function<void(const BulkObservable &)> visitor) const {
+    for (const auto &bulkObservable : this->bulkObservables)
+        visitor(*bulkObservable);
 }

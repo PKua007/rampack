@@ -11,6 +11,7 @@
 
 #include "ShapeTraits.h"
 #include "Observable.h"
+#include "BulkObservable.h"
 #include "utils/Quantity.h"
 
 /**
@@ -25,6 +26,7 @@ private:
     double pressure{};
 
     std::vector<std::unique_ptr<Observable>> observables;
+    std::vector<std::unique_ptr<BulkObservable>> bulkObservables;
     std::vector<std::string> snapshotHeader;
     std::vector<std::string> averagingHeader;
     std::vector<std::size_t> inlineObservablesIndices;
@@ -74,6 +76,8 @@ public:
      * @param observableType the type of the observable as specified by ObservableType
      */
     void addObservable(std::unique_ptr<Observable> observable, std::size_t observableType);
+
+    void addBulkObservable(std::unique_ptr<BulkObservable> observable);
 
     /**
      * @brief Sets the thermodynamic parameters: @a temperature_ and @a pressure_ to be used when calculating observable
@@ -135,6 +139,8 @@ public:
      * them grouped according to Observable objects.
      */
     [[nodiscard]] std::vector<ObservableGroupData> getGroupedAverageValues() const;
+
+    void visitBulkObservables(std::function<void(const BulkObservable &)> visitor) const;
 
     /**
      * @brief Returns the total time used to calculate observable values in microseconds.
