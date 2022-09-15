@@ -36,6 +36,13 @@ std::vector<HistogramBuilder::BinValue>
 HistogramBuilder::dumpValues(HistogramBuilder::ReductionMethod reductionMethod) const
 {
     std::vector<BinValue> result(this->size());
+
+    if (this->numSnapshots == 0) {
+        std::transform(this->binValues.begin(), this->binValues.end(), result.begin(),
+                       [](double binMiddle) { return BinValue{binMiddle, 0}; });
+        return result;
+    }
+
     switch (reductionMethod) {
         case ReductionMethod::SUM:
             std::transform(this->histogram.bins.begin(), this->histogram.bins.end(), this->binValues.begin(),

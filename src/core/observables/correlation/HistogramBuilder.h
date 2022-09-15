@@ -67,7 +67,7 @@ public:
 
     void add(double pos, double value);
     void nextSnapshot();
-    [[nodiscard]] std::vector<BinValue> dumpValues(ReductionMethod reductionMethod) const;
+    [[nodiscard]] std::vector<BinValue> dumpValues(ReductionMethod binMiddle) const;
     void clear();
     [[nodiscard]] std::size_t size() const { return this->histogram.size(); }
     [[nodiscard]] double getBinSize() const { return this->step; }

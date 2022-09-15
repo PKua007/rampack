@@ -46,6 +46,15 @@ TEST_CASE("Histogram: reduction methods") {
     }
 }
 
+TEST_CASE("Histogram: empty histogram") {
+    // Bins: [1, 2), [2, 3]
+    HistogramBuilder histogram(1, 3, 2);
+
+    auto reductionMethod = GENERATE(HistogramBuilder::ReductionMethod::SUM, HistogramBuilder::ReductionMethod::AVERAGE);
+    auto values = histogram.dumpValues(reductionMethod);
+    CHECK(values == std::vector<HistogramBuilder::BinValue>{{1.5, 0}, {2.5, 0}});
+}
+
 TEST_CASE("Histogram: info") {
     // Bins: [1, 2), [2, 3]
     HistogramBuilder histogram(1, 3, 2);

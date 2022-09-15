@@ -71,9 +71,6 @@ void ObservablesCollector::addSnapshot(const Packing &packing, std::size_t cycle
     }
     Assert(valueIndex == this->snapshotValues.size());
 
-    for (const auto &bulkObservable : this->bulkObservables)
-        bulkObservable->addSnapshot(packing, this->temperature, this->pressure, shapeTraits);
-
     auto end = std::chrono::high_resolution_clock::now();
     this->computationMicroseconds += std::chrono::duration<double, std::micro>(end - start).count();
 }
@@ -95,6 +92,9 @@ void ObservablesCollector::addAveragingValues(const Packing &packing, const Shap
     }
     Assert(valueIndex == this->averagingValues.size());
 
+    for (const auto &bulkObservable : this->bulkObservables)
+        bulkObservable->addSnapshot(packing, this->temperature, this->pressure, shapeTraits);
+
     auto end = std::chrono::high_resolution_clock::now();
     this->computationMicroseconds += std::chrono::duration<double, std::micro>(end - start).count();
 }
@@ -102,7 +102,6 @@ void ObservablesCollector::addAveragingValues(const Packing &packing, const Shap
 std::string ObservablesCollector::generateInlineObservablesString(const Packing &packing,
                                                                   const ShapeTraits &shapeTraits) const
 {
-
     if (this->inlineObservablesIndices.empty())
         return "";
 
