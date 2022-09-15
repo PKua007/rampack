@@ -10,10 +10,10 @@ void PairDensityCorrelation::addSnapshot(const Packing &packing, [[maybe_unused]
 {
     this->pairEnumerator->enumeratePairs(packing, shapeTraits, *this);
     auto binDividers = this->histogram.getBinDividers();
-    auto expectedMolecules = this->pairEnumerator->getExpectedNumOfMoleculesInShells(packing, binDividers);
-    for (auto &em : expectedMolecules)
-        em = 1./em;
-    this->histogram.renormalizeBins(expectedMolecules);
+    auto factors = this->pairEnumerator->getExpectedNumOfMoleculesInShells(packing, binDividers);
+    for (auto &factor : factors)
+        factor = 2. / factor / static_cast<double>(packing.size());
+    this->histogram.renormalizeBins(factors);
     this->histogram.nextSnapshot();
 }
 
