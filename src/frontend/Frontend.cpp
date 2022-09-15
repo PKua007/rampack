@@ -850,9 +850,11 @@ int Frontend::trajectory(int argc, char **argv) {
 
     std::string inputFilename;
     std::string trajectoryFilename;
-    std::string outputFilename;
+    std::string obsOutputFilename;
     std::vector<std::string> observables;
+    std::string bulkObsOutputFilename;
     std::vector<std::string> bulkObservables;
+    std::size_t averagingStart{};
     std::string datFilename;
     std::string wolframFilename;
     std::string verbosity;
@@ -870,12 +872,22 @@ int Frontend::trajectory(int argc, char **argv) {
                         "error, warn, info, verbose, debug. Defaults to: info if --log-file not specified, "
                         "otherwise to: warn",
          cxxopts::value<std::string>(verbosity))
-        ("o,output", "output file with the results (depending of a selected mode, for example --observables)",
-         cxxopts::value<std::string>(outputFilename))
+        ("o,obs-output", "output file with the results of --observables",
+         cxxopts::value<std::string>(obsOutputFilename))
         ("O,observables", "replays the simulation and calculates specified observables (format as in the input file). "
                           "Observables can be passed using multiple short options (-o obs1 -o obs2) or comma-separated "
                           "in a long option (--observables=obs1,obs2)",
          cxxopts::value<std::vector<std::string>>(observables))
+        ("b,bulk-obs-output", "output file pattern with the results of --bulk-observables. Every occurrence of {} is "
+                              "replaced with observable signature name. If not specified, '_{}.txt' is appended at the "
+                              "end",
+         cxxopts::value<std::string>(bulkObsOutputFilename))
+        ("B,bulk-observables", "replays the simulation and calculates specified bulk observables (format as in the "
+                               "input file). Observables can be passed using multiple short options (-o obs1 -o obs2) "
+                               "or comma-separated in a long option (--observables=obs1,obs2)",
+         cxxopts::value<std::vector<std::string>>(bulkObservables))
+        ("a,averaging-start", "specifies when the averaging starts. It is used for bulk observables",
+         cxxopts::value<std::size_t>(averagingStart))
         ("d,generate-dat", "reads the last snapshot and recreates *.dat file from it",
          cxxopts::value<std::string>(datFilename))
         ("w,generate-wolfram", "reads the last snapshot and recreates Wolfram Mathematica file from it",
@@ -915,11 +927,12 @@ int Frontend::trajectory(int argc, char **argv) {
         die("Input file must be specified with option -i [input file name]", this->logger);
     if (!parsedOptions.count("trajectory"))
         die("Trajectory file must be specified with option -t [input file name]", this->logger);
-    if (!parsedOptions.count("observables") && !parsedOptions.count("log-info") && !parsedOptions.count("generate-dat")
+    if (!parsedOptions.count("observables") && !parsedOptions.count("bulk-observables")
+        && !parsedOptions.count("log-info") && !parsedOptions.count("generate-dat")
         && !parsedOptions.count("generate-wolfram"))
     {
-        die("At least one of: --observables, --log-info, --generate-dat, --generate-wolfram options must be specified",
-            this->logger);
+        die("At least one of: --observables, --bulk-observables, --log-info, --generate-dat, --generate-wolfram "
+            "options must be specified", this->logger);
     }
 
     Parameters params = this->loadParameters(inputFilename);
@@ -944,11 +957,11 @@ int Frontend::trajectory(int argc, char **argv) {
 
     // Replay the simulation and calculate observables (if desired)
     if (parsedOptions.count("observables")) {
-        if (!parsedOptions.count("output"))
-            die("Output file must be specified with option -o [output file name]", this->logger);
+        if (!parsedOptions.count("obs-output"))
+            die("Output file for observables must be specified with option -o [output file name]", this->logger);
 
-        this->logger.info() << "Starting simulation replay..." << std::endl;
-        auto collector = ObservablesCollectorFactory::create(observables, bulkObservables);
+        this->logger.info() << "Starting simulation replay for observables..." << std::endl;
+        auto collector = ObservablesCollectorFactory::create(observables, {});
 
         using namespace std::chrono;
         auto start = high_resolution_clock::now();
@@ -963,7 +976,53 @@ int Frontend::trajectory(int argc, char **argv) {
         double time = duration<double>(end - start).count();
 
         this->logger.info() << "Replay finished after " << time << " s." << std::endl;
-        this->storeSnapshots(*collector, false, outputFilename);
+        this->storeSnapshots(*collector, false, obsOutputFilename);
+        this->logger.info() << std::endl;
+    }
+
+    // Replay the simulation and calculate bulk observables (if desired)
+    if (parsedOptions.count("bulk-observables")) {
+        if (!parsedOptions.count("bulk-obs-output"))
+            die("Output file for bulk observables must be specified with option -b [output file name]", this->logger);
+        if (!parsedOptions.count("averaging-start"))
+            die("The start of averaging must be specified with option -a [first cycle number]", this->logger);
+        if (averagingStart >= player.getTotalCycles()) {
+            die("Starting cycle (" + std::to_string(averagingStart) + ") is larger than a total number of recorded "
+                + "cycles (" + std::to_string(player.getTotalCycles()) + ")");
+        }
+        if (averagingStart < player.getCycleStep()) {
+            die("Starting cycle (" + std::to_string(averagingStart) + ") is less than cycle number of first recorded "
+                + "shapshot (" + std::to_string(player.getCycleStep()) + ")");
+        }
+
+        this->logger.info() << "Starting simulation replay for bulk observables..." << std::endl;
+        auto collector = ObservablesCollectorFactory::create({}, bulkObservables);
+
+        using namespace std::chrono;
+        auto start = high_resolution_clock::now();
+
+        // Round the starting cycle up
+        std::size_t startingCycle{};
+        std::size_t cycleStep = player.getCycleStep();
+        if (averagingStart % cycleStep == 0)
+            startingCycle = averagingStart;
+        else
+            startingCycle = (averagingStart / cycleStep + 1) * cycleStep;
+
+        player.jumpToSnapshot(*packing, shapeTraits->getInteraction(), startingCycle);
+        collector->addAveragingValues(*packing, *shapeTraits);
+        this->logger.info() << "Replayed cycle " << player.getCurrentSnapshotCycles() << "; " << std::endl;
+        while (player.hasNext()) {
+            player.nextSnapshot(*packing, shapeTraits->getInteraction());
+            collector->addAveragingValues(*packing, *shapeTraits);
+            this->logger.info() << "Replayed cycle " << player.getCurrentSnapshotCycles() << "; " << std::endl;
+        }
+        auto end = high_resolution_clock::now();
+        double time = duration<double>(end - start).count();
+
+        this->logger.info() << "Replay finished after " << time << " s." << std::endl;
+        this->storeBulkObservables(*collector, bulkObsOutputFilename);
+        this->logger.info() << std::endl;
     }
 
     // Recreate dat file from the last snapshot (if desired)
@@ -976,6 +1035,7 @@ int Frontend::trajectory(int argc, char **argv) {
             this->generateDatFile(*packing, params, datFilename, player.getCurrentSnapshotCycles());
         if (parsedOptions.count("generate-wolfram"))
             this->storeWolframVisualization(*packing, shapeTraits->getPrinter(), wolframFilename);
+        this->logger.info() << std::endl;
     }
 
     return EXIT_SUCCESS;
