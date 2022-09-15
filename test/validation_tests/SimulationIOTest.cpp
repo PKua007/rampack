@@ -65,7 +65,10 @@ TEST_CASE("Simulation IO: storing and restoring")
 
         auto in_stream = std::make_unique<std::istream>(&inout_buf);
         SimulationPlayer player(std::move(in_stream));
-        
+
+        CHECK(player.getTotalCycles() == 2000);
+        CHECK(player.getCycleStep() == 100);
+
         SECTION("whole replay") {
             while (player.hasNext())
                 player.nextSnapshot(packing1, interaction);
@@ -76,6 +79,13 @@ TEST_CASE("Simulation IO: storing and restoring")
 
         SECTION("only last") {
             player.lastSnapshot(packing1, interaction);
+            player.close();
+
+            assert_equal(packing1, simulation.getPacking());
+        }
+
+        SECTION("only last, but using explicit cycle number") {
+            player.jumpToSnapshot(packing1, interaction, 2000);
             player.close();
 
             assert_equal(packing1, simulation.getPacking());
@@ -98,6 +108,8 @@ TEST_CASE("Simulation IO: storing and restoring")
 
         auto in_stream = std::make_unique<std::istream>(&inout_buf);
         SimulationPlayer player(std::move(in_stream));
+        CHECK(player.getTotalCycles() == 2000);
+        CHECK(player.getCycleStep() == 100);
         while (player.hasNext())
             player.nextSnapshot(packing1, interaction);
         player.close();
@@ -119,6 +131,8 @@ TEST_CASE("Simulation IO: storing and restoring")
 
         auto in_stream = std::make_unique<std::istream>(&inout_buf);
         SimulationPlayer player(std::move(in_stream));
+        CHECK(player.getTotalCycles() == 1000);
+        CHECK(player.getCycleStep() == 100);
         while (player.hasNext())
             player.nextSnapshot(packing1, interaction);
         player.close();

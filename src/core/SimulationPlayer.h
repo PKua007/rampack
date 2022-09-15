@@ -45,10 +45,25 @@ public:
     void lastSnapshot(Packing &packing, const Interaction &interaction);
 
     /**
+     * @brief Jumps to a given snapshot and prints it on @a packing.
+     */
+    void jumpToSnapshot(Packing &packing, const Interaction &interaction, std::size_t cycleNumber);
+
+    /**
      * @brief Returns number of cycles for a current snapshot (which was recently moved to using
      * SimyulationPlayer::nextSnapshot()).
      */
     [[nodiscard]] std::size_t getCurrentSnapshotCycles() const;
+
+    /**
+     * @brief Returns total number of recorded cycles.
+     */
+    [[nodiscard]] std::size_t getTotalCycles() const { return this->header.cycleStep * this->header.numSnapshots; }
+
+    /**
+     * @brief Returns cycle step between snapshots.
+     */
+    [[nodiscard]] std::size_t getCycleStep() const { return this->header.cycleStep; }
 
     /**
      * @brief Closes the stream on demand and prevents any further operations.
