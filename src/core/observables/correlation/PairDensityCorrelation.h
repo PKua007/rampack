@@ -23,8 +23,10 @@ protected:
                      double distance) override;
 
 public:
-    explicit PairDensityCorrelation(std::unique_ptr<PairEnumerator> pairEnumerator, double maxR, std::size_t numBins)
-            : pairEnumerator{std::move(pairEnumerator)}, histogram(0, maxR, numBins)
+    explicit PairDensityCorrelation(std::unique_ptr<PairEnumerator> pairEnumerator, double maxR, std::size_t numBins,
+                                    std::size_t numThreads = 1)
+            : PairConsumer(numThreads), pairEnumerator{std::move(pairEnumerator)},
+              histogram(0, maxR, numBins, numThreads)
     { }
 
     void addSnapshot(const Packing &packing, double temperature, double pressure,

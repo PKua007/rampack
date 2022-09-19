@@ -23,9 +23,10 @@ private:
 
 public:
     PairAveragedCorrelation(std::unique_ptr<PairEnumerator> pairEnumerator,
-                            std::unique_ptr<CorrelationFunction> correlationFunction, double maxR, std::size_t numBins)
-            : pairEnumerator{std::move(pairEnumerator)}, correlationFunction{std::move(correlationFunction)},
-              histogram(0, maxR, numBins)
+                            std::unique_ptr<CorrelationFunction> correlationFunction, double maxR, std::size_t numBins,
+                            std::size_t numThreads = 1)
+            : PairConsumer(numThreads), pairEnumerator{std::move(pairEnumerator)},
+              correlationFunction{std::move(correlationFunction)}, histogram(0, maxR, numBins, numThreads)
     { }
 
     void addSnapshot(const Packing &packing, double temperature, double pressure,

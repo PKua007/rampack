@@ -14,7 +14,10 @@ void RadialEnumerator::enumeratePairs(const Packing &packing, const ShapeTraits 
 {
     const auto &bc = packing.getBoundaryConditions();
     auto focalPoints = packing.dumpNamedPoints(shapeTraits.getGeometry(), this->focalPoint);
-    for (std::size_t i{}; i < packing.size(); i++) {
+    std::size_t maxThreads = pairConsumer.getMaxThreads();
+    #pragma omp parallel for shared(packing, focalPoints, bc, pairConsumer) default(none) schedule(dynamic) \
+            num_threads(maxThreads)
+    for (std::size_t i = 0; i < packing.size(); i++) {
         for (std::size_t j = i; j < packing.size(); j++) {
             const Vector<3> &pos1 = focalPoints[i];
             Vector<3> pos2 = focalPoints[j];

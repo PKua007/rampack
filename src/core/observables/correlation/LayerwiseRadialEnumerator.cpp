@@ -33,7 +33,10 @@ void LayerwiseRadialEnumerator::enumeratePairs(const Packing &packing, const Sha
     auto tauAngle = std::arg(tau);
 
     const auto &bc = packing.getBoundaryConditions();
-    for (std::size_t i{}; i < packing.size(); i++) {
+    std::size_t maxThreads = pairConsumer.getMaxThreads();
+    #pragma omp parallel for shared(packing, focalPoints, bc, pairConsumer, kVector, tauAngle, kVectorNorm) \
+            default(none) schedule(dynamic) num_threads(maxThreads)
+    for (std::size_t i = 0; i < packing.size(); i++) {
         for (std::size_t j = i; j < packing.size(); j++) {
             const auto &pos1 = focalPoints[i];
             auto pos2 = focalPoints[j];
