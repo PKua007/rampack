@@ -281,7 +281,7 @@ namespace {
 
 std::unique_ptr<ObservablesCollector>
 ObservablesCollectorFactory::create(const std::vector<std::string> &observables,
-                                    const std::vector<std::string> &bulkObservables)
+                                    const std::vector<std::string> &bulkObservables, std::size_t maxThreads)
 {
     auto collector = std::make_unique<ObservablesCollector>();
 
@@ -346,7 +346,9 @@ ObservablesCollectorFactory::create(const std::vector<std::string> &observables,
             Validate(numBins >= 2);
 
             auto pairEnumerator = parse_pair_enumerator(observableStream);
-            auto rhoCorr = std::make_unique<PairDensityCorrelation>(std::move(pairEnumerator), maxDistance, numBins);
+            auto rhoCorr = std::make_unique<PairDensityCorrelation>(
+                std::move(pairEnumerator), maxDistance, numBins, maxThreads
+            );
             collector->addBulkObservable(std::move(rhoCorr));
         } else if (observableName == "pairAveragedCorrelation") {
             double maxDistance{};
@@ -359,7 +361,7 @@ ObservablesCollectorFactory::create(const std::vector<std::string> &observables,
             auto correlationFunction = parse_correlation_function(observableStream);
             auto pairEnumerator = parse_pair_enumerator(observableStream);
             auto avgCorr = std::make_unique<PairAveragedCorrelation>(
-                std::move(pairEnumerator), std::move(correlationFunction), maxDistance, numBins
+                std::move(pairEnumerator), std::move(correlationFunction), maxDistance, numBins, maxThreads
             );
             collector->addBulkObservable(std::move(avgCorr));
         } else {

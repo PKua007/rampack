@@ -299,7 +299,8 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
     auto temperatureUpdater = ParameterUpdaterFactory::create(runParams.temperature);
     auto pressureUpdater = ParameterUpdaterFactory::create(runParams.pressure);
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','),
-                                                         explode(runParams.bulkObservables, ','));
+                                                         explode(runParams.bulkObservables, ','),
+                                                         simulation.getPacking().getScalingThreads());
     simulation.integrate(std::move(temperatureUpdater), std::move(pressureUpdater), runParams.thermalisationCycles,
                          runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
                          shapeTraits, std::move(collector), std::move(recorder), logger, cycleOffset);
@@ -368,7 +369,8 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, const std::strin
     auto temperatureUpdater = ParameterUpdaterFactory::create(runParams.temperature);
     auto pressureUpdater = ParameterUpdaterFactory::create(runParams.pressure);
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','),
-                                                         explode(runParams.bulkObservables, ','));
+                                                         explode(runParams.bulkObservables, ','),
+                                                         simulation.getPacking().getScalingThreads());
     simulation.relaxOverlaps(std::move(temperatureUpdater), std::move(pressureUpdater), runParams.snapshotEvery,
                              *shapeTraits, std::move(collector), std::move(recorder), this->logger, cycleOffset);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
@@ -855,6 +857,7 @@ int Frontend::trajectory(int argc, char **argv) {
     std::string bulkObsOutputFilename;
     std::vector<std::string> bulkObservables;
     std::size_t averagingStart{};
+    std::size_t maxThreads{};
     std::string datFilename;
     std::string wolframFilename;
     std::string verbosity;
@@ -888,6 +891,9 @@ int Frontend::trajectory(int argc, char **argv) {
          cxxopts::value<std::vector<std::string>>(bulkObservables))
         ("a,averaging-start", "specifies when the averaging starts. It is used for bulk observables",
          cxxopts::value<std::size_t>(averagingStart))
+        ("T,max-threads", "specifies maximal number of OpenMP threads that may be used to calculate observables. If 0 "
+                          "is passed, all available threads are used",
+         cxxopts::value<std::size_t>(maxThreads)->default_value("1"))
         ("d,generate-dat", "reads the last snapshot and recreates *.dat file from it",
          cxxopts::value<std::string>(datFilename))
         ("w,generate-wolfram", "reads the last snapshot and recreates Wolfram Mathematica file from it",
@@ -961,7 +967,7 @@ int Frontend::trajectory(int argc, char **argv) {
             die("Output file for observables must be specified with option -o [output file name]", this->logger);
 
         this->logger.info() << "Starting simulation replay for observables..." << std::endl;
-        auto collector = ObservablesCollectorFactory::create(observables, {});
+        auto collector = ObservablesCollectorFactory::create(observables, {}, maxThreads);
 
         using namespace std::chrono;
         auto start = high_resolution_clock::now();
@@ -996,7 +1002,7 @@ int Frontend::trajectory(int argc, char **argv) {
         }
 
         this->logger.info() << "Starting simulation replay for bulk observables..." << std::endl;
-        auto collector = ObservablesCollectorFactory::create({}, bulkObservables);
+        auto collector = ObservablesCollectorFactory::create({}, bulkObservables, maxThreads);
 
         using namespace std::chrono;
         auto start = high_resolution_clock::now();
