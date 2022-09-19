@@ -37,7 +37,7 @@ private:
     double step{};
     std::size_t numSnapshots{};
     Histogram histogram;
-    Histogram currentHistogram;
+    std::vector<Histogram> currentHistograms;
     std::vector<double> binValues{};
 
 public:
@@ -63,7 +63,7 @@ public:
         AVERAGE
     };
 
-    explicit HistogramBuilder(double min, double max, std::size_t numBins);
+    explicit HistogramBuilder(double min, double max, std::size_t numBins, std::size_t numThreads = 1);
 
     void add(double pos, double value);
     void nextSnapshot();
@@ -74,7 +74,7 @@ public:
     [[nodiscard]] double getMin() const { return this->min; }
     [[nodiscard]] double getMax() const { return this->max; }
     [[nodiscard]] std::vector<double> getBinDividers() const;
-    void renormalizeBins(const std::vector<double> &factors) { this->currentHistogram.renormalizeBins(factors); }
+    void renormalizeBins(const std::vector<double> &factors);
 };
 
 

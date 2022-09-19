@@ -5,6 +5,7 @@
 #include <catch2/catch.hpp>
 
 #include "core/observables/correlation/HistogramBuilder.h"
+#include "utils/OMPMacros.h"
 
 
 TEST_CASE("Histogram: reduction methods") {
@@ -44,6 +45,34 @@ TEST_CASE("Histogram: reduction methods") {
         auto values = histogram.dumpValues(HistogramBuilder::ReductionMethod::SUM);
         CHECK(values == std::vector<HistogramBuilder::BinValue>{{1.5, 2}, {2.5, 4}});
     }
+}
+
+TEST_CASE("Histogram: OpenMP") {
+    // The same as the above, but in parallel
+    HistogramBuilder histogram(1, 3, 2, 2);
+
+    #pragma omp parallel num_threads(2) shared(histogram) default(none)
+    {
+        if (_OMP_THREAD_ID == 0) {
+            histogram.add(1.1, 2);
+        } else {
+            histogram.add(2.1, 4);
+            histogram.add(2.9, 5);
+        }
+    }
+    histogram.nextSnapshot();
+
+    #pragma omp parallel num_threads(2) shared(histogram) default(none)
+    {
+        if (_OMP_THREAD_ID == 0)
+            histogram.add(1.9, 6);
+        else
+            histogram.add(2.5, 15);
+    }
+    histogram.nextSnapshot();
+
+    auto values = histogram.dumpValues(HistogramBuilder::ReductionMethod::SUM);
+    CHECK(values == std::vector<HistogramBuilder::BinValue>{{1.5, 4}, {2.5, 12}});
 }
 
 TEST_CASE("Histogram: empty histogram") {

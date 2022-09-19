@@ -7,28 +7,35 @@
 
 #include "HistogramBuilder.h"
 #include "utils/Assertions.h"
+#include "utils/OMPMacros.h"
 
 
 void HistogramBuilder::add(double pos, double value) {
     Expects(pos >= this->min);
     Expects(pos <= this->max);
+    std::size_t threadId = _OMP_THREAD_ID;
+    Expects(threadId < this->currentHistograms.size());
 
     auto binIdx = static_cast<std::size_t>(std::floor((pos - this->min)/this->step));
     if (binIdx >= this->size())
         binIdx = this->size() - 1;
 
-    this->currentHistogram.bins[binIdx].addPoint(value);
+    auto &currentHistogram = this->currentHistograms[threadId];
+    currentHistogram.bins[binIdx].addPoint(value);
 }
 
 void HistogramBuilder::nextSnapshot() {
-    this->histogram += this->currentHistogram;
+    for (auto &currentHistogram : this->currentHistograms) {
+        this->histogram += currentHistogram;
+        currentHistogram.clear();
+    }
     this->numSnapshots++;
-    this->currentHistogram.clear();
 }
 
 void HistogramBuilder::clear() {
     this->histogram.clear();
-    this->currentHistogram.clear();
+    for (auto &currentHistogram : this->currentHistograms)
+        currentHistogram.clear();
     this->numSnapshots = 0;
 }
 
@@ -66,12 +73,16 @@ HistogramBuilder::dumpValues(HistogramBuilder::ReductionMethod reductionMethod) 
     return result;
 }
 
-HistogramBuilder::HistogramBuilder(double min, double max, std::size_t numBins)
-        : min{min}, max{max}, step{(max - min)/numBins}, histogram(numBins), currentHistogram(numBins),
+HistogramBuilder::HistogramBuilder(double min, double max, std::size_t numBins, std::size_t numThreads)
+        : min{min}, max{max}, step{(max - min)/numBins}, histogram(numBins),
           binValues(numBins)
 {
     Expects(this->max > this->min);
     Expects(numBins >= 1);
+
+    if (numThreads == 0)
+        numThreads = _OMP_MAXTHREADS;
+    currentHistograms.resize(numThreads, Histogram{numBins});
 
     for (std::size_t i{}; i < numBins; i++)
         this->binValues[i] = this->min + (static_cast<double>(i) + 0.5) * this->step;
@@ -85,6 +96,11 @@ std::vector<double> HistogramBuilder::getBinDividers() const {
         result[i] = this->min * ((ds - di) / ds) + this->max * (di / ds);
     }
     return result;
+}
+
+void HistogramBuilder::renormalizeBins(const std::vector<double> &factors) {
+    for (auto &currentHistogram : this->currentHistograms)
+        currentHistogram.renormalizeBins(factors);
 }
 
 HistogramBuilder::Histogram & HistogramBuilder::Histogram::operator+=(const HistogramBuilder::Histogram &otherData) {
