@@ -7,6 +7,7 @@
 
 #include "mocks/MockShapeTraits.h"
 #include "mocks/MockObservable.h"
+#include "mocks/MockBulkObservable.h"
 
 #include "core/ObservablesCollector.h"
 
@@ -33,12 +34,26 @@ TEST_CASE("ObservablesCollector") {
         return out.str();
     };
     auto mockObservable = std::make_unique<MockObservable>();
-    ALLOW_CALL(*mockObservable, calculate(_, _, _, _)).LR_SIDE_EFFECT(boxSize = _1.getBox().getHeights());
+    ALLOW_CALL(*mockObservable, calculate(_, 4, 2, _))
+        .LR_WITH(&_4 == &mockShapeTraits)
+        .LR_SIDE_EFFECT(boxSize = _1.getBox().getHeights());
     ALLOW_CALL(*mockObservable, getIntervalHeader()).RETURN(std::vector<std::string>{"L_X", "L_Y", "L_Z"});
     ALLOW_CALL(*mockObservable, getIntervalValues()).LR_RETURN(std::vector<double>(boxSize.begin(), boxSize.end()));
     ALLOW_CALL(*mockObservable, getNominalHeader()).RETURN(std::vector<std::string>{"dim"});
     ALLOW_CALL(*mockObservable, getNominalValues()).LR_RETURN(std::vector<std::string>{dimFormatter()});
     ALLOW_CALL(*mockObservable, getName()).RETURN("box dimensions");
+
+    auto mockBulkObservable = std::make_unique<MockBulkObservable>();
+    std::vector<double> volumes;
+    ALLOW_CALL(*mockBulkObservable, addSnapshot(_, 4, 2, _))
+        .LR_WITH(&_4 == &mockShapeTraits)
+        .LR_SIDE_EFFECT(volumes.push_back(_1.getVolume()));
+    ALLOW_CALL(*mockBulkObservable, clear()).LR_SIDE_EFFECT(volumes.clear());
+    ALLOW_CALL(*mockBulkObservable, getSignatureName()).RETURN("vol_history");
+    ALLOW_CALL(*mockBulkObservable, print(_)).LR_SIDE_EFFECT(
+        for (double vol : volumes)
+            _1 << vol << " ";
+    );
 
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     Shape s1({1, 1, 1});
@@ -51,6 +66,7 @@ TEST_CASE("ObservablesCollector") {
     collector.addObservable(std::move(mockObservable), OC::INLINE | OC::SNAPSHOT | OC::AVERAGING);
     collector.addObservable(std::make_unique<CompressibilityFactor>(), OC::SNAPSHOT | OC::AVERAGING);
     collector.addObservable(std::make_unique<NumberDensity>(), OC::INLINE | OC::SNAPSHOT);
+    collector.addBulkObservable(std::move(mockBulkObservable));
     collector.setThermodynamicParameters(4, 2);
 
     SECTION("snapshots") {
@@ -121,6 +137,30 @@ TEST_CASE("ObservablesCollector") {
             REQUIRE(values[1].observableData.size() == 1);
             CHECK(values[1].observableData[0].name == "Z");
             CHECK(values[1].observableData[0].quantity.value == Approx(45));
+        }
+
+        SECTION("bulk observable") {
+            std::ostringstream bulkOut;
+            bool alreadyUsed = false;
+            auto bulkProcessor = [&](const BulkObservable &obs) {
+                REQUIRE_FALSE(alreadyUsed);
+                alreadyUsed = true;
+                obs.print(bulkOut);
+            };
+
+            collector.visitBulkObservables(bulkProcessor);
+
+            CHECK(bulkOut.str() == "60 480 ");
+
+            SECTION("clearing") {
+                alreadyUsed = false;
+                bulkOut.str("");
+
+                collector.clear();
+
+                collector.visitBulkObservables(bulkProcessor);
+                CHECK(bulkOut.str().empty());
+            }
         }
     }
 
