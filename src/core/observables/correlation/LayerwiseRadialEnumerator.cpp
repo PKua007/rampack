@@ -14,7 +14,7 @@
 
 Vector<3> LayerwiseRadialEnumerator::calculateK(const Packing &packing) const {
     auto dimInv = packing.getBox().getDimensions().inverse();
-    Vector<3> kVector = 2*M_PI*(dimInv.transpose() * millerIndices);
+    Vector<3> kVector = 2*M_PI*(dimInv.transpose() * this->millerIndices);
     return kVector;
 }
 
@@ -23,18 +23,12 @@ void LayerwiseRadialEnumerator::enumeratePairs(const Packing &packing, const Sha
 {
     Vector<3> kVector = this->calculateK(packing);
     Vector<3> kVectorNorm = kVector.normalized();
-
-    auto focalPoints = packing.dumpNamedPoints(traits.getGeometry(), this->focalPoint);
-    auto tauAccumulator = [kVector](std::complex<double> tau_, const Vector<3> &point) {
-        using namespace std::complex_literals;
-        return tau_ + std::exp(1i * (kVector * point));
-    };
-    auto tau = std::accumulate(focalPoints.begin(), focalPoints.end(), std::complex<double>{0}, tauAccumulator);
-    auto tauAngle = std::arg(tau);
-
+    auto focalPoints = packing.dumpNamedPoints(traits.getGeometry(), this->focalPointName);
+    double tauAngle = LayerwiseRadialEnumerator::calculateTauAngle(kVector, focalPoints);
     const auto &bc = packing.getBoundaryConditions();
     std::size_t maxThreads = pairConsumer.getMaxThreads();
-    #pragma omp parallel for shared(packing, focalPoints, bc, pairConsumer, kVector, tauAngle, kVectorNorm) \
+
+    #pragma omp parallel for shared(packing, focalPoints, bc, pairConsumer, kVector, tauAngle, kVectorNorm, traits) \
             default(none) schedule(dynamic) num_threads(maxThreads)
     for (std::size_t i = 0; i < packing.size(); i++) {
         for (std::size_t j = i; j < packing.size(); j++) {
@@ -51,13 +45,25 @@ void LayerwiseRadialEnumerator::enumeratePairs(const Packing &packing, const Sha
             double distance2 = diff.norm2() - std::pow(diff * kVectorNorm, 2);   // Subtract normal component
             distance2 = std::max(0.0, distance2);   // Make sure it is not < 0 due to numerical precision
             double distance = std::sqrt(distance2);
-            pairConsumer.consumePair(packing, {i, j}, distance);
+            pairConsumer.consumePair(packing, {i, j}, distance, traits);
         }
     }
 }
 
-LayerwiseRadialEnumerator::LayerwiseRadialEnumerator(const std::array<int, 3> &millerIndices, std::string focalPoint)
-        : focalPoint{std::move(focalPoint)}
+double LayerwiseRadialEnumerator::calculateTauAngle(const Vector<3> &kVector,
+                                                    const std::vector<Vector<3>> &focalPoints)
+{
+    auto tauAccumulator = [kVector](std::complex<double> tau_, const Vector<3> &point) {
+        using namespace std::complex_literals;
+        return tau_ + std::exp(1i * (kVector * point));
+    };
+    auto tau = std::accumulate(focalPoints.begin(), focalPoints.end(), std::complex<double>{0}, tauAccumulator);
+    return std::arg(tau);
+}
+
+LayerwiseRadialEnumerator::LayerwiseRadialEnumerator(const std::array<int, 3> &millerIndices,
+                                                     std::string focalPointName)
+        : focalPointName{std::move(focalPointName)}
 {
     Expects(std::any_of(millerIndices.begin(), millerIndices.end(), [](auto i) { return i != 0; }));
     std::copy(millerIndices.begin(), millerIndices.end(), this->millerIndices.begin());
@@ -83,6 +89,5 @@ LayerwiseRadialEnumerator::getExpectedNumOfMoleculesInShells(const Packing &pack
     result.reserve(radiiBounds.size() - 1);
     std::transform(std::next(molecules.begin()), molecules.end(), molecules.begin(), std::back_inserter(result),
                    std::minus<>{});
-
     return result;
 }

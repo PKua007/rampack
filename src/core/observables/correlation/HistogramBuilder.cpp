@@ -17,8 +17,8 @@ void HistogramBuilder::add(double pos, double value) {
     Expects(threadId < this->currentHistograms.size());
 
     auto binIdx = static_cast<std::size_t>(std::floor((pos - this->min)/this->step));
-    if (binIdx >= this->size())
-        binIdx = this->size() - 1;
+    if (binIdx >= this->getNumBins())
+        binIdx = this->getNumBins() - 1;
 
     auto &currentHistogram = this->currentHistograms[threadId];
     currentHistogram.bins[binIdx].addPoint(value);
@@ -42,7 +42,7 @@ void HistogramBuilder::clear() {
 std::vector<HistogramBuilder::BinValue>
 HistogramBuilder::dumpValues(HistogramBuilder::ReductionMethod reductionMethod) const
 {
-    std::vector<BinValue> result(this->size());
+    std::vector<BinValue> result(this->getNumBins());
 
     if (this->numSnapshots == 0) {
         std::transform(this->binValues.begin(), this->binValues.end(), result.begin(),
@@ -55,7 +55,7 @@ HistogramBuilder::dumpValues(HistogramBuilder::ReductionMethod reductionMethod) 
             std::transform(this->histogram.bins.begin(), this->histogram.bins.end(), this->binValues.begin(),
                            result.begin(),
                            [this](const BinData &binData, double binValue) {
-                                return BinValue{binValue, binData.value / this->numSnapshots};
+                                return BinValue{binValue, binData.value / static_cast<double>(this->numSnapshots)};
                            });
             break;
 
@@ -63,7 +63,7 @@ HistogramBuilder::dumpValues(HistogramBuilder::ReductionMethod reductionMethod) 
             std::transform(this->histogram.bins.begin(), this->histogram.bins.end(), this->binValues.begin(),
                            result.begin(),
                            [](const BinData &binData, double binValue) {
-                               return BinValue{binValue, binData.value / binData.numPoints};
+                               return BinValue{binValue, binData.value / static_cast<double>(binData.numPoints)};
                            });
             break;
 
@@ -74,7 +74,7 @@ HistogramBuilder::dumpValues(HistogramBuilder::ReductionMethod reductionMethod) 
 }
 
 HistogramBuilder::HistogramBuilder(double min, double max, std::size_t numBins, std::size_t numThreads)
-        : min{min}, max{max}, step{(max - min)/numBins}, histogram(numBins),
+        : min{min}, max{max}, step{(max - min)/static_cast<double>(numBins)}, histogram(numBins),
           binValues(numBins)
 {
     Expects(this->max > this->min);
@@ -82,18 +82,18 @@ HistogramBuilder::HistogramBuilder(double min, double max, std::size_t numBins, 
 
     if (numThreads == 0)
         numThreads = _OMP_MAXTHREADS;
-    currentHistograms.resize(numThreads, Histogram{numBins});
+    this->currentHistograms.resize(numThreads, Histogram{numBins});
 
     for (std::size_t i{}; i < numBins; i++)
         this->binValues[i] = this->min + (static_cast<double>(i) + 0.5) * this->step;
 }
 
 std::vector<double> HistogramBuilder::getBinDividers() const {
-    std::vector<double> result(this->size() + 1);
-    auto ds = static_cast<double>(this->size());
-    for (std::size_t i{}; i <= this->size(); i++) {
-        auto di = static_cast<double>(i);
-        result[i] = this->min * ((ds - di) / ds) + this->max * (di / ds);
+    std::vector<double> result(this->getNumBins() + 1);
+    auto numBinsD = static_cast<double>(this->getNumBins());
+    for (std::size_t i{}; i <= this->getNumBins(); i++) {
+        auto iD = static_cast<double>(i);
+        result[i] = this->min * ((numBinsD - iD) / numBinsD) + this->max * (iD / numBinsD);
     }
     return result;
 }

@@ -69,7 +69,7 @@ public:
     void nextSnapshot();
     [[nodiscard]] std::vector<BinValue> dumpValues(ReductionMethod binMiddle) const;
     void clear();
-    [[nodiscard]] std::size_t size() const { return this->histogram.size(); }
+    [[nodiscard]] std::size_t getNumBins() const { return this->histogram.size(); }
     [[nodiscard]] double getBinSize() const { return this->step; }
     [[nodiscard]] double getMin() const { return this->min; }
     [[nodiscard]] double getMax() const { return this->max; }

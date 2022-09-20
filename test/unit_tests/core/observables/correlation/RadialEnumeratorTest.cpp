@@ -19,7 +19,7 @@ namespace {
         PairMap pairData;
 
         void consumePair([[maybe_unused]] const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
-                         double distance) override
+                         double distance, [[maybe_unused]] const ShapeTraits &shapeTraits) override
         {
             CHECK(this->pairData.find(idxPair) == this->pairData.end());
             this->pairData[idxPair] = distance;

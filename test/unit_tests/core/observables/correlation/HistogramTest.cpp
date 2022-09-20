@@ -88,7 +88,7 @@ TEST_CASE("Histogram: info") {
     // Bins: [1, 2), [2, 3]
     HistogramBuilder histogram(1, 3, 2);
 
-    CHECK(histogram.size() == 2);
+    CHECK(histogram.getNumBins() == 2);
     CHECK(histogram.getMin() == 1);
     CHECK(histogram.getMax() == 3);
     CHECK(histogram.getBinSize() == 1);

@@ -10,10 +10,10 @@
 
 class RadialEnumerator : public PairEnumerator {
 private:
-    std::string focalPoint;
+    std::string focalPointName;
 
 public:
-    explicit RadialEnumerator(std::string focalPoint = "cm") : focalPoint{std::move(focalPoint)} { }
+    explicit RadialEnumerator(std::string focalPoint = "cm") : focalPointName{std::move(focalPoint)} { }
 
     [[nodiscard]] std::vector<double>
     getExpectedNumOfMoleculesInShells(const Packing &packing, const std::vector<double> &radiiBounds) const override;

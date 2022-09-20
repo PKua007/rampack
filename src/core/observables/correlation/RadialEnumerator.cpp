@@ -13,10 +13,11 @@ void RadialEnumerator::enumeratePairs(const Packing &packing, const ShapeTraits 
                                       PairConsumer &pairConsumer) const
 {
     const auto &bc = packing.getBoundaryConditions();
-    auto focalPoints = packing.dumpNamedPoints(shapeTraits.getGeometry(), this->focalPoint);
+    auto focalPoints = packing.dumpNamedPoints(shapeTraits.getGeometry(), this->focalPointName);
     std::size_t maxThreads = pairConsumer.getMaxThreads();
-    #pragma omp parallel for shared(packing, focalPoints, bc, pairConsumer) default(none) schedule(dynamic) \
-            num_threads(maxThreads)
+
+    #pragma omp parallel for shared(packing, focalPoints, bc, pairConsumer, shapeTraits) default(none) \
+            schedule(dynamic) num_threads(maxThreads)
     for (std::size_t i = 0; i < packing.size(); i++) {
         for (std::size_t j = i; j < packing.size(); j++) {
             const Vector<3> &pos1 = focalPoints[i];
@@ -24,7 +25,7 @@ void RadialEnumerator::enumeratePairs(const Packing &packing, const ShapeTraits 
             pos2 += bc.getTranslation(pos1, pos2);
 
             double distance2 = (pos2 - pos1).norm2();
-            pairConsumer.consumePair(packing, {i, j}, std::sqrt(distance2));
+            pairConsumer.consumePair(packing, {i, j}, std::sqrt(distance2), shapeTraits);
         }
     }
 }
@@ -35,12 +36,11 @@ std::vector<double> RadialEnumerator::getExpectedNumOfMoleculesInShells(const Pa
     Expects(radiiBounds.size() >= 2);
     Expects(std::is_sorted(radiiBounds.begin(), radiiBounds.end()));
 
-
     std::vector<double> molecules;
     molecules.reserve(radiiBounds.size());
     double numberDensity = packing.getNumberDensity();
-    auto moleculesInDisk = [numberDensity](double r) { return 4./3 * M_PI * r*r*r * numberDensity; };
-    std::transform(radiiBounds.begin(), radiiBounds.end(), std::back_inserter(molecules), moleculesInDisk);
+    auto moleculesInBall = [numberDensity](double r) { return 4. / 3 * M_PI * r * r * r * numberDensity; };
+    std::transform(radiiBounds.begin(), radiiBounds.end(), std::back_inserter(molecules), moleculesInBall);
 
     std::vector<double> result;
     result.reserve(radiiBounds.size() - 1);

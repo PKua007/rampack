@@ -23,8 +23,8 @@ void PairDensityCorrelation::print(std::ostream &out) const {
 }
 
 void PairDensityCorrelation::consumePair([[maybe_unused]] const Packing &packing,
-                                         [[maybe_unused]] const std::pair<std::size_t, std::size_t> &idxPair,
-                                         double distance)
+                                         const std::pair<std::size_t, std::size_t> &idxPair, double distance,
+                                         [[maybe_unused]] const ShapeTraits &shapeTraits)
 {
     if (idxPair.first == idxPair.second)
         return;

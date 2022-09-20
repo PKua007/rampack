@@ -7,6 +7,7 @@
 
 #include "core/Packing.h"
 #include "utils/OMPMacros.h"
+#include "core/ShapeTraits.h"
 
 
 class PairConsumer {
@@ -18,7 +19,7 @@ public:
     virtual ~PairConsumer() = default;
 
     virtual void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
-                             double distance) = 0;
+                             double distance, const ShapeTraits &shapeTraits) = 0;
     [[nodiscard]] std::size_t getMaxThreads() const { return this->numThreads; }
 };
 

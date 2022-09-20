@@ -20,7 +20,7 @@ private:
 
 protected:
     void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
-                     double distance) override;
+                     double distance, const ShapeTraits &shapeTraits) override;
 
 public:
     explicit PairDensityCorrelation(std::unique_ptr<PairEnumerator> pairEnumerator, double maxR, std::size_t numBins,

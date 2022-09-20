@@ -44,9 +44,9 @@ TEST_CASE("PairAveragedCorrelation") {
     REQUIRE_CALL(*enumerator, enumeratePairs(_, _, _))
             .LR_WITH(&_1 == &packing1 && &_2 == &traits)
             .SIDE_EFFECT (
-                    _3.consumePair(_1, {0, 0}, 1.5);   // ends in BIN 1 with value 1
-                    _3.consumePair(_1, {0, 2}, 1.8);   // ends in BIN 1 with value 2
-                    _3.consumePair(_1, {1, 2}, 5.5);   // REJECTED because too big distance
+                    _3.consumePair(_1, {0, 0}, 1.5, _2);   // ends in BIN 1 with value 1
+                    _3.consumePair(_1, {0, 2}, 1.8, _2);   // ends in BIN 1 with value 2
+                    _3.consumePair(_1, {1, 2}, 5.5, _2);   // REJECTED because too big distance
             );
     // Snapshot 2 - expected bins: {3, 4}
     auto bc2 = std::make_unique<PeriodicBoundaryConditions>();
@@ -54,8 +54,8 @@ TEST_CASE("PairAveragedCorrelation") {
     REQUIRE_CALL(*enumerator, enumeratePairs(_, _, _))
             .LR_WITH(&_1 == &packing2 && &_2 == &traits)
             .SIDE_EFFECT (
-                    _3.consumePair(_1, {0, 1}, 1.5);  // ends in BIN 1 with value 3
-                    _3.consumePair(_1, {1, 2}, 2.5);  // ends in BIN 2 with value 4
+                    _3.consumePair(_1, {0, 1}, 1.5, _2);  // ends in BIN 1 with value 3
+                    _3.consumePair(_1, {1, 2}, 2.5, _2);  // ends in BIN 2 with value 4
             );
 
     // Bin ranges: [0, 2), [2, 4]

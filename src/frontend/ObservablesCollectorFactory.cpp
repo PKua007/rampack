@@ -51,18 +51,18 @@
                                        "[binning specification] :=\n"\
                                        BINNING_SPEC_ALTERNATIVES
 
-#define CORR_FUN_ALTERNATIVES "1. S100 (primary|secondary)"
+#define CORR_FUN_ALTERNATIVES "1. S110 (primary|secondary)"
 
-#define CORR_FUN_USAGE "Malformed correlation funtions. Available alternatives:\n" \
+#define CORR_FUN_USAGE "Malformed correlation function. Available alternatives:\n" \
                        CORR_FUN_ALTERNATIVES
 
 #define PAIR_AVERAGED_CORRELATION_USAGE "Malformed pair averaged correlation, usage:\n" \
-                                        "pairAveragedCorrelation [correlation function] [max distance] [num bins] " \
+                                        "pairAveragedCorrelation [max distance] [num bins] [correlation function] " \
                                         "[binning specification] \n" \
                                         "[binning specification] :=\n" \
                                         BINNING_SPEC_ALTERNATIVES "\n" \
                                         "[correlation function] :=\n" \
-                                        "1. S110 (primary|secondary)"
+                                        CORR_FUN_ALTERNATIVES
 
 namespace {
     auto parse_observable_name_and_type(std::istringstream &observableStream, const std::regex &typePattern) {
@@ -230,18 +230,18 @@ namespace {
     }
 
     std::unique_ptr<PairEnumerator> parse_pair_enumerator(std::istringstream &observableStream) {
-        std::string name;
-        observableStream >> name;
+        std::string enumeratorName;
+        observableStream >> enumeratorName;
         ValidateMsg(observableStream, BINNING_SPEC_USAGE);
 
-        if (name == "radial") {
+        if (enumeratorName == "radial") {
             std::string focalPoint = "cm";
             if (is_anything_left(observableStream))
                 observableStream >> focalPoint;
             ValidateMsg(!observableStream.fail(), BINNING_SPEC_USAGE);
 
             return std::make_unique<RadialEnumerator>(focalPoint);
-        } else if (name == "layerwiseRadial") {
+        } else if (enumeratorName == "layerwiseRadial") {
             std::string millerString;
             observableStream >> millerString;
             ValidateMsg(observableStream, BINNING_SPEC_USAGE);
@@ -254,14 +254,14 @@ namespace {
 
             return std::make_unique<LayerwiseRadialEnumerator>(millerIndices, focalPoint);
         } else {
-            throw ValidationException("Unknown binning specification: " + name);
+            throw ValidationException("Unknown binning specification: " + enumeratorName);
         }
     }
 
     std::unique_ptr<CorrelationFunction> parse_correlation_function(std::istringstream &observableStream) {
         std::string name;
         observableStream >> name;
-        ValidateMsg(observableStream, BINNING_SPEC_USAGE);
+        ValidateMsg(observableStream, CORR_FUN_USAGE);
 
         if (name == "S110") {
             std::string axisName;
@@ -277,6 +277,96 @@ namespace {
             throw ValidationException("Unknown correlation function: " + name);
         }
     }
+    
+    void parse_observables(const std::vector<std::string> &observables, ObservablesCollector &collector) {
+        std::regex typePattern(R"(^(?:inline|snapshot|averaging)(?:\/(?:inline|snapshot|averaging))*$)");
+
+        for (auto observable : observables) {
+            trim(observable);
+            std::istringstream observableStream(observable);
+
+            auto [observableName, observableType] = parse_observable_name_and_type(observableStream, typePattern);
+
+            if (observableName == "numberDensity") {
+                collector.addObservable(std::make_unique<NumberDensity>(), observableType);
+            } else if (observableName == "boxDimensions") {
+                collector.addObservable(std::make_unique<BoxDimensions>(), observableType);
+            } else if (observableName == "packingFraction") {
+                collector.addObservable(std::make_unique<PackingFraction>(), observableType);
+            } else if (observableName == "compressibilityFactor") {
+                collector.addObservable(std::make_unique<CompressibilityFactor>(), observableType);
+            } else if (observableName == "energyPerParticle") {
+                collector.addObservable(std::make_unique<EnergyPerParticle>(), observableType);
+            } else if (observableName == "energyFluctuationsPerParticle") {
+                collector.addObservable(std::make_unique<EnergyFluctuationsPerParticle>(), observableType);
+            } else if (observableName == "nematicOrder") {
+                observableStream >> std::ws;
+                if (observableStream.eof()) {
+                    collector.addObservable(std::make_unique<NematicOrder>(), observableType);
+                    continue;
+                }
+
+                std::string QTensorString;
+                observableStream >> QTensorString;
+                ValidateMsg(QTensorString == "dumpQTensor", "Malformed nematic order, usage: nematicOrder (dumpQTensor)");
+                collector.addObservable(std::make_unique<NematicOrder>(true), observableType);
+            } else if (observableName == "smecticOrder") {
+                collector.addObservable(parse_smectic_order(observableStream), observableType);
+            } else if (observableName == "bondOrder") {
+                collector.addObservable(parse_bond_order(observableStream), observableType);
+            } else if (observableName == "rotationMatrixDrift") {
+                collector.addObservable(std::make_unique<RotationMatrixDrift>(), observableType);
+            } else if (observableName == "temperature") {
+                collector.addObservable(std::make_unique<Temperature>(), observableType);
+            } else if (observableName == "pressure") {
+                collector.addObservable(std::make_unique<Pressure>(), observableType);
+            } else {
+                throw ValidationException("Unknown observable: " + observableName);
+            }
+        }
+    }
+
+    void parse_bulk_observables(const std::vector<std::string> &bulkObservables, size_t maxThreads,
+                                ObservablesCollector &collector)
+    {
+        for (const auto &bulkObservable : bulkObservables) {
+            std::istringstream observableStream(bulkObservable);
+            std::string observableName;
+            observableStream >> observableName;
+            ValidateMsg(observableStream, "Malformed bulk observable, usage: [observable name] (parameters)");
+
+            if (observableName == "pairDensityCorrelation") {
+                double maxDistance{};
+                std::size_t numBins{};
+                observableStream >> maxDistance >> numBins;
+                ValidateMsg(observableStream, PAIR_DENSITY_CORRELATION_USAGE);
+                Validate(maxDistance > 0);
+                Validate(numBins >= 2);
+
+                auto pairEnumerator = parse_pair_enumerator(observableStream);
+                auto rhoCorr = std::make_unique<PairDensityCorrelation>(
+                        std::move(pairEnumerator), maxDistance, numBins, maxThreads
+                );
+                collector.addBulkObservable(std::move(rhoCorr));
+            } else if (observableName == "pairAveragedCorrelation") {
+                double maxDistance{};
+                std::size_t numBins{};
+                observableStream >> maxDistance >> numBins;
+                ValidateMsg(observableStream, PAIR_AVERAGED_CORRELATION_USAGE);
+                Validate(maxDistance > 0);
+                Validate(numBins >= 2);
+
+                auto correlationFunction = parse_correlation_function(observableStream);
+                auto pairEnumerator = parse_pair_enumerator(observableStream);
+                auto avgCorr = std::make_unique<PairAveragedCorrelation>(
+                        std::move(pairEnumerator), std::move(correlationFunction), maxDistance, numBins, maxThreads
+                );
+                collector.addBulkObservable(std::move(avgCorr));
+            } else {
+                throw ValidationException("Unknown observable: " + observableName);
+            }
+        }
+    }
 }
 
 std::unique_ptr<ObservablesCollector>
@@ -284,90 +374,7 @@ ObservablesCollectorFactory::create(const std::vector<std::string> &observables,
                                     const std::vector<std::string> &bulkObservables, std::size_t maxThreads)
 {
     auto collector = std::make_unique<ObservablesCollector>();
-
-    std::regex typePattern(R"(^(?:inline|snapshot|averaging)(?:\/(?:inline|snapshot|averaging))*$)");
-
-    for (auto observable : observables) {
-        trim(observable);
-        std::istringstream observableStream(observable);
-
-        auto [observableName, observableType] = parse_observable_name_and_type(observableStream, typePattern);
-
-        if (observableName == "numberDensity") {
-            collector->addObservable(std::make_unique<NumberDensity>(), observableType);
-        } else if (observableName == "boxDimensions") {
-            collector->addObservable(std::make_unique<BoxDimensions>(), observableType);
-        } else if (observableName == "packingFraction") {
-            collector->addObservable(std::make_unique<PackingFraction>(), observableType);
-        } else if (observableName == "compressibilityFactor") {
-            collector->addObservable(std::make_unique<CompressibilityFactor>(), observableType);
-        } else if (observableName == "energyPerParticle") {
-            collector->addObservable(std::make_unique<EnergyPerParticle>(), observableType);
-        } else if (observableName == "energyFluctuationsPerParticle") {
-            collector->addObservable(std::make_unique<EnergyFluctuationsPerParticle>(), observableType);
-        } else if (observableName == "nematicOrder") {
-            observableStream >> std::ws;
-            if (observableStream.eof()) {
-                collector->addObservable(std::make_unique<NematicOrder>(), observableType);
-                continue;
-            }
-
-            std::string QTensorString;
-            observableStream >> QTensorString;
-            ValidateMsg(QTensorString == "dumpQTensor", "Malformed nematic order, usage: nematicOrder (dumpQTensor)");
-            collector->addObservable(std::make_unique<NematicOrder>(true), observableType);
-        } else if (observableName == "smecticOrder") {
-            collector->addObservable(parse_smectic_order(observableStream), observableType);
-        } else if (observableName == "bondOrder") {
-            collector->addObservable(parse_bond_order(observableStream), observableType);
-        } else if (observableName == "rotationMatrixDrift") {
-            collector->addObservable(std::make_unique<RotationMatrixDrift>(), observableType);
-        } else if (observableName == "temperature") {
-            collector->addObservable(std::make_unique<Temperature>(), observableType);
-        } else if (observableName == "pressure") {
-            collector->addObservable(std::make_unique<Pressure>(), observableType);
-        } else {
-            throw ValidationException("Unknown observable: " + observableName);
-        }
-    }
-
-    for (const auto &observable : bulkObservables) {
-        std::istringstream observableStream(observable);
-        std::string observableName;
-        observableStream >> observableName;
-        ValidateMsg(observableStream, "Malformed bulk observable, usage: [observable name] (parameters)");
-
-        if (observableName == "pairDensityCorrelation") {
-            double maxDistance{};
-            std::size_t numBins{};
-            observableStream >> maxDistance >> numBins;
-            ValidateMsg(observableStream, PAIR_DENSITY_CORRELATION_USAGE);
-            Validate(maxDistance > 0);
-            Validate(numBins >= 2);
-
-            auto pairEnumerator = parse_pair_enumerator(observableStream);
-            auto rhoCorr = std::make_unique<PairDensityCorrelation>(
-                std::move(pairEnumerator), maxDistance, numBins, maxThreads
-            );
-            collector->addBulkObservable(std::move(rhoCorr));
-        } else if (observableName == "pairAveragedCorrelation") {
-            double maxDistance{};
-            std::size_t numBins{};
-            observableStream >> maxDistance >> numBins;
-            ValidateMsg(observableStream, PAIR_DENSITY_CORRELATION_USAGE);
-            Validate(maxDistance > 0);
-            Validate(numBins >= 2);
-
-            auto correlationFunction = parse_correlation_function(observableStream);
-            auto pairEnumerator = parse_pair_enumerator(observableStream);
-            auto avgCorr = std::make_unique<PairAveragedCorrelation>(
-                std::move(pairEnumerator), std::move(correlationFunction), maxDistance, numBins, maxThreads
-            );
-            collector->addBulkObservable(std::move(avgCorr));
-        } else {
-            throw ValidationException("Unknown observable: " + observableName);
-        }
-    }
-
+    parse_observables(observables, *collector);
+    parse_bulk_observables(bulkObservables, maxThreads, *collector);
     return collector;
 }
