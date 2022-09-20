@@ -15,10 +15,11 @@
 #include "utils/Quantity.h"
 
 /**
- * @brief The class responsible for collection and storing of all observables.
+ * @brief The class responsible for collection and storing of all Observable -s and BulkObservable -s.
  * @details The class is responsible for three possible observable scopes: snapshots, inline printing on the standard
- * output and ensemble averaged values (see ObservableType). A single observable can be used in an arbitrary combination
- * of all those scopes.
+ * output and ensemble averaged values (see ObservableType). A single Observable can be used in an arbitrary combination
+ * of all those scopes. BulkObservable -s are always calculated only in the averaging phase (where the system is already
+ * thermalized).
  */
 class ObservablesCollector {
 private:
@@ -77,6 +78,9 @@ public:
      */
     void addObservable(std::unique_ptr<Observable> observable, std::size_t observableType);
 
+    /**
+     * @brief Adds BulkObservable to be computed in the averaging phase.
+     */
     void addBulkObservable(std::unique_ptr<BulkObservable> observable);
 
     /**
@@ -94,7 +98,8 @@ public:
     void addSnapshot(const Packing &packing, std::size_t cycleNumber, const ShapeTraits &shapeTraits);
 
     /**
-     * @brief Add next interval values of ObservableType::AVERAGING observables to the ensemble averages of them.
+     * @brief Add next interval values of ObservableType::AVERAGING Observable -s and all BulkObservable -s to the
+     * ensemble averages of them.
      * @param packing packing to calculate observables on
      * @param shapeTraits shape traits describing the shape used in the packing
      */
@@ -111,8 +116,8 @@ public:
                                                               const ShapeTraits &shapeTraits) const;
 
     /**
-     * @brief Clears all collected observable values (but does not delete added Observable objects) as well as
-     * computation times.
+     * @brief Clears all collected observable values (but does not delete added Observable nor BulkObservable objects),
+     * It also clears BulkObservable -s (BulkObservable::clear()) and computation times.
      */
     void clear();
 
@@ -140,6 +145,9 @@ public:
      */
     [[nodiscard]] std::vector<ObservableGroupData> getGroupedAverageValues() const;
 
+    /**
+     * @brief The method iterates over all BulkObservables and calls @a visitor function passing them as the argument.
+     */
     void visitBulkObservables(std::function<void(const BulkObservable &)> visitor) const;
 
     /**
