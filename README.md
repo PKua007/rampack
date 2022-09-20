@@ -124,6 +124,11 @@ interfaces. The examples are:
   output. One can implement all three interfaces in a one class. The shape parsing is done by `frontend/ShapeFactory`,
   so new shapes have to be registered there
 * observables implement `core/Observable` interface. They should be registered in `frontend/ObservableCollectorFactory`
+* bulk observables implement `core/BulkObservable` interface. `core/observable/correlation/PairDensityCorrelation` and 
+  `core/observable/correlation/PairAveragedCorrelation` use interface `core/observable/correlation/PairEnumerator`
+  to sample pairs and define the distance. `PairDensityCorrelation` has programmable correlation function to be computed
+  given by the interface `core/observable/correlation/CorrelationFunction`. Everything is registered in
+  `frontend/ObservableCollectorFactory`.
 * molecule move sampling schemes (translation, rotation, flip, etc.) are provided by `core/MoveSampler` interface. They
   are registered in`frontend/MoveSamplerFactory`
 * volume scaling scheme (all dimensions at once vs a single one a time, linear vs logarithmic, etc.) is provided by
