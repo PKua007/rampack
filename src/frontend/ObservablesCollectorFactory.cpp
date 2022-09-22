@@ -114,7 +114,7 @@ namespace {
         }
 
         if (tokens.size() == 3 || tokens.size() == 4)
-            fieldMap["max_k"] = tokens[0] + " " + tokens[1] + " " + tokens[2];
+            fieldMap["max_n"] = tokens[0] + " " + tokens[1] + " " + tokens[2];
 
         return fieldMap;
     }
@@ -128,7 +128,7 @@ namespace {
         std::array<int, 3> maxN{};
         if (maxNToneks.size() == 1)
             maxN = {maxNToneks[0], maxNToneks[0], maxNToneks[0]};
-        else // maxKToneks.size() == 3
+        else // maxNToneks.size() == 3
             maxN = {maxNToneks[0], maxNToneks[1], maxNToneks[2]};
 
         bool anyNonzero = std::any_of(maxN.begin(), maxN.end(), [](int i) { return i != 0; });
