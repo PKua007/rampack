@@ -27,5 +27,5 @@ jobs:
 
     - name: Test
       working-directory: ${{github.workspace}}/build/test
-      run: ctest -C ${{env.BUILD_TYPE}}
+      run: ctest -C ${{env.BUILD_TYPE}} --verbose
       
