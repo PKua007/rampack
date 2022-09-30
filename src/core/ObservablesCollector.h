@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 #include <iosfwd>
+#include <functional>
 
 #include "ShapeTraits.h"
 #include "Observable.h"
