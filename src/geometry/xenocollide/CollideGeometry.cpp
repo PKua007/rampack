@@ -18,6 +18,10 @@ not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 */
 
+/*
+ * Adapted by Michal Ciesla and Piotr Kubala
+ */
+
 #include "CollideGeometry.h"
 #include "../Vector.h"
 
