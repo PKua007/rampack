@@ -22,14 +22,14 @@ not be misrepresented as being the original software.
  * Adapted by Michal Ciesla and Piotr Kubala
  */
 
-#include "AbstractCollideGeometry.h"
+#include "AbstractXCGeometry.h"
 #include "../Vector.h"
 
 
 //////////////////////////////////////////////////////////////////////////////
 // CollideGeometry
 
-Vector<3> AbstractCollideGeometry::GetCenter() const
+Vector<3> AbstractXCGeometry::GetCenter() const
 {
 	Vector<3> v({0, 0, 0});
 	return v;
@@ -361,7 +361,7 @@ Vector<3> CollidePolytope::GetSupportPoint(const Vector<3>& n) const
 //////////////////////////////////////////////////////////////////////////////
 // CollideSum
 
-CollideSum::CollideSum(std::shared_ptr<AbstractCollideGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2)
+CollideSum::CollideSum(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2)
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
@@ -373,7 +373,7 @@ CollideSum::CollideSum(std::shared_ptr<AbstractCollideGeometry> g1, const Matrix
 
 //////////////////////////////////////////////////////////////////////////////
 
-CollideSum::CollideSum(std::shared_ptr<AbstractCollideGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry> g2, const Vector<3>& t2)
+CollideSum::CollideSum(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Vector<3>& t2)
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
@@ -385,7 +385,7 @@ CollideSum::CollideSum(std::shared_ptr<AbstractCollideGeometry> g1, const Vector
 
 //////////////////////////////////////////////////////////////////////////////
 
-CollideSum::CollideSum(std::shared_ptr<AbstractCollideGeometry> g1, std::shared_ptr<AbstractCollideGeometry> g2)
+CollideSum::CollideSum(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2)
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
@@ -412,7 +412,7 @@ Vector<3> CollideSum::GetCenter() const
 //////////////////////////////////////////////////////////////////////////////
 // CollideDiff
 
-CollideDiff::CollideDiff(std::shared_ptr<AbstractCollideGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2)
+CollideDiff::CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2)
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
@@ -424,7 +424,7 @@ CollideDiff::CollideDiff(std::shared_ptr<AbstractCollideGeometry> g1, const Matr
 
 //////////////////////////////////////////////////////////////////////////////
 
-CollideDiff::CollideDiff(std::shared_ptr<AbstractCollideGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry> g2, const Vector<3>& t2)
+CollideDiff::CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Vector<3>& t2)
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
@@ -436,7 +436,7 @@ CollideDiff::CollideDiff(std::shared_ptr<AbstractCollideGeometry> g1, const Vect
 
 //////////////////////////////////////////////////////////////////////////////
 
-CollideDiff::CollideDiff(std::shared_ptr<AbstractCollideGeometry> g1, std::shared_ptr<AbstractCollideGeometry> g2)
+CollideDiff::CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2)
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
@@ -463,7 +463,7 @@ Vector<3> CollideDiff::GetCenter() const
 //////////////////////////////////////////////////////////////////////////////
 // CollideNeg
 
-CollideNeg::CollideNeg(std::shared_ptr<AbstractCollideGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1)
+CollideNeg::CollideNeg(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1)
 {
 	mGeometry1 = g1;
 	this->m1 = m1;
@@ -472,7 +472,7 @@ CollideNeg::CollideNeg(std::shared_ptr<AbstractCollideGeometry> g1, const Matrix
 
 //////////////////////////////////////////////////////////////////////////////
 
-CollideNeg::CollideNeg(std::shared_ptr<AbstractCollideGeometry> g1, const Vector<3>& t1)
+CollideNeg::CollideNeg(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1)
 {
 	mGeometry1 = g1;
 	this->m1 = Matrix<3,3>::identity();
@@ -481,7 +481,7 @@ CollideNeg::CollideNeg(std::shared_ptr<AbstractCollideGeometry> g1, const Vector
 
 //////////////////////////////////////////////////////////////////////////////
 
-CollideNeg::CollideNeg(std::shared_ptr<AbstractCollideGeometry> g1)
+CollideNeg::CollideNeg(std::shared_ptr<AbstractXCGeometry> g1)
 {
 	mGeometry1 = g1;
 	this->m1 = Matrix<3,3>::identity();
@@ -505,7 +505,7 @@ Vector<3> CollideNeg::GetCenter() const
 //////////////////////////////////////////////////////////////////////////////
 // CollideMax
 
-CollideMax::CollideMax(std::shared_ptr<AbstractCollideGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2)
+CollideMax::CollideMax(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2)
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
@@ -517,7 +517,7 @@ CollideMax::CollideMax(std::shared_ptr<AbstractCollideGeometry> g1, const Matrix
 
 //////////////////////////////////////////////////////////////////////////////
 
-CollideMax::CollideMax(std::shared_ptr<AbstractCollideGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry> g2, const Vector<3>& t2)
+CollideMax::CollideMax(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Vector<3>& t2)
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
@@ -529,7 +529,7 @@ CollideMax::CollideMax(std::shared_ptr<AbstractCollideGeometry> g1, const Vector
 
 //////////////////////////////////////////////////////////////////////////////
 
-CollideMax::CollideMax(std::shared_ptr<AbstractCollideGeometry> g1, std::shared_ptr<AbstractCollideGeometry> g2)
+CollideMax::CollideMax(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2)
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;

@@ -22,7 +22,8 @@ not be misrepresented as being the original software.
  * Adapted by Michal Ciesla and Piotr Kubala
  */
 
-#pragma once
+#ifndef RAMPACK_ABSTRACTXCGEOMETRY_H
+#define RAMPACK_ABSTRACTXCGEOMETRY_H
 
 
 #include <algorithm>
@@ -44,18 +45,18 @@ inline bool is_vector_zero(const Vector<3> &v) {
 // a deep interior point for your shape, override this method and return a
 // different point.
 
-class AbstractCollideGeometry{
+class AbstractXCGeometry{
 
 //	friend class std::shared_ptr<CollideGeometry>;
 public:
-	virtual ~AbstractCollideGeometry() = default;
+	virtual ~AbstractXCGeometry() = default;
 	[[nodiscard]] virtual Vector<3> GetSupportPoint(const Vector<3>& n) const = 0;
 	[[nodiscard]] virtual Vector<3> GetCenter() const;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollidePoint : public AbstractCollideGeometry
+class CollidePoint : public AbstractXCGeometry
 {
 	Vector<3> mPoint;
 
@@ -69,7 +70,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideSegment : public AbstractCollideGeometry
+class CollideSegment : public AbstractXCGeometry
 {
 	double mRadius;
 
@@ -82,7 +83,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideRectangle : public AbstractCollideGeometry
+class CollideRectangle : public AbstractXCGeometry
 {
 	Vector<3> mRadius;
 
@@ -95,7 +96,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideBox : public AbstractCollideGeometry
+class CollideBox : public AbstractXCGeometry
 {
 	Vector<3> mRadius;
 
@@ -108,7 +109,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideDisc : public AbstractCollideGeometry
+class CollideDisc : public AbstractXCGeometry
 {
 	double mRadius;
 
@@ -121,7 +122,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideSphere : public AbstractCollideGeometry
+class CollideSphere : public AbstractXCGeometry
 {
 	double mRadius;
 
@@ -134,7 +135,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideEllipse : public AbstractCollideGeometry
+class CollideEllipse : public AbstractXCGeometry
 {
 	Vector<3> mRadius;
 
@@ -147,7 +148,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideEllipsoid : public AbstractCollideGeometry
+class CollideEllipsoid : public AbstractXCGeometry
 {
 	Vector<3> mRadius;
 
@@ -160,7 +161,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideFootball : public AbstractCollideGeometry
+class CollideFootball : public AbstractXCGeometry
 {
 
 	double mLength;
@@ -175,7 +176,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideBullet : public AbstractCollideGeometry
+class CollideBullet : public AbstractXCGeometry
 {
 
 	double mLengthTip;
@@ -192,7 +193,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideSaucer : public AbstractCollideGeometry
+class CollideSaucer : public AbstractXCGeometry
 {
 
 	double mHalfThickness;
@@ -207,7 +208,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollidePolytope : public AbstractCollideGeometry
+class CollidePolytope : public AbstractXCGeometry
 {
 
 	Vector<3>* mVert;
@@ -224,7 +225,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideSum : public AbstractCollideGeometry
+class CollideSum : public AbstractXCGeometry
 {
 
 public:
@@ -234,14 +235,14 @@ public:
 	Vector<3>	t1;
 	Vector<3>	t2;
 
-	std::shared_ptr<AbstractCollideGeometry>	mGeometry1;
-	std::shared_ptr<AbstractCollideGeometry>	mGeometry2;
+	std::shared_ptr<AbstractXCGeometry>	mGeometry1;
+	std::shared_ptr<AbstractXCGeometry>	mGeometry2;
 
 public:
 
-	CollideSum(std::shared_ptr<AbstractCollideGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2);
-	CollideSum(std::shared_ptr<AbstractCollideGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry> g2, const Vector<3>& t2);
-	CollideSum(std::shared_ptr<AbstractCollideGeometry> g1, std::shared_ptr<AbstractCollideGeometry> g2);
+	CollideSum(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2);
+	CollideSum(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Vector<3>& t2);
+	CollideSum(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2);
 
 	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
 	[[nodiscard]] Vector<3> GetCenter() const override;
@@ -249,7 +250,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideDiff : public AbstractCollideGeometry
+class CollideDiff : public AbstractXCGeometry
 {
 
 	Matrix<3,3>	m1;
@@ -257,14 +258,14 @@ class CollideDiff : public AbstractCollideGeometry
 	Vector<3>	t1;
 	Vector<3>	t2;
 
-	std::shared_ptr<AbstractCollideGeometry>	mGeometry1;
-	std::shared_ptr<AbstractCollideGeometry>	mGeometry2;
+	std::shared_ptr<AbstractXCGeometry>	mGeometry1;
+	std::shared_ptr<AbstractXCGeometry>	mGeometry2;
 
 public:
 
-	CollideDiff(std::shared_ptr<AbstractCollideGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2);
-	CollideDiff(std::shared_ptr<AbstractCollideGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry> g2, const Vector<3>& t2);
-	CollideDiff(std::shared_ptr<AbstractCollideGeometry> g1, std::shared_ptr<AbstractCollideGeometry> g2);
+	CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2);
+	CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Vector<3>& t2);
+	CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2);
 
 	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
 	[[nodiscard]] Vector<3> GetCenter() const override;
@@ -272,19 +273,19 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideNeg : public AbstractCollideGeometry
+class CollideNeg : public AbstractXCGeometry
 {
 
 	Matrix<3,3>	m1;
 	Vector<3>	t1;
 
-	std::shared_ptr<AbstractCollideGeometry>	mGeometry1;
+	std::shared_ptr<AbstractXCGeometry>	mGeometry1;
 
 public:
 
-	CollideNeg(std::shared_ptr<AbstractCollideGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1);
-	CollideNeg(std::shared_ptr<AbstractCollideGeometry> g1, const Vector<3>& t1);
-	explicit CollideNeg(std::shared_ptr<AbstractCollideGeometry> g1);
+	CollideNeg(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1);
+	CollideNeg(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1);
+	explicit CollideNeg(std::shared_ptr<AbstractXCGeometry> g1);
 
     [[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
 	[[nodiscard]] Vector<3> GetCenter() const override;
@@ -292,21 +293,21 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideMax : public AbstractCollideGeometry
+class CollideMax : public AbstractXCGeometry
 {
 	Matrix<3,3>	m1;
 	Matrix<3,3>	m2;
 	Vector<3>	t1;
 	Vector<3>	t2;
 
-	std::shared_ptr<AbstractCollideGeometry>	mGeometry1;
-	std::shared_ptr<AbstractCollideGeometry>	mGeometry2;
+	std::shared_ptr<AbstractXCGeometry>	mGeometry1;
+	std::shared_ptr<AbstractXCGeometry>	mGeometry2;
 
 public:
 
-	CollideMax(std::shared_ptr<AbstractCollideGeometry>, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry>, const Matrix<3,3>& m2, const Vector<3>& t2);
-	CollideMax(std::shared_ptr<AbstractCollideGeometry>, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry>, const Vector<3>& t2);
-	CollideMax(std::shared_ptr<AbstractCollideGeometry> g1, std::shared_ptr<AbstractCollideGeometry> g2);
+	CollideMax(std::shared_ptr<AbstractXCGeometry>, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry>, const Matrix<3,3>& m2, const Vector<3>& t2);
+	CollideMax(std::shared_ptr<AbstractXCGeometry>, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry>, const Vector<3>& t2);
+	CollideMax(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2);
 
 	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
 	[[nodiscard]] Vector<3> GetCenter() const override;
@@ -322,3 +323,4 @@ inline Vector<3> CompMul(const Vector<3>& a, const Vector<3>& b)
 	return v;
 }
 
+#endif //RAMPACK_ABSTRACTXCGEOMETRY_H

@@ -23,24 +23,25 @@ not be misrepresented as being the original software.
  */
 
 
-#pragma once
+#ifndef RAMPACK_XENOCOLLIDE_H
+#define RAMPACK_XENOCOLLIDE_H
 
 #include "../Vector.h"
-#include "AbstractCollideGeometry.h"
+#include "AbstractXCGeometry.h"
 
 
 //////////////////////////////////////////////////////////////////////////////
 // This file (and its associated *.cpp file) contain the implementation of
 // the XenoCollide algorithm.
 
-template<typename CollideGeometry>
-class Collide {
+template<typename XCGeometry>
+class XenoCollide {
 private:
     //////////////////////////////////////////////////////////////////////////////
     // TransformSupportVert() finds the support point for a rotated and/or
     // translated CollideGeometry.
 
-    static inline Vector<3> TransformSupportVert(const CollideGeometry& p, const Matrix<3,3>& m, const Vector<3>& t, const Vector<3>& n ) {
+    static inline Vector<3> TransformSupportVert(const XCGeometry& p, const Matrix<3,3>& m, const Vector<3>& t, const Vector<3>& n ) {
         Vector<3> localNormal = m.transpose()*n;
         Vector<3> localSupport = p.GetSupportPoint(localNormal);
         Vector<3> worldSupport = m*localSupport + t;
@@ -52,7 +53,7 @@ public:
 // Intersect() is the simplest XenoCollide routine.  It returns true if two
 // CollideGeometry objects overlap, or false if they do not.
 
-	static bool Intersect(const CollideGeometry& p1, const Matrix<3,3>& m1, const Vector<3>& t1, const CollideGeometry& p2, const Matrix<3,3>& m2, const Vector<3>& t2, double boundaryTolerance) {
+	static bool Intersect(const XCGeometry& p1, const Matrix<3,3>& m1, const Vector<3>& t1, const XCGeometry& p2, const Matrix<3,3>& m2, const Vector<3>& t2, double boundaryTolerance) {
         // v0 = center of Minkowski difference
         Vector<3> v0 = (m2*p2.GetCenter() + t2) - (m1*p1.GetCenter() + t1);
         if (is_vector_zero(v0)) return true;	// v0 and origin overlap ==> hit
@@ -139,3 +140,5 @@ public:
         }
     }
 };
+
+#endif //RAMPACK_XENOCOLLIDE_H

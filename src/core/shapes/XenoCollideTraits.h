@@ -9,8 +9,8 @@
 #include <utility>
 
 #include "core/ShapeTraits.h"
-#include "geometry/xenocollide/AbstractCollideGeometry.h"
-#include "geometry/xenocollide/Collide.h"
+#include "geometry/xenocollide/AbstractXCGeometry.h"
+#include "geometry/xenocollide/XenoCollide.h"
 
 
 template<typename ConcreteCollideTraits>
@@ -74,10 +74,10 @@ public:
                                       const BoundaryConditions &bc) const override {
         const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
         const auto &collideGeometry = thisConcreteTraits.getCollideGeometry();
-        using CollideGeometry = decltype(collideGeometry);
+        using XCGeometry = decltype(collideGeometry);
 
         Vector<3> pos2bc = pos2 + bc.getTranslation(pos1, pos2);
-        bool result = Collide<CollideGeometry>::Intersect(collideGeometry, orientation1, pos1, collideGeometry, orientation2, pos2bc, 1.0e-12);
+        bool result = XenoCollide<XCGeometry>::Intersect(collideGeometry, orientation1, pos1, collideGeometry, orientation2, pos2bc, 1.0e-12);
         return result;
     }
 

@@ -22,7 +22,7 @@ not be misrepresented as being the original software.
  * Adapted by Michal Ciesla and Piotr Kubala
  */
 
-#include "BodyBuilder.h"
+#include "XCBodyBuilder.h"
 #include "../../utils/Utils.h"
 #include "../../utils/Assertions.h"
 #include <list>
@@ -32,10 +32,10 @@ not be misrepresented as being the original software.
 
 //////////////////////////////////////////////////////////////
 
-double BodyBuilder::getMaxRadius() const
+double XCBodyBuilder::getMaxRadius() const
 {
 	const XCShape& s = *mShapeStack.back();
-	const AbstractCollideGeometry &collideModel = *s.geom;
+	const AbstractXCGeometry &collideModel = *s.geom;
 	double radiusNegX = std::abs(collideModel.GetSupportPoint( Vector<3>({-1, 0, 0}) )[0]);
 	double radiusPosX = std::abs(collideModel.GetSupportPoint( Vector<3>({1, 0, 0}) )[0]);
 	double radiusNegY = std::abs(collideModel.GetSupportPoint( Vector<3>({0, -1, 0}) )[1]);
@@ -53,14 +53,14 @@ double BodyBuilder::getMaxRadius() const
 	return maxRadiusVector.norm();
 }
 
-std::shared_ptr<AbstractCollideGeometry> BodyBuilder::getCollideGeometry(){
+std::shared_ptr<AbstractXCGeometry> XCBodyBuilder::getCollideGeometry(){
 	if (mShapeStack.empty())
 		throw ValidationException("BodyBuilder: shape stack empty");
 	XCShape& s = *mShapeStack.back();
 	return s.geom;
 }
 
-void BodyBuilder::axis(double x){
+void XCBodyBuilder::axis(double x){
 	auto geom = std::make_shared<CollideSegment>(x);
 	mShapeStack.push_back(std::make_shared<XCShape>(geom));
     Matrix<3, 3>::rotation(Vector<3>{0,0,1}, M_PI/2);
@@ -68,16 +68,16 @@ void BodyBuilder::axis(double x){
 	mShapeStack.push_back(std::make_shared<XCShape>(geom, Matrix<3, 3>::rotation(Vector<3>{0,1,0}, M_PI/2), Vector<3>({0, 0, 0}) ) );
 }
 
-void BodyBuilder::box(double x, double y, double z){
+void XCBodyBuilder::box(double x, double y, double z){
 	auto geom = std::make_shared<CollideBox>(Vector<3>({x, y, z}));
 	mShapeStack.push_back(std::make_shared<XCShape>(geom));
 }
 
-void BodyBuilder::clear(){
+void XCBodyBuilder::clear(){
 	this->mShapeStack.clear();
 }
 
-void BodyBuilder::diff(){
+void XCBodyBuilder::diff(){
 	if (mShapeStack.size() < 2)
 		return;
 	auto shape2 = mShapeStack.back();
@@ -91,17 +91,17 @@ void BodyBuilder::diff(){
 	mShapeStack.push_back(newShape);
 }
 
-void BodyBuilder::disc(double x){
+void XCBodyBuilder::disc(double x){
 	auto geom = std::make_shared<CollideDisc>(x);
 	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
-void BodyBuilder::disc(double x, double y){
+void XCBodyBuilder::disc(double x, double y){
 	auto geom = std::make_shared<CollideEllipse>(x, y);
 	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
-void BodyBuilder::dup(size_t n){
+void XCBodyBuilder::dup(size_t n){
 	if (mShapeStack.size() < n)
 		return;
 	auto it = mShapeStack.end();
@@ -116,60 +116,60 @@ void BodyBuilder::dup(size_t n){
 	}
 }
 
-void BodyBuilder::football(double l, double w){
+void XCBodyBuilder::football(double l, double w){
 	auto geom = std::make_shared<CollideFootball>(l,w);
 	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
-void BodyBuilder::move(double x, double y, double z){
+void XCBodyBuilder::move(double x, double y, double z){
 	if (mShapeStack.size() < 1)
 		return;
 	mShapeStack.back()->x += Vector<3>({x, y, z});
 }
 
-void BodyBuilder::point(double x, double y, double z){
+void XCBodyBuilder::point(double x, double y, double z){
 	auto geom = std::make_shared<CollidePoint>(Vector<3>({x, y, z}));
 	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
-void BodyBuilder::pop(){
+void XCBodyBuilder::pop(){
 	if (mShapeStack.size() < 1)
 		return;
 	mShapeStack.pop_back();
 }
 
-void::BodyBuilder::rect(double x, double y){
+void::XCBodyBuilder::rect(double x, double y){
 	auto geom = std::make_shared<CollideRectangle>(x, y);
 	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
-void BodyBuilder::rot(double x, double y, double z){
+void XCBodyBuilder::rot(double x, double y, double z){
 	if (mShapeStack.size() < 1)
 		return;
 	mShapeStack.back()->m = Matrix<3,3>::rotation(x*M_PI/180.0, y*M_PI/180.0, z*M_PI/180.0) * mShapeStack.back()->m;
 }
 
-void BodyBuilder::saucer(double r, double t){
+void XCBodyBuilder::saucer(double r, double t){
 	auto geom = std::make_shared<CollideSaucer>(r,t);
 	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
-void BodyBuilder::segment(double l){
+void XCBodyBuilder::segment(double l){
 	auto geom = std::make_shared<CollideSegment>(l);
 	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
-void BodyBuilder::sphere(double r){
+void XCBodyBuilder::sphere(double r){
 	auto geom = std::make_shared<CollideSphere>(r);
 	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
-void BodyBuilder::sphere(double rx, double ry, double rz){
+void XCBodyBuilder::sphere(double rx, double ry, double rz){
 	auto geom = std::make_shared<CollideEllipsoid>(Vector<3>({rx, ry, rz}));
 	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
-void BodyBuilder::swap(){
+void XCBodyBuilder::swap(){
 	if (mShapeStack.size() < 2)
 		return;
 	auto s1 = mShapeStack.back();
@@ -182,7 +182,7 @@ void BodyBuilder::swap(){
 	mShapeStack.push_back(s2);
 }
 
-void BodyBuilder::sweep(){
+void XCBodyBuilder::sweep(){
 	if (mShapeStack.size() < 2)
 		return;
 	auto shape1 = mShapeStack.back();
@@ -196,7 +196,7 @@ void BodyBuilder::sweep(){
 	mShapeStack.push_back(newShape);
 }
 
-void BodyBuilder::wrap(){
+void XCBodyBuilder::wrap(){
 	if (mShapeStack.size() < 2)
 		return;
     auto shape1 = mShapeStack.back();
@@ -213,7 +213,7 @@ void BodyBuilder::wrap(){
 //////////////////////////////////////////////////////////////
 
 
-void BodyBuilder::ProcessCommand(std::string& commandLine){
+void XCBodyBuilder::ProcessCommand(std::string& commandLine){
 	commandLine = trim(commandLine);
 	std::stringstream ss(commandLine);
 	std::string command;
