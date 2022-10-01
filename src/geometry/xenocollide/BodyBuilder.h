@@ -10,7 +10,6 @@
 
 #include <list>
 #include "CollideGeometry.h"
-#include "Quat.h"
 #include "MapPtr.h"
 #include "../Vector.h"
 
@@ -57,14 +56,14 @@ public:
 
 private:
 	struct XCShape{
-		XCShape() : geom(NULL) { q = Quat(0, 0, 0, 1); x = Vector<3>({0, 0, 0}); }
-		XCShape(CollideGeometry* _geom, const Quat& _q, const Vector<3>& _x) : geom(_geom), q(_q), x(_x) {}
-		XCShape(CollideGeometry* _geom) : geom(_geom) { q = Quat(0, 0, 0, 1); x = Vector<3>({0, 0, 0}); }
-		XCShape(const XCShape& s) : geom(s.geom), q(s.q), x(s.x) {}
-		XCShape& operator = (const XCShape& s){ geom = s.geom; q = s.q; x = s.x; return *this;}
+		XCShape() : geom(NULL) { m = Matrix<3,3>::identity(); x = Vector<3>({0, 0, 0}); }
+		XCShape(CollideGeometry* _geom, const Matrix<3,3>& _m, const Vector<3>& _x) : geom(_geom), m(_m), x(_x) {}
+		XCShape(CollideGeometry* _geom) : geom(_geom) { m = Matrix<3,3>::identity(); x = Vector<3>({0, 0, 0}); }
+		XCShape(const XCShape& s) : geom(s.geom), m(s.m), x(s.x) {}
+		XCShape& operator = (const XCShape& s){ geom = s.geom; m = s.m; x = s.x; return *this;}
 		MapPtr<CollideGeometry>	geom;
-		Quat				q;
-		Vector<3>			x;
+		Matrix<3,3>				m;
+		Vector<3>			    x;
 	};
 	std::list< MapPtr<XCShape> > mShapeStack;
 };

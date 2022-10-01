@@ -26,7 +26,6 @@ not be misrepresented as being the original software.
 
 #include "../Vector.h"
 #include "CollideGeometry.h"
-#include "Quat.h"
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -44,11 +43,11 @@ public:
 // Intersect() is the simplest XenoCollide routine.  It returns true if two
 // CollideGeometry objects overlap, or false if they do not.
 
-	static bool Intersect(CollideGeometry& p1, const Quat& q1, const Vector<3>& t1, CollideGeometry& p2, const Quat& q2, const Vector<3>& t2, double boundaryTolerance);
+	static bool Intersect(CollideGeometry& p1, const Matrix<3,3>& m1, const Vector<3>& t1, CollideGeometry& p2, const Matrix<3,3>& m2, const Vector<3>& t2, double boundaryTolerance);
 
 //////////////////////////////////////////////////////////////////////////////
 // TransformSupportVert() finds the support point for a rotated and/or
 // translated CollideGeometry.
 
-	static Vector<3> TransformSupportVert( CollideGeometry& p, const Quat& q, const Vector<3>& t, const Vector<3>& n );
+	static Vector<3> TransformSupportVert( CollideGeometry& p, const Matrix<3,3>& m, const Vector<3>& t, const Vector<3>& n );
 };

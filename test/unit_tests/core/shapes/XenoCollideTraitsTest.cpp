@@ -7,6 +7,8 @@
 #include "core/FreeBoundaryConditions.h"
 #include "core/PeriodicBoundaryConditions.h"
 
+#include "utils/Assertions.h"
+
 #include "matchers/VectorApproxMatcher.h"
 #include "geometry/xenocollide/BodyBuilder.h"
 

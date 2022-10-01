@@ -83,8 +83,9 @@ BodyBuilder::~BodyBuilder()
 void BodyBuilder::axis(double x){
 	MapPtr<CollideGeometry> geom = new CollideSegment(x);
 	mShapeStack.push_back( new XCShape(geom) );
-	mShapeStack.push_back( new XCShape(geom, Quat(0, 0, std::sin(M_PI/4), std::cos(M_PI/4)), Vector<3>({0, 0, 0}) ) );
-	mShapeStack.push_back( new XCShape(geom, Quat(0, std::sin(M_PI/4), 0, std::cos(M_PI/4)), Vector<3>({0, 0, 0}) ) );
+    Matrix<3, 3>::rotation(Vector<3>{0,0,1}, M_PI/2);
+	mShapeStack.push_back( new XCShape(geom, Matrix<3, 3>::rotation(Vector<3>{0,0,1}, M_PI/2), Vector<3>({0, 0, 0}) ) );
+	mShapeStack.push_back( new XCShape(geom, Matrix<3, 3>::rotation(Vector<3>{0,1,0}, M_PI/2), Vector<3>({0, 0, 0}) ) );
 }
 
 void BodyBuilder::box(double x, double y, double z){
@@ -106,7 +107,7 @@ void BodyBuilder::diff(){
 	mShapeStack.pop_back();
 
 	MapPtr<XCShape> newShape = new XCShape();
-	newShape->geom = new CollideDiff(shape1->geom, shape1->q, shape1->x, shape2->geom, shape2->q, shape2->x);
+	newShape->geom = new CollideDiff(shape1->geom, shape1->m, shape1->x, shape2->geom, shape2->m, shape2->x);
 	mShapeStack.push_back(newShape);
 }
 
@@ -165,9 +166,7 @@ void::BodyBuilder::rect(double x, double y){
 void BodyBuilder::rot(double x, double y, double z){
 	if (mShapeStack.size() < 1)
 		return;
-	Quat quatLog( x*M_PI/180.0, y*M_PI/180.0, z*M_PI/180.0, 0);
-	Quat q = Quat::QuatExp(quatLog);
-	mShapeStack.back()->q = q * mShapeStack.back()->q;
+	mShapeStack.back()->m = Matrix<3,3>::rotation(x*M_PI/180.0, y*M_PI/180.0, z*M_PI/180.0) * mShapeStack.back()->m;
 }
 
 void BodyBuilder::saucer(double r, double t){
@@ -213,7 +212,7 @@ void BodyBuilder::sweep(){
 	mShapeStack.pop_back();
 
 	MapPtr<XCShape> newShape = new XCShape();
-	newShape->geom = new CollideSum(shape1->geom, shape1->q, shape1->x, shape2->geom, shape2->q, shape2->x);
+	newShape->geom = new CollideSum(shape1->geom, shape1->m, shape1->x, shape2->geom, shape2->m, shape2->x);
 	mShapeStack.push_back(newShape);
 }
 
@@ -227,7 +226,7 @@ void BodyBuilder::wrap(){
 	mShapeStack.pop_back();
 
 	MapPtr<XCShape> newShape = new XCShape();
-	newShape->geom = new CollideMax(shape1->geom, shape1->q, shape1->x, shape2->geom, shape2->q, shape2->x);
+	newShape->geom = new CollideMax(shape1->geom, shape1->m, shape1->x, shape2->geom, shape2->m, shape2->x);
 	mShapeStack.push_back(newShape);
 }
 

@@ -25,7 +25,6 @@ not be misrepresented as being the original software.
 
 #include "MapPtr.h"
 #include "../Vector.h"
-#include "Quat.h"
 
 
 inline bool is_vector_zero(const Vector<3> &v) {
@@ -226,8 +225,8 @@ class CollideSum : public CollideGeometry
 
 public:
 
-	Quat	q1;
-	Quat	q2;
+	Matrix<3,3>	m1;
+	Matrix<3,3> m2;
 	Vector<3>	t1;
 	Vector<3>	t2;
 
@@ -236,7 +235,7 @@ public:
 
 public:
 
-	CollideSum(CollideGeometry* g1, const Quat& q1, const Vector<3>& t1, CollideGeometry* g2, const Quat& q2, const Vector<3>& t2);
+	CollideSum(CollideGeometry* g1, const Matrix<3,3>& m1, const Vector<3>& t1, CollideGeometry* g2, const Matrix<3,3>& m2, const Vector<3>& t2);
 	CollideSum(CollideGeometry* g1, const Vector<3>& t1, CollideGeometry* g2, const Vector<3>& t2);
 	CollideSum(CollideGeometry* g1, CollideGeometry* g2);
 
@@ -249,8 +248,8 @@ public:
 class CollideDiff : public CollideGeometry
 {
 
-	Quat	q1;
-	Quat	q2;
+	Matrix<3,3>	m1;
+	Matrix<3,3>	m2;
 	Vector<3>	t1;
 	Vector<3>	t2;
 
@@ -259,7 +258,7 @@ class CollideDiff : public CollideGeometry
 
 public:
 
-	CollideDiff(CollideGeometry* g1, const Quat& q1, const Vector<3>& t1, CollideGeometry* g2, const Quat& q2, const Vector<3>& t2);
+	CollideDiff(CollideGeometry* g1, const Matrix<3,3>& m1, const Vector<3>& t1, CollideGeometry* g2, const Matrix<3,3>& m2, const Vector<3>& t2);
 	CollideDiff(CollideGeometry* g1, const Vector<3>& t1, CollideGeometry* g2, const Vector<3>& t2);
 	CollideDiff(CollideGeometry* g1, CollideGeometry* g2);
 
@@ -272,14 +271,14 @@ public:
 class CollideNeg : public CollideGeometry
 {
 
-	Quat	q1;
+	Matrix<3,3>	m1;
 	Vector<3>	t1;
 
 	MapPtr<CollideGeometry>	mGeometry1;
 
 public:
 
-	CollideNeg(CollideGeometry* g1, const Quat& q1, const Vector<3>& t1);
+	CollideNeg(CollideGeometry* g1, const Matrix<3,3>& m1, const Vector<3>& t1);
 	CollideNeg(CollideGeometry* g1, const Vector<3>& t1);
 	CollideNeg(CollideGeometry* g1);
 
@@ -291,8 +290,8 @@ public:
 
 class CollideMax : public CollideGeometry
 {
-	Quat	q1;
-	Quat	q2;
+	Matrix<3,3>	m1;
+	Matrix<3,3>	m2;
 	Vector<3>	t1;
 	Vector<3>	t2;
 
@@ -301,7 +300,7 @@ class CollideMax : public CollideGeometry
 
 public:
 
-	CollideMax(CollideGeometry* g1, const Quat& q1, const Vector<3>& t1, CollideGeometry* g2, const Quat& q2, const Vector<3>& t2);
+	CollideMax(CollideGeometry* g1, const Matrix<3,3>& m1, const Vector<3>& t1, CollideGeometry* g2, const Matrix<3,3>& m2, const Vector<3>& t2);
 	CollideMax(CollideGeometry* g1, const Vector<3>& t1, CollideGeometry* g2, const Vector<3>& t2);
 	CollideMax(CollideGeometry* g1, CollideGeometry* g2);
 

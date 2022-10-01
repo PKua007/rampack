@@ -357,13 +357,13 @@ Vector<3> CollidePolytope::GetSupportPoint(const Vector<3>& n)
 //////////////////////////////////////////////////////////////////////////////
 // CollideSum
 
-CollideSum::CollideSum(CollideGeometry* g1, const Quat& q1, const Vector<3>& t1, CollideGeometry* g2, const Quat& q2, const Vector<3>& t2)
+CollideSum::CollideSum(CollideGeometry* g1, const Matrix<3,3>& m1, const Vector<3>& t1, CollideGeometry* g2, const Matrix<3,3>& m2, const Vector<3>& t2)
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
-	this->q1 = q1;
+	this->m1 = m1;
 	this->t1 = t1;
-	this->q2 = q2;
+	this->m2 = m2;
 	this->t2 = t2;
 }
 
@@ -373,9 +373,9 @@ CollideSum::CollideSum(CollideGeometry* g1, const Vector<3>& t1, CollideGeometry
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
-	this->q1 = Quat(0, 0, 0, 1);
+	this->m1 = Matrix<3,3>::identity();
 	this->t1 = t1;
-	this->q2 = Quat(0, 0, 0, 1);
+	this->m2 = Matrix<3,3>::identity(); // Quat(0, 0, 0, 1);
 	this->t2 = t2;
 }
 
@@ -385,9 +385,9 @@ CollideSum::CollideSum(CollideGeometry* g1, CollideGeometry* g2)
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
-	this->q1 = Quat(0, 0, 0, 1);
+	this->m1 = Matrix<3,3>::identity();
 	this->t1 = Vector<3>({0, 0, 0});
-	this->q2 = Quat(0, 0, 0, 1);
+	this->m2 = Matrix<3,3>::identity();
 	this->t2 = Vector<3>({0, 0, 0});
 }
 
@@ -395,26 +395,26 @@ CollideSum::CollideSum(CollideGeometry* g1, CollideGeometry* g2)
 
 Vector<3> CollideSum::GetSupportPoint(const Vector<3>& n)
 {
-	return q1.Rotate(mGeometry1->GetSupportPoint( (~q1).Rotate(n))) + t1 + q2.Rotate(mGeometry2->GetSupportPoint((~q2).Rotate(n))) + t2;
+	return m1*(mGeometry1->GetSupportPoint( (m1.transpose()*n))) + t1 + m2*(mGeometry2->GetSupportPoint((m2.transpose()*n))) + t2;
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 Vector<3> CollideSum::GetCenter()
 {
-	return q1.Rotate(mGeometry1->GetCenter()) + t1 + q2.Rotate(mGeometry2->GetCenter()) + t2;
+	return m1*(mGeometry1->GetCenter()) + t1 + m2*(mGeometry2->GetCenter()) + t2;
 }
 
 //////////////////////////////////////////////////////////////////////////////
 // CollideDiff
 
-CollideDiff::CollideDiff(CollideGeometry* g1, const Quat& q1, const Vector<3>& t1, CollideGeometry* g2, const Quat& q2, const Vector<3>& t2)
+CollideDiff::CollideDiff(CollideGeometry* g1, const Matrix<3,3>& m1, const Vector<3>& t1, CollideGeometry* g2, const Matrix<3,3>& m2, const Vector<3>& t2)
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
-	this->q1 = q1;
+	this->m1 = m1;
 	this->t1 = t1;
-	this->q2 = q2;
+	this->m2 = m2;
 	this->t2 = t2;
 }
 
@@ -424,9 +424,9 @@ CollideDiff::CollideDiff(CollideGeometry* g1, const Vector<3>& t1, CollideGeomet
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
-	this->q1 = Quat(0, 0, 0, 1);
+	this->m1 = Matrix<3,3>::identity();
 	this->t1 = t1;
-	this->q2 = Quat(0, 0, 0, 1);
+	this->m2 = Matrix<3,3>::identity();
 	this->t2 = t2;
 }
 
@@ -436,9 +436,9 @@ CollideDiff::CollideDiff(CollideGeometry* g1, CollideGeometry* g2)
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
-	this->q1 = Quat(0, 0, 0, 1);
+	this->m1 = Matrix<3,3>::identity();
 	this->t1 = Vector<3>({0, 0, 0});
-	this->q2 = Quat(0, 0, 0, 1);
+	this->m2 = Matrix<3,3>::identity();
 	this->t2 = Vector<3>({0, 0, 0});
 }
 
@@ -446,23 +446,23 @@ CollideDiff::CollideDiff(CollideGeometry* g1, CollideGeometry* g2)
 
 Vector<3> CollideDiff::GetSupportPoint(const Vector<3>& n)
 {
-	return q1.Rotate(mGeometry1->GetSupportPoint( (~q1).Rotate(n))) + t1 - q2.Rotate(mGeometry2->GetSupportPoint((~q2).Rotate(-n))) - t2;
+	return m1*(mGeometry1->GetSupportPoint( m1.transpose()*n)) + t1 - m2*(mGeometry2->GetSupportPoint((m2.transpose())*(-n))) - t2;
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 Vector<3> CollideDiff::GetCenter()
 {
-	return q1.Rotate(mGeometry1->GetCenter()) + t1 - q2.Rotate(mGeometry2->GetCenter()) - t2;
+	return m1*(mGeometry1->GetCenter()) + t1 - m2*(mGeometry2->GetCenter()) - t2;
 }
 
 //////////////////////////////////////////////////////////////////////////////
 // CollideNeg
 
-CollideNeg::CollideNeg(CollideGeometry* g1, const Quat& q1, const Vector<3>& t1)
+CollideNeg::CollideNeg(CollideGeometry* g1, const Matrix<3,3>& m1, const Vector<3>& t1)
 {
 	mGeometry1 = g1;
-	this->q1 = q1;
+	this->m1 = m1;
 	this->t1 = t1;
 }
 
@@ -471,7 +471,7 @@ CollideNeg::CollideNeg(CollideGeometry* g1, const Quat& q1, const Vector<3>& t1)
 CollideNeg::CollideNeg(CollideGeometry* g1, const Vector<3>& t1)
 {
 	mGeometry1 = g1;
-	this->q1 = Quat(0, 0, 0, 1);
+	this->m1 = Matrix<3,3>::identity();
 	this->t1 = t1;
 }
 
@@ -480,7 +480,7 @@ CollideNeg::CollideNeg(CollideGeometry* g1, const Vector<3>& t1)
 CollideNeg::CollideNeg(CollideGeometry* g1)
 {
 	mGeometry1 = g1;
-	this->q1 = Quat(0, 0, 0, 1);
+	this->m1 = Matrix<3,3>::identity();
 	this->t1 = Vector<3>({0, 0, 0});
 }
 
@@ -488,26 +488,26 @@ CollideNeg::CollideNeg(CollideGeometry* g1)
 
 Vector<3> CollideNeg::GetSupportPoint(const Vector<3>& n)
 {
-	return -(q1.Rotate(mGeometry1->GetSupportPoint( (~q1).Rotate(-n))) + t1);
+	return -(m1*(mGeometry1->GetSupportPoint( (m1.transpose())*(-n))) + t1);
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
 Vector<3> CollideNeg::GetCenter()
 {
-	return -(q1.Rotate(mGeometry1->GetCenter()) + t1);
+	return -(m1*(mGeometry1->GetCenter()) + t1);
 }
 
 //////////////////////////////////////////////////////////////////////////////
 // CollideMax
 
-CollideMax::CollideMax(CollideGeometry* g1, const Quat& q1, const Vector<3>& t1, CollideGeometry* g2, const Quat& q2, const Vector<3>& t2)
+CollideMax::CollideMax(CollideGeometry* g1, const Matrix<3,3>& m1, const Vector<3>& t1, CollideGeometry* g2, const Matrix<3,3>& m2, const Vector<3>& t2)
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
-	this->q1 = q1;
+	this->m1 = m1;
 	this->t1 = t1;
-	this->q2 = q2;
+	this->m2 = m2;
 	this->t2 = t2;
 }
 
@@ -517,9 +517,9 @@ CollideMax::CollideMax(CollideGeometry* g1, const Vector<3>& t1, CollideGeometry
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
-	this->q1 = Quat(0, 0, 0, 1);
+	this->m1 = Matrix<3,3>::identity();
 	this->t1 = t1;
-	this->q2 = Quat(0, 0, 0, 1);
+	this->m2 = Matrix<3,3>::identity();
 	this->t2 = t2;
 }
 
@@ -529,9 +529,9 @@ CollideMax::CollideMax(CollideGeometry* g1, CollideGeometry* g2)
 {
 	mGeometry1 = g1;
 	mGeometry2 = g2;
-	this->q1 = Quat(0, 0, 0, 1);
+	this->m1 = Matrix<3,3>::identity();
 	this->t1 = Vector<3>({0, 0, 0});
-	this->q2 = Quat(0, 0, 0, 1);
+	this->m2 = Matrix<3,3>::identity();
 	this->t2 = Vector<3>({0, 0, 0});
 }
 
@@ -539,8 +539,8 @@ CollideMax::CollideMax(CollideGeometry* g1, CollideGeometry* g2)
 
 Vector<3> CollideMax::GetSupportPoint(const Vector<3>& n)
 {
-	Vector<3> v1 = q1.Rotate(mGeometry1->GetSupportPoint((~q1).Rotate(n))) + t1;
-	Vector<3> v2 = q2.Rotate(mGeometry2->GetSupportPoint((~q2).Rotate(n))) + t2;
+	Vector<3> v1 = m1*(mGeometry1->GetSupportPoint((m1.transpose())*(n))) + t1;
+	Vector<3> v2 = m2*(mGeometry2->GetSupportPoint((m2.transpose())*(n))) + t2;
 
 	if ( (v2-v1) * n > 0 )
 	{
@@ -555,7 +555,7 @@ Vector<3> CollideMax::GetSupportPoint(const Vector<3>& n)
 Vector<3> CollideMax::GetCenter()
 {
 	// Return the average of the two centers
-	return 0.5 * (q1.Rotate(mGeometry1->GetCenter()) + t1 + q2.Rotate(mGeometry2->GetCenter()) + t2);
+	return 0.5 * (m1*(mGeometry1->GetCenter()) + t1 + m2*(mGeometry2->GetCenter()) + t2);
 }
 
 //////////////////////////////////////////////////////////////////////////////
