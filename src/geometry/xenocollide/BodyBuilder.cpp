@@ -29,19 +29,13 @@ not be misrepresented as being the original software.
 #include <sstream>
 #include <string>
 
-//////////////////////////////////////////////////////////////
-
-BodyBuilder::BodyBuilder()
-{
-
-}
 
 //////////////////////////////////////////////////////////////
 
-double BodyBuilder::getMaxRadius()
+double BodyBuilder::getMaxRadius() const
 {
-	XCShape& s = *mShapeStack.back();
-	CollideGeometry &collideModel = *s.geom;
+	const XCShape& s = *mShapeStack.back();
+	const CollideGeometry &collideModel = *s.geom;
 	double radiusNegX = std::abs(collideModel.GetSupportPoint( Vector<3>({-1, 0, 0}) )[0]);
 	double radiusPosX = std::abs(collideModel.GetSupportPoint( Vector<3>({1, 0, 0}) )[0]);
 	double radiusNegY = std::abs(collideModel.GetSupportPoint( Vector<3>({0, -1, 0}) )[1]);
@@ -60,21 +54,10 @@ double BodyBuilder::getMaxRadius()
 }
 
 std::shared_ptr<CollideGeometry> BodyBuilder::getCollideGeometry(){
-	if (mShapeStack.size() < 1)
-		throw new ValidationException("BodyBuilder: shape stack empty");
+	if (mShapeStack.empty())
+		throw ValidationException("BodyBuilder: shape stack empty");
 	XCShape& s = *mShapeStack.back();
 	return s.geom;
-}
-
-size_t BodyBuilder::getModelStackSize(){
-	return this->mShapeStack.size();
-}
-
-
-
-BodyBuilder::~BodyBuilder()
-{
-	mShapeStack.clear();
 }
 
 void BodyBuilder::axis(double x){
@@ -121,7 +104,7 @@ void BodyBuilder::disc(double x, double y){
 void BodyBuilder::dup(size_t n){
 	if (mShapeStack.size() < n)
 		return;
-	std::list< std::shared_ptr<XCShape> >::iterator it = mShapeStack.end();
+	auto it = mShapeStack.end();
 	for (size_t i=0; i < n; i++){
 			it--;
 	}
