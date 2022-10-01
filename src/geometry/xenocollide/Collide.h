@@ -17,8 +17,9 @@ would be appreciated but is not required.
 not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 */
+
 /*
- * Adapted by Michał Cieśla
+ * Adapted by Michal Ciesla and Piotr Kubala
  */
 
 
