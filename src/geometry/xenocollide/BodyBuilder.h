@@ -9,8 +9,9 @@
 #define GEOMETRY_XENOCOLLIDE_BODYBUILDER_H_
 
 #include <list>
+#include <memory>
+#include <utility>
 #include "CollideGeometry.h"
-#include "MapPtr.h"
 #include "../Vector.h"
 
 class BodyBuilder
@@ -50,22 +51,20 @@ public:
 	void clear();
 
 	void ProcessCommand(std::string& cmd);
-	MapPtr<CollideGeometry> getCollideGeometry();
+	std::shared_ptr<CollideGeometry> getCollideGeometry();
 	double getMaxRadius();
 	size_t getModelStackSize();
 
 private:
 	struct XCShape{
-		XCShape() : geom(NULL) { m = Matrix<3,3>::identity(); x = Vector<3>({0, 0, 0}); }
-		XCShape(CollideGeometry* _geom, const Matrix<3,3>& _m, const Vector<3>& _x) : geom(_geom), m(_m), x(_x) {}
-		XCShape(CollideGeometry* _geom) : geom(_geom) { m = Matrix<3,3>::identity(); x = Vector<3>({0, 0, 0}); }
-		XCShape(const XCShape& s) : geom(s.geom), m(s.m), x(s.x) {}
-		XCShape& operator = (const XCShape& s){ geom = s.geom; m = s.m; x = s.x; return *this;}
-		MapPtr<CollideGeometry>	geom;
+		XCShape() : geom(nullptr) { m = Matrix<3,3>::identity(); x = Vector<3>({0, 0, 0}); }
+		XCShape(std::shared_ptr<CollideGeometry> _geom, const Matrix<3,3>& _m, const Vector<3>& _x) : geom(std::move(_geom)), m(_m), x(_x) {}
+		explicit XCShape(std::shared_ptr<CollideGeometry>  _geom) : geom(std::move(_geom)) { m = Matrix<3,3>::identity(); x = Vector<3>({0, 0, 0}); }
+		std::shared_ptr<CollideGeometry>	geom;
 		Matrix<3,3>				m;
 		Vector<3>			    x;
 	};
-	std::list< MapPtr<XCShape> > mShapeStack;
+	std::list< std::shared_ptr<XCShape> > mShapeStack;
 };
 
 

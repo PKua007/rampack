@@ -14,7 +14,7 @@ private:
     double r{};
     double l{};
 
-    static MapPtr<CollideGeometry> createShapeModel(double R, double r, double l);
+    static std::shared_ptr<CollideGeometry> createShapeModel(double R, double r, double l);
     static double getVolume(double R, double r, double l);
 
 public:

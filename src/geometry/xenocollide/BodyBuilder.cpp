@@ -21,11 +21,7 @@ not be misrepresented as being the original software.
  * Adapted by Michal Ciesla
  */
 
-
-
-
 #include "BodyBuilder.h"
-#include "MapPtr.h"
 #include "../../utils/Utils.h"
 #include "../../utils/Assertions.h"
 #include <list>
@@ -44,13 +40,13 @@ BodyBuilder::BodyBuilder()
 double BodyBuilder::getMaxRadius()
 {
 	XCShape& s = *mShapeStack.back();
-	CollideGeometry *collideModel = s.geom;
-	double radiusNegX = std::abs(collideModel->GetSupportPoint( Vector<3>({-1, 0, 0}) )[0]);
-	double radiusPosX = std::abs(collideModel->GetSupportPoint( Vector<3>({1, 0, 0}) )[0]);
-	double radiusNegY = std::abs(collideModel->GetSupportPoint( Vector<3>({0, -1, 0}) )[1]);
-	double radiusPosY = std::abs(collideModel->GetSupportPoint( Vector<3>({0,  1, 0}) )[1]);
-	double radiusNegZ = std::abs(collideModel->GetSupportPoint( Vector<3>({0, 0, -1}) )[2]);
-	double radiusPosZ = std::abs(collideModel->GetSupportPoint( Vector<3>({0, 0,  1}) )[2]);
+	CollideGeometry &collideModel = *s.geom;
+	double radiusNegX = std::abs(collideModel.GetSupportPoint( Vector<3>({-1, 0, 0}) )[0]);
+	double radiusPosX = std::abs(collideModel.GetSupportPoint( Vector<3>({1, 0, 0}) )[0]);
+	double radiusNegY = std::abs(collideModel.GetSupportPoint( Vector<3>({0, -1, 0}) )[1]);
+	double radiusPosY = std::abs(collideModel.GetSupportPoint( Vector<3>({0,  1, 0}) )[1]);
+	double radiusNegZ = std::abs(collideModel.GetSupportPoint( Vector<3>({0, 0, -1}) )[2]);
+	double radiusPosZ = std::abs(collideModel.GetSupportPoint( Vector<3>({0, 0,  1}) )[2]);
 
 	Vector<3> maxRadiusVector
 	({
@@ -62,7 +58,7 @@ double BodyBuilder::getMaxRadius()
 	return maxRadiusVector.norm();
 }
 
-MapPtr<CollideGeometry> BodyBuilder::getCollideGeometry(){
+std::shared_ptr<CollideGeometry> BodyBuilder::getCollideGeometry(){
 	if (mShapeStack.size() < 1)
 		throw new ValidationException("BodyBuilder: shape stack empty");
 	XCShape& s = *mShapeStack.back();
@@ -81,16 +77,16 @@ BodyBuilder::~BodyBuilder()
 }
 
 void BodyBuilder::axis(double x){
-	MapPtr<CollideGeometry> geom = new CollideSegment(x);
-	mShapeStack.push_back( new XCShape(geom) );
+	auto geom = std::make_shared<CollideSegment>(x);
+	mShapeStack.push_back(std::make_shared<XCShape>(geom));
     Matrix<3, 3>::rotation(Vector<3>{0,0,1}, M_PI/2);
-	mShapeStack.push_back( new XCShape(geom, Matrix<3, 3>::rotation(Vector<3>{0,0,1}, M_PI/2), Vector<3>({0, 0, 0}) ) );
-	mShapeStack.push_back( new XCShape(geom, Matrix<3, 3>::rotation(Vector<3>{0,1,0}, M_PI/2), Vector<3>({0, 0, 0}) ) );
+	mShapeStack.push_back(std::make_shared<XCShape>(geom, Matrix<3, 3>::rotation(Vector<3>{0,0,1}, M_PI/2), Vector<3>({0, 0, 0}) ) );
+	mShapeStack.push_back(std::make_shared<XCShape>(geom, Matrix<3, 3>::rotation(Vector<3>{0,1,0}, M_PI/2), Vector<3>({0, 0, 0}) ) );
 }
 
 void BodyBuilder::box(double x, double y, double z){
-	MapPtr<CollideGeometry> geom = new CollideBox(Vector<3>({x, y, z}));
-	mShapeStack.push_back( new XCShape(geom) );
+	auto geom = std::make_shared<CollideBox>(Vector<3>({x, y, z}));
+	mShapeStack.push_back(std::make_shared<XCShape>(geom));
 }
 
 void BodyBuilder::clear(){
@@ -100,36 +96,36 @@ void BodyBuilder::clear(){
 void BodyBuilder::diff(){
 	if (mShapeStack.size() < 2)
 		return;
-	MapPtr<XCShape> shape2 = mShapeStack.back();
+	auto shape2 = mShapeStack.back();
 	mShapeStack.pop_back();
 
-	MapPtr<XCShape> shape1 = mShapeStack.back();
+	auto shape1 = mShapeStack.back();
 	mShapeStack.pop_back();
 
-	MapPtr<XCShape> newShape = new XCShape();
-	newShape->geom = new CollideDiff(shape1->geom, shape1->m, shape1->x, shape2->geom, shape2->m, shape2->x);
+	auto newShape = std::make_shared<XCShape>();
+	newShape->geom = std::make_shared<CollideDiff>(shape1->geom, shape1->m, shape1->x, shape2->geom, shape2->m, shape2->x);
 	mShapeStack.push_back(newShape);
 }
 
 void BodyBuilder::disc(double x){
-	MapPtr<CollideGeometry> geom = new CollideDisc(x);
-	mShapeStack.push_back( new XCShape(geom) );
+	auto geom = std::make_shared<CollideDisc>(x);
+	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
 void BodyBuilder::disc(double x, double y){
-	MapPtr<CollideGeometry> geom = new CollideEllipse(x, y);
-	mShapeStack.push_back( new XCShape(geom) );
+	auto geom = std::make_shared<CollideEllipse>(x, y);
+	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
 void BodyBuilder::dup(size_t n){
 	if (mShapeStack.size() < n)
 		return;
-	std::list< MapPtr<XCShape> >::iterator it = mShapeStack.end();
+	std::list< std::shared_ptr<XCShape> >::iterator it = mShapeStack.end();
 	for (size_t i=0; i < n; i++){
 			it--;
 	}
 	for (size_t i=0; i < n; i++){
-		MapPtr<XCShape> s = new XCShape();
+		auto s = std::make_shared<XCShape>();
 		*s = **it;
 		mShapeStack.push_back( s );
 		it++;
@@ -137,8 +133,8 @@ void BodyBuilder::dup(size_t n){
 }
 
 void BodyBuilder::football(double l, double w){
-	MapPtr<CollideGeometry> geom = new CollideFootball(l,w);
-	mShapeStack.push_back( new XCShape(geom) );
+	auto geom = std::make_shared<CollideFootball>(l,w);
+	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
 void BodyBuilder::move(double x, double y, double z){
@@ -148,8 +144,8 @@ void BodyBuilder::move(double x, double y, double z){
 }
 
 void BodyBuilder::point(double x, double y, double z){
-	MapPtr<CollideGeometry> geom = new CollidePoint(Vector<3>({x, y, z}));
-	mShapeStack.push_back( new XCShape(geom) );
+	auto geom = std::make_shared<CollidePoint>(Vector<3>({x, y, z}));
+	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
 void BodyBuilder::pop(){
@@ -159,8 +155,8 @@ void BodyBuilder::pop(){
 }
 
 void::BodyBuilder::rect(double x, double y){
-	MapPtr<CollideGeometry> geom = new CollideRectangle(x, y);
-	mShapeStack.push_back( new XCShape(geom) );
+	auto geom = std::make_shared<CollideRectangle>(x, y);
+	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
 void BodyBuilder::rot(double x, double y, double z){
@@ -170,32 +166,32 @@ void BodyBuilder::rot(double x, double y, double z){
 }
 
 void BodyBuilder::saucer(double r, double t){
-	MapPtr<CollideGeometry> geom = new CollideSaucer(r,t);
-	mShapeStack.push_back( new XCShape(geom) );
+	auto geom = std::make_shared<CollideSaucer>(r,t);
+	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
 void BodyBuilder::segment(double l){
-	MapPtr<CollideGeometry> geom = new CollideSegment(l);
-	mShapeStack.push_back( new XCShape(geom) );
+	auto geom = std::make_shared<CollideSegment>(l);
+	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
 void BodyBuilder::sphere(double r){
-	MapPtr<CollideGeometry> geom = new CollideSphere(r);
-	mShapeStack.push_back( new XCShape(geom) );
+	auto geom = std::make_shared<CollideSphere>(r);
+	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
 void BodyBuilder::sphere(double rx, double ry, double rz){
-	MapPtr<CollideGeometry> geom = new CollideEllipsoid(Vector<3>({rx, ry, rz}));
-	mShapeStack.push_back( new XCShape(geom) );
+	auto geom = std::make_shared<CollideEllipsoid>(Vector<3>({rx, ry, rz}));
+	mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
 void BodyBuilder::swap(){
 	if (mShapeStack.size() < 2)
 		return;
-	MapPtr<XCShape> s1 = mShapeStack.back();
+	auto s1 = mShapeStack.back();
 	mShapeStack.pop_back();
 
-	MapPtr<XCShape> s2 = mShapeStack.back();
+	auto s2 = mShapeStack.back();
 	mShapeStack.pop_back();
 
 	mShapeStack.push_back(s1);
@@ -205,28 +201,28 @@ void BodyBuilder::swap(){
 void BodyBuilder::sweep(){
 	if (mShapeStack.size() < 2)
 		return;
-	MapPtr<XCShape> shape1 = mShapeStack.back();
+	auto shape1 = mShapeStack.back();
 	mShapeStack.pop_back();
 
-	MapPtr<XCShape> shape2 = mShapeStack.back();
+    auto shape2 = mShapeStack.back();
 	mShapeStack.pop_back();
 
-	MapPtr<XCShape> newShape = new XCShape();
-	newShape->geom = new CollideSum(shape1->geom, shape1->m, shape1->x, shape2->geom, shape2->m, shape2->x);
+    auto newShape = std::make_shared<XCShape>();
+	newShape->geom = std::make_shared<CollideSum>(shape1->geom, shape1->m, shape1->x, shape2->geom, shape2->m, shape2->x);
 	mShapeStack.push_back(newShape);
 }
 
 void BodyBuilder::wrap(){
 	if (mShapeStack.size() < 2)
 		return;
-	MapPtr<XCShape> shape1 = mShapeStack.back();
+    auto shape1 = mShapeStack.back();
 	mShapeStack.pop_back();
 
-	MapPtr<XCShape> shape2 = mShapeStack.back();
+    auto shape2 = mShapeStack.back();
 	mShapeStack.pop_back();
 
-	MapPtr<XCShape> newShape = new XCShape();
-	newShape->geom = new CollideMax(shape1->geom, shape1->m, shape1->x, shape2->geom, shape2->m, shape2->x);
+    auto newShape = std::make_shared<XCShape>();
+	newShape->geom = std::make_shared<CollideMax>(shape1->geom, shape1->m, shape1->x, shape2->geom, shape2->m, shape2->x);
 	mShapeStack.push_back(newShape);
 }
 

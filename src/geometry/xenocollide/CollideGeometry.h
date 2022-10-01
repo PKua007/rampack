@@ -22,8 +22,8 @@ not be misrepresented as being the original software.
 
 
 #include <algorithm>
+#include <memory>
 
-#include "MapPtr.h"
 #include "../Vector.h"
 
 
@@ -42,7 +42,7 @@ inline bool is_vector_zero(const Vector<3> &v) {
 
 class CollideGeometry{
 
-//	friend class MapPtr<CollideGeometry>;
+//	friend class std::shared_ptr<CollideGeometry>;
 public:
 	virtual ~CollideGeometry() {}
 	virtual Vector<3> GetSupportPoint(const Vector<3>& n) = 0;
@@ -230,14 +230,14 @@ public:
 	Vector<3>	t1;
 	Vector<3>	t2;
 
-	MapPtr<CollideGeometry>	mGeometry1;
-	MapPtr<CollideGeometry>	mGeometry2;
+	std::shared_ptr<CollideGeometry>	mGeometry1;
+	std::shared_ptr<CollideGeometry>	mGeometry2;
 
 public:
 
-	CollideSum(CollideGeometry* g1, const Matrix<3,3>& m1, const Vector<3>& t1, CollideGeometry* g2, const Matrix<3,3>& m2, const Vector<3>& t2);
-	CollideSum(CollideGeometry* g1, const Vector<3>& t1, CollideGeometry* g2, const Vector<3>& t2);
-	CollideSum(CollideGeometry* g1, CollideGeometry* g2);
+	CollideSum(std::shared_ptr<CollideGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<CollideGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2);
+	CollideSum(std::shared_ptr<CollideGeometry> g1, const Vector<3>& t1, std::shared_ptr<CollideGeometry> g2, const Vector<3>& t2);
+	CollideSum(std::shared_ptr<CollideGeometry> g1, std::shared_ptr<CollideGeometry> g2);
 
 	virtual Vector<3> GetSupportPoint(const Vector<3>& n);
 	virtual Vector<3> GetCenter();
@@ -253,14 +253,14 @@ class CollideDiff : public CollideGeometry
 	Vector<3>	t1;
 	Vector<3>	t2;
 
-	MapPtr<CollideGeometry>	mGeometry1;
-	MapPtr<CollideGeometry>	mGeometry2;
+	std::shared_ptr<CollideGeometry>	mGeometry1;
+	std::shared_ptr<CollideGeometry>	mGeometry2;
 
 public:
 
-	CollideDiff(CollideGeometry* g1, const Matrix<3,3>& m1, const Vector<3>& t1, CollideGeometry* g2, const Matrix<3,3>& m2, const Vector<3>& t2);
-	CollideDiff(CollideGeometry* g1, const Vector<3>& t1, CollideGeometry* g2, const Vector<3>& t2);
-	CollideDiff(CollideGeometry* g1, CollideGeometry* g2);
+	CollideDiff(std::shared_ptr<CollideGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<CollideGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2);
+	CollideDiff(std::shared_ptr<CollideGeometry> g1, const Vector<3>& t1, std::shared_ptr<CollideGeometry> g2, const Vector<3>& t2);
+	CollideDiff(std::shared_ptr<CollideGeometry> g1, std::shared_ptr<CollideGeometry> g2);
 
 	virtual Vector<3> GetSupportPoint(const Vector<3>& n);
 	virtual Vector<3> GetCenter();
@@ -274,13 +274,13 @@ class CollideNeg : public CollideGeometry
 	Matrix<3,3>	m1;
 	Vector<3>	t1;
 
-	MapPtr<CollideGeometry>	mGeometry1;
+	std::shared_ptr<CollideGeometry>	mGeometry1;
 
 public:
 
-	CollideNeg(CollideGeometry* g1, const Matrix<3,3>& m1, const Vector<3>& t1);
-	CollideNeg(CollideGeometry* g1, const Vector<3>& t1);
-	CollideNeg(CollideGeometry* g1);
+	CollideNeg(std::shared_ptr<CollideGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1);
+	CollideNeg(std::shared_ptr<CollideGeometry> g1, const Vector<3>& t1);
+	CollideNeg(std::shared_ptr<CollideGeometry> g1);
 
 	virtual Vector<3> GetSupportPoint(const Vector<3>& n);
 	virtual Vector<3> GetCenter();
@@ -295,14 +295,14 @@ class CollideMax : public CollideGeometry
 	Vector<3>	t1;
 	Vector<3>	t2;
 
-	MapPtr<CollideGeometry>	mGeometry1;
-	MapPtr<CollideGeometry>	mGeometry2;
+	std::shared_ptr<CollideGeometry>	mGeometry1;
+	std::shared_ptr<CollideGeometry>	mGeometry2;
 
 public:
 
-	CollideMax(CollideGeometry* g1, const Matrix<3,3>& m1, const Vector<3>& t1, CollideGeometry* g2, const Matrix<3,3>& m2, const Vector<3>& t2);
-	CollideMax(CollideGeometry* g1, const Vector<3>& t1, CollideGeometry* g2, const Vector<3>& t2);
-	CollideMax(CollideGeometry* g1, CollideGeometry* g2);
+	CollideMax(std::shared_ptr<CollideGeometry>, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<CollideGeometry>, const Matrix<3,3>& m2, const Vector<3>& t2);
+	CollideMax(std::shared_ptr<CollideGeometry>, const Vector<3>& t1, std::shared_ptr<CollideGeometry>, const Vector<3>& t2);
+	CollideMax(std::shared_ptr<CollideGeometry> g1, std::shared_ptr<CollideGeometry> g2);
 
 	virtual Vector<3> GetSupportPoint(const Vector<3>& n);
 	virtual Vector<3> GetCenter();

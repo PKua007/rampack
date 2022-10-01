@@ -25,7 +25,7 @@ XenoCollideTraits::XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, d
 }
 
 XenoCollideTraits::XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v,
-                                     MapPtr<CollideGeometry> shapeModel, double rangeRadius,
+                                     std::shared_ptr<CollideGeometry> shapeModel, double rangeRadius,
                                      std::map<std::string, Vector<3>> customNamedPoints)
         : primaryAxis{pa}, secondaryAxis{sa}, geometricOrigin{cm}, volume{v}, rangeRadius{rangeRadius},
           customNamedPoints{std::move(customNamedPoints)}, shapeModel{shapeModel}
