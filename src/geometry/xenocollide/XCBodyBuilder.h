@@ -22,16 +22,16 @@ not be misrepresented as being the original software.
  * Adapted by Michal Ciesla and Piotr Kubala
  */
 
-#ifndef GEOMETRY_XENOCOLLIDE_BODYBUILDER_H_
-#define GEOMETRY_XENOCOLLIDE_BODYBUILDER_H_
+#ifndef RAMPACK_XCBODYBUILDER_H
+#define RAMPACK_XCBODYBUILDER_H
 
 #include <list>
 #include <memory>
 #include <utility>
-#include "AbstractCollideGeometry.h"
+#include "AbstractXCGeometry.h"
 #include "../Vector.h"
 
-class BodyBuilder
+class XCBodyBuilder
 {
 
 public:
@@ -64,15 +64,15 @@ public:
 	void clear();
 
 	void ProcessCommand(std::string& cmd);
-	std::shared_ptr<AbstractCollideGeometry> getCollideGeometry();
+	std::shared_ptr<AbstractXCGeometry> getCollideGeometry();
     [[nodiscard]] double getMaxRadius() const;
 
 private:
 	struct XCShape{
 		XCShape() : geom(nullptr) { m = Matrix<3,3>::identity(); x = Vector<3>({0, 0, 0}); }
-		XCShape(std::shared_ptr<AbstractCollideGeometry> _geom, const Matrix<3,3>& _m, const Vector<3>& _x) : geom(std::move(_geom)), m(_m), x(_x) {}
-		explicit XCShape(std::shared_ptr<AbstractCollideGeometry>  _geom) : geom(std::move(_geom)) { m = Matrix<3,3>::identity(); x = Vector<3>({0, 0, 0}); }
-		std::shared_ptr<AbstractCollideGeometry>	geom;
+		XCShape(std::shared_ptr<AbstractXCGeometry> _geom, const Matrix<3,3>& _m, const Vector<3>& _x) : geom(std::move(_geom)), m(_m), x(_x) {}
+		explicit XCShape(std::shared_ptr<AbstractXCGeometry>  _geom) : geom(std::move(_geom)) { m = Matrix<3,3>::identity(); x = Vector<3>({0, 0, 0}); }
+		std::shared_ptr<AbstractXCGeometry>	geom;
 		Matrix<3,3>				m;
 		Vector<3>			    x;
 	};
@@ -80,4 +80,4 @@ private:
 };
 
 
-#endif /* GEOMETRY_XENOCOLLIDE_BODYBUILDER_H_ */
+#endif //RAMPACK_XCBODYBUILDER_H

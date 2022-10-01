@@ -10,7 +10,7 @@
 #include "utils/Assertions.h"
 
 #include "matchers/VectorApproxMatcher.h"
-#include "geometry/xenocollide/BodyBuilder.h"
+#include "geometry/xenocollide/XCBodyBuilder.h"
 
 
 namespace {
@@ -23,11 +23,11 @@ namespace {
             return M_PI * r * r * (4.0 / 3.0 * r + l);
         }
 
-        static std::shared_ptr<AbstractCollideGeometry> createShapeModel(double l, double r) {
+        static std::shared_ptr<AbstractXCGeometry> createShapeModel(double l, double r) {
             Expects(r > 0);
             Expects(l > 0);
 
-            BodyBuilder bb;
+            XCBodyBuilder bb;
             bb.sphere(r);
             bb.move(-l/2, 0, 0);
             bb.sphere(r);
@@ -36,7 +36,7 @@ namespace {
             return bb.getCollideGeometry();
         }
 
-        std::shared_ptr<AbstractCollideGeometry> shapeModel;
+        std::shared_ptr<AbstractXCGeometry> shapeModel;
 
     public:
         XenoCollideSpherocylinderTraits(double l, double r)
@@ -46,7 +46,7 @@ namespace {
                   r{r}, l{l}, shapeModel{XenoCollideSpherocylinderTraits::createShapeModel(l, r)}
         { }
 
-        const AbstractCollideGeometry &getCollideGeometry() const { return *this->shapeModel; }
+        const AbstractXCGeometry &getCollideGeometry() const { return *this->shapeModel; }
 
         [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
 

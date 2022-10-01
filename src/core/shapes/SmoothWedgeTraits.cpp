@@ -2,17 +2,17 @@
 // Created by ciesla on 8/9/22.
 //
 
-#include "RoundedConeTraits.h"
+#include "SmoothWedgeTraits.h"
 #include "utils/Assertions.h"
-#include "geometry/xenocollide/BodyBuilder.h"
+#include "geometry/xenocollide/XCBodyBuilder.h"
 
-std::shared_ptr<AbstractCollideGeometry> RoundedConeTraits::createShapeModel(double R, double r, double l) {
+std::shared_ptr<AbstractXCGeometry> SmoothWedgeTraits::createShapeModel(double R, double r, double l) {
     Expects(R > 0);
     Expects(r > 0);
     Expects(l > 0);
     Expects(R >= r);
 
-    BodyBuilder bb;
+    XCBodyBuilder bb;
     bb.sphere(R);
     bb.move(0, 0, -l/2);
     bb.sphere(r);
@@ -21,7 +21,7 @@ std::shared_ptr<AbstractCollideGeometry> RoundedConeTraits::createShapeModel(dou
     return bb.getCollideGeometry();
 }
 
-double RoundedConeTraits::getVolume(double R, double r, double l) {
+double SmoothWedgeTraits::getVolume(double R, double r, double l) {
     return
             (M_PI*
              (l*l*l*l*(r*r + r*R + R*R) +
@@ -31,17 +31,17 @@ double RoundedConeTraits::getVolume(double R, double r, double l) {
             )/(3*l*l*l);
 }
 
-RoundedConeTraits::RoundedConeTraits(double R, double r, double l)
+SmoothWedgeTraits::SmoothWedgeTraits(double R, double r, double l)
         : XenoCollideTraits({0, 0, 1}, {1, 0, 0}, {0, 0, 0},
-                            RoundedConeTraits::getVolume(R, r, l),
+                            SmoothWedgeTraits::getVolume(R, r, l),
                             l + 2*std::max(1., r),
                             {{"sl", {0, 0, -l/2}}, {"ss", {0, 0, l/2}}}),
-          R{R}, r{r}, l{l}, shapeModel{RoundedConeTraits::createShapeModel(R, r, l)}
+          R{R}, r{r}, l{l}, shapeModel{SmoothWedgeTraits::createShapeModel(R, r, l)}
 {
 
 }
 
-std::string RoundedConeTraits::toWolfram(const Shape &shape) const {
+std::string SmoothWedgeTraits::toWolfram(const Shape &shape) const {
     Vector<3> pos = shape.getPosition();
     Matrix<3, 3> orientation = shape.getOrientation();
 
