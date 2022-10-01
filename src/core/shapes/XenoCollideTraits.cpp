@@ -4,7 +4,7 @@
 
 #include "XenoCollideTraits.h"
 #include "geometry/xenocollide/Collide.h"
-#include "geometry/xenocollide/CollideGeometry.h"
+#include "geometry/xenocollide/AbstractCollideGeometry.h"
 #include "geometry/xenocollide/BodyBuilder.h"
 
 
@@ -25,7 +25,7 @@ XenoCollideTraits::XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, d
 }
 
 XenoCollideTraits::XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v,
-                                     std::shared_ptr<CollideGeometry> shapeModel, double rangeRadius,
+                                     std::shared_ptr<AbstractCollideGeometry> shapeModel, double rangeRadius,
                                      std::map<std::string, Vector<3>> customNamedPoints)
         : primaryAxis{pa}, secondaryAxis{sa}, geometricOrigin{cm}, volume{v}, rangeRadius{rangeRadius},
           customNamedPoints{std::move(customNamedPoints)}, shapeModel{shapeModel}
@@ -39,7 +39,7 @@ bool XenoCollideTraits::overlapBetween(const Vector<3> &pos1, const Matrix<3, 3>
                                        const BoundaryConditions &bc) const
 {
     Vector<3> pos2bc = pos2 + bc.getTranslation(pos1, pos2);
-    bool result = Collide::Intersect(*(this->shapeModel), orientation1, pos1, *(this->shapeModel), orientation2, pos2bc, 1.0e-12);
+    bool result = Collide<AbstractCollideGeometry>::Intersect(*(this->shapeModel), orientation1, pos1, *(this->shapeModel), orientation2, pos2bc, 1.0e-12);
     return result;
 }
 

@@ -24,7 +24,7 @@ namespace {
         }
 
     public:
-        static std::shared_ptr<CollideGeometry> createShapeModel(double l, double r) {
+        static std::shared_ptr<AbstractCollideGeometry> createShapeModel(double l, double r) {
             Expects(r > 0);
             Expects(l > 0);
 
