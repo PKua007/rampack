@@ -3,7 +3,6 @@
 //
 
 #include "XenoCollideTraits.h"
-#include "geometry/xenocollide/Quat.h"
 #include "geometry/xenocollide/Collide.h"
 #include "geometry/xenocollide/CollideGeometry.h"
 #include "geometry/xenocollide/BodyBuilder.h"
@@ -40,19 +39,16 @@ bool XenoCollideTraits::overlapBetween(const Vector<3> &pos1, const Matrix<3, 3>
                                        const BoundaryConditions &bc) const
 {
     Vector<3> pos2bc = pos2 + bc.getTranslation(pos1, pos2);
-    Quat q1(orientation1);
-    Quat q2(orientation2);
-    bool result = Collide::Intersect(*(this->shapeModel), q1, pos1, *(this->shapeModel), q2, pos2bc, 1.0e-12);
+    bool result = Collide::Intersect(*(this->shapeModel), orientation1, pos1, *(this->shapeModel), orientation2, pos2bc, 1.0e-12);
     return result;
 }
 
 bool XenoCollideTraits::overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation, [[maybe_unused]] std::size_t idx,
                                    const Vector<3> &wallOrigin, const Vector<3> &wallVector) const{
 
-    Quat q(orientation);
-    Vector<3> normalVector = (~q).Rotate(wallVector);
+    Vector<3> normalVector = (orientation.transpose())*(wallVector);
     Vector<3> sp = (*(this->shapeModel)).GetSupportPoint(-normalVector);
-    Vector<3> origin = (~q).Rotate(wallOrigin - pos);
+    Vector<3> origin = (orientation.transpose())*(wallOrigin - pos);
     double distanceSupport = -sp*normalVector;  // minus sign because we count distance along -normalVector
     double distanceWall = -origin*normalVector;
     if (distanceWall > distanceSupport)

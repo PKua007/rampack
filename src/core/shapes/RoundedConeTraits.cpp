@@ -3,8 +3,8 @@
 //
 
 #include "RoundedConeTraits.h"
+#include "utils/Assertions.h"
 #include "geometry/xenocollide/BodyBuilder.h"
-
 
 MapPtr<CollideGeometry> RoundedConeTraits::createShapeModel(double R, double r, double l) {
     Expects(R > 0);

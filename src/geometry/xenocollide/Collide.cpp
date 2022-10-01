@@ -28,11 +28,11 @@ not be misrepresented as being the original software.
 
 //////////////////////////////////////////////////////////////////////////////
 
-inline Vector<3> Collide::TransformSupportVert( CollideGeometry& p, const Quat& q, const Vector<3>& t, const Vector<3>& n )
+inline Vector<3> Collide::TransformSupportVert( CollideGeometry& p, const Matrix<3,3>& m, const Vector<3>& t, const Vector<3>& n )
 {
-	Vector<3> localNormal = (~q).Rotate(n);
+	Vector<3> localNormal = m.transpose()*n;
 	Vector<3> localSupport = p.GetSupportPoint(localNormal);
-	Vector<3> worldSupport = q.Rotate(localSupport) + t;
+	Vector<3> worldSupport = m*localSupport + t;
 	return worldSupport;
 }
 
@@ -64,21 +64,21 @@ inline void Collide::Swap(Vector<3>& a, Vector<3>& b)
 //
 // Returns true if two CollideGeometry objects intersect.
 //
-bool Collide::Intersect(CollideGeometry& p1, const Quat& q1, const Vector<3>& t1, CollideGeometry& p2, const Quat& q2, const Vector<3>& t2, double boundaryTolerance)
+bool Collide::Intersect(CollideGeometry& p1, const Matrix<3,3>& m1, const Vector<3>& t1, CollideGeometry& p2, const Matrix<3,3>& m2, const Vector<3>& t2, double boundaryTolerance)
 {
 	// v0 = center of Minkowski difference
-	Vector<3> v0 = (q2.Rotate(p2.GetCenter()) + t2) - (q1.Rotate(p1.GetCenter()) + t1);
+	Vector<3> v0 = (m2*p2.GetCenter() + t2) - (m1*p1.GetCenter() + t1);
 	if (is_vector_zero(v0)) return true;	// v0 and origin overlap ==> hit
 
 	// v1 = support in direction of origin
 	Vector<3> n = -v0;
-	Vector<3> v1 = TransformSupportVert(p2, q2, t2, n) - TransformSupportVert(p1, q1, t1, -n);
+	Vector<3> v1 = TransformSupportVert(p2, m2, t2, n) - TransformSupportVert(p1, m1, t1, -n);
 	if (v1 * n <= 0) return false;	// origin outside v1 support plane ==> miss
 
 	// v2 = support perpendicular to plane containing origin, v0 and v1
 	n = v1 ^ v0;
 	if (is_vector_zero(n)) return true;	// v0, v1 and origin colinear (and origin inside v1 support plane) == > hit
-	Vector<3> v2 = TransformSupportVert(p2, q2, t2, n) - TransformSupportVert(p1, q1, t1, -n);
+	Vector<3> v2 = TransformSupportVert(p2, m2, t2, n) - TransformSupportVert(p1, m1, t1, -n);
 	if (v2 * n <= 0) return false;	// origin outside v2 support plane ==> miss
 
 	// v3 = support perpendicular to plane containing v0, v1 and v2
@@ -97,7 +97,7 @@ bool Collide::Intersect(CollideGeometry& p1, const Quat& q1, const Vector<3>& t1
 	while (1)
 	{
 		// Obtain the next support point
-		Vector<3> v3 = TransformSupportVert(p2, q2, t2, n) - TransformSupportVert(p1, q1, t1, -n);
+		Vector<3> v3 = TransformSupportVert(p2, m2, t2, n) - TransformSupportVert(p1, m1, t1, -n);
 		if (v3 * n <= 0) return false;	// origin outside v3 support plane ==> miss
 
 		// If origin is outside (v1,v0,v3), then portal is invalid -- eliminate v2 and find new support outside face
@@ -128,7 +128,7 @@ bool Collide::Intersect(CollideGeometry& p1, const Quat& q1, const Vector<3>& t1
 			if (n * v1 >= 0) return true;
 
 			// Find the support point in the direction of the portal's normal
-			Vector<3> v4 = TransformSupportVert(p2, q2, t2, n) - TransformSupportVert(p1, q1, t1, -n);
+			Vector<3> v4 = TransformSupportVert(p2, m2, t2, n) - TransformSupportVert(p1, m1, t1, -n);
 
 			// If the origin is outside the support plane or the boundary is thin enough, we have a miss
 			n = n.normalized();
