@@ -35,7 +35,7 @@ not be misrepresented as being the original software.
 double BodyBuilder::getMaxRadius() const
 {
 	const XCShape& s = *mShapeStack.back();
-	const CollideGeometry &collideModel = *s.geom;
+	const AbstractCollideGeometry &collideModel = *s.geom;
 	double radiusNegX = std::abs(collideModel.GetSupportPoint( Vector<3>({-1, 0, 0}) )[0]);
 	double radiusPosX = std::abs(collideModel.GetSupportPoint( Vector<3>({1, 0, 0}) )[0]);
 	double radiusNegY = std::abs(collideModel.GetSupportPoint( Vector<3>({0, -1, 0}) )[1]);
@@ -53,7 +53,7 @@ double BodyBuilder::getMaxRadius() const
 	return maxRadiusVector.norm();
 }
 
-std::shared_ptr<CollideGeometry> BodyBuilder::getCollideGeometry(){
+std::shared_ptr<AbstractCollideGeometry> BodyBuilder::getCollideGeometry(){
 	if (mShapeStack.empty())
 		throw ValidationException("BodyBuilder: shape stack empty");
 	XCShape& s = *mShapeStack.back();

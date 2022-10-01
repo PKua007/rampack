@@ -44,18 +44,18 @@ inline bool is_vector_zero(const Vector<3> &v) {
 // a deep interior point for your shape, override this method and return a
 // different point.
 
-class CollideGeometry{
+class AbstractCollideGeometry{
 
 //	friend class std::shared_ptr<CollideGeometry>;
 public:
-	virtual ~CollideGeometry() = default;
+	virtual ~AbstractCollideGeometry() = default;
 	[[nodiscard]] virtual Vector<3> GetSupportPoint(const Vector<3>& n) const = 0;
 	[[nodiscard]] virtual Vector<3> GetCenter() const;
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollidePoint : public CollideGeometry
+class CollidePoint : public AbstractCollideGeometry
 {
 	Vector<3> mPoint;
 
@@ -69,7 +69,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideSegment : public CollideGeometry
+class CollideSegment : public AbstractCollideGeometry
 {
 	double mRadius;
 
@@ -82,7 +82,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideRectangle : public CollideGeometry
+class CollideRectangle : public AbstractCollideGeometry
 {
 	Vector<3> mRadius;
 
@@ -95,7 +95,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideBox : public CollideGeometry
+class CollideBox : public AbstractCollideGeometry
 {
 	Vector<3> mRadius;
 
@@ -108,7 +108,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideDisc : public CollideGeometry
+class CollideDisc : public AbstractCollideGeometry
 {
 	double mRadius;
 
@@ -121,7 +121,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideSphere : public CollideGeometry
+class CollideSphere : public AbstractCollideGeometry
 {
 	double mRadius;
 
@@ -134,7 +134,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideEllipse : public CollideGeometry
+class CollideEllipse : public AbstractCollideGeometry
 {
 	Vector<3> mRadius;
 
@@ -147,7 +147,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideEllipsoid : public CollideGeometry
+class CollideEllipsoid : public AbstractCollideGeometry
 {
 	Vector<3> mRadius;
 
@@ -160,7 +160,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideFootball : public CollideGeometry
+class CollideFootball : public AbstractCollideGeometry
 {
 
 	double mLength;
@@ -175,7 +175,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideBullet : public CollideGeometry
+class CollideBullet : public AbstractCollideGeometry
 {
 
 	double mLengthTip;
@@ -192,7 +192,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideSaucer : public CollideGeometry
+class CollideSaucer : public AbstractCollideGeometry
 {
 
 	double mHalfThickness;
@@ -207,7 +207,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollidePolytope : public CollideGeometry
+class CollidePolytope : public AbstractCollideGeometry
 {
 
 	Vector<3>* mVert;
@@ -224,7 +224,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideSum : public CollideGeometry
+class CollideSum : public AbstractCollideGeometry
 {
 
 public:
@@ -234,14 +234,14 @@ public:
 	Vector<3>	t1;
 	Vector<3>	t2;
 
-	std::shared_ptr<CollideGeometry>	mGeometry1;
-	std::shared_ptr<CollideGeometry>	mGeometry2;
+	std::shared_ptr<AbstractCollideGeometry>	mGeometry1;
+	std::shared_ptr<AbstractCollideGeometry>	mGeometry2;
 
 public:
 
-	CollideSum(std::shared_ptr<CollideGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<CollideGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2);
-	CollideSum(std::shared_ptr<CollideGeometry> g1, const Vector<3>& t1, std::shared_ptr<CollideGeometry> g2, const Vector<3>& t2);
-	CollideSum(std::shared_ptr<CollideGeometry> g1, std::shared_ptr<CollideGeometry> g2);
+	CollideSum(std::shared_ptr<AbstractCollideGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2);
+	CollideSum(std::shared_ptr<AbstractCollideGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry> g2, const Vector<3>& t2);
+	CollideSum(std::shared_ptr<AbstractCollideGeometry> g1, std::shared_ptr<AbstractCollideGeometry> g2);
 
 	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
 	[[nodiscard]] Vector<3> GetCenter() const override;
@@ -249,7 +249,7 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideDiff : public CollideGeometry
+class CollideDiff : public AbstractCollideGeometry
 {
 
 	Matrix<3,3>	m1;
@@ -257,14 +257,14 @@ class CollideDiff : public CollideGeometry
 	Vector<3>	t1;
 	Vector<3>	t2;
 
-	std::shared_ptr<CollideGeometry>	mGeometry1;
-	std::shared_ptr<CollideGeometry>	mGeometry2;
+	std::shared_ptr<AbstractCollideGeometry>	mGeometry1;
+	std::shared_ptr<AbstractCollideGeometry>	mGeometry2;
 
 public:
 
-	CollideDiff(std::shared_ptr<CollideGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<CollideGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2);
-	CollideDiff(std::shared_ptr<CollideGeometry> g1, const Vector<3>& t1, std::shared_ptr<CollideGeometry> g2, const Vector<3>& t2);
-	CollideDiff(std::shared_ptr<CollideGeometry> g1, std::shared_ptr<CollideGeometry> g2);
+	CollideDiff(std::shared_ptr<AbstractCollideGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2);
+	CollideDiff(std::shared_ptr<AbstractCollideGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry> g2, const Vector<3>& t2);
+	CollideDiff(std::shared_ptr<AbstractCollideGeometry> g1, std::shared_ptr<AbstractCollideGeometry> g2);
 
 	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
 	[[nodiscard]] Vector<3> GetCenter() const override;
@@ -272,19 +272,19 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideNeg : public CollideGeometry
+class CollideNeg : public AbstractCollideGeometry
 {
 
 	Matrix<3,3>	m1;
 	Vector<3>	t1;
 
-	std::shared_ptr<CollideGeometry>	mGeometry1;
+	std::shared_ptr<AbstractCollideGeometry>	mGeometry1;
 
 public:
 
-	CollideNeg(std::shared_ptr<CollideGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1);
-	CollideNeg(std::shared_ptr<CollideGeometry> g1, const Vector<3>& t1);
-	explicit CollideNeg(std::shared_ptr<CollideGeometry> g1);
+	CollideNeg(std::shared_ptr<AbstractCollideGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1);
+	CollideNeg(std::shared_ptr<AbstractCollideGeometry> g1, const Vector<3>& t1);
+	explicit CollideNeg(std::shared_ptr<AbstractCollideGeometry> g1);
 
     [[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
 	[[nodiscard]] Vector<3> GetCenter() const override;
@@ -292,21 +292,21 @@ public:
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideMax : public CollideGeometry
+class CollideMax : public AbstractCollideGeometry
 {
 	Matrix<3,3>	m1;
 	Matrix<3,3>	m2;
 	Vector<3>	t1;
 	Vector<3>	t2;
 
-	std::shared_ptr<CollideGeometry>	mGeometry1;
-	std::shared_ptr<CollideGeometry>	mGeometry2;
+	std::shared_ptr<AbstractCollideGeometry>	mGeometry1;
+	std::shared_ptr<AbstractCollideGeometry>	mGeometry2;
 
 public:
 
-	CollideMax(std::shared_ptr<CollideGeometry>, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<CollideGeometry>, const Matrix<3,3>& m2, const Vector<3>& t2);
-	CollideMax(std::shared_ptr<CollideGeometry>, const Vector<3>& t1, std::shared_ptr<CollideGeometry>, const Vector<3>& t2);
-	CollideMax(std::shared_ptr<CollideGeometry> g1, std::shared_ptr<CollideGeometry> g2);
+	CollideMax(std::shared_ptr<AbstractCollideGeometry>, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry>, const Matrix<3,3>& m2, const Vector<3>& t2);
+	CollideMax(std::shared_ptr<AbstractCollideGeometry>, const Vector<3>& t1, std::shared_ptr<AbstractCollideGeometry>, const Vector<3>& t2);
+	CollideMax(std::shared_ptr<AbstractCollideGeometry> g1, std::shared_ptr<AbstractCollideGeometry> g2);
 
 	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
 	[[nodiscard]] Vector<3> GetCenter() const override;

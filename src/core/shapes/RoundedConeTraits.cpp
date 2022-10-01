@@ -6,7 +6,7 @@
 #include "utils/Assertions.h"
 #include "geometry/xenocollide/BodyBuilder.h"
 
-std::shared_ptr<CollideGeometry> RoundedConeTraits::createShapeModel(double R, double r, double l) {
+std::shared_ptr<AbstractCollideGeometry> RoundedConeTraits::createShapeModel(double R, double r, double l) {
     Expects(R > 0);
     Expects(r > 0);
     Expects(l > 0);
