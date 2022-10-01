@@ -14,7 +14,7 @@
 
 
 namespace {
-    class XenoCollideSpherocylinderTraits : public XenoCollideTraits, public ShapePrinter {
+    class XenoCollideSpherocylinderTraits : public XenoCollideTraits<XenoCollideSpherocylinderTraits>, public ShapePrinter {
     private:
         double r{};
         double l{};
@@ -23,7 +23,6 @@ namespace {
             return M_PI * r * r * (4.0 / 3.0 * r + l);
         }
 
-    public:
         static std::shared_ptr<AbstractCollideGeometry> createShapeModel(double l, double r) {
             Expects(r > 0);
             Expects(l > 0);
@@ -37,12 +36,17 @@ namespace {
             return bb.getCollideGeometry();
         }
 
+        std::shared_ptr<AbstractCollideGeometry> shapeModel;
+
+    public:
         XenoCollideSpherocylinderTraits(double l, double r)
-                : XenoCollideTraits({1, 0, 0}, {0, 0, 1}, {0, 0, 0}, getStaticVolume(l, r), createShapeModel(l, r),
+                : XenoCollideTraits({1, 0, 0}, {0, 0, 1}, {0, 0, 0}, getStaticVolume(l, r),
                                     l + 2*r,
                                     {{"beg", {-l/2, 0, 0}}, {"end", {l/2, 0, 0}}}),
-                  r{r}, l{l}
+                  r{r}, l{l}, shapeModel{XenoCollideSpherocylinderTraits::createShapeModel(l, r)}
         { }
+
+        const AbstractCollideGeometry &getCollideGeometry() const { return *this->shapeModel; }
 
         [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
 
@@ -51,33 +55,6 @@ namespace {
         }
     };
 }
-
-TEST_CASE("XenoCollide: support points") {
-    double l = 12.0, r = 3;
-    XenoCollideSpherocylinderTraits traits(l, r);
-
-    Shape sc({0, 0, 0}, Matrix<3, 3>::identity());
-
-    SECTION("left") {
-        CHECK((*(traits.shapeModel)).GetSupportPoint({1, 0, 0})[0]==l/2+r);
-    }
-    SECTION("right") {
-        CHECK((*(traits.shapeModel)).GetSupportPoint({-1, 0, 0})[0]==-l/2-r);
-    }
-    SECTION("up") {
-        CHECK((*(traits.shapeModel)).GetSupportPoint({0, 1, 0})[1]==r);
-    }
-    SECTION("down") {
-        CHECK((*(traits.shapeModel)).GetSupportPoint({0, -1, 0})[1]==-r);
-    }
-    SECTION("front") {
-        CHECK((*(traits.shapeModel)).GetSupportPoint({0, 0, 1})[2]==r);
-    }
-    SECTION("back") {
-        CHECK((*(traits.shapeModel)).GetSupportPoint({0, 0, -1})[2]==-r);
-    }
-}
-
 
 TEST_CASE("XenoCollide: overlap") {
     FreeBoundaryConditions fbc;
