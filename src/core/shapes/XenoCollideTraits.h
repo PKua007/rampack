@@ -9,7 +9,6 @@
 
 #include "core/ShapeTraits.h"
 #include "geometry/xenocollide/CollideGeometry.h"
-#include "geometry/xenocollide/MapPtr.h"
 
 
 class XenoCollideTraits : public ShapeTraits, public Interaction, public ShapeGeometry {
@@ -24,11 +23,11 @@ private:
 protected:
 
 public:
-    MapPtr<CollideGeometry> shapeModel;
+    std::shared_ptr<CollideGeometry> shapeModel;
 
     XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v, const std::string &attr,
                       std::map<std::string, Vector<3>> customNamedPoints = {});
-    XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v, MapPtr<CollideGeometry> shapeModel,
+    XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v, std::shared_ptr<CollideGeometry> shapeModel,
                       double rangeRadius, std::map<std::string, Vector<3>> customNamedPoints = {});
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
