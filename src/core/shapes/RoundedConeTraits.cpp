@@ -34,10 +34,9 @@ double RoundedConeTraits::getVolume(double R, double r, double l) {
 RoundedConeTraits::RoundedConeTraits(double R, double r, double l)
         : XenoCollideTraits({0, 0, 1}, {1, 0, 0}, {0, 0, 0},
                             RoundedConeTraits::getVolume(R, r, l),
-                            RoundedConeTraits::createShapeModel(R, r, l),
                             l + 2*std::max(1., r),
                             {{"sl", {0, 0, -l/2}}, {"ss", {0, 0, l/2}}}),
-          R{R}, r{r}, l{l}
+          R{R}, r{r}, l{l}, shapeModel{RoundedConeTraits::createShapeModel(R, r, l)}
 {
 
 }
