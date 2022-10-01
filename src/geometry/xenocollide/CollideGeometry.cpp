@@ -29,7 +29,7 @@ not be misrepresented as being the original software.
 //////////////////////////////////////////////////////////////////////////////
 // CollideGeometry
 
-Vector<3> CollideGeometry::GetCenter()
+Vector<3> CollideGeometry::GetCenter() const
 {
 	Vector<3> v({0, 0, 0});
 	return v;
@@ -45,14 +45,14 @@ CollidePoint::CollidePoint(const Vector<3>& p)
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollidePoint::GetSupportPoint([[maybe_unused]] const Vector<3>& n)
+Vector<3> CollidePoint::GetSupportPoint([[maybe_unused]] const Vector<3>& n) const
 {
 	return mPoint;
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollidePoint::GetCenter()
+Vector<3> CollidePoint::GetCenter() const
 {
 	return mPoint;
 }
@@ -67,7 +67,7 @@ CollideSegment::CollideSegment(double r)
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideSegment::GetSupportPoint(const Vector<3>& n)
+Vector<3> CollideSegment::GetSupportPoint(const Vector<3>& n) const
 {
 	Vector<3> v({0, 0, 0});
 	if (n[0] < 0)
@@ -89,7 +89,7 @@ CollideRectangle::CollideRectangle(double rx, double ry)
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideRectangle::GetSupportPoint(const Vector<3>& n)
+Vector<3> CollideRectangle::GetSupportPoint(const Vector<3>& n) const
 {
 	Vector<3> result = mRadius;
 	if (n[0] < 0) result[0] = -result[0];
@@ -107,7 +107,7 @@ CollideSphere::CollideSphere(double r)
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideSphere::GetSupportPoint(const Vector<3>& n)
+Vector<3> CollideSphere::GetSupportPoint(const Vector<3>& n) const
 {
 	Vector<3> n2 = n;
 	n2 = n2.normalized();
@@ -126,7 +126,7 @@ CollideEllipse::CollideEllipse(double rx, double ry)
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideEllipse::GetSupportPoint(const Vector<3>& n)
+Vector<3> CollideEllipse::GetSupportPoint(const Vector<3>& n) const
 {
 	Vector<3> n2 = CompMul(mRadius, n);
 	if (is_vector_zero(n2)){
@@ -147,7 +147,7 @@ CollideEllipsoid::CollideEllipsoid(const Vector<3>& r)
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideEllipsoid::GetSupportPoint(const Vector<3>& n)
+Vector<3> CollideEllipsoid::GetSupportPoint(const Vector<3>& n) const
 {
 	Vector<3> n2 = CompMul(n, mRadius);
 	n2 = n2.normalized();
@@ -162,7 +162,7 @@ CollideDisc::CollideDisc(double r)
 	mRadius = r;
 }
 
-Vector<3> CollideDisc::GetSupportPoint(const Vector<3>& n)
+Vector<3> CollideDisc::GetSupportPoint(const Vector<3>& n) const
 {
 	Vector<3> n2 = n;
 	n2[3] = 0;
@@ -185,7 +185,7 @@ CollideBox::CollideBox(const Vector<3>& r)
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideBox::GetSupportPoint(const Vector<3>& n)
+Vector<3> CollideBox::GetSupportPoint(const Vector<3>& n) const
 {
 	Vector<3> result = mRadius;
 	if (n[0] < 0) result[0] = -result[0];
@@ -205,7 +205,7 @@ CollideFootball::CollideFootball(double length, double radius)
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideFootball::GetSupportPoint(const Vector<3>& n)
+Vector<3> CollideFootball::GetSupportPoint(const Vector<3>& n) const
 {
 	// Radius
 	double r1 = mRadius;
@@ -239,7 +239,7 @@ CollideBullet::CollideBullet(double lengthTip, double lengthTail, double radius)
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideBullet::GetSupportPoint(const Vector<3>& n)
+Vector<3> CollideBullet::GetSupportPoint(const Vector<3>& n) const
 {
 	if (n[0] < 0)
 	{
@@ -276,7 +276,7 @@ Vector<3> CollideBullet::GetSupportPoint(const Vector<3>& n)
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideBullet::GetCenter()
+Vector<3> CollideBullet::GetCenter() const
 {
 	return Vector<3>({ 0.5f * (mLengthTail - mLengthTip), 0, 0 });
 }
@@ -292,7 +292,7 @@ CollideSaucer::CollideSaucer(double radius, double halfThickness)
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideSaucer::GetSupportPoint(const Vector<3>& n)
+Vector<3> CollideSaucer::GetSupportPoint(const Vector<3>& n) const
 {
 	// Half-thickness
 	double t = mHalfThickness;
@@ -343,7 +343,7 @@ void CollidePolytope::AddVert(const Vector<3>& p)
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollidePolytope::GetSupportPoint(const Vector<3>& n)
+Vector<3> CollidePolytope::GetSupportPoint(const Vector<3>& n) const
 {
 	int i = mVertCount-1;
 	Vector<3> r = mVert[i--];
@@ -397,14 +397,14 @@ CollideSum::CollideSum(std::shared_ptr<CollideGeometry> g1, std::shared_ptr<Coll
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideSum::GetSupportPoint(const Vector<3>& n)
+Vector<3> CollideSum::GetSupportPoint(const Vector<3>& n) const
 {
 	return m1*(mGeometry1->GetSupportPoint( (m1.transpose()*n))) + t1 + m2*(mGeometry2->GetSupportPoint((m2.transpose()*n))) + t2;
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideSum::GetCenter()
+Vector<3> CollideSum::GetCenter() const
 {
 	return m1*(mGeometry1->GetCenter()) + t1 + m2*(mGeometry2->GetCenter()) + t2;
 }
@@ -448,14 +448,14 @@ CollideDiff::CollideDiff(std::shared_ptr<CollideGeometry> g1, std::shared_ptr<Co
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideDiff::GetSupportPoint(const Vector<3>& n)
+Vector<3> CollideDiff::GetSupportPoint(const Vector<3>& n) const
 {
 	return m1*(mGeometry1->GetSupportPoint( m1.transpose()*n)) + t1 - m2*(mGeometry2->GetSupportPoint((m2.transpose())*(-n))) - t2;
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideDiff::GetCenter()
+Vector<3> CollideDiff::GetCenter() const
 {
 	return m1*(mGeometry1->GetCenter()) + t1 - m2*(mGeometry2->GetCenter()) - t2;
 }
@@ -490,14 +490,14 @@ CollideNeg::CollideNeg(std::shared_ptr<CollideGeometry> g1)
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideNeg::GetSupportPoint(const Vector<3>& n)
+Vector<3> CollideNeg::GetSupportPoint(const Vector<3>& n) const
 {
 	return -(m1*(mGeometry1->GetSupportPoint( (m1.transpose())*(-n))) + t1);
 }
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideNeg::GetCenter()
+Vector<3> CollideNeg::GetCenter() const
 {
 	return -(m1*(mGeometry1->GetCenter()) + t1);
 }
@@ -541,7 +541,7 @@ CollideMax::CollideMax(std::shared_ptr<CollideGeometry> g1, std::shared_ptr<Coll
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideMax::GetSupportPoint(const Vector<3>& n)
+Vector<3> CollideMax::GetSupportPoint(const Vector<3>& n) const
 {
 	Vector<3> v1 = m1*(mGeometry1->GetSupportPoint((m1.transpose())*(n))) + t1;
 	Vector<3> v2 = m2*(mGeometry2->GetSupportPoint((m2.transpose())*(n))) + t2;
@@ -556,7 +556,7 @@ Vector<3> CollideMax::GetSupportPoint(const Vector<3>& n)
 
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideMax::GetCenter()
+Vector<3> CollideMax::GetCenter() const
 {
 	// Return the average of the two centers
 	return 0.5 * (m1*(mGeometry1->GetCenter()) + t1 + m2*(mGeometry2->GetCenter()) + t2);

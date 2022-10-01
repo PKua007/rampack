@@ -35,10 +35,6 @@ class BodyBuilder
 {
 
 public:
-
-	BodyBuilder();
-	~BodyBuilder();
-
 	// shapes
 	void axis(double x);
 	void box(double x, double y, double z);
@@ -69,8 +65,7 @@ public:
 
 	void ProcessCommand(std::string& cmd);
 	std::shared_ptr<CollideGeometry> getCollideGeometry();
-	double getMaxRadius();
-	size_t getModelStackSize();
+    [[nodiscard]] double getMaxRadius() const;
 
 private:
 	struct XCShape{
