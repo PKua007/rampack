@@ -27,7 +27,6 @@ not be misrepresented as being the original software.
 #include "../Vector.h"
 #include "../../utils/Assertions.h"
 
-//////////////////////////////////////////////////////////////////////////////
 
 inline Vector<3> Collide::TransformSupportVert( CollideGeometry& p, const Matrix<3,3>& m, const Vector<3>& t, const Vector<3>& n )
 {
@@ -36,22 +35,6 @@ inline Vector<3> Collide::TransformSupportVert( CollideGeometry& p, const Matrix
 	Vector<3> worldSupport = m*localSupport + t;
 	return worldSupport;
 }
-
-//////////////////////////////////////////////////////////////////////////////
-// Collide
-
-// Global Test Data
-double gAvgSupportCount = 0.0f;
-int gMaxPhase1 = 0;
-int gMaxPhase2 = 0;
-int gMinPhase1 = 1000;
-int gMinPhase2 = 1000;
-double gAvgPhase1 = 0;
-double gAvgPhase2 = 0;
-double gCountPhase1 = 0;
-double gCountPhase2 = 0;
-
-//////////////////////////////////////////////////////////////////////////////
 
 inline void Collide::Swap(Vector<3>& a, Vector<3>& b)
 {
@@ -95,8 +78,7 @@ bool Collide::Intersect(CollideGeometry& p1, const Matrix<3,3>& m1, const Vector
 	///
 	// Phase One: Find a valid portal
 
-	while (1)
-	{
+	while (true) {
 		// Obtain the next support point
 		Vector<3> v3 = TransformSupportVert(p2, m2, t2, n) - TransformSupportVert(p1, m1, t1, -n);
 		if (v3 * n <= 0) return false;	// origin outside v3 support plane ==> miss
@@ -120,8 +102,7 @@ bool Collide::Intersect(CollideGeometry& p1, const Matrix<3,3>& m1, const Vector
 		///
 		// Phase Two: Refine the portal
 
-		while (1)
-		{
+		while (true) {
 			// Compute outward facing normal of the portal
 			n = (v2 - v1) ^ (v3 - v1);
 
@@ -135,7 +116,6 @@ bool Collide::Intersect(CollideGeometry& p1, const Matrix<3,3>& m1, const Vector
 			n = n.normalized();
 			if ( -(v4 * n) >= 0 || (v4 - v3) * n <= boundaryTolerance ) return false;
 
-#if 1
 			// Test origin against the three planes that separate the new portal candidates: (v1,v4,v0) (v2,v4,v0) (v3,v4,v0)
 			// Note:  We're taking advantage of the triple product identities here as an optimization
 			//        (v1 % v4) * v0 == v1 * (v4 % v0)    > 0 if origin inside (v1, v4, v0)
@@ -152,20 +132,6 @@ bool Collide::Intersect(CollideGeometry& p1, const Matrix<3,3>& m1, const Vector
 				if (v3 * cross > 0) v2 = v4;	// Outside v1 & inside v3 ==> eliminate v2
 				else v1 = v4;					// Outside v1 & outside v3 ==> eliminate v1
 			}
-#else
-			// Test origin against the three planes that separate the new portal candidates: (v1,v4,v0) (v2,v4,v0) (v3,v4,v0)
-			// Note: non-optimized version
-			if (v1 ^ v4 * v0 > 0)
-			{
-				if (v2 ^ v4 * v0 > 0) v1 = v4;	// Inside v1 & inside v2 ==> eliminate v1
-				else v3 = v4;					// Inside v1 & outside v2 ==> eliminate v3
-			}
-			else
-			{
-				if (v3 ^ v4 * v0 > 0) v2 = v4;	// Outside v1 & inside v3 ==> eliminate v2
-				else v1 = v4;					// Outside v1 & outside v3 ==> eliminate v1
-			}
-#endif
 		}
 	}
 }
