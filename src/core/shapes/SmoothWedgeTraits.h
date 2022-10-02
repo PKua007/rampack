@@ -18,11 +18,13 @@ public:
         double Rminusr{};
         double Rpos{};
         double rpos{};
+        double circumsphereRadius{};
 
     public:
         CollideGeometry(double R, double r, double l);
 
         [[nodiscard]] Vector<3> getCenter() const { return {}; }
+
         [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const {
             Vector<3> nNorm = n.normalized();
             if (this->Rminusr > nNorm[2]*this->l)
@@ -30,6 +32,8 @@ public:
             else
                 return this->r * nNorm + Vector<3>{0, 0, this->rpos};
         }
+
+        [[nodiscard]] double getCircumsphereRadius() const { return this->circumsphereRadius; }
     };
 
 private:

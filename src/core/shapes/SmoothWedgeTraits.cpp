@@ -53,7 +53,7 @@ std::string SmoothWedgeTraits::toWolfram(const Shape &shape) const {
 }
 
 SmoothWedgeTraits::CollideGeometry::CollideGeometry(double R, double r, double l)
-        : R{R}, r{r}, l{l}, Rminusr{R - r}, Rpos{-l/2}, rpos{l/2}
+        : R{R}, r{r}, l{l}, Rminusr{R - r}, Rpos{-l/2}, rpos{l/2}, circumsphereRadius{l/2 + R}
 {
     Expects(R > 0);
     Expects(r > 0);
