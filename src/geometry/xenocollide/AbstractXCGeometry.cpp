@@ -25,6 +25,8 @@ not be misrepresented as being the original software.
 #include "AbstractXCGeometry.h"
 #include "../Vector.h"
 
+#include "utils/Assertions.h"
+
 
 //////////////////////////////////////////////////////////////////////////////
 // CollideGeometry
@@ -85,6 +87,7 @@ CollideRectangle::CollideRectangle(double rx, double ry)
 	mRadius[0] = rx;
 	mRadius[1] = ry;
 	mRadius[2] = 0;
+    this->halfDiagonal = this->mRadius.norm();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -122,6 +125,7 @@ CollideEllipse::CollideEllipse(double rx, double ry)
 	mRadius[0] = rx;
 	mRadius[1] = ry;
 	mRadius[2] = 0;
+    this->circumsphereRadius = *std::max_element(this->mRadius.begin(), this->mRadius.end());
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -143,6 +147,7 @@ Vector<3> CollideEllipse::getSupportPoint(const Vector<3>& n) const
 CollideEllipsoid::CollideEllipsoid(const Vector<3>& r)
 {
 	mRadius = r;
+    this->circumsphereRadius = *std::max_element(this->mRadius.begin(), this->mRadius.end());
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -181,6 +186,7 @@ Vector<3> CollideDisc::getSupportPoint(const Vector<3>& n) const
 CollideBox::CollideBox(const Vector<3>& r)
 {
 	mRadius = r;
+    this->halfDiagonal = this->mRadius.norm();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -197,8 +203,9 @@ Vector<3> CollideBox::getSupportPoint(const Vector<3>& n) const
 //////////////////////////////////////////////////////////////////////////////
 // CollideFootball
 
-CollideFootball::CollideFootball(double length, double radius)
-{
+CollideFootball::CollideFootball(double length, double radius) {
+    Expects(length >= radius);
+
 	mRadius = radius;
 	mLength = length;
 }
@@ -230,11 +237,13 @@ Vector<3> CollideFootball::getSupportPoint(const Vector<3>& n) const
 //////////////////////////////////////////////////////////////////////////////
 // CollideBullet
 
-CollideBullet::CollideBullet(double lengthTip, double lengthTail, double radius)
-{
+CollideBullet::CollideBullet(double lengthTip, double lengthTail, double radius) {
+    Expects(lengthTip >= radius);
+
 	mRadius = radius;
 	mLengthTip = lengthTip;
 	mLengthTail = lengthTail;
+    this->circumsphereRadius = std::max(lengthTip, std::sqrt(lengthTail*lengthTip + radius*radius));
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -284,8 +293,9 @@ Vector<3> CollideBullet::getCenter() const
 //////////////////////////////////////////////////////////////////////////////
 // CollideSaucer
 
-CollideSaucer::CollideSaucer(double radius, double halfThickness)
-{
+CollideSaucer::CollideSaucer(double radius, double halfThickness) {
+    Expects(halfThickness <= radius);
+
 	mHalfThickness = halfThickness;
 	mRadius = radius;
 }
@@ -338,7 +348,10 @@ CollidePolytope::CollidePolytope(int maxVerts)
 void CollidePolytope::AddVert(const Vector<3>& p)
 {
 	if (mVertCount >= mVertMax) return;
-	mVert[mVertCount++] = p;
+    double distance = p.norm();
+    if (distance > this->circumsphereRadius)
+        this->circumsphereRadius = distance;
+    mVert[mVertCount++] = p;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -361,38 +374,13 @@ Vector<3> CollidePolytope::getSupportPoint(const Vector<3>& n) const
 //////////////////////////////////////////////////////////////////////////////
 // CollideSum
 
-CollideSum::CollideSum(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2)
+CollideSum::CollideSum(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1,
+                       std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2)
+        : m1{m1}, m2{m2}, t1{t1}, t2{t2}, mGeometry1{std::move(g1)}, mGeometry2{std::move(g2)}
 {
-	mGeometry1 = g1;
-	mGeometry2 = g2;
-	this->m1 = m1;
-	this->t1 = t1;
-	this->m2 = m2;
-	this->t2 = t2;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-CollideSum::CollideSum(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Vector<3>& t2)
-{
-	mGeometry1 = g1;
-	mGeometry2 = g2;
-	this->m1 = Matrix<3,3>::identity();
-	this->t1 = t1;
-	this->m2 = Matrix<3,3>::identity(); // Quat(0, 0, 0, 1);
-	this->t2 = t2;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-CollideSum::CollideSum(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2)
-{
-	mGeometry1 = g1;
-	mGeometry2 = g2;
-	this->m1 = Matrix<3,3>::identity();
-	this->t1 = Vector<3>({0, 0, 0});
-	this->m2 = Matrix<3,3>::identity();
-	this->t2 = Vector<3>({0, 0, 0});
+    double circumsphere1 = this->mGeometry1->getCircumsphereRadius();
+    double circumsphere2 = this->mGeometry2->getCircumsphereRadius();
+    this->circumsphereRadius = (this->t1 + this->t2).norm() + circumsphere1 + circumsphere2;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -413,38 +401,13 @@ Vector<3> CollideSum::getCenter() const
 //////////////////////////////////////////////////////////////////////////////
 // CollideDiff
 
-CollideDiff::CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2)
+CollideDiff::CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1,
+                         std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2)
+        : m1{m1}, m2{m2}, t1{t1}, t2{t2}, mGeometry1{std::move(g1)}, mGeometry2{std::move(g2)}
 {
-	mGeometry1 = g1;
-	mGeometry2 = g2;
-	this->m1 = m1;
-	this->t1 = t1;
-	this->m2 = m2;
-	this->t2 = t2;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-CollideDiff::CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Vector<3>& t2)
-{
-	mGeometry1 = g1;
-	mGeometry2 = g2;
-	this->m1 = Matrix<3,3>::identity();
-	this->t1 = t1;
-	this->m2 = Matrix<3,3>::identity();
-	this->t2 = t2;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-CollideDiff::CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2)
-{
-	mGeometry1 = g1;
-	mGeometry2 = g2;
-	this->m1 = Matrix<3,3>::identity();
-	this->t1 = Vector<3>({0, 0, 0});
-	this->m2 = Matrix<3,3>::identity();
-	this->t2 = Vector<3>({0, 0, 0});
+    double circumsphere1 = this->mGeometry1->getCircumsphereRadius();
+    double circumsphere2 = this->mGeometry2->getCircumsphereRadius();
+    this->circumsphereRadius = (this->t1 - this->t2).norm() + circumsphere1 + circumsphere2;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -466,28 +429,9 @@ Vector<3> CollideDiff::getCenter() const
 // CollideNeg
 
 CollideNeg::CollideNeg(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1)
+        : m1{m1}, t1{t1}, mGeometry1{std::move(g1)}
 {
-	mGeometry1 = g1;
-	this->m1 = m1;
-	this->t1 = t1;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-CollideNeg::CollideNeg(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1)
-{
-	mGeometry1 = g1;
-	this->m1 = Matrix<3,3>::identity();
-	this->t1 = t1;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-CollideNeg::CollideNeg(std::shared_ptr<AbstractXCGeometry> g1)
-{
-	mGeometry1 = g1;
-	this->m1 = Matrix<3,3>::identity();
-	this->t1 = Vector<3>({0, 0, 0});
+	this->circumsphereRadius = this->t1.norm() + this->mGeometry1->getCircumsphereRadius();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -507,38 +451,13 @@ Vector<3> CollideNeg::getCenter() const
 //////////////////////////////////////////////////////////////////////////////
 // CollideMax
 
-CollideMax::CollideMax(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2)
+CollideMax::CollideMax(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1,
+                       std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2)
+        : m1{m1}, m2{m2}, t1{t1}, t2{t2}, mGeometry1{std::move(g1)}, mGeometry2{std::move(g2)}
 {
-	mGeometry1 = g1;
-	mGeometry2 = g2;
-	this->m1 = m1;
-	this->t1 = t1;
-	this->m2 = m2;
-	this->t2 = t2;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-CollideMax::CollideMax(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Vector<3>& t2)
-{
-	mGeometry1 = g1;
-	mGeometry2 = g2;
-	this->m1 = Matrix<3,3>::identity();
-	this->t1 = t1;
-	this->m2 = Matrix<3,3>::identity();
-	this->t2 = t2;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
-CollideMax::CollideMax(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2)
-{
-	mGeometry1 = g1;
-	mGeometry2 = g2;
-	this->m1 = Matrix<3,3>::identity();
-	this->t1 = Vector<3>({0, 0, 0});
-	this->m2 = Matrix<3,3>::identity();
-	this->t2 = Vector<3>({0, 0, 0});
+    double circumsphere1 = this->t1.norm() + this->mGeometry1->getCircumsphereRadius();
+    double circumsphere2 = this->t2.norm() + this->mGeometry2->getCircumsphereRadius();
+    this->circumsphereRadius = std::max(circumsphere1, circumsphere2);
 }
 
 //////////////////////////////////////////////////////////////////////////////

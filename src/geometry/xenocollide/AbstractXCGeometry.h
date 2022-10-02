@@ -51,265 +51,296 @@ public:
 
 	[[nodiscard]] virtual Vector<3> getSupportPoint(const Vector<3>& n) const = 0;
 	[[nodiscard]] virtual Vector<3> getCenter() const;
+    [[nodiscard]] virtual double getCircumsphereRadius() const { return 0; };
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollidePoint : public AbstractXCGeometry
-{
+class CollidePoint : public AbstractXCGeometry {
+private:
 	Vector<3> mPoint;
 
 public:
-
 	explicit CollidePoint(const Vector<3>& p);
 
 	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
 	[[nodiscard]] Vector<3> getCenter() const override;
+    [[nodiscard]] double getCircumsphereRadius() const override { return 0; }
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideSegment : public AbstractXCGeometry
-{
+class CollideSegment : public AbstractXCGeometry {
+private:
 	double mRadius;
 
 public:
-
 	explicit CollideSegment(double r);
 
 	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->mRadius; }
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideRectangle : public AbstractXCGeometry
-{
+class CollideRectangle : public AbstractXCGeometry {
+private:
 	Vector<3> mRadius;
+    double halfDiagonal{};
 
 public:
-
 	CollideRectangle(double rx, double ry);
 
 	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->halfDiagonal; }
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideBox : public AbstractXCGeometry
-{
+class CollideBox : public AbstractXCGeometry {
+private:
 	Vector<3> mRadius;
+    double halfDiagonal{};
 
 public:
-
 	explicit CollideBox(const Vector<3>& r);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->halfDiagonal; }
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideDisc : public AbstractXCGeometry
-{
+class CollideDisc : public AbstractXCGeometry {
+private:
 	double mRadius;
 
 public:
-
 	explicit CollideDisc(double r);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->mRadius; }
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideSphere : public AbstractXCGeometry
-{
+class CollideSphere : public AbstractXCGeometry {
+private:
 	double mRadius;
 
 public:
-
 	explicit CollideSphere(double r);
 
 	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->mRadius; }
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideEllipse : public AbstractXCGeometry
-{
+class CollideEllipse : public AbstractXCGeometry {
+private:
 	Vector<3> mRadius;
+    double circumsphereRadius{};
 
 public:
-
 	CollideEllipse(double rx, double ry);
 
 	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideEllipsoid : public AbstractXCGeometry
-{
+class CollideEllipsoid : public AbstractXCGeometry {
+private:
 	Vector<3> mRadius;
+    double circumsphereRadius{};
 
 public:
-
 	explicit CollideEllipsoid(const Vector<3>& r);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideFootball : public AbstractXCGeometry
-{
-
+class CollideFootball : public AbstractXCGeometry {
+private:
 	double mLength;
 	double mRadius;
 
 public:
-
 	CollideFootball(double length, double radius);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->mLength; }
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideBullet : public AbstractXCGeometry
-{
-
+class CollideBullet : public AbstractXCGeometry {
+private:
 	double mLengthTip;
 	double mLengthTail;
 	double mRadius;
+    double circumsphereRadius;
 
 public:
-
 	CollideBullet(double lengthTip, double lengthTail, double radius);
 
 	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
 	[[nodiscard]] Vector<3> getCenter() const override;
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideSaucer : public AbstractXCGeometry
-{
-
+class CollideSaucer : public AbstractXCGeometry {
+private:
 	double mHalfThickness;
 	double mRadius;
 
 public:
-
 	CollideSaucer(double radius, double halfThickness);
 
 	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->mRadius; }
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollidePolytope : public AbstractXCGeometry
-{
-
+class CollidePolytope : public AbstractXCGeometry {
+private:
 	Vector<3>* mVert;
 	int mVertMax;
 	int mVertCount;
+    double circumsphereRadius{};
 
 public:
-
 	explicit CollidePolytope(int n);
 
 	void AddVert(const Vector<3>& p);
 	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideSum : public AbstractXCGeometry
-{
-
-public:
-
+class CollideSum : public AbstractXCGeometry {
+private:
 	Matrix<3,3>	m1;
 	Matrix<3,3> m2;
 	Vector<3>	t1;
 	Vector<3>	t2;
+    double circumsphereRadius{};
 
 	std::shared_ptr<AbstractXCGeometry>	mGeometry1;
 	std::shared_ptr<AbstractXCGeometry>	mGeometry2;
 
 public:
+	CollideSum(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1,
+               std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2);
 
-	CollideSum(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2);
-	CollideSum(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Vector<3>& t2);
-	CollideSum(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2);
+    CollideSum(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1,
+               std::shared_ptr<AbstractXCGeometry> g2, const Vector<3>& t2)
+            : CollideSum(std::move(g1), Matrix<3, 3>::identity(), t1, std::move(g2), Matrix<3, 3>::identity(), t2)
+    { }
+
+    CollideSum(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2)
+            : CollideSum(std::move(g1), {}, std::move(g2), {})
+    { }
 
 	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
 	[[nodiscard]] Vector<3> getCenter() const override;
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideDiff : public AbstractXCGeometry
-{
-
+class CollideDiff : public AbstractXCGeometry {
+private:
 	Matrix<3,3>	m1;
 	Matrix<3,3>	m2;
 	Vector<3>	t1;
 	Vector<3>	t2;
+    double circumsphereRadius{};
 
 	std::shared_ptr<AbstractXCGeometry>	mGeometry1;
 	std::shared_ptr<AbstractXCGeometry>	mGeometry2;
 
 public:
+    CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1,
+                std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2);
 
-	CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2);
-	CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Vector<3>& t2);
-	CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2);
+    CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1,
+                std::shared_ptr<AbstractXCGeometry> g2, const Vector<3>& t2)
+            : CollideDiff(std::move(g1), Matrix<3, 3>::identity(), t1, std::move(g2), Matrix<3, 3>::identity(), t2)
+    { }
+
+    CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2)
+            : CollideDiff(std::move(g1), {}, std::move(g2), {})
+    { }
 
 	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
 	[[nodiscard]] Vector<3> getCenter() const override;
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideNeg : public AbstractXCGeometry
-{
-
+class CollideNeg : public AbstractXCGeometry {
+private:
 	Matrix<3,3>	m1;
 	Vector<3>	t1;
+    double circumsphereRadius{};
 
 	std::shared_ptr<AbstractXCGeometry>	mGeometry1;
 
 public:
-
 	CollideNeg(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1);
-	CollideNeg(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1);
-	explicit CollideNeg(std::shared_ptr<AbstractXCGeometry> g1);
+
+	CollideNeg(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1)
+            : CollideNeg(std::move(g1), Matrix<3, 3>::identity(), t1)
+    { }
+
+	explicit CollideNeg(std::shared_ptr<AbstractXCGeometry> g1) : CollideNeg(std::move(g1), {})
+    { }
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
 	[[nodiscard]] Vector<3> getCenter() const override;
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
 };
 
 //////////////////////////////////////////////////////////////////////////////
 
-class CollideMax : public AbstractXCGeometry
-{
+class CollideMax : public AbstractXCGeometry {
+private:
 	Matrix<3,3>	m1;
 	Matrix<3,3>	m2;
 	Vector<3>	t1;
 	Vector<3>	t2;
+    double circumsphereRadius{};
 
 	std::shared_ptr<AbstractXCGeometry>	mGeometry1;
 	std::shared_ptr<AbstractXCGeometry>	mGeometry2;
 
 public:
+    CollideMax(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1,
+               std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2);
 
-	CollideMax(std::shared_ptr<AbstractXCGeometry>, const Matrix<3,3>& m1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry>, const Matrix<3,3>& m2, const Vector<3>& t2);
-	CollideMax(std::shared_ptr<AbstractXCGeometry>, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry>, const Vector<3>& t2);
-	CollideMax(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2);
+    CollideMax(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1,
+               std::shared_ptr<AbstractXCGeometry> g2, const Vector<3>& t2)
+            : CollideMax(std::move(g1), Matrix<3, 3>::identity(), t1, std::move(g2), Matrix<3, 3>::identity(), t2)
+    { }
+
+    CollideMax(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2)
+            : CollideMax(std::move(g1), {}, std::move(g2), {})
+    { }
 
 	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
 	[[nodiscard]] Vector<3> getCenter() const override;
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
 };
 
 //////////////////////////////////////////////////////////////////////////////
