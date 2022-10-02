@@ -5,7 +5,7 @@ file(GLOB_RECURSE unit_tests_sources CONFIGURE_DEPENDS "unit_tests/*.cpp" "unit_
 
 file(GLOB_RECURSE valid_tests_sources CONFIGURE_DEPENDS "validation_tests/*.cpp" "validation_tests/*.h")
 
-add_executable(unit_tests TestMain.cpp ${unit_tests_sources} unit_tests/core/shapes/XenoCollideTraitsTest.cpp)
+add_executable(unit_tests TestMain.cpp ${unit_tests_sources})
 target_link_libraries(unit_tests PRIVATE rampack_lib Catch2::Catch2 trompeloeil)
 target_include_directories(unit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 

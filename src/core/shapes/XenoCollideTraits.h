@@ -41,8 +41,8 @@ public:
 //    }
 
 
-    XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v, double rangeRadius, std::map<std::string, Vector<3>> customNamedPoints = {})
-            : primaryAxis{pa}, secondaryAxis{sa}, geometricOrigin{cm}, volume{v}, rangeRadius{rangeRadius},
+    XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> o, double v, double rangeRadius, std::map<std::string, Vector<3>> customNamedPoints = {})
+            : primaryAxis{pa}, secondaryAxis{sa}, geometricOrigin{o}, volume{v}, rangeRadius{rangeRadius},
               customNamedPoints{std::move(customNamedPoints)}
     {
 
