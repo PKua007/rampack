@@ -90,7 +90,7 @@ public:
         const auto &collideGeometry = thisConcreteTraits.getCollideGeometry();
 
         Vector<3> normalVector = (orientation.transpose())*(wallVector);
-        Vector<3> sp = collideGeometry.GetSupportPoint(-normalVector);
+        Vector<3> sp = collideGeometry.getSupportPoint(-normalVector);
         Vector<3> origin = (orientation.transpose())*(wallOrigin - pos);
         double distanceSupport = -sp*normalVector;  // minus sign because we count distance along -normalVector
         double distanceWall = -origin*normalVector;

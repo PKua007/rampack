@@ -31,14 +31,14 @@ TEST_CASE("SmoothWedge: collide geometry") {
     SmoothWedgeTraits traits(2, 1, 5);
     const auto &collideGeometry = traits.getCollideGeometry();
 
-    CHECK_THAT(collideGeometry.GetCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
+    CHECK_THAT(collideGeometry.getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
 
     // We are always using not normalized normal vectors, because they should work
-    CHECK_THAT(collideGeometry.GetSupportPoint({0, 0, 2}), IsApproxEqual({0, 0, 3.5}, 1e-12));
-    CHECK_THAT(collideGeometry.GetSupportPoint({0, 0, -2}), IsApproxEqual({0, 0, -4.5}, 1e-12));
+    CHECK_THAT(collideGeometry.getSupportPoint({0, 0, 2}), IsApproxEqual({0, 0, 3.5}, 1e-12));
+    CHECK_THAT(collideGeometry.getSupportPoint({0, 0, -2}), IsApproxEqual({0, 0, -4.5}, 1e-12));
     double b = 0.2;
     double h1 = 0.4*std::sqrt(6);
     auto sideNormal = Vector<3>{h1, 0, b};
     auto tangentPoint = Vector<3>{h1, 0, 2.5 + b};
-    CHECK(sideNormal * (collideGeometry.GetSupportPoint(sideNormal) - tangentPoint) == Approx(0).margin(1e-12));
+    CHECK(sideNormal * (collideGeometry.getSupportPoint(sideNormal) - tangentPoint) == Approx(0).margin(1e-12));
 }
