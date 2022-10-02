@@ -6,20 +6,6 @@
 #include "utils/Assertions.h"
 #include "geometry/xenocollide/XCBodyBuilder.h"
 
-std::shared_ptr<AbstractXCGeometry> SmoothWedgeTraits::createShapeModel(double R, double r, double l) {
-    Expects(R > 0);
-    Expects(r > 0);
-    Expects(l > 0);
-    Expects(R >= r);
-
-    XCBodyBuilder bb;
-    bb.sphere(R);
-    bb.move(0, 0, -l/2);
-    bb.sphere(r);
-    bb.move(0, 0, l/2);
-    bb.wrap();
-    return bb.getCollideGeometry();
-}
 
 double SmoothWedgeTraits::getVolume(double R, double r, double l) {
     double r2 = r*r;
@@ -38,7 +24,7 @@ SmoothWedgeTraits::SmoothWedgeTraits(double R, double r, double l)
                             SmoothWedgeTraits::getVolume(R, r, l),
                             l + 2*std::max(R, r),
                             {{"sl", {0, 0, -l/2}}, {"ss", {0, 0, l/2}}}),
-          R{R}, r{r}, l{l}, shapeModel{SmoothWedgeTraits::createShapeModel(R, r, l)}
+          R{R}, r{r}, l{l}, shapeModel(R, r, l)
 {
 
 }
@@ -64,4 +50,13 @@ std::string SmoothWedgeTraits::toWolfram(const Shape &shape) const {
     out << "          {" << orientation(2, 0) << ", " << orientation(2, 1) << ", " << orientation(2, 2) << "}}," << std::endl;
     out << "          " << pos << "}]]";
     return out.str();
+}
+
+SmoothWedgeTraits::CollideGeometry::CollideGeometry(double R, double r, double l)
+        : R{R}, r{r}, l{l}, Rminusr{R - r}, Rpos{-l/2}, rpos{l/2}
+{
+    Expects(R > 0);
+    Expects(r > 0);
+    Expects(l > 0);
+    Expects(R >= r);
 }
