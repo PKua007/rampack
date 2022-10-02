@@ -77,6 +77,8 @@ public:
         using XCGeometry = decltype(collideGeometry);
 
         Vector<3> pos2bc = pos2 + bc.getTranslation(pos1, pos2);
+        if ((pos2bc - pos1).norm2() > this->rangeRadius*this->rangeRadius)
+            return false;
         bool result = XenoCollide<XCGeometry>::Intersect(collideGeometry, orientation1, pos1, collideGeometry, orientation2, pos2bc, 1.0e-12);
         return result;
     }
