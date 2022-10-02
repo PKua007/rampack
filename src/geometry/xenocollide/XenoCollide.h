@@ -43,7 +43,7 @@ private:
 
     static inline Vector<3> TransformSupportVert(const XCGeometry& p, const Matrix<3,3>& m, const Vector<3>& t, const Vector<3>& n ) {
         Vector<3> localNormal = m.transpose()*n;
-        Vector<3> localSupport = p.GetSupportPoint(localNormal);
+        Vector<3> localSupport = p.getSupportPoint(localNormal);
         Vector<3> worldSupport = m*localSupport + t;
         return worldSupport;
     }
@@ -55,7 +55,7 @@ public:
 
 	static bool Intersect(const XCGeometry& p1, const Matrix<3,3>& m1, const Vector<3>& t1, const XCGeometry& p2, const Matrix<3,3>& m2, const Vector<3>& t2, double boundaryTolerance) {
         // v0 = center of Minkowski difference
-        Vector<3> v0 = (m2*p2.GetCenter() + t2) - (m1*p1.GetCenter() + t1);
+        Vector<3> v0 = (m2*p2.getCenter() + t2) - (m1 * p1.getCenter() + t1);
         if (is_vector_zero(v0)) return true;	// v0 and origin overlap ==> hit
 
         // v1 = support in direction of origin

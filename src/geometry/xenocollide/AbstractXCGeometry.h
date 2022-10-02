@@ -45,13 +45,12 @@ inline bool is_vector_zero(const Vector<3> &v) {
 // a deep interior point for your shape, override this method and return a
 // different point.
 
-class AbstractXCGeometry{
-
-//	friend class std::shared_ptr<CollideGeometry>;
+class AbstractXCGeometry {
 public:
 	virtual ~AbstractXCGeometry() = default;
-	[[nodiscard]] virtual Vector<3> GetSupportPoint(const Vector<3>& n) const = 0;
-	[[nodiscard]] virtual Vector<3> GetCenter() const;
+
+	[[nodiscard]] virtual Vector<3> getSupportPoint(const Vector<3>& n) const = 0;
+	[[nodiscard]] virtual Vector<3> getCenter() const;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -64,8 +63,8 @@ public:
 
 	explicit CollidePoint(const Vector<3>& p);
 
-	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
-	[[nodiscard]] Vector<3> GetCenter() const override;
+	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
+	[[nodiscard]] Vector<3> getCenter() const override;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -78,7 +77,7 @@ public:
 
 	explicit CollideSegment(double r);
 
-	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
+	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -91,7 +90,7 @@ public:
 
 	CollideRectangle(double rx, double ry);
 
-	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
+	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -104,7 +103,7 @@ public:
 
 	explicit CollideBox(const Vector<3>& r);
 
-    [[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
+    [[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -117,7 +116,7 @@ public:
 
 	explicit CollideDisc(double r);
 
-    [[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
+    [[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -130,7 +129,7 @@ public:
 
 	explicit CollideSphere(double r);
 
-	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
+	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -143,7 +142,7 @@ public:
 
 	CollideEllipse(double rx, double ry);
 
-	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
+	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -156,7 +155,7 @@ public:
 
 	explicit CollideEllipsoid(const Vector<3>& r);
 
-    [[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
+    [[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -171,7 +170,7 @@ public:
 
 	CollideFootball(double length, double radius);
 
-    [[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
+    [[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -187,8 +186,8 @@ public:
 
 	CollideBullet(double lengthTip, double lengthTail, double radius);
 
-	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
-	[[nodiscard]] Vector<3> GetCenter() const override;
+	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
+	[[nodiscard]] Vector<3> getCenter() const override;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -203,7 +202,7 @@ public:
 
 	CollideSaucer(double radius, double halfThickness);
 
-	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
+	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -220,7 +219,7 @@ public:
 	explicit CollidePolytope(int n);
 
 	void AddVert(const Vector<3>& p);
-	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
+	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -244,8 +243,8 @@ public:
 	CollideSum(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Vector<3>& t2);
 	CollideSum(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2);
 
-	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
-	[[nodiscard]] Vector<3> GetCenter() const override;
+	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
+	[[nodiscard]] Vector<3> getCenter() const override;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -267,8 +266,8 @@ public:
 	CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry> g2, const Vector<3>& t2);
 	CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2);
 
-	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
-	[[nodiscard]] Vector<3> GetCenter() const override;
+	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
+	[[nodiscard]] Vector<3> getCenter() const override;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -287,8 +286,8 @@ public:
 	CollideNeg(std::shared_ptr<AbstractXCGeometry> g1, const Vector<3>& t1);
 	explicit CollideNeg(std::shared_ptr<AbstractXCGeometry> g1);
 
-    [[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
-	[[nodiscard]] Vector<3> GetCenter() const override;
+    [[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
+	[[nodiscard]] Vector<3> getCenter() const override;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -309,8 +308,8 @@ public:
 	CollideMax(std::shared_ptr<AbstractXCGeometry>, const Vector<3>& t1, std::shared_ptr<AbstractXCGeometry>, const Vector<3>& t2);
 	CollideMax(std::shared_ptr<AbstractXCGeometry> g1, std::shared_ptr<AbstractXCGeometry> g2);
 
-	[[nodiscard]] Vector<3> GetSupportPoint(const Vector<3>& n) const override;
-	[[nodiscard]] Vector<3> GetCenter() const override;
+	[[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
+	[[nodiscard]] Vector<3> getCenter() const override;
 };
 
 //////////////////////////////////////////////////////////////////////////////

@@ -22,8 +22,8 @@ public:
     public:
         CollideGeometry(double R, double r, double l);
 
-        [[nodiscard]] Vector<3> GetCenter() const { return {}; }
-        [[nodiscard]] Vector<3> GetSupportPoint(const Vector<3> &n) const {
+        [[nodiscard]] Vector<3> getCenter() const { return {}; }
+        [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const {
             Vector<3> nNorm = n.normalized();
             if (this->Rminusr > nNorm[2]*this->l)
                 return this->R * nNorm + Vector<3>{0, 0, this->Rpos};

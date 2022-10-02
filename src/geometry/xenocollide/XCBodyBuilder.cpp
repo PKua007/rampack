@@ -36,12 +36,12 @@ double XCBodyBuilder::getMaxRadius() const
 {
 	const XCShape& s = *mShapeStack.back();
 	const AbstractXCGeometry &collideModel = *s.geom;
-	double radiusNegX = std::abs(collideModel.GetSupportPoint( Vector<3>({-1, 0, 0}) )[0]);
-	double radiusPosX = std::abs(collideModel.GetSupportPoint( Vector<3>({1, 0, 0}) )[0]);
-	double radiusNegY = std::abs(collideModel.GetSupportPoint( Vector<3>({0, -1, 0}) )[1]);
-	double radiusPosY = std::abs(collideModel.GetSupportPoint( Vector<3>({0,  1, 0}) )[1]);
-	double radiusNegZ = std::abs(collideModel.GetSupportPoint( Vector<3>({0, 0, -1}) )[2]);
-	double radiusPosZ = std::abs(collideModel.GetSupportPoint( Vector<3>({0, 0,  1}) )[2]);
+	double radiusNegX = std::abs(collideModel.getSupportPoint(Vector<3>({-1, 0, 0}))[0]);
+	double radiusPosX = std::abs(collideModel.getSupportPoint(Vector<3>({1, 0, 0}))[0]);
+	double radiusNegY = std::abs(collideModel.getSupportPoint(Vector<3>({0, -1, 0}))[1]);
+	double radiusPosY = std::abs(collideModel.getSupportPoint(Vector<3>({0, 1, 0}))[1]);
+	double radiusNegZ = std::abs(collideModel.getSupportPoint(Vector<3>({0, 0, -1}))[2]);
+	double radiusPosZ = std::abs(collideModel.getSupportPoint(Vector<3>({0, 0, 1}))[2]);
 
 	Vector<3> maxRadiusVector
 	({
