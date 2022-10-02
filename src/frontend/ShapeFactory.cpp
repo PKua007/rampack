@@ -171,13 +171,13 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
     } else if (shapeName == "RoundedCone") {
         double R, r, length;
         shapeAttrStream >> length >> R >> r;
-        ValidateMsg(shapeAttrStream, "Malformed RoundedCone attributes; expected: [length] [large radius] "
+        ValidateMsg(shapeAttrStream, "Malformed SmoothWedge attributes; expected: [length] [large radius] "
                                      "[small radius]");
         Validate(r > 0);
         Validate(R > 0);
         Validate(R >= r);
         Validate(length >= 0);
-        ValidateMsg(interactionName == "hard" || interactionName.empty(), "RoundedCone supports only hard interactions");
+        ValidateMsg(interactionName == "hard" || interactionName.empty(), "SmoothWedge supports only hard interactions");
         return std::make_shared<SmoothWedgeTraits>(R, r, length);
     } else {
         throw ValidationException("Unknown particle name: " + shapeName);
