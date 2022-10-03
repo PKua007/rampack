@@ -20,10 +20,10 @@ double SmoothWedgeTraits::getVolume(double R, double r, double l) {
 }
 
 SmoothWedgeTraits::SmoothWedgeTraits(double R, double r, double l)
-        : XenoCollideTraits({0, 0, 1}, {1, 0, 0}, {0, 0, (r - R)/2},
+        : XenoCollideTraits({0, 0, 1}, {1, 0, 0}, {0, 0, (r - R) / 2},
                             SmoothWedgeTraits::getVolume(R, r, l),
-                            l + 2*std::max(R, r),
-                            {{"sl", {0, 0, -l/2}}, {"ss", {0, 0, l/2}}}),
+                            {{"sl", {0, 0, -l / 2}},
+                             {"ss", {0, 0, l / 2}}}),
           R{R}, r{r}, l{l}, shapeModel(R, r, l)
 {
 
