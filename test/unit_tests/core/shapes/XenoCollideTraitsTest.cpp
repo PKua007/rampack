@@ -46,7 +46,9 @@ namespace {
                   r{r}, l{l}, shapeModel{XenoCollideSpherocylinderTraits::createShapeModel(l, r)}
         { }
 
-        const AbstractXCGeometry &getCollideGeometry() const { return *this->shapeModel; }
+        [[nodiscard]] const AbstractXCGeometry &getCollideGeometry([[maybe_unused]] std::size_t idx = 0) const {
+            return *this->shapeModel;
+        }
 
         [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
 
@@ -54,9 +56,35 @@ namespace {
             throw std::runtime_error("not implemented");
         }
     };
+
+    class XenoCollideDimerTraits : public XenoCollideTraits<XenoCollideDimerTraits>, public ShapePrinter {
+    private:
+        static double getStaticVolume(double r1, double r2) {  return 4*M_PI/3 * (r1*r1*r1 + r1*r2*r2); }
+
+        std::vector<CollideSphere> shapeModels;
+        std::vector<Vector<3>> interactionCentres;
+
+    public:
+        XenoCollideDimerTraits(double r1, double r2, double x2)
+                : XenoCollideTraits({1, 0, 0}, {0, 0, 1}, {0, 0, 0}, getStaticVolume(r1, r2)),
+                  shapeModels{CollideSphere(r1), CollideSphere(r2)}, interactionCentres{{0, 0, 0}, {x2, 0, 0}}
+        { }
+
+        [[nodiscard]] const AbstractXCGeometry &getCollideGeometry(std::size_t idx) const {
+            return shapeModels.at(idx);
+        }
+
+        [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
+
+        [[nodiscard]] std::string toWolfram([[maybe_unused]] const Shape &shape) const override {
+            throw std::runtime_error("not implemented");
+        }
+
+        [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return this->interactionCentres; }
+    };
 }
 
-TEST_CASE("XenoCollide: overlap") {
+TEST_CASE("XenoCollide: spherocylinder overlap") {
     FreeBoundaryConditions fbc;
     double l = 3, r = 2;
     XenoCollideSpherocylinderTraits traits(l, r);
@@ -161,7 +189,7 @@ TEST_CASE("XenoCollide: overlap") {
     }
 }
 
-TEST_CASE("XenoColllide: wall overlap") {
+TEST_CASE("XenoColllide: spherocylinder wall overlap") {
     double l = 1.0, r = 0.5;
     XenoCollideSpherocylinderTraits traits(l, r);
     const Interaction &interaction = traits.getInteraction();
@@ -213,7 +241,7 @@ TEST_CASE("XenoColllide: wall overlap") {
 }
 
 
-TEST_CASE("XenoCollide: basic features") {
+TEST_CASE("XenoCollide: spherocylinder basic features") {
     double l = 3, r = 2;
     XenoCollideSpherocylinderTraits traits(l, r);
 
@@ -251,4 +279,32 @@ TEST_CASE("XenoCollide: basic features") {
         CHECK(traits.getGeometry().getNamedPoint("cm", {}) == Vector<3>{0, 0, 0});
         CHECK(traits.getGeometry().getNamedPoint("o", {}) == Vector<3>{0, 0, 0});
     }
+}
+
+TEST_CASE("XenoCollide: dimer overlap") {
+    // The same test as for PolysphereTraits
+    XenoCollideDimerTraits traits(0.5, 1, 3);
+    const Interaction &interaction = traits.getInteraction();
+    PeriodicBoundaryConditions pbc(10);
+
+    SECTION("overlap") {
+        Shape shape1({1.01, 5, 5}, Matrix<3, 3>::identity());
+        Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0));
+        CHECK(interaction.overlapBetweenShapes(shape1, shape2, pbc));
+    }
+
+    SECTION("no overlap") {
+        Shape shape1({0.99, 5, 5}, Matrix<3, 3>::identity());
+        Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0));
+        CHECK_FALSE(interaction.overlapBetweenShapes(shape1, shape2, pbc));
+    }
+}
+
+TEST_CASE("XenoCollide: dimer ranges") {
+    // The same test as for PolysphereTraits
+    XenoCollideDimerTraits traits(0.5, 1, 3);
+    const Interaction &interaction = traits.getInteraction();
+
+    CHECK(interaction.getRangeRadius() == 2);
+    CHECK(interaction.getTotalRangeRadius() == 8);
 }
