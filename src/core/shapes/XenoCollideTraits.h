@@ -69,18 +69,19 @@ public:
     [[nodiscard]] bool hasWallPart() const override { return true; }
     [[nodiscard]] bool hasSoftPart() const override { return false; }
 
-    [[nodiscard]] bool overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1, [[maybe_unused]] std::size_t idx1,
-                                      const Vector<3> &pos2, const Matrix<3, 3> &orientation2, [[maybe_unused]] std::size_t idx2,
+    [[nodiscard]] bool overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1, std::size_t idx1,
+                                      const Vector<3> &pos2, const Matrix<3, 3> &orientation2, std::size_t idx2,
                                       const BoundaryConditions &bc) const override {
         const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
-        const auto &collideGeometry = thisConcreteTraits.getCollideGeometry();
-        using XCGeometry = decltype(collideGeometry);
-        double rangeRadius = 2*collideGeometry.getCircumsphereRadius();
+        const auto &collideGeometry1 = thisConcreteTraits.getCollideGeometry(idx1);
+        const auto &collideGeometry2 = thisConcreteTraits.getCollideGeometry(idx2);
+        using XCGeometry = decltype(collideGeometry1);
+        double rangeRadius = collideGeometry1.getCircumsphereRadius() + collideGeometry2.getCircumsphereRadius();
 
         Vector<3> pos2bc = pos2 + bc.getTranslation(pos1, pos2);
         if ((pos2bc - pos1).norm2() > rangeRadius*rangeRadius)
             return false;
-        bool result = XenoCollide<XCGeometry>::Intersect(collideGeometry, orientation1, pos1, collideGeometry, orientation2, pos2bc, 1.0e-12);
+        bool result = XenoCollide<XCGeometry>::Intersect(collideGeometry1, orientation1, pos1, collideGeometry2, orientation2, pos2bc, 1.0e-12);
         return result;
     }
 
@@ -88,7 +89,7 @@ public:
                                        const Vector<3> &wallOrigin, const Vector<3> &wallVector) const override {
 
         const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
-        const auto &collideGeometry = thisConcreteTraits.getCollideGeometry();
+        const auto &collideGeometry = thisConcreteTraits.getCollideGeometry(idx);
 
         Vector<3> normalVector = (orientation.transpose())*(wallVector);
         Vector<3> sp = collideGeometry.getSupportPoint(-normalVector);
@@ -101,8 +102,15 @@ public:
     }
 
     [[nodiscard]] double getRangeRadius() const override {
+        std::size_t numCenters = std::max(this->getInteractionCentres().size(), 1ul);
         const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
-        return 2*thisConcreteTraits.getCollideGeometry().getCircumsphereRadius();
+        double maxRadius{};
+        for (std::size_t i{}; i < numCenters; i++) {
+            double newRadius = thisConcreteTraits.getCollideGeometry(i).getCircumsphereRadius();
+            if (newRadius > maxRadius)
+                maxRadius = newRadius;
+        }
+        return 2*maxRadius;
     }
 
     [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const override {

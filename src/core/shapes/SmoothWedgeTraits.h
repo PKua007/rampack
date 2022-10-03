@@ -47,7 +47,10 @@ private:
 public:
     SmoothWedgeTraits(double R, double r, double l);
 
-    [[nodiscard]] const CollideGeometry &getCollideGeometry() const { return this->shapeModel; }
+    [[nodiscard]] const CollideGeometry &getCollideGeometry([[maybe_unused]] std::size_t idx = 0) const {
+        return this->shapeModel;
+    }
+
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
     [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
 };
