@@ -20,10 +20,9 @@ double SmoothWedgeTraits::getVolume(double R, double r, double l) {
 }
 
 SmoothWedgeTraits::SmoothWedgeTraits(double R, double r, double l)
-        : XenoCollideTraits({0, 0, 1}, {1, 0, 0}, {0, 0, (r - R) / 2},
+        : XenoCollideTraits({0, 0, 1}, {1, 0, 0}, {0, 0, 0},
                             SmoothWedgeTraits::getVolume(R, r, l),
-                            {{"sl", {0, 0, -l / 2}},
-                             {"ss", {0, 0, l / 2}}}),
+                            {{"sl", {0, 0, (-l + R - r)/2}}, {"ss", {0, 0, (l + R - r)/2}}}),
           R{R}, r{r}, l{l}, shapeModel(R, r, l)
 {
 
@@ -53,7 +52,7 @@ std::string SmoothWedgeTraits::toWolfram(const Shape &shape) const {
 }
 
 SmoothWedgeTraits::CollideGeometry::CollideGeometry(double R, double r, double l)
-        : R{R}, r{r}, l{l}, Rminusr{R - r}, Rpos{-l/2}, rpos{l/2}, circumsphereRadius{l/2 + R}
+        : R{R}, r{r}, l{l}, Rminusr{R - r}, Rpos{(-l + R - r)/2}, rpos{(l + R - r)/2}, circumsphereRadius{(l + R + r)/2}
 {
     Expects(R > 0);
     Expects(r > 0);
