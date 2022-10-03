@@ -20,7 +20,6 @@ private:
     Vector<3> secondaryAxis;
     Vector<3> geometricOrigin;
     double volume{};
-    double rangeRadius{};
     std::map<std::string, Vector<3>> customNamedPoints{};
 
 public:
@@ -41,8 +40,9 @@ public:
 //    }
 
 
-    XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> o, double v, double rangeRadius, std::map<std::string, Vector<3>> customNamedPoints = {})
-            : primaryAxis{pa}, secondaryAxis{sa}, geometricOrigin{o}, volume{v}, rangeRadius{rangeRadius},
+    XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> o, double v,
+                      std::map<std::string, Vector<3>> customNamedPoints = {})
+            : primaryAxis{pa}, secondaryAxis{sa}, geometricOrigin{o}, volume{v},
               customNamedPoints{std::move(customNamedPoints)}
     {
 
@@ -75,9 +75,10 @@ public:
         const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
         const auto &collideGeometry = thisConcreteTraits.getCollideGeometry();
         using XCGeometry = decltype(collideGeometry);
+        double rangeRadius = 2*collideGeometry.getCircumsphereRadius();
 
         Vector<3> pos2bc = pos2 + bc.getTranslation(pos1, pos2);
-        if ((pos2bc - pos1).norm2() > this->rangeRadius*this->rangeRadius)
+        if ((pos2bc - pos1).norm2() > rangeRadius*rangeRadius)
             return false;
         bool result = XenoCollide<XCGeometry>::Intersect(collideGeometry, orientation1, pos1, collideGeometry, orientation2, pos2bc, 1.0e-12);
         return result;
@@ -99,8 +100,10 @@ public:
         return true;
     }
 
-
-    [[nodiscard]] double getRangeRadius() const override { return this->rangeRadius; }
+    [[nodiscard]] double getRangeRadius() const override {
+        const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
+        return 2*thisConcreteTraits.getCollideGeometry().getCircumsphereRadius();
+    }
 
     [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const override {
         auto namedPoint = this->customNamedPoints.find(pointName);

@@ -41,8 +41,8 @@ namespace {
     public:
         XenoCollideSpherocylinderTraits(double l, double r)
                 : XenoCollideTraits({1, 0, 0}, {0, 0, 1}, {0, 0, 0}, getStaticVolume(l, r),
-                                    l + 2*r,
-                                    {{"beg", {-l/2, 0, 0}}, {"end", {l/2, 0, 0}}}),
+                                    {{"beg", {-l / 2, 0, 0}},
+                                     {"end", {l / 2,  0, 0}}}),
                   r{r}, l{l}, shapeModel{XenoCollideSpherocylinderTraits::createShapeModel(l, r)}
         { }
 
