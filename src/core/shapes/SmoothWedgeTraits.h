@@ -20,6 +20,8 @@ public:
         double rpos{};
         double circumsphereRadius{};
 
+        friend SmoothWedgeTraits;
+
     public:
         CollideGeometry(double R, double r, double l);
 
@@ -40,17 +42,19 @@ private:
     double R{};
     double r{};
     double l{};
-    CollideGeometry shapeModel;
+    std::vector<CollideGeometry> shapeModel;
+    std::vector<Vector<3>> interactionCentres;
 
     static double getVolume(double R, double r, double l);
 
 public:
-    SmoothWedgeTraits(double R, double r, double l);
+    SmoothWedgeTraits(double R, double r, double l, std::size_t subdivisions = 0);
 
     [[nodiscard]] const CollideGeometry &getCollideGeometry([[maybe_unused]] std::size_t idx = 0) const {
-        return this->shapeModel;
+        return this->shapeModel[idx];
     }
 
+    [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return this->interactionCentres; }
     [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
     [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
 };
