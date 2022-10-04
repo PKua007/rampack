@@ -172,13 +172,18 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         double R, r, length;
         shapeAttrStream >> length >> R >> r;
         ValidateMsg(shapeAttrStream, "Malformed SmoothWedge attributes; expected: [length] [large radius] "
-                                     "[small radius]");
+                                     "[small radius] ([subdivisions = 1])");
+        std::size_t subdivisions;
+        shapeAttrStream >> subdivisions;
+        if (!shapeAttrStream)
+            subdivisions = 1;
+
         Validate(r > 0);
         Validate(R > 0);
         Validate(R >= r);
         Validate(length >= 0);
         ValidateMsg(interactionName == "hard" || interactionName.empty(), "SmoothWedge supports only hard interactions");
-        return std::make_shared<SmoothWedgeTraits>(R, r, length);
+        return std::make_shared<SmoothWedgeTraits>(R, r, length, subdivisions);
     } else {
         throw ValidationException("Unknown particle name: " + shapeName);
     }

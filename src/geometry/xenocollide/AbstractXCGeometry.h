@@ -343,6 +343,21 @@ public:
     [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
 };
 
+template<typename CollideGeometry>
+class PolymorphicCollideAdapter : public AbstractXCGeometry {
+private:
+    CollideGeometry geometry;
+
+public:
+    explicit PolymorphicCollideAdapter(CollideGeometry geometry) : geometry{std::move(geometry)} { }
+
+    [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override {
+        return this->geometry.getSupportPoint(n);
+    }
+    [[nodiscard]] Vector<3> getCenter() const override { return this->geometry.getCenter(); }
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->geometry.getCircumsphereRadius(); }
+};
+
 //////////////////////////////////////////////////////////////////////////////
 inline Vector<3> CompMul(const Vector<3>& a, const Vector<3>& b)
 {
