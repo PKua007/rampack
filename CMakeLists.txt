@@ -30,6 +30,10 @@ if (NOT CMAKE_BUILD_TYPE)
     message(STATUS "No CMAKE_BUILD_TYPE specified; using Release. Use -DCMAKE_BUILD_TYPE=... to specify it manually")
 endif()
 
+add_library(quickhull STATIC extern/quickhull/QuickHull.cpp)
+target_include_directories(quickhull PUBLIC extern/quickhull/)
+target_compile_options(quickhull PRIVATE "-Wno-maybe-uninitialized")
+
 # Explicitly link filesystem library for older versions of GCC
 link_libraries(stdc++fs)
 

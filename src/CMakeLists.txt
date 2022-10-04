@@ -6,7 +6,7 @@ add_library(rampack_lib STATIC ${rampack_lib_sources})
 
 target_include_directories(rampack_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(rampack_lib PUBLIC ../extern/ZipIterator)
-target_link_libraries(rampack_lib PUBLIC cxxopts)
+target_link_libraries(rampack_lib PUBLIC cxxopts quickhull)
 
 add_executable(rampack Main.cpp)
 target_link_libraries(rampack PRIVATE rampack_lib)

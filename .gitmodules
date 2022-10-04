@@ -10,3 +10,6 @@
 [submodule "extern/ZipIterator"]
 	path = extern/ZipIterator
 	url = https://github.com/dpellegr/ZipIterator.git
+[submodule "extern/quickhull"]
+	path = extern/quickhull
+	url = https://github.com/akuukka/quickhull.git
