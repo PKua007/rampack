@@ -14,7 +14,7 @@
 
 
 namespace {
-    class XenoCollideSpherocylinderTraits : public XenoCollideTraits<XenoCollideSpherocylinderTraits>, public ShapePrinter {
+    class XenoCollideSpherocylinderTraits : public XenoCollideTraits<XenoCollideSpherocylinderTraits> {
     private:
         double r{};
         double l{};
@@ -49,15 +49,9 @@ namespace {
         [[nodiscard]] const AbstractXCGeometry &getCollideGeometry([[maybe_unused]] std::size_t idx = 0) const {
             return *this->shapeModel;
         }
-
-        [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
-
-        [[nodiscard]] std::string toWolfram([[maybe_unused]] const Shape &shape) const override {
-            throw std::runtime_error("not implemented");
-        }
     };
 
-    class XenoCollideDimerTraits : public XenoCollideTraits<XenoCollideDimerTraits>, public ShapePrinter {
+    class XenoCollideDimerTraits : public XenoCollideTraits<XenoCollideDimerTraits> {
     private:
         static double getStaticVolume(double r1, double r2) {  return 4*M_PI/3 * (r1*r1*r1 + r1*r2*r2); }
 
@@ -75,10 +69,6 @@ namespace {
         }
 
         [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
-
-        [[nodiscard]] std::string toWolfram([[maybe_unused]] const Shape &shape) const override {
-            throw std::runtime_error("not implemented");
-        }
 
         [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return this->interactionCentres; }
     };

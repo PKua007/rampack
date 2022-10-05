@@ -29,13 +29,15 @@ public:
 
 private:
     static VertexList generateSpherePoints(std::size_t subdivisions);
+    static Polyhedron buildPolyhedron0(const AbstractXCGeometry &geometry, std::size_t subdivisions);
 
 public:
-    static Polyhedron buildPolyhedron(const AbstractXCGeometry &geometry, std::size_t subdivisions);
-
     template<typename CollideGeometry>
-    static Polyhedron buildPolyhedron(CollideGeometry geometry, std::size_t subdivisions) {
-        return buildPolyhedron(PolymorphicCollideAdapter<CollideGeometry>(std::move(geometry)));
+    static Polyhedron buildPolyhedron(const CollideGeometry &geometry, std::size_t subdivisions) {
+        if constexpr (std::is_convertible_v<const CollideGeometry&, const AbstractXCGeometry&>)
+            return buildPolyhedron0(geometry, subdivisions);
+        else
+            return buildPolyhedron0(PolymorphicCollideAdapter<CollideGeometry>(geometry), subdivisions);
     }
 };
 
