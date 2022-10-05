@@ -1,11 +1,23 @@
 cmake_minimum_required(VERSION 3.10)
 project(rampack)
 
+if (NOT (CMAKE_COMPILER_IS_GNUCXX AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.0))
+    message(FATAL_ERROR "Only GCC 7+ is supporter")
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=native")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_GLIBCXX_CONCEPT_CHECKS -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC")
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+    message(STATUS "No CMAKE_BUILD_TYPE specified; using Release. Use -DCMAKE_BUILD_TYPE=... to specify it manually")
+endif()
+
+add_compile_options(-Wall -Wextra -pedantic)
+if (CMAKE_BUILD_TYPE MATCHES "Release")
+    add_compile_options(-O3 -march=native)
+elseif (CMAKE_BUILD_TYPE MATCHES "Debug")
+    add_compile_definitions(_GLIBCXX_CONCEPT_CHECKS _GLIBCXX_DEBUG _GLIBCXX_DEBUG_PEDANTIC _GLIBCXX_CONCEPT_CHECKS)
+endif()
 
 # Check for submodules
 if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/Catch2/CMakeLists.txt" OR
@@ -25,14 +37,11 @@ if(OpenMP_CXX_FOUND)
     link_libraries(OpenMP::OpenMP_CXX)
 endif()
 
-if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
-    message(STATUS "No CMAKE_BUILD_TYPE specified; using Release. Use -DCMAKE_BUILD_TYPE=... to specify it manually")
-endif()
-
 add_library(quickhull STATIC extern/quickhull/QuickHull.cpp)
 target_include_directories(quickhull PUBLIC extern/quickhull/)
-target_compile_options(quickhull PRIVATE "-Wno-maybe-uninitialized")
+target_compile_options(quickhull PRIVATE -Wno-maybe-uninitialized)
+# unset _GLIBCXX_CONCEPT_CHECKS for quickhull because it causes compilation errors
+target_compile_options(quickhull PRIVATE -U_GLIBCXX_CONCEPT_CHECKS)
 
 # Explicitly link filesystem library for older versions of GCC
 link_libraries(stdc++fs)
