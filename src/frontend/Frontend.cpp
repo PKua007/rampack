@@ -406,12 +406,27 @@ void Frontend::storeSnapshots(const ObservablesCollector &observablesCollector, 
 }
 
 void Frontend::storeWolframVisualization(const Packing &packing, const ShapePrinter &shapePrinter,
-                                         const std::string &wolframFilename) const
+                                         const std::string &wolframAttr) const
 {
-    std::ofstream out(wolframFilename);
-    ValidateOpenedDesc(out, wolframFilename, "to store Wolfram packing");
-    packing.toWolfram(out, shapePrinter);
-    this->logger.info() << "Wolfram packing stored to " + wolframFilename << std::endl;
+    std::istringstream wolframAttrStream(wolframAttr);
+    std::string filename;
+    std::string styleStr;
+    wolframAttrStream >> filename >> styleStr;
+    if (!wolframAttrStream)
+        styleStr = "standard";
+
+    Packing::WolframStyle wolframStyle{};
+    if (styleStr == "standard")
+        wolframStyle = Packing::WolframStyle::STANDARD;
+    else if (styleStr == "affineTransform")
+        wolframStyle = Packing::WolframStyle::AFFINE_TRANSFORM;
+    else
+        throw ValidationException("Unknown Packing::toWolfram style: " + styleStr);
+
+    std::ofstream out(filename);
+    ValidateOpenedDesc(out, filename, "to store Wolfram packing");
+    packing.toWolfram(out, shapePrinter, wolframStyle);
+    this->logger.info() << "Wolfram packing stored to " + filename << " using '" << styleStr << "' style" << std::endl;
 }
 
 void Frontend::storePacking(const Simulation &simulation, const std::string &packingFilename) {

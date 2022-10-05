@@ -53,7 +53,7 @@ private:
                             double pressure) const;
     void storePacking(const Simulation &simulation, const std::string &packingFilename);
     void storeWolframVisualization(const Packing &packing, const ShapePrinter &shapePrinter,
-                                   const std::string &wolframFilename) const;
+                                   const std::string &wolframAttr) const;
     void storeSnapshots(const ObservablesCollector &observablesCollector, bool isContinuation,
                         const std::string &observableSnapshotFilename) const;
     void storeBulkObservables(const ObservablesCollector &observablesCollector,
