@@ -217,15 +217,40 @@ const Shape &Packing::back() const {
     return this->shapes[this->size() - 1];
 }
 
-void Packing::toWolfram(std::ostream &out, const ShapePrinter &shapePrinter) const {
-    out << "Graphics3D[{" << std::endl;
-    for (std::size_t i{}; i < this->size(); i++) {
-        const auto &shape = shapes[i];
-        out << shapePrinter.toWolfram(shape);
-        if (i != this->size() - 1)
-            out << "," << std::endl;
+void Packing::toWolfram(std::ostream &out, const ShapePrinter &shapePrinter, WolframStyle style) const {
+    out << std::fixed;
+    switch (style) {
+        case WolframStyle::STANDARD: {
+            out << "Graphics3D[{" << std::endl;
+            for (std::size_t i{}; i < this->size(); i++) {
+                const auto &shape = this->shapes[i];
+                out << shapePrinter.toWolfram(shape);
+                if (i != this->size() - 1)
+                    out << "," << std::endl;
+            }
+            out << "}]";
+            break;
+        }
+
+        case WolframStyle::AFFINE_TRANSFORM: {
+            out << "Graphics3D[GeometricTransformation[" << std::endl;
+            out << shapePrinter.toWolfram({});
+            out << ",AffineTransform@#]& /@ {" << std::endl;
+            for (std::size_t i{}; i < this->size(); i++) {
+                Vector<3> pos = this->shapes[i].getPosition();
+                Matrix<3, 3> rot = this->shapes[i].getOrientation();
+                out << "{{{" << rot(0, 0) << ", " << rot(0, 1) << ", " << rot(0, 2) << "}, ";
+                out << "{" << rot(1, 0) << ", " << rot(1, 1) << ", " << rot(1, 2) << "}, ";
+                out << "{" << rot(2, 0) << ", " << rot(2, 1) << ", " << rot(2, 2) << "}}, ";
+                out << pos << "}";
+                if (i != this->size() - 1)
+                    out << ",";
+                out << std::endl;
+            }
+            out << "}]" << std::endl;
+            break;
+        }
     }
-    out << "}]";
 }
 
 double Packing::getPackingFraction(double shapeVolume) const {

@@ -25,6 +25,7 @@ private:
     std::map<std::string, Vector<3>> customNamedPoints{};
 
 public:
+    static constexpr std::size_t MESH_SUBDIVISIONS = 3;
 //    XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v, const std::string &attr,
 //                      std::map<std::string, Vector<3>> customNamedPoints = {})
 //            : primaryAxis{pa}, secondaryAxis{sa}, geometricOrigin{cm}, volume{v},
@@ -137,7 +138,7 @@ public:
         for (std::size_t i{}; i < centers.size(); i++) {
             const auto &geometry = thisConcreteTraits.getCollideGeometry(i);
             const auto &center = centers[i];
-            auto polyhedron = XCPrinter::buildPolyhedron(geometry, 2);
+            auto polyhedron = XCPrinter::buildPolyhedron(geometry, ConcreteCollideTraits::MESH_SUBDIVISIONS);
             std::string wolframPolyhedron = polyhedron.toWolfram();
 
             Vector<3> pos = shape.getPosition() + orientation * center;

@@ -133,6 +133,11 @@ private:
 public:
     using const_iterator = decltype(shapes)::const_iterator;
 
+    enum class WolframStyle {
+        STANDARD,
+        AFFINE_TRANSFORM
+    };
+
     static std::map<std::string, std::string> restoreAuxInfo(std::istream &in);
 
     /**
@@ -392,8 +397,9 @@ public:
      * @brief Represents a packing as a Wolfram Mathematica code.
      * @param out the output stream to store a packing
      * @param printer the object responsible for representing a single shape
+     * @param style style of the output
      */
-    void toWolfram(std::ostream &out, const ShapePrinter &printer) const;
+    void toWolfram(std::ostream &out, const ShapePrinter &printer, WolframStyle style = WolframStyle::STANDARD) const;
 
     /**
      * @brief Stores a packing in an internal representation form.
