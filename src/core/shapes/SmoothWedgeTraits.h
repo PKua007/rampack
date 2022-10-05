@@ -8,7 +8,7 @@
 #include "XenoCollideTraits.h"
 
 
-class SmoothWedgeTraits : public XenoCollideTraits<SmoothWedgeTraits>, public ShapePrinter {
+class SmoothWedgeTraits : public XenoCollideTraits<SmoothWedgeTraits> {
 public:
     class CollideGeometry {
     private:
@@ -55,8 +55,6 @@ public:
     }
 
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return this->interactionCentres; }
-    [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
-    [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
 };
 
 

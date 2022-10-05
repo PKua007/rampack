@@ -12,7 +12,7 @@
 
 
 
-XCPrinter::Polyhedron XCPrinter::buildPolyhedron(const AbstractXCGeometry &geometry, std::size_t subdivisions) {
+XCPrinter::Polyhedron XCPrinter::buildPolyhedron0(const AbstractXCGeometry &geometry, std::size_t subdivisions) {
     auto spherePoints = XCPrinter::generateSpherePoints(subdivisions);
 
     using QHVector = quickhull::Vector3<double>;
@@ -74,7 +74,7 @@ std::string XCPrinter::Polyhedron::toWolfram() const {
 
     out << "GraphicsComplex[{" << std::endl;
     for (std::size_t i{}; i < this->vertices.size(); i++) {
-        out << this->vertices[i];
+        out << "    " << this->vertices[i];
         if (i < this->vertices.size() - 1)
             out << ",";
         out << std::endl;
@@ -82,7 +82,7 @@ std::string XCPrinter::Polyhedron::toWolfram() const {
     out << "}," << std::endl << "Polygon[{" << std::endl;
     for (std::size_t i{}; i < this->triangles.size(); i++) {
         const auto &tri = this->triangles[i];
-        out << "{" << (tri[0] + 1) << "," << (tri[1] + 1) << "," << (tri[2] + 1) << "}";
+        out << "    {" << (tri[0] + 1) << ", " << (tri[1] + 1) << ", " << (tri[2] + 1) << "}";
         if (i < this->triangles.size() - 1)
             out << ",";
         out << std::endl;

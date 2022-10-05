@@ -7,14 +7,16 @@
 
 #include <map>
 #include <utility>
+#include <sstream>
 
 #include "core/ShapeTraits.h"
 #include "geometry/xenocollide/AbstractXCGeometry.h"
 #include "geometry/xenocollide/XenoCollide.h"
+#include "geometry/xenocollide/XCPrinter.h"
 
 
 template<typename ConcreteCollideTraits>
-class XenoCollideTraits : public ShapeTraits, public Interaction, public ShapeGeometry {
+class XenoCollideTraits : public ShapeTraits, public Interaction, public ShapeGeometry, public ShapePrinter {
 private:
     Vector<3> primaryAxis;
     Vector<3> secondaryAxis;
@@ -50,6 +52,7 @@ public:
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
+    [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
 
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const final {
         return shape.getOrientation() * this->primaryAxis;
@@ -119,6 +122,41 @@ public:
             return ShapeGeometry::getNamedPoint(pointName, shape);
 
         return shape.getPosition() + shape.getOrientation() * namedPoint->second;
+    }
+
+    [[nodiscard]] std::string toWolfram(const Shape &shape) const override {
+        std::ostringstream out;
+        out << "{EdgeForm[None]," << std::endl;
+
+        auto centers = this->getInteraction().getInteractionCentres();
+        if (centers.empty())
+            centers.push_back({0, 0, 0});
+
+        const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
+        Matrix<3, 3> orientation = shape.getOrientation();
+        for (std::size_t i{}; i < centers.size(); i++) {
+            const auto &geometry = thisConcreteTraits.getCollideGeometry(i);
+            const auto &center = centers[i];
+            auto polyhedron = XCPrinter::buildPolyhedron(geometry, 2);
+            std::string wolframPolyhedron = polyhedron.toWolfram();
+
+            Vector<3> pos = shape.getPosition() + orientation * center;
+
+            out << "GeometricTransformation[" << wolframPolyhedron << "," << std::endl;
+            out << "AffineTransform[" << std::endl;
+            out << "    {{{" << orientation(0, 0) << ", " << orientation(0, 1) << ", " << orientation(0, 2) << "}," << std::endl;
+            out << "      {" << orientation(1, 0) << ", " << orientation(1, 1) << ", " << orientation(1, 2) << "}," << std::endl;
+            out << "      {" << orientation(2, 0) << ", " << orientation(2, 1) << ", " << orientation(2, 2) << "}}," << std::endl;
+            out << "      " << pos << "}]" << std::endl;
+            out << "]";
+
+            if (i < centers.size() - 1)
+                out << ",";
+            out << std::endl;
+        }
+        out << "}";
+
+        return out.str();
     }
 };
 
