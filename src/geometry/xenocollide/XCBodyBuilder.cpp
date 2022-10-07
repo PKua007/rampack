@@ -92,8 +92,8 @@ void XCBodyBuilder::dup(std::size_t numShapes){
 
 void XCBodyBuilder::football(double length, double radius){
     Validate(length > 0 && radius > 0);
-    Validate(length >= radius);
-    auto geom = std::make_shared<CollideFootball>(length, radius);
+    Validate(length >= 2*radius);
+    auto geom = std::make_shared<CollideFootball>(length/2, radius);
     mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
@@ -223,9 +223,10 @@ void XCBodyBuilder::processCommand(std::string cmd){
         this->ellipse(semiAxisX, semiAxisY);
     }
     else if(command == "ellipsoid"){
-        double rx, ry, rz;
-        ss >> rx >> ry >> rz;
-        this->ellipsoid(rx, ry, rz);
+        double semiAxisX, semiAxisY, semiAxisZ;
+        ss >> semiAxisX >> semiAxisY >> semiAxisZ;
+        ValidateMsg(ss, "Malformed command arguments. Usage: ellipsoid [semi-axis x] [semi-axis y] [semi-axis z]");
+        this->ellipsoid(semiAxisX, semiAxisY, semiAxisZ);
     }
     else if (command == "football"){
         double length, radius;
