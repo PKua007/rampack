@@ -191,6 +191,7 @@ Config Config::fetchSubconfig(const std::string &section) const {
             }
         }
     }
+    result.buildSections();
     result.buildRootSections();
     return result;
 }
