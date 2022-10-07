@@ -22,12 +22,13 @@ not be misrepresented as being the original software.
  * Adapted by Michal Ciesla and Piotr Kubala
  */
 
-#include "XCBodyBuilder.h"
-#include "../../utils/Utils.h"
-#include "../../utils/Assertions.h"
 #include <list>
 #include <sstream>
 #include <string>
+
+#include "XCBodyBuilder.h"
+#include "utils/Utils.h"
+#include "utils/Assertions.h"
 
 
 std::shared_ptr<AbstractXCGeometry> XCBodyBuilder::getCollideGeometry(){
@@ -37,8 +38,9 @@ std::shared_ptr<AbstractXCGeometry> XCBodyBuilder::getCollideGeometry(){
     return s.geom;
 }
 
-void XCBodyBuilder::cuboid(double x, double y, double z){
-    auto geom = std::make_shared<CollideBox>(Vector<3>({x, y, z}));
+void XCBodyBuilder::cuboid(double sideX, double sideY, double sideZ){
+    Validate(sideX > 0 && sideY > 0 && sideZ > 0);
+    auto geom = std::make_shared<CollideBox>(Vector<3>({sideX / 2, sideY / 2, sideZ / 2}));
     mShapeStack.push_back(std::make_shared<XCShape>(geom));
 }
 
@@ -47,8 +49,8 @@ void XCBodyBuilder::clear(){
 }
 
 void XCBodyBuilder::diff(){
-    if (mShapeStack.size() < 2)
-        return;
+    ValidateMsg(this->mShapeStack.size() >= 2, "Shape stack contains < 2 shapes; cannot compute Minkowski difference");
+
     auto shape2 = mShapeStack.back();
     mShapeStack.pop_back();
 
@@ -60,24 +62,27 @@ void XCBodyBuilder::diff(){
     mShapeStack.push_back(newShape);
 }
 
-void XCBodyBuilder::disc(double x){
-    auto geom = std::make_shared<CollideDisc>(x);
+void XCBodyBuilder::disk(double radius){
+    Validate(radius > 0);
+    auto geom = std::make_shared<CollideDisc>(radius);
     mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
-void XCBodyBuilder::ellipse(double x, double y){
-    auto geom = std::make_shared<CollideEllipse>(x, y);
+void XCBodyBuilder::ellipse(double semiAxisX, double semiAxisY){
+    Validate(semiAxisX > 0 && semiAxisY > 0);
+    auto geom = std::make_shared<CollideEllipse>(semiAxisX, semiAxisY);
     mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
-void XCBodyBuilder::dup(size_t n){
-    if (mShapeStack.size() < n)
+void XCBodyBuilder::dup(std::size_t numShapes){
+    Validate(numShapes > 0);
+    if (mShapeStack.size() < numShapes)
         return;
     auto it = mShapeStack.end();
-    for (size_t i=0; i < n; i++){
+    for (size_t i=0; i < numShapes; i++){
         it--;
     }
-    for (size_t i=0; i < n; i++){
+    for (size_t i=0; i < numShapes; i++){
         auto s = std::make_shared<XCShape>();
         *s = **it;
         mShapeStack.push_back( s );
@@ -85,14 +90,15 @@ void XCBodyBuilder::dup(size_t n){
     }
 }
 
-void XCBodyBuilder::football(double l, double w){
-    auto geom = std::make_shared<CollideFootball>(l,w);
+void XCBodyBuilder::football(double length, double radius){
+    Validate(length > 0 && radius > 0);
+    Validate(length >= radius);
+    auto geom = std::make_shared<CollideFootball>(length, radius);
     mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
 void XCBodyBuilder::move(double x, double y, double z){
-    if (mShapeStack.size() < 1)
-        return;
+    ValidateMsg(!this->mShapeStack.empty(), "Shape stack is empty; cannot move");
     mShapeStack.back()->x += Vector<3>({x, y, z});
 }
 
@@ -102,45 +108,49 @@ void XCBodyBuilder::point(double x, double y, double z){
 }
 
 void XCBodyBuilder::pop(){
-    if (mShapeStack.size() < 1)
-        return;
+    ValidateMsg(!this->mShapeStack.empty(), "Shape stack is empty; cannot pop last element");
     mShapeStack.pop_back();
 }
 
-void::XCBodyBuilder::rect(double x, double y){
-    auto geom = std::make_shared<CollideRectangle>(x, y);
+void::XCBodyBuilder::rectangle(double sideX, double sideY){
+    Validate(sideX > 0 && sideY > 0);
+    auto geom = std::make_shared<CollideRectangle>(sideX / 2, sideY / 2);
     mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
 void XCBodyBuilder::rot(double x, double y, double z){
-    if (mShapeStack.size() < 1)
-        return;
+    ValidateMsg(!this->mShapeStack.empty(), "Shape stack is empty; cannot rotate");
     mShapeStack.back()->m = Matrix<3,3>::rotation(x*M_PI/180.0, y*M_PI/180.0, z*M_PI/180.0) * mShapeStack.back()->m;
 }
 
-void XCBodyBuilder::saucer(double r, double t){
-    auto geom = std::make_shared<CollideSaucer>(r,t);
+void XCBodyBuilder::saucer(double radius, double thickness){
+    Validate(radius > 0 && thickness > 0);
+    Validate(thickness <= 2*radius);
+    auto geom = std::make_shared<CollideSaucer>(radius, thickness/2);
     mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
-void XCBodyBuilder::segment(double l){
-    auto geom = std::make_shared<CollideSegment>(l);
+void XCBodyBuilder::segment(double length){
+    Validate(length > 0);
+    auto geom = std::make_shared<CollideSegment>(length / 2);
     mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
-void XCBodyBuilder::sphere(double r){
-    auto geom = std::make_shared<CollideSphere>(r);
+void XCBodyBuilder::sphere(double radius){
+    Validate(radius > 0);
+    auto geom = std::make_shared<CollideSphere>(radius);
     mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
-void XCBodyBuilder::ellipsoid(double rx, double ry, double rz){
-    auto geom = std::make_shared<CollideEllipsoid>(Vector<3>({rx, ry, rz}));
+void XCBodyBuilder::ellipsoid(double semiAxisX, double semiAxisY, double semiAxisZ){
+    Validate(semiAxisX > 0 && semiAxisY > 0 && semiAxisZ > 0);
+    auto geom = std::make_shared<CollideEllipsoid>(Vector<3>({semiAxisX, semiAxisY, semiAxisZ}));
     mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
 void XCBodyBuilder::swap(){
-    if (mShapeStack.size() < 2)
-        return;
+    ValidateMsg(this->mShapeStack.size() >= 2, "Shape stack contains < 2 shapes; cannot swap them");
+
     auto s1 = mShapeStack.back();
     mShapeStack.pop_back();
 
@@ -151,9 +161,9 @@ void XCBodyBuilder::swap(){
     mShapeStack.push_back(s2);
 }
 
-void XCBodyBuilder::sweep(){
-    if (mShapeStack.size() < 2)
-        return;
+void XCBodyBuilder::sum(){
+    ValidateMsg(this->mShapeStack.size() >= 2, "Shape stack contains < 2 shapes; cannot compute Minkowski sum");
+
     auto shape1 = mShapeStack.back();
     mShapeStack.pop_back();
 
@@ -166,8 +176,8 @@ void XCBodyBuilder::sweep(){
 }
 
 void XCBodyBuilder::wrap(){
-    if (mShapeStack.size() < 2)
-        return;
+    ValidateMsg(this->mShapeStack.size() >= 2, "Shape stack contains < 2 shapes; cannot compute convex hull");
+
     auto shape1 = mShapeStack.back();
     mShapeStack.pop_back();
 
@@ -179,104 +189,104 @@ void XCBodyBuilder::wrap(){
     mShapeStack.push_back(newShape);
 }
 
-//////////////////////////////////////////////////////////////
-
-
-void XCBodyBuilder::ProcessCommand(std::string commandLine){
-    commandLine = trim(commandLine);
-    std::stringstream ss(commandLine);
+void XCBodyBuilder::processCommand(std::string cmd){
+    cmd = trim(cmd);
+    std::stringstream ss(cmd);
     std::string command;
     ss >> command;
 
-    if (command == "cube"){
-        double x, y, z;
-        ss >> x;
-        ss >> y;
-        ss >> z;
-        this->cuboid(x, y, z);
+    if (command == "cuboid"){
+        double sideX, sideY, sideZ;
+        ss >> sideX >> sideY >> sideZ;
+        ValidateMsg(ss, "Malformed command arguments. Usage: cuboid [side x] [side y] [side z]");
+        this->cuboid(sideX, sideY, sideZ);
     }
     else if (command == "diff"){
         this->diff();
     }
-    else if (command == "ellipse"){
-        double x;
-        ss >> x;
-        this->disc(x);
-    }
-    else if (command == "ellipse"){
-        double x, y;
-        ss >> x >> y;
-        this->ellipse(x, y);
+    else if (command == "disk"){
+        double radius;
+        ss >> radius;
+        ValidateMsg(ss, "Malformed command arguments. Usage: disk [radius]");
+        this->disk(radius);
     }
     else if (command == "dup"){
-        size_t n;
-        ss >> n;
-        this->dup(n);
+        std::size_t numShapes;
+        ss >> numShapes;
+        ValidateMsg(ss, "Malformed command arguments. Usage: dup [number of shapes]");
+        this->dup(numShapes);
+    }
+    else if (command == "ellipse"){
+        double semiAxisX, semiAxisY;
+        ss >> semiAxisX >> semiAxisY;
+        ValidateMsg(ss, "Malformed command arguments. Usage: ellipse [semi-axis x] [semi-axis y]");
+        this->ellipse(semiAxisX, semiAxisY);
+    }
+    else if(command == "ellipsoid"){
+        double rx, ry, rz;
+        ss >> rx >> ry >> rz;
+        this->ellipsoid(rx, ry, rz);
     }
     else if (command == "football"){
-        double l, w;
-        ss >> l;
-        ss >> w;
-        this->football(l, w);
+        double length, radius;
+        ss >> length >> radius;
+        ValidateMsg(ss, "Malformed command arguments. Usage: football [length] [radius]");
+        this->football(length, radius);
     }
     else if (command == "move"){
         double x, y, z;
-        ss >> x;
-        ss >> y;
-        ss >> z;
+        ss >> x >> y >> z;
+        ValidateMsg(ss, "Malformed command arguments. Usage: move [delta x] [delta y] [delta z]");
         this->move(x, y, z);
     }
     else if (command == "point"){
         double x, y, z;
-        ss >> x;
-        ss >> y;
-        ss >> z;
+        ss >> x  >> y >> z;
+        ValidateMsg(ss, "Malformed command arguments. Usage: point [x] [y] [z]");
         this->point(x, y, z);
     }
     else if (command == "pop"){
         this->pop();
     }
-    else if (command == "rect"){
-        double x, y;
-        ss >> x;
-        ss >> y;
-        this->rect(x, y);
+    else if (command == "rectangle"){
+        double sideX, sideY;
+        ss >> sideX  >> sideY;
+        ValidateMsg(ss, "Malformed command arguments. Usage: rectangle [side x] [side y]");
+        this->rectangle(sideX, sideY);
     }
     else if (command == "rot"){
-        double x, y, z;
-        ss >> x;
-        ss >> y;
-        ss >> z;
-        this->rot(x, y, z);
+        double angleX, angleY, angleZ;
+        ss >> angleX >> angleY >> angleZ;
+        ValidateMsg(ss, "Malformed command arguments. Usage: rot [angle x] [angle y] [angle z]");
+        this->rot(angleX, angleY, angleZ);
     }
     else if (command == "saucer"){
-        double r, t;
-        ss >> r;
-        ss >> t;
-        this->saucer(r, t);
+        double radius, thickness;
+        ss >> radius >> thickness;
+        ValidateMsg(ss, "Malformed command arguments. Usage: saucer [radius] [thickness]");
+        this->saucer(radius, thickness);
     }
     else if (command == "segment"){
-        double x;
-        ss >> x;
-        this->segment(x);
+        double length;
+        ss >> length;
+        ValidateMsg(ss, "Malformed command arguments. Usage: segment [length]");
+        this->segment(length);
     }
     else if(command=="sphere"){
-        double r;
-        ss >> r;
-        this->sphere(r);
+        double radius;
+        ss >> radius;
+        ValidateMsg(ss, "Malformed command arguments. Usage: sphere [radius]");
+        this->sphere(radius);
     }
-    else if(command=="ellipsoid"){
-        double rx, ry, rz;
-        ss >> rx >> ry >> rz;
-        this->ellipsoid(rx, ry, rz);
+    else if (command == "sum"){
+        this->sum();
     }
     else if (command == "swap"){
         this->swap();
     }
-    else if (command == "sweep"){
-        this->sweep();
-    }
     else if (command == "wrap"){
         this->wrap();
+    } else {
+        throw ValidationException("Unknown XCBodyBuilder command: " + command);
     }
 }

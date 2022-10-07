@@ -137,7 +137,7 @@ namespace {
 
         XCBodyBuilder builder;
         for (const auto &command : commands)
-            builder.ProcessCommand(command);
+            builder.processCommand(command);
 
         auto collideGeometry = builder.getCollideGeometry();
 
