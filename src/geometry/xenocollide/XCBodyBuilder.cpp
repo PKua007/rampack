@@ -31,11 +31,17 @@ not be misrepresented as being the original software.
 #include "utils/Assertions.h"
 
 
-std::shared_ptr<AbstractXCGeometry> XCBodyBuilder::getCollideGeometry(){
-    if (mShapeStack.empty())
-        throw ValidationException("BodyBuilder: shape stack empty");
-    XCShape& s = *mShapeStack.back();
-    return s.geom;
+std::shared_ptr<AbstractXCGeometry> XCBodyBuilder::releaseCollideGeometry(){
+    if (mShapeStack.empty()) {
+        throw ValidationException("XCBodyBuilder: shape stack is empty");
+    } else if (mShapeStack.size() > 1) {
+        throw ValidationException("XCBodyBuilder: shape stack contains more than 1 shape; did you forget to use "
+                                  "sum, diff or wrap?");
+    }
+
+    auto geom = mShapeStack.back()->geom;
+    this->clear();
+    return geom;
 }
 
 void XCBodyBuilder::cuboid(double sideX, double sideY, double sideZ){

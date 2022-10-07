@@ -17,7 +17,7 @@ TEST_CASE("XenoCollidePrinter") {
     bb.sphere(r);
     bb.move(l/2, 0, 0);
     bb.wrap();
-    auto geometry = bb.getCollideGeometry();
+    auto geometry = bb.releaseCollideGeometry();
 
     auto polyhedron = XCPrinter::buildPolyhedron(*geometry, 5);
 

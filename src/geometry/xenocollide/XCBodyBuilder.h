@@ -64,7 +64,7 @@ public:
     void clear();
 
     void processCommand(std::string cmd);
-    std::shared_ptr<AbstractXCGeometry> getCollideGeometry();
+    std::shared_ptr<AbstractXCGeometry> releaseCollideGeometry();
 
 private:
     struct XCShape{
