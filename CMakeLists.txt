@@ -23,7 +23,8 @@ endif()
 if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/Catch2/CMakeLists.txt" OR
         NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/trompeloeil/CMakeLists.txt" OR
         NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/cxxopts/CMakeLists.txt" OR
-        NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/ZipIterator/ZipIterator.hpp")
+        NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/ZipIterator/ZipIterator.hpp" OR
+        NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/quickhull/QuickHull.hpp")
     if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
         message(FATAL_ERROR "Some submodules are not present. Execute: git submodule update --init")
     else()

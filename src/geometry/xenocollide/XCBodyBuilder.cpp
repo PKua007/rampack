@@ -213,7 +213,7 @@ void XCBodyBuilder::wrap(){
 //////////////////////////////////////////////////////////////
 
 
-void XCBodyBuilder::ProcessCommand(std::string& commandLine){
+void XCBodyBuilder::ProcessCommand(std::string commandLine){
 	commandLine = trim(commandLine);
 	std::stringstream ss(commandLine);
 	std::string command;
@@ -249,14 +249,6 @@ void XCBodyBuilder::ProcessCommand(std::string& commandLine){
 		size_t n;
 		ss >> n;
 		this->dup(n);
-	}
-	else if (command == "script"){
-		std::string commands;
-		std::getline(ss, commands, '\0');
-		std::stringstream commandsStream(commands);
-		std::string cmdLine;
-		while (std::getline(commandsStream, cmdLine, '&'))
-			this->ProcessCommand(cmdLine);
 	}
 	else if (command == "football"){
 		double l, w;
