@@ -37,8 +37,8 @@ public:
     virtual ~AbstractXCGeometry() = default;
 
     [[nodiscard]] virtual Vector<3> getSupportPoint(const Vector<3>& n) const = 0;
-    [[nodiscard]] virtual Vector<3> getCenter() const;
-    [[nodiscard]] virtual double getCircumsphereRadius() const { return 0; };
+    [[nodiscard]] virtual Vector<3> getCenter() const { return {}; };
+    [[nodiscard]] virtual double getCircumsphereRadius() const = 0;
 };
 
 
