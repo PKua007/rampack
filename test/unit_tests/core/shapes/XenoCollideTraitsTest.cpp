@@ -33,7 +33,7 @@ namespace {
             bb.sphere(r);
             bb.move(l/2, 0, 0);
             bb.wrap();
-            return bb.getCollideGeometry();
+            return bb.releaseCollideGeometry();
         }
 
         std::shared_ptr<AbstractXCGeometry> shapeModel;

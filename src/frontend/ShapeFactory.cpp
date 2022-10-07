@@ -139,8 +139,7 @@ namespace {
         for (const auto &command : commands)
             builder.processCommand(command);
 
-        auto collideGeometry = builder.getCollideGeometry();
-
+        auto collideGeometry = builder.releaseCollideGeometry();
         return std::make_shared<GenericXenoCollideTraits>(
             std::move(collideGeometry), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
         );
