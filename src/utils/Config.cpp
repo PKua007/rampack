@@ -15,14 +15,32 @@ Config Config::parse(std::istream &in, char delim, bool allowRedefinition) {
 
     Config result;
     std::size_t lineNum = 0;
+    bool lastLineContinued = false;
     std::string line;
+    std::string partialLine;
     std::string currentSection;
-    while (std::getline(in, line)) {
+    while (std::getline(in, partialLine)) {
         lineNum++;
-        stripComment(line);
-        trim(line);
-        if (line.empty())
+        stripComment(partialLine);
+        trim(partialLine);
+        if (partialLine.empty())
             continue;
+
+        if (lastLineContinued)
+            line += "\n";
+        else
+            line = "";
+
+        if (partialLine.back() == '\\') {
+            std::string partialLineTrimmed = partialLine.substr(0, partialLine.size() - 1);
+            trim(partialLineTrimmed);
+            line += partialLineTrimmed;
+            lastLineContinued = true;
+            continue;
+        } else {
+            line += partialLine;
+            lastLineContinued = false;
+        }
 
         if (isItSectionEntry(line, lineNum)) {
             currentSection = line.substr(1, line.size() - 2) + ".";
@@ -39,6 +57,9 @@ Config Config::parse(std::istream &in, char delim, bool allowRedefinition) {
         if (!result.hasField(field.key))
             result.keys.push_back(field.key);
     }
+
+    if (lastLineContinued)
+        throw ConfigParseException("Unexpected end after line continuation '\\' in line " + std::to_string(lineNum));
 
     result.buildSections();
     result.buildRootSections();

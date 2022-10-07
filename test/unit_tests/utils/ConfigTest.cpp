@@ -79,3 +79,35 @@ TEST_CASE("Config: parsing sections tree") {
         }
     }
 }
+
+TEST_CASE("Config: line continuation") {
+    SECTION("correct") {
+        std::stringstream in;
+        in << "k1 = 1" << std::endl;
+        in << "k2 = 2 \\" << std::endl;
+        in << "continued" << std::endl;
+        in << "k3 = 3 \\  # comment" << std::endl;
+        in << "    " << std::endl;
+        in << " this = looks like key \\" << std::endl;
+        in << "the end  " << std::endl;
+        in << "k4 = 4" << std::endl;
+
+        auto config = Config::parse(in);
+
+        REQUIRE_THAT(config.getKeys(), Catch::UnorderedEquals(std::vector<std::string>{"k1", "k2", "k3", "k4"}));
+        CHECK(config.getString("k1") == "1");
+        CHECK(config.getString("k2") == "2\ncontinued");
+        CHECK(config.getString("k3") == "3\nthis = looks like key\nthe end");
+        CHECK(config.getString("k4") == "4");
+    }
+
+    SECTION("unexpected end") {
+        std::stringstream in;
+        in << "k1 = 1" << std::endl;
+        in << "k2 = 2 \\" << std::endl;
+        in << "    # comment" << std::endl;
+        in << "  " << std::endl;
+
+        CHECK_THROWS_WITH(Config::parse(in), Catch::Contains("unexpected end", Catch::CaseSensitive::No));
+    }
+}
