@@ -27,6 +27,7 @@ not be misrepresented as being the original software.
 
 #include "utils/Assertions.h"
 #include "XCPrimitives.h"
+#include "XCOperations.h"
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -105,56 +106,16 @@ Vector<3> AbstractXCGeometry::getCenter() const
 //////////////////////////////////////////////////////////////////////////////
 // CollideSum
 
-CollideSum::CollideSum(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1,
-                       std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2)
-        : m1{m1}, m2{m2}, t1{t1}, t2{t2}, mGeometry1{std::move(g1)}, mGeometry2{std::move(g2)}
-{
-    double circumsphere1 = this->mGeometry1->getCircumsphereRadius();
-    double circumsphere2 = this->mGeometry2->getCircumsphereRadius();
-    this->circumsphereRadius = (this->t1 + this->t2).norm() + circumsphere1 + circumsphere2;
-}
-
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideSum::getSupportPoint(const Vector<3>& n) const
-{
-    return m1*(mGeometry1->getSupportPoint((m1.transpose() * n))) + t1 + m2 * (mGeometry2->getSupportPoint(
-            (m2.transpose() * n))) + t2;
-}
-
 //////////////////////////////////////////////////////////////////////////////
-
-Vector<3> CollideSum::getCenter() const
-{
-    return m1*(mGeometry1->getCenter()) + t1 + m2 * (mGeometry2->getCenter()) + t2;
-}
 
 //////////////////////////////////////////////////////////////////////////////
 // CollideDiff
 
-CollideDiff::CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1,
-                         std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2)
-        : m1{m1}, m2{m2}, t1{t1}, t2{t2}, mGeometry1{std::move(g1)}, mGeometry2{std::move(g2)}
-{
-    double circumsphere1 = this->mGeometry1->getCircumsphereRadius();
-    double circumsphere2 = this->mGeometry2->getCircumsphereRadius();
-    this->circumsphereRadius = (this->t1 - this->t2).norm() + circumsphere1 + circumsphere2;
-}
-
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideDiff::getSupportPoint(const Vector<3>& n) const
-{
-    return m1*(mGeometry1->getSupportPoint(m1.transpose() * n)) + t1 - m2 * (mGeometry2->getSupportPoint(
-            (m2.transpose()) * (-n))) - t2;
-}
-
 //////////////////////////////////////////////////////////////////////////////
-
-Vector<3> CollideDiff::getCenter() const
-{
-    return m1*(mGeometry1->getCenter()) + t1 - m2 * (mGeometry2->getCenter()) - t2;
-}
 
 //////////////////////////////////////////////////////////////////////////////
 // CollideNeg
@@ -166,37 +127,9 @@ Vector<3> CollideDiff::getCenter() const
 //////////////////////////////////////////////////////////////////////////////
 // CollideMax
 
-CollideMax::CollideMax(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,3>& m1, const Vector<3>& t1,
-                       std::shared_ptr<AbstractXCGeometry> g2, const Matrix<3,3>& m2, const Vector<3>& t2)
-        : m1{m1}, m2{m2}, t1{t1}, t2{t2}, mGeometry1{std::move(g1)}, mGeometry2{std::move(g2)}
-{
-    double circumsphere1 = this->t1.norm() + this->mGeometry1->getCircumsphereRadius();
-    double circumsphere2 = this->t2.norm() + this->mGeometry2->getCircumsphereRadius();
-    this->circumsphereRadius = std::max(circumsphere1, circumsphere2);
-}
-
 //////////////////////////////////////////////////////////////////////////////
 
-Vector<3> CollideMax::getSupportPoint(const Vector<3>& n) const
-{
-    Vector<3> v1 = m1*(mGeometry1->getSupportPoint((m1.transpose()) * (n))) + t1;
-    Vector<3> v2 = m2*(mGeometry2->getSupportPoint((m2.transpose()) * (n))) + t2;
-
-    if ( (v2-v1) * n > 0 )
-    {
-        return v2;
-    }
-
-    return v1;
-}
-
 //////////////////////////////////////////////////////////////////////////////
-
-Vector<3> CollideMax::getCenter() const
-{
-    // Return the average of the two centers
-    return 0.5 * (m1*(mGeometry1->getCenter()) + t1 + m2 * (mGeometry2->getCenter()) + t2);
-}
 
 //////////////////////////////////////////////////////////////////////////////
 
