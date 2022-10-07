@@ -111,6 +111,7 @@ public:
 
     [[nodiscard]] std::string toWolfram(const Shape &shape) const override {
         std::ostringstream out;
+        out << std::fixed;
         out << "{EdgeForm[None]," << std::endl;
 
         auto centers = this->getInteraction().getInteractionCentres();

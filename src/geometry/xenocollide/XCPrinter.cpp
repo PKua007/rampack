@@ -71,6 +71,7 @@ XCPrinter::VertexList XCPrinter::generateSpherePoints(std::size_t subdivisions) 
 
 std::string XCPrinter::Polyhedron::toWolfram() const {
     std::ostringstream out;
+    out << std::fixed;
 
     out << "GraphicsComplex[{" << std::endl;
     for (std::size_t i{}; i < this->vertices.size(); i++) {

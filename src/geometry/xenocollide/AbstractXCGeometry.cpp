@@ -170,7 +170,7 @@ CollideDisc::CollideDisc(double r)
 Vector<3> CollideDisc::getSupportPoint(const Vector<3>& n) const
 {
     Vector<3> n2 = n;
-    n2[3] = 0;
+    n2[2] = 0;
     if (is_vector_zero(n2))
     {
         Vector<3> v({0, 0, 0});
