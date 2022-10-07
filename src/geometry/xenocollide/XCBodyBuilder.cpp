@@ -30,29 +30,6 @@ not be misrepresented as being the original software.
 #include <string>
 
 
-//////////////////////////////////////////////////////////////
-
-double XCBodyBuilder::getMaxRadius() const
-{
-    const XCShape& s = *mShapeStack.back();
-    const AbstractXCGeometry &collideModel = *s.geom;
-    double radiusNegX = std::abs(collideModel.getSupportPoint(Vector<3>({-1, 0, 0}))[0]);
-    double radiusPosX = std::abs(collideModel.getSupportPoint(Vector<3>({1, 0, 0}))[0]);
-    double radiusNegY = std::abs(collideModel.getSupportPoint(Vector<3>({0, -1, 0}))[1]);
-    double radiusPosY = std::abs(collideModel.getSupportPoint(Vector<3>({0, 1, 0}))[1]);
-    double radiusNegZ = std::abs(collideModel.getSupportPoint(Vector<3>({0, 0, -1}))[2]);
-    double radiusPosZ = std::abs(collideModel.getSupportPoint(Vector<3>({0, 0, 1}))[2]);
-
-    Vector<3> maxRadiusVector
-    ({
-        std::max(radiusNegX, radiusPosX),
-        std::max(radiusNegY, radiusPosY),
-        std::max(radiusNegZ, radiusPosZ)
-    });
-
-    return maxRadiusVector.norm();
-}
-
 std::shared_ptr<AbstractXCGeometry> XCBodyBuilder::getCollideGeometry(){
     if (mShapeStack.empty())
         throw ValidationException("BodyBuilder: shape stack empty");
@@ -60,15 +37,7 @@ std::shared_ptr<AbstractXCGeometry> XCBodyBuilder::getCollideGeometry(){
     return s.geom;
 }
 
-void XCBodyBuilder::axis(double x){
-    auto geom = std::make_shared<CollideSegment>(x);
-    mShapeStack.push_back(std::make_shared<XCShape>(geom));
-    Matrix<3, 3>::rotation(Vector<3>{0,0,1}, M_PI/2);
-    mShapeStack.push_back(std::make_shared<XCShape>(geom, Matrix<3, 3>::rotation(Vector<3>{0,0,1}, M_PI/2), Vector<3>({0, 0, 0}) ) );
-    mShapeStack.push_back(std::make_shared<XCShape>(geom, Matrix<3, 3>::rotation(Vector<3>{0,1,0}, M_PI/2), Vector<3>({0, 0, 0}) ) );
-}
-
-void XCBodyBuilder::box(double x, double y, double z){
+void XCBodyBuilder::cuboid(double x, double y, double z){
     auto geom = std::make_shared<CollideBox>(Vector<3>({x, y, z}));
     mShapeStack.push_back(std::make_shared<XCShape>(geom));
 }
@@ -96,7 +65,7 @@ void XCBodyBuilder::disc(double x){
     mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
-void XCBodyBuilder::disc(double x, double y){
+void XCBodyBuilder::ellipse(double x, double y){
     auto geom = std::make_shared<CollideEllipse>(x, y);
     mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
@@ -106,7 +75,7 @@ void XCBodyBuilder::dup(size_t n){
         return;
     auto it = mShapeStack.end();
     for (size_t i=0; i < n; i++){
-            it--;
+        it--;
     }
     for (size_t i=0; i < n; i++){
         auto s = std::make_shared<XCShape>();
@@ -164,7 +133,7 @@ void XCBodyBuilder::sphere(double r){
     mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
 
-void XCBodyBuilder::sphere(double rx, double ry, double rz){
+void XCBodyBuilder::ellipsoid(double rx, double ry, double rz){
     auto geom = std::make_shared<CollideEllipsoid>(Vector<3>({rx, ry, rz}));
     mShapeStack.push_back( std::make_shared<XCShape>(geom) );
 }
@@ -219,31 +188,25 @@ void XCBodyBuilder::ProcessCommand(std::string commandLine){
     std::string command;
     ss >> command;
 
-    if (command == "axis"){
-        double x;
-        ss >> x;
-        this->axis(x);
-    }
-    else if (command == "box"){
+    if (command == "cube"){
         double x, y, z;
         ss >> x;
         ss >> y;
         ss >> z;
-        this->box(x, y, z);
+        this->cuboid(x, y, z);
     }
     else if (command == "diff"){
         this->diff();
     }
-    else if (command == "disc"){
+    else if (command == "ellipse"){
         double x;
         ss >> x;
-        if(!ss.eof()){
-            double y;
-            ss >> y;
-            this->disc(x, y);
-        }else{
-            this->disc(x);
-        }
+        this->disc(x);
+    }
+    else if (command == "ellipse"){
+        double x, y;
+        ss >> x >> y;
+        this->ellipse(x, y);
     }
     else if (command == "dup"){
         size_t n;
@@ -298,15 +261,14 @@ void XCBodyBuilder::ProcessCommand(std::string commandLine){
         this->segment(x);
     }
     else if(command=="sphere"){
+        double r;
+        ss >> r;
+        this->sphere(r);
+    }
+    else if(command=="ellipsoid"){
         double rx, ry, rz;
-        ss >> rx;
-        if(!ss.eof()){
-            ss >> ry;
-            ss >> rz;
-            this->sphere(rx, ry, rz);
-        }else{
-            this->sphere(rx);
-        }
+        ss >> rx >> ry >> rz;
+        this->ellipsoid(rx, ry, rz);
     }
     else if (command == "swap"){
         this->swap();
@@ -318,5 +280,3 @@ void XCBodyBuilder::ProcessCommand(std::string commandLine){
         this->wrap();
     }
 }
-
-//////////////////////////////////////////////////////////////

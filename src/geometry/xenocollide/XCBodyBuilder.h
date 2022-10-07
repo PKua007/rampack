@@ -36,17 +36,16 @@ class XCBodyBuilder
 
 public:
     // shapes
-    void axis(double x);
-    void box(double x, double y, double z);
+    void cuboid(double x, double y, double z);
     void disc(double x);
-    void disc(double x, double y);
+    void ellipse(double x, double y);
     void football(double l, double w);
     void point(double x, double y, double z);
     void rect(double x, double y);
     void saucer(double r, double t);
     void segment(double l);
     void sphere(double x);
-    void sphere(double x, double y, double z);
+    void ellipsoid(double x, double y, double z);
 
     // shapes transformations
     void move(double x, double y, double z);
@@ -65,7 +64,6 @@ public:
 
     void ProcessCommand(std::string cmd);
     std::shared_ptr<AbstractXCGeometry> getCollideGeometry();
-    [[nodiscard]] double getMaxRadius() const;
 
 private:
     struct XCShape{
