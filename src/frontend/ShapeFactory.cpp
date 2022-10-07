@@ -120,7 +120,7 @@ namespace {
         std::vector<std::string> requiredFields{"script", "primaryAxis", "secondaryAxis", "geometricOrigin", "volume"};
         std::vector<std::string> allFields = requiredFields;
         allFields.emplace_back("namedPoints");
-        auto fieldsMap = ParseUtils::parseFields(requiredFields, in);
+        auto fieldsMap = ParseUtils::parseFields(allFields, in);
         ValidateMsg(has_all_fields(fieldsMap, requiredFields), GENERIC_XENO_COLLIDE_USAGE);
 
         Vector<3> primaryAxis = parse_axis(fieldsMap.at("primaryAxis"));
