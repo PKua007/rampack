@@ -11,6 +11,7 @@
 
 #include "matchers/VectorApproxMatcher.h"
 #include "geometry/xenocollide/XCBodyBuilder.h"
+#include "geometry/xenocollide/XCPrimitives.h"
 
 
 namespace {
