@@ -32,12 +32,6 @@ not be misrepresented as being the original software.
 #include "geometry/Vector.h"
 
 
-inline bool is_vector_zero(const Vector<3> &v) {
-    constexpr double ZERO = 9.094947e-13;
-    return std::all_of(v.begin(), v.end(), [](double d) { return std::abs(d) < ZERO; });
-}
-
-
 class AbstractXCGeometry {
 public:
     virtual ~AbstractXCGeometry() = default;

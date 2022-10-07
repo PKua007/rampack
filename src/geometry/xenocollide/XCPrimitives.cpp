@@ -4,13 +4,8 @@
 
 #include "XCPrimitives.h"
 #include "utils/Assertions.h"
+#include "XCUtils.h"
 
-
-namespace {
-    inline Vector<3> vector_comp_mul(const Vector<3> &a, const Vector<3> &b) {
-        return {a[0]*b[0], a[1]*b[1], a[2]*b[2]};
-    }
-}
 
 CollideSegment::CollideSegment(double halfLength) : halfLength{halfLength} {
     Expects(halfLength > 0);
