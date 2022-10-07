@@ -28,12 +28,28 @@ not be misrepresented as being the original software.
 #include <list>
 #include <memory>
 #include <utility>
+
 #include "AbstractXCGeometry.h"
-#include "../Vector.h"
+#include "geometry/Vector.h"
 
 
-class XCBodyBuilder
-{
+class XCBodyBuilder {
+private:
+    struct XCShape {
+        std::shared_ptr<AbstractXCGeometry> geometry;
+        Matrix<3 ,3> orientation;
+        Vector<3> pos;
+
+        XCShape(std::shared_ptr<AbstractXCGeometry> geometry, const Matrix<3, 3> &orientation, const Vector<3> &pos)
+                : geometry{std::move(geometry)}, orientation{orientation}, pos{pos}
+        { }
+
+        explicit XCShape(std::shared_ptr<AbstractXCGeometry> geometry)
+                : geometry{std::move(geometry)}, orientation{Matrix<3, 3>::identity()}, pos{}
+        { }
+    };
+
+    std::list<XCShape> shapeStack;
 
 public:
     // shapes
@@ -65,17 +81,6 @@ public:
 
     void processCommand(std::string cmd);
     std::shared_ptr<AbstractXCGeometry> releaseCollideGeometry();
-
-private:
-    struct XCShape{
-        XCShape() : geom(nullptr) { m = Matrix<3,3>::identity(); x = Vector<3>({0, 0, 0}); }
-        XCShape(std::shared_ptr<AbstractXCGeometry> _geom, const Matrix<3,3>& _m, const Vector<3>& _x) : geom(std::move(_geom)), m(_m), x(_x) {}
-        explicit XCShape(std::shared_ptr<AbstractXCGeometry>  _geom) : geom(std::move(_geom)) { m = Matrix<3,3>::identity(); x = Vector<3>({0, 0, 0}); }
-        std::shared_ptr<AbstractXCGeometry>    geom;
-        Matrix<3,3>                m;
-        Vector<3>                x;
-    };
-    std::list< std::shared_ptr<XCShape> > mShapeStack;
 };
 
 
