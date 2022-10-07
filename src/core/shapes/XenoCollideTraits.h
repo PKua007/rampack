@@ -26,23 +26,7 @@ private:
 
 public:
     static constexpr std::size_t MESH_SUBDIVISIONS = 3;
-//    XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> cm, double v, const std::string &attr,
-//                      std::map<std::string, Vector<3>> customNamedPoints = {})
-//            : primaryAxis{pa}, secondaryAxis{sa}, geometricOrigin{cm}, volume{v},
-//              customNamedPoints{std::move(customNamedPoints)}
-//    {
-//        std::stringstream ss(attr);
-//        std::string commands;
-//        std::getline(ss, commands, '\0');
-//        std::string script = "script " + commands;
-//
-//        BodyBuilder bb;
-//        bb.ProcessCommand(script);
-//        this->shapeModel = bb.getCollideGeometry();
-//        this->rangeRadius = 2*bb.getMaxRadius();
-//    }
-
-
+    
     XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> o, double v,
                       std::map<std::string, Vector<3>> customNamedPoints = {})
             : primaryAxis{pa}, secondaryAxis{sa}, geometricOrigin{o}, volume{v},

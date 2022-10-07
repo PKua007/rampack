@@ -63,7 +63,7 @@ public:
 	void swap();
 	void clear();
 
-	void ProcessCommand(std::string& cmd);
+	void ProcessCommand(std::string cmd);
 	std::shared_ptr<AbstractXCGeometry> getCollideGeometry();
     [[nodiscard]] double getMaxRadius() const;
 

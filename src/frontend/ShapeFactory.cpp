@@ -7,6 +7,8 @@
 #include "ShapeFactory.h"
 
 #include "utils/Assertions.h"
+#include "ParseUtils.h"
+#include "utils/Utils.h"
 
 #include "core/shapes/SphereTraits.h"
 #include "core/shapes/SpherocylinderTraits.h"
@@ -16,11 +18,25 @@
 #include "core/shapes/PolysphereLollipopTraits.h"
 #include "core/shapes/PolysphereWedgeTraits.h"
 #include "core/shapes/SmoothWedgeTraits.h"
+#include "core/shapes/GenericXenoCollideTraits.h"
 
 #include "core/interactions/LennardJonesInteraction.h"
 #include "core/interactions/RepulsiveLennardJonesInteraction.h"
 #include "core/interactions/SquareInverseCoreInteraction.h"
 
+#include "geometry/xenocollide/XCBodyBuilder.h"
+
+
+#define GENERIC_XENO_COLLIDE_USAGE "Malformed GenericXenoCollide attributes. Usage:\n" \
+                                   "    [param 1] [value 1] ... [param n] [value n]\n" \
+                                   "Params can be in any order, but all of the following have to be specified\n" \
+                                   "    primaryAxis [x] [y] [z]\n" \
+                                   "    secondaryAxis [x] [y] [z]\n" \
+                                   "    geometricOrigin [x] [y] [z]\n" \
+                                   "    volume [volume]\n" \
+                                   "    script [&-separated  commands] \n" \
+                                   "There is also one optional\n" \
+                                   "    namedPoints [name 1] [x1] [y1] [z1] [name 2] [x2] [y2] [z2] ..."
 
 namespace {
     template <typename ConcreteTraits, typename... Args>
@@ -63,6 +79,71 @@ namespace {
                                                   "(Lennard Jones cut at the minimum), square_inverse_core "
                                                   "(dipole-like short-range interaction)");
         }
+    }
+
+    bool has_all_fields(const std::map<std::string, std::string> &fieldsMap, const std::vector<std::string> &fields) {
+        for (const auto &field : fields)
+            if (fieldsMap.find(field) == fieldsMap.end())
+                return false;
+        return true;
+    }
+
+    Vector<3> parse_vector(const std::string &coords) {
+        std::istringstream coordsStream(coords);
+        Vector<3> v;
+        coordsStream >> v[0] >> v[1] >> v[2];
+        ValidateMsg(coordsStream, "Malformed vector coordinates");
+        return v;
+    }
+
+    Vector<3> parse_axis(const std::string &coords) {
+        Vector<3> axis = parse_vector(coords);
+        ValidateMsg(axis.norm() >= 1e-8, "Axis has too small norm - at least 10^(-8) is required");
+        return axis.normalized();
+    }
+
+    std::map<std::string, Vector<3>> parse_named_points(const std::string &pointsStr) {
+        std::map<std::string, Vector<3>> namedPoints;
+        std::istringstream pointsStream(pointsStr);
+        while (pointsStream.good()) {
+            std::string name;
+            Vector<3> pos;
+            pointsStream >> name >> pos[0] >> pos[1] >> pos[2];
+            ValidateMsg(pointsStream, "Malformed named point");
+            if (pointsStream.good())
+                pointsStream >> std::ws;
+        }
+        return namedPoints;
+    }
+
+    std::shared_ptr<ShapeTraits> parse_generic_xeno_collide(std::istream &in) {
+        std::vector<std::string> requiredFields{"script", "primaryAxis", "secondaryAxis", "geometricOrigin", "volume"};
+        std::vector<std::string> allFields = requiredFields;
+        allFields.emplace_back("namedPoints");
+        auto fieldsMap = ParseUtils::parseFields(requiredFields, in);
+        ValidateMsg(has_all_fields(fieldsMap, requiredFields), GENERIC_XENO_COLLIDE_USAGE);
+
+        Vector<3> primaryAxis = parse_axis(fieldsMap.at("primaryAxis"));
+        Vector<3> secondaryAxis = parse_axis(fieldsMap.at("secondaryAxis"));
+        Vector<3> geometricOrigin = parse_vector(fieldsMap.at("geometricOrigin"));
+        double volume = stod(fieldsMap.at("volume"));
+        Validate(volume > 0);
+        std::map<std::string, Vector<3>> namedPoints;
+        if (fieldsMap.find("namedPoints") != fieldsMap.end())
+            namedPoints = parse_named_points(fieldsMap.at("namedPoints"));
+
+        auto commands = explode(fieldsMap.at("script"), '&');
+        ValidateMsg(!commands.empty(), "At least one script command should be passed");
+
+        XCBodyBuilder builder;
+        for (const auto &command : commands)
+            builder.ProcessCommand(command);
+
+        auto collideGeometry = builder.getCollideGeometry();
+
+        return std::make_shared<GenericXenoCollideTraits>(
+            std::move(collideGeometry), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
+        );
     }
 }
 
@@ -168,7 +249,7 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         ValidateMsg(interactionName == "hard" || interactionName.empty(),
                     "Spherocylinder supports only hard interactions");
         return std::make_shared<SpherocylinderTraits>(length, r);
-    } else if (shapeName == "RoundedCone") {
+    } else if (shapeName == "SmoothWedge") {
         double R, r, length;
         shapeAttrStream >> length >> R >> r;
         ValidateMsg(shapeAttrStream, "Malformed SmoothWedge attributes; expected: [length] [large radius] "
@@ -184,6 +265,10 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         Validate(length >= 0);
         ValidateMsg(interactionName == "hard" || interactionName.empty(), "SmoothWedge supports only hard interactions");
         return std::make_shared<SmoothWedgeTraits>(R, r, length, subdivisions);
+    } else if (shapeName == "GenericXenoCollide") {
+        ValidateMsg(interactionName == "hard" || interactionName.empty(),
+                    "GenericXenoCollide supports only hard interactions");
+        return parse_generic_xeno_collide(shapeAttrStream);
     } else {
         throw ValidationException("Unknown particle name: " + shapeName);
     }
