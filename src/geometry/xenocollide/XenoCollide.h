@@ -53,21 +53,21 @@ public:
 // Intersect() is the simplest XenoCollide routine.  It returns true if two
 // CollideGeometry objects overlap, or false if they do not.
 
-	static bool Intersect(const XCGeometry& p1, const Matrix<3,3>& m1, const Vector<3>& t1, const XCGeometry& p2, const Matrix<3,3>& m2, const Vector<3>& t2, double boundaryTolerance) {
+    static bool Intersect(const XCGeometry& p1, const Matrix<3,3>& m1, const Vector<3>& t1, const XCGeometry& p2, const Matrix<3,3>& m2, const Vector<3>& t2, double boundaryTolerance) {
         // v0 = center of Minkowski difference
         Vector<3> v0 = (m2*p2.getCenter() + t2) - (m1 * p1.getCenter() + t1);
-        if (is_vector_zero(v0)) return true;	// v0 and origin overlap ==> hit
+        if (is_vector_zero(v0)) return true;    // v0 and origin overlap ==> hit
 
         // v1 = support in direction of origin
         Vector<3> n = -v0;
         Vector<3> v1 = TransformSupportVert(p2, m2, t2, n) - TransformSupportVert(p1, m1, t1, -n);
-        if (v1 * n <= 0) return false;	// origin outside v1 support plane ==> miss
+        if (v1 * n <= 0) return false;    // origin outside v1 support plane ==> miss
 
         // v2 = support perpendicular to plane containing origin, v0 and v1
         n = v1 ^ v0;
-        if (is_vector_zero(n)) return true;	// v0, v1 and origin colinear (and origin inside v1 support plane) == > hit
+        if (is_vector_zero(n)) return true;    // v0, v1 and origin colinear (and origin inside v1 support plane) == > hit
         Vector<3> v2 = TransformSupportVert(p2, m2, t2, n) - TransformSupportVert(p1, m1, t1, -n);
-        if (v2 * n <= 0) return false;	// origin outside v2 support plane ==> miss
+        if (v2 * n <= 0) return false;    // origin outside v2 support plane ==> miss
 
         // v3 = support perpendicular to plane containing v0, v1 and v2
         n = (v1 - v0) ^ (v2 - v0);
@@ -85,7 +85,7 @@ public:
         while (true) {
             // Obtain the next support point
             Vector<3> v3 = TransformSupportVert(p2, m2, t2, n) - TransformSupportVert(p1, m1, t1, -n);
-            if (v3 * n <= 0) return false;	// origin outside v3 support plane ==> miss
+            if (v3 * n <= 0) return false;    // origin outside v3 support plane ==> miss
 
             // If origin is outside (v1,v0,v3), then portal is invalid -- eliminate v2 and find new support outside face
             if ( (v1 ^ v3) * v0 < 0)
@@ -128,13 +128,13 @@ public:
                 Vector<3> cross = v4 ^ v0;
                 if (v1 * cross > 0)
                 {
-                    if (v2 * cross > 0) v1 = v4;	// Inside v1 & inside v2 ==> eliminate v1
-                    else v3 = v4;					// Inside v1 & outside v2 ==> eliminate v3
+                    if (v2 * cross > 0) v1 = v4;    // Inside v1 & inside v2 ==> eliminate v1
+                    else v3 = v4;                    // Inside v1 & outside v2 ==> eliminate v3
                 }
                 else
                 {
-                    if (v3 * cross > 0) v2 = v4;	// Outside v1 & inside v3 ==> eliminate v2
-                    else v1 = v4;					// Outside v1 & outside v3 ==> eliminate v1
+                    if (v3 * cross > 0) v2 = v4;    // Outside v1 & inside v3 ==> eliminate v2
+                    else v1 = v4;                    // Outside v1 & outside v3 ==> eliminate v1
                 }
             }
         }
