@@ -28,6 +28,7 @@ not be misrepresented as being the original software.
 
 #include "../Vector.h"
 #include "AbstractXCGeometry.h"
+#include "XCUtils.h"
 
 
 //////////////////////////////////////////////////////////////////////////////
