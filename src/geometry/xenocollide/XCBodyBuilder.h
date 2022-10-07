@@ -31,21 +31,22 @@ not be misrepresented as being the original software.
 #include "AbstractXCGeometry.h"
 #include "../Vector.h"
 
+
 class XCBodyBuilder
 {
 
 public:
     // shapes
-    void cuboid(double x, double y, double z);
-    void disc(double x);
-    void ellipse(double x, double y);
-    void football(double l, double w);
+    void cuboid(double sideX, double sideY, double sideZ);
+    void disk(double radius);
+    void ellipse(double semiAxisX, double semiAxisY);
+    void football(double length, double radius);
     void point(double x, double y, double z);
-    void rect(double x, double y);
-    void saucer(double r, double t);
-    void segment(double l);
-    void sphere(double x);
-    void ellipsoid(double x, double y, double z);
+    void rectangle(double sideX, double sideY);
+    void saucer(double radius, double thickness);
+    void segment(double length);
+    void sphere(double radius);
+    void ellipsoid(double semiAxisX, double semiAxisY, double semiAxisZ);
 
     // shapes transformations
     void move(double x, double y, double z);
@@ -53,16 +54,16 @@ public:
 
     // shape combination
     void diff();
-    void sweep();
+    void sum();
     void wrap();
 
     // stack operations
-    void dup(size_t n);
+    void dup(std::size_t numShapes);
     void pop();
     void swap();
     void clear();
 
-    void ProcessCommand(std::string cmd);
+    void processCommand(std::string cmd);
     std::shared_ptr<AbstractXCGeometry> getCollideGeometry();
 
 private:
