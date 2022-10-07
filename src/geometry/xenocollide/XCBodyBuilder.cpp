@@ -29,6 +29,7 @@ not be misrepresented as being the original software.
 #include "XCBodyBuilder.h"
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
+#include "XCPrimitives.h"
 
 
 std::shared_ptr<AbstractXCGeometry> XCBodyBuilder::releaseCollideGeometry() {
