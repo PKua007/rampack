@@ -13,13 +13,18 @@ double SmoothWedgeTraits::getVolume(double R, double r, double l) {
     double R2 = R*R;
     double R3 = R2*R;
     double Rr = R*r;
-    double epsilon = (R - r)/l;
+    double epsilon{};
+    // Prevent nan if R == r and l == 0
+    if (R == r)
+        epsilon = 0;
+    else
+        epsilon = (R - r)/l;
     double epsilon2 = epsilon*epsilon;
 
     return M_PI*l/3*(R2 + Rr + r2)*(1 + epsilon2) + 2*M_PI/3*(R3 + r3);
 }
 
-SmoothWedgeTraits::SmoothWedgeTraits(double R, double r, double l, std::size_t subdivision)
+SmoothWedgeTraits::SmoothWedgeTraits(double R, double r, double l, std::size_t subdivisions)
         : XenoCollideTraits({0, 0, 1}, {1, 0, 0}, {0, 0, 0},
                             SmoothWedgeTraits::getVolume(R, r, l),
                             {{"sl", {0, 0, (-l + R - r)/2}}, {"ss", {0, 0, (l + R - r)/2}}}),
@@ -29,42 +34,48 @@ SmoothWedgeTraits::SmoothWedgeTraits(double R, double r, double l, std::size_t s
     Expects(R > r);
     Expects(l >= R - r);
 
-    if (subdivision == 0 || subdivision == 1) {
+    if (subdivisions == 0 || subdivisions == 1) {
         this->interactionCentres = {};
         this->shapeModel.emplace_back(R, r, l);
         return;
     }
 
-    double A{};
-    if (R == r)
-        A = 1;
-    else
-        A = (l - r + R)/(l + r - R);
+    std::vector<double> alphas = this->calculateRelativeSpherePositions(subdivisions);
 
-    std::vector<double> alphas;
-    alphas.reserve(subdivision + 1);
-    alphas.push_back(0);
-    for (std::size_t i{}; i < subdivision; i++)
-        alphas.push_back(A*alphas.back() + 1);
-    for (auto &alpha : alphas)
-        alpha /= alphas.back();
-
-    double beg = (-l + R - r)/2;
-    this->shapeModel.reserve(subdivision);
-    this->interactionCentres.reserve(subdivision);
-    for (std::size_t i{}; i < subdivision; i++) {
+    double begZ = (-this->l + this->R - this->r)/2;
+    this->shapeModel.reserve(subdivisions);
+    this->interactionCentres.reserve(subdivisions);
+    for (std::size_t i{}; i < subdivisions; i++) {
         double alpha0 = alphas[i];
         double alpha1 = alphas[i + 1];
 
-        double r0 = alpha0*r + (1 - alpha0)*R;
-        double r1 = alpha1*r + (1 - alpha1)*R;
-        double l01 = (alpha1 - alpha0)*l;
+        double r0 = alpha0*this->r + (1 - alpha0)*this->R;
+        double r1 = alpha1*this->r + (1 - alpha1)*this->R;
+        double l01 = (alpha1 - alpha0)*this->l;
 
         this->shapeModel.emplace_back(r0, r1, l01);
 
-        double centreZ = beg + l*(alpha0 + alpha1)/2 - (r0 - r1)/2;
+        double centreZ = begZ + this->l*(alpha0 + alpha1)/2 - (r0 - r1)/2;
         this->interactionCentres.push_back({0, 0, centreZ});
     }
+}
+
+std::vector<double> SmoothWedgeTraits::calculateRelativeSpherePositions(std::size_t subdivisions) const {
+    double A{};
+    // Prevent nan if R == r and l == 0
+    if (this->R == this->r)
+        A = 1;
+    else
+        A = (this->l - this->r + this->R)/(this->l + this->r - this->R);
+
+    std::vector<double> alphas;
+    alphas.reserve(subdivisions + 1);
+    alphas.push_back(0);
+    for (std::size_t i{}; i < subdivisions; i++)
+        alphas.push_back(A*alphas.back() + 1);
+    for (auto &alpha : alphas)
+        alpha /= alphas.back();
+    return alphas;
 }
 
 SmoothWedgeTraits::CollideGeometry::CollideGeometry(double R, double r, double l)

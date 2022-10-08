@@ -18,7 +18,7 @@ TEST_CASE("SmoothWedge: geometry") {
     CHECK_THAT(geometry.getPrimaryAxis(shape), IsApproxEqual({1, 0, 0}, 1e-12));
     CHECK_THAT(geometry.getSecondaryAxis(shape), IsApproxEqual({0, 0, -1}, 1e-12));
     CHECK_THAT(geometry.getGeometricOrigin(shape), IsApproxEqual({0, 0, 0}, 1e-12));
-    // Calculated in Mathematica using the formula, cross-checked with numerical convex hull volume
+    // Calculated in Mathematica using the analytic formula, cross-checked with numerical convex hull volume
     CHECK(geometry.getVolume() == Approx(272*M_PI/15));
     CHECK_THAT(geometry.getNamedPoint("cm", shape), IsApproxEqual({1, 2, 3}, 1e-12));
     CHECK_THAT(geometry.getNamedPoint("o", shape), IsApproxEqual({1, 2, 3}, 1e-12));
@@ -28,9 +28,9 @@ TEST_CASE("SmoothWedge: geometry") {
 }
 
 TEST_CASE("SmoothWedge: collide geometry") {
-    double b = 0.2;
-    double h1 = 0.4 * std::sqrt(6);
-    auto sideNormal = Vector<3>{h1, 0, b};
+    double b = 0.2;     // distance from sphere center to sphere-side tangent point (along the height)
+    double h1 = 0.4 * std::sqrt(6);     // orthogonal distance from sphere-side tangent point to the height
+    auto sideNormal = Vector<3>{h1, 0, b};      // normal at tangent point
     auto tangentPoint = Vector<3>{h1, 0, 3 + b};
 
     SECTION("no subdivisions") {
@@ -40,8 +40,9 @@ TEST_CASE("SmoothWedge: collide geometry") {
         CHECK_THAT(collideGeometry.getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
 
         // We are always using not normalized normal vectors, because they should work
-        CHECK_THAT(collideGeometry.getSupportPoint({0, 0, 2}), IsApproxEqual({0, 0, 4}, 1e-12));
-        CHECK_THAT(collideGeometry.getSupportPoint({0, 0, -2}), IsApproxEqual({0, 0, -4}, 1e-12));
+        CHECK_THAT(collideGeometry.getSupportPoint({0, 0, 2}), IsApproxEqual({0, 0, 4}, 1e-12));    // sphere 1
+        CHECK_THAT(collideGeometry.getSupportPoint({0, 0, -2}), IsApproxEqual({0, 0, -4}, 1e-12));  // sphere 2
+        // side
         CHECK(sideNormal * (collideGeometry.getSupportPoint(sideNormal) - tangentPoint) == Approx(0).margin(1e-12));
     }
 
@@ -61,6 +62,7 @@ TEST_CASE("SmoothWedge: collide geometry") {
         CHECK_THAT(collideGeometry2.getSupportPoint({0, 0, 2}) + centers[2], IsApproxEqual({0, 0, 4}, 1e-12));
         CHECK_THAT(collideGeometry0.getSupportPoint({0, 0, -2}) + centers[0], IsApproxEqual({0, 0, -4}, 1e-12));
         auto approx0 = Approx(0).margin(1e-12);
+        // side for all 3 subdivisions
         CHECK(sideNormal * (collideGeometry0.getSupportPoint(sideNormal) - tangentPoint + centers[0]) == approx0);
         CHECK(sideNormal * (collideGeometry1.getSupportPoint(sideNormal) - tangentPoint + centers[1]) == approx0);
         CHECK(sideNormal * (collideGeometry2.getSupportPoint(sideNormal) - tangentPoint + centers[2]) == approx0);
