@@ -31,10 +31,27 @@ not be misrepresented as being the original software.
 #include "XCUtils.h"
 
 
+/**
+ * @brief The class implementing XenoCollide algorithm of Gary Snethen.
+ * @details Based on two XCGeometry objects is determines if two objects collide.
+ * @tparam XCGeometry Class containing 3 methods with signatures (corresponding to the ones of AbstractXCGeometry):
+ * @code
+ * // For given (non necessarily normalized) vector v returns the support point, which is the point on the shape's
+ * // boundary lying the furthest in the direction of n
+ * Vector<3> XCGeometry::getSupportPoint(const Vector<3> &n) const;
+ *
+ * // Returns a point lying deep inside the shape (preferably center of the optimal circumscribed sphere)
+ * Vector<3> XCGeometry::getCenter() const;
+ *
+ * // Return the radius of the smallest sphere covering the shape with its center in {0, 0, 0}
+ * // (not in XCGeometry::getCenter(), however the two may coincide)
+ * double XCGeometry::getCircumsphereRadius() const;
+ * @endcode
+ */
 template<typename XCGeometry>
 class XenoCollide {
 private:
-    /* TransformSupportVert() finds the support point for a rotated and/or translated CollideGeometry. */
+    /* TransformSupportVert() finds the support point for a rotated and/or translated XCGeometry. */
     static inline Vector<3> TransformSupportVert(const XCGeometry &geom, const Matrix<3, 3> &rot, const Vector<3> &pos,
                                                  const Vector<3> &n)
     {
@@ -45,6 +62,11 @@ private:
     }
 
 public:
+    /**
+     * @brief Returns @a true, if two shapes, one with position @a pos1, orientation @a rot1 with geometry @a geom1 and
+     * the second one with position @a pos2, orientation @a rot2 with geometry @a geom2 overlap.
+     * @details @a boundaryTolerance determines the numerical precision of reporting a missed overlap.
+     */
     static bool Intersect(const XCGeometry &geom1, const Matrix<3, 3> &rot1, const Vector<3> &pos1,
                           const XCGeometry &geom2, const Matrix<3, 3> &rot2, const Vector<3> &pos2,
                           double boundaryTolerance)

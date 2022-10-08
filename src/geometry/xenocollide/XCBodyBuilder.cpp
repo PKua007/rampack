@@ -55,7 +55,7 @@ void XCBodyBuilder::bullet(double lengthTip, double lengthTail, double radius) {
 
 void XCBodyBuilder::cuboid(double sideX, double sideY, double sideZ) {
     Validate(sideX > 0 && sideY > 0 && sideZ > 0);
-    auto geom = std::make_shared<CollideBox>(Vector<3>{sideX/2, sideY/2, sideZ/2});
+    auto geom = std::make_shared<CollideCuboid>(Vector<3>{sideX / 2, sideY / 2, sideZ / 2});
     this->shapeStack.emplace_back(geom);
 }
 
@@ -79,7 +79,7 @@ void XCBodyBuilder::diff() {
 
 void XCBodyBuilder::disk(double radius) {
     Validate(radius > 0);
-    auto geom = std::make_shared<CollideDisc>(radius);
+    auto geom = std::make_shared<CollideDisk>(radius);
     this->shapeStack.emplace_back(geom);
 }
 
@@ -129,7 +129,7 @@ void XCBodyBuilder::pop() {
     this->shapeStack.pop_back();
 }
 
-void::XCBodyBuilder::rectangle(double sideX, double sideY) {
+void XCBodyBuilder::rectangle(double sideX, double sideY) {
     Validate(sideX > 0 && sideY > 0);
     auto geom = std::make_shared<CollideRectangle>(sideX/2, sideY/2);
     this->shapeStack.emplace_back(geom);
