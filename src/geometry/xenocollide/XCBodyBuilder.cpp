@@ -46,9 +46,16 @@ std::shared_ptr<AbstractXCGeometry> XCBodyBuilder::releaseCollideGeometry() {
     return geom;
 }
 
+void XCBodyBuilder::bullet(double lengthTip, double lengthTail, double radius) {
+    Validate(lengthTip > 0 && lengthTail > 0 && radius > 0);
+    Validate(lengthTip >= radius);
+    auto geom = std::make_shared<CollideBullet>(lengthTip, lengthTail, radius);
+    this->shapeStack.emplace_back(geom);
+}
+
 void XCBodyBuilder::cuboid(double sideX, double sideY, double sideZ) {
     Validate(sideX > 0 && sideY > 0 && sideZ > 0);
-    auto geom = std::make_shared<CollideBox>(Vector<3>({sideX/2, sideY/2, sideZ/2}));
+    auto geom = std::make_shared<CollideBox>(Vector<3>{sideX/2, sideY/2, sideZ/2});
     this->shapeStack.emplace_back(geom);
 }
 
@@ -82,6 +89,12 @@ void XCBodyBuilder::ellipse(double semiAxisX, double semiAxisY) {
     this->shapeStack.emplace_back(geom);
 }
 
+void XCBodyBuilder::ellipsoid(double semiAxisX, double semiAxisY, double semiAxisZ) {
+    Validate(semiAxisX > 0 && semiAxisY > 0 && semiAxisZ > 0);
+    auto geom = std::make_shared<CollideEllipsoid>(Vector<3>{semiAxisX, semiAxisY, semiAxisZ});
+    this->shapeStack.emplace_back(geom);
+}
+
 void XCBodyBuilder::dup(std::size_t numShapes) {
     Validate(numShapes > 0);
     Validate(numShapes <= this->shapeStack.size());
@@ -105,7 +118,7 @@ void XCBodyBuilder::move(double x, double y, double z) {
 }
 
 void XCBodyBuilder::point(double x, double y, double z) {
-    auto geom = std::make_shared<CollidePoint>(Vector<3>({x, y, z}));
+    auto geom = std::make_shared<CollidePoint>(Vector<3>{x, y, z});
     this->shapeStack.emplace_back(geom);
 }
 
@@ -116,7 +129,7 @@ void XCBodyBuilder::pop() {
 
 void::XCBodyBuilder::rectangle(double sideX, double sideY) {
     Validate(sideX > 0 && sideY > 0);
-    auto geom = std::make_shared<CollideRectangle>(sideX / 2, sideY / 2);
+    auto geom = std::make_shared<CollideRectangle>(sideX/2, sideY/2);
     this->shapeStack.emplace_back(geom);
 }
 
@@ -145,20 +158,6 @@ void XCBodyBuilder::sphere(double radius) {
     this->shapeStack.emplace_back(geom);
 }
 
-void XCBodyBuilder::ellipsoid(double semiAxisX, double semiAxisY, double semiAxisZ) {
-    Validate(semiAxisX > 0 && semiAxisY > 0 && semiAxisZ > 0);
-    auto geom = std::make_shared<CollideEllipsoid>(Vector<3>({semiAxisX, semiAxisY, semiAxisZ}));
-    this->shapeStack.emplace_back(geom);
-}
-
-void XCBodyBuilder::swap() {
-    ValidateMsg(this->shapeStack.size() >= 2, "Shape stack contains < 2 shapes; cannot swap them");
-
-    auto it1 = std::prev(this->shapeStack.end());
-    auto it2 = std::prev(it1);
-    std::swap(*it1, *it2);
-}
-
 void XCBodyBuilder::sum() {
     ValidateMsg(this->shapeStack.size() >= 2, "Shape stack contains < 2 shapes; cannot compute Minkowski sum");
 
@@ -171,6 +170,14 @@ void XCBodyBuilder::sum() {
     auto geom = std::make_shared<CollideSum>(shape1.geometry, shape1.orientation, shape1.pos,
                                              shape2.geometry, shape2.orientation, shape2.pos);
     this->shapeStack.emplace_back(geom);
+}
+
+void XCBodyBuilder::swap() {
+    ValidateMsg(this->shapeStack.size() >= 2, "Shape stack contains < 2 shapes; cannot swap them");
+
+    auto it1 = std::prev(this->shapeStack.end());
+    auto it2 = std::prev(it1);
+    std::swap(*it1, *it2);
 }
 
 void XCBodyBuilder::wrap() {
@@ -193,7 +200,12 @@ void XCBodyBuilder::processCommand(std::string cmd) {
     std::string commandName;
     cmdStream >> commandName;
 
-    if (commandName == "cuboid") {
+    if (commandName == "bullet") {
+        double lengthTip, lengthTail, radius;
+        cmdStream >> lengthTip >> lengthTail >> radius;
+        ValidateMsg(cmdStream, "Malformed command arguments. Usage: bullet [length of tip] [length of tail] [radius]");
+        this->bullet(lengthTip, lengthTail, radius);
+    } else if (commandName == "cuboid") {
         double sideX, sideY, sideZ;
         cmdStream >> sideX >> sideY >> sideZ;
         ValidateMsg(cmdStream, "Malformed command arguments. Usage: cuboid [side x] [side y] [side z]");

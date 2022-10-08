@@ -53,16 +53,17 @@ private:
 
 public:
     // shapes
+    void bullet(double lengthTip, double lengthTail, double radius);
     void cuboid(double sideX, double sideY, double sideZ);
     void disk(double radius);
     void ellipse(double semiAxisX, double semiAxisY);
+    void ellipsoid(double semiAxisX, double semiAxisY, double semiAxisZ);
     void football(double length, double radius);
     void point(double x, double y, double z);
     void rectangle(double sideX, double sideY);
     void saucer(double radius, double thickness);
     void segment(double length);
     void sphere(double radius);
-    void ellipsoid(double semiAxisX, double semiAxisY, double semiAxisZ);
 
     // shapes transformations
     void move(double x, double y, double z);
