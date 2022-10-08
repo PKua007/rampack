@@ -8,7 +8,7 @@
 #include "geometry/xenocollide/XCBodyBuilder.h"
 
 
-TEST_CASE("XenoCollidePrinter") {
+TEST_CASE("XenoCollidePrinter: spherocylinder volume") {
     double r = 1;
     double l = 2;
     XCBodyBuilder bb;
