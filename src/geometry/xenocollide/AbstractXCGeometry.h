@@ -19,7 +19,7 @@ not be misrepresented as being the original software.
 */
 
 /*
- * Adapted by Michal Ciesla and Piotr Kubala
+ * Heavily adapted by Michal Ciesla and Piotr Kubala
  */
 
 #ifndef RAMPACK_ABSTRACTXCGEOMETRY_H
