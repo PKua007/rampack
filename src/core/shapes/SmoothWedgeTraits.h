@@ -47,6 +47,8 @@ private:
 
     static double getVolume(double R, double r, double l);
 
+    [[nodiscard]] std::vector<double> calculateRelativeSpherePositions(std::size_t subdivisions) const;
+
 public:
     SmoothWedgeTraits(double R, double r, double l, std::size_t subdivisions = 0);
 
@@ -55,6 +57,7 @@ public:
     }
 
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return this->interactionCentres; }
+
 };
 
 
