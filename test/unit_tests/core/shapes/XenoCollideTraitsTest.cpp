@@ -1,6 +1,7 @@
 //
 // Created by Michal Ciesla on 9/4/22.
 //
+
 #include <catch2/catch.hpp>
 
 #include "core/shapes/XenoCollideTraits.h"
@@ -17,9 +18,6 @@
 namespace {
     class XenoCollideSpherocylinderTraits : public XenoCollideTraits<XenoCollideSpherocylinderTraits> {
     private:
-        double r{};
-        double l{};
-
         static double getStaticVolume(double l, double r) {
             return M_PI * r * r * (4.0 / 3.0 * r + l);
         }
@@ -44,7 +42,7 @@ namespace {
                 : XenoCollideTraits({1, 0, 0}, {0, 0, 1}, {0, 0, 0}, getStaticVolume(l, r),
                                     {{"beg", {-l / 2, 0, 0}},
                                      {"end", {l / 2,  0, 0}}}),
-                  r{r}, l{l}, shapeModel{XenoCollideSpherocylinderTraits::createShapeModel(l, r)}
+                  shapeModel{XenoCollideSpherocylinderTraits::createShapeModel(l, r)}
         { }
 
         [[nodiscard]] const AbstractXCGeometry &getCollideGeometry([[maybe_unused]] std::size_t idx = 0) const {
@@ -111,11 +109,11 @@ TEST_CASE("XenoCollide: spherocylinder overlap") {
 
     SECTION("sphere-cylinder") {
         sc1.rotate({   0.936848795202308, -0.03157560239884583,  0.34830635403497,
-                       -0.03157560239884583,    0.984212198800577, 0.174153177017485,
+                    -0.03157560239884583,    0.984212198800577, 0.174153177017485,
                        -0.34830635403497,   -0.174153177017485, 0.921060994002885});
         sc2.rotate({0.07918504528890558, 0.3698006820181268, -0.925730621823391,
                     -0.2008438095940726,  0.915521563787973,  0.348542723904781,
-                    0.976417683550607, 0.1583278933673811, 0.1467677942585273});
+                      0.976417683550607, 0.1583278933673811, 0.1467677942585273});
 
         SECTION("overlap") {
             sc1.translate(Vector<3>{1, 2, 3} * 0.95, fbc);
@@ -136,11 +134,11 @@ TEST_CASE("XenoCollide: spherocylinder overlap") {
 
     SECTION("cylinder-cylinder") {
         sc1.rotate({  0.921060994002885,   0.1446263415347036,    0.361565853836759,
-                      -0.1446263415347036,    0.989111861241777, -0.02722034689555686,
-                      -0.361565853836759, -0.02722034689555686,    0.931949132761108});
+                    -0.1446263415347036,    0.989111861241777, -0.02722034689555686,
+                     -0.361565853836759, -0.02722034689555686,    0.931949132761108});
         sc2.rotate({ 0.4161880560663263, 0.5570946854720225, -0.7186327388914037,
                      -0.902545539870646, 0.1570999152673587, -0.4009129145869377,
-                     -0.1104493116652922,  0.815453939865286,  0.5681864320017205});
+                    -0.1104493116652922,  0.815453939865286,  0.5681864320017205});
 
         SECTION("overlap") {
             sc1.translate(Vector<3>{1, 2, 3} * 0.95, fbc);
