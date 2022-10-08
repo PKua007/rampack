@@ -99,10 +99,12 @@ void XCBodyBuilder::dup(std::size_t numShapes) {
     Validate(numShapes > 0);
     Validate(numShapes <= this->shapeStack.size());
 
-    auto startDup =  this->shapeStack.end();
-    std::advance(startDup, -static_cast<decltype(startDup)::difference_type>(numShapes));
-    for (auto it = startDup; it != this->shapeStack.end(); it++)
+    auto it = this->shapeStack.end();
+    std::advance(it, -static_cast<decltype(it)::difference_type>(numShapes));
+    for (std::size_t i{}; i < numShapes; i++) {
         this->shapeStack.push_back(*it);
+        it++;
+    }
 }
 
 void XCBodyBuilder::football(double length, double radius) {

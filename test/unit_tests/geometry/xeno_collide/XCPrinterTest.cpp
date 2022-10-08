@@ -2,7 +2,7 @@
 // Created by pkua on 04.10.22.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
 #include "geometry/xenocollide/XCPrinter.h"
 #include "geometry/xenocollide/XCBodyBuilder.h"
