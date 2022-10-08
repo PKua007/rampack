@@ -16,6 +16,29 @@
 #include "geometry/xenocollide/XCPrinter.h"
 
 
+/**
+ * @brief A shape with XenoCollide intersection test.
+ * @details <p> The class implements all ShapeTraits methods, so that the deriving class @a ConcreteCollideTraits has
+ * to only provide @a CollideGeometry objects (conforming to XenoCollide template parameter), shape axes, origin, volume
+ * and optionally named points (see ShapeGeometry::getNamedPoint). It supports multiple interaction centres, so one can
+ * combine many XenoCollide shapes into a one concave object. Derived class specifies interaction centers by overriding
+ * Interaction::getInteractionCentres() method on its own. It must then support as many @a CollideGeometry objects
+ * (see @a XenoCollideTraits::ConcreteCollideTraits template parameter).
+ *
+ * <p> Assuming the deriving class is called @a MyShape it should derive from XenoCollideTraits like this (CRTP idiom):
+ * @code
+ * class MyShape : public XenoCollideTraits<MyShape> {
+ *     ...
+ * }
+ * @endcode
+ * @tparam ConcreteCollideTraits a deriving class (CRTP idiom). It is requires to have a method with signature
+ * @code
+ * // Returns CollideGeometry object (arbitrary class but conforming to XenoCollide template parameter) for an
+ * // interaction center with index idx. If ConcreteCollideTraits has only a single interaction center, the argument
+ * // should be ignored, but signature must not be altered
+ * const CollideGeometry &ConcreteCollideTraits::getCollideGeometry(std::size_t idx) const
+ * @endcode
+ */
 template<typename ConcreteCollideTraits>
 class XenoCollideTraits : public ShapeTraits, public Interaction, public ShapeGeometry, public ShapePrinter {
 private:
@@ -29,11 +52,21 @@ private:
     mutable std::optional<XCPrinter::Polyhedron> polyhedron;
 
 public:
+    /** @brief The number of sphere subdivisions when printing the shape (see XCPrinter::XCPrintes @a subdivision
+     * parameter) */
     static constexpr std::size_t MESH_SUBDIVISIONS = 3;
-    
-    XenoCollideTraits(Vector<3> pa, Vector<3> sa, Vector<3> o, double v,
-                      std::map<std::string, Vector<3>> customNamedPoints = {})
-            : primaryAxis{pa}, secondaryAxis{sa}, geometricOrigin{o}, volume{v},
+
+    /**
+     * @brief Programmes the shape with given parameters.
+     * @param primaryAxis primary axis of the shape (see ShapeGeometry::getPrimaryAxis())
+     * @param secondaryAxis secondary axis of the shape (see ShapeGeometry::getSecondaryAxis())
+     * @param geometricOrigin geometric origin of the shape (see ShapeGeometry::getGeometricOrigin())
+     * @param volume volume of the shape (it has to be computed manually, since there is no exact general method)
+     * @param customNamedPoints optional list of named points (see ShapeGeometry::getNamedPoint())
+     */
+    XenoCollideTraits(const Vector<3> &primaryAxis, const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin,
+                      double volume, std::map<std::string, Vector<3>> customNamedPoints = {})
+            : primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}, geometricOrigin{geometricOrigin}, volume{volume},
               customNamedPoints{std::move(customNamedPoints)}
     { }
 
