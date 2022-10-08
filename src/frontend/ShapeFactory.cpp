@@ -82,10 +82,9 @@ namespace {
     }
 
     bool has_all_fields(const std::map<std::string, std::string> &fieldsMap, const std::vector<std::string> &fields) {
-        for (const auto &field : fields)
-            if (fieldsMap.find(field) == fieldsMap.end())
-                return false;
-        return true;
+        return std::all_of(fields.begin(), fields.end(), [&fieldsMap](const auto &field) {
+            return fieldsMap.find(field) != fieldsMap.end();
+        });
     }
 
     Vector<3> parse_vector(const std::string &coords) {
@@ -126,7 +125,7 @@ namespace {
         Vector<3> primaryAxis = parse_axis(fieldsMap.at("primaryAxis"));
         Vector<3> secondaryAxis = parse_axis(fieldsMap.at("secondaryAxis"));
         Vector<3> geometricOrigin = parse_vector(fieldsMap.at("geometricOrigin"));
-        double volume = stod(fieldsMap.at("volume"));
+        double volume = std::stod(fieldsMap.at("volume"));
         Validate(volume > 0);
         std::map<std::string, Vector<3>> namedPoints;
         if (fieldsMap.find("namedPoints") != fieldsMap.end())
