@@ -53,11 +53,11 @@ Vector<3> CollideRectangle::getSupportPoint(const Vector<3> &n) const {
     return result;
 }
 
-CollideBox::CollideBox(const Vector<3> &halfSides) : halfSides{halfSides}, halfDiagonal{halfSides.norm()} {
+CollideCuboid::CollideCuboid(const Vector<3> &halfSides) : halfSides{halfSides}, halfDiagonal{halfSides.norm()} {
     Expects(std::all_of(halfSides.begin(), halfSides.end(), [](double d) { return d > 0; }));
 }
 
-Vector<3> CollideBox::getSupportPoint(const Vector<3> &n) const {
+Vector<3> CollideCuboid::getSupportPoint(const Vector<3> &n) const {
     Vector<3> result = this->halfSides;
     if (n[0] < 0) result[0] = -result[0];
     if (n[1] < 0) result[1] = -result[1];
@@ -65,11 +65,11 @@ Vector<3> CollideBox::getSupportPoint(const Vector<3> &n) const {
     return result;
 }
 
-CollideDisc::CollideDisc(double radius) : radius{radius} {
+CollideDisk::CollideDisk(double radius) : radius{radius} {
     Expects(radius > 0);
 }
 
-Vector<3> CollideDisc::getSupportPoint(const Vector<3> &n) const {
+Vector<3> CollideDisk::getSupportPoint(const Vector<3> &n) const {
     Vector<3> n2 = n;
     n2[2] = 0;
     if (is_vector_zero(n2))

@@ -33,11 +33,18 @@ not be misrepresented as being the original software.
 #include "geometry/Vector.h"
 
 
+/**
+ * @brief Class constructing complex shapes with XenoCollide primitives and operations.
+ * @details It contains a stack on which the shapes are added to be later combined using Minkowski sum, difference,
+ * convex hull, etc. Each added shape has default position and orientation. It can be rotated and moved using move() and
+ * rot() methods. Please note that position and orientation are applied only when combining two shapes. Position and
+ * orientation of a single shape are ignored when exporting the geometry by releaseCollideGeometry()
+ */
 class XCBodyBuilder {
 private:
     struct XCShape {
         std::shared_ptr<AbstractXCGeometry> geometry;
-        Matrix<3 ,3> orientation;
+        Matrix<3, 3> orientation;
         Vector<3> pos;
 
         XCShape(std::shared_ptr<AbstractXCGeometry> geometry, const Matrix<3, 3> &orientation, const Vector<3> &pos)
@@ -52,35 +59,65 @@ private:
     std::list<XCShape> shapeStack;
 
 public:
-    // shapes
+    /** @brief Creates a CollideBullet shape */
     void bullet(double lengthTip, double lengthTail, double radius);
+    /** @brief Creates a CollideCuboid shape */
     void cuboid(double sideX, double sideY, double sideZ);
+    /** @brief Creates a CollideDisk shape */
     void disk(double radius);
+    /** @brief Creates a CollideEllipse shape */
     void ellipse(double semiAxisX, double semiAxisY);
+    /** @brief Creates a CollideEllipsoid shape */
     void ellipsoid(double semiAxisX, double semiAxisY, double semiAxisZ);
+    /** @brief Creates a CollideFootball shape */
     void football(double length, double radius);
+    /** @brief Creates a CollideEllipsoid shape */
     void point(double x, double y, double z);
+    /** @brief Creates a CollideRectangle shape */
     void rectangle(double sideX, double sideY);
+    /** @brief Creates a CollideSaucer shape */
     void saucer(double radius, double thickness);
+    /** @brief Creates a CollideSegment shape */
     void segment(double length);
+    /** @brief Creates a CollideSphere shape */
     void sphere(double radius);
 
-    // shapes transformations
+    /** @brief Moves last shape in the stack by vector {@a x, @a y, @a z} */
     void move(double x, double y, double z);
+    /** @brief Rotates last shape in the stack by angles @a ax, @a ay, @a az (in degrees) around axes X, Y, Z in exactly
+     * that order */
     void rot(double x, double y, double z);
 
-    // shape combination
+    /** @brief Computes Minkowski difference of last two shapes in the stack. The sum replaces those two in the
+     * stack. */
     void diff();
+    /** @brief Computes Minkowski sum of last two shapes in the stack. The sum replaces those two in the stack. */
     void sum();
+    /** @brief Computes convex hull of last two shapes in the stack. The sum replaces those two in the stack. */
     void wrap();
 
-    // stack operations
+    /** @brief Duplicates @a numShape last entries in the stack. */
     void dup(std::size_t numShapes);
+    /** @brief Removes last entry from the stack. */
     void pop();
+    /** @brief Swaps last two entries in the stack. */
     void swap();
+    /** @brief Clears the stack. */
     void clear();
 
+    /**
+     * @brief Processed the command @a cmd.
+     * @details The commands names are identical as all methods used to manipulate the shape stack (excluding clear())
+     * with identical, space separated arguments. For example, to invoke XCBodyBuilder::saucer (2, 1) the command
+     * "saucer 2 1" should be used.
+     */
     void processCommand(std::string cmd);
+
+    /**
+     * @brief Releases the AbstractXCGeometry built on a stack and clears it.
+     * @details The stack has to contain exactly one shape, otherwise, the error is reported (combining operations should
+     * be fully performed). Position and orientation of that last shape changed using move() and rot() are ignored.
+     */
     std::shared_ptr<AbstractXCGeometry> releaseCollideGeometry();
 };
 

@@ -32,16 +32,27 @@ not be misrepresented as being the original software.
 #include "geometry/Vector.h"
 
 
+/**
+ * @brief Polymorphic interface compatible with @a XCGeometry template parameter of XenoCollide.
+ * @details Please refer to XenoCollide for the description of methods.
+ */
 class AbstractXCGeometry {
 public:
     virtual ~AbstractXCGeometry() = default;
 
-    [[nodiscard]] virtual Vector<3> getSupportPoint(const Vector<3>& n) const = 0;
+    [[nodiscard]] virtual Vector<3> getSupportPoint(const Vector<3> &n) const = 0;
     [[nodiscard]] virtual Vector<3> getCenter() const { return {}; };
     [[nodiscard]] virtual double getCircumsphereRadius() const = 0;
 };
 
 
+/**
+ * @brief Class deriving after AbstractXCGeometry encapsulating @a XCGeometry object, compatible with template parameter
+ * of XenoCollide.
+ * @details It can be useful if a method accepts only classes derived from AbstractXCGeometry, but the concrete
+ * @a CollideGeometry does not do it.
+ * @tparam CollideGeometry concrete collide geometry to encapsulate
+ */
 template<typename CollideGeometry>
 class PolymorphicCollideAdapter : public AbstractXCGeometry {
 private:

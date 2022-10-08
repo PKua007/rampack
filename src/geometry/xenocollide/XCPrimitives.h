@@ -28,11 +28,17 @@ not be misrepresented as being the original software.
 #include "AbstractXCGeometry.h"
 
 
+/**
+ * @brief AbstractXCGeometry describing a single point.
+ */
 class CollidePoint : public AbstractXCGeometry {
 private:
     Vector<3> pos;
 
 public:
+    /**
+     * @brief Creates the point at position @a pos.
+     */
     explicit CollidePoint(const Vector<3> &pos) : pos{pos} { }
 
     [[nodiscard]] Vector<3> getSupportPoint([[maybe_unused]] const Vector<3> &n) const override { return this->pos; }
@@ -41,11 +47,17 @@ public:
 };
 
 
+/**
+ * @brief AbstractXCGeometry describing a segment.
+ */
 class CollideSegment : public AbstractXCGeometry {
 private:
     double halfLength{};
 
 public:
+    /**
+     * @brief Creates the segment centered between the points: {-@a halfLength, 0, 0}, {@a halfLength, 0, 0}.
+     */
     explicit CollideSegment(double halfLength);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
@@ -53,12 +65,19 @@ public:
 };
 
 
+/**
+ * @brief AbstractXCGeometry describing a rectangle.
+ */
 class CollideRectangle : public AbstractXCGeometry {
 private:
     Vector<3> halfSides;
     double halfDiagonal{};
 
 public:
+    /**
+     * @brief Creates an axis aligned rectangle with two opposite vertices: {-@a halfSideX, -@a halfSideY, 0} and
+     * {@a halfSideX, @a halfSideY, 0}.
+     */
     CollideRectangle(double halfSideX, double halfSideY);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
@@ -66,36 +85,55 @@ public:
 };
 
 
-class CollideBox : public AbstractXCGeometry {
+/**
+ * @brief AbstractXCGeometry describing a cuboid.
+ */
+class CollideCuboid : public AbstractXCGeometry {
 private:
     Vector<3> halfSides;
     double halfDiagonal{};
 
 public:
-    explicit CollideBox(const Vector<3> &halfSides);
+    /**
+     * @brief Creates an axis aligned cuboid with two opposite vertices:
+     * {-@a halfSides[0], -@a halfSides[1], -@a halfSides[2]} and {@a halfSides[0], @a halfSides[1], @a halfSides[2]}.
+     */
+    explicit CollideCuboid(const Vector<3> &halfSides);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
     [[nodiscard]] double getCircumsphereRadius() const override { return this->halfDiagonal; }
 };
 
 
-class CollideDisc : public AbstractXCGeometry {
+/**
+ * @brief AbstractXCGeometry describing a disk.
+ */
+class CollideDisk : public AbstractXCGeometry {
 private:
     double radius{};
 
 public:
-    explicit CollideDisc(double radius);
+    /**
+     * @brief Creates a disk with its center in {0, 0, 0}, lying in XY plane with radius @a radius.
+     */
+    explicit CollideDisk(double radius);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
     [[nodiscard]] double getCircumsphereRadius() const override { return this->radius; }
 };
 
 
+/**
+ * @brief AbstractXCGeometry describing a sphere.
+ */
 class CollideSphere : public AbstractXCGeometry {
 private:
     double radius{};
 
 public:
+    /**
+     * @brief Creates a sphere with its center in {0, 0, 0} and radius @a radius.
+     */
     explicit CollideSphere(double radius);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override { return this->radius * n.normalized(); }
@@ -103,12 +141,19 @@ public:
 };
 
 
+/**
+ * @brief AbstractXCGeometry describing an ellipse.
+ */
 class CollideEllipse : public AbstractXCGeometry {
 private:
     Vector<3> semiAxes;
     double circumsphereRadius{};
 
 public:
+    /**
+     * @brief Creates a disk with its center in {0, 0, 0}, lying in XY plane with X semi-axis @a semiAxisX and
+     * Y semi-axis @a semiAxisY.
+     */
     CollideEllipse(double semiAxisX, double semiAxisY);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
@@ -116,12 +161,19 @@ public:
 };
 
 
+/**
+ * @brief AbstractXCGeometry describing an ellipsoid.
+ */
 class CollideEllipsoid : public AbstractXCGeometry {
 private:
     Vector<3> semiAxes;
     double circumsphereRadius{};
 
 public:
+    /**
+     * @brief Creates an ellipsoid with its center in {0, 0, 0} and axis-oriented semi-axes @a semiAxes (subsequent
+     * indices correspond to, respectively, X, Y and Z semi-axis).
+     */
     explicit CollideEllipsoid(const Vector<3> &semiAxes);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
@@ -129,12 +181,20 @@ public:
 };
 
 
+/**
+ * @brief AbstractXCGeometry describing a rugby ball.
+ */
 class CollideFootball : public AbstractXCGeometry {
 private:
     double length{};
     double radius{};
 
 public:
+    /**
+     * @brief Creates a rugby ball by drawing a circle segment between the points {-@a length/2, 0, 0} and
+     * {@a length/2, 0, 0} and then revolving it around X axis. The radius is chosen in such a way that the height of
+     * the circle segment in Y direction is equal to @a radius.
+     */
     CollideFootball(double length, double radius);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
@@ -142,6 +202,9 @@ public:
 };
 
 
+/**
+ * @brief AbstractXCGeometry describing a pistol bullet.
+ */
 class CollideBullet : public AbstractXCGeometry {
 private:
     double lengthTip{};
@@ -150,6 +213,11 @@ private:
     double circumsphereRadius{};
 
 public:
+    /**
+     * @brief Creates a pistol bullet by combining half of a shape as given by CollideFootball (constructed as
+     * CollideFootball::CollideFootball (@a lengthTip/2, @a radius)) spanned in the negative X half-space and the
+     * cylinder with radius @a radius and length @a lengthTail spanned in the positive X half-space.
+     */
     CollideBullet(double lengthTip, double lengthTail, double radius);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
@@ -158,12 +226,20 @@ public:
 };
 
 
+/**
+ * @brief AbstractXCGeometry describing a saucer.
+ */
 class CollideSaucer : public AbstractXCGeometry {
 private:
     double halfThickness{};
     double radius{};
 
 public:
+    /**
+     * @brief Creates saucer by drawing a circle segment between the points {0, 0, -@a radius} and {0, 0, @a radius} and
+     * then revolving it around X axis. The radius is chosen in such a way that the height of the circle segment in X
+     * direction is equal to @a halfThickness.
+     */
     CollideSaucer(double radius, double halfThickness);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
