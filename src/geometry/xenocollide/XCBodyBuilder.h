@@ -59,27 +59,27 @@ private:
     std::list<XCShape> shapeStack;
 
 public:
-    /** @brief Creates a CollideBullet shape */
+    /** @brief Creates a XCBullet shape */
     void bullet(double lengthTip, double lengthTail, double radius);
-    /** @brief Creates a CollideCuboid shape */
+    /** @brief Creates a XCCuboid shape */
     void cuboid(double sideX, double sideY, double sideZ);
-    /** @brief Creates a CollideDisk shape */
+    /** @brief Creates a XCDisk shape */
     void disk(double radius);
-    /** @brief Creates a CollideEllipse shape */
+    /** @brief Creates a XCEllipse shape */
     void ellipse(double semiAxisX, double semiAxisY);
-    /** @brief Creates a CollideEllipsoid shape */
+    /** @brief Creates a XCEllipsoid shape */
     void ellipsoid(double semiAxisX, double semiAxisY, double semiAxisZ);
-    /** @brief Creates a CollideFootball shape */
+    /** @brief Creates a XCFootball shape */
     void football(double length, double radius);
-    /** @brief Creates a CollideEllipsoid shape */
+    /** @brief Creates a XCPoint shape */
     void point(double x, double y, double z);
-    /** @brief Creates a CollideRectangle shape */
+    /** @brief Creates a XCRectangle shape */
     void rectangle(double sideX, double sideY);
-    /** @brief Creates a CollideSaucer shape */
+    /** @brief Creates a XCSaucer shape */
     void saucer(double radius, double thickness);
-    /** @brief Creates a CollideSegment shape */
+    /** @brief Creates a XCSegment shape */
     void segment(double length);
-    /** @brief Creates a CollideSphere shape */
+    /** @brief Creates a XCSphere shape */
     void sphere(double radius);
 
     /** @brief Moves last shape in the stack by vector {@a x, @a y, @a z} */

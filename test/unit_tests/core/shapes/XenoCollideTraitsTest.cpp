@@ -54,13 +54,13 @@ namespace {
     private:
         static double getStaticVolume(double r1, double r2) {  return 4*M_PI/3 * (r1*r1*r1 + r1*r2*r2); }
 
-        std::vector<CollideSphere> shapeModels;
+        std::vector<XCSphere> shapeModels;
         std::vector<Vector<3>> interactionCentres;
 
     public:
         XenoCollideDimerTraits(double r1, double r2, double x2)
                 : XenoCollideTraits({1, 0, 0}, {0, 0, 1}, {0, 0, 0}, getStaticVolume(r1, r2)),
-                  shapeModels{CollideSphere(r1), CollideSphere(r2)}, interactionCentres{{0, 0, 0}, {x2, 0, 0}}
+                  shapeModels{XCSphere(r1), XCSphere(r2)}, interactionCentres{{0, 0, 0}, {x2, 0, 0}}
         { }
 
         [[nodiscard]] const AbstractXCGeometry &getCollideGeometry(std::size_t idx) const {

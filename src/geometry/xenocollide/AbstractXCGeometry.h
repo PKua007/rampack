@@ -54,12 +54,12 @@ public:
  * @tparam CollideGeometry concrete collide geometry to encapsulate
  */
 template<typename CollideGeometry>
-class PolymorphicCollideAdapter : public AbstractXCGeometry {
+class PolymorphicXCAdapter : public AbstractXCGeometry {
 private:
     CollideGeometry geometry;
 
 public:
-    explicit PolymorphicCollideAdapter(CollideGeometry geometry) : geometry{std::move(geometry)} { }
+    explicit PolymorphicXCAdapter(CollideGeometry geometry) : geometry{std::move(geometry)} { }
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override {
         return this->geometry.getSupportPoint(n);

@@ -27,11 +27,11 @@ not be misrepresented as being the original software.
 #include "XCUtils.h"
 
 
-CollideSegment::CollideSegment(double halfLength) : halfLength{halfLength} {
+XCSegment::XCSegment(double halfLength) : halfLength{halfLength} {
     Expects(halfLength > 0);
 }
 
-Vector<3> CollideSegment::getSupportPoint(const Vector<3> &n) const {
+Vector<3> XCSegment::getSupportPoint(const Vector<3> &n) const {
     Vector<3> v;
     if (n[0] < 0)
         v[0] = -this->halfLength;
@@ -40,24 +40,24 @@ Vector<3> CollideSegment::getSupportPoint(const Vector<3> &n) const {
     return v;
 }
 
-CollideRectangle::CollideRectangle(double halfSideX, double halfSideY)
+XCRectangle::XCRectangle(double halfSideX, double halfSideY)
         : halfSides{halfSideX, halfSideY, 0}, halfDiagonal{halfSides.norm()}
 {
     Expects(halfSideX > 0 && halfSideY > 0);
 }
 
-Vector<3> CollideRectangle::getSupportPoint(const Vector<3> &n) const {
+Vector<3> XCRectangle::getSupportPoint(const Vector<3> &n) const {
     Vector<3> result = this->halfSides;
     if (n[0] < 0) result[0] = -result[0];
     if (n[1] < 0) result[1] = -result[1];
     return result;
 }
 
-CollideCuboid::CollideCuboid(const Vector<3> &halfSides) : halfSides{halfSides}, halfDiagonal{halfSides.norm()} {
+XCCuboid::XCCuboid(const Vector<3> &halfSides) : halfSides{halfSides}, halfDiagonal{halfSides.norm()} {
     Expects(std::all_of(halfSides.begin(), halfSides.end(), [](double d) { return d > 0; }));
 }
 
-Vector<3> CollideCuboid::getSupportPoint(const Vector<3> &n) const {
+Vector<3> XCCuboid::getSupportPoint(const Vector<3> &n) const {
     Vector<3> result = this->halfSides;
     if (n[0] < 0) result[0] = -result[0];
     if (n[1] < 0) result[1] = -result[1];
@@ -65,11 +65,11 @@ Vector<3> CollideCuboid::getSupportPoint(const Vector<3> &n) const {
     return result;
 }
 
-CollideDisk::CollideDisk(double radius) : radius{radius} {
+XCDisk::XCDisk(double radius) : radius{radius} {
     Expects(radius > 0);
 }
 
-Vector<3> CollideDisk::getSupportPoint(const Vector<3> &n) const {
+Vector<3> XCDisk::getSupportPoint(const Vector<3> &n) const {
     Vector<3> n2 = n;
     n2[2] = 0;
     if (is_vector_zero(n2))
@@ -77,16 +77,16 @@ Vector<3> CollideDisk::getSupportPoint(const Vector<3> &n) const {
     return radius * n2.normalized();
 }
 
-CollideSphere::CollideSphere(double radius) : radius{radius} {
+XCSphere::XCSphere(double radius) : radius{radius} {
     Expects(radius > 0);
 }
 
-CollideEllipse::CollideEllipse(double semiAxisX, double semiAxisY) : semiAxes{semiAxisX, semiAxisY, 0} {
+XCEllipse::XCEllipse(double semiAxisX, double semiAxisY) : semiAxes{semiAxisX, semiAxisY, 0} {
     Expects(semiAxisX > 0 && semiAxisY > 0);
     this->circumsphereRadius = *std::max_element(this->semiAxes.begin(), this->semiAxes.end());
 }
 
-Vector<3> CollideEllipse::getSupportPoint(const Vector<3> &n) const {
+Vector<3> XCEllipse::getSupportPoint(const Vector<3> &n) const {
     Vector<3> n2 = vector_comp_mul(this->semiAxes, n);
     if (is_vector_zero(n2))
         return {};
@@ -94,22 +94,22 @@ Vector<3> CollideEllipse::getSupportPoint(const Vector<3> &n) const {
     return vector_comp_mul(n2.normalized(), this->semiAxes);
 }
 
-CollideEllipsoid::CollideEllipsoid(const Vector<3> &semiAxes) : semiAxes{semiAxes} {
+XCEllipsoid::XCEllipsoid(const Vector<3> &semiAxes) : semiAxes{semiAxes} {
     Expects(std::all_of(semiAxes.begin(), semiAxes.end(), [](double d) { return d > 0; }));
     this->circumsphereRadius = *std::max_element(this->semiAxes.begin(), this->semiAxes.end());
 }
 
-Vector<3> CollideEllipsoid::getSupportPoint(const Vector<3> &n) const {
+Vector<3> XCEllipsoid::getSupportPoint(const Vector<3> &n) const {
     Vector<3> n2 = vector_comp_mul(n, this->semiAxes).normalized();
     return vector_comp_mul(n2, this->semiAxes);
 }
 
-CollideFootball::CollideFootball(double length, double radius) : length{length}, radius{radius} {
+XCFootball::XCFootball(double length, double radius) : length{length}, radius{radius} {
     Expects(radius > 0);
     Expects(length >= radius);
 }
 
-Vector<3> CollideFootball::getSupportPoint(const Vector<3> &n) const {
+Vector<3> XCFootball::getSupportPoint(const Vector<3> &n) const {
     double r1 = this->radius;
     double h = this->length;
 
@@ -126,7 +126,7 @@ Vector<3> CollideFootball::getSupportPoint(const Vector<3> &n) const {
     return -n2*(r2-r1) + n3*r2;
 }
 
-CollideBullet::CollideBullet(double lengthTip, double lengthTail, double radius)
+XCBullet::XCBullet(double lengthTip, double lengthTail, double radius)
         : lengthTip{lengthTip}, lengthTail{lengthTail}, radius{radius}
 {
     Expects(radius > 0);
@@ -136,7 +136,7 @@ CollideBullet::CollideBullet(double lengthTip, double lengthTail, double radius)
     this->circumsphereRadius = std::max(lengthTip, std::sqrt(lengthTail*lengthTip + radius*radius));
 }
 
-Vector<3> CollideBullet::getSupportPoint(const Vector<3> &n) const {
+Vector<3> XCBullet::getSupportPoint(const Vector<3> &n) const {
     if (n[0] < 0) {
         double r1 = this->radius;
         double h = this->lengthTip;
@@ -162,16 +162,16 @@ Vector<3> CollideBullet::getSupportPoint(const Vector<3> &n) const {
     }
 }
 
-Vector<3> CollideBullet::getCenter() const {
+Vector<3> XCBullet::getCenter() const {
     return {0.5*(this->lengthTail - this->lengthTip), 0, 0};
 }
 
-CollideSaucer::CollideSaucer(double radius, double halfThickness) : halfThickness{halfThickness}, radius{radius} {
+XCSaucer::XCSaucer(double radius, double halfThickness) : halfThickness{halfThickness}, radius{radius} {
     Expects(radius > 0);
     Expects(halfThickness <= radius);
 }
 
-Vector<3> CollideSaucer::getSupportPoint(const Vector<3> &n) const {
+Vector<3> XCSaucer::getSupportPoint(const Vector<3> &n) const {
     double t = this->halfThickness;
     double h = this->radius;
 

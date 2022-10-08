@@ -61,7 +61,7 @@ public:
         if constexpr (std::is_convertible_v<const CollideGeometry&, const AbstractXCGeometry&>)
             return buildPolyhedron0(geometry, subdivisions);
         else
-            return buildPolyhedron0(PolymorphicCollideAdapter<CollideGeometry>(geometry), subdivisions);
+            return buildPolyhedron0(PolymorphicXCAdapter<CollideGeometry>(geometry), subdivisions);
     }
 };
 
