@@ -57,7 +57,7 @@ CollideDiff::CollideDiff(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3,
 
 Vector<3> CollideDiff::getSupportPoint(const Vector<3> &n) const{
     Vector<3> p1 = this->rot1 * (this->geom1->getSupportPoint(this->rot1.transpose() * n)) + this->pos1;
-    Vector<3> p2 = this->rot2 * (this->geom2->getSupportPoint(this->rot2.transpose() * n)) + this->pos2;
+    Vector<3> p2 = this->rot2 * (this->geom2->getSupportPoint(this->rot2.transpose() * -n)) + this->pos2;
     return p1 - p2;
 }
 

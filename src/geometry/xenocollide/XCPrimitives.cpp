@@ -41,7 +41,7 @@ Vector<3> CollideSegment::getSupportPoint(const Vector<3> &n) const {
 }
 
 CollideRectangle::CollideRectangle(double halfSideX, double halfSideY)
-        : halfSides{halfSideX, halfSideX, 0}, halfDiagonal{halfSides.norm()}
+        : halfSides{halfSideX, halfSideY, 0}, halfDiagonal{halfSides.norm()}
 {
     Expects(halfSideX > 0 && halfSideY > 0);
 }
