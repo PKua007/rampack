@@ -49,13 +49,13 @@ std::shared_ptr<AbstractXCGeometry> XCBodyBuilder::releaseCollideGeometry() {
 void XCBodyBuilder::bullet(double lengthTip, double lengthTail, double radius) {
     Validate(lengthTip > 0 && lengthTail > 0 && radius > 0);
     Validate(lengthTip >= radius);
-    auto geom = std::make_shared<CollideBullet>(lengthTip, lengthTail, radius);
+    auto geom = std::make_shared<XCBullet>(lengthTip, lengthTail, radius);
     this->shapeStack.emplace_back(geom);
 }
 
 void XCBodyBuilder::cuboid(double sideX, double sideY, double sideZ) {
     Validate(sideX > 0 && sideY > 0 && sideZ > 0);
-    auto geom = std::make_shared<CollideCuboid>(Vector<3>{sideX / 2, sideY / 2, sideZ / 2});
+    auto geom = std::make_shared<XCCuboid>(Vector<3>{sideX / 2, sideY / 2, sideZ / 2});
     this->shapeStack.emplace_back(geom);
 }
 
@@ -72,26 +72,26 @@ void XCBodyBuilder::diff() {
     auto shape1 = this->shapeStack.back();
     this->shapeStack.pop_back();
 
-    auto geom = std::make_shared<CollideDiff>(shape1.geometry, shape1.orientation, shape1.pos,
-                                              shape2.geometry, shape2.orientation, shape2.pos);
+    auto geom = std::make_shared<XCDiff>(shape1.geometry, shape1.orientation, shape1.pos,
+                                         shape2.geometry, shape2.orientation, shape2.pos);
     this->shapeStack.emplace_back(geom);
 }
 
 void XCBodyBuilder::disk(double radius) {
     Validate(radius > 0);
-    auto geom = std::make_shared<CollideDisk>(radius);
+    auto geom = std::make_shared<XCDisk>(radius);
     this->shapeStack.emplace_back(geom);
 }
 
 void XCBodyBuilder::ellipse(double semiAxisX, double semiAxisY) {
     Validate(semiAxisX > 0 && semiAxisY > 0);
-    auto geom = std::make_shared<CollideEllipse>(semiAxisX, semiAxisY);
+    auto geom = std::make_shared<XCEllipse>(semiAxisX, semiAxisY);
     this->shapeStack.emplace_back(geom);
 }
 
 void XCBodyBuilder::ellipsoid(double semiAxisX, double semiAxisY, double semiAxisZ) {
     Validate(semiAxisX > 0 && semiAxisY > 0 && semiAxisZ > 0);
-    auto geom = std::make_shared<CollideEllipsoid>(Vector<3>{semiAxisX, semiAxisY, semiAxisZ});
+    auto geom = std::make_shared<XCEllipsoid>(Vector<3>{semiAxisX, semiAxisY, semiAxisZ});
     this->shapeStack.emplace_back(geom);
 }
 
@@ -110,7 +110,7 @@ void XCBodyBuilder::dup(std::size_t numShapes) {
 void XCBodyBuilder::football(double length, double radius) {
     Validate(length > 0 && radius > 0);
     Validate(length >= 2*radius);
-    auto geom = std::make_shared<CollideFootball>(length/2, radius);
+    auto geom = std::make_shared<XCFootball>(length / 2, radius);
     this->shapeStack.emplace_back(geom);
 }
 
@@ -120,7 +120,7 @@ void XCBodyBuilder::move(double x, double y, double z) {
 }
 
 void XCBodyBuilder::point(double x, double y, double z) {
-    auto geom = std::make_shared<CollidePoint>(Vector<3>{x, y, z});
+    auto geom = std::make_shared<XCPoint>(Vector<3>{x, y, z});
     this->shapeStack.emplace_back(geom);
 }
 
@@ -131,7 +131,7 @@ void XCBodyBuilder::pop() {
 
 void XCBodyBuilder::rectangle(double sideX, double sideY) {
     Validate(sideX > 0 && sideY > 0);
-    auto geom = std::make_shared<CollideRectangle>(sideX/2, sideY/2);
+    auto geom = std::make_shared<XCRectangle>(sideX / 2, sideY / 2);
     this->shapeStack.emplace_back(geom);
 }
 
@@ -144,19 +144,19 @@ void XCBodyBuilder::rot(double x, double y, double z) {
 void XCBodyBuilder::saucer(double radius, double thickness) {
     Validate(radius > 0 && thickness > 0);
     Validate(thickness <= 2*radius);
-    auto geom = std::make_shared<CollideSaucer>(radius, thickness/2);
+    auto geom = std::make_shared<XCSaucer>(radius, thickness / 2);
     this->shapeStack.emplace_back(geom);
 }
 
 void XCBodyBuilder::segment(double length) {
     Validate(length > 0);
-    auto geom = std::make_shared<CollideSegment>(length/2);
+    auto geom = std::make_shared<XCSegment>(length / 2);
     this->shapeStack.emplace_back(geom);
 }
 
 void XCBodyBuilder::sphere(double radius) {
     Validate(radius > 0);
-    auto geom = std::make_shared<CollideSphere>(radius);
+    auto geom = std::make_shared<XCSphere>(radius);
     this->shapeStack.emplace_back(geom);
 }
 
@@ -169,8 +169,8 @@ void XCBodyBuilder::sum() {
     auto shape2 = this->shapeStack.back();
     this->shapeStack.pop_back();
 
-    auto geom = std::make_shared<CollideSum>(shape1.geometry, shape1.orientation, shape1.pos,
-                                             shape2.geometry, shape2.orientation, shape2.pos);
+    auto geom = std::make_shared<XCSum>(shape1.geometry, shape1.orientation, shape1.pos,
+                                        shape2.geometry, shape2.orientation, shape2.pos);
     this->shapeStack.emplace_back(geom);
 }
 
@@ -191,8 +191,8 @@ void XCBodyBuilder::wrap() {
     auto shape2 = this->shapeStack.back();
     this->shapeStack.pop_back();
 
-    auto geom = std::make_shared<CollideMax>(shape1.geometry, shape1.orientation, shape1.pos,
-                                             shape2.geometry, shape2.orientation, shape2.pos);
+    auto geom = std::make_shared<XCMax>(shape1.geometry, shape1.orientation, shape1.pos,
+                                        shape2.geometry, shape2.orientation, shape2.pos);
     this->shapeStack.emplace_back(geom);
 }
 
