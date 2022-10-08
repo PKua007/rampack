@@ -12,6 +12,11 @@
 #include "geometry/xenocollide/AbstractXCGeometry.h"
 
 
+/**
+ * @brief XenoCollideTraits using AbstractXCGeometry as @a CollideGeometry.
+ * @details It is an adapter class, which enables one to used some implementation of AbstractXCGeometry, for example
+ * coming from XCBodyBuilder.
+ */
 class GenericXenoCollideTraits : public XenoCollideTraits<GenericXenoCollideTraits> {
 private:
     std::shared_ptr<AbstractXCGeometry> geometry;
