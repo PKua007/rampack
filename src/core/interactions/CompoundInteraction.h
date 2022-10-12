@@ -17,14 +17,15 @@ private:
     const Interaction &interaction2;
 
     std::vector<Vector<3>> interactionCentres;
-    double rangeRadius;
-    double totalRangeRadius;
-    bool hasSoftPart1;
-    bool hasSoftPart2;
-    bool hasHardPart1;
-    bool hasHardPart2;
-    bool hasWallPart1;
-    bool hasWallPart2;
+    double rangeRadius{};
+    double totalRangeRadius{};
+    bool hasSoftPart1{};
+    bool hasSoftPart2{};
+    bool hasHardPart1{};
+    bool hasHardPart2{};
+    bool hasWallPart1{};
+    bool hasWallPart2{};
+    bool isThisConvex{};
 
 public:
     /**
@@ -36,6 +37,7 @@ public:
     [[nodiscard]] bool hasHardPart() const override { return this->hasHardPart1 || this->hasHardPart2; }
     [[nodiscard]] bool hasSoftPart() const override { return this->hasSoftPart1 || this->hasSoftPart2; }
     [[nodiscard]] bool hasWallPart() const override { return this->hasWallPart1 || this->hasWallPart2; }
+    [[nodiscard]] bool isConvex() const override { return this->isThisConvex; }
     [[nodiscard]] double getRangeRadius() const override { return this->rangeRadius; }
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return this->interactionCentres; }
     [[nodiscard]] double getTotalRangeRadius() const override { return this->totalRangeRadius; }

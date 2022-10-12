@@ -20,6 +20,7 @@ public:
     MAKE_CONST_MOCK0(hasHardPart, bool(), override);
     MAKE_CONST_MOCK0(hasSoftPart, bool(), override);
     MAKE_CONST_MOCK0(hasWallPart, bool(), override);
+    MAKE_CONST_MOCK0(isConvex, bool(), override);
     MAKE_CONST_MOCK7(calculateEnergyBetween, double(const Vector<3> &, const Matrix<3, 3> &, std::size_t,
         const Vector<3> &, const Matrix<3, 3> &, std::size_t,
         const BoundaryConditions &),

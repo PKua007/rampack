@@ -23,6 +23,7 @@ namespace {
         [[nodiscard]] bool hasHardPart() const override { return false; }
         [[nodiscard]] bool hasSoftPart() const override { return false; }
         [[nodiscard]] bool hasWallPart() const override { return false; }
+        [[nodiscard]] bool isConvex() const override { return false; }
     };
 }
 

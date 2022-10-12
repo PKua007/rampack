@@ -15,6 +15,7 @@
     ALLOW_CALL(name, hasHardPart()).RETURN(true); \
     ALLOW_CALL(name, hasSoftPart()).RETURN(false); \
     ALLOW_CALL(name, hasWallPart()).RETURN(false); \
+    ALLOW_CALL(name, isConvex()).RETURN(false); \
     ALLOW_CALL(name, getRangeRadius()).RETURN(0); \
     ALLOW_CALL(name, getTotalRangeRadius()).RETURN(0); \
     ALLOW_CALL(name, getInteractionCentres()).RETURN(std::vector<Vector<3>>{})
@@ -24,6 +25,7 @@
     ALLOW_CALL(name, hasHardPart()).RETURN(false); \
     ALLOW_CALL(name, hasSoftPart()).RETURN(true); \
     ALLOW_CALL(name, hasWallPart()).RETURN(false); \
+    ALLOW_CALL(name, isConvex()).RETURN(false); \
     ALLOW_CALL(name, getRangeRadius()).RETURN(0); \
     ALLOW_CALL(name, getTotalRangeRadius()).RETURN(0); \
     ALLOW_CALL(name, getInteractionCentres()).RETURN(std::vector<Vector<3>>{})
@@ -33,6 +35,7 @@
     ALLOW_CALL(name, hasHardPart()).RETURN(false); \
     ALLOW_CALL(name, hasSoftPart()).RETURN(false); \
     ALLOW_CALL(name, hasWallPart()).RETURN(true); \
+    ALLOW_CALL(name, isConvex()).RETURN(false); \
     ALLOW_CALL(name, getRangeRadius()).RETURN(0); \
     ALLOW_CALL(name, getTotalRangeRadius()).RETURN(0); \
     ALLOW_CALL(name, getInteractionCentres()).RETURN(std::vector<Vector<3>>{})
@@ -111,6 +114,25 @@ TEST_CASE("CompoundInteraction") {
             CHECK(compound.hasSoftPart() == hasSoft);
             CHECK(compound.hasHardPart() == hasHard);
             CHECK(compound.hasWallPart() == hasWall);
+        }
+    }
+
+    SECTION("convexity behaviour") {
+        MAKE_HARD_MOCK(hardConvex);
+        ALLOW_CALL(hardConvex, isConvex()).RETURN(true);
+        MAKE_HARD_MOCK(hardConcave);
+        ALLOW_CALL(hardConcave, isConvex()).RETURN(false);
+        auto [int1, int2, name1, name2, isConvex]
+                = GENERATE_REF(std::make_tuple(&hardConvex, &hardConvex, "hard convex", "hard convex", false),
+                               std::make_tuple(&hardConvex, &soft, "hard convex", "not hard", true),
+                               std::make_tuple(&hardConcave, &soft, "hard concave", "not hard", false));
+
+        DYNAMIC_SECTION(name1 << " + " << name2) {
+            CompoundInteraction compound1(*int1, *int2);
+            CompoundInteraction compound2(*int2, *int1);
+
+            CHECK(compound1.isConvex() == isConvex);
+            CHECK(compound2.isConvex() == isConvex);
         }
     }
 

@@ -193,7 +193,8 @@ double Packing::tryScaling(const TriclinicBox &newBox, const Interaction &intera
             else if (overlapDelta > 0)
                 return INF;
         } else {
-            if (this->countTotalOverlaps(interaction, true) > 0)
+            bool cannotOverlap = interaction.isConvex() && Packing::isBoxUpscaled(this->lastBox, this->box);
+            if (!cannotOverlap && this->countTotalOverlaps(interaction, true) > 0)
                 return INF;
         }
     }
@@ -1276,5 +1277,28 @@ std::vector<Vector<3>> Packing::dumpNamedPoints(const ShapeGeometry &geometry, c
     };
     std::transform(this->begin(), this->end(), std::back_inserter(namedPoints), namedPointsCalculator);
     return namedPoints;
+}
+
+bool Packing::isBoxUpscaled(const TriclinicBox &oldBox, const TriclinicBox &newBox) {
+    const auto &oldSides = oldBox.getSides();
+    const auto &newSides = newBox.getSides();
+
+    constexpr double EPSILON = 100*std::numeric_limits<double>::epsilon();
+    for (std::size_t i{}; i < 3; i++) {
+        const auto &oldSide = oldSides[i];
+        const auto &newSide = newSides[i];
+
+        double dot = oldSide*newSide;
+        double norm2Old = oldSide.norm2();
+        double norm2New = newSide.norm2();
+        // For now, we can handle only box transformations without sheering and rotations - exit if box vectors are not
+        // co-linear
+        if (std::abs(dot*dot/norm2Old/norm2New - 1) < -EPSILON)
+            return false;
+        // Factor < 1 may lead to an overlap - box is not only upscaled
+        if (dot*dot/norm2Old/norm2Old < 1 + EPSILON)
+            return false;
+    }
+    return true;
 }
 
