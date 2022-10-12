@@ -33,9 +33,15 @@ public:
     [[nodiscard]] virtual bool hasSoftPart() const = 0;
 
     /**
-     * @brief Returns @a true, if the interaction includes a wall part
+     * @brief Returns @a true, if the interaction includes a wall part.
      */
     [[nodiscard]] virtual bool hasWallPart() const = 0;
+
+    /**
+     * @brief Returns @a true, if the hard-core shape is convex.
+     * @details The presence or the lack of soft part should not affect convexity.
+     */
+    [[nodiscard]] virtual bool isConvex() const = 0;
 
     /**
      * @brief Returns the soft interaction energy between two interaction centers of two molecules (for example two

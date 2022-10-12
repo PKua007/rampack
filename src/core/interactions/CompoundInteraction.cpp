@@ -20,6 +20,16 @@ CompoundInteraction::CompoundInteraction(const Interaction &interaction1, const 
     this->hasSoftPart2 = this->interaction2.hasSoftPart();
     this->hasWallPart1 = this->interaction1.hasWallPart();
     this->hasWallPart2 = this->interaction2.hasWallPart();
+
+    bool isConvex1 = this->interaction1.isConvex();
+    bool isConvex2 = this->interaction2.isConvex();
+    if (this->hasHardPart1 && this->hasHardPart2)
+        this->isThisConvex = false;
+    else if ((this->hasHardPart1 && isConvex1) || (this->hasHardPart2 && isConvex2))
+        this->isThisConvex = true;
+    else
+        this->isThisConvex = false;
+
     this->rangeRadius = std::max(this->interaction1.getRangeRadius(), this->interaction2.getRangeRadius());
     this->totalRangeRadius = std::max(this->interaction1.getTotalRangeRadius(),
                                       this->interaction2.getTotalRangeRadius());

@@ -26,6 +26,8 @@ namespace {
         [[nodiscard]] bool hasHardPart() const override { return true; }
         [[nodiscard]] bool hasSoftPart() const override { return false; }
         [[nodiscard]] bool hasWallPart() const override { return true; }
+        // Claim it is not convex to force full overlap check on upscaling moves
+        [[nodiscard]] bool isConvex() const override { return false; }
 
         [[nodiscard]] bool overlapBetween(const Vector<3> &pos1,
                                           [[maybe_unused]] const Matrix<3, 3> &orientaton1,
@@ -54,6 +56,7 @@ namespace {
         [[nodiscard]] bool hasHardPart() const override { return false; }
         [[nodiscard]] bool hasSoftPart() const override { return true; }
         [[nodiscard]] bool hasWallPart() const override { return false; }
+        [[nodiscard]] bool isConvex() const override { return false; }
 
         [[nodiscard]] double calculateEnergyBetween(const Vector<3> &pos1,
                                                     [[maybe_unused]] const Matrix<3, 3> &orientaton1,

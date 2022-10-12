@@ -69,6 +69,8 @@ private:
 
 
     static bool areShapesWithinBox(const std::vector<Shape> &shapes, const TriclinicBox &box);
+    static Matrix<3, 3> restoreDimensions(std::istream &in);
+    static bool isBoxUpscaled(const TriclinicBox &oldBox, const TriclinicBox &newBox);
 
     void rebuildNeighbourGrid();
 
@@ -127,8 +129,6 @@ private:
 
     [[nodiscard]] iterator begin() { return this->shapes.begin(); }
     [[nodiscard]] iterator end() { return this->shapes.end() - this->moveThreads; }
-
-    static Matrix<3, 3> restoreDimensions(std::istream &in);
 
 public:
     using const_iterator = decltype(shapes)::const_iterator;

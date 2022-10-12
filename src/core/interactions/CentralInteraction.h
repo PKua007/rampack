@@ -53,6 +53,7 @@ public:
     [[nodiscard]] bool hasHardPart() const final { return false; }
     [[nodiscard]] bool hasWallPart() const final { return false; }
     [[nodiscard]] bool hasSoftPart() const final { return true; }
+    [[nodiscard]] bool isConvex() const final { return false; }
 
     [[nodiscard]] double calculateEnergyBetween(const Vector<3> &pos1,
                                                 [[maybe_unused]] const Matrix<3, 3> &orientation1,
