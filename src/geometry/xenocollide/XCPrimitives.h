@@ -44,6 +44,7 @@ public:
     [[nodiscard]] Vector<3> getSupportPoint([[maybe_unused]] const Vector<3> &n) const override { return this->pos; }
     [[nodiscard]] Vector<3> getCenter() const override { return this->pos; }
     [[nodiscard]] double getCircumsphereRadius() const override { return 0; }
+    [[nodiscard]] double getInsphereRadius() const override { return 0; }
 };
 
 
@@ -62,6 +63,7 @@ public:
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
     [[nodiscard]] double getCircumsphereRadius() const override { return this->halfLength; }
+    [[nodiscard]] double getInsphereRadius() const override { return 0; }
 };
 
 
@@ -71,7 +73,7 @@ public:
 class XCRectangle : public AbstractXCGeometry {
 private:
     Vector<3> halfSides;
-    double halfDiagonal{};
+    double circumsphereRadius{};
 
 public:
     /**
@@ -81,7 +83,8 @@ public:
     XCRectangle(double halfSideX, double halfSideY);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
-    [[nodiscard]] double getCircumsphereRadius() const override { return this->halfDiagonal; }
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
+    [[nodiscard]] double getInsphereRadius() const override { return 0; }
 };
 
 
@@ -91,7 +94,8 @@ public:
 class XCCuboid : public AbstractXCGeometry {
 private:
     Vector<3> halfSides;
-    double halfDiagonal{};
+    double circumsphereRadius{};
+    double insphereRadius{};
 
 public:
     /**
@@ -101,7 +105,8 @@ public:
     explicit XCCuboid(const Vector<3> &halfSides);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
-    [[nodiscard]] double getCircumsphereRadius() const override { return this->halfDiagonal; }
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
+    [[nodiscard]] double getInsphereRadius() const override { return this->insphereRadius; }
 };
 
 
@@ -120,6 +125,7 @@ public:
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
     [[nodiscard]] double getCircumsphereRadius() const override { return this->radius; }
+    [[nodiscard]] double getInsphereRadius() const override { return 0; }
 };
 
 
@@ -138,6 +144,7 @@ public:
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override { return this->radius * n.normalized(); }
     [[nodiscard]] double getCircumsphereRadius() const override { return this->radius; }
+    [[nodiscard]] double getInsphereRadius() const override { return this->radius; }
 };
 
 
@@ -158,6 +165,7 @@ public:
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
     [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
+    [[nodiscard]] double getInsphereRadius() const override { return 0; }
 };
 
 
@@ -168,6 +176,7 @@ class XCEllipsoid : public AbstractXCGeometry {
 private:
     Vector<3> semiAxes;
     double circumsphereRadius{};
+    double insphereRadius{};
 
 public:
     /**
@@ -178,6 +187,7 @@ public:
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
     [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
+    [[nodiscard]] double getInsphereRadius() const override { return this->insphereRadius; }
 };
 
 
@@ -199,30 +209,7 @@ public:
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
     [[nodiscard]] double getCircumsphereRadius() const override { return this->length; }
-};
-
-
-/**
- * @brief AbstractXCGeometry describing a pistol bullet.
- */
-class XCBullet : public AbstractXCGeometry {
-private:
-    double lengthTip{};
-    double lengthTail{};
-    double radius{};
-    double circumsphereRadius{};
-
-public:
-    /**
-     * @brief Creates a pistol bullet by combining half of a shape as given by XCFootball (constructed as
-     * XCFootball::XCFootball (@a lengthTip/2, @a radius)) spanned in the negative X half-space and the
-     * cylinder with radius @a radius and length @a lengthTail spanned in the positive X half-space.
-     */
-    XCBullet(double lengthTip, double lengthTail, double radius);
-
-    [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
-    [[nodiscard]] Vector<3> getCenter() const override;
-    [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
+    [[nodiscard]] double getInsphereRadius() const override { return this->radius; }
 };
 
 
@@ -244,6 +231,7 @@ public:
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
     [[nodiscard]] double getCircumsphereRadius() const override { return this->radius; }
+    [[nodiscard]] double getInsphereRadius() const override { return this->halfThickness; }
 };
 
 #endif //RAMPACK_XCPRIMITIVES_H

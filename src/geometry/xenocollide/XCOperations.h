@@ -38,6 +38,7 @@ private:
     Vector<3> pos1;
     Vector<3> pos2;
     double circumsphereRadius{};
+    double insphereRadius{};
 
     std::shared_ptr<AbstractXCGeometry> geom1;
     std::shared_ptr<AbstractXCGeometry> geom2;
@@ -70,6 +71,7 @@ public:
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
     [[nodiscard]] Vector<3> getCenter() const override;
     [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
+    [[nodiscard]] double getInsphereRadius() const override { return this->insphereRadius; }
 };
 
 
@@ -83,6 +85,7 @@ private:
     Vector<3> pos1;
     Vector<3> pos2;
     double circumsphereRadius{};
+    double insphereRadius{};
 
     std::shared_ptr<AbstractXCGeometry> geom1;
     std::shared_ptr<AbstractXCGeometry> geom2;
@@ -115,6 +118,7 @@ public:
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
     [[nodiscard]] Vector<3> getCenter() const override;
     [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
+    [[nodiscard]] double getInsphereRadius() const override { return this->insphereRadius; }
 };
 
 
@@ -128,9 +132,12 @@ private:
     Vector<3> pos1;
     Vector<3> pos2;
     double circumsphereRadius{};
+    double insphereRadius{};
 
     std::shared_ptr<AbstractXCGeometry> geom1;
     std::shared_ptr<AbstractXCGeometry> geom2;
+
+    [[nodiscard]] double calculateInsphereRadius() const;
 
 public:
     /**
@@ -160,6 +167,7 @@ public:
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
     [[nodiscard]] Vector<3> getCenter() const override;
     [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
+    [[nodiscard]] double getInsphereRadius() const override { return this->insphereRadius; }
 };
 
 

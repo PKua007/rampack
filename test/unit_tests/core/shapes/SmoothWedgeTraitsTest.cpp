@@ -33,6 +33,24 @@ TEST_CASE("SmoothWedge: collide geometry") {
     auto sideNormal = Vector<3>{h1, 0, b};      // normal at tangent point
     auto tangentPoint = Vector<3>{h1, 0, 3 + b};
 
+    SECTION("spheres") {
+        SECTION("original case") {
+            SmoothWedgeTraits traits(2, 1, 5);
+            const auto &collideGeometry = traits.getCollideGeometry();
+
+            CHECK(collideGeometry.getInsphereRadius() == Approx(1.6));
+            CHECK(collideGeometry.getCircumsphereRadius() == Approx(4));
+        }
+
+        SECTION("case detecting bug") {
+            SmoothWedgeTraits traits(3, 1, 5);
+            const auto &collideGeometry = traits.getCollideGeometry();
+
+            CHECK(collideGeometry.getInsphereRadius() == Approx(2.4));
+            CHECK(collideGeometry.getCircumsphereRadius() == Approx(4.5));
+        }
+    }
+
     SECTION("no subdivisions") {
         SmoothWedgeTraits traits(2, 1, 5);
         const auto &collideGeometry = traits.getCollideGeometry();

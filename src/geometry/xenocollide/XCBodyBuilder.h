@@ -59,8 +59,6 @@ private:
     std::list<XCShape> shapeStack;
 
 public:
-    /** @brief Creates a XCBullet shape */
-    void bullet(double lengthTip, double lengthTail, double radius);
     /** @brief Creates a XCCuboid shape */
     void cuboid(double sideX, double sideY, double sideZ);
     /** @brief Creates a XCDisk shape */

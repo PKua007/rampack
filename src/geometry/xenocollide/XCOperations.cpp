@@ -31,7 +31,11 @@ XCSum::XCSum(std::shared_ptr<AbstractXCGeometry> geom1, const Matrix<3, 3> &rot1
 {
     double circumsphere1 = this->geom1->getCircumsphereRadius();
     double circumsphere2 = this->geom2->getCircumsphereRadius();
-    this->circumsphereRadius = (this->pos1 + this->pos2).norm() + circumsphere1 + circumsphere2;
+    double insphere1 = this->geom1->getInsphereRadius();
+    double insphere2 = this->geom2->getInsphereRadius();
+    double centerDisplacement = (this->pos1 + this->pos2).norm();
+    this->circumsphereRadius = centerDisplacement + circumsphere1 + circumsphere2;
+    this->insphereRadius = std::max(0., insphere1 + insphere2 - centerDisplacement);
 }
 
 Vector<3> XCSum::getSupportPoint(const Vector<3>& n) const {
@@ -52,7 +56,11 @@ XCDiff::XCDiff(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3, 3> &rot1,
 {
     double circumsphere1 = this->geom1->getCircumsphereRadius();
     double circumsphere2 = this->geom2->getCircumsphereRadius();
-    this->circumsphereRadius = (this->pos1 - this->pos2).norm() + circumsphere1 + circumsphere2;
+    double insphere1 = this->geom1->getInsphereRadius();
+    double insphere2 = this->geom2->getInsphereRadius();
+    double centerDisplacement = (this->pos1 - this->pos2).norm();
+    this->circumsphereRadius = centerDisplacement + circumsphere1 + circumsphere2;
+    this->insphereRadius = std::max(0., insphere1 + insphere2 - centerDisplacement);
 }
 
 Vector<3> XCDiff::getSupportPoint(const Vector<3> &n) const{
@@ -74,6 +82,7 @@ XCMax::XCMax(std::shared_ptr<AbstractXCGeometry> g1, const Matrix<3, 3> &rot1, c
     double circumsphere1 = this->pos1.norm() + this->geom1->getCircumsphereRadius();
     double circumsphere2 = this->pos2.norm() + this->geom2->getCircumsphereRadius();
     this->circumsphereRadius = std::max(circumsphere1, circumsphere2);
+    this->insphereRadius = this->calculateInsphereRadius();
 }
 
 Vector<3> XCMax::getSupportPoint(const Vector<3> &n) const {
@@ -89,4 +98,27 @@ Vector<3> XCMax::getCenter() const{
     Vector<3> p1 = this->rot1 * (geom1->getCenter()) + pos1;
     Vector<3> p2 = this->rot2 * (geom2->getCenter()) + pos2;
     return (p1 + p2) / 2.;
+}
+
+double XCMax::calculateInsphereRadius() const {
+    double insphere1 = this->geom1->getInsphereRadius();
+    double insphere2 = this->geom2->getInsphereRadius();
+
+    Vector<3> diff = (this->pos2 - this->pos1);
+    double diffNorm = diff.norm();
+    Vector<3> normalDiff = diff/diffNorm;
+    if (diffNorm / std::max(insphere1, insphere2) < 1e-14)
+        return std::min(insphere1, insphere2);
+
+    double originT = -(this->pos1*normalDiff)/diffNorm;
+    if (originT < 0)
+        return 0;
+    if (originT > 1)
+        return 0;
+
+    // Offset of the origin from the line joining shapes decreases insphere radius
+    double originOffset = std::sqrt(std::max(0.0, this->pos1.norm2() - std::pow(this->pos1 * normalDiff, 2)));
+    // Sphere radius is interpolated linearly between the shapes
+    double interpolatedR = (1 - originT)*insphere1 + originT*insphere2;
+    return std::max(0.0, interpolatedR - originOffset);
 }

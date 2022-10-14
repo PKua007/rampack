@@ -34,7 +34,7 @@ not be misrepresented as being the original software.
 /**
  * @brief The class implementing XenoCollide algorithm of Gary Snethen.
  * @details Based on two XCGeometry objects is determines if two objects collide.
- * @tparam XCGeometry Class containing 3 methods with signatures (corresponding to the ones of AbstractXCGeometry):
+ * @tparam XCGeometry Class containing 4 methods with signatures (corresponding to the ones of AbstractXCGeometry):
  * @code
  * // For given (non necessarily normalized) vector v returns the support point, which is the point on the shape's
  * // boundary lying the furthest in the direction of n
@@ -46,6 +46,10 @@ not be misrepresented as being the original software.
  * // Return the radius of the smallest sphere covering the shape with its center in {0, 0, 0}
  * // (not in XCGeometry::getCenter(), however the two may coincide)
  * double XCGeometry::getCircumsphereRadius() const;
+ *
+ * // Return the radius of the largest sphere lying inside the shape with its center in {0, 0, 0}
+ * // (not in XCGeometry::getCenter(), however the two may coincide)
+ * double XCGeometry::getInsphereRadius() const;
  * @endcode
  */
 template<typename XCGeometry>

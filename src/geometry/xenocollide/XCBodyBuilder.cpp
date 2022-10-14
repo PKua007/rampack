@@ -46,13 +46,6 @@ std::shared_ptr<AbstractXCGeometry> XCBodyBuilder::releaseCollideGeometry() {
     return geom;
 }
 
-void XCBodyBuilder::bullet(double lengthTip, double lengthTail, double radius) {
-    Validate(lengthTip > 0 && lengthTail > 0 && radius > 0);
-    Validate(lengthTip >= radius);
-    auto geom = std::make_shared<XCBullet>(lengthTip, lengthTail, radius);
-    this->shapeStack.emplace_back(geom);
-}
-
 void XCBodyBuilder::cuboid(double sideX, double sideY, double sideZ) {
     Validate(sideX > 0 && sideY > 0 && sideZ > 0);
     auto geom = std::make_shared<XCCuboid>(Vector<3>{sideX / 2, sideY / 2, sideZ / 2});
@@ -202,12 +195,7 @@ void XCBodyBuilder::processCommand(std::string cmd) {
     std::string commandName;
     cmdStream >> commandName;
 
-    if (commandName == "bullet") {
-        double lengthTip, lengthTail, radius;
-        cmdStream >> lengthTip >> lengthTail >> radius;
-        ValidateMsg(cmdStream, "Malformed command arguments. Usage: bullet [length of tip] [length of tail] [radius]");
-        this->bullet(lengthTip, lengthTail, radius);
-    } else if (commandName == "cuboid") {
+    if (commandName == "cuboid") {
         double sideX, sideY, sideZ;
         cmdStream >> sideX >> sideY >> sideZ;
         ValidateMsg(cmdStream, "Malformed command arguments. Usage: cuboid [side x] [side y] [side z]");

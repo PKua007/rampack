@@ -49,7 +49,7 @@ private:
     std::map<std::string, Vector<3>> customNamedPoints{};
 
     mutable std::optional<double> rangeRadius;
-    mutable std::optional<XCPrinter::Polyhedron> polyhedron;
+    mutable std::vector<XCPrinter::Polyhedron> polyhedra;
 
 public:
     /** @brief The number of sphere subdivisions when printing the shape (see XCPrinter::XCPrintes @a subdivision
@@ -101,15 +101,19 @@ public:
         const auto &collideGeometry1 = thisConcreteTraits.getCollideGeometry(idx1);
         const auto &collideGeometry2 = thisConcreteTraits.getCollideGeometry(idx2);
         using XCGeometry = decltype(collideGeometry1);
-        double r = collideGeometry1.getCircumsphereRadius() + collideGeometry2.getCircumsphereRadius();
+        double rCircumsphere = collideGeometry1.getCircumsphereRadius() + collideGeometry2.getCircumsphereRadius();
+        double rInsphere = collideGeometry1.getInsphereRadius() + collideGeometry2.getInsphereRadius();
 
         Vector<3> pos2bc = pos2 + bc.getTranslation(pos1, pos2);
-        if ((pos2bc - pos1).norm2() > r * r)
+        double dist2 = (pos2bc - pos1).norm2();
+        if (dist2 > rCircumsphere*rCircumsphere)
             return false;
-        bool result = XenoCollide<XCGeometry>::Intersect(collideGeometry1, orientation1, pos1,
-                                                         collideGeometry2, orientation2, pos2bc,
-                                                         1.0e-12);
-        return result;
+        if (dist2 < rInsphere*rInsphere)
+            return true;
+
+        return XenoCollide<XCGeometry>::Intersect(collideGeometry1, orientation1, pos1,
+                                                  collideGeometry2, orientation2, pos2bc,
+                                                  1.0e-12);
     }
 
     [[nodiscard]] bool overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation,
@@ -168,9 +172,10 @@ public:
         for (std::size_t i{}; i < centers.size(); i++) {
             const auto &geometry = thisConcreteTraits.getCollideGeometry(i);
             const auto &center = centers[i];
-            if (!this->polyhedron.has_value())
-                this->polyhedron.emplace(XCPrinter::buildPolyhedron(geometry, ConcreteCollideTraits::MESH_SUBDIVISIONS));
-            std::string wolframPolyhedron = this->polyhedron->toWolfram();
+            if (this->polyhedra.size() <= i)
+                this->polyhedra.push_back(XCPrinter::buildPolyhedron(geometry, ConcreteCollideTraits::MESH_SUBDIVISIONS));
+            const auto &polyhedron = this->polyhedra[i];
+            std::string wolframPolyhedron = polyhedron.toWolfram();
 
             Vector<3> pos = shape.getPosition() + rot * center;
 

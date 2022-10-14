@@ -25,6 +25,7 @@ public:
         double Rpos{};
         double rpos{};
         double circumsphereRadius{};
+        double insphereRadius{};
 
         friend SmoothWedgeTraits;
 
@@ -49,6 +50,7 @@ public:
         }
 
         [[nodiscard]] double getCircumsphereRadius() const { return this->circumsphereRadius; }
+        [[nodiscard]] double getInsphereRadius() const { return this->insphereRadius; }
     };
 
 private:
