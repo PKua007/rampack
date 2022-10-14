@@ -79,7 +79,8 @@ std::vector<double> SmoothWedgeTraits::calculateRelativeSpherePositions(std::siz
 }
 
 SmoothWedgeTraits::CollideGeometry::CollideGeometry(double R, double r, double l)
-        : R{R}, r{r}, l{l}, Rminusr{R - r}, Rpos{(-l + R - r)/2}, rpos{(l + R - r)/2}, circumsphereRadius{(l + R + r)/2}
+        : R{R}, r{r}, l{l}, Rminusr{R - r}, Rpos{(-l + R - r)/2}, rpos{(l + R - r)/2},
+          circumsphereRadius{(l + R + r)/2}, insphereRadius{0.5*(R + r + Rminusr*Rminusr/l)}
 {
     Expects(R > 0);
     Expects(r > 0);

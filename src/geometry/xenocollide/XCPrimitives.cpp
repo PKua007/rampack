@@ -41,7 +41,7 @@ Vector<3> XCSegment::getSupportPoint(const Vector<3> &n) const {
 }
 
 XCRectangle::XCRectangle(double halfSideX, double halfSideY)
-        : halfSides{halfSideX, halfSideY, 0}, halfDiagonal{halfSides.norm()}
+        : halfSides{halfSideX, halfSideY, 0}, circumsphereRadius{halfSides.norm()}
 {
     Expects(halfSideX > 0 && halfSideY > 0);
 }
@@ -53,7 +53,10 @@ Vector<3> XCRectangle::getSupportPoint(const Vector<3> &n) const {
     return result;
 }
 
-XCCuboid::XCCuboid(const Vector<3> &halfSides) : halfSides{halfSides}, halfDiagonal{halfSides.norm()} {
+XCCuboid::XCCuboid(const Vector<3> &halfSides)
+        : halfSides{halfSides}, circumsphereRadius{halfSides.norm()},
+          insphereRadius{*std::min_element(halfSides.begin(), halfSides.end())}
+{
     Expects(std::all_of(halfSides.begin(), halfSides.end(), [](double d) { return d > 0; }));
 }
 
@@ -81,9 +84,11 @@ XCSphere::XCSphere(double radius) : radius{radius} {
     Expects(radius > 0);
 }
 
-XCEllipse::XCEllipse(double semiAxisX, double semiAxisY) : semiAxes{semiAxisX, semiAxisY, 0} {
+XCEllipse::XCEllipse(double semiAxisX, double semiAxisY)
+        : semiAxes{semiAxisX, semiAxisY, 0},
+          circumsphereRadius{*std::max_element(semiAxes.begin(), semiAxes.end())}
+{
     Expects(semiAxisX > 0 && semiAxisY > 0);
-    this->circumsphereRadius = *std::max_element(this->semiAxes.begin(), this->semiAxes.end());
 }
 
 Vector<3> XCEllipse::getSupportPoint(const Vector<3> &n) const {
@@ -94,9 +99,12 @@ Vector<3> XCEllipse::getSupportPoint(const Vector<3> &n) const {
     return vector_comp_mul(n2.normalized(), this->semiAxes);
 }
 
-XCEllipsoid::XCEllipsoid(const Vector<3> &semiAxes) : semiAxes{semiAxes} {
+XCEllipsoid::XCEllipsoid(const Vector<3> &semiAxes)
+        : semiAxes{semiAxes},
+          circumsphereRadius{*std::max_element(semiAxes.begin(), semiAxes.end())},
+          insphereRadius{*std::min_element(semiAxes.begin(), semiAxes.end())}
+{
     Expects(std::all_of(semiAxes.begin(), semiAxes.end(), [](double d) { return d > 0; }));
-    this->circumsphereRadius = *std::max_element(this->semiAxes.begin(), this->semiAxes.end());
 }
 
 Vector<3> XCEllipsoid::getSupportPoint(const Vector<3> &n) const {
@@ -124,46 +132,6 @@ Vector<3> XCFootball::getSupportPoint(const Vector<3> &n) const {
 
     Vector<3> n2 = Vector<3>{0, n[1], n[2]}.normalized();
     return -n2*(r2-r1) + n3*r2;
-}
-
-XCBullet::XCBullet(double lengthTip, double lengthTail, double radius)
-        : lengthTip{lengthTip}, lengthTail{lengthTail}, radius{radius}
-{
-    Expects(radius > 0);
-    Expects(lengthTail > 0);
-    Expects(lengthTip >= radius);
-
-    this->circumsphereRadius = std::max(lengthTip, std::sqrt(lengthTail*lengthTip + radius*radius));
-}
-
-Vector<3> XCBullet::getSupportPoint(const Vector<3> &n) const {
-    if (n[0] < 0) {
-        double r1 = this->radius;
-        double h = this->lengthTip;
-
-        // Radius of curvature
-        double r2 = 0.5f * (h*h/r1 + r1);
-
-        Vector<3> n3 = n.normalized();
-        if (n3[0] * r2 < -h)
-            return Vector<3>{-h, 0, 0};
-        if (n3[0] * r2 > h)
-            return Vector<3>{h, 0, 0};
-
-        Vector<3> n2 = Vector<3>{0, n[1], n[2]}.normalized();
-        return -n2 * (r2 - r1) + n3 * r2;
-    } else {
-        Vector<3> n2 = n;
-        n2[0] = 0;
-        if (is_vector_zero(n2))
-            return {this->lengthTail, 0, 0};
-        n2 = n2.normalized();
-        return this->radius * n2 + Vector<3>({this->lengthTail, 0, 0});
-    }
-}
-
-Vector<3> XCBullet::getCenter() const {
-    return {0.5*(this->lengthTail - this->lengthTip), 0, 0};
 }
 
 XCSaucer::XCSaucer(double radius, double halfThickness) : halfThickness{halfThickness}, radius{radius} {

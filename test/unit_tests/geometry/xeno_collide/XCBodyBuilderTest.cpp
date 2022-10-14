@@ -8,43 +8,38 @@
 
 #include "geometry/xenocollide/XCBodyBuilder.h"
 
+// Uncomment if you want to visualize shapes in each test case with their inspheres and circumspheres
+//#define VISUALIZE
 
-TEST_CASE("XCBodyBuilder: bullet") {
-    XCBodyBuilder builder;
+#ifdef VISUALIZE
+    #include <iostream>
+    #include "geometry/xenocollide/XCPrinter.h"
+#endif
 
-    builder.processCommand("bullet 2 3 1");
-    auto geom = builder.releaseCollideGeometry();
-
-    CHECK_THAT(geom->getCenter(), IsApproxEqual({0.5, 0, 0}, 1e-12));
-
-    double L = 3, l = 2, r = 1;
-    double x = 0.5*l*l/r - 1.5*r;
-    double R = 0.5*(l*l/r + r);
-    // Curved part of tip - Y direction
-    Vector<3> curvedN1{-l + 0.1, x + r, 0};
-    Vector<3> curvedP1 = Vector<3>{0, -(r + x), 0} + R*curvedN1.normalized();
-    CHECK_THAT(geom->getSupportPoint(curvedN1), IsApproxEqual(curvedP1, 1e-12));
-    // Curved part of tip - Z direction
-    Vector<3> curvedN2{-l + 0.1, 0, x + r};
-    Vector<3> curvedP2 = Vector<3>{0, 0, -(r + x)} + R*curvedN2.normalized();
-    CHECK_THAT(geom->getSupportPoint(curvedN2), IsApproxEqual(curvedP2, 1e-12));
-    // The very tip
-    Vector<3> notCurvedN{-l - 0.1, x + r, 0};
-    CHECK_THAT(geom->getSupportPoint(notCurvedN), IsApproxEqual({-l, 0, 0}, 1e-12));
-    // The back
-    CHECK_THAT(geom->getSupportPoint({2, 0, 0}), IsApproxEqual({L, 0, 0}, 1e-12));
-    // The cylinder
-    Vector<3> sideP = geom->getSupportPoint({0, 2, 0}) - Vector<3>{0, r, 0};
-    CHECK_THAT((sideP ^ Vector<3>{1, 0, 0}), IsApproxEqual({}, 1e-12));
+namespace {
+    void visualize([[maybe_unused]] const AbstractXCGeometry &geom) {
+        #ifdef VISUALIZE
+            auto polyhedron = XCPrinter::buildPolyhedron(geom, 4);
+            double r = geom.getInsphereRadius();
+            double R = geom.getCircumsphereRadius();
+            std::cout << "Graphics3D[{{Red,Sphere[{0,0,0}," << r << "]}," << std::endl;
+            std::cout << "{White,Opacity[0.5]," << polyhedron.toWolfram() << "}," << std::endl;
+            std::cout << "{Cyan,Opacity[0.25],Sphere[{0,0,0}," << R << "]}}]" << std::endl;
+        #endif
+    }
 }
+
 
 TEST_CASE("XCBodyBuilder: cuboid") {
     XCBodyBuilder builder;
 
     builder.processCommand("cuboid 1 2 3");
     auto geom = builder.releaseCollideGeometry();
+    visualize(*geom);
 
     CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
+    CHECK(geom->getInsphereRadius() == Approx(0.5));
+    CHECK(geom->getCircumsphereRadius() == Approx(std::sqrt(1.*1 + 2*2 + 3*3)/2));
     CHECK((geom->getSupportPoint({2, 0, 0}) * Vector<3>{1, 0, 0}) == Approx(0.5));
     CHECK((geom->getSupportPoint({-2, 0, 0}) * Vector<3>{1, 0, 0}) == Approx(-0.5));
     CHECK((geom->getSupportPoint({0, 2, 0}) * Vector<3>{0, 1, 0}) == Approx(1));
@@ -58,8 +53,11 @@ TEST_CASE("XCBodyBuilder: disk") {
 
     builder.processCommand("disk 2");
     auto geom = builder.releaseCollideGeometry();
+    visualize(*geom);
 
     CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
+    CHECK(geom->getInsphereRadius() == 0);
+    CHECK(geom->getCircumsphereRadius() == 2);
     CHECK_THAT(geom->getSupportPoint({0, 0, 2}), IsApproxEqual({}, 1e-12));
     CHECK_THAT(geom->getSupportPoint({1, 2, 2}), IsApproxEqual(2.*Vector<3>{1, 2, 0}.normalized(), 1e-12));
 }
@@ -69,8 +67,11 @@ TEST_CASE("XCBodyBuilder: ellipse") {
 
     builder.processCommand("ellipse 1 2");
     auto geom = builder.releaseCollideGeometry();
+    visualize(*geom);
 
     CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
+    CHECK(geom->getInsphereRadius() == 0);
+    CHECK(geom->getCircumsphereRadius() == 2);
     CHECK_THAT(geom->getSupportPoint({0, 0, 2}), IsApproxEqual({}, 1e-12));
     CHECK_THAT(geom->getSupportPoint({2, 0, 2}), IsApproxEqual({1, 0, 0}, 1e-12));
     CHECK_THAT(geom->getSupportPoint({0, 2, 2}), IsApproxEqual({0, 2, 0}, 1e-12));
@@ -81,8 +82,11 @@ TEST_CASE("XCBodyBuilder: ellipsoid") {
 
     builder.processCommand("ellipsoid 1 2 3");
     auto geom = builder.releaseCollideGeometry();
+    visualize(*geom);
 
     CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
+    CHECK(geom->getInsphereRadius() == 1);
+    CHECK(geom->getCircumsphereRadius() == 3);
     CHECK_THAT(geom->getSupportPoint({2, 0, 0}), IsApproxEqual({1, 0, 0}, 1e-12));
     CHECK_THAT(geom->getSupportPoint({0, 2, 0}), IsApproxEqual({0, 2, 0}, 1e-12));
     CHECK_THAT(geom->getSupportPoint({0, 0, 2}), IsApproxEqual({0, 0, 3}, 1e-12));
@@ -93,8 +97,11 @@ TEST_CASE("XCBodyBuilder: football") {
 
     builder.processCommand("football 4 1");
     auto geom = builder.releaseCollideGeometry();
+    visualize(*geom);
 
     CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
+    CHECK(geom->getInsphereRadius() == 1);
+    CHECK(geom->getCircumsphereRadius() == 2);
 
     double l = 2, r = 1;
     double x = 0.5*l*l/r - 1.5*r;
@@ -117,8 +124,11 @@ TEST_CASE("XCBodyBuilder: point") {
 
     builder.processCommand("point 1 2 3");
     auto geom = builder.releaseCollideGeometry();
+    visualize(*geom);
 
     CHECK_THAT(geom->getCenter(), IsApproxEqual({1, 2, 3}, 1e-12));
+    CHECK(geom->getInsphereRadius() == 0);
+    CHECK(geom->getCircumsphereRadius() == 0);
     CHECK_THAT(geom->getSupportPoint({1, 4, -7}), IsApproxEqual({1, 2, 3}, 1e-12));
 }
 
@@ -127,8 +137,11 @@ TEST_CASE("XCBodyBuilder: rectangle") {
 
     builder.processCommand("rectangle 1 2");
     auto geom = builder.releaseCollideGeometry();
+    visualize(*geom);
 
     CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
+    CHECK(geom->getInsphereRadius() == 0);
+    CHECK(geom->getCircumsphereRadius() == Approx(std::sqrt(1.*1 + 2*2)/2));
     CHECK(geom->getSupportPoint({0, 0, 2}) * Vector<3>{0, 0, 1} == Approx(0).margin(1e-12));
     CHECK((geom->getSupportPoint({2, 0, 2}) * Vector<3>{1, 0, 0}) == Approx(0.5));
     CHECK((geom->getSupportPoint({-2, 0, 2}) * Vector<3>{1, 0, 0}) == Approx(-0.5));
@@ -142,8 +155,11 @@ TEST_CASE("XCBodyBuilder: saucer") {
 
     builder.processCommand("saucer 2 2");
     auto geom = builder.releaseCollideGeometry();
+    visualize(*geom);
 
     CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
+    CHECK(geom->getInsphereRadius() == 1);
+    CHECK(geom->getCircumsphereRadius() == 2);
 
     double l = 2, r = 1;
     double x = 0.5*l*l/r - 1.5*r;
@@ -166,8 +182,11 @@ TEST_CASE("XCBodyBuilder: segment") {
 
     builder.processCommand("segment 3");
     auto geom = builder.releaseCollideGeometry();
+    visualize(*geom);
 
     CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
+    CHECK(geom->getInsphereRadius() == 0);
+    CHECK(geom->getCircumsphereRadius() == 1.5);
     CHECK_THAT(geom->getSupportPoint({2, 4, -7}), IsApproxEqual({1.5, 0, 0}, 1e-12));
     CHECK_THAT(geom->getSupportPoint({-2, 4, -7}), IsApproxEqual({-1.5, 0, 0}, 1e-12));
 }
@@ -177,8 +196,11 @@ TEST_CASE("XCBodyBuilder: sphere") {
 
     builder.processCommand("sphere 2");
     auto geom = builder.releaseCollideGeometry();
+    visualize(*geom);
 
     CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
+    CHECK(geom->getInsphereRadius() == 2);
+    CHECK(geom->getCircumsphereRadius() == 2);
     CHECK_THAT(geom->getSupportPoint({2, 4, -7}), IsApproxEqual(2.*Vector<3>{2, 4, -7}.normalized(), 1e-12));
 }
 
@@ -190,6 +212,7 @@ TEST_CASE("XCBodyBuilder: rot + sum") {
     builder.processCommand("rot 0 0 90");
     builder.processCommand("sum");
     auto geom = builder.releaseCollideGeometry();
+    visualize(*geom);
 
     CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
     CHECK_THAT(geom->getSupportPoint({1, 1, 1}), IsApproxEqual({0.5, 1, 0}, 1e-12));
@@ -204,6 +227,7 @@ TEST_CASE("XCBodyBuilder: move + rot + diff") {
     builder.processCommand("rot 0 0 90");
     builder.processCommand("diff");
     auto geom = builder.releaseCollideGeometry();
+    visualize(*geom);
 
     CHECK_THAT(geom->getCenter(), IsApproxEqual({-0.5, 0, 0}, 1e-12));
     CHECK_THAT(geom->getSupportPoint({1, 1, 1}), IsApproxEqual({0, 1, 0}, 1e-12));
@@ -218,6 +242,7 @@ TEST_CASE("XCBodyBuilder: rot + wrap") {
     builder.processCommand("rot 0 0 90");
     builder.processCommand("wrap");
     auto geom = builder.releaseCollideGeometry();
+    visualize(*geom);
 
     CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
     CHECK_THAT(geom->getSupportPoint({1, 0, 1}), IsApproxEqual({0.5, 0, 0}, 1e-12));
@@ -238,6 +263,8 @@ TEST_CASE("XCBodyBuilder: dup + move + wrap") {
     builder.processCommand("wrap");
 
     auto geom = builder.releaseCollideGeometry();
+    visualize(*geom);
+
     CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
     CHECK_THAT(geom->getSupportPoint({0.1, 0, 1}), IsApproxEqual({0.5, 0, 0.5}, 1e-12));
     CHECK_THAT(geom->getSupportPoint({1, 1, -1}), IsApproxEqual({0.5, 0.5, -0.5}, 1e-12));
@@ -253,6 +280,8 @@ TEST_CASE("XCBodyBuilder: swap + pop") {
     builder.processCommand("pop");
 
     auto geom = builder.releaseCollideGeometry();
+    visualize(*geom);
+
     CHECK_THAT(geom->getSupportPoint({2, 4, -7}), IsApproxEqual(2.*Vector<3>{2, 4, -7}.normalized(), 1e-12));
 }
 
@@ -265,5 +294,7 @@ TEST_CASE("XCBodyBuilder: clear") {
     builder.processCommand("sphere 2");
 
     auto geom = builder.releaseCollideGeometry();
+    visualize(*geom);
+
     CHECK_THAT(geom->getSupportPoint({2, 4, -7}), IsApproxEqual(2.*Vector<3>{2, 4, -7}.normalized(), 1e-12));
 }
