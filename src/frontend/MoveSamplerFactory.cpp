@@ -10,9 +10,12 @@
 #include "core/move_samplers/TranslationSampler.h"
 #include "core/move_samplers/RotationSampler.h"
 #include "core/move_samplers/FlipSampler.h"
+#include "ParseUtils.h"
 
 
-std::unique_ptr<MoveSampler> MoveSamplerFactory::create(const std::string &moveSamplerString) {
+std::unique_ptr<MoveSampler> MoveSamplerFactory::create(const std::string &moveSamplerString,
+                                                        const ShapeTraits &traits)
+{
     std::istringstream moveSamplerStream(moveSamplerString);
     std::string moveName;
     moveSamplerStream >> moveName;
@@ -20,14 +23,16 @@ std::unique_ptr<MoveSampler> MoveSamplerFactory::create(const std::string &moveS
 
     if (moveName == "rototranslation") {
         double translationStep{};
-        double rotationStep{};
-        moveSamplerStream >> translationStep >> rotationStep;
+        moveSamplerStream >> translationStep;
         ValidateMsg(moveSamplerStream, "Malformed move sampler");
         Validate(translationStep > 0);
-        Validate(rotationStep > 0);
+        if (!ParseUtils::isAnythingLeft(moveSamplerStream))
+            return std::make_unique<RototranslationSampler>(traits.getInteraction(), translationStep);
 
-        moveSamplerStream >> std::ws;
-        if (moveSamplerStream.eof())
+        double rotationStep{};
+        moveSamplerStream >> translationStep;
+        Validate(rotationStep > 0);
+        if (!ParseUtils::isAnythingLeft(moveSamplerStream))
             return std::make_unique<RototranslationSampler>(translationStep, rotationStep);
 
         double maxTranslationStep{};

@@ -36,3 +36,10 @@ std::map<std::string, std::string> ParseUtils::parseFields(const std::vector<std
     }
     return fieldMap;
 }
+
+bool ParseUtils::isAnythingLeft(std::istringstream &stream) {
+    if (!stream)
+        return false;
+    stream >> std::ws;
+    return stream.good();
+}

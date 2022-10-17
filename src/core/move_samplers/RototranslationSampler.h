@@ -21,6 +21,12 @@ private:
 
 public:
     RototranslationSampler(double translationStepSize, double rotationStepSize, double maxTranslationStepSize = 0);
+    RototranslationSampler(const Interaction &interaction, double translationStepSize,
+                           double maxTranslationStepSize = 0)
+            : translationStepSize{translationStepSize},
+              rotationStepSize{2 * translationStepSize / interaction.getTotalRangeRadius()},
+              maxTranslationStepSize{maxTranslationStepSize}
+    { }
 
     [[nodiscard]] std::string getName() const override { return "rototranslation"; }
 
