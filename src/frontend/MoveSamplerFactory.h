@@ -8,11 +8,12 @@
 #include <memory>
 
 #include "core/MoveSampler.h"
+#include "core/ShapeTraits.h"
 
 
 class MoveSamplerFactory {
 public:
-    static std::unique_ptr<MoveSampler> create(const std::string &moveSamplerString);
+    static std::unique_ptr<MoveSampler> create(const std::string &moveSamplerString, const ShapeTraits &traits);
 };
 
 

@@ -222,13 +222,6 @@ namespace {
         return std::make_unique<BondOrder>(ranks, millerIndices, layeringPoint, bondOrderPoint);
     }
 
-    bool is_anything_left(std::istringstream &observableStream) {
-        if (!observableStream)
-            return false;
-        observableStream >> std::ws;
-        return observableStream.good();
-    }
-
     std::unique_ptr<PairEnumerator> parse_pair_enumerator(std::istringstream &observableStream) {
         std::string enumeratorName;
         observableStream >> enumeratorName;
@@ -236,7 +229,7 @@ namespace {
 
         if (enumeratorName == "radial") {
             std::string focalPoint = "cm";
-            if (is_anything_left(observableStream))
+            if (ParseUtils::isAnythingLeft(observableStream))
                 observableStream >> focalPoint;
             ValidateMsg(!observableStream.fail(), BINNING_SPEC_USAGE);
 
@@ -248,7 +241,7 @@ namespace {
             auto millerIndices = parse_miller_indices(millerString);
 
             std::string focalPoint = "cm";
-            if (is_anything_left(observableStream))
+            if (ParseUtils::isAnythingLeft(observableStream))
                 observableStream >> focalPoint;
             ValidateMsg(!observableStream.fail(), BINNING_SPEC_USAGE);
 

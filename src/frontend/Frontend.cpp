@@ -212,7 +212,7 @@ int Frontend::casino(int argc, char **argv) {
     std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
     moveSamplers.reserve(moveSamplerStrings.size());
     for (const auto &moveSamplerString : moveSamplerStrings)
-        moveSamplers.push_back(MoveSamplerFactory::create(moveSamplerString));
+        moveSamplers.push_back(MoveSamplerFactory::create(moveSamplerString, *shapeTraits));
 
     // Load starting state from a previous or current run packing depending on --start-from and --continue
     // options combination
@@ -743,7 +743,7 @@ int Frontend::preview(int argc, char **argv) {
 
     // Store packing (if desired)
     if (parsedOptions.count("dat"))
-        this->generateDatFile(*packing, params, datFilename);
+        this->generateDatFile(*packing, params, *shapeTraits, datFilename);
 
     // Store Mathematica packing (if desired)
     if (parsedOptions.count("wolfram"))
@@ -752,15 +752,15 @@ int Frontend::preview(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-void Frontend::generateDatFile(const Packing &packing, const Parameters &params, const std::string &datFilename,
-                               std::size_t cycles)
+void Frontend::generateDatFile(const Packing &packing, const Parameters &params, const ShapeTraits &traits,
+                               const std::string &datFilename, std::size_t cycles)
 {
     // Parse move type
     auto moveSamplerStrings = explode(params.moveTypes, ',');
     std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
     moveSamplers.reserve(moveSamplerStrings.size());
     for (const auto &moveSamplerString : moveSamplerStrings)
-        moveSamplers.push_back(MoveSamplerFactory::create(moveSamplerString));
+        moveSamplers.push_back(MoveSamplerFactory::create(moveSamplerString, traits));
 
     std::map<std::string, std::string> auxInfo;
     appendMoveStepSizesToAuxInfo(moveSamplers, params.volumeStepSize, auxInfo);
@@ -1053,7 +1053,7 @@ int Frontend::trajectory(int argc, char **argv) {
         this->logger.info() << "cycles: " << player.getCurrentSnapshotCycles() << std::endl;
 
         if (parsedOptions.count("generate-dat"))
-            this->generateDatFile(*packing, params, datFilename, player.getCurrentSnapshotCycles());
+            this->generateDatFile(*packing, params, *shapeTraits, datFilename, player.getCurrentSnapshotCycles());
         if (parsedOptions.count("generate-wolfram"))
             this->storeWolframVisualization(*packing, shapeTraits->getPrinter(), wolframFilename);
         this->logger.info() << std::endl;

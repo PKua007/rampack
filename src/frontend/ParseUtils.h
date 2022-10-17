@@ -62,6 +62,8 @@ public:
     static std::map<std::string, std::string> parseFields(const std::vector<std::string> &fields, std::istream &in) {
         return ParseUtils::parseFields(fields, ParseUtils::tokenize<std::string>(in));
     }
+
+    static bool isAnythingLeft(std::istringstream &stream);
 };
 
 
