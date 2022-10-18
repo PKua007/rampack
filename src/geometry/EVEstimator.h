@@ -14,7 +14,7 @@ class EVEstimator {
 private:
     double range, volume;
     ShapeTraits &traits;
-    Interaction &interaction;
+    const Interaction &interaction;
     std::uniform_real_distribution<double> translationDistribution;
     std::uniform_real_distribution<double> rotationDistribution;
     std::mt19937 mt;
