@@ -886,6 +886,7 @@ int Frontend::trajectory(int argc, char **argv) {
          cxxopts::value<std::string>(inputFilename))
         ("t,trajectory", "a file with recorder trajectory",
          cxxopts::value<std::string>(trajectoryFilename))
+        ("f,auto-fix", "tries to auto-fix the trajectory if it is broken")
         ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
                         "error, warn, info, verbose, debug. Defaults to: info if --log-file not specified, "
                         "otherwise to: warn",
@@ -967,12 +968,31 @@ int Frontend::trajectory(int argc, char **argv) {
     auto trajectoryStream = std::make_unique<std::ifstream>(trajectoryFilename,
                                                                          std::ios_base::in | std::ios_base::binary);
     ValidateOpenedDesc(*trajectoryStream, trajectoryFilename, "to read trajectory");
-    SimulationPlayer player(std::move(trajectoryStream));
+    std::unique_ptr<SimulationPlayer> player;
+    if (parsedOptions.count("auto-fix")) {
+        SimulationPlayer::AutoFix autoFix(packing->size());
+        try {
+            player = std::make_unique<SimulationPlayer>(std::move(trajectoryStream), autoFix);
+        } catch (const ValidationException &exception) {
+            autoFix.dumpInfo(this->logger);
+            return EXIT_FAILURE;
+        }
+        autoFix.dumpInfo(this->logger);
+        this->logger.info() << std::endl;
+    } else {
+        try {
+            player = std::make_unique<SimulationPlayer>(std::move(trajectoryStream));
+        } catch (const ValidationException &exception) {
+            this->logger.error() << "Reading the trajectory failed: " << exception.what() << std::endl;
+            this->logger << "You may try to fix it by adding the --auto-fix option." << std::endl;
+            return EXIT_FAILURE;
+        }
+    }
 
     // Show info (if desired)
     if (parsedOptions.count("log-info")) {
         this->logger.info() << "-- " << trajectoryFilename << std::endl;
-        player.dumpHeader(this->logger);
+        player->dumpHeader(this->logger);
         this->logger.info() << std::endl;
     }
 
@@ -986,10 +1006,10 @@ int Frontend::trajectory(int argc, char **argv) {
 
         using namespace std::chrono;
         auto start = high_resolution_clock::now();
-        while (player.hasNext()) {
-            player.nextSnapshot(*packing, shapeTraits->getInteraction());
-            collector->addSnapshot(*packing, player.getCurrentSnapshotCycles(), *shapeTraits);
-            this->logger.info() << "Replayed cycle " << player.getCurrentSnapshotCycles() << "; ";
+        while (player->hasNext()) {
+            player->nextSnapshot(*packing, shapeTraits->getInteraction());
+            collector->addSnapshot(*packing, player->getCurrentSnapshotCycles(), *shapeTraits);
+            this->logger.info() << "Replayed cycle " << player->getCurrentSnapshotCycles() << "; ";
             this->logger << collector->generateInlineObservablesString(*packing, *shapeTraits);
             this->logger << std::endl;
         }
@@ -1007,13 +1027,13 @@ int Frontend::trajectory(int argc, char **argv) {
             die("Output file for bulk observables must be specified with option -b [output file name]", this->logger);
         if (!parsedOptions.count("averaging-start"))
             die("The start of averaging must be specified with option -a [first cycle number]", this->logger);
-        if (averagingStart >= player.getTotalCycles()) {
+        if (averagingStart >= player->getTotalCycles()) {
             die("Starting cycle (" + std::to_string(averagingStart) + ") is larger than a total number of recorded "
-                + "cycles (" + std::to_string(player.getTotalCycles()) + ")");
+                + "cycles (" + std::to_string(player->getTotalCycles()) + ")");
         }
-        if (averagingStart < player.getCycleStep()) {
+        if (averagingStart < player->getCycleStep()) {
             die("Starting cycle (" + std::to_string(averagingStart) + ") is less than cycle number of first recorded "
-                + "shapshot (" + std::to_string(player.getCycleStep()) + ")");
+                + "shapshot (" + std::to_string(player->getCycleStep()) + ")");
         }
 
         this->logger.info() << "Starting simulation replay for bulk observables..." << std::endl;
@@ -1024,19 +1044,19 @@ int Frontend::trajectory(int argc, char **argv) {
 
         // Round the starting cycle up
         std::size_t startingCycle{};
-        std::size_t cycleStep = player.getCycleStep();
+        std::size_t cycleStep = player->getCycleStep();
         if (averagingStart % cycleStep == 0)
             startingCycle = averagingStart;
         else
             startingCycle = (averagingStart / cycleStep + 1) * cycleStep;
 
-        player.jumpToSnapshot(*packing, shapeTraits->getInteraction(), startingCycle);
+        player->jumpToSnapshot(*packing, shapeTraits->getInteraction(), startingCycle);
         collector->addAveragingValues(*packing, *shapeTraits);
-        this->logger.info() << "Replayed cycle " << player.getCurrentSnapshotCycles() << "; " << std::endl;
-        while (player.hasNext()) {
-            player.nextSnapshot(*packing, shapeTraits->getInteraction());
+        this->logger.info() << "Replayed cycle " << player->getCurrentSnapshotCycles() << "; " << std::endl;
+        while (player->hasNext()) {
+            player->nextSnapshot(*packing, shapeTraits->getInteraction());
             collector->addAveragingValues(*packing, *shapeTraits);
-            this->logger.info() << "Replayed cycle " << player.getCurrentSnapshotCycles() << "; " << std::endl;
+            this->logger.info() << "Replayed cycle " << player->getCurrentSnapshotCycles() << "; " << std::endl;
         }
         auto end = high_resolution_clock::now();
         double time = duration<double>(end - start).count();
@@ -1049,11 +1069,11 @@ int Frontend::trajectory(int argc, char **argv) {
     // Recreate dat file from the last snapshot (if desired)
     if (parsedOptions.count("generate-dat") || parsedOptions.count("generate-wolfram")) {
         this->logger.info() << "Reading last snapshot... " << std::flush;
-        player.lastSnapshot(*packing, shapeTraits->getInteraction());
-        this->logger.info() << "cycles: " << player.getCurrentSnapshotCycles() << std::endl;
+        player->lastSnapshot(*packing, shapeTraits->getInteraction());
+        this->logger.info() << "cycles: " << player->getCurrentSnapshotCycles() << std::endl;
 
         if (parsedOptions.count("generate-dat"))
-            this->generateDatFile(*packing, params, *shapeTraits, datFilename, player.getCurrentSnapshotCycles());
+            this->generateDatFile(*packing, params, *shapeTraits, datFilename, player->getCurrentSnapshotCycles());
         if (parsedOptions.count("generate-wolfram"))
             this->storeWolframVisualization(*packing, shapeTraits->getPrinter(), wolframFilename);
         this->logger.info() << std::endl;

@@ -22,12 +22,43 @@ private:
     std::size_t currentSnapshot{};
 
 public:
+    class AutoFix {
+    private:
+        std::size_t expectedNumMolecules{};
+
+        bool wasFixed{};
+        bool fixingSuccessful = true;
+        std::string errorMessage;
+        std::size_t headerSnapshots{};
+        std::size_t inferredSnapshots{};
+        std::size_t bytesRemainder{};
+        std::size_t bytesPerSnapshot{};
+
+        void reportNofix(const SimulationIO::Header &header_);
+        void reportError(const std::string &message);
+        void tryFixing(Header &header_, std::size_t snapshotBytes);
+
+        friend class SimulationPlayer;
+
+    public:
+        explicit AutoFix(std::size_t expectedNumMolecules);
+
+        [[nodiscard]] bool wasFixingSuccessful() const { return this->fixingSuccessful; }
+        void dumpInfo(Logger &out) const;
+    };
+
     /**
      * @brief Constructs the player from a given @a std::istream (it takes full responsibility of it).
      * @details After the construction the internal "pointer" point before the first snapshot. The stream has to be
      * binary and has operable @a tellg and @a seekg methods.
      */
     explicit SimulationPlayer(std::unique_ptr<std::istream> in);
+
+    /**
+     * @brief The same as the other constructor, but it will attempt to fix the trajectory if it was truncated and
+     * report the results via autoFix. If fixing fails, exception is thrown afterwards.
+     */
+    explicit SimulationPlayer(std::unique_ptr<std::istream> in, AutoFix &autoFix);
 
     /**
      * @brief Returns true if there is next snapshot to move to.
