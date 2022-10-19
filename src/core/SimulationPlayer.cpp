@@ -2,6 +2,8 @@
 // Created by pkua on 04.04.2022.
 //
 
+#include <sstream>
+
 #include "SimulationPlayer.h"
 #include "utils/Assertions.h"
 
@@ -10,11 +12,38 @@ SimulationPlayer::SimulationPlayer(std::unique_ptr<std::istream> in) : in{std::m
     this->in->seekg(0);
     this->header = SimulationIO::readHeader(*this->in);
 
-    std::streamoff savePos = this->in->tellg();
+    std::streamoff savedPos = this->in->tellg();
     this->in->seekg(0, std::ios_base::end);
     std::streamoff expectedPos = SimulationIO::streamoffForSnapshot(this->header, this->header.numSnapshots);
     ValidateMsg(this->in->tellg() == expectedPos, "RAMTRJ read error: broken snapshot structure");
-    this->in->seekg(savePos);
+    this->in->seekg(savedPos);
+}
+
+SimulationPlayer::SimulationPlayer(std::unique_ptr<std::istream> in, SimulationPlayer::AutoFix &autoFix)
+        : in{std::move(in)}
+{
+    this->in->seekg(0);
+    try {
+        this->header = SimulationIO::readHeader(*this->in);
+    } catch (const ValidationException &ex) {
+        autoFix.fixingSuccessful = false;
+        autoFix.errorMessage = ex.what();
+        std::rethrow_exception(std::current_exception());
+    }
+
+    std::streamoff savedPos = this->in->tellg();
+
+    std::streamoff expectedPos = SimulationIO::streamoffForSnapshot(this->header, this->header.numSnapshots);
+    this->in->seekg(0, std::ios_base::end);
+    std::streamoff realPos = this->in->tellg();
+    if (realPos == expectedPos) {
+        autoFix.reportNofix(this->header);
+    } else {
+        std::size_t snapshotBytes = realPos - SimulationIO::getHeaderSize();
+        autoFix.tryFixing(this->header, snapshotBytes);
+    }
+
+    this->in->seekg(savedPos);
 }
 
 bool SimulationPlayer::hasNext() const {
@@ -74,4 +103,65 @@ void SimulationPlayer::dumpHeader(Logger &out) const {
     out << "number of snapshots     : " << this->header.numSnapshots << std::endl;
     out << "cycle step              : " << this->header.cycleStep << std::endl;
     out << "total number of cycles  : " << (this->header.cycleStep * this->header.numSnapshots) << std::endl;
+}
+
+void SimulationPlayer::AutoFix::dumpInfo(Logger &out) const {
+    if (!this->fixingSuccessful) {
+        out.error() << "Trajectory was invalid and fixing it failed. Error message: " << std::endl;
+        out.error() << this->errorMessage << std::endl;
+        return;
+    }
+
+    if (!this->wasFixed) {
+        out.info() << "Trajectory was completely valid. No fixes were made." << std::endl;
+        return;
+    }
+
+    out.warn() << "Trajectory file was truncated, but could be fixed. The summary:" << std::endl;
+    out << "Alleged number of snapshots  : " << this->headerSnapshots << std::endl;
+    out << "Inferred number of snapshots : " << this->inferredSnapshots << std::endl;
+    if (this->bytesRemainder == 0) {
+        out << "The last snapshot was not truncated" << std::endl;
+    } else {
+        out << "The last snapshot was truncated: only " << this->bytesRemainder << "/" << this->bytesPerSnapshot;
+        out << " bytes were read" << std::endl;
+    }
+}
+
+SimulationPlayer::AutoFix::AutoFix(std::size_t expectedNumMolecules) : expectedNumMolecules{expectedNumMolecules} {
+    Expects(expectedNumMolecules > 0);
+}
+
+void SimulationPlayer::AutoFix::reportNofix(const SimulationIO::Header &header_) {
+    this->fixingSuccessful = true;
+    if (header_.numParticles != 0)
+        this->bytesPerSnapshot = getSnapshotSize(header_);
+    this->headerSnapshots = header_.numSnapshots;
+    this->wasFixed = false;
+    this->inferredSnapshots = header_.numSnapshots;
+}
+
+void SimulationPlayer::AutoFix::reportError(const std::string &message) {
+    this->wasFixed = false;
+    this->fixingSuccessful = false;
+    this->errorMessage = message;
+}
+
+void SimulationPlayer::AutoFix::tryFixing(SimulationIO::Header &header_, std::size_t snapshotBytes) {
+    if (header_.numParticles == 0) {
+        header_.numParticles = this->expectedNumMolecules;
+    } else if (header_.numParticles != this->expectedNumMolecules) {
+        this->fixingSuccessful = false;
+        std::ostringstream error;
+        error << "Expected number of molecules (" << this->expectedNumMolecules << ") != number of molecules ";
+        error << "in the input (" << header_.numParticles << ")";
+        this->reportError(error.str());
+        throw ValidationException(this->errorMessage);
+    }
+
+    this->wasFixed = true;
+    this->fixingSuccessful = true;
+    this->bytesPerSnapshot = SimulationIO::getSnapshotSize(header_);
+    header_.numSnapshots = this->inferredSnapshots = snapshotBytes / this->bytesPerSnapshot;
+    this->bytesRemainder = snapshotBytes % this->bytesPerSnapshot;
 }
