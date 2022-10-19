@@ -21,6 +21,11 @@ private:
 
 public:
     RototranslationSampler(double translationStepSize, double rotationStepSize, double maxTranslationStepSize = 0);
+
+    /**
+     * @brief Creates the sampler, where translation step size is given explicitly and rotation step size is calculated
+     * using heuristically found formula.
+     */
     RototranslationSampler(const Interaction &interaction, double translationStepSize,
                            double maxTranslationStepSize = 0);
 
