@@ -76,3 +76,28 @@ void RototranslationSampler::setStepSize(const std::string &stepName, double ste
     else
         throw PreconditionException("Unknown step name: " + stepName);
 }
+
+RototranslationSampler::RototranslationSampler(const Interaction &interaction, double translationStepSize,
+                                               double maxTranslationStepSize)
+        : translationStepSize{translationStepSize},
+          maxTranslationStepSize{maxTranslationStepSize}
+{
+    Expects(maxTranslationStepSize >= 0);
+    if (maxTranslationStepSize > 0)
+        Expects(translationStepSize <= maxTranslationStepSize);
+    Expects(translationStepSize > 0);
+    Expects(interaction.getTotalRangeRadius() > 0);
+    Expects(interaction.getTotalRangeRadius() < std::numeric_limits<double>::infinity());
+
+    // Optimal rotation step size can be computed automatically based on translationStepSize and total interaction
+    // radius. It was done by a following heuristic procedure:
+    //
+    // We carried out simulations for: Spherocylinder, SmoothWedge, PolyspherocylinderBanana (with 2 segments) and a
+    // cube (using GenericXenoCollide) with various aspect ratios around packing fraction 0.5. In the simulations,
+    // translational and rotational moves were separate and both step sizes were optimized individually. We then
+    // fit the best quadratic function to rotationStepSize(translationStepSize/totalRangeRadius) dependence.
+
+    double ratio = translationStepSize / interaction.getTotalRangeRadius();
+    this->rotationStepSize = 0.133183 - 1.18634*ratio + 264.37*ratio*ratio;
+    Assert(this->rotationStepSize > 0);
+}
