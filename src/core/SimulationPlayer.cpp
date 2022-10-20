@@ -118,7 +118,7 @@ void SimulationPlayer::AutoFix::dumpInfo(Logger &out) const {
         return;
     }
 
-    if (!this->wasFixed) {
+    if (!this->fixed) {
         out.info() << "Trajectory was completely valid. No fixes were made." << std::endl;
         return;
     }
@@ -143,12 +143,12 @@ void SimulationPlayer::AutoFix::reportNofix(const SimulationIO::Header &header_)
     if (header_.numParticles != 0)
         this->bytesPerSnapshot = getSnapshotSize(header_);
     this->headerSnapshots = header_.numSnapshots;
-    this->wasFixed = false;
+    this->fixed = false;
     this->inferredSnapshots = header_.numSnapshots;
 }
 
 void SimulationPlayer::AutoFix::reportError(const std::string &message) {
-    this->wasFixed = false;
+    this->fixed = false;
     this->fixingSuccessful = false;
     this->errorMessage = message;
 }
@@ -168,7 +168,7 @@ void SimulationPlayer::AutoFix::tryFixing(SimulationIO::Header &header_, std::si
         throw ValidationException(this->errorMessage);
     }
 
-    this->wasFixed = true;
+    this->fixed = true;
     this->fixingSuccessful = true;
     this->bytesPerSnapshot = SimulationIO::getSnapshotSize(header_);
     header_.numSnapshots = this->inferredSnapshots = snapshotBytes / this->bytesPerSnapshot;
