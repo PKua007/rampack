@@ -59,7 +59,8 @@ TEST_CASE("Simulation IO: storing and restoring")
 
     SECTION("without continuation") {
         auto inout_stream = std::make_unique<std::iostream>(&inout_buf);
-        auto recorder = std::make_unique<SimulationRecorder>(std::move(inout_stream), false);
+        auto recorder = std::make_unique<SimulationRecorder>(std::move(inout_stream), simulation.getPacking().size(),
+                                                             100, false);
         auto collector = std::make_unique<ObservablesCollector>();
         simulation.integrate(1, 1, 1000, 1000, 100, 100, traits, std::move(collector), std::move(recorder), logger);
 
@@ -95,13 +96,15 @@ TEST_CASE("Simulation IO: storing and restoring")
     SECTION("with continuation") {
         // Initial run
         auto inout_stream1 = std::make_unique<std::iostream>(&inout_buf);
-        auto recorder1 = std::make_unique<SimulationRecorder>(std::move(inout_stream1), false);
+        auto recorder1 = std::make_unique<SimulationRecorder>(std::move(inout_stream1), simulation.getPacking().size(),
+                                                              100, false);
         auto collector1 = std::make_unique<ObservablesCollector>();
         simulation.integrate(1, 1, 500, 500, 100, 100, traits, std::move(collector1), std::move(recorder1), logger);
 
         // Continuation
         auto inout_stream2 = std::make_unique<std::iostream>(&inout_buf);
-        auto recorder2 = std::make_unique<SimulationRecorder>(std::move(inout_stream2), true);
+        auto recorder2 = std::make_unique<SimulationRecorder>(std::move(inout_stream2), simulation.getPacking().size(),
+                                                              100, true);
         auto collector2 = std::make_unique<ObservablesCollector>();
         simulation.integrate(1, 1, 500, 500, 100, 100, traits, std::move(collector2), std::move(recorder2), logger,
                              1000);
@@ -120,12 +123,14 @@ TEST_CASE("Simulation IO: storing and restoring")
     SECTION("with continuation from 0 snapshots") {
         // Initial run
         auto inout_stream1 = std::make_unique<std::iostream>(&inout_buf);
-        auto recorder1 = std::make_unique<SimulationRecorder>(std::move(inout_stream1), false);
+        auto recorder1 = std::make_unique<SimulationRecorder>(std::move(inout_stream1), simulation.getPacking().size(),
+                                                              100, false);
         recorder1.reset();
 
         // Continuation
         auto inout_stream2 = std::make_unique<std::iostream>(&inout_buf);
-        auto recorder2 = std::make_unique<SimulationRecorder>(std::move(inout_stream2), true);
+        auto recorder2 = std::make_unique<SimulationRecorder>(std::move(inout_stream2), simulation.getPacking().size(),
+                                                              100, true);
         auto collector2 = std::make_unique<ObservablesCollector>();
         simulation.integrate(1, 1, 500, 500, 100, 100, traits, std::move(collector2), std::move(recorder2), logger);
 

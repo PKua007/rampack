@@ -30,7 +30,8 @@ public:
      * snapshots will be appended and it is assumed that the @a stream alredy contains correct recording. If @a append
      * is @a false, the stream should be empty, or else an error is reported.
      */
-    SimulationRecorder(std::unique_ptr<std::iostream> stream, bool append);
+    SimulationRecorder(std::unique_ptr<std::iostream> stream, std::size_t numParticles, std::size_t cycleStep,
+                       bool append);
 
     ~SimulationRecorder();
 

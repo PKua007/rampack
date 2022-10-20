@@ -293,8 +293,10 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
     std::unique_ptr<SimulationRecorder> recorder;
-    if (!runParams.recordingFilename.empty())
-        recorder = loadSimulationRecorder(runParams.recordingFilename, isContinuation);
+    if (!runParams.recordingFilename.empty()) {
+        recorder = this->loadSimulationRecorder(runParams.recordingFilename, simulation.getPacking().size(),
+                                                runParams.snapshotEvery, isContinuation);
+    }
 
     auto temperatureUpdater = ParameterUpdaterFactory::create(runParams.temperature);
     auto pressureUpdater = ParameterUpdaterFactory::create(runParams.pressure);
@@ -326,6 +328,7 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
 }
 
 std::unique_ptr<SimulationRecorder> Frontend::loadSimulationRecorder(const std::string &filename,
+                                                                     std::size_t numMolecules, std::size_t cycleStep,
                                                                      bool &isContinuation) const {
     std::unique_ptr<std::fstream> inout;
 
@@ -340,7 +343,7 @@ std::unique_ptr<SimulationRecorder> Frontend::loadSimulationRecorder(const std::
     }
 
     ValidateOpenedDesc(*inout, filename, "to store packing data");
-    return std::make_unique<SimulationRecorder>(std::move(inout), isContinuation);
+    return std::make_unique<SimulationRecorder>(std::move(inout), numMolecules, cycleStep, isContinuation);
 }
 
 void Frontend::performOverlapRelaxation(Simulation &simulation, const std::string &shapeName,
@@ -358,8 +361,10 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, const std::strin
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
     std::unique_ptr<SimulationRecorder> recorder;
-    if (!runParams.recordingFilename.empty())
-        recorder = loadSimulationRecorder(runParams.recordingFilename, isContinuation);
+    if (!runParams.recordingFilename.empty()) {
+        recorder = this->loadSimulationRecorder(runParams.recordingFilename, simulation.getPacking().size(),
+                                                runParams.snapshotEvery, isContinuation);
+    }
 
     if (!runParams.helperInteraction.empty()) {
         auto helperShape = ShapeFactory::shapeTraitsFor(shapeName, shapeAttr, runParams.helperInteraction);
@@ -975,7 +980,7 @@ int Frontend::trajectory(int argc, char **argv) {
 
     if (parsedOptions.count("store-trajectory")) {
         bool isContinuation = false;
-        auto recorder = this->loadSimulationRecorder(storeFilename, isContinuation);
+        auto recorder = this->loadSimulationRecorder(storeFilename, 0, 0, isContinuation);
 
         this->logger.info() << "Storing fixed trajectory started..." << std::endl;
 

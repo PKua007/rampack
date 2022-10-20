@@ -154,8 +154,11 @@ void SimulationPlayer::AutoFix::reportError(const std::string &message) {
 }
 
 void SimulationPlayer::AutoFix::tryFixing(SimulationIO::Header &header_, std::size_t snapshotBytes) {
-    if (header_.numParticles == 0) {
-        header_.numParticles = this->expectedNumMolecules;
+    if (header_.numParticles == 0 || header_.cycleStep == 0) {
+        Assert(header_.versionMajor == 1 && header_.versionMinor == 0);
+        this->reportError("The header does not contain information about the number of particles or cycle step - it was"
+                          " not always stored in RAMTRJ v1.0.");
+        throw ValidationException(this->errorMessage);
     } else if (header_.numParticles != this->expectedNumMolecules) {
         this->fixingSuccessful = false;
         std::ostringstream error;
