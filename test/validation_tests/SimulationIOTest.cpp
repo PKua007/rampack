@@ -65,8 +65,11 @@ TEST_CASE("Simulation IO: storing and restoring")
         simulation.integrate(1, 1, 1000, 1000, 100, 100, traits, std::move(collector), std::move(recorder), logger);
 
         auto in_stream = std::make_unique<std::istream>(&inout_buf);
-        SimulationPlayer player(std::move(in_stream));
+        // We also check is auto fix will correctly tell that no fixing in needed
+        SimulationPlayer::AutoFix autoFix(simulation.getPacking().size());
+        SimulationPlayer player(std::move(in_stream), autoFix);
 
+        CHECK_FALSE(autoFix.wasFixed());
         CHECK(player.getTotalCycles() == 2000);
         CHECK(player.getCycleStep() == 100);
 
@@ -138,6 +141,38 @@ TEST_CASE("Simulation IO: storing and restoring")
         SimulationPlayer player(std::move(in_stream));
         CHECK(player.getTotalCycles() == 1000);
         CHECK(player.getCycleStep() == 100);
+        while (player.hasNext())
+            player.nextSnapshot(packing1, interaction);
+        player.close();
+
+        assert_equal(packing1, simulation.getPacking());
+    }
+
+    SECTION("fixing trajectory") {
+        auto inout_stream = std::make_unique<std::iostream>(&inout_buf);
+        auto recorder = std::make_unique<SimulationRecorder>(std::move(inout_stream), simulation.getPacking().size(),
+                                                             100, false);
+        auto collector = std::make_unique<ObservablesCollector>();
+        simulation.integrate(1, 1, 1000, 1000, 100, 100, traits, std::move(collector), std::move(recorder), logger);
+
+        // Add garbage bytes
+        {
+            std::iostream inout(&inout_buf);
+            inout.seekp(0, std::ios::end);
+            inout.write("12345", 5);
+        }
+
+        auto in_stream = std::make_unique<std::istream>(&inout_buf);
+        SimulationPlayer::AutoFix autoFix(simulation.getPacking().size());
+        SimulationPlayer player(std::move(in_stream), autoFix);
+
+        CHECK(autoFix.wasFixed());
+        CHECK(autoFix.wasFixingSuccessful());
+        CHECK(autoFix.getInferredSnapshots() == 20);
+        CHECK(autoFix.getBytesRemainder() == 5);
+        CHECK(player.getTotalCycles() == 2000);
+        CHECK(player.getCycleStep() == 100);
+
         while (player.hasNext())
             player.nextSnapshot(packing1, interaction);
         player.close();

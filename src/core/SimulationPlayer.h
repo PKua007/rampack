@@ -26,7 +26,7 @@ public:
     private:
         std::size_t expectedNumMolecules{};
 
-        bool wasFixed{};
+        bool fixed{};
         bool fixingSuccessful = true;
         std::string errorMessage;
         std::size_t headerSnapshots{};
@@ -44,6 +44,10 @@ public:
         explicit AutoFix(std::size_t expectedNumMolecules);
 
         [[nodiscard]] bool wasFixingSuccessful() const { return this->fixingSuccessful; }
+        [[nodiscard]] bool wasFixed() const { return this->fixed; }
+        [[nodiscard]] std::size_t getInferredSnapshots() const { return this->inferredSnapshots; }
+        [[nodiscard]] std::size_t getBytesRemainder() const { return this->bytesRemainder; }
+
         void dumpInfo(Logger &out) const;
     };
 
