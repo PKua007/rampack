@@ -17,6 +17,8 @@
 #include "core/Interaction.h"
 #include "core/lattice/OrthorhombicArrangingModel.h"
 #include "core/Simulation.h"
+#include "core/SimulationRecorder.h"
+#include "core/SimulationPlayer.h"
 
 /**
  * @brief Class responsible for the communication between the user and the simulation backend.
@@ -37,6 +39,8 @@ private:
                          const std::string &datFilename, std::size_t cycles = 0);
     Logger::LogType parseVerbosityLevel(const std::string &verbosityLevelName) const;
     std::unique_ptr<SimulationRecorder> loadSimulationRecorder(const std::string &filename, bool &isContinuation) const;
+    std::unique_ptr<SimulationPlayer> loadSimulationPlayer(std::string &trajectoryFilename, size_t numMolecules,
+                                                           bool autoFix_);
     void createWalls(Packing &packing, const std::string &walls);
 
     void performIntegration(Simulation &simulation, const Parameters::IntegrationParameters &runParams,
@@ -75,7 +79,6 @@ public:
     int trajectory(int argc, char **argv);
 
     int printGeneralHelp(const std::string &cmd);
-
 };
 
 

@@ -878,6 +878,7 @@ int Frontend::trajectory(int argc, char **argv) {
     std::string verbosity;
     std::string auxOutput;
     std::string auxVerbosity;
+    std::string storeFilename;
 
     options.add_options()
         ("h,help", "prints help for this mode")
@@ -921,7 +922,9 @@ int Frontend::trajectory(int argc, char **argv) {
          cxxopts::value<std::string>(auxOutput))
         ("log-file-verbosity", "how verbose the output to the log file should be. Allowed values, with increasing "
                                "verbosity: error, warn, info, verbose, debug. Defaults to: info",
-         cxxopts::value<std::string>(auxVerbosity));
+         cxxopts::value<std::string>(auxVerbosity))
+        ("s,store-trajectory", "store the trajectory; it is most useful for broken trajectories fixed using --auto-fix",
+         cxxopts::value<std::string>(storeFilename));
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
@@ -965,28 +968,31 @@ int Frontend::trajectory(int argc, char **argv) {
                                                       shapeTraits->getInteraction(), shapeTraits->getGeometry(), 1, 1);
     this->createWalls(*packing, params.walls);
 
-    auto trajectoryStream = std::make_unique<std::ifstream>(trajectoryFilename,
-                                                                         std::ios_base::in | std::ios_base::binary);
-    ValidateOpenedDesc(*trajectoryStream, trajectoryFilename, "to read trajectory");
-    std::unique_ptr<SimulationPlayer> player;
-    if (parsedOptions.count("auto-fix")) {
-        SimulationPlayer::AutoFix autoFix(packing->size());
-        try {
-            player = std::make_unique<SimulationPlayer>(std::move(trajectoryStream), autoFix);
-        } catch (const ValidationException &exception) {
-            autoFix.dumpInfo(this->logger);
-            return EXIT_FAILURE;
+    bool autoFix = parsedOptions.count("auto-fix");
+    auto player = this->loadSimulationPlayer(trajectoryFilename, packing->size(), autoFix);
+    if (player == nullptr)
+        return EXIT_FAILURE;
+
+    if (parsedOptions.count("store-trajectory")) {
+        bool isContinuation = false;
+        auto recorder = this->loadSimulationRecorder(storeFilename, isContinuation);
+
+        this->logger.info() << "Storing fixed trajectory started..." << std::endl;
+
+        using namespace std::chrono;
+        auto start = high_resolution_clock::now();
+        while (player->hasNext()) {
+            player->nextSnapshot(*packing, shapeTraits->getInteraction());
+            recorder->recordSnapshot(*packing, player->getCurrentSnapshotCycles());
+            this->logger.info() << "Replayed cycle " << player->getCurrentSnapshotCycles() << "; " << std::endl;
         }
-        autoFix.dumpInfo(this->logger);
+        auto end = high_resolution_clock::now();
+        double time = duration<double>(end - start).count();
+
+        this->logger.info() << "Storing finished after " << time << " s." << std::endl;
         this->logger.info() << std::endl;
-    } else {
-        try {
-            player = std::make_unique<SimulationPlayer>(std::move(trajectoryStream));
-        } catch (const ValidationException &exception) {
-            this->logger.error() << "Reading the trajectory failed: " << exception.what() << std::endl;
-            this->logger << "You may try to fix it by adding the --auto-fix option." << std::endl;
-            return EXIT_FAILURE;
-        }
+
+        player->reset();
     }
 
     // Show info (if desired)
@@ -1080,6 +1086,34 @@ int Frontend::trajectory(int argc, char **argv) {
     }
 
     return EXIT_SUCCESS;
+}
+
+std::unique_ptr<SimulationPlayer> Frontend::loadSimulationPlayer(std::string &trajectoryFilename,
+                                                                 std::size_t numMolecules, bool autoFix_)
+{
+    auto trajectoryStream = std::make_unique<std::ifstream>(trajectoryFilename,
+                                                            std::ios_base::in | std::ios_base::binary);
+    ValidateOpenedDesc(*trajectoryStream, trajectoryFilename, "to read trajectory");
+    if (autoFix_) {
+        SimulationPlayer::AutoFix autoFix(numMolecules);
+        try {
+            auto simulationPlayer = std::make_unique<SimulationPlayer>(std::move(trajectoryStream), autoFix);
+            autoFix.dumpInfo(this->logger);
+            this->logger.info() << std::endl;
+            return simulationPlayer;
+        } catch (const ValidationException &exception) {
+            autoFix.dumpInfo(this->logger);
+            return nullptr;
+        }
+    } else {
+        try {
+            return std::make_unique<SimulationPlayer>(std::move(trajectoryStream));
+        } catch (const ValidationException &exception) {
+            this->logger.error() << "Reading the trajectory failed: " << exception.what() << std::endl;
+            this->logger << "You may try to fix it by adding the --auto-fix option." << std::endl;
+            return nullptr;
+        }
+    }
 }
 
 void Frontend::createWalls(Packing &packing, const std::string &walls) {

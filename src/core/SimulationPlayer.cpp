@@ -12,11 +12,11 @@ SimulationPlayer::SimulationPlayer(std::unique_ptr<std::istream> in) : in{std::m
     this->in->seekg(0);
     this->header = SimulationIO::readHeader(*this->in);
 
-    std::streamoff savedPos = this->in->tellg();
     this->in->seekg(0, std::ios_base::end);
     std::streamoff expectedPos = SimulationIO::streamoffForSnapshot(this->header, this->header.numSnapshots);
     ValidateMsg(this->in->tellg() == expectedPos, "RAMTRJ read error: broken snapshot structure");
-    this->in->seekg(savedPos);
+
+    this->reset();
 }
 
 SimulationPlayer::SimulationPlayer(std::unique_ptr<std::istream> in, SimulationPlayer::AutoFix &autoFix)
@@ -103,6 +103,12 @@ void SimulationPlayer::dumpHeader(Logger &out) const {
     out << "number of snapshots     : " << this->header.numSnapshots << std::endl;
     out << "cycle step              : " << this->header.cycleStep << std::endl;
     out << "total number of cycles  : " << (this->header.cycleStep * this->header.numSnapshots) << std::endl;
+}
+
+void SimulationPlayer::reset() {
+    auto pos = static_cast<std::streamoff>(SimulationPlayer::getHeaderSize());
+    this->in->seekg(pos);
+    this->currentSnapshot = 0;
 }
 
 void SimulationPlayer::AutoFix::dumpInfo(Logger &out) const {
