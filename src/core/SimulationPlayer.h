@@ -71,6 +71,12 @@ public:
     void nextSnapshot(Packing &packing, const Interaction &interaction);
 
     /**
+     * @brief Moves back to the beginning of the trajectory. Calling nextSnapshot() afterwards will then jump to the
+     * first one.
+     */
+    void reset();
+
+    /**
      * @brief Moves to the last snapshot and prints it on @a packing.
      */
     void lastSnapshot(Packing &packing, const Interaction &interaction);
