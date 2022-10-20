@@ -978,9 +978,21 @@ int Frontend::trajectory(int argc, char **argv) {
     if (player == nullptr)
         return EXIT_FAILURE;
 
+    // Show info (if desired)
+    if (parsedOptions.count("log-info")) {
+        this->logger.info() << "-- " << trajectoryFilename << std::endl;
+        player->dumpHeader(this->logger);
+        this->logger.info() << std::endl;
+    }
+
+    // Stored trajectory (if desired)
     if (parsedOptions.count("store-trajectory")) {
+        if (storeFilename == trajectoryFilename)
+            die("Input and output trajectory file names are identical!", this->logger);
+
         bool isContinuation = false;
-        auto recorder = this->loadSimulationRecorder(storeFilename, 0, 0, isContinuation);
+        auto recorder = this->loadSimulationRecorder(storeFilename, player->getNumMolecules(), player->getCycleStep(),
+                                                     isContinuation);
 
         this->logger.info() << "Storing fixed trajectory started..." << std::endl;
 
@@ -998,13 +1010,6 @@ int Frontend::trajectory(int argc, char **argv) {
         this->logger.info() << std::endl;
 
         player->reset();
-    }
-
-    // Show info (if desired)
-    if (parsedOptions.count("log-info")) {
-        this->logger.info() << "-- " << trajectoryFilename << std::endl;
-        player->dumpHeader(this->logger);
-        this->logger.info() << std::endl;
     }
 
     // Replay the simulation and calculate observables (if desired)
@@ -1111,13 +1116,16 @@ std::unique_ptr<SimulationPlayer> Frontend::loadSimulationPlayer(std::string &tr
             return nullptr;
         }
     } else {
+        std::unique_ptr<SimulationPlayer> player;
         try {
-            return std::make_unique<SimulationPlayer>(std::move(trajectoryStream));
+            player = std::make_unique<SimulationPlayer>(std::move(trajectoryStream));
         } catch (const ValidationException &exception) {
             this->logger.error() << "Reading the trajectory failed: " << exception.what() << std::endl;
             this->logger << "You may try to fix it by adding the --auto-fix option." << std::endl;
             return nullptr;
         }
+        Validate(player->getNumMolecules() == numMolecules);
+        return player;
     }
 }
 
