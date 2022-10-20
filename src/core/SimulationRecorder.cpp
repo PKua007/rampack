@@ -5,14 +5,21 @@
 #include "SimulationRecorder.h"
 
 
-SimulationRecorder::SimulationRecorder(std::unique_ptr<std::iostream> stream_, bool append) : stream{std::move(stream_)} {
+SimulationRecorder::SimulationRecorder(std::unique_ptr<std::iostream> stream_, std::size_t numParticles,
+                                       std::size_t cycleStep, bool append)
+        : stream{std::move(stream_)}, cycleStep{cycleStep}, numParticles{numParticles}
+{
+    Expects(numParticles > 0);
+    Expects(cycleStep > 0);
+
     if (append) {
         this->stream->seekg(0);
         Header header = readHeader(*this->stream);
 
-        this->cycleStep = header.cycleStep;
+        ValidateMsg(this->numParticles == header.numParticles && this->cycleStep == header.cycleStep,
+                    "RAMTRJ append error: unmatching number of molecules and/or cycle step");
+
         this->numSnapshots = header.numSnapshots;
-        this->numParticles = header.numParticles;
 
         this->stream->seekp(0, std::ios_base::end);
         std::streamoff expectedPos = SimulationIO::streamoffForSnapshot(header, this->numSnapshots);
@@ -21,8 +28,9 @@ SimulationRecorder::SimulationRecorder(std::unique_ptr<std::iostream> stream_, b
         this->stream->seekp(0, std::ios_base::end);
         ValidateMsg(this->stream->tellp() == 0, "RAMTRJ error: append = false however stream is not empty");
 
-        // Write an uninitialized header to start with
         Header header;
+        header.numParticles = this->numParticles;
+        header.cycleStep = this->cycleStep;
         SimulationIO::writeHeader(header, *this->stream);
     }
 }
@@ -33,15 +41,9 @@ SimulationRecorder::~SimulationRecorder() {
 
 void SimulationRecorder::recordSnapshot(const Packing &packing, std::size_t cycle) {
     Expects(this->stream != nullptr);
-
     Expects(cycle > 0);
-    if (this->numSnapshots == 0) {
-        this->cycleStep = cycle;
-        this->numParticles = packing.size();
-    } else {
-        Expects(cycle == (this->numSnapshots + 1) * this->cycleStep);
-        Expects(packing.size() == this->numParticles);
-    }
+    Expects(cycle == (this->numSnapshots + 1) * this->cycleStep);
+    Expects(packing.size() == this->numParticles);
 
     SimulationIO::writeBox(packing.getBox(), *this->stream);
     for (const auto &shape : packing)
@@ -52,9 +54,6 @@ void SimulationRecorder::recordSnapshot(const Packing &packing, std::size_t cycl
 
 void SimulationRecorder::close() {
     if (this->stream == nullptr)
-        return;
-
-    if (this->numSnapshots == 0)
         return;
 
     Header header;

@@ -18,11 +18,16 @@ class SimulationIO {
 protected:
     /**
      * @brief Header of RAMTRJ file (as is)
+     * @details Version log
+     * <ol>
+     * <li> 1.0 - first release
+     * <li> 1.1 - @a numParticles and @a cycleStep set before recording snapshots (header no longer has zeros)
+     * </ol>
      */
     struct Header {
         char magic[7] = {'R', 'A', 'M', 'T', 'R', 'J', '\n'};
         unsigned char versionMajor = 1;
-        unsigned char versionMinor = 0;
+        unsigned char versionMinor = 1;
         std::size_t numParticles{};
         std::size_t numSnapshots{};
         std::size_t cycleStep{};
