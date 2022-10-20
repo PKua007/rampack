@@ -69,7 +69,7 @@ TEST_CASE("Simulation IO: storing and restoring")
         SimulationPlayer::AutoFix autoFix(simulation.getPacking().size());
         SimulationPlayer player(std::move(in_stream), autoFix);
 
-        CHECK_FALSE(autoFix.wasFixed());
+        CHECK_FALSE(autoFix.wasFixingNeeded());
         CHECK(player.getTotalCycles() == 2000);
         CHECK(player.getCycleStep() == 100);
 
@@ -166,7 +166,7 @@ TEST_CASE("Simulation IO: storing and restoring")
         SimulationPlayer::AutoFix autoFix(simulation.getPacking().size());
         SimulationPlayer player(std::move(in_stream), autoFix);
 
-        CHECK(autoFix.wasFixed());
+        CHECK(autoFix.wasFixingNeeded());
         CHECK(autoFix.wasFixingSuccessful());
         CHECK(autoFix.getInferredSnapshots() == 20);
         CHECK(autoFix.getBytesRemainder() == 5);

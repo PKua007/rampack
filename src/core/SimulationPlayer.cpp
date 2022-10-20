@@ -26,12 +26,9 @@ SimulationPlayer::SimulationPlayer(std::unique_ptr<std::istream> in, SimulationP
     try {
         this->header = SimulationIO::readHeader(*this->in);
     } catch (const ValidationException &ex) {
-        autoFix.fixingSuccessful = false;
-        autoFix.errorMessage = ex.what();
+        autoFix.reportError(ex.what());
         std::rethrow_exception(std::current_exception());
     }
-
-    std::streamoff savedPos = this->in->tellg();
 
     std::streamoff expectedPos = SimulationIO::streamoffForSnapshot(this->header, this->header.numSnapshots);
     this->in->seekg(0, std::ios_base::end);
@@ -43,7 +40,7 @@ SimulationPlayer::SimulationPlayer(std::unique_ptr<std::istream> in, SimulationP
         autoFix.tryFixing(this->header, snapshotBytes);
     }
 
-    this->in->seekg(savedPos);
+    this->reset();
 }
 
 bool SimulationPlayer::hasNext() const {
@@ -118,7 +115,7 @@ void SimulationPlayer::AutoFix::dumpInfo(Logger &out) const {
         return;
     }
 
-    if (!this->fixed) {
+    if (!this->fixingNeeded) {
         out.info() << "Trajectory was completely valid. No fixes were made." << std::endl;
         return;
     }
@@ -140,15 +137,14 @@ SimulationPlayer::AutoFix::AutoFix(std::size_t expectedNumMolecules) : expectedN
 
 void SimulationPlayer::AutoFix::reportNofix(const SimulationIO::Header &header_) {
     this->fixingSuccessful = true;
-    if (header_.numParticles != 0)
-        this->bytesPerSnapshot = getSnapshotSize(header_);
+    this->bytesPerSnapshot = getSnapshotSize(header_);
     this->headerSnapshots = header_.numSnapshots;
-    this->fixed = false;
+    this->fixingNeeded = false;
     this->inferredSnapshots = header_.numSnapshots;
 }
 
 void SimulationPlayer::AutoFix::reportError(const std::string &message) {
-    this->fixed = false;
+    this->fixingNeeded = false;
     this->fixingSuccessful = false;
     this->errorMessage = message;
 }
@@ -168,7 +164,7 @@ void SimulationPlayer::AutoFix::tryFixing(SimulationIO::Header &header_, std::si
         throw ValidationException(this->errorMessage);
     }
 
-    this->fixed = true;
+    this->fixingNeeded = true;
     this->fixingSuccessful = true;
     this->bytesPerSnapshot = SimulationIO::getSnapshotSize(header_);
     header_.numSnapshots = this->inferredSnapshots = snapshotBytes / this->bytesPerSnapshot;
