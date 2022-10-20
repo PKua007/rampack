@@ -22,11 +22,14 @@ private:
     std::size_t currentSnapshot{};
 
 public:
+    /**
+     * @brief Helper class used to perform trajectory fixing and report the results.
+     */
     class AutoFix {
     private:
         std::size_t expectedNumMolecules{};
 
-        bool fixed{};
+        bool fixingNeeded{};
         bool fixingSuccessful = true;
         std::string errorMessage;
         std::size_t headerSnapshots{};
@@ -41,13 +44,34 @@ public:
         friend class SimulationPlayer;
 
     public:
+        /**
+         * @brief Constructs the class expecting @a expectedNumMolecules molecules in the fixed trajectory.
+         */
         explicit AutoFix(std::size_t expectedNumMolecules);
 
+        /**
+         * @brief Returns @a true, if fixing was successful (or was not needed)
+         */
         [[nodiscard]] bool wasFixingSuccessful() const { return this->fixingSuccessful; }
-        [[nodiscard]] bool wasFixed() const { return this->fixed; }
+
+        /**
+         * @brief Return @a true, if fixing was needed and performed correctly
+         */
+        [[nodiscard]] bool wasFixingNeeded() const { return this->fixingNeeded; }
+
+        /**
+         * @brief Returns a number of full snapshots found in the trajectory.
+         */
         [[nodiscard]] std::size_t getInferredSnapshots() const { return this->inferredSnapshots; }
+
+        /**
+         * @brief Returns a number of bytes in the last, truncated snapshot.
+         */
         [[nodiscard]] std::size_t getBytesRemainder() const { return this->bytesRemainder; }
 
+        /**
+         * @brief Prints info about auto-fixing operation.
+         */
         void dumpInfo(Logger &out) const;
     };
 
@@ -105,6 +129,11 @@ public:
      * @brief Returns cycle step between snapshots.
      */
     [[nodiscard]] std::size_t getCycleStep() const { return this->header.cycleStep; }
+
+    /**
+     * @brief Returns number of molecules in the trajectory.
+     */
+    [[nodiscard]] std::size_t getNumMolecules() const { return this->header.numParticles; }
 
     /**
      * @brief Closes the stream on demand and prevents any further operations.
