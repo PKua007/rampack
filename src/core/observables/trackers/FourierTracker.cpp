@@ -16,10 +16,15 @@ std::string FourierTracker::getModeName() const {
 
 void FourierTracker::calculateOrigin(const Packing &packing, const ShapeTraits &shapeTraits) {
     FourierValues fourierValues = this->calculateFourierValues(packing, shapeTraits);
+    Vector<3> originPosRel = this->calculateRelativeOriginPos(fourierValues);
+    this->originPos = packing.getBox().relativeToAbsolute(originPosRel);
+}
 
+Vector<3> FourierTracker::calculateRelativeOriginPos(const FourierTracker::FourierValues &fourierValues) const {
+    Vector<3> originPosRel{};
     for (std::size_t idx0{}; idx0 < 3; idx0++) {
         std::size_t wavenumber = this->wavenumbers[idx0];
-        double &posComp = this->originPos[idx0];
+        double &posComp = originPosRel[idx0];
         if (wavenumber == 0) {
             posComp = 0;
             continue;
@@ -28,38 +33,31 @@ void FourierTracker::calculateOrigin(const Packing &packing, const ShapeTraits &
         std::size_t idx1 = (idx0 + 1) % 3;
         std::size_t idx2 = (idx0 + 2) % 3;
 
-        std::vector<std::tuple<std::size_t, std::size_t, double>> valuesAlternatives;
-        for (std::size_t j{}; j < this->fourierFunctions[idx1].size(); j++) {
-            for (std::size_t k{}; k < this->fourierFunctions[idx2].size(); k++) {
+        std::vector<std::tuple<double, double, double>> atan2Alternatives;
+        for (std::size_t fIdx1{}; fIdx1 < this->fourierFunctions[idx1].size(); fIdx1++) {
+            for (std::size_t fIdx2{}; fIdx2 < this->fourierFunctions[idx2].size(); fIdx2++) {
                 std::array<std::size_t, 3> idx{};
-                idx[idx1] = j;
-                idx[idx2] = k;
+                idx[idx1] = fIdx1;
+                idx[idx2] = fIdx2;
 
                 idx[idx0] = 0;
                 double cosVal = fourierValues[idx[0]][idx[1]][idx[2]];
                 idx[idx0] = 1;
                 double sinVal = fourierValues[idx[0]][idx[1]][idx[2]];
 
-                valuesAlternatives.emplace_back(j, k, cosVal*cosVal + sinVal*sinVal);
+                atan2Alternatives.emplace_back(cosVal, sinVal, cosVal * cosVal + sinVal * sinVal);
             }
         }
 
         auto comp = [](const auto &elem1, const auto &elem2) {
             return std::get<2>(elem1) < std::get<2>(elem2);
         };
-        auto[j, k, val] = *std::max_element(valuesAlternatives.begin(), valuesAlternatives.end(), comp);
 
-        std::array<std::size_t, 3> idx{};
-        idx[idx1] = j;
-        idx[idx2] = k;
-
-        idx[idx0] = 0;
-        double cosVal = fourierValues[idx[0]][idx[1]][idx[2]];
-        idx[idx0] = 1;
-        double sinVal = fourierValues[idx[0]][idx[1]][idx[2]];
+        auto[cosVal, sinVal, norm] = *std::max_element(atan2Alternatives.begin(), atan2Alternatives.end(), comp);
         double angle = std::atan2(cosVal, sinVal);
-        posComp = std::fmod(angle + 2*M_PI, 2*M_PI);
+        posComp = std::fmod(angle/2/M_PI + 1, 1);
     }
+    return originPosRel;
 }
 
 FourierTracker::FourierValues FourierTracker::calculateFourierValues(const Packing &packing,

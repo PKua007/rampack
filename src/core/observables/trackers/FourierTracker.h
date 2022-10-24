@@ -26,6 +26,7 @@ private:
     FourierFunctions fourierFunctions{};
 
     [[nodiscard]] FourierValues calculateFourierValues(const Packing &packing, const ShapeTraits &shapeTraits) const;
+    [[nodiscard]] Vector<3> calculateRelativeOriginPos(const FourierValues &fourierValues) const;
 
 public:
     FourierTracker(const std::array<std::size_t, 3> &wavenumber, Function function, std::string functionName);
