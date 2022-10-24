@@ -30,7 +30,7 @@ std::unique_ptr<MoveSampler> MoveSamplerFactory::create(const std::string &moveS
             return std::make_unique<RototranslationSampler>(traits.getInteraction(), translationStep);
 
         double rotationStep{};
-        moveSamplerStream >> translationStep;
+        moveSamplerStream >> rotationStep;
         Validate(rotationStep > 0);
         if (!ParseUtils::isAnythingLeft(moveSamplerStream))
             return std::make_unique<RototranslationSampler>(translationStep, rotationStep);
