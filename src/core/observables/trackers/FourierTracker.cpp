@@ -21,43 +21,61 @@ void FourierTracker::calculateOrigin(const Packing &packing, const ShapeTraits &
 }
 
 Vector<3> FourierTracker::calculateRelativeOriginPos(const FourierTracker::FourierValues &fourierValues) const {
-    Vector<3> originPosRel{};
-    for (std::size_t idx0{}; idx0 < 3; idx0++) {
-        std::size_t wavenumber = this->wavenumbers[idx0];
-        double &posComp = originPosRel[idx0];
-        if (wavenumber == 0) {
-            posComp = 0;
-            continue;
-        }
-
-        std::size_t idx1 = (idx0 + 1) % 3;
-        std::size_t idx2 = (idx0 + 2) % 3;
-
-        std::vector<std::tuple<double, double, double>> atan2Alternatives;
-        for (std::size_t fIdx1{}; fIdx1 < this->fourierFunctions[idx1].size(); fIdx1++) {
-            for (std::size_t fIdx2{}; fIdx2 < this->fourierFunctions[idx2].size(); fIdx2++) {
-                std::array<std::size_t, 3> idx{};
-                idx[idx1] = fIdx1;
-                idx[idx2] = fIdx2;
-
-                idx[idx0] = 0;
-                double cosVal = fourierValues[idx[0]][idx[1]][idx[2]];
-                idx[idx0] = 1;
-                double sinVal = fourierValues[idx[0]][idx[1]][idx[2]];
-
-                atan2Alternatives.emplace_back(cosVal, sinVal, cosVal * cosVal + sinVal * sinVal);
-            }
-        }
-
-        auto comp = [](const auto &elem1, const auto &elem2) {
-            return std::get<2>(elem1) < std::get<2>(elem2);
-        };
-
-        auto[cosVal, sinVal, norm] = *std::max_element(atan2Alternatives.begin(), atan2Alternatives.end(), comp);
-        double angle = std::atan2(cosVal, sinVal);
-        posComp = std::fmod(angle/2/M_PI + 1, 1);
+    switch (this->nonzeroIdxs.size()) {
+        case 1:
+            return this->calculateRelativeOriginPos1D(fourierValues);
+        case 2:
+            return this->calculateRelativeOriginPos2D(fourierValues);
+        default:
+            throw AssertionException("FourierTracker: zeros = " + std::to_string(this->nonzeroIdxs.size()));
     }
-    return originPosRel;
+}
+
+Vector<3> FourierTracker::calculateRelativeOriginPos1D(const FourierTracker::FourierValues &fourierValues) const {
+    std::size_t nonzeroIdx = this->nonzeroIdxs.front();
+    std::array<std::size_t, 3> idxs{};
+    idxs[nonzeroIdx] = 0;
+    double c = fourierValues[idxs[0]][idxs[1]][idxs[2]];
+    idxs[nonzeroIdx] = 1;
+    double d = fourierValues[idxs[0]][idxs[1]][idxs[2]];
+
+    if (c*c + d*d < AMPLITUDE_EPSILON*AMPLITUDE_EPSILON)
+        return {};
+
+    auto wavenumber = static_cast<double>(this->wavenumbers[nonzeroIdx]);
+    Vector<3> relPos{};
+    relPos[nonzeroIdx] = std::fmod(std::atan2(d, c)/wavenumber/2/M_PI + 1, 1);
+    return relPos;
+}
+
+Vector<3> FourierTracker::calculateRelativeOriginPos2D(const FourierTracker::FourierValues &fourierValues) const {
+    std::size_t nonzeroIdx1 = this->nonzeroIdxs[0];
+    std::size_t nonzeroIdx2 = this->nonzeroIdxs[1];
+    std::array<std::size_t, 3> idxs{};
+    idxs[nonzeroIdx1] = 0;
+    idxs[nonzeroIdx2] = 0;
+    double A = fourierValues[idxs[0]][idxs[1]][idxs[2]];
+    idxs[nonzeroIdx1] = 0;
+    idxs[nonzeroIdx2] = 1;
+    double B = fourierValues[idxs[0]][idxs[1]][idxs[2]];
+    idxs[nonzeroIdx1] = 1;
+    idxs[nonzeroIdx2] = 0;
+    double C = fourierValues[idxs[0]][idxs[1]][idxs[2]];
+    idxs[nonzeroIdx1] = 1;
+    idxs[nonzeroIdx2] = 1;
+    double D = fourierValues[idxs[0]][idxs[1]][idxs[2]];
+
+    if (A*A + B*B + C*C + D*D < AMPLITUDE_EPSILON*AMPLITUDE_EPSILON)
+        return {};
+
+    double a = std::atan2(C + B, A - D);
+    double b = std::atan2(C - B, A + D);
+    auto wavenumber1 = static_cast<double>(this->wavenumbers[nonzeroIdx1]);
+    auto wavenumber2 = static_cast<double>(this->wavenumbers[nonzeroIdx2]);
+    Vector<3> relPos{};
+    relPos[nonzeroIdx1] = std::fmod(((a + b)/2)/wavenumber1/2/M_PI + 1, 1);
+    relPos[nonzeroIdx2] = std::fmod(((a - b)/2)/wavenumber2/2/M_PI + 1, 1);
+    return relPos;
 }
 
 FourierTracker::FourierValues FourierTracker::calculateFourierValues(const Packing &packing,
@@ -91,11 +109,18 @@ FourierTracker::FourierValues FourierTracker::calculateFourierValues(const Packi
     return fourierValues;
 }
 
-FourierTracker::FourierTracker(const std::array<std::size_t, 3> &wavenumber, Function function,
+FourierTracker::FourierTracker(const std::array<std::size_t, 3> &wavenumbers, Function function,
                                std::string functionName)
-        : wavenumbers{wavenumber}, function{std::move(function)}, functionName{std::move(functionName)}
+        : wavenumbers{wavenumbers}, function{std::move(function)}, functionName{std::move(functionName)}
 {
-    Expects(std::any_of(wavenumber.begin(), wavenumber.end(), [](auto item) { return item > 0; }));
+    for (std::size_t i{}; i < 3; i++) {
+        std::size_t wavenumber = this->wavenumbers[i];
+        Expects(wavenumber >= 0);
+        if (wavenumber > 0)
+            this->nonzeroIdxs.push_back(wavenumber);
+    }
+    Expects(!this->nonzeroIdxs.empty());
+    ExpectsMsg(this->nonzeroIdxs.size() != 3, "3D FourierTracker is not implemented yet");
 
     auto functionFiller = [](std::size_t wavenumber) -> std::vector<FourierFunction> {
         if (wavenumber == 0) {
