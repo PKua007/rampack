@@ -7,6 +7,7 @@
 
 #include <array>
 #include <functional>
+#include <optional>
 
 #include "core/observables/GoldestoneTracker.h"
 
@@ -27,11 +28,13 @@ private:
     std::string functionName;
     FourierFunctions fourierFunctions{};
     std::vector<std::size_t> nonzeroIdxs{};
+    std::optional<Vector<3>> previousRelValue{};
 
     [[nodiscard]] FourierValues calculateFourierValues(const Packing &packing, const ShapeTraits &shapeTraits) const;
     [[nodiscard]] Vector<3> calculateRelativeOriginPos(const FourierValues &fourierValues) const;
     [[nodiscard]] Vector<3> calculateRelativeOriginPos1D(const FourierValues &fourierValues) const;
     [[nodiscard]] Vector<3> calculateRelativeOriginPos2D(const FourierValues &fourierValues) const;
+    [[nodiscard]] Vector<3> normalizeOriginPos(const Vector<3> &originPosRel);
 
 public:
     FourierTracker(const std::array<std::size_t, 3> &wavenumbers, Function function, std::string functionName);

@@ -7,6 +7,7 @@
 
 #include "FourierTracker.h"
 #include "utils/Assertions.h"
+#include "core/PeriodicBoundaryConditions.h"
 
 
 std::string FourierTracker::getModeName() const {
@@ -17,6 +18,7 @@ std::string FourierTracker::getModeName() const {
 void FourierTracker::calculateOrigin(const Packing &packing, const ShapeTraits &shapeTraits) {
     FourierValues fourierValues = this->calculateFourierValues(packing, shapeTraits);
     Vector<3> originPosRel = this->calculateRelativeOriginPos(fourierValues);
+    originPosRel = this->normalizeOriginPos(originPosRel);
     this->originPos = packing.getBox().relativeToAbsolute(originPosRel);
 }
 
@@ -135,4 +137,38 @@ FourierTracker::FourierTracker(const std::array<std::size_t, 3> &wavenumbers, Fu
     };
 
     std::transform(this->wavenumbers.begin(), this->wavenumbers.end(), this->fourierFunctions.begin(), functionFiller);
+}
+
+Vector<3> FourierTracker::normalizeOriginPos(const Vector<3> &originPosRel) {
+    if (!this->previousRelValue.has_value()) {
+        this->previousRelValue = originPosRel;
+        return originPosRel;
+    }
+
+    PeriodicBoundaryConditions pbc(1);
+    Vector<3> bestOriginPosRel = originPosRel;
+    double deltaR2 = pbc.getDistance2(*this->previousRelValue, originPosRel);
+    std::array<std::size_t, 3> idxs{};
+    for (idxs[0] = 0; idxs[0] < std::max(2*this->wavenumbers[0], 1ul); idxs[0]++) {
+        for (idxs[1] = 0; idxs[1] < std::max(2*this->wavenumbers[1], 1ul); idxs[1]++) {
+            for (idxs[2] = 0; idxs[2] < std::max(2*this->wavenumbers[2], 1ul); idxs[2]++) {
+                if (std::accumulate(idxs.begin(), idxs.end(), 0ul) % 2 != 0)
+                    continue;
+
+                Vector<3> nextOriginPosRel = originPosRel;
+                for (std::size_t i{}; i < 3; i++)
+                    if (this->wavenumbers[idxs[i]] > 0)
+                        nextOriginPosRel[idxs[i]] += static_cast<double>(idxs[i])/static_cast<double>(2*this->wavenumbers[idxs[i]]);
+
+                double newDeltaR2 = pbc.getDistance2(*this->previousRelValue, nextOriginPosRel);
+                if (newDeltaR2 < deltaR2) {
+                    deltaR2 = newDeltaR2;
+                    bestOriginPosRel = nextOriginPosRel;
+                }
+            }
+        }
+    }
+
+    this->previousRelValue = bestOriginPosRel;
+    return bestOriginPosRel;
 }
