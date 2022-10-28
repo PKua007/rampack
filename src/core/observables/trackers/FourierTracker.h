@@ -19,7 +19,12 @@ public:
 private:
     using FourierFunction = std::function<double(double)>;
     using FourierFunctions = std::array<std::vector<FourierFunction>, 3>;
-    using FourierValues = std::array<std::array<std::array<double, 2>, 2>, 2>;
+    using FourierCoefficients = std::array<std::array<std::array<double, 2>, 2>, 2>;
+
+    enum : std::size_t {
+        COS = 0,
+        SIN = 1
+    };
 
     static constexpr double AMPLITUDE_EPSILON = 1e-8;
 
@@ -27,13 +32,17 @@ private:
     Function function;
     std::string functionName;
     FourierFunctions fourierFunctions{};
-    std::vector<std::size_t> nonzeroIdxs{};
+    std::vector<std::size_t> nonzeroWavenumberIdxs{};
     Vector<3> previousRelValue;
 
-    [[nodiscard]] FourierValues calculateFourierValues(const Packing &packing, const ShapeTraits &shapeTraits) const;
-    [[nodiscard]] Vector<3> calculateRelativeOriginPos(const FourierValues &fourierValues) const;
-    [[nodiscard]] Vector<3> calculateRelativeOriginPos1D(const FourierValues &fourierValues) const;
-    [[nodiscard]] Vector<3> calculateRelativeOriginPos2D(const FourierValues &fourierValues) const;
+    static double guardedAtan2(double y, double x);
+
+    void fillFourierFunctions();
+    [[nodiscard]] FourierCoefficients calculateFourierCoefficients(const Packing &packing,
+                                                                   const ShapeTraits &shapeTraits) const;
+    [[nodiscard]] Vector<3> calculateRelativeOriginPos(const FourierCoefficients &coefficients) const;
+    [[nodiscard]] Vector<3> calculateRelativeOriginPos1D(const FourierCoefficients &coefficients) const;
+    [[nodiscard]] Vector<3> calculateRelativeOriginPos2D(const FourierCoefficients &fourierValues) const;
     [[nodiscard]] Vector<3> normalizeOriginPos(const Vector<3> &originPosRel);
 
 public:
