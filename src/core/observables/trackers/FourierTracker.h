@@ -12,7 +12,7 @@
 #include "core/observables/GoldestoneTracker.h"
 
 
-class FourierTracker : GoldestoneTracker {
+class FourierTracker : public GoldestoneTracker {
 public:
     using Function = std::function<double(const Shape &, const ShapeTraits &)>;
 
@@ -28,7 +28,7 @@ private:
     std::string functionName;
     FourierFunctions fourierFunctions{};
     std::vector<std::size_t> nonzeroIdxs{};
-    std::optional<Vector<3>> previousRelValue{};
+    Vector<3> previousRelValue;
 
     [[nodiscard]] FourierValues calculateFourierValues(const Packing &packing, const ShapeTraits &shapeTraits) const;
     [[nodiscard]] Vector<3> calculateRelativeOriginPos(const FourierValues &fourierValues) const;

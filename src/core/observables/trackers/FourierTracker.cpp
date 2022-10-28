@@ -117,9 +117,8 @@ FourierTracker::FourierTracker(const std::array<std::size_t, 3> &wavenumbers, Fu
 {
     for (std::size_t i{}; i < 3; i++) {
         std::size_t wavenumber = this->wavenumbers[i];
-        Expects(wavenumber >= 0);
         if (wavenumber > 0)
-            this->nonzeroIdxs.push_back(wavenumber);
+            this->nonzeroIdxs.push_back(i);
     }
     Expects(!this->nonzeroIdxs.empty());
     ExpectsMsg(this->nonzeroIdxs.size() != 3, "3D FourierTracker is not implemented yet");
@@ -140,14 +139,9 @@ FourierTracker::FourierTracker(const std::array<std::size_t, 3> &wavenumbers, Fu
 }
 
 Vector<3> FourierTracker::normalizeOriginPos(const Vector<3> &originPosRel) {
-    if (!this->previousRelValue.has_value()) {
-        this->previousRelValue = originPosRel;
-        return originPosRel;
-    }
-
     PeriodicBoundaryConditions pbc(1);
     Vector<3> bestOriginPosRel = originPosRel;
-    double deltaR2 = pbc.getDistance2(*this->previousRelValue, originPosRel);
+    double deltaR2 = pbc.getDistance2(this->previousRelValue, originPosRel);
     std::array<std::size_t, 3> idxs{};
     for (idxs[0] = 0; idxs[0] < std::max(2*this->wavenumbers[0], 1ul); idxs[0]++) {
         for (idxs[1] = 0; idxs[1] < std::max(2*this->wavenumbers[1], 1ul); idxs[1]++) {
@@ -157,10 +151,10 @@ Vector<3> FourierTracker::normalizeOriginPos(const Vector<3> &originPosRel) {
 
                 Vector<3> nextOriginPosRel = originPosRel;
                 for (std::size_t i{}; i < 3; i++)
-                    if (this->wavenumbers[idxs[i]] > 0)
-                        nextOriginPosRel[idxs[i]] += static_cast<double>(idxs[i])/static_cast<double>(2*this->wavenumbers[idxs[i]]);
+                    if (this->wavenumbers[i] > 0)
+                        nextOriginPosRel[i] += static_cast<double>(idxs[i])/static_cast<double>(2*this->wavenumbers[i]);
 
-                double newDeltaR2 = pbc.getDistance2(*this->previousRelValue, nextOriginPosRel);
+                double newDeltaR2 = pbc.getDistance2(this->previousRelValue, nextOriginPosRel);
                 if (newDeltaR2 < deltaR2) {
                     deltaR2 = newDeltaR2;
                     bestOriginPosRel = nextOriginPosRel;

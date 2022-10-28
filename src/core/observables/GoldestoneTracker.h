@@ -23,6 +23,9 @@ public:
     [[nodiscard]] std::vector<double> getIntervalValues() const final;
     [[nodiscard]] std::vector<std::string> getNominalValues() const final  {return {}; }
     [[nodiscard]] std::string getName() const final { return this->getModeName() + " tracker"; }
+
+    [[nodiscard]] const Vector<3> &getOriginPos() const { return this->originPos; }
+    [[nodiscard]] const Matrix<3, 3> &getOriginRot() const { return this->originRot; }
 };
 
 
