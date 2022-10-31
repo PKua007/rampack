@@ -22,7 +22,7 @@ class PairAveragedCorrelation : public BulkObservable, public PairConsumer {
 private:
     std::unique_ptr<PairEnumerator> pairEnumerator;
     std::unique_ptr<CorrelationFunction> correlationFunction;
-    HistogramBuilder histogram;
+    HistogramBuilder<1> histogram;
 
 public:
     /**

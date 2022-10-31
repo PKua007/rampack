@@ -18,7 +18,7 @@ void PairDensityCorrelation::addSnapshot(const Packing &packing, [[maybe_unused]
 }
 
 void PairDensityCorrelation::print(std::ostream &out) const {
-    for (auto [x, y] : this->histogram.dumpValues(HistogramBuilder::ReductionMethod::SUM))
+    for (auto [x, y] : this->histogram.dumpValues(HistogramBuilder<1>::ReductionMethod::SUM))
         out << x << " " << y << std::endl;
 }
 
