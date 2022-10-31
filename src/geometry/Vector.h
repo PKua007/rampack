@@ -271,6 +271,38 @@ public:
     [[nodiscard]] iterator end() {
         return this->v.end();
     }
+
+    [[nodiscard]] E &front() {
+        if constexpr (DIM == 0)
+            throw std::runtime_error("Vector::front: DIM == 0");
+        return this->v.arr[0];
+    }
+
+    [[nodiscard]] E front() const {
+        if constexpr (DIM == 0)
+            throw std::runtime_error("Vector::front: DIM == 0");
+        return this->v.arr[0];
+    }
+
+    [[nodiscard]] E &back() {
+        if constexpr (DIM == 0)
+            throw std::runtime_error("Vector::front: DIM == 0");
+        return this->v.arr[DIM - 1];
+    }
+
+    [[nodiscard]] E back() const {
+        if constexpr (DIM == 0)
+            throw std::runtime_error("Vector::front: DIM == 0");
+        return this->v.arr[DIM - 1];
+    }
+
+    [[nodiscard]] constexpr bool empty() const {
+        return DIM == 0;
+    }
+
+    [[nodiscard]] constexpr std::size_t size() const {
+        return DIM;
+    }
 };
 
 
