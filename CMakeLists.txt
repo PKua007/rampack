@@ -24,7 +24,9 @@ if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/Catch2/CMakeLists.txt" OR
         NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/trompeloeil/CMakeLists.txt" OR
         NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/cxxopts/CMakeLists.txt" OR
         NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/ZipIterator/ZipIterator.hpp" OR
-        NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/quickhull/QuickHull.hpp")
+        NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/quickhull/QuickHull.hpp" OR
+        NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/eigen/CMakeLists.txt" OR
+        NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/Root-Finder/root_finder/CMakeLists.txt")
     if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
         message(FATAL_ERROR "Some submodules are not present. Execute: git submodule update --init")
     else()
@@ -51,10 +53,15 @@ link_libraries(stdc++fs)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 set(CXXOPTS_BUILD_TESTS OFF)
 
+# Turn off tests and documentation for Eigen
+set(EIGEN_BUILD_DOC OFF)
+set(BUILD_TESTING OFF)
+
 # Now we can safely add submodule subdirectories
 add_subdirectory(extern/Catch2 EXCLUDE_FROM_ALL)
 add_subdirectory(extern/trompeloeil EXCLUDE_FROM_ALL)
 add_subdirectory(extern/cxxopts EXCLUDE_FROM_ALL)
+add_subdirectory(extern/eigen EXCLUDE_FROM_ALL)
 
 add_subdirectory(src)
 add_subdirectory(test)

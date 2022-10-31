@@ -3,6 +3,8 @@
 //
 
 #include <algorithm>
+#include <Eigen/Core>
+#include <root_finder/root_finder.hpp>
 
 #include "FourierTracker.h"
 #include "utils/Assertions.h"
@@ -26,6 +28,8 @@ Vector<3> FourierTracker::calculateRelativeOriginPos(const FourierTracker::Fouri
             return this->calculateRelativeOriginPos1D(coefficients);
         case 2:
             return this->calculateRelativeOriginPos2D(coefficients);
+        case 3:
+            return this->calculateRelativeOriginPos3D(coefficients);
         default:
             throw AssertionException("FourierTracker: zeros = " + std::to_string(this->nonzeroWavenumberIdxs.size()));
     }
@@ -48,22 +52,22 @@ Vector<3> FourierTracker::calculateRelativeOriginPos1D(const FourierTracker::Fou
     return relPos;
 }
 
-Vector<3> FourierTracker::calculateRelativeOriginPos2D(const FourierTracker::FourierCoefficients &fourierValues) const {
+Vector<3> FourierTracker::calculateRelativeOriginPos2D(const FourierTracker::FourierCoefficients &coefficients) const {
     std::size_t nonzeroIdx1 = this->nonzeroWavenumberIdxs[0];
     std::size_t nonzeroIdx2 = this->nonzeroWavenumberIdxs[1];
     std::array<std::size_t, 3> idxs{};
     idxs[nonzeroIdx1] = COS;
     idxs[nonzeroIdx2] = COS;
-    double A = fourierValues[idxs[0]][idxs[1]][idxs[2]];
+    double A = coefficients[idxs[0]][idxs[1]][idxs[2]];
     idxs[nonzeroIdx1] = COS;
     idxs[nonzeroIdx2] = SIN;
-    double B = fourierValues[idxs[0]][idxs[1]][idxs[2]];
+    double B = coefficients[idxs[0]][idxs[1]][idxs[2]];
     idxs[nonzeroIdx1] = SIN;
     idxs[nonzeroIdx2] = COS;
-    double C = fourierValues[idxs[0]][idxs[1]][idxs[2]];
+    double C = coefficients[idxs[0]][idxs[1]][idxs[2]];
     idxs[nonzeroIdx1] = SIN;
     idxs[nonzeroIdx2] = SIN;
-    double D = fourierValues[idxs[0]][idxs[1]][idxs[2]];
+    double D = coefficients[idxs[0]][idxs[1]][idxs[2]];
 
     if (A*A + B*B + C*C + D*D < AMPLITUDE_EPSILON*AMPLITUDE_EPSILON)
         return {};
@@ -119,7 +123,6 @@ FourierTracker::FourierTracker(const std::array<std::size_t, 3> &wavenumbers, Fu
             this->nonzeroWavenumberIdxs.push_back(i);
     }
     Expects(!this->nonzeroWavenumberIdxs.empty());
-    ExpectsMsg(this->nonzeroWavenumberIdxs.size() != 3, "3D FourierTracker is not implemented yet");
 
     this->fillFourierFunctions();
 }
@@ -156,6 +159,7 @@ Vector<3> FourierTracker::normalizeOriginPos(const Vector<3> &originPosRel) {
                 for (std::size_t i{}; i < 3; i++)
                     if (this->wavenumbers[i] > 0)
                         nextOriginPosRel[i] += static_cast<double>(idxs[i])/static_cast<double>(2*this->wavenumbers[i]);
+                nextOriginPosRel += pbc.getCorrection(nextOriginPosRel);
 
                 double newDeltaR2 = pbc.getDistance2(this->previousRelValue, nextOriginPosRel);
                 if (newDeltaR2 < bestDeltaR2) {
@@ -175,4 +179,99 @@ double FourierTracker::guardedAtan2(double y, double x) {
         return 0;
     else
         return std::atan2(y, x);
+}
+
+Vector<3> FourierTracker::calculateRelativeOriginPos3D(const FourierTracker::FourierCoefficients &coefficients) const {
+    double A = FourierTracker::getCoefficient(coefficients, {COS, COS, COS});
+    double B = FourierTracker::getCoefficient(coefficients, {COS, COS, SIN});
+    double C = FourierTracker::getCoefficient(coefficients, {COS, SIN, COS});
+    double D = FourierTracker::getCoefficient(coefficients, {COS, SIN, SIN});
+    double E = FourierTracker::getCoefficient(coefficients, {SIN, COS, COS});
+    double F = FourierTracker::getCoefficient(coefficients, {SIN, COS, SIN});
+    double G = FourierTracker::getCoefficient(coefficients, {SIN, SIN, COS});
+    double H = FourierTracker::getCoefficient(coefficients, {SIN, SIN, SIN});
+
+    if (A*A + B*B + C*C + D*D + E*E + F*F + G*G + H*H < AMPLITUDE_EPSILON*AMPLITUDE_EPSILON)
+        return {};
+
+    double K1 = (A + G)/2;
+    double K2 = (A - G)/2;
+    double L1 = (B + H)/2;
+    double L2 = (B - H)/2;
+    double M1 = (C + E)/2;
+    double M2 = (C - E)/2;
+    double N1 = (D + F)/2;
+    double N2 = (D - F)/2;
+
+    double U = K2*K2 + M1*M1;
+    double V = K2*L2 + M1*N1;
+    double W = L2*L2 + N1*N1;
+    double X = K1*K1 + M2*M2;
+    double Y = K1*L1 + M2*N2;
+    double Z = L1*L1 + N2*N2;
+
+    std::array<double, 7> polyCoef = this->calculateTanZCoefficients(U, V, W, X, Y, Z);
+    Eigen::VectorXd eigenCoef(7);
+    std::copy(polyCoef.rbegin(), polyCoef.rend(), eigenCoef.begin());
+    constexpr auto INF = std::numeric_limits<double>::infinity();
+    auto roots = RootFinder::solvePolynomial(eigenCoef, -INF, INF, 1e-12);
+    auto[sz, cz] = this->findBestSinCosZ(roots, U, V, W, X, Y, Z);
+    double z0 = FourierTracker::guardedAtan2(sz, cz);
+
+    double A2D = A*cz + B*sz;
+    double B2D = C*cz + D*sz;
+    double C2D = E*cz + F*sz;
+    double D2D = G*cz + H*sz;
+    double a = FourierTracker::guardedAtan2(C2D + B2D, A2D - D2D);
+    double b = FourierTracker::guardedAtan2(C2D - B2D, A2D + D2D);
+    double x0 = (a + b)/2;
+    double y0 = (a - b)/2;
+
+    Vector<3> relPos{};
+    relPos[0] = std::fmod(x0/static_cast<double>(this->wavenumbers[0])/2/M_PI + 1, 1);
+    relPos[1] = std::fmod(y0/static_cast<double>(this->wavenumbers[1])/2/M_PI + 1, 1);
+    relPos[2] = std::fmod(z0/static_cast<double>(this->wavenumbers[2])/2/M_PI + 1, 1);
+    return relPos;
+}
+
+double FourierTracker::getCoefficient(const FourierTracker::FourierCoefficients &coefficients,
+                                      const std::array<std::size_t, 3> &idxs)
+{
+    return coefficients[idxs[0]][idxs[1]][idxs[2]];
+}
+
+std::array<double, 7> FourierTracker::calculateTanZCoefficients(double U, double V, double W, double X, double Y,
+                                                                double Z) const
+{
+    return {
+        V*V*X - U*Y*Y,
+        2*V*(W*X + (V-Y)*Y) - 2*U*(V*X + Y*(-X+Z)),
+        -2*V*V*X + (U-W)*(U-W)*X + 4*V*(-U+W)*Y + 2*U*Y*Y - W*Y*Y + 4*V*Y*(X-Z) - U*(X-Z)*(X-Z) + V*V*Z,
+        2*(V*(U-W)*X - 2*V*V*Y + (U-W)*(U-W)*Y + 2*V*Y*Y + W*Y*(X-Z) - V*(X-Z)*(X-Z) + V*(-U+W)*Z + U*Y*(-X+Z)),
+        V*V*X + 4*V*(U-W)*Y - U*Y*Y + 2*W*Y*Y - W*(X-Z)*(X-Z) - 2*V*V*Z + (U-W)*(U-W)*Z + 4*V*Y*(-X+Z),
+        2*(V*V*Y + W*Y*(-X+Z) - V*(Y*Y + (-U+W)*Z)),
+        -W*Y*Y + V*V*Z
+    };
+}
+
+std::pair<double, double> FourierTracker::findBestSinCosZ(const std::set<double> &roots, double U, double V, double W,
+                                                          double X, double Y, double Z) const
+{
+    double bestSz{};
+    double bestCz{};
+    double bestVal{};
+
+    for (double z : roots) {
+        double norm = std::sqrt(1 + z*z);
+        double cz = 1/norm;
+        double sz = z/norm;
+        double val = std::sqrt(U*cz*cz + 2*V*sz*cz + W*sz*sz) + std::sqrt(X*cz*cz + 2*Y*sz*cz + Z*sz*sz);
+        if (val > bestVal) {
+            bestVal = val;
+            bestSz = sz;
+            bestCz = cz;
+        }
+    }
+
+    return {bestSz, bestCz};
 }
