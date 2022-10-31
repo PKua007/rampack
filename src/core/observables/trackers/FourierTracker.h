@@ -8,6 +8,7 @@
 #include <array>
 #include <functional>
 #include <optional>
+#include <set>
 
 #include "core/observables/GoldestoneTracker.h"
 
@@ -36,20 +37,27 @@ private:
     Vector<3> previousRelValue;
 
     static double guardedAtan2(double y, double x);
+    static double getCoefficient(const FourierCoefficients &coefficients, const std::array<std::size_t, 3> &idxs);
 
     void fillFourierFunctions();
     [[nodiscard]] FourierCoefficients calculateFourierCoefficients(const Packing &packing,
                                                                    const ShapeTraits &shapeTraits) const;
     [[nodiscard]] Vector<3> calculateRelativeOriginPos(const FourierCoefficients &coefficients) const;
     [[nodiscard]] Vector<3> calculateRelativeOriginPos1D(const FourierCoefficients &coefficients) const;
-    [[nodiscard]] Vector<3> calculateRelativeOriginPos2D(const FourierCoefficients &fourierValues) const;
+    [[nodiscard]] Vector<3> calculateRelativeOriginPos2D(const FourierCoefficients &coefficients) const;
+    [[nodiscard]] Vector<3> calculateRelativeOriginPos3D(const FourierCoefficients &coefficients) const;
     [[nodiscard]] Vector<3> normalizeOriginPos(const Vector<3> &originPosRel);
+    [[nodiscard]] std::array<double, 7> calculateTanZCoefficients(double U, double V, double W, double X, double Y,
+                                                                  double Z) const;
+    [[nodiscard]] std::pair<double, double> findBestSinCosZ(const std::set<double> &roots, double U, double V, double W,
+                                                            double X, double Y, double Z) const;
 
 public:
     FourierTracker(const std::array<std::size_t, 3> &wavenumbers, Function function, std::string functionName);
 
     [[nodiscard]] std::string getModeName() const override;
     void calculateOrigin(const Packing &packing, const ShapeTraits &shapeTraits) override;
+
 };
 
 

@@ -57,4 +57,27 @@ TEST_CASE("FourierTracker") {
         // original maximum is in {0, 1, 0.5}, but this one is closer to {0, 0, 0}
         CHECK_THAT(tracker.getOriginPos(), IsApproxEqual({0, 4.75, 4+2./3}, 0.05));
     }
+
+    SECTION("3D") {
+        Vector<3> origin{0.5, 1, 1.5};
+        auto function = [box, origin](const Shape &shape, const ShapeTraits &) {
+            double x = box.absoluteToRelative(shape.getPosition())[0];
+            double x0 = box.absoluteToRelative(origin)[0];
+            double y = box.absoluteToRelative(shape.getPosition())[1];
+            double y0 = box.absoluteToRelative(origin)[1];
+            double z = box.absoluteToRelative(shape.getPosition())[2];
+            double z0 = box.absoluteToRelative(origin)[2];
+            return std::cos(1 * 2*M_PI*(x - x0)) * std::cos(2 * 2*M_PI*(y - y0)) * std::cos(3 * 2*M_PI*(z - z0));
+        };
+        FourierTracker tracker({1, 2, 3}, function, "test");
+
+        tracker.calculateOrigin(packing, traits);
+        // original maximum is in {0.5, 1, 1.5}, but this one is closer to {0, 0, 0}
+        CHECK_THAT(tracker.getOriginPos(), IsApproxEqual({0.5, 4.75, 2./3}, 0.05));
+    }
+
+    SECTION("name") {
+        FourierTracker tracker({0, 2, 0}, [](const Shape &, const ShapeTraits &) { return 0.0; }, "test");
+        CHECK(tracker.getName() == "test_fourier_tracker");
+    }
 }

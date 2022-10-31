@@ -13,3 +13,9 @@
 [submodule "extern/quickhull"]
 	path = extern/quickhull
 	url = https://github.com/akuukka/quickhull.git
+[submodule "extern/Root-Finder"]
+	path = extern/Root-Finder
+	url = https://github.com/ZhepeiWang/Root-Finder.git
+[submodule "extern/eigen"]
+	path = extern/eigen
+	url = https://gitlab.com/libeigen/eigen.git
