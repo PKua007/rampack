@@ -2,13 +2,13 @@
 // Created by pkua on 14.09.22.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
 #include "utils/HistogramBuilder.h"
 #include "utils/OMPMacros.h"
 
 
-TEST_CASE("Histogram: reduction methods") {
+TEST_CASE("Histogram 1D: reduction methods") {
     // Bins: [1, 2), [2, 3]
     HistogramBuilder<1> histogram(1, 3, 2);
 
@@ -47,7 +47,7 @@ TEST_CASE("Histogram: reduction methods") {
     }
 }
 
-TEST_CASE("Histogram: OpenMP") {
+TEST_CASE("Histogram 1D: OpenMP") {
     // The same as the above, but in parallel
     HistogramBuilder<1> histogram(1, 3, 2, 2);
 
@@ -75,7 +75,7 @@ TEST_CASE("Histogram: OpenMP") {
     CHECK(values == std::vector<HistogramBuilder<1>::BinValue>{{1.5, 4}, {2.5, 12}});
 }
 
-TEST_CASE("Histogram: empty histogram") {
+TEST_CASE("Histogram 1D: empty histogram") {
     // Bins: [1, 2), [2, 3]
     HistogramBuilder<1> histogram(1, 3, 2);
 
@@ -84,18 +84,24 @@ TEST_CASE("Histogram: empty histogram") {
     CHECK(values == std::vector<HistogramBuilder<1>::BinValue>{{1.5, 0}, {2.5, 0}});
 }
 
-TEST_CASE("Histogram: info") {
+TEST_CASE("Histogram 2D: info") {
     // Bins: [1, 2), [2, 3]
-    HistogramBuilder<1> histogram(1, 3, 2);
+    HistogramBuilder<2> histogram({1, 2}, {3, 4}, {2, 4});
 
-    CHECK(histogram.getNumBins() == 2);
-    CHECK(histogram.getMin() == 1);
-    CHECK(histogram.getMax() == 3);
-    CHECK(histogram.getBinSize() == 1);
-    CHECK(histogram.getBinDividers() == std::vector<double>{1, 2, 3});
+    CHECK(histogram.getNumBins(0) == 2);
+    CHECK(histogram.getMin(0) == 1);
+    CHECK(histogram.getMax(0) == 3);
+    CHECK(histogram.getBinSize(0) == 1);
+    CHECK(histogram.getBinDividers(0) == std::vector<double>{1, 2, 3});
+
+    CHECK(histogram.getNumBins(1) == 4);
+    CHECK(histogram.getMin(1) == 2);
+    CHECK(histogram.getMax(1) == 4);
+    CHECK(histogram.getBinSize(1) == 0.5);
+    CHECK(histogram.getBinDividers(1) == std::vector<double>{2, 2.5, 3, 3.5, 4});
 }
 
-TEST_CASE("Histogram: add") {
+TEST_CASE("Histogram 1D: add") {
     // Bins: [1, 2), [2, 3]
     HistogramBuilder<1> histogram(1, 3, 2);
 
@@ -115,7 +121,24 @@ TEST_CASE("Histogram: add") {
     }
 }
 
-TEST_CASE("Histogram: renormalization") {
+TEST_CASE("Histogram 2D: add") {
+    // Bins: { [1, 2), [2, 3] }  X  { [1, 2), [2, 3), [3, 4] }
+    HistogramBuilder<2> histogram({1, 1}, {3, 4}, {2, 3});
+    histogram.add({1.2, 1.3}, 1);
+    histogram.add({1.5, 1.6}, 2);
+    histogram.add({2.5, 1.6}, 5);
+    histogram.add({2.6, 3.1}, 7);
+    histogram.nextSnapshot();
+
+    auto values = histogram.dumpValues(HistogramBuilder<2>::ReductionMethod::SUM);
+    auto expected = std::vector<HistogramBuilder<2>::BinValue>{
+        {{1.5, 1.5}, 3}, {{1.5, 2.5}, 0}, {{1.5, 3.5}, 0},
+        {{2.5, 1.5}, 5}, {{2.5, 2.5}, 0}, {{2.5, 3.5}, 7}
+    };
+    CHECK_THAT(values, Catch::UnorderedEquals(expected));
+}
+
+TEST_CASE("Histogram 1D: renormalization") {
     // Bins: [1, 2), [2, 3]
     HistogramBuilder<1> histogram(1, 3, 2);
 
