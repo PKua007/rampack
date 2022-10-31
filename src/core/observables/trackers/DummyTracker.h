@@ -5,15 +5,16 @@
 #ifndef RAMPACK_DUMMYTRACKER_H
 #define RAMPACK_DUMMYTRACKER_H
 
-#include "core/observables/GoldestoneTracker.h"
+#include "core/observables/GoldstoneTracker.h"
 
 
-class DummyTracker : public GoldestoneTracker {
+class DummyTracker : public GoldstoneTracker {
 public:
     [[nodiscard]] std::string getModeName() const override { return "dummy"; }
     void calculateOrigin([[maybe_unused]] const Packing &packing,
                          [[maybe_unused]] const ShapeTraits &shapeTraits) override
     { }
+    void reset() override { }
 };
 
 

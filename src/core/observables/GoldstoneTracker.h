@@ -2,13 +2,13 @@
 // Created by pkua on 20.10.22.
 //
 
-#ifndef RAMPACK_GOLDESTONETRACKER_H
-#define RAMPACK_GOLDESTONETRACKER_H
+#ifndef RAMPACK_GOLDSTONETRACKER_H
+#define RAMPACK_GOLDSTONETRACKER_H
 
 #include "core/Observable.h"
 
 
-class GoldestoneTracker : public Observable {
+class GoldstoneTracker : public Observable {
 protected:
     Vector<3> originPos;
     Matrix<3, 3> originRot = Matrix<3, 3>::identity();
@@ -16,6 +16,7 @@ protected:
 public:
     [[nodiscard]] virtual std::string getModeName() const = 0;
     virtual void calculateOrigin(const Packing &packing, const ShapeTraits &shapeTraits) = 0;
+    virtual void reset() = 0;
 
     void calculate(const Packing &packing, double temperature, double pressure, const ShapeTraits &shapeTraits) final;
     [[nodiscard]] std::vector<std::string> getIntervalHeader() const final;
@@ -31,4 +32,4 @@ public:
 
 
 
-#endif //RAMPACK_GOLDESTONETRACKER_H
+#endif //RAMPACK_GOLDSTONETRACKER_H

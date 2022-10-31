@@ -10,10 +10,10 @@
 #include <optional>
 #include <set>
 
-#include "core/observables/GoldestoneTracker.h"
+#include "core/observables/GoldstoneTracker.h"
 
 
-class FourierTracker : public GoldestoneTracker {
+class FourierTracker : public GoldstoneTracker {
 public:
     using Function = std::function<double(const Shape &, const ShapeTraits &)>;
 
@@ -57,7 +57,7 @@ public:
 
     [[nodiscard]] std::string getModeName() const override;
     void calculateOrigin(const Packing &packing, const ShapeTraits &shapeTraits) override;
-
+    void reset() override;
 };
 
 

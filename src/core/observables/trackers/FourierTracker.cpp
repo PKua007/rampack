@@ -275,3 +275,7 @@ std::pair<double, double> FourierTracker::findBestSinCosZ(const std::set<double>
 
     return {bestSz, bestCz};
 }
+
+void FourierTracker::reset() {
+    this->previousRelValue = {};
+}
