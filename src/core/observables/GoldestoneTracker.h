@@ -21,7 +21,7 @@ public:
     [[nodiscard]] std::vector<std::string> getIntervalHeader() const final;
     [[nodiscard]] std::vector<std::string> getNominalHeader() const final { return {}; }
     [[nodiscard]] std::vector<double> getIntervalValues() const final;
-    [[nodiscard]] std::vector<std::string> getNominalValues() const final  {return {}; }
+    [[nodiscard]] std::vector<std::string> getNominalValues() const final { return {}; }
     [[nodiscard]] std::string getName() const final { return this->getModeName() + "_tracker"; }
 
     [[nodiscard]] const Vector<3> &getOriginPos() const { return this->originPos; }
