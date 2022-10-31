@@ -533,6 +533,14 @@ public:
     [[nodiscard]] inline const_iterator end() const;
     [[nodiscard]] inline iterator begin();
     [[nodiscard]] inline iterator end();
+
+    [[nodiscard]] constexpr bool empty() const {
+        return ROWS == 0 || COLS == 0;
+    }
+
+    [[nodiscard]] constexpr std::size_t size() const {
+        return ROWS * COLS;
+    }
 };
 
 

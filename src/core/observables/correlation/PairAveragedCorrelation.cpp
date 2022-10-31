@@ -14,7 +14,7 @@ void PairAveragedCorrelation::addSnapshot(const Packing &packing, [[maybe_unused
 
 void PairAveragedCorrelation::print(std::ostream &out) const {
     for (auto [x, y] : this->histogram.dumpValues(HistogramBuilder<1>::ReductionMethod::AVERAGE))
-        out << x << " " << y << std::endl;
+        out << x.front() << " " << y << std::endl;
 }
 
 void PairAveragedCorrelation::consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
