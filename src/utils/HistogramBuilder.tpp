@@ -24,8 +24,8 @@ void HistogramBuilder<DIM>::add(const Vector<DIM> &pos, double value) {
     Expects(threadId < this->currentHistograms.size());
 
     auto binIdx = this->calculateFlatBinIndex(pos);
-    if (binIdx >= this->getNumBins())
-        binIdx = this->getNumBins() - 1;
+    if (binIdx >= this->flatNumBins)
+        binIdx = this->flatNumBins - 1;
 
     auto &currentHistogram = this->currentHistograms[threadId];
     currentHistogram.bins[binIdx].addPoint(value);
