@@ -4,7 +4,7 @@
 
 #include <catch2/catch.hpp>
 
-#include "core/observables/correlation/HistogramBuilder.h"
+#include "utils/HistogramBuilder.h"
 #include "utils/OMPMacros.h"
 
 
