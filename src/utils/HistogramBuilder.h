@@ -8,6 +8,11 @@
 #include <ostream>
 #include <vector>
 #include <tuple>
+#include <algorithm>
+#include <cmath>
+
+#include "utils/Assertions.h"
+#include "utils/OMPMacros.h"
 
 
 /**
@@ -19,6 +24,7 @@
  * counter. Before adding the snapshot one can renormalize bin values using renormalizeBins() method. After gathering
  * all snapshots dumpValues() method can be used to obtain a final, snapshot-averaged histogram.
  */
+template<std::size_t DIM = 1>
 class HistogramBuilder {
 private:
     struct BinData {
@@ -155,5 +161,7 @@ public:
     void renormalizeBins(const std::vector<double> &factors);
 };
 
+
+#include "HistogramBuilder.tpp"
 
 #endif //RAMPACK_HISTOGRAMBUILDER_H

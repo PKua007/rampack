@@ -22,7 +22,7 @@
 class PairDensityCorrelation : public BulkObservable, protected PairConsumer {
 private:
     std::unique_ptr<PairEnumerator> pairEnumerator;
-    HistogramBuilder histogram;
+    HistogramBuilder<1> histogram;
 
 protected:
     void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,

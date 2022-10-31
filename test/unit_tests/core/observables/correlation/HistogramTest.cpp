@@ -10,7 +10,7 @@
 
 TEST_CASE("Histogram: reduction methods") {
     // Bins: [1, 2), [2, 3]
-    HistogramBuilder histogram(1, 3, 2);
+    HistogramBuilder<1> histogram(1, 3, 2);
 
     // |   |   | 5 |
     // | 2 |   | 4 |
@@ -27,13 +27,13 @@ TEST_CASE("Histogram: reduction methods") {
     histogram.nextSnapshot();
 
     SECTION("sum reduction") {
-        auto values = histogram.dumpValues(HistogramBuilder::ReductionMethod::SUM);
-        CHECK(values == std::vector<HistogramBuilder::BinValue>{{1.5, 4}, {2.5, 12}});
+        auto values = histogram.dumpValues(HistogramBuilder<1>::ReductionMethod::SUM);
+        CHECK(values == std::vector<HistogramBuilder<1>::BinValue>{{1.5, 4}, {2.5, 12}});
     }
 
     SECTION("average reduction") {
-        auto values = histogram.dumpValues(HistogramBuilder::ReductionMethod::AVERAGE);
-        CHECK(values == std::vector<HistogramBuilder::BinValue>{{1.5, 4}, {2.5, 8}});
+        auto values = histogram.dumpValues(HistogramBuilder<1>::ReductionMethod::AVERAGE);
+        CHECK(values == std::vector<HistogramBuilder<1>::BinValue>{{1.5, 4}, {2.5, 8}});
     }
 
     SECTION("clearing") {
@@ -42,14 +42,14 @@ TEST_CASE("Histogram: reduction methods") {
         histogram.add(2.5, 4);
         histogram.nextSnapshot();
 
-        auto values = histogram.dumpValues(HistogramBuilder::ReductionMethod::SUM);
-        CHECK(values == std::vector<HistogramBuilder::BinValue>{{1.5, 2}, {2.5, 4}});
+        auto values = histogram.dumpValues(HistogramBuilder<1>::ReductionMethod::SUM);
+        CHECK(values == std::vector<HistogramBuilder<1>::BinValue>{{1.5, 2}, {2.5, 4}});
     }
 }
 
 TEST_CASE("Histogram: OpenMP") {
     // The same as the above, but in parallel
-    HistogramBuilder histogram(1, 3, 2, 2);
+    HistogramBuilder<1> histogram(1, 3, 2, 2);
 
     #pragma omp parallel num_threads(2) shared(histogram) default(none)
     {
@@ -71,22 +71,22 @@ TEST_CASE("Histogram: OpenMP") {
     }
     histogram.nextSnapshot();
 
-    auto values = histogram.dumpValues(HistogramBuilder::ReductionMethod::SUM);
-    CHECK(values == std::vector<HistogramBuilder::BinValue>{{1.5, 4}, {2.5, 12}});
+    auto values = histogram.dumpValues(HistogramBuilder<1>::ReductionMethod::SUM);
+    CHECK(values == std::vector<HistogramBuilder<1>::BinValue>{{1.5, 4}, {2.5, 12}});
 }
 
 TEST_CASE("Histogram: empty histogram") {
     // Bins: [1, 2), [2, 3]
-    HistogramBuilder histogram(1, 3, 2);
+    HistogramBuilder<1> histogram(1, 3, 2);
 
-    auto reductionMethod = GENERATE(HistogramBuilder::ReductionMethod::SUM, HistogramBuilder::ReductionMethod::AVERAGE);
+    auto reductionMethod = GENERATE(HistogramBuilder<1>::ReductionMethod::SUM, HistogramBuilder<1>::ReductionMethod::AVERAGE);
     auto values = histogram.dumpValues(reductionMethod);
-    CHECK(values == std::vector<HistogramBuilder::BinValue>{{1.5, 0}, {2.5, 0}});
+    CHECK(values == std::vector<HistogramBuilder<1>::BinValue>{{1.5, 0}, {2.5, 0}});
 }
 
 TEST_CASE("Histogram: info") {
     // Bins: [1, 2), [2, 3]
-    HistogramBuilder histogram(1, 3, 2);
+    HistogramBuilder<1> histogram(1, 3, 2);
 
     CHECK(histogram.getNumBins() == 2);
     CHECK(histogram.getMin() == 1);
@@ -97,7 +97,7 @@ TEST_CASE("Histogram: info") {
 
 TEST_CASE("Histogram: add") {
     // Bins: [1, 2), [2, 3]
-    HistogramBuilder histogram(1, 3, 2);
+    HistogramBuilder<1> histogram(1, 3, 2);
 
     SECTION("tricky values") {
         histogram.add(1, 4);
@@ -105,8 +105,8 @@ TEST_CASE("Histogram: add") {
         histogram.add(3, 6);
         histogram.nextSnapshot();
 
-        auto values = histogram.dumpValues(HistogramBuilder::ReductionMethod::SUM);
-        CHECK(values == std::vector<HistogramBuilder::BinValue>{{1.5, 4}, {2.5, 11}});
+        auto values = histogram.dumpValues(HistogramBuilder<1>::ReductionMethod::SUM);
+        CHECK(values == std::vector<HistogramBuilder<1>::BinValue>{{1.5, 4}, {2.5, 11}});
     }
 
     SECTION("errors") {
@@ -117,7 +117,7 @@ TEST_CASE("Histogram: add") {
 
 TEST_CASE("Histogram: renormalization") {
     // Bins: [1, 2), [2, 3]
-    HistogramBuilder histogram(1, 3, 2);
+    HistogramBuilder<1> histogram(1, 3, 2);
 
     histogram.add(1.5, 4);
     histogram.add(2.5, 5);
@@ -125,6 +125,6 @@ TEST_CASE("Histogram: renormalization") {
     histogram.renormalizeBins({2, 3});
     histogram.nextSnapshot();
 
-    auto values = histogram.dumpValues(HistogramBuilder::ReductionMethod::SUM);
-    CHECK(values == std::vector<HistogramBuilder::BinValue>{{1.5, 8}, {2.5, 33}});
+    auto values = histogram.dumpValues(HistogramBuilder<1>::ReductionMethod::SUM);
+    CHECK(values == std::vector<HistogramBuilder<1>::BinValue>{{1.5, 8}, {2.5, 33}});
 }
