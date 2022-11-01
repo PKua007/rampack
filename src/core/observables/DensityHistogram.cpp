@@ -19,13 +19,13 @@ void DensityHistogram::addSnapshot(const Packing &packing, [[maybe_unused]] doub
 
     const auto &box = packing.getBox();
     const auto &bc = packing.getBoundaryConditions();
-    double volume = packing.getVolume();
-    #pragma omp parallel for shared(packing, bc, box, histogramBuilder, originDelta, volume) default(none)
+    #pragma omp parallel for shared(packing, bc, box, histogramBuilder, originDelta) default(none) \
+            num_threads(this->numThreads)
     for (std::size_t i = 0; i < packing.size(); i++) {
         Vector<3> pos = packing[i].getPosition();
         pos -= originDelta;
         pos += bc.getCorrection(pos);
-        this->histogramBuilder.add(box.absoluteToRelative(pos), volume);
+        this->histogramBuilder.add(box.absoluteToRelative(pos), 1./static_cast<double>(packing.size()));
     }
     this->histogramBuilder.nextSnapshot();
 }
@@ -44,7 +44,8 @@ void DensityHistogram::clear() {
 DensityHistogram::DensityHistogram(const std::array<std::size_t, 3> &numBins, std::unique_ptr<GoldstoneTracker> tracker,
                                    std::size_t numThreads)
         : numBins{normalizeNumBins(numBins)}, tracker{std::move(tracker)},
-        histogramBuilder({0, 0, 0}, {1, 1, 1}, this->numBins, numThreads)
+          histogramBuilder({0, 0, 0}, {1, 1, 1}, this->numBins, numThreads),
+          numThreads{numThreads == 0 ? _OMP_MAXTHREADS : numThreads}
 {
     Expects(std::any_of(numBins.begin(), numBins.end(), [](std::size_t n) { return n > 1; }));
 }
@@ -54,4 +55,8 @@ std::array<std::size_t, 3> DensityHistogram::normalizeNumBins(std::array<std::si
         if (elem == 0)
             elem = 1;
     return array;
+}
+
+std::vector<HistogramBuilder3D::BinValue> DensityHistogram::dumpValues() const {
+    return this->histogramBuilder.dumpValues(HistogramBuilder3D::ReductionMethod::SUM);
 }
