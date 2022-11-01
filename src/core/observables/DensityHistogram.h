@@ -20,6 +20,7 @@ private:
     std::unique_ptr<GoldstoneTracker> tracker;
     HistogramBuilder3D histogramBuilder;
     std::optional<Vector<3>> firstOrigin;
+    std::size_t numThreads{};
 
     static std::array<std::size_t, 3> normalizeNumBins(std::array<std::size_t, 3> array);
 
@@ -33,6 +34,8 @@ public:
     void print(std::ostream &out) const override;
     void clear() override;
     [[nodiscard]] std::string getSignatureName() const override { return "density_histogram"; };
+
+    [[nodiscard]] std::vector<HistogramBuilder3D::BinValue> dumpValues() const;
 };
 
 
