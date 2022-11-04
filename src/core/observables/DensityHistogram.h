@@ -10,7 +10,6 @@
 
 #include "core/BulkObservable.h"
 #include "GoldstoneTracker.h"
-#include "trackers/DummyTracker.h"
 #include "utils/HistogramBuilder.h"
 
 
@@ -26,8 +25,7 @@ private:
 
 public:
     explicit DensityHistogram(const std::array<std::size_t, 3> &numBins,
-                              std::unique_ptr<GoldstoneTracker> tracker = std::make_unique<DummyTracker>(),
-                              std::size_t numThreads = 1);
+                              std::unique_ptr<GoldstoneTracker> tracker = nullptr, std::size_t numThreads = 1);
 
     void addSnapshot(const Packing &packing, double temperature, double pressure,
                      const ShapeTraits &shapeTraits) override;

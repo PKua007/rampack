@@ -63,7 +63,7 @@ public:
         return ParseUtils::parseFields(fields, ParseUtils::tokenize<std::string>(in));
     }
 
-    static bool isAnythingLeft(std::istringstream &stream);
+    static bool isAnythingLeft(std::istream &stream);
 };
 
 

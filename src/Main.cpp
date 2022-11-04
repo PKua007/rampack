@@ -23,6 +23,22 @@ namespace {
         }
         std::abort();
     }
+
+    int handle_commands(const std::string &cmd, const std::string &mode, int argc, char **argv) {
+        Frontend frontend(logger);
+        if (mode == "-h" || mode == "--help")
+            return frontend.printGeneralHelp(cmd);
+        else if (mode == "casino")
+            return frontend.casino(argc, argv);
+        else if (mode == "optimize-distance")
+            return frontend.optimize_distance(argc, argv);
+        else if (mode == "preview")
+            return frontend.preview(argc, argv);
+        else if (mode == "trajectory")
+            return frontend.trajectory(argc, argv);
+        logger.error() << "Unknown mode " << mode << ". See " << cmd << " --help" << std::endl;
+        return EXIT_FAILURE;
+    }
 }
 
 
@@ -44,24 +60,19 @@ int main(int argc, char **argv) {
     argc--;
     argv[0] = cmdAndMode.data();
 
-    Frontend frontend(logger);
 
     // Try and rethrow exception to let the destructors be called during stack unwinding, but then use the general
     // terminate handler. This however does not work for exceptions thrown from threads other than master.
-    try {
-        if (mode == "-h" || mode == "--help")
-            return frontend.printGeneralHelp(cmd);
-        else if (mode == "casino")
-            return frontend.casino(argc, argv);
-        else if (mode == "optimize-distance")
-            return frontend.optimize_distance(argc, argv);
-        else if (mode == "preview")
-            return frontend.preview(argc, argv);
-        else if (mode == "trajectory")
-            return frontend.trajectory(argc, argv);
-        logger.error() << "Unknown mode " << mode << ". See " << cmd << " --help" << std::endl;
-        return EXIT_FAILURE;
-    } catch (const std::exception &) {
-        std::rethrow_exception(std::current_exception());
-    }
+    // This is enabled for the Release build - in the Debug build we want to know from where the exception is thrown
+    // and using rethrowing erases this information, and we do not need destructors to be called, since the execution
+    // is only paused, so we have access to everything anyway.
+    #ifdef NDEBUG
+        try {
+            handle_commands(cmd, mode, argc, argv);
+        } catch (const std::exception &) {
+            throw;
+        }
+    #else
+        handle_commands(cmd, mode, argc, argv);
+    #endif
 }

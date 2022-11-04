@@ -19,11 +19,13 @@
 #include "core/observables/RotationMatrixDrift.h"
 #include "core/observables/Temperature.h"
 #include "core/observables/Pressure.h"
+#include "core/observables/DensityHistogram.h"
 #include "core/observables/correlation/RadialEnumerator.h"
 #include "core/observables/correlation/LayerwiseRadialEnumerator.h"
 #include "core/observables/correlation/PairDensityCorrelation.h"
 #include "core/observables/correlation/PairAveragedCorrelation.h"
 #include "core/observables/correlation/S110Correlation.h"
+#include "core/observables/trackers/FourierTracker.h"
 
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
@@ -63,6 +65,18 @@
                                         BINNING_SPEC_ALTERNATIVES "\n" \
                                         "[correlation function] :=\n" \
                                         CORR_FUN_ALTERNATIVES
+
+#define FOURIER_TRACKER_USAGE "Malformed Fourier tracker, usage:\n" \
+                              "fourierTracker [wavenumber x] [... y] [... z] [function]\n" \
+                              "[function] :=\n" \
+                              "1. const\n" \
+                              "2. (primaryAxis|secondaryAxis) (x|y|z)"
+
+#define DENSITY_HISTOGRAM_USAGE "Malformed density histogram, usage:\n" \
+                                "densityHistogram n_bins [number of bins x] [... y] [... z] " \
+                                "(tracker [tracker name] ([tracker parameters]))\n" \
+                                "[tracker name] :=\n" \
+                                "1. fourierTracker"
 
 namespace {
     auto parse_observable_name_and_type(std::istringstream &observableStream, const std::regex &typePattern) {
@@ -138,7 +152,7 @@ namespace {
         return maxN;
     }
 
-    std::unique_ptr<SmecticOrder> parse_smectic_order(std::istringstream &observableStream) {
+    std::unique_ptr<SmecticOrder> parse_smectic_order(std::istream &observableStream) {
         std::vector<std::string> tokens = ParseUtils::tokenize<std::string>(observableStream);
         auto fieldMap = ParseUtils::parseFields({"", "max_n", "dumpTauVector", "focalPoint"}, tokens);
 
@@ -198,7 +212,7 @@ namespace {
         return ranks;
     }
 
-    std::unique_ptr<BondOrder> parse_bond_order(std::istringstream &observableStream) {
+    std::unique_ptr<BondOrder> parse_bond_order(std::istream &observableStream) {
         std::vector<std::string> tokens = ParseUtils::tokenize<std::string>(observableStream);
         auto fieldMap = ParseUtils::parseFields({"", "millerIdx", "ranks", "layeringPoint", "bondOrderPoint"}, tokens);
 
@@ -222,7 +236,7 @@ namespace {
         return std::make_unique<BondOrder>(ranks, millerIndices, layeringPoint, bondOrderPoint);
     }
 
-    std::unique_ptr<PairEnumerator> parse_pair_enumerator(std::istringstream &observableStream) {
+    std::unique_ptr<PairEnumerator> parse_pair_enumerator(std::istream &observableStream) {
         std::string enumeratorName;
         observableStream >> enumeratorName;
         ValidateMsg(observableStream, BINNING_SPEC_USAGE);
@@ -251,7 +265,7 @@ namespace {
         }
     }
 
-    std::unique_ptr<CorrelationFunction> parse_correlation_function(std::istringstream &observableStream) {
+    std::unique_ptr<CorrelationFunction> parse_correlation_function(std::istream &observableStream) {
         std::string name;
         observableStream >> name;
         ValidateMsg(observableStream, CORR_FUN_USAGE);
@@ -270,52 +284,124 @@ namespace {
             throw ValidationException("Unknown correlation function: " + name);
         }
     }
-    
+
+    std::unique_ptr<FourierTracker> parse_fourier_tracker(std::istream &observableStream) {
+        std::array<std::size_t, 3> wavenumbers{};
+        std::string functionName;
+        observableStream >> wavenumbers[0] >> wavenumbers[1] >> wavenumbers[2] >> functionName;
+        ValidateMsg(observableStream, FOURIER_TRACKER_USAGE);
+
+        ValidateMsg(std::any_of(wavenumbers.begin(), wavenumbers.end(), [](std::size_t n) { return n > 0; }),
+                    "Fourier tracker: at least one of wavenubmers must be > 0");
+
+        FourierTracker::Function function;
+        std::string functionShortName;
+        if (functionName == "const") {
+            function = [](const Shape &, const ShapeTraits &) -> double { return 1; };
+            functionShortName = "c";
+        } else if (functionName == "primaryAxis" || functionName == "secondaryAxis") {
+            char coord{};
+            observableStream >> coord;
+            ValidateMsg(observableStream, FOURIER_TRACKER_USAGE);
+            ValidateMsg(coord >= 'x' && coord <= 'z', "FourierTracker: axis coordinate should be x, y or z");
+            std::size_t coordIdx = coord - 'x';
+
+            if (functionName == "primaryAxis") {
+                function = [coordIdx](const Shape &shape, const ShapeTraits &traits) {
+                    return traits.getGeometry().getPrimaryAxis(shape)[coordIdx];
+                };
+                functionShortName = "pa_";
+            } else {    // secondaryAxis
+                function = [coordIdx](const Shape &shape, const ShapeTraits &traits) {
+                    return traits.getGeometry().getSecondaryAxis(shape)[coordIdx];
+                };
+                functionShortName = "sa_";
+            }
+            functionShortName += coord;
+        } else {
+            throw ValidationException(FOURIER_TRACKER_USAGE);
+        }
+
+        return std::make_unique<FourierTracker>(wavenumbers, function, functionShortName);
+    }
+
+    std::unique_ptr<GoldstoneTracker> parse_tracker(const std::string &trackerName, std::istream &trackerStream) {
+        if (trackerName == "fourierTracker") {
+            return parse_fourier_tracker(trackerStream);
+        } else {
+            throw ValidationException("Unknown Goldstone tracker: " + trackerName);
+        }
+    }
+
+    std::unique_ptr<Observable> parse_observable(const std::string &observableName, std::istream &observableStream) {
+        if (observableName == "numberDensity") {
+            return std::make_unique<NumberDensity>();
+        } else if (observableName == "boxDimensions") {
+            return std::make_unique<BoxDimensions>();
+        } else if (observableName == "packingFraction") {
+            return std::make_unique<PackingFraction>();
+        } else if (observableName == "compressibilityFactor") {
+            return std::make_unique<CompressibilityFactor>();
+        } else if (observableName == "energyPerParticle") {
+            return std::make_unique<EnergyPerParticle>();
+        } else if (observableName == "energyFluctuationsPerParticle") {
+            return std::make_unique<EnergyFluctuationsPerParticle>();
+        } else if (observableName == "nematicOrder") {
+            if (!ParseUtils::isAnythingLeft(observableStream))
+                return std::make_unique<NematicOrder>();
+
+            std::string QTensorString;
+            observableStream >> QTensorString;
+            ValidateMsg(QTensorString == "dumpQTensor", "Malformed nematic order, usage: nematicOrder (dumpQTensor)");
+            return std::make_unique<NematicOrder>(true);
+        } else if (observableName == "smecticOrder") {
+            return parse_smectic_order(observableStream);
+        } else if (observableName == "bondOrder") {
+            return parse_bond_order(observableStream);
+        } else if (observableName == "rotationMatrixDrift") {
+            return std::make_unique<RotationMatrixDrift>();
+        } else if (observableName == "temperature") {
+            return std::make_unique<Temperature>();
+        } else if (observableName == "pressure") {
+            return std::make_unique<Pressure>();
+        }
+
+        try {
+            return parse_tracker(observableName, observableStream);
+        } catch (const ValidationException &) { }
+
+        throw ValidationException("Unknown observable: " + observableName);
+    }
+
+    std::unique_ptr<DensityHistogram> parse_density_histogram(std::istream &observableStream,
+                                                              std::size_t maxThreads)
+    {
+        auto fields = ParseUtils::parseFields({"n_bins", "tracker"}, observableStream);
+        ValidateMsg(fields.find("n_bins") != fields.end(), DENSITY_HISTOGRAM_USAGE);
+        auto nBinsTokens = ParseUtils::tokenize<std::size_t>(fields.at("n_bins"));
+        ValidateMsg(nBinsTokens.size() == 3, DENSITY_HISTOGRAM_USAGE);
+        std::array<std::size_t, 3> nBins{};
+        std::copy(nBinsTokens.begin(), nBinsTokens.end(), nBins.begin());
+
+        if (fields.find("tracker") == fields.end())
+            return std::make_unique<DensityHistogram>(nBins, nullptr, maxThreads);
+
+        std::istringstream trackerStream(fields.at("tracker"));
+        std::string trackerName;
+        trackerStream >> trackerName;
+        ValidateMsg(trackerStream, DENSITY_HISTOGRAM_USAGE);
+        std::unique_ptr<GoldstoneTracker> tracker = parse_tracker(trackerName, trackerStream);
+        return std::make_unique<DensityHistogram>(nBins, std::move(tracker));
+    }
+
     void parse_observables(const std::vector<std::string> &observables, ObservablesCollector &collector) {
         std::regex typePattern(R"(^(?:inline|snapshot|averaging)(?:\/(?:inline|snapshot|averaging))*$)");
 
         for (auto observable : observables) {
             trim(observable);
             std::istringstream observableStream(observable);
-
             auto [observableName, observableType] = parse_observable_name_and_type(observableStream, typePattern);
-
-            if (observableName == "numberDensity") {
-                collector.addObservable(std::make_unique<NumberDensity>(), observableType);
-            } else if (observableName == "boxDimensions") {
-                collector.addObservable(std::make_unique<BoxDimensions>(), observableType);
-            } else if (observableName == "packingFraction") {
-                collector.addObservable(std::make_unique<PackingFraction>(), observableType);
-            } else if (observableName == "compressibilityFactor") {
-                collector.addObservable(std::make_unique<CompressibilityFactor>(), observableType);
-            } else if (observableName == "energyPerParticle") {
-                collector.addObservable(std::make_unique<EnergyPerParticle>(), observableType);
-            } else if (observableName == "energyFluctuationsPerParticle") {
-                collector.addObservable(std::make_unique<EnergyFluctuationsPerParticle>(), observableType);
-            } else if (observableName == "nematicOrder") {
-                observableStream >> std::ws;
-                if (observableStream.eof()) {
-                    collector.addObservable(std::make_unique<NematicOrder>(), observableType);
-                    continue;
-                }
-
-                std::string QTensorString;
-                observableStream >> QTensorString;
-                ValidateMsg(QTensorString == "dumpQTensor", "Malformed nematic order, usage: nematicOrder (dumpQTensor)");
-                collector.addObservable(std::make_unique<NematicOrder>(true), observableType);
-            } else if (observableName == "smecticOrder") {
-                collector.addObservable(parse_smectic_order(observableStream), observableType);
-            } else if (observableName == "bondOrder") {
-                collector.addObservable(parse_bond_order(observableStream), observableType);
-            } else if (observableName == "rotationMatrixDrift") {
-                collector.addObservable(std::make_unique<RotationMatrixDrift>(), observableType);
-            } else if (observableName == "temperature") {
-                collector.addObservable(std::make_unique<Temperature>(), observableType);
-            } else if (observableName == "pressure") {
-                collector.addObservable(std::make_unique<Pressure>(), observableType);
-            } else {
-                throw ValidationException("Unknown observable: " + observableName);
-            }
+            collector.addObservable(parse_observable(observableName, observableStream), observableType);
         }
     }
 
@@ -355,6 +441,8 @@ namespace {
                         std::move(pairEnumerator), std::move(correlationFunction), maxDistance, numBins, maxThreads
                 );
                 collector.addBulkObservable(std::move(avgCorr));
+            } else if (observableName == "densityHistogram") {
+                collector.addBulkObservable(parse_density_histogram(observableStream, maxThreads));
             } else {
                 throw ValidationException("Unknown observable: " + observableName);
             }
