@@ -6,6 +6,7 @@
 
 #include "DensityHistogram.h"
 #include "utils/Assertions.h"
+#include "trackers/DummyTracker.h"
 
 
 void DensityHistogram::addSnapshot(const Packing &packing, [[maybe_unused]] double temperature,
@@ -47,6 +48,8 @@ DensityHistogram::DensityHistogram(const std::array<std::size_t, 3> &numBins, st
           histogramBuilder({0, 0, 0}, {1, 1, 1}, this->numBins, numThreads),
           numThreads{numThreads == 0 ? _OMP_MAXTHREADS : numThreads}
 {
+    if (this->tracker == nullptr)
+        this->tracker = std::make_unique<DummyTracker>();
     Expects(std::any_of(numBins.begin(), numBins.end(), [](std::size_t n) { return n > 1; }));
 }
 

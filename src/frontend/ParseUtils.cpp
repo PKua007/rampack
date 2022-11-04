@@ -37,7 +37,7 @@ std::map<std::string, std::string> ParseUtils::parseFields(const std::vector<std
     return fieldMap;
 }
 
-bool ParseUtils::isAnythingLeft(std::istringstream &stream) {
+bool ParseUtils::isAnythingLeft(std::istream &stream) {
     if (!stream)
         return false;
     stream >> std::ws;
