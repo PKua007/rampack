@@ -47,9 +47,9 @@ public:
     void clear() override;
 
     /**
-     * @brief Returns "density_histogram" as the signature name.
+     * @brief Returns "rho_xyz" as the signature name.
      */
-    [[nodiscard]] std::string getSignatureName() const override { return "density_histogram"; };
+    [[nodiscard]] std::string getSignatureName() const override { return "rho_xyz"; };
 
     /**
      * @brief Dumps a flat list of HistogramBuilder3D::BinValue -s averages over snapshots.
