@@ -8,9 +8,13 @@
 #include "core/observables/GoldstoneTracker.h"
 
 
+/**
+ * @brief Dummy tracker which does not track anything - it leaves origin position and system orientation at default
+ * values.
+ */
 class DummyTracker : public GoldstoneTracker {
 public:
-    [[nodiscard]] std::string getModeName() const override { return "dummy"; }
+    [[nodiscard]] std::string getTrackingMethodName() const override { return "dummy"; }
     void calculateOrigin([[maybe_unused]] const Packing &packing,
                          [[maybe_unused]] const ShapeTraits &shapeTraits) override
     { }

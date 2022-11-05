@@ -18,15 +18,16 @@ void DensityHistogram::addSnapshot(const Packing &packing, [[maybe_unused]] doub
         this->firstOrigin = trackedOrigin;
     Vector<3> originDelta = trackedOrigin - *this->firstOrigin;
 
+    std::size_t totalBins = std::accumulate(this->numBins.begin(), this->numBins.end(), 1ul, std::multiplies<>{});
     const auto &box = packing.getBox();
     const auto &bc = packing.getBoundaryConditions();
-    #pragma omp parallel for shared(packing, bc, box, histogramBuilder, originDelta) default(none) \
+    #pragma omp parallel for shared(packing, bc, box, histogramBuilder, originDelta, totalBins) default(none) \
             num_threads(this->numThreads)
     for (std::size_t i = 0; i < packing.size(); i++) {
         Vector<3> pos = packing[i].getPosition();
         pos -= originDelta;
         pos += bc.getCorrection(pos);
-        this->histogramBuilder.add(box.absoluteToRelative(pos), 1./static_cast<double>(packing.size()));
+        this->histogramBuilder.add(box.absoluteToRelative(pos), static_cast<double>(totalBins)/packing.size());
     }
     this->histogramBuilder.nextSnapshot();
 }

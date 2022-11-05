@@ -10,7 +10,7 @@
 #include "core/BulkObservable.h"
 #include "PairConsumer.h"
 #include "PairEnumerator.h"
-#include "utils/HistogramBuilder.h"
+#include "core/observables/HistogramBuilder.h"
 
 
 /**

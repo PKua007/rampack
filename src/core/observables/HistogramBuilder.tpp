@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <numeric>
 #include <cmath>
-#include <ZipIterator.hpp>
+#include "ZipIterator.hpp"
 
 #include "utils/Assertions.h"
 #include "utils/OMPMacros.h"
