@@ -43,9 +43,9 @@ TEST_CASE("DensityHistogram") {
     auto zerosRemover = [](const HistogramBuilder3D::BinValue &binValue) { return binValue.value == 0; };
     histogram.erase(std::remove_if(histogram.begin(), histogram.end(), zerosRemover), histogram.end());
     std::vector<HistogramBuilder3D::BinValue> expected = {
-        {{0.45, 0.5, 0.15}, 0.125}, {{0.45, 0.5, 0.75}, 0.125},
-        {{0.55, 0.5, 0.15}, 0.25}, {{0.55, 0.5, 0.75}, 0.25},
-        {{0.65, 0.5, 0.15}, 0.125}, {{0.65, 0.5, 0.75}, 0.125}
+        {{0.45, 0.5, 0.15}, 12.5}, {{0.45, 0.5, 0.75}, 12.5},
+        {{0.55, 0.5, 0.15}, 25}, {{0.55, 0.5, 0.75}, 25},
+        {{0.65, 0.5, 0.15}, 12.5}, {{0.65, 0.5, 0.75}, 12.5}
     };
     for (auto[expectedItem, actualItem] : Zip(expected, histogram)) {
         CHECK_THAT(actualItem.binMiddle, IsApproxEqual(expectedItem.binMiddle, 1e-12));

@@ -11,7 +11,7 @@
 #include "core/PeriodicBoundaryConditions.h"
 
 
-std::string FourierTracker::getModeName() const {
+std::string FourierTracker::getTrackingMethodName() const {
     return this->functionName + "_fourier";
 }
 
@@ -72,6 +72,13 @@ Vector<3> FourierTracker::calculateRelativeOriginPos2D(const FourierTracker::Fou
     if (A*A + B*B + C*C + D*D < AMPLITUDE_EPSILON*AMPLITUDE_EPSILON)
         return {};
 
+    // We express the function
+    // (1)   A cx cy + B cx sy + C sx cy + D sx sy
+    // as
+    // (2)   sqrt((C - B)^2 + (A + D)^2) cos(x + y - a) + sqrt((C + B)^2 + (A - D)^2) cos(x - y - b)
+    // where a and b are given by atan2-s as below. Equations
+    // (3)   x + y == a, x - y == b
+    // maximize both cosines, giving the final result. The amplitude is given by the sum of the two sqrt(...) in (2).
     double a = FourierTracker::guardedAtan2(C + B, A - D);
     double b = FourierTracker::guardedAtan2(C - B, A + D);
     auto wavenumber1 = static_cast<double>(this->wavenumbers[nonzeroIdx1]);
@@ -210,14 +217,26 @@ Vector<3> FourierTracker::calculateRelativeOriginPos3D(const FourierTracker::Fou
     double Y = K1*L1 + M2*N2;
     double Z = L1*L1 + N2*N2;
 
+    // The function:
+    // (1)   A cx cy cz + B cx cy sz + C cx sy cz + D cx sy sz + E sx cy cz + F sx cy sz + G sx sy cz + H sx sy sz
+    // is rewritten as
+    // (2)   A'(z) cx cy + B'(z) cx sy + C'(z) sx cy + D'(z) sx sy
+    // where the coefficients depend on cz, sz, for example A'(z) = A cz + B sz. Then, we optimize the amplitude of
+    // the above function of (x, y), which is equal (see calculateRelativeOriginPos2D)
+    // (3)   sqrt((K2 cz + L2 sz)^2 + (M1 cz + N1 sz)^2) + sqrt((K1 cz + L1 sz)^2 + (M2 cz + N2 sz)^2).
+    // We then equate the derivative over z to 0 and perform algebraic operations to write the equations as a 6-th
+    // degree polynomial in cz and sz. We divide it by cz^6 and obtain 6-th degree polynomial over tan(z). It then
+    // can be solved numericaly ...
     std::array<double, 7> polyCoef = this->calculateTanZCoefficients(U, V, W, X, Y, Z);
     Eigen::VectorXd eigenCoef(7);
     std::copy(polyCoef.rbegin(), polyCoef.rend(), eigenCoef.begin());
     constexpr auto INF = std::numeric_limits<double>::infinity();
     auto roots = RootFinder::solvePolynomial(eigenCoef, -INF, INF, 1e-12);
+    // ... and we select the solution giving the largest amplitude (3) - this solves the problem for z value. ...
     auto[sz, cz] = this->findBestSinCosZ(roots, U, V, W, X, Y, Z);
     double z0 = FourierTracker::guardedAtan2(sz, cz);
 
+    // ... We then proceed to optimize x and y in the same way as in calculateRelativeOriginPos2D.
     double A2D = A*cz + B*sz;
     double B2D = C*cz + D*sz;
     double C2D = E*cz + F*sz;

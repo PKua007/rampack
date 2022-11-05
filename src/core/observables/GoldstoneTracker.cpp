@@ -13,7 +13,7 @@ void GoldstoneTracker::calculate(const Packing &packing, [[maybe_unused]] double
 }
 
 std::vector<std::string> GoldstoneTracker::getIntervalHeader() const {
-    std::string modeName = this->getModeName();
+    std::string modeName = this->getTrackingMethodName();
     std::vector<std::string> header{"_x", "_y", "_z", "_ox", "_oy", "_oz"};
     for (auto &headerItem : header)
         headerItem = modeName + headerItem;
@@ -21,7 +21,7 @@ std::vector<std::string> GoldstoneTracker::getIntervalHeader() const {
 }
 
 std::vector<double> GoldstoneTracker::getIntervalValues() const {
-    EulerAngles eulerAngles(this->originRot);
+    EulerAngles eulerAngles(this->systemRot);
     return {this->originPos[0], this->originPos[1], this->originPos[2],
             eulerAngles.first[0], eulerAngles.first[1], eulerAngles.first[2]};
 }
