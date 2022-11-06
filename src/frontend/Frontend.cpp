@@ -516,11 +516,11 @@ int Frontend::printGeneralHelp(const std::string &cmd) {
     rawOut << "preview" << std::endl;
     rawOut << Fold("Based on the input file generate initial configuration and store Wolfram and/or *.dat packing.")
               .width(80).margin(4) << std::endl;
+    rawOut << "shape-preview" << std::endl;
+    rawOut << Fold("Provides information and preview for a given shape.").width(80).margin(4) << std::endl;
     rawOut << "trajectory" << std::endl;
     rawOut << Fold("Replays recorded simulation trajectory and performs some operations on it.")
               .width(80).margin(4) << std::endl;
-    rawOut << "shape-preview" << std::endl;
-    rawOut << Fold("Provides information and preview for a given shape.").width(80).margin(4) << std::endl;
     rawOut << std::endl;
     rawOut << "Type " + cmd + " [mode] --help to get help on the specific mode." << std::endl;
 
