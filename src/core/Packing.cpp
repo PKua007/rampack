@@ -1271,7 +1271,7 @@ std::size_t Packing::countParticleWallOverlaps(std::size_t particleIdx, const In
 std::vector<Vector<3>> Packing::dumpNamedPoints(const ShapeGeometry &geometry, const std::string &pointName) const {
     std::vector<Vector<3>> namedPoints;
     namedPoints.reserve(this->size());
-    Vector<3> alignedNamedPoint = geometry.getNamedPoint(pointName, {});
+    Vector<3> alignedNamedPoint = geometry.getNamedPoint(pointName);
     auto namedPointsCalculator = [alignedNamedPoint](const Shape &shape) {
         return shape.getPosition() + shape.getOrientation() * alignedNamedPoint;
     };

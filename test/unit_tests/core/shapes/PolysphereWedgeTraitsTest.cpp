@@ -34,11 +34,11 @@ TEST_CASE("PolysphereWedgeTraits") {
         CHECK_THAT(geometry.getGeometricOrigin(shape), IsApproxEqual({0, 6, 0}, 1e-12));
         CHECK_THAT(geometry.getPrimaryAxis(shape), IsApproxEqual({0, 1, 0}, 1e-12));
         CHECK_THAT(geometry.getSecondaryAxis(shape), IsApproxEqual({-1, 0, 0}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("s0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("ss", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("s2", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 10, 0}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("sl", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 10, 0}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("o", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 6, 0}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("cm", shape), IsApproxEqual({1, 2, 3}, 1e-12));
+        CHECK_THAT(geometry.getNamedPointForShape("s0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-12));
+        CHECK_THAT(geometry.getNamedPointForShape("ss", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-12));
+        CHECK_THAT(geometry.getNamedPointForShape("s2", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 10, 0}, 1e-12));
+        CHECK_THAT(geometry.getNamedPointForShape("sl", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 10, 0}, 1e-12));
+        CHECK_THAT(geometry.getNamedPointForShape("o", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 6, 0}, 1e-12));
+        CHECK_THAT(geometry.getNamedPointForShape("cm", shape), IsApproxEqual({1, 2, 3}, 1e-12));
     }
 }

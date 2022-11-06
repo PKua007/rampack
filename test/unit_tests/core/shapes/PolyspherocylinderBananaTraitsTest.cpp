@@ -30,13 +30,13 @@ TEST_CASE("PolyspherocylinderBananaTraits") {
             CHECK_THAT(geometry.getPrimaryAxis({}), IsApproxEqual({0, 1, 0}, 1e-12));
             CHECK_THAT(geometry.getSecondaryAxis({}), IsApproxEqual({-1, 0, 0}, 1e-12));
             CHECK_THAT(geometry.getGeometricOrigin({}), IsApproxEqual({-1, 0, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPoint("o0", {}), IsApproxEqual({-1, 1, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPoint("b0", {}), IsApproxEqual({0, 2, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPoint("beg", {}), IsApproxEqual({0, 2, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPoint("e1", {}), IsApproxEqual({0, -2, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPoint("end", {}), IsApproxEqual({0, -2, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPoint("o", {}), IsApproxEqual({-1, 0, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPoint("cm", {}), IsApproxEqual({0, 0, 0}, 1e-12));
+            CHECK_THAT(geometry.getNamedPointForShape("o0", {}), IsApproxEqual({-1, 1, 0}, 1e-12));
+            CHECK_THAT(geometry.getNamedPointForShape("b0", {}), IsApproxEqual({0, 2, 0}, 1e-12));
+            CHECK_THAT(geometry.getNamedPointForShape("beg", {}), IsApproxEqual({0, 2, 0}, 1e-12));
+            CHECK_THAT(geometry.getNamedPointForShape("e1", {}), IsApproxEqual({0, -2, 0}, 1e-12));
+            CHECK_THAT(geometry.getNamedPointForShape("end", {}), IsApproxEqual({0, -2, 0}, 1e-12));
+            CHECK_THAT(geometry.getNamedPointForShape("o", {}), IsApproxEqual({-1, 0, 0}, 1e-12));
+            CHECK_THAT(geometry.getNamedPointForShape("cm", {}), IsApproxEqual({0, 0, 0}, 1e-12));
         }
     }
 

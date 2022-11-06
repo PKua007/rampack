@@ -27,7 +27,7 @@ private:
 public:
     /**
      * @brief Creates the enumerator for layers described by Miller indices @a millerIndices. Points named @a
-     * focalPointName will be used to calculate layering and computing distances (see ShapeGeometry::getNamedPoint).
+     * focalPointName will be used to calculate layering and computing distances (see ShapeGeometry::getNamedPointForShape).
      */
     explicit LayerwiseRadialEnumerator(const std::array<int, 3> &millerIndices, std::string focalPointName = "cm");
 

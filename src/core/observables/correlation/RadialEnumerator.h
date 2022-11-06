@@ -19,7 +19,7 @@ private:
 public:
     /**
      * @brief Constructs the class. Points named @a focalPoint will be used to calculate distances (see
-     * ShapeGeometry::getNamedPoint).
+     * ShapeGeometry::getNamedPointForShape).
      */
     explicit RadialEnumerator(std::string focalPoint = "cm") : focalPointName{std::move(focalPoint)} { }
 

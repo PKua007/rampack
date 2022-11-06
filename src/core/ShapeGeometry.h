@@ -65,8 +65,9 @@ public:
      * @param shape shape for which the point should be calculated
      * @return a special, named point lying somewhere on a @a shape
      */
-    [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const;
+    [[nodiscard]] Vector<3> getNamedPointForShape(const std::string &pointName, const Shape &shape) const;
 
+    [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName) const;
     [[nodiscard]] NamedPoints getNamedPoints() const;
 };
 

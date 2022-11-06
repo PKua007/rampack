@@ -263,10 +263,10 @@ TEST_CASE("XenoCollide: spherocylinder basic features") {
     }
 
     SECTION("named points") {
-        CHECK(traits.getGeometry().getNamedPoint("beg", {}) == Vector<3>{-1.5, 0, 0});
-        CHECK(traits.getGeometry().getNamedPoint("end", {}) == Vector<3>{1.5, 0, 0});
-        CHECK(traits.getGeometry().getNamedPoint("cm", {}) == Vector<3>{0, 0, 0});
-        CHECK(traits.getGeometry().getNamedPoint("o", {}) == Vector<3>{0, 0, 0});
+        CHECK(traits.getGeometry().getNamedPointForShape("beg", {}) == Vector<3>{-1.5, 0, 0});
+        CHECK(traits.getGeometry().getNamedPointForShape("end", {}) == Vector<3>{1.5, 0, 0});
+        CHECK(traits.getGeometry().getNamedPointForShape("cm", {}) == Vector<3>{0, 0, 0});
+        CHECK(traits.getGeometry().getNamedPointForShape("o", {}) == Vector<3>{0, 0, 0});
     }
 }
 

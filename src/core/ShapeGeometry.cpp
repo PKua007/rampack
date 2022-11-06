@@ -7,16 +7,20 @@
 #include "utils/Assertions.h"
 
 
-Vector<3> ShapeGeometry::getNamedPoint(const std::string &pointName, const Shape &shape) const {
+Vector<3> ShapeGeometry::getNamedPointForShape(const std::string &pointName, const Shape &shape) const {
+    return shape.getPosition() + shape.getOrientation() * this->getNamedPoint(pointName);
+}
+
+Vector<3> ShapeGeometry::getNamedPoint(const std::string &pointName) const {
     if (pointName == "cm")
-        return shape.getPosition();
+        return {};
     else if (pointName == "o")
-        return shape.getPosition() + this->getGeometricOrigin(shape);
+        return this->getGeometricOrigin({});
 
     auto point = this->namedPoints.find(pointName);
     if (point == this->namedPoints.end())
         throw std::runtime_error("ShapeGeometry::getNamedPoint : unknown point name '" + pointName + "'");
-    return shape.getPosition() + shape.getOrientation()*point->second;
+    return point->second;
 }
 
 void ShapeGeometry::registerNamedPoint(const std::string &pointName, const Vector<3> &point) {
