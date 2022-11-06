@@ -101,14 +101,15 @@ namespace {
         return axis.normalized();
     }
 
-    std::map<std::string, Vector<3>> parse_named_points(const std::string &pointsStr) {
-        std::map<std::string, Vector<3>> namedPoints;
+    ShapeGeometry::NamedPoints parse_named_points(const std::string &pointsStr) {
+        ShapeGeometry::NamedPoints namedPoints;
         std::istringstream pointsStream(pointsStr);
         while (pointsStream.good()) {
             std::string name;
             Vector<3> pos;
             pointsStream >> name >> pos[0] >> pos[1] >> pos[2];
             ValidateMsg(pointsStream, "Malformed named point");
+            namedPoints.emplace_back(name, pos);
             if (pointsStream.good())
                 pointsStream >> std::ws;
         }
@@ -127,7 +128,7 @@ namespace {
         Vector<3> geometricOrigin = parse_vector(fieldsMap.at("geometricOrigin"));
         double volume = std::stod(fieldsMap.at("volume"));
         Validate(volume > 0);
-        std::map<std::string, Vector<3>> namedPoints;
+        ShapeGeometry::NamedPoints namedPoints;
         if (fieldsMap.find("namedPoints") != fieldsMap.end())
             namedPoints = parse_named_points(fieldsMap.at("namedPoints"));
 
