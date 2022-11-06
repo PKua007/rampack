@@ -1169,6 +1169,7 @@ int Frontend::shapePreview(int argc, char **argv) {
     std::string shapeName;
     std::string shapeAttr;
     std::string interactionName;
+    std::string wolframFilename;
 
     options.add_options()
         ("h,help", "prints help for this mode")
@@ -1184,7 +1185,10 @@ int Frontend::shapePreview(int argc, char **argv) {
         ("I,interaction", "manually specified interactionName (instead of reading from INI file using -i); it "
                           "has to be combined with -S and -A options",
          cxxopts::value<std::string>(interactionName))
-        ("l,log-info", "prints information about the shape");
+        ("l,log-info", "prints information about the shape")
+        ("W,wolfram-preview", "stores Wolfram preview of the shape in a file given by -w option")
+        ("w,wolfram-preview-filename", "file name to store Wolfram preview of the shape using -W",
+         cxxopts::value<std::string>(wolframFilename));
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
@@ -1206,6 +1210,49 @@ int Frontend::shapePreview(int argc, char **argv) {
     }
 
     auto traits = ShapeFactory::shapeTraitsFor(shapeName, shapeAttr, interactionName);
+    const auto &interaction = traits->getInteraction();
+    const auto &geometry = traits->getGeometry();
+    const auto &printer = traits->getPrinter();
+
+    if (!parsedOptions.count("log-info") && !parsedOptions.count("wolfram-preview"))
+        die("At least one of options: -l (--log-info), -W (--wolfram-preview) must be specified", this->logger);
+
+    if (parsedOptions.count("log-info")) {
+        auto displayBool = [](bool b) { return b ? "true" : "false"; };
+
+        this->logger.info() << "Shape name       : " << shapeName << std::endl;
+        this->logger << "Shape attributes : " << shapeAttr << std::endl;
+        this->logger << "Interaction      : " << interactionName << std::endl;
+        this->logger << std::endl;
+        this->logger << "## Interaction info" << std::endl;
+        this->logger << "Has hard part            : " << displayBool(interaction.hasHardPart()) << std::endl;
+        this->logger << "Has soft part            : " << displayBool(interaction.hasSoftPart()) << std::endl;
+        this->logger << "Has wall part            : " << displayBool(interaction.hasWallPart()) << std::endl;
+        this->logger << "Interaction center range : " << interaction.getRangeRadius() << std::endl;
+        this->logger << "Total range              : " << interaction.getTotalRangeRadius() << std::endl;
+        this->logger << "Interaction centers      :" << std::endl;
+        auto interactionCentres = interaction.getInteractionCentres();
+        if (interactionCentres.empty())
+            interactionCentres.emplace_back();
+        for (std::size_t i{}; i < interactionCentres.size(); i++)
+            this->logger << "    [" << i << "] = " << interactionCentres[i] << std::endl;
+        this->logger << std::endl;
+        this->logger << "## Geometry info" << std::endl;
+        this->logger << "Volume           : " << geometry.getVolume() << std::endl;
+        this->logger << "Geometric origin : " << geometry.getGeometricOrigin({}) << std::endl;
+        try {
+            auto axis = geometry.getPrimaryAxis({});
+            this->logger << "Primary axis     : " << axis << std::endl;
+        } catch (std::runtime_error &) {
+            this->logger << "Primary axis     : UNSPECIFIED" << std::endl;
+        }
+        try {
+            auto axis = geometry.getSecondaryAxis({});
+            this->logger << "Secondary axis   : " << axis << std::endl;
+        } catch (std::runtime_error &) {
+            this->logger << "Secondary axis   : UNSPECIFIED" << std::endl;
+        }
+    }
 
     return EXIT_SUCCESS;
 }
