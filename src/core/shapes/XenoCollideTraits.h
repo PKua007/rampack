@@ -46,7 +46,6 @@ private:
     Vector<3> secondaryAxis;
     Vector<3> geometricOrigin;
     double volume{};
-    std::map<std::string, Vector<3>> customNamedPoints{};
 
     mutable std::optional<double> rangeRadius;
     mutable std::vector<XCPrinter::Polyhedron> polyhedra;
@@ -65,10 +64,12 @@ public:
      * @param customNamedPoints optional list of named points (see ShapeGeometry::getNamedPoint())
      */
     XenoCollideTraits(const Vector<3> &primaryAxis, const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin,
-                      double volume, std::map<std::string, Vector<3>> customNamedPoints = {})
-            : primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}, geometricOrigin{geometricOrigin}, volume{volume},
-              customNamedPoints{std::move(customNamedPoints)}
-    { }
+                      double volume, const std::map<std::string, Vector<3>>& customNamedPoints = {})
+            : primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}, geometricOrigin{geometricOrigin}, volume{volume}
+    {
+        for (const auto &[name, point] : customNamedPoints)
+            this->registerNamedPoint(name, point);
+    }
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
@@ -148,14 +149,6 @@ public:
         }
         this->rangeRadius = 2*maxRadius;
         return *this->rangeRadius;
-    }
-
-    [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const override {
-        auto namedPoint = this->customNamedPoints.find(pointName);
-        if (namedPoint == this->customNamedPoints.end())
-            return ShapeGeometry::getNamedPoint(pointName, shape);
-
-        return shape.getPosition() + shape.getOrientation() * namedPoint->second;
     }
 
     [[nodiscard]] std::string toWolfram(const Shape &shape) const override {

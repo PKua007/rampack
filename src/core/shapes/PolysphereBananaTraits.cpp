@@ -33,6 +33,7 @@ PolysphereBananaTraits::generateGeometry(double arcRadius, double arcAngle, std:
         geometry.setGeometricOrigin(geometry.calculateMassCentre());
     }
     const auto &newSphereData = geometry.getSphereData();
-    geometry.setCustomNamedPoints({{"beg", newSphereData.front().position}, {"end", newSphereData.back().position}});
+    geometry.addCustomNamedPoints({{"beg", newSphereData.front().position},
+                                   {"end", newSphereData.back().position}});
     return geometry;
 }

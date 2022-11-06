@@ -6,9 +6,12 @@
 #include "utils/Assertions.h"
 #include "geometry/SegmentDistanceCalculator.h"
 
-SpherocylinderTraits::SpherocylinderTraits(double length, double radius) : length(length), radius(radius) {
+SpherocylinderTraits::SpherocylinderTraits(double length, double radius) : length{length}, radius{radius} {
     Expects(length >= 0);
     Expects(radius > 0);
+
+    this->registerNamedPoint("beg", this->getCapCentre(-1, {}));
+    this->registerNamedPoint("end", this->getCapCentre(1, {}));
 }
 
 Vector<3> SpherocylinderTraits::getCapCentre(short beginOrEnd, const Shape &shape) const {
@@ -70,13 +73,4 @@ bool SpherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matrix<3,
         return true;
 
     return false;
-}
-
-Vector<3> SpherocylinderTraits::getNamedPoint(const std::string &pointName, const Shape &shape) const {
-    if (pointName == "beg")
-        return this->getCapCentre(-1, shape);
-    else if (pointName == "end")
-        return this->getCapCentre(1, shape);
-    else
-        return ShapeGeometry::getNamedPoint(pointName, shape);
 }

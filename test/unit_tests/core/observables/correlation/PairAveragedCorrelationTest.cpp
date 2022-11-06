@@ -25,7 +25,6 @@ TEST_CASE("PairAveragedCorrelation") {
     ALLOW_CALL(traits, getRangeRadius()).RETURN(1);
     ALLOW_CALL(traits, getTotalRangeRadius()).RETURN(1);
     using trompeloeil::_;
-    ALLOW_CALL(traits, getNamedPoint(_, _)).LR_RETURN(traits.ShapeGeometry::getNamedPoint(_1, _2));
 
     auto function = std::make_unique<MockCorrelationFunction>();
     ALLOW_CALL(*function, getSignatureName()).RETURN("func");

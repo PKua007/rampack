@@ -628,7 +628,7 @@ TEST_CASE("Packing: named points dumping") {
     Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
     using trompeloeil::_;
     MockShapeGeometry geometry;
-    ALLOW_CALL(geometry, getNamedPoint("point", _)).RETURN(_2.getPosition() + _2.getOrientation() * Vector<3>{1, 0, 0});
+    geometry.addNamedPoints({{"point", {1, 0, 0}}});
 
     auto points = packing.dumpNamedPoints(geometry, "point");
 

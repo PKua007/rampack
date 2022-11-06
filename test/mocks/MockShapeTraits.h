@@ -39,7 +39,6 @@ public:
     MAKE_CONST_MOCK1(getPrimaryAxis, Vector<3>(const Shape &), override);
     MAKE_CONST_MOCK1(getSecondaryAxis, Vector<3>(const Shape &), override);
     MAKE_CONST_MOCK1(getGeometricOrigin, Vector<3>(const Shape &), override);
-    MAKE_CONST_MOCK2(getNamedPoint, Vector<3>(const std::string &, const Shape &), override);
 
     MAKE_CONST_MOCK1(toWolfram, std::string(const Shape &), override);
 };

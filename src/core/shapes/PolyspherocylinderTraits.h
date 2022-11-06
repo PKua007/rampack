@@ -65,7 +65,6 @@ public:
         Vector<3> primaryAxis;
         Vector<3> secondaryAxis;
         Vector<3> geometricOrigin;
-        std::map<std::string, Vector<3>> customNamedPoints;
 
     public:
         /**
@@ -79,7 +78,7 @@ public:
          */
         PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, const Vector<3> &primaryAxis,
                                    const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin = {0, 0, 0},
-                                   std::map<std::string, Vector<3>> customNamedPoints = {});
+                                   const std::map<std::string, Vector<3>>& customNamedPoints = {});
 
         [[nodiscard]] double getVolume() const override;
 
@@ -95,14 +94,6 @@ public:
             return shape.getOrientation() * this->geometricOrigin;
         }
 
-        /**
-         * @brief Returns named point @a pointName for a @a shape.
-         * @details In addition to the ones inherited from ShapeGeometry, all spherocylinders origins, first caps and
-         * second caps are named, respectively "ox", "bx", "ex", where @a x is the index of the spherocylinder, starting
-         * from 0. Additional named points are provided in the constructor.
-         */
-        [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const override;
-
         [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const {
             return this->spherocylinderData;
         }
@@ -113,10 +104,6 @@ public:
          */
         void normalizeMassCentre();
 
-        void setCustomNamedPoints(std::map<std::string, Vector<3>> customNamedPoints_) {
-            this->customNamedPoints = std::move(customNamedPoints_);
-        }
-
         /**
          * @brief Calculates and returns mass centre.
          * @details Overlaps are not accounted for.
@@ -124,6 +111,10 @@ public:
         [[nodiscard]] Vector<3> calculateMassCentre() const;
 
         void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
+
+        void addCustomNamedPoints(const std::map<std::string, Vector<3>> &namedPoints) {
+            this->registerNamedPoints(namedPoints);
+        }
     };
 
 private:

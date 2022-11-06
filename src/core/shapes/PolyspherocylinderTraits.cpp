@@ -18,12 +18,21 @@ double PolyspherocylinderTraits::PolyspherocylinderGeometry::getVolume() const {
 PolyspherocylinderTraits::PolyspherocylinderGeometry
     ::PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, const Vector<3> &primaryAxis,
                                  const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin,
-                                 std::map<std::string, Vector<3>> customNamedPoints)
+                                 const std::map<std::string, Vector<3>>& customNamedPoints)
         : spherocylinderData{std::move(spherocylinderData)}, primaryAxis{primaryAxis.normalized()},
-          secondaryAxis{secondaryAxis.normalized()}, geometricOrigin{geometricOrigin},
-          customNamedPoints{std::move(customNamedPoints)}
+          secondaryAxis{secondaryAxis.normalized()}, geometricOrigin{geometricOrigin}
 {
     Expects(!this->spherocylinderData.empty());
+
+    for (std::size_t i{}; i < this->spherocylinderData.size(); i++) {
+        const auto &scData = this->spherocylinderData[i];
+        std::string iStr = std::to_string(i);
+        this->registerNamedPoint("o" + iStr, scData.position);
+        this->registerNamedPoint("b" + iStr, scData.position - scData.halfAxis);
+        this->registerNamedPoint("e" + iStr, scData.position + scData.halfAxis);
+    }
+
+    this->registerNamedPoints(customNamedPoints);
 }
 
 std::string PolyspherocylinderTraits::toWolfram(const Shape &shape) const {
@@ -52,8 +61,7 @@ void PolyspherocylinderTraits::PolyspherocylinderGeometry::normalizeMassCentre()
                    std::back_inserter(newSpherocylinderData), massCentreShifter);
     this->spherocylinderData = std::move(newSpherocylinderData);
     this->geometricOrigin -= massCentre;
-    for (auto &namedPoint : this->customNamedPoints)
-        namedPoint.second -= massCentre;
+    this->moveNamedPoints(-massCentre);
 }
 
 Vector<3> PolyspherocylinderTraits::PolyspherocylinderGeometry::calculateMassCentre() const {
@@ -158,42 +166,4 @@ bool PolyspherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matri
         return true;
 
     return false;
-}
-
-Vector<3> PolyspherocylinderTraits::PolyspherocylinderGeometry::getNamedPoint(const std::string &pointName,
-                                                                              const Shape &shape) const
-{
-    auto customPointsIt = this->customNamedPoints.find(pointName);
-    if (customPointsIt != this->customNamedPoints.end())
-        return shape.getPosition() + shape.getOrientation() * customPointsIt->second;
-
-    if (pointName.length() < 2)
-        return ShapeGeometry::getNamedPoint(pointName, shape);
-
-    switch (pointName[0]) {
-        case 'o': case 'b': case 'e':
-            break;
-        default:
-            return ShapeGeometry::getNamedPoint(pointName, shape);
-    }
-
-    if (!std::all_of(std::next(pointName.begin()), pointName.end(), isdigit))
-        return ShapeGeometry::getNamedPoint(pointName, shape);
-
-    // We are using std::strtoul with incremented c-string pointer to prevent any new memory allocations
-    std::size_t scIdx = std::strtoul(pointName.c_str() + 1, nullptr, 0);
-    if (scIdx >= this->spherocylinderData.size())
-        return ShapeGeometry::getNamedPoint(pointName, shape);
-
-    const auto &scData = this->spherocylinderData[scIdx];
-    switch (pointName[0]) {
-        case 'o':   // midpoint
-            return scData.centreForShape(shape);
-        case 'b':   // first cap (beginning)
-            return scData.centreForShape(shape) - scData.halfAxisForShape(shape);
-        case 'e':   // second cap (end)
-            return scData.centreForShape(shape) + scData.halfAxisForShape(shape);
-        default:
-            throw std::runtime_error("This shouldn't happen");
-    }
 }
