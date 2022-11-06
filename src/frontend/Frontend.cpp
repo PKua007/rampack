@@ -1253,6 +1253,14 @@ int Frontend::shapePreview(int argc, char **argv) {
         } catch (std::runtime_error &) {
             this->logger << "Secondary axis   : UNSPECIFIED" << std::endl;
         }
+        this->logger << "Named points     :" << std::endl;
+        auto points = geometry.getNamedPoints();
+        std::size_t maxLength = std::max_element(points.begin(), points.end(), [](const auto &p1, const auto &p2) {
+            return p1.first.length() < p2.first.length();
+        })->first.length();
+        for (const auto &[name, point] : points) {
+            this->logger << "    " << std::left << std::setw(maxLength) << name << " = " << point << std::endl;
+        }
     }
 
     // Wolfram preview
