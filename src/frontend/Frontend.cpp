@@ -1186,8 +1186,7 @@ int Frontend::shapePreview(int argc, char **argv) {
                           "has to be combined with -S and -A options",
          cxxopts::value<std::string>(interactionName))
         ("l,log-info", "prints information about the shape")
-        ("W,wolfram-preview", "stores Wolfram preview of the shape in a file given by -w option")
-        ("w,wolfram-preview-filename", "file name to store Wolfram preview of the shape using -W",
+        ("w,wolfram-preview", "stores Wolfram preview of the shape in a file given as an argument",
          cxxopts::value<std::string>(wolframFilename));
 
     auto parsedOptions = options.parse(argc, argv);
@@ -1197,6 +1196,7 @@ int Frontend::shapePreview(int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
+    // Create shape traits
     if (parsedOptions.count("input")) {
         Parameters parameters = this->loadParameters(inputFilename);
         shapeName = parameters.shapeName;
@@ -1217,6 +1217,7 @@ int Frontend::shapePreview(int argc, char **argv) {
     if (!parsedOptions.count("log-info") && !parsedOptions.count("wolfram-preview"))
         die("At least one of options: -l (--log-info), -W (--wolfram-preview) must be specified", this->logger);
 
+    // Log info
     if (parsedOptions.count("log-info")) {
         auto displayBool = [](bool b) { return b ? "true" : "false"; };
 
@@ -1252,6 +1253,13 @@ int Frontend::shapePreview(int argc, char **argv) {
         } catch (std::runtime_error &) {
             this->logger << "Secondary axis   : UNSPECIFIED" << std::endl;
         }
+    }
+
+    // Wolfram preview
+    if (parsedOptions.count("wolfram-preview")) {
+        std::ofstream wolframFile(wolframFilename);
+        ValidateOpenedDesc(wolframFile, wolframFilename, " to store Wolfram preview of the shape");
+        wolframFile << "Graphics3D[" << printer.toWolfram({}) << "]";
     }
 
     return EXIT_SUCCESS;
