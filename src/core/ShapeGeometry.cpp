@@ -2,6 +2,7 @@
 // Created by pkua on 06.11.22.
 //
 
+#include <vector>
 #include "ShapeGeometry.h"
 #include "utils/Assertions.h"
 
@@ -21,21 +22,25 @@ Vector<3> ShapeGeometry::getNamedPoint(const std::string &pointName, const Shape
 void ShapeGeometry::registerNamedPoint(const std::string &pointName, const Vector<3> &point) {
     Expects(this->namedPoints.find(pointName) == this->namedPoints.end());
     this->namedPoints[pointName] = point;
+    this->namedPointsOrdered.emplace_back(pointName, point);
 }
 
-std::map<std::string, Vector<3>> ShapeGeometry::getNamedPoints() const {
-    std::map<std::string, Vector<3>> namedPoints_ = this->namedPoints;
-    namedPoints_["cm"] = {};
-    namedPoints_["o"] = this->getGeometricOrigin({});
+ShapeGeometry::NamedPoints ShapeGeometry::getNamedPoints() const {
+    NamedPoints namedPoints_;
+    namedPoints_.emplace_back("cm", Vector<3>{});
+    namedPoints_.emplace_back("o", this->getGeometricOrigin({}));
+    namedPoints_.insert(namedPoints_.end(), this->namedPointsOrdered.begin(), this->namedPointsOrdered.end());
     return namedPoints_;
 }
 
-void ShapeGeometry::registerNamedPoints(const std::map<std::string, Vector<3>> &namedPoints) {
-    for (const auto &[name, point] : namedPoints)
+void ShapeGeometry::registerNamedPoints(const std::vector<std::pair<std::string, Vector<3>>> &namedPoints_) {
+    for (const auto &[name, point] : namedPoints_)
         this->registerNamedPoint(name, point);
 }
 
 void ShapeGeometry::moveNamedPoints(const Vector<3> &translation) {
     for (auto &[name, point] : this->namedPoints)
+        point += translation;
+    for (auto &[name, point] : this->namedPointsOrdered)
         point += translation;
 }

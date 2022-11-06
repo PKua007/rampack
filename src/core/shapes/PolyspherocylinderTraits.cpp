@@ -18,7 +18,7 @@ double PolyspherocylinderTraits::PolyspherocylinderGeometry::getVolume() const {
 PolyspherocylinderTraits::PolyspherocylinderGeometry
     ::PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, const Vector<3> &primaryAxis,
                                  const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin,
-                                 const std::map<std::string, Vector<3>>& customNamedPoints)
+                                 const ShapeGeometry::NamedPoints &customNamedPoints)
         : spherocylinderData{std::move(spherocylinderData)}, primaryAxis{primaryAxis.normalized()},
           secondaryAxis{secondaryAxis.normalized()}, geometricOrigin{geometricOrigin}
 {
