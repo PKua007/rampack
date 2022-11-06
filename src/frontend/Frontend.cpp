@@ -519,6 +519,8 @@ int Frontend::printGeneralHelp(const std::string &cmd) {
     rawOut << "trajectory" << std::endl;
     rawOut << Fold("Replays recorded simulation trajectory and performs some operations on it.")
               .width(80).margin(4) << std::endl;
+    rawOut << "shape-preview" << std::endl;
+    rawOut << Fold("Provides information and preview for a given shape.").width(80).margin(4) << std::endl;
     rawOut << std::endl;
     rawOut << "Type " + cmd + " [mode] --help to get help on the specific mode." << std::endl;
 
@@ -1146,7 +1148,7 @@ void Frontend::storeBulkObservables(const ObservablesCollector &observablesColle
                                     std::string bulkObservableFilenamePattern) const
 {
     std::regex pattern(R"(\{\})");
-    if (std::regex_search(bulkObservableFilenamePattern, pattern) == false)
+    if (!std::regex_search(bulkObservableFilenamePattern, pattern))
         bulkObservableFilenamePattern = bulkObservableFilenamePattern + "_{}.txt";
 
     observablesCollector.visitBulkObservables([&](const BulkObservable &bulkObservable) {
@@ -1157,4 +1159,53 @@ void Frontend::storeBulkObservables(const ObservablesCollector &observablesColle
         bulkObservable.print(out);
         this->logger.info() << "Bulk observable " << observableName << " stored to " << filename << std::endl;
     });
+}
+
+int Frontend::shapePreview(int argc, char **argv) {
+    // Prepare and parse options
+    cxxopts::Options options(argv[0], "Information and preview for the shape.");
+
+    std::string inputFilename;
+    std::string shapeName;
+    std::string shapeAttr;
+    std::string interactionName;
+
+    options.add_options()
+        ("h,help", "prints help for this mode")
+        ("i,input", "an INI file with parameters of the shape; it can be used instead of manually "
+                    "specifying shape parameters using -S, -A and -I",
+         cxxopts::value<std::string>(inputFilename))
+        ("S,shape-name", "manually specified shape name (instead of reading from INI file using -i); it has "
+                         "to be combined with -A and -I options",
+         cxxopts::value<std::string>(shapeName))
+        ("A,shape-attr", "manually specified shape attributes (instead of reading from INI file using -i); "
+                         "it has to be combined with -S and -I options",
+         cxxopts::value<std::string>(shapeAttr))
+        ("I,interaction", "manually specified interactionName (instead of reading from INI file using -i); it "
+                          "has to be combined with -S and -A options",
+         cxxopts::value<std::string>(interactionName))
+        ("l,log-info", "prints information about the shape");
+
+    auto parsedOptions = options.parse(argc, argv);
+    if (parsedOptions.count("help")) {
+        std::ostream &rawOut = this->logger;
+        rawOut << options.help() << std::endl;
+        return EXIT_SUCCESS;
+    }
+
+    if (parsedOptions.count("input")) {
+        Parameters parameters = this->loadParameters(inputFilename);
+        shapeName = parameters.shapeName;
+        shapeAttr = parameters.shapeAttributes;
+        interactionName = parameters.interaction;
+    } else if (!parsedOptions.count("shape-name") || !parsedOptions.count("shape-attr")
+               || !parsedOptions.count("interaction"))
+    {
+        die("You must specify INI file with shape parameters using -i or do it manually using -S, -A and -I",
+            this->logger);
+    }
+
+    auto traits = ShapeFactory::shapeTraitsFor(shapeName, shapeAttr, interactionName);
+
+    return EXIT_SUCCESS;
 }

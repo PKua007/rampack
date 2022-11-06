@@ -47,6 +47,8 @@ namespace {
             return frontend.preview(argc, argv);
         else if (mode == "trajectory")
             return frontend.trajectory(argc, argv);
+        else if (mode == "shape-preview")
+            return frontend.shapePreview(argc, argv);
         logger.error() << "Unknown mode " << mode << ". See " << cmd << " --help" << std::endl;
         return EXIT_FAILURE;
     }
