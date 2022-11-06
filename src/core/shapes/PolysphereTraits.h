@@ -41,6 +41,9 @@ public:
 
     /**
      * @brief A helper class defining a whole particle.
+     * @details The class, apart from standard named points (see ShapeGeometry::getNamedPoint()) and
+     * @a customNamedPoints from the constructor, defines points "sx" representing constituent spheres, where "x" is
+     * sphere's index starting from 0.
      */
     class PolysphereGeometry : public ShapeGeometry {
     private:

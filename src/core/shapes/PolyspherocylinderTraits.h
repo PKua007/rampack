@@ -58,6 +58,10 @@ public:
 
     /**
      * @brief A helper class defining a whole particle.
+     * @details The class, apart from standard named points (see ShapeGeometry::getNamedPoint()) and
+     * @a customNamedPoints from the constructor, defines points "ox", "bx" and "ex" representing, respectively,
+     * origin, beginning cap center and end cap center of constituent spherocylinders, where "x" is
+     * spherocylinder's index starting from 0.
      */
     class PolyspherocylinderGeometry : public ShapeGeometry {
     private:

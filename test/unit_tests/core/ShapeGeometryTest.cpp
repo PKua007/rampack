@@ -42,7 +42,7 @@ TEST_CASE("ShapeGeometry: named points") {
         CHECK_THAT(geometry.getNamedPoint("z"), IsApproxEqual(expected[2].second, 1e-12));
         CHECK_THAT(geometry.getNamedPoint("c"), IsApproxEqual(expected[3].second, 1e-12));
         CHECK_THAT(geometry.getNamedPoint("t"), IsApproxEqual(expected[4].second, 1e-12));
-        CHECK_THROWS(geometry.getNamedPoint("notexistent"));
+        CHECK_THROWS(geometry.getNamedPoint("nonexistent"));
         auto actual = geometry.getNamedPoints();
         REQUIRE(actual.size() == 5);
         for (const auto &[actualItem, expectedItem]: Zip(actual, expected)) {

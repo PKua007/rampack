@@ -24,8 +24,21 @@ private:
     std::vector<std::pair<std::string, Vector<3>>> namedPointsOrdered;
 
 protected:
+    /**
+     * @brief Registers a new named point @a point with name @a pointName (see getNamedPoint()).
+     * @details The order of points registered using this method or registerNamedPoints() is remembered.
+     */
     void registerNamedPoint(const std::string &pointName, const Vector<3> &point);
+
+    /**
+     * @brief Registers all named points from @a namedPoints_.
+     * @details The order of points registered using this method or registerNamedPoint() is remembered.
+     */
     void registerNamedPoints(const std::vector<std::pair<std::string, Vector<3>>> &namedPoints_);
+
+    /**
+     * @brief Translates all named points, except for "o" and "cm" by a given @a translation.
+     */
     void moveNamedPoints(const Vector<3> &translation);
 
 public:
@@ -58,16 +71,23 @@ public:
     }
 
     /**
-     * @brief Returns a special, named point lying somewhere on a @a shape.
-     * @details Default points are mass' center ("c") and geometric origin ("o"). Deriving classes can supplement their
-     * own special points. They should always preserve all points from the inheritance hierarchy.
+     * @brief Returns a special, named point lying somewhere on a shape with default position and orientation.
+     * @details Default points are mass' center ("cm") and geometric origin ("o"). Deriving classes can supplement their
+     * own special points using registerNamedPoint() and registerNamedPoints() methods.
      * @param pointName name of the point
-     * @param shape shape for which the point should be calculated
-     * @return a special, named point lying somewhere on a @a shape
+     * @return a special, named point
+     */
+    [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName) const;
+
+    /**
+     * @brief Returns a named point with name @a pointName (see getNamedPoint()) on a specifically positioned and
+     * oriented @a shape.
      */
     [[nodiscard]] Vector<3> getNamedPointForShape(const std::string &pointName, const Shape &shape) const;
 
-    [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName) const;
+    /**
+     * @brief Returns a list of all named points (see getNamedPoint())
+     */
     [[nodiscard]] NamedPoints getNamedPoints() const;
 };
 

@@ -24,7 +24,7 @@ private:
 public:
     GenericXenoCollideTraits(std::shared_ptr<AbstractXCGeometry> geometry, const Vector<3> &primaryAxis,
                              const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin, double volume,
-                             const std::map<std::string, Vector<3>> &namedPoints)
+                             const ShapeGeometry::NamedPoints &namedPoints)
             : XenoCollideTraits(primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints),
               geometry{std::move(geometry)}
     { }
