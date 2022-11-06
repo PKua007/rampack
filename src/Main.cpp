@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <string>
 #include <iostream>
+#include <cxxabi.h>
 
 #include "frontend/Frontend.h"
 #include "utils/Logger.h"
@@ -13,12 +14,22 @@
 namespace {
     Logger logger(std::cout);
 
+    std::string demangle(const char *abiName) {
+        char *demangledCstr = abi::__cxa_demangle(abiName, nullptr, nullptr, nullptr);
+        if (demangledCstr == nullptr)
+            return abiName;
+
+        std::string demangledStr(demangledCstr);
+        std::free(demangledCstr);
+        return demangledStr;
+    }
+
     void logger_terminate_handler() {
         logger.error() << "Terminate called after throwing an instance of ";
         try {
             std::rethrow_exception(std::current_exception());
         } catch (const std::exception &ex) {
-            logger << typeid(ex).name() << std::endl;
+            logger << demangle(typeid(ex).name()) << std::endl;
             logger << "what(): " << ex.what() << std::endl;
         }
         std::abort();
@@ -60,19 +71,18 @@ int main(int argc, char **argv) {
     argc--;
     argv[0] = cmdAndMode.data();
 
-
     // Try and rethrow exception to let the destructors be called during stack unwinding, but then use the general
     // terminate handler. This however does not work for exceptions thrown from threads other than master.
     // This is enabled for the Release build - in the Debug build we want to know from where the exception is thrown
     // and using rethrowing erases this information, and we do not need destructors to be called, since the execution
-    // is only paused, so we have access to everything anyway.
-    #ifdef NDEBUG
-        try {
-            handle_commands(cmd, mode, argc, argv);
-        } catch (const std::exception &) {
-            throw;
-        }
-    #else
-        handle_commands(cmd, mode, argc, argv);
-    #endif
+    // is only paused, so we have ana access to everything anyway.
+#ifdef NDEBUG
+    try {
+        return handle_commands(cmd, mode, argc, argv);
+    } catch (const std::exception &) {
+        throw;
+    }
+#else
+    return handle_commands(cmd, mode, argc, argv);
+#endif
 }
