@@ -23,6 +23,7 @@ Operation modes are:
 * `casino` - Monte Carlo simulation facility
 * `preview` - preview of the initial configuration
 * `optimize-distance` - the optimization of lattice cell dimensions
+* `shape-preview` - information and preview for a shape
 * `trajectory` - operations on recorded simulation trajectories
 
 and they are described in detail below.
@@ -39,10 +40,10 @@ are also available. The parameters of the simulation are provided within an INI 
 file `sample_input/integration.ini`. Overlap reduction is described in `sample_input/overlap_reduction.ini`. The
 anonymous INI section at the beginning describes the initial conditions of the system, particle model and interaction
 model as well as specifies technical parameters such as number of threads and initial Monte Carlo step extents. Then,
-one or more Monte Carlo runs are specified. Each run can be either NpT integration or overlap reduction. The runs are performed
-sequentially in the order specified in the input file and the final state of a finished run is used as a starting point
-of the next one (apart from the first run, whose initial configuration is specified in at the beginning). Each run
-corresponds to an INI section named (including the brackets) `[integration.run_name]` for integration and
+one or more Monte Carlo runs are specified. Each run can be either NpT integration or overlap reduction. The runs are
+performed sequentially in the order specified in the input file and the final state of a finished run is used as a
+starting point of the next one (apart from the first run, whose initial configuration is specified in at the beginning).
+Each run corresponds to an INI section named (including the brackets) `[integration.run_name]` for integration and
 `[overlaps.run_name]` for overlaps reduction. Each of these sections includes the parameters for the specific run.
 Currently, when the run is finished the software can output the following data:
 
@@ -77,6 +78,13 @@ may help to choose the lattice spacing. Using appropriate options (see `./rampac
 produce a clean output making it easier to incorporate into an automated workflow. Please note that long particles may
 interact not only with the nearest neighbors, meaning that the values calculated by this mode may be too low. More
 intelligent optimization, similar to the one done by `initialArrangement` input parameter will be added in the future.
+
+### shape-preview
+
+The `shape-preview` mode is used to browse metadata of the shape paired with and interaction, including interaction
+range, volume, interaction centers, named points, etc. One can also generate a Wolfram Mathematica preview of a single
+shape (for example to investigate if the parameters were specified correctly). All available features can be listed
+by `./rampack shape-preview --help`.
 
 ### trajectory
 
