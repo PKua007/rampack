@@ -66,6 +66,9 @@ private:
 
     void printMoveStatistics(const Simulation &simulation) const;
 
+    void printInteractionInfo(const Interaction &interaction);
+    void printGeometryInfo(const ShapeGeometry &geometry);
+
     static std::string doubleToString(double d);
     static std::string formatMoveKey(const std::string &groupName, const std::string &moveName);
     static bool isStepSizeKey(const std::string &key);

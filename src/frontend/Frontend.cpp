@@ -1210,65 +1210,75 @@ int Frontend::shapePreview(int argc, char **argv) {
     }
 
     auto traits = ShapeFactory::shapeTraitsFor(shapeName, shapeAttr, interactionName);
-    const auto &interaction = traits->getInteraction();
-    const auto &geometry = traits->getGeometry();
-    const auto &printer = traits->getPrinter();
 
     if (!parsedOptions.count("log-info") && !parsedOptions.count("wolfram-preview"))
         die("At least one of options: -l (--log-info), -W (--wolfram-preview) must be specified", this->logger);
 
     // Log info
     if (parsedOptions.count("log-info")) {
-        auto displayBool = [](bool b) { return b ? "true" : "false"; };
-
         this->logger.info() << "Shape name       : " << shapeName << std::endl;
         this->logger << "Shape attributes : " << shapeAttr << std::endl;
         this->logger << "Interaction      : " << interactionName << std::endl;
         this->logger << std::endl;
-        this->logger << "## Interaction info" << std::endl;
-        this->logger << "Has hard part            : " << displayBool(interaction.hasHardPart()) << std::endl;
-        this->logger << "Has soft part            : " << displayBool(interaction.hasSoftPart()) << std::endl;
-        this->logger << "Has wall part            : " << displayBool(interaction.hasWallPart()) << std::endl;
-        this->logger << "Interaction center range : " << interaction.getRangeRadius() << std::endl;
-        this->logger << "Total range              : " << interaction.getTotalRangeRadius() << std::endl;
-        this->logger << "Interaction centers      :" << std::endl;
-        auto interactionCentres = interaction.getInteractionCentres();
-        if (interactionCentres.empty())
-            interactionCentres.emplace_back();
-        for (std::size_t i{}; i < interactionCentres.size(); i++)
-            this->logger << "    [" << i << "] = " << interactionCentres[i] << std::endl;
+        this->printInteractionInfo(traits->getInteraction());
         this->logger << std::endl;
-        this->logger << "## Geometry info" << std::endl;
-        this->logger << "Volume           : " << geometry.getVolume() << std::endl;
-        this->logger << "Geometric origin : " << geometry.getGeometricOrigin({}) << std::endl;
-        try {
-            auto axis = geometry.getPrimaryAxis({});
-            this->logger << "Primary axis     : " << axis << std::endl;
-        } catch (std::runtime_error &) {
-            this->logger << "Primary axis     : UNSPECIFIED" << std::endl;
-        }
-        try {
-            auto axis = geometry.getSecondaryAxis({});
-            this->logger << "Secondary axis   : " << axis << std::endl;
-        } catch (std::runtime_error &) {
-            this->logger << "Secondary axis   : UNSPECIFIED" << std::endl;
-        }
-        this->logger << "Named points     :" << std::endl;
-        auto points = geometry.getNamedPoints();
-        std::size_t maxLength = std::max_element(points.begin(), points.end(), [](const auto &p1, const auto &p2) {
-            return p1.first.length() < p2.first.length();
-        })->first.length();
-        for (const auto &[name, point] : points) {
-            this->logger << "    " << std::left << std::setw(maxLength) << name << " = " << point << std::endl;
-        }
+        this->printGeometryInfo(traits->getGeometry());
     }
 
     // Wolfram preview
     if (parsedOptions.count("wolfram-preview")) {
         std::ofstream wolframFile(wolframFilename);
         ValidateOpenedDesc(wolframFile, wolframFilename, " to store Wolfram preview of the shape");
+        const auto &printer = traits->getPrinter();
         wolframFile << "Graphics3D[" << printer.toWolfram({}) << "]";
     }
 
     return EXIT_SUCCESS;
+}
+
+void Frontend::printGeometryInfo(const ShapeGeometry &geometry) {
+    logger << "## Geometry info" << std::endl;
+    logger << "Volume           : " << geometry.getVolume() << std::endl;
+    logger << "Geometric origin : " << geometry.getGeometricOrigin({}) << std::endl;
+
+    // Axes
+    try {
+        auto axis = geometry.getPrimaryAxis({});
+        logger << "Primary axis     : " << axis << std::endl;
+    } catch (std::runtime_error &) {
+        logger << "Primary axis     : UNSPECIFIED" << std::endl;
+    }
+    try {
+        auto axis = geometry.getSecondaryAxis({});
+        logger << "Secondary axis   : " << axis << std::endl;
+    } catch (std::runtime_error &) {
+        logger << "Secondary axis   : UNSPECIFIED" << std::endl;
+    }
+
+    // Named points
+    logger << "Named points     :" << std::endl;
+    auto points = geometry.getNamedPoints();
+    std::size_t maxLength = std::max_element(points.begin(), points.end(), [](const auto &p1, const auto &p2) {
+        return p1.first.length() < p2.first.length();
+    })->first.length();
+
+    for (const auto &[name, point] : points) {
+        logger << "    " << std::left << std::setw(maxLength) << name << " = " << point << std::endl;
+    }
+}
+
+void Frontend::printInteractionInfo(const Interaction &interaction) {
+    auto displayBool = [](bool b) { return b ? "true" : "false"; };
+    logger << "## Interaction info" << std::endl;
+    logger << "Has hard part            : " << displayBool(interaction.hasHardPart()) << std::endl;
+    logger << "Has soft part            : " << displayBool(interaction.hasSoftPart()) << std::endl;
+    logger << "Has wall part            : " << displayBool(interaction.hasWallPart()) << std::endl;
+    logger << "Interaction center range : " << interaction.getRangeRadius() << std::endl;
+    logger << "Total range              : " << interaction.getTotalRangeRadius() << std::endl;
+    logger << "Interaction centers      :" << std::endl;
+    auto interactionCentres = interaction.getInteractionCentres();
+    if (interactionCentres.empty())
+        interactionCentres.emplace_back();
+    for (std::size_t i{}; i < interactionCentres.size(); i++)
+        logger << "    [" << i << "] = " << interactionCentres[i] << std::endl;
 }
