@@ -77,14 +77,14 @@ TEST_CASE("PolyspherocylinderTraits") {
         CHECK_THAT(geometry.getPrimaryAxis(shape), IsApproxEqual({1, 0, 0}, 1e-8));
         CHECK_THAT(geometry.getSecondaryAxis(shape), IsApproxEqual({0, 0, -1}, 1e-8));
         CHECK_THAT(geometry.getGeometricOrigin(shape), IsApproxEqual({0, 1, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPoint("o0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPoint("b0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{-1, 0, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPoint("e0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1, 0, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPoint("o1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{2, 0, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPoint("b1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1, 0, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPoint("e1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{3, 0, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPoint("o", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPoint("cm", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPointForShape("o0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPointForShape("b0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{-1, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPointForShape("e0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPointForShape("o1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{2, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPointForShape("b1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPointForShape("e1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{3, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPointForShape("o", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPointForShape("cm", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-8));
     }
 }
 
@@ -228,5 +228,5 @@ TEST_CASE("PolyspherocylnderTraits: mass centre normalization") {
     const auto &scData = traits.getSpherocylinderData();
     CHECK(scData == std::vector<Data>{Data{{0, 0, -2}, {0, 0, 1}, 1}, Data{{0, 0, 4}, {0, 0, 3}, 0.5}});
     CHECK_THAT(geometry.getGeometricOrigin({}), IsApproxEqual({1, 0, -2}, 1e-12));
-    CHECK_THAT(geometry.getNamedPoint("point1", {}), IsApproxEqual({1, 0, -2}, 1e-12));
+    CHECK_THAT(geometry.getNamedPointForShape("point1", {}), IsApproxEqual({1, 0, -2}, 1e-12));
 }
