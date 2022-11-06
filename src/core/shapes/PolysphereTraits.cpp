@@ -124,7 +124,7 @@ void PolysphereTraits::PolysphereGeometry::normalizeMassCentre() {
 PolysphereTraits::PolysphereGeometry::PolysphereGeometry(std::vector<SphereData> sphereData,
                                                          const Vector<3> &primaryAxis, const Vector<3> &secondaryAxis,
                                                          const Vector<3> &geometricOrigin,
-                                                         const std::map<std::string, Vector<3>> &customNamedPoints)
+                                                         const ShapeGeometry::NamedPoints &customNamedPoints)
         : sphereData{std::move(sphereData)}, primaryAxis{primaryAxis.normalized()},
           secondaryAxis{secondaryAxis.normalized()}, geometricOrigin{geometricOrigin}
 {

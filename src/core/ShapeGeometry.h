@@ -16,12 +16,16 @@
  * @brief An interface describing geometric properties of the shape.
  */
 class ShapeGeometry {
+public:
+    using NamedPoints = std::vector<std::pair<std::string, Vector<3>>>;
+
 private:
     std::map<std::string, Vector<3>> namedPoints;
+    std::vector<std::pair<std::string, Vector<3>>> namedPointsOrdered;
 
 protected:
     void registerNamedPoint(const std::string &pointName, const Vector<3> &point);
-    void registerNamedPoints(const std::map<std::string, Vector<3>> &namedPoints);
+    void registerNamedPoints(const std::vector<std::pair<std::string, Vector<3>>> &namedPoints_);
     void moveNamedPoints(const Vector<3> &translation);
 
 public:
@@ -63,7 +67,7 @@ public:
      */
     [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const;
 
-    [[nodiscard]] std::map<std::string, Vector<3>> getNamedPoints() const;
+    [[nodiscard]] NamedPoints getNamedPoints() const;
 };
 
 
