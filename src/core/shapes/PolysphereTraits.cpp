@@ -118,19 +118,24 @@ void PolysphereTraits::PolysphereGeometry::normalizeMassCentre() {
 
     this->sphereData = std::move(newSphereData);
     this->geometricOrigin -= massCentre;
-    for (auto &namedPoint : this->customNamedPoints)
-        namedPoint.second -= massCentre;
+    this->moveNamedPoints(-massCentre);
 }
 
 PolysphereTraits::PolysphereGeometry::PolysphereGeometry(std::vector<SphereData> sphereData,
                                                          const Vector<3> &primaryAxis, const Vector<3> &secondaryAxis,
                                                          const Vector<3> &geometricOrigin,
-                                                         std::map<std::string, Vector<3>> customNamedPoints)
+                                                         const std::map<std::string, Vector<3>> &customNamedPoints)
         : sphereData{std::move(sphereData)}, primaryAxis{primaryAxis.normalized()},
-          secondaryAxis{secondaryAxis.normalized()}, geometricOrigin{geometricOrigin},
-          customNamedPoints{std::move(customNamedPoints)}
+          secondaryAxis{secondaryAxis.normalized()}, geometricOrigin{geometricOrigin}
 {
     Expects(!this->sphereData.empty());
+
+    for (std::size_t i{}; i < this->sphereData.size(); i++) {
+        const auto &ssData = this->sphereData[i];
+        this->registerNamedPoint("s" + std::to_string(i), ssData.position);
+    }
+
+    this->registerNamedPoints(customNamedPoints);
 }
 
 Vector<3> PolysphereTraits::PolysphereGeometry::calculateMassCentre() const {
@@ -149,26 +154,4 @@ Vector<3> PolysphereTraits::PolysphereGeometry::calculateMassCentre() const {
     double weightSum = std::accumulate(this->sphereData.begin(), this->sphereData.end(), 0., weightAccumulator);
     massCentre /= weightSum;
     return massCentre;
-}
-
-Vector<3> PolysphereTraits::PolysphereGeometry::getNamedPoint(const std::string &pointName, const Shape &shape) const {
-    auto customPointIt = this->customNamedPoints.find(pointName);
-    if (customPointIt != this->customNamedPoints.end())
-        return shape.getPosition() + shape.getOrientation() * customPointIt->second;
-
-    if (pointName.length() < 2)
-        return ShapeGeometry::getNamedPoint(pointName, shape);
-
-    if (pointName[0] != 's')
-        return ShapeGeometry::getNamedPoint(pointName, shape);
-
-    if (!std::all_of(std::next(pointName.begin()), pointName.end(), isdigit))
-        return ShapeGeometry::getNamedPoint(pointName, shape);
-
-    // We are using std::strtoul with incremented c-string pointer to prevent any new memory allocations
-    std::size_t sphereIdx = std::strtoul(pointName.c_str() + 1, nullptr, 0);
-    if (sphereIdx >= this->sphereData.size())
-        return ShapeGeometry::getNamedPoint(pointName, shape);
-
-    return this->sphereData[sphereIdx].centreForShape(shape);
 }

@@ -41,7 +41,6 @@ TEST_CASE("RadialEnumerator") {
     ALLOW_CALL(traits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(traits, getRangeRadius()).RETURN(1);
     ALLOW_CALL(traits, getTotalRangeRadius()).RETURN(1);
-    ALLOW_CALL(traits, getNamedPoint(_, _)).LR_RETURN(traits.ShapeGeometry::getNamedPoint(_1, _2));
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     Packing packing(box, shapes, std::move(bc), traits.getInteraction());
     RadialEnumerator enumerator;

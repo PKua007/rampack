@@ -22,7 +22,6 @@ TEST_CASE("PairDensityCorrelation") {
     ALLOW_CALL(traits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(traits, getRangeRadius()).RETURN(1);
     ALLOW_CALL(traits, getTotalRangeRadius()).RETURN(1);
-    ALLOW_CALL(traits, getNamedPoint(_, _)).LR_RETURN(traits.ShapeGeometry::getNamedPoint(_1, _2));
 
     TriclinicBox box(10);
     auto binDividers = std::vector<double>{0, 2, 4};

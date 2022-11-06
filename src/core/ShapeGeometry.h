@@ -5,6 +5,9 @@
 #ifndef RAMPACK_SHAPEGEOMETRY_H
 #define RAMPACK_SHAPEGEOMETRY_H
 
+#include <map>
+#include <string>
+
 #include "geometry/Vector.h"
 #include "Shape.h"
 
@@ -13,6 +16,14 @@
  * @brief An interface describing geometric properties of the shape.
  */
 class ShapeGeometry {
+private:
+    std::map<std::string, Vector<3>> namedPoints;
+
+protected:
+    void registerNamedPoint(const std::string &pointName, const Vector<3> &point);
+    void registerNamedPoints(const std::map<std::string, Vector<3>> &namedPoints);
+    void moveNamedPoints(const Vector<3> &translation);
+
 public:
     /**
      * @brief Returns the volume of the shape.
@@ -50,14 +61,9 @@ public:
      * @param shape shape for which the point should be calculated
      * @return a special, named point lying somewhere on a @a shape
      */
-    [[nodiscard]] virtual Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const {
-        if (pointName == "cm")
-            return shape.getPosition();
-        else if (pointName == "o")
-            return shape.getPosition() + this->getGeometricOrigin(shape);
-        else
-            throw std::runtime_error("ShapeGeometry::getNamedPoint : unknown point name '" + pointName + "'");
-    }
+    [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const;
+
+    [[nodiscard]] std::map<std::string, Vector<3>> getNamedPoints() const;
 };
 
 

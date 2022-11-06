@@ -31,7 +31,7 @@ PolysphereWedgeTraits::generateGeometry(std::size_t sphereNum, double smallSpher
     double end1 = geometry.getSphereData().front().position[0];
     double end2 = geometry.getSphereData().back().position[0];
     geometry.setGeometricOrigin({(end2 + largeSphereRadius + end1 - smallSphereRadius)/2, 0, 0});
-    geometry.setCustomNamedPoints({{"ss", geometry.getSphereData().front().position},
+    geometry.addCustomNamedPoints({{"ss", geometry.getSphereData().front().position},
                                    {"sl", geometry.getSphereData().back().position}});
     return geometry;
 }

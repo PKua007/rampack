@@ -48,7 +48,6 @@ public:
         Vector<3> primaryAxis;
         Vector<3> secondaryAxis;
         Vector<3> geometricOrigin;
-        std::map<std::string, Vector<3>> customNamedPoints;
 
     public:
         /**
@@ -62,7 +61,7 @@ public:
          */
         PolysphereGeometry(std::vector<SphereData> sphereData, const Vector<3> &primaryAxis,
                            const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin = {0, 0, 0},
-                           std::map<std::string, Vector<3>> customNamedPoints = {});
+                           const std::map<std::string, Vector<3>>& customNamedPoints = {});
 
         [[nodiscard]] double getVolume() const override;
 
@@ -93,17 +92,9 @@ public:
         [[nodiscard]] Vector<3> calculateMassCentre() const;
 
         void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
-
-        void setCustomNamedPoints(std::map<std::string, Vector<3>> customNamedPoints_) {
-            this->customNamedPoints = std::move(customNamedPoints_);
+        void addCustomNamedPoints(const std::map<std::string, Vector<3>> &namedPoints) {
+            this->registerNamedPoints(namedPoints);
         }
-
-        /**
-         * @brief Returns named point @a pointName for a @a shape.
-         * @details In addition to the ones inherited from ShapeGeometry, all spheres are named "sx", where @a x is the
-         * index of the sphere, starting from 0. Additional named points are provided in the constructor.
-         */
-        [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName, const Shape &shape) const override;
     };
 
 private:
