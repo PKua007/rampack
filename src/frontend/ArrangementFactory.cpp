@@ -168,7 +168,7 @@ namespace {
 
         std::array<double, 3> cellDimensions{};
         std::array<std::size_t, 3> particlesInLine{};
-        if (ParseUtils::isAnythingLeft(arrangementStream)) {
+        if (!ParseUtils::isAnythingLeft(arrangementStream)) {
             // Format: [num particles x] [... y] [... z]
             ValidateMsg((boxDimensions != std::array<double, 3>{0, 0, 0}),
                         "Implicit cell sizes are not available for automatic box dimensions");

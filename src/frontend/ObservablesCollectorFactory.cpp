@@ -29,7 +29,7 @@
 
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
-#include "ParseUtils.h"
+#include "utils/ParseUtils.h"
 
 
 #define SMECTIC_ORDER_USAGE "Malformed smectic order, usage:\n" \
@@ -245,7 +245,7 @@ namespace {
             std::string focalPoint = "cm";
             if (ParseUtils::isAnythingLeft(observableStream))
                 observableStream >> focalPoint;
-            ValidateMsg(!observableStream.fail(), BINNING_SPEC_USAGE);
+            ValidateMsg(observableStream, BINNING_SPEC_USAGE);
 
             return std::make_unique<RadialEnumerator>(focalPoint);
         } else if (enumeratorName == "layerwiseRadial") {
@@ -257,7 +257,7 @@ namespace {
             std::string focalPoint = "cm";
             if (ParseUtils::isAnythingLeft(observableStream))
                 observableStream >> focalPoint;
-            ValidateMsg(!observableStream.fail(), BINNING_SPEC_USAGE);
+            ValidateMsg(observableStream, BINNING_SPEC_USAGE);
 
             return std::make_unique<LayerwiseRadialEnumerator>(millerIndices, focalPoint);
         } else {

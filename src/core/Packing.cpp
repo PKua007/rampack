@@ -1162,7 +1162,8 @@ Matrix<3, 3> Packing::restoreDimensions(std::istream &in) {
     ValidateMsg(dimensionsStream, "Broken packing file: dimensions");
 
     Matrix<3, 3> dimensions;
-    if (ParseUtils::isAnythingLeft(dimensionsStream)) {     // If eof, dimensions were saved in the old format: L_x, L_y, L_z
+    if (!ParseUtils::isAnythingLeft(dimensionsStream)) {
+        // If eof, dimensions were saved in the old format: L_x, L_y, L_z
         dimensions(0, 0) = tokensOld[0];
         dimensions(1, 1) = tokensOld[1];
         dimensions(2, 2) = tokensOld[2];
