@@ -70,41 +70,50 @@ TEST_CASE("ObservablesCollector") {
     collector.setThermodynamicParameters(4, 2);
 
     SECTION("snapshots") {
-        collector.addSnapshot(packing, 100, mockShapeTraits);
-        packing.tryScaling(2, mockShapeTraits.getInteraction());
-        collector.addSnapshot(packing, 200, mockShapeTraits);
-        std::ostringstream out;
+        std::string expectedSnapshotOut = "cycle L_X L_Y L_Z dim Z rho \n"
+                                          "100 3 4 5 3x4x5 10 0.050000000000000003 \n"
+                                          "200 6 8 10 6x8x10 80 0.0062500000000000003 \n";
 
-        collector.printSnapshots(out);
+        SECTION("printing snapshots") {
+            collector.addSnapshot(packing, 100, mockShapeTraits);
+            packing.tryScaling(2, mockShapeTraits.getInteraction());
+            collector.addSnapshot(packing, 200, mockShapeTraits);
+            std::ostringstream out;
 
-        CHECK(out.str() == "cycle L_X L_Y L_Z dim Z rho \n"
-                           "100 3 4 5 3x4x5 10 0.050000000000000003 \n"
-                           "200 6 8 10 6x8x10 80 0.0062500000000000003 \n");
+            collector.printSnapshots(out);
 
-        SECTION("clearing") {
-            std::ostringstream out2;
+            CHECK(out.str() == expectedSnapshotOut);
 
-            collector.clear();
+            SECTION("clearing") {
+                std::ostringstream out2;
 
-            collector.printSnapshots(out2);
-            CHECK(out2.str() == "cycle L_X L_Y L_Z dim Z rho \n");
+                collector.clear();
+
+                collector.printSnapshots(out2);
+                CHECK(out2.str() == "cycle L_X L_Y L_Z dim Z rho \n");
+            }
         }
-    }
 
-    SECTION("on the fly snapshots") {
-        std::stringbuf buf(std::ios::out);
+        SECTION("on the fly snapshots") {
+            std::stringbuf buf(std::ios::out);
 
-        auto out1 = std::make_unique<std::ostream>(&buf);
-        collector.attachOnTheFlyOutput(std::move(out1));
-        collector.addSnapshot(packing, 100, mockShapeTraits);
-        packing.tryScaling(2, mockShapeTraits.getInteraction());
-        auto out2 = std::make_unique<std::ostream>(&buf);
-        collector.attachOnTheFlyOutput(std::move(out2));
-        collector.addSnapshot(packing, 200, mockShapeTraits);
+            auto out1 = std::make_unique<std::ostream>(&buf);
+            collector.attachOnTheFlyOutput(std::move(out1));
+            collector.addSnapshot(packing, 100, mockShapeTraits);
+            packing.tryScaling(2, mockShapeTraits.getInteraction());
+            auto out2 = std::make_unique<std::ostream>(&buf);
+            collector.attachOnTheFlyOutput(std::move(out2));
+            collector.addSnapshot(packing, 200, mockShapeTraits);
 
-        CHECK(buf.str() == "cycle L_X L_Y L_Z dim Z rho \n"
-                           "100 3 4 5 3x4x5 10 0.050000000000000003 \n"
-                           "200 6 8 10 6x8x10 80 0.0062500000000000003 \n");
+            CHECK(buf.str() == expectedSnapshotOut);
+
+            SECTION("detaching") {
+                collector.detachOnTheFlyOutput();
+                collector.addSnapshot(packing, 300, mockShapeTraits);
+
+                CHECK(buf.str() == expectedSnapshotOut);
+            }
+        }
     }
 
     SECTION("average values") {

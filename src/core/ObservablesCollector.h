@@ -109,7 +109,17 @@ public:
      */
     void addAveragingValues(const Packing &packing, const ShapeTraits &shapeTraits);
 
+    /**
+     * @brief Starts saving observable snapshots "on the fly" to the output stream @a out.
+     * @details If something was attached previously, its destructor is called. If @a nullptr is passed, it is analogous
+     * to calling detachOnTheFlyOutput.
+     */
     void attachOnTheFlyOutput(std::unique_ptr<std::ostream> out);
+
+    /**
+     * @brief Detaches and returns "on the fly" output stream (or @a nullptr if nothing is attached).
+     */
+    std::unique_ptr<std::ostream> detachOnTheFlyOutput() { return std::move(this->onTheFlyOut); }
 
     /**
      * @brief Generate a short inline string with current interval and nominal values of all ObservableType::INLINE
