@@ -73,6 +73,9 @@ void ObservablesCollector::addSnapshot(const Packing &packing, std::size_t cycle
 
     auto end = std::chrono::high_resolution_clock::now();
     this->computationMicroseconds += std::chrono::duration<double, std::micro>(end - start).count();
+
+    if (this->onTheFlyOut != nullptr)
+        this->doPrintSnapshotValues(*this->onTheFlyOut, this->snapshotCycleNumbers.size() - 1);
 }
 
 void ObservablesCollector::addAveragingValues(const Packing &packing, const ShapeTraits &shapeTraits) {
@@ -172,19 +175,24 @@ void ObservablesCollector::printSnapshots(std::ostream &out, bool printHeader) c
     for (const auto &singleSet : this->snapshotValues)
         Assert(singleSet.size() == numSnapshots);
 
-    if (printHeader) {
-        out << "cycle ";
-        std::copy(this->snapshotHeader.begin(), this->snapshotHeader.end(),
-                  std::ostream_iterator<std::string>(out, " "));
-        out << std::endl;
-    }
+    if (printHeader)
+        this->doPrintSnapshotHeader(out);
 
-    for (std::size_t i{}; i < numSnapshots; i++) {
-        out << this->snapshotCycleNumbers[i] << " ";
-        for (const auto &observableValues : this->snapshotValues)
-            out << observableValues[i] << " ";
-        out << std::endl;
-    }
+    for (std::size_t i{}; i < numSnapshots; i++)
+        this->doPrintSnapshotValues(out, i);
+}
+
+void ObservablesCollector::doPrintSnapshotValues(std::ostream &out, std::size_t snapshotIdx) const{
+    out << this->snapshotCycleNumbers[snapshotIdx] << " ";
+    for (const auto &observableValues : this->snapshotValues)
+        out << observableValues[snapshotIdx] << " ";
+    out << std::endl;
+}
+
+void ObservablesCollector::doPrintSnapshotHeader(std::ostream &out) const {
+    out << "cycle ";
+    std::copy(snapshotHeader.begin(), snapshotHeader.end(), std::ostream_iterator<std::string>(out, " "));
+    out << std::endl;
 }
 
 std::vector<ObservablesCollector::ObservableData> ObservablesCollector::getFlattenedAverageValues() const {
@@ -237,4 +245,10 @@ std::size_t ObservablesCollector::getMemoryUsage() const {
 void ObservablesCollector::visitBulkObservables(std::function<void(const BulkObservable &)> visitor) const {
     for (const auto &bulkObservable : this->bulkObservables)
         visitor(*bulkObservable);
+}
+
+void ObservablesCollector::attachOnTheFlyOutput(std::unique_ptr<std::ostream> out) {
+    this->onTheFlyOut = std::move(out);
+    if (this->onTheFlyOut->tellp() == 0)
+        this->doPrintSnapshotHeader(*this->onTheFlyOut);
 }

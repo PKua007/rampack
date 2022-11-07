@@ -37,11 +37,14 @@ private:
     std::vector<std::size_t> snapshotCycleNumbers;
     std::vector<std::vector<std::string>> snapshotValues;
     std::vector<std::vector<double>> averagingValues;
+    std::unique_ptr<std::ostream> onTheFlyOut;
 
     mutable double computationMicroseconds{};
 
     void printInlineObservable(unsigned long observableIdx, const Packing &packing, const ShapeTraits &shapeTraits,
                                std::ostringstream &out) const;
+    void doPrintSnapshotHeader(std::ostream &out) const;
+    void doPrintSnapshotValues(std::ostream &out, std::size_t snapshotIdx) const;
 
 public:
     /**
@@ -105,6 +108,8 @@ public:
      * @param shapeTraits shape traits describing the shape used in the packing
      */
     void addAveragingValues(const Packing &packing, const ShapeTraits &shapeTraits);
+
+    void attachOnTheFlyOutput(std::unique_ptr<std::ostream> out);
 
     /**
      * @brief Generate a short inline string with current interval and nominal values of all ObservableType::INLINE

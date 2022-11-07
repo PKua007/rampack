@@ -91,6 +91,22 @@ TEST_CASE("ObservablesCollector") {
         }
     }
 
+    SECTION("on the fly snapshots") {
+        std::stringbuf buf(std::ios::out);
+
+        auto out1 = std::make_unique<std::ostream>(&buf);
+        collector.attachOnTheFlyOutput(std::move(out1));
+        collector.addSnapshot(packing, 100, mockShapeTraits);
+        packing.tryScaling(2, mockShapeTraits.getInteraction());
+        auto out2 = std::make_unique<std::ostream>(&buf);
+        collector.attachOnTheFlyOutput(std::move(out2));
+        collector.addSnapshot(packing, 200, mockShapeTraits);
+
+        CHECK(buf.str() == "cycle L_X L_Y L_Z dim Z rho \n"
+                           "100 3 4 5 3x4x5 10 0.050000000000000003 \n"
+                           "200 6 8 10 6x8x10 80 0.0062500000000000003 \n");
+    }
+
     SECTION("average values") {
         collector.addAveragingValues(packing, mockShapeTraits);
         packing.tryScaling(2, mockShapeTraits.getInteraction());
