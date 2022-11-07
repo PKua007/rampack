@@ -249,6 +249,9 @@ void ObservablesCollector::visitBulkObservables(std::function<void(const BulkObs
 
 void ObservablesCollector::attachOnTheFlyOutput(std::unique_ptr<std::ostream> out) {
     this->onTheFlyOut = std::move(out);
+    if (this->onTheFlyOut == nullptr)
+        return;
+
     if (this->onTheFlyOut->tellp() == 0)
         this->doPrintSnapshotHeader(*this->onTheFlyOut);
 }
