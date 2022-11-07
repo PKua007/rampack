@@ -43,6 +43,7 @@ private:
     std::unique_ptr<SimulationPlayer> loadSimulationPlayer(std::string &trajectoryFilename, size_t numMolecules,
                                                            bool autoFix_);
     void createWalls(Packing &packing, const std::string &walls);
+    void attachSnapshotOut(ObservablesCollector &collector, const std::string& filename, bool isContinuation) const;
 
     void performIntegration(Simulation &simulation, const Parameters::IntegrationParameters &runParams,
                             const ShapeTraits &shapeTraits, size_t cycleOffset, bool isContinuation);

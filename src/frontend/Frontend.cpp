@@ -303,6 +303,7 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','),
                                                          explode(runParams.bulkObservables, ','),
                                                          simulation.getPacking().getScalingThreads());
+    this->attachSnapshotOut(*collector, runParams.observableSnapshotFilename, isContinuation);
     simulation.integrate(std::move(temperatureUpdater), std::move(pressureUpdater), runParams.thermalisationCycles,
                          runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
                          shapeTraits, std::move(collector), std::move(recorder), logger, cycleOffset);
@@ -321,8 +322,6 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
         this->storeAverageValues(runParams.outputFilename, observablesCollector, simulation.getCurrentTemperature(),
                                  simulation.getCurrentPressure());
     }
-    if (!runParams.observableSnapshotFilename.empty())
-        this->storeSnapshots(observablesCollector, isContinuation, runParams.observableSnapshotFilename);
     if (!runParams.bulkObservableFilenamePattern.empty())
         this->storeBulkObservables(observablesCollector, runParams.bulkObservableFilenamePattern);
 }
@@ -343,6 +342,7 @@ std::unique_ptr<SimulationRecorder> Frontend::loadSimulationRecorder(const std::
     }
 
     ValidateOpenedDesc(*inout, filename, "to store packing data");
+    this->logger.info() << "Trajectory is stored on the fly to '" << filename << "'" << std::endl;
     return std::make_unique<SimulationRecorder>(std::move(inout), numMolecules, cycleStep, isContinuation);
 }
 
@@ -376,6 +376,7 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, const std::strin
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','),
                                                          explode(runParams.bulkObservables, ','),
                                                          simulation.getPacking().getScalingThreads());
+    this->attachSnapshotOut(*collector, runParams.observableSnapshotFilename, isContinuation);
     simulation.relaxOverlaps(std::move(temperatureUpdater), std::move(pressureUpdater), runParams.snapshotEvery,
                              *shapeTraits, std::move(collector), std::move(recorder), this->logger, cycleOffset);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
@@ -388,8 +389,6 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, const std::strin
         this->storePacking(simulation, runParams.packingFilename);
     if (!runParams.wolframFilename.empty())
         this->storeWolframVisualization(simulation.getPacking(), shapeTraits->getPrinter(), runParams.wolframFilename);
-    if (!runParams.observableSnapshotFilename.empty())
-        this->storeSnapshots(observablesCollector, isContinuation, runParams.observableSnapshotFilename);
     if (!runParams.bulkObservableFilenamePattern.empty())
         this->storeBulkObservables(observablesCollector, runParams.bulkObservableFilenamePattern);
 }
@@ -1281,4 +1280,21 @@ void Frontend::printInteractionInfo(const Interaction &interaction) {
         interactionCentres.emplace_back();
     for (std::size_t i{}; i < interactionCentres.size(); i++)
         logger << "    [" << i << "] = " << interactionCentres[i] << std::endl;
+}
+
+void Frontend::attachSnapshotOut(ObservablesCollector &collector, const std::string &filename,
+                                 bool isContinuation) const
+{
+    if (filename.empty())
+        return;
+
+    std::unique_ptr<std::ofstream> out;
+    if (isContinuation)
+        out = std::make_unique<std::ofstream>(filename, std::ios_base::app);
+    else
+        out = std::make_unique<std::ofstream>(filename);
+
+    ValidateOpenedDesc(*out, filename, "to store observables");
+    this->logger.info() << "Observable snapshots are stored on the fly to '" << filename << "'" << std::endl;
+    collector.attachOnTheFlyOutput(std::move(out));
 }
