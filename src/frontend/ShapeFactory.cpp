@@ -7,7 +7,7 @@
 #include "ShapeFactory.h"
 
 #include "utils/Assertions.h"
-#include "ParseUtils.h"
+#include "utils/ParseUtils.h"
 #include "utils/Utils.h"
 
 #include "core/shapes/SphereTraits.h"

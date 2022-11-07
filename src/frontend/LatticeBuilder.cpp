@@ -9,7 +9,7 @@
 #include <variant>
 
 
-#include "ParseUtils.h"
+#include "utils/ParseUtils.h"
 #include "LatticeBuilder.h"
 #include "core/TriclinicBox.h"
 #include "utils/Utils.h"
@@ -47,7 +47,7 @@ namespace {
 
         std::istringstream boxStream(boxString);
         auto tokens = ParseUtils::tokenize<double>(boxStream);
-        ValidateMsg(!boxStream.fail(), BOX_DIMENSIONS_USAGE);
+        ValidateMsg(boxStream, BOX_DIMENSIONS_USAGE);
 
         switch (tokens.size()) {
             case 1:
@@ -69,7 +69,7 @@ namespace {
     CellDimensions parse_cell_dim(const std::string &dim) {
         std::istringstream boxStream(dim);
         auto tokens = ParseUtils::tokenize<double>(boxStream);
-        ValidateMsg(!boxStream.fail(), BOX_DIMENSIONS_USAGE);
+        ValidateMsg(boxStream, BOX_DIMENSIONS_USAGE);
 
         switch (tokens.size()) {
             case 1:
@@ -117,7 +117,7 @@ namespace {
         for (const auto &shapeString : shapesExploded) {
             std::istringstream shapeStream(shapeString);
             auto tokens = ParseUtils::tokenize<double>(shapeStream);
-            ValidateMsg(!shapeStream.fail(), "Malformed shape. Usage: [pos. x] [y] [z] ([angle x deg] [y] [z])");
+            ValidateMsg(shapeStream, "Malformed shape. Usage: [pos. x] [y] [z] ([angle x deg] [y] [z])");
             constexpr double toRad = M_PI / 180;
             switch (tokens.size()) {
                 case 3:
@@ -137,7 +137,7 @@ namespace {
     std::array<std::size_t, 3> parse_lattice_dim(const std::string &ncellString) {
         std::istringstream dimStream(ncellString);
         auto latticeDimTokens = ParseUtils::tokenize<std::size_t>(dimStream);
-        ValidateMsg(!dimStream.fail() && latticeDimTokens.size() == 3, "Malformed 'ncell'");
+        ValidateMsg(dimStream && latticeDimTokens.size() == 3, "Malformed 'ncell'");
         auto greaterThanZero = [](auto dim) { return dim > 0; };
         ValidateMsg(std::all_of(latticeDimTokens.begin(), latticeDimTokens.end(), greaterThanZero),
                     "All 'ncell' elements have to be > 0");

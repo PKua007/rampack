@@ -10,7 +10,7 @@
 #include "core/move_samplers/TranslationSampler.h"
 #include "core/move_samplers/RotationSampler.h"
 #include "core/move_samplers/FlipSampler.h"
-#include "ParseUtils.h"
+#include "utils/ParseUtils.h"
 
 
 std::unique_ptr<MoveSampler> MoveSamplerFactory::create(const std::string &moveSamplerString,

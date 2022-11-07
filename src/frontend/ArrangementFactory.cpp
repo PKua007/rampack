@@ -11,6 +11,7 @@
 #include "utils/Assertions.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "LatticeBuilder.h"
+#include "utils/ParseUtils.h"
 
 
 #define ORTHORHOMBIC_USAGE "Malformed orthorhombic arrangement. Usage alternatives:\n" \
@@ -162,12 +163,12 @@ namespace {
                                             const OrthorhombicArrangingModel &model)
     {
         std::array<std::string, 3> firstThreeTokens{};
-        arrangementStream >> firstThreeTokens[0] >> firstThreeTokens[1] >> firstThreeTokens[2] >> std::ws;
-        ValidateMsg(!arrangementStream.fail(), ORTHORHOMBIC_USAGE);
+        arrangementStream >> firstThreeTokens[0] >> firstThreeTokens[1] >> firstThreeTokens[2];
+        ValidateMsg(arrangementStream, ORTHORHOMBIC_USAGE);
 
         std::array<double, 3> cellDimensions{};
         std::array<std::size_t, 3> particlesInLine{};
-        if (arrangementStream.eof()) {
+        if (ParseUtils::isAnythingLeft(arrangementStream)) {
             // Format: [num particles x] [... y] [... z]
             ValidateMsg((boxDimensions != std::array<double, 3>{0, 0, 0}),
                         "Implicit cell sizes are not available for automatic box dimensions");

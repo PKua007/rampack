@@ -67,9 +67,9 @@ std::unique_ptr<DynamicParameter> ParameterUpdaterFactory::create(std::string up
             std::string underlyingParam;
             underlyingParamDataStream >> cycle;
             std::getline(underlyingParamDataStream, underlyingParam);
-            ValidateMsg(!underlyingParamDataStream.fail(), "Malformed piecewise parameter. Usage: piecewise "
-                                                           "[cycle 1] [dynamic parameter 1] , ...; [cycle 1] should "
-                                                           "be equal 0");
+            ValidateMsg(underlyingParamDataStream, "Malformed piecewise parameter. Usage: piecewise "
+                                                   "[cycle 1] [dynamic parameter 1] , ...; [cycle 1] should "
+                                                   "be equal 0");
             try {
                 list.emplace_back(cycle, ParameterUpdaterFactory::create(underlyingParam));
             } catch (ValidationException &validationException) {

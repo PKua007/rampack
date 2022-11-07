@@ -13,6 +13,7 @@
 #include "Packing.h"
 #include "utils/Assertions.h"
 #include "utils/Utils.h"
+#include "utils/ParseUtils.h"
 
 
 namespace {
@@ -1157,12 +1158,11 @@ Matrix<3, 3> Packing::restoreDimensions(std::istream &in) {
     // a whole 9-element box matrix. The format can be recognized by the number of string in the line.
     double tokensOld[3];
     std::istringstream dimensionsStream(line);
-    dimensionsStream >> tokensOld[0] >> tokensOld[1] >> tokensOld[2] >> std::ws;
-    // in.fail() is error apart from eof, which may happen
-    ValidateMsg(!dimensionsStream.fail(), "Broken packing file: dimensions");
+    dimensionsStream >> tokensOld[0] >> tokensOld[1] >> tokensOld[2];
+    ValidateMsg(dimensionsStream, "Broken packing file: dimensions");
 
     Matrix<3, 3> dimensions;
-    if (dimensionsStream.eof()) {     // If eof, dimensions were saved in the old format: L_x, L_y, L_z
+    if (ParseUtils::isAnythingLeft(dimensionsStream)) {     // If eof, dimensions were saved in the old format: L_x, L_y, L_z
         dimensions(0, 0) = tokensOld[0];
         dimensions(1, 1) = tokensOld[1];
         dimensions(2, 2) = tokensOld[2];
@@ -1172,7 +1172,7 @@ Matrix<3, 3> Packing::restoreDimensions(std::istream &in) {
         dimensions(0, 2) = tokensOld[2];
         dimensionsStream >> dimensions(1, 0) >> dimensions(1, 1) >> dimensions(1, 2);
         dimensionsStream >> dimensions(2, 0) >> dimensions(2, 1) >> dimensions(2, 2);
-        ValidateMsg(!dimensionsStream.fail(), "Broken packing file: dimensions");
+        ValidateMsg(dimensionsStream, "Broken packing file: dimensions");
     }
 
     return dimensions;
