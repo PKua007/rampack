@@ -47,14 +47,15 @@ Each run corresponds to an INI section named (including the brackets) `[integrat
 `[overlaps.run_name]` for overlaps reduction. Each of these sections includes the parameters for the specific run.
 Currently, when the run is finished the software can output the following data:
 
-* internal representation of the packing, which can be used for example as a starting point for another run (both run
-  types)
+* internal representation of the packing, which can be used for example as a starting point for another run (both run 
+  types) - it is stored after the simulation
 * Mathematica notebook representing the packing (for best performance it is advisable to open it in a text editor, copy
-  the contents and manually paste in an empty Mathematica notebook) (both run types)
-* a csv-like table containing values of specified observables taken at given intervals of time (both run types)
-* ensemble-averaged values of some observables (only NpT integration)
-* a compact, binary recording of a simulation (trajectories), which can be used later for example to recalculate  
-  observable averages (both run types)
+  the contents and manually paste in an empty Mathematica notebook) (both run types) - it is stored after the simulation
+* a csv-like table containing values of specified observables taken at given intervals of time (both run types) - it is
+  stored on the fly during simulation
+* ensemble-averaged values of some observables (only NpT integration) - it is stored after the simulation
+* a compact, binary recording of a simulation (trajectories), which can be used later for example to recalculate
+  observable averages (both run types) - it is stored on the fly during simulation
 
 The example input file `sample_inputs/integration.ini` describes the simulation of hard-core balls. It starts with a
 gaseous phase, which is then compressed to a degenerate liquid in the second run and in the third one is freezes into
