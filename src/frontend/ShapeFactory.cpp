@@ -38,6 +38,33 @@
                                    "There is also one optional\n" \
                                    "    namedPoints [name 1] [x1] [y1] [z1] [name 2] [x2] [y2] [z2] ..."
 
+#define GENERIC_POLYSPHERE_USAGE "Malformed Polysphere attributes. Usage:\n" \
+                                 "    [param 1] [value 1] ... [param n] [value n]\n" \
+                                 "Params can be in any order, but all of the following have to be specified\n" \
+                                 "    primaryAxis [x] [y] [z]\n" \
+                                 "    secondaryAxis [x] [y] [z]\n" \
+                                 "    geometricOrigin [x] [y] [z]\n" \
+                                 "    volume [volume]\n" \
+                                 "    spheres [x1] [y1] [z1] [r1] [x2] [y2] [z2] [r2] ... \n" \
+                                 "There is also one optional\n" \
+                                 "    namedPoints [name 1] [x1] [y1] [z1] [name 2] [x2] [y2] [z2] ..."
+
+#define GENERIC_POLYSPHEROCYLINDER_USAGE \
+    "Malformed Polyspherocylnder attributes. Usage:\n" \
+    "    [param 1] [value 1] ... [param n] [value n]\n" \
+    "Params can be in any order, but all of the following have to be specified\n" \
+    "    primaryAxis [x] [y] [z]\n" \
+    "    secondaryAxis [x] [y] [z]\n" \
+    "    geometricOrigin [x] [y] [z]\n" \
+    "    volume [volume]\n" \
+    "and at least one of the following\n" \
+    "    spherocylinders [spherocylinder spec 1] [spherocylinder spec 2] ...\n" \
+    "    chain [r] [x1] [y1] [z1] [x2] [y2] [z2] ...\n" \
+    "where\n" \
+    "    [spherocylinder spec i] := [ri] [beg xi] [beg yi] [beg zi] [end xi] [end yi] [end zi]\n" \
+    "There is also one optional\n" \
+    "    namedPoints [name 1] [x1] [y1] [z1] [name 2] [x2] [y2] [z2] ..."
+
 namespace {
     template <typename ConcreteTraits, typename... Args>
     auto parse_polysphere_traits(const std::string &shapeName, const std::string &interactionName,
@@ -116,12 +143,17 @@ namespace {
         return namedPoints;
     }
 
-    std::shared_ptr<ShapeTraits> parse_generic_xeno_collide(std::istream &in) {
-        std::vector<std::string> requiredFields{"script", "primaryAxis", "secondaryAxis", "geometricOrigin", "volume"};
+    auto parse_generic_shape_traits(std::istream &in, const std::string &usage,
+                                    const std::vector<std::string> &requiredCustomFields,
+                                    const std::vector<std::string> &optionalCustomFields = {})
+    {
+        std::vector<std::string> requiredFields{"primaryAxis", "secondaryAxis", "geometricOrigin", "volume"};
+        requiredFields.insert(requiredFields.end(), requiredCustomFields.begin(), requiredCustomFields.end());
         std::vector<std::string> allFields = requiredFields;
         allFields.emplace_back("namedPoints");
+        allFields.insert(allFields.end(), optionalCustomFields.begin(), optionalCustomFields.end());
         auto fieldsMap = ParseUtils::parseFields(allFields, in);
-        ValidateMsg(has_all_fields(fieldsMap, requiredFields), GENERIC_XENO_COLLIDE_USAGE);
+        ValidateMsg(has_all_fields(fieldsMap, requiredFields), usage);
 
         Vector<3> primaryAxis = parse_axis(fieldsMap.at("primaryAxis"));
         Vector<3> secondaryAxis = parse_axis(fieldsMap.at("secondaryAxis"));
@@ -132,6 +164,12 @@ namespace {
         if (fieldsMap.find("namedPoints") != fieldsMap.end())
             namedPoints = parse_named_points(fieldsMap.at("namedPoints"));
 
+        return std::make_tuple(fieldsMap, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints);
+    }
+
+    std::shared_ptr<ShapeTraits> parse_generic_xeno_collide(std::istream &in) {
+        auto [fieldsMap, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints]
+            = parse_generic_shape_traits(in, GENERIC_XENO_COLLIDE_USAGE, {"scripts"});
         auto commands = explode(fieldsMap.at("script"), '&');
         ValidateMsg(!commands.empty(), "At least one script command should be passed");
 
@@ -143,6 +181,71 @@ namespace {
         return std::make_shared<GenericXenoCollideTraits>(
             std::move(collideGeometry), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
         );
+    }
+
+    PolysphereTraits::PolysphereGeometry parse_polysphere_geometry(std::istream &in) {
+        auto [fieldsMap, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints]
+            = parse_generic_shape_traits(in, GENERIC_POLYSPHERE_USAGE, {"spheres"});
+
+        std::vector<PolysphereTraits::SphereData> sphereData;
+        auto spheres = ParseUtils::tokenize<double>(fieldsMap.at("spheres"));
+        ValidateMsg(!spheres.empty() && (spheres.size() % 4 == 0), GENERIC_POLYSPHERE_USAGE);
+        for (std::size_t i{}; i < spheres.size(); i += 4) {
+            double r = spheres[i];
+            Vector<3> pos{spheres[i + 1], spheres[i + 2], spheres[i + 3]};
+            ValidateMsg(r > 0, "Radius of sphere " + std::to_string(i/4) + " is <= 0");
+            sphereData.emplace_back(pos, r);
+        }
+        return {std::move(sphereData), primaryAxis, secondaryAxis, geometricOrigin, namedPoints};
+    }
+
+    std::shared_ptr<ShapeTraits> parse_polyspherocylinder(std::istream &in) {
+        auto [fieldsMap, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints]
+                = parse_generic_shape_traits(in, GENERIC_POLYSPHEROCYLINDER_USAGE, {}, {"chain", "spherocylinders"});
+
+        using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
+        std::vector<SpherocylinderData> spheroc;
+
+        if (fieldsMap.find("chain") != fieldsMap.end()) {
+            auto tokens = ParseUtils::tokenize<double>(fieldsMap.at("chain"));
+            ValidateMsg((tokens.size() >= 7) && (tokens.size() % 3 == 1), GENERIC_POLYSPHEROCYLINDER_USAGE);
+
+            double r = tokens[0];
+            ValidateMsg(r > 0, "Chain radius is <= 0");
+            std::vector<Vector<3>> chainPos;
+            for (std::size_t i = 1; i < tokens.size(); i += 3)
+                chainPos.push_back({tokens[i], tokens[i + 1], tokens[i + 2]});
+
+            auto spherocylinderCreator = [r](const Vector<3> &beg, const Vector<3> &end) -> SpherocylinderData {
+                Vector<3> pos = (beg + end)/2.;
+                Vector<3> halfAxis = end - pos;
+                return {pos, halfAxis, r};
+            };
+            std::transform(chainPos.begin(), std::prev(chainPos.end()), std::next(chainPos.begin()),
+                           std::back_inserter(spheroc), spherocylinderCreator);
+        }
+
+        if (fieldsMap.find("spherocylinders") != fieldsMap.end()) {
+            auto tokens = ParseUtils::tokenize<double>(fieldsMap.at("spherocylinders"));
+            ValidateMsg(!tokens.empty() && (tokens.size() % 7 == 0), GENERIC_POLYSPHEROCYLINDER_USAGE);
+
+            for (std::size_t i{}; i < tokens.size(); i += 7) {
+                double r = tokens[i];
+                Vector<3> beg{tokens[i + 1], tokens[i + 2], tokens[i + 3]};
+                Vector<3> end{tokens[i + 4], tokens[i + 5], tokens[i + 6]};
+                Vector<3> pos = (beg + end)/2.;
+                Vector<3> halfAxis = end - pos;
+                ValidateMsg(r > 0, "Radius of spherocylinder " + std::to_string(i/7) + " is <= 0");
+                spheroc.emplace_back(pos, halfAxis, r);
+            }
+        }
+
+        ValidateMsg(!spheroc.empty(), GENERIC_POLYSPHEROCYLINDER_USAGE);
+
+        PolyspherocylinderTraits::PolyspherocylinderGeometry geometry(
+            std::move(spheroc), primaryAxis, secondaryAxis, geometricOrigin, namedPoints
+        );
+        return std::make_unique<PolyspherocylinderTraits>(std::move(geometry));
     }
 }
 
@@ -268,6 +371,13 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         ValidateMsg(interactionName == "hard" || interactionName.empty(),
                     "GenericXenoCollide supports only hard interactions");
         return parse_generic_xeno_collide(shapeAttrStream);
+    } else if (shapeName == "Polysphere") {
+        auto geometry = parse_polysphere_geometry(shapeAttrStream);
+        return parse_polysphere_traits<PolysphereTraits>(shapeName, interactionName, interactionAttrStream, geometry);
+    } else if (shapeName == "Polyspherocylinder") {
+        ValidateMsg(interactionName == "hard" || interactionName.empty(),
+                    "Polyspherocylinder supports only hard interactions");
+        return parse_polyspherocylinder(shapeAttrStream);
     } else {
         throw ValidationException("Unknown particle name: " + shapeName);
     }
