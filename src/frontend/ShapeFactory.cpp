@@ -66,6 +66,9 @@
     "    namedPoints [name 1] [x1] [y1] [z1] [name 2] [x2] [y2] [z2] ..."
 
 namespace {
+    using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
+
+
     template <typename ConcreteTraits, typename... Args>
     auto parse_polysphere_traits(const std::string &shapeName, const std::string &interactionName,
                                  std::istream &interactionAttrStream, Args&&... args)
@@ -199,51 +202,55 @@ namespace {
         return {std::move(sphereData), primaryAxis, secondaryAxis, geometricOrigin, namedPoints};
     }
 
+    void parse_chain(const std::string &chainStr, std::vector<SpherocylinderData> &spherocylinderData) {
+        auto tokens = ParseUtils::tokenize<double>(chainStr);
+        ValidateMsg((tokens.size() >= 7) && (tokens.size() % 3 == 1), GENERIC_POLYSPHEROCYLINDER_USAGE);
+
+        double r = tokens[0];
+        ValidateMsg(r > 0, "Chain radius is <= 0");
+        std::vector<Vector<3>> chainPos;
+        for (std::size_t i = 1; i < tokens.size(); i += 3)
+            chainPos.push_back({tokens[i], tokens[i + 1], tokens[i + 2]});
+
+        auto spherocylinderCreator = [r](const Vector<3> &beg, const Vector<3> &end) -> SpherocylinderData {
+            Vector<3> pos = (beg + end)/2.;
+            Vector<3> halfAxis = end - pos;
+            return {pos, halfAxis, r};
+        };
+        std::transform(chainPos.begin(), std::prev(chainPos.end()), std::next(chainPos.begin()),
+                       std::back_inserter(spherocylinderData), spherocylinderCreator);
+    }
+
+    void parse_spherocylinders(const std::string &spherocylindersStr,
+                               std::vector<SpherocylinderData> &spherocylinderData)
+    {
+        auto tokens = ParseUtils::tokenize<double>(spherocylindersStr);
+        ValidateMsg(!tokens.empty() && (tokens.size() % 7 == 0), GENERIC_POLYSPHEROCYLINDER_USAGE);
+
+        for (std::size_t i{}; i < tokens.size(); i += 7) {
+            double r = tokens[i];
+            Vector<3> beg{tokens[i + 1], tokens[i + 2], tokens[i + 3]};
+            Vector<3> end{tokens[i + 4], tokens[i + 5], tokens[i + 6]};
+            Vector<3> pos = (beg + end)/2.;
+            Vector<3> halfAxis = end - pos;
+            ValidateMsg(r > 0, "Radius of spherocylinder " + std::to_string(i/7) + " is <= 0");
+            spherocylinderData.emplace_back(pos, halfAxis, r);
+        }
+    }
+
     std::shared_ptr<ShapeTraits> parse_polyspherocylinder(std::istream &in) {
         auto [fieldsMap, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints]
                 = parse_generic_shape_traits(in, GENERIC_POLYSPHEROCYLINDER_USAGE, {}, {"chain", "spherocylinders"});
 
-        using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
-        std::vector<SpherocylinderData> spheroc;
-
-        if (fieldsMap.find("chain") != fieldsMap.end()) {
-            auto tokens = ParseUtils::tokenize<double>(fieldsMap.at("chain"));
-            ValidateMsg((tokens.size() >= 7) && (tokens.size() % 3 == 1), GENERIC_POLYSPHEROCYLINDER_USAGE);
-
-            double r = tokens[0];
-            ValidateMsg(r > 0, "Chain radius is <= 0");
-            std::vector<Vector<3>> chainPos;
-            for (std::size_t i = 1; i < tokens.size(); i += 3)
-                chainPos.push_back({tokens[i], tokens[i + 1], tokens[i + 2]});
-
-            auto spherocylinderCreator = [r](const Vector<3> &beg, const Vector<3> &end) -> SpherocylinderData {
-                Vector<3> pos = (beg + end)/2.;
-                Vector<3> halfAxis = end - pos;
-                return {pos, halfAxis, r};
-            };
-            std::transform(chainPos.begin(), std::prev(chainPos.end()), std::next(chainPos.begin()),
-                           std::back_inserter(spheroc), spherocylinderCreator);
-        }
-
-        if (fieldsMap.find("spherocylinders") != fieldsMap.end()) {
-            auto tokens = ParseUtils::tokenize<double>(fieldsMap.at("spherocylinders"));
-            ValidateMsg(!tokens.empty() && (tokens.size() % 7 == 0), GENERIC_POLYSPHEROCYLINDER_USAGE);
-
-            for (std::size_t i{}; i < tokens.size(); i += 7) {
-                double r = tokens[i];
-                Vector<3> beg{tokens[i + 1], tokens[i + 2], tokens[i + 3]};
-                Vector<3> end{tokens[i + 4], tokens[i + 5], tokens[i + 6]};
-                Vector<3> pos = (beg + end)/2.;
-                Vector<3> halfAxis = end - pos;
-                ValidateMsg(r > 0, "Radius of spherocylinder " + std::to_string(i/7) + " is <= 0");
-                spheroc.emplace_back(pos, halfAxis, r);
-            }
-        }
-
-        ValidateMsg(!spheroc.empty(), GENERIC_POLYSPHEROCYLINDER_USAGE);
+        std::vector<SpherocylinderData> spherocylinderData;
+        if (fieldsMap.find("chain") != fieldsMap.end())
+            parse_chain(fieldsMap.at("chain"), spherocylinderData);
+        if (fieldsMap.find("spherocylinders") != fieldsMap.end())
+            parse_spherocylinders(fieldsMap.at("spherocylinders"), spherocylinderData);
+        ValidateMsg(!spherocylinderData.empty(), GENERIC_POLYSPHEROCYLINDER_USAGE);
 
         PolyspherocylinderTraits::PolyspherocylinderGeometry geometry(
-            std::move(spheroc), primaryAxis, secondaryAxis, geometricOrigin, namedPoints
+            std::move(spherocylinderData), primaryAxis, secondaryAxis, geometricOrigin, namedPoints
         );
         return std::make_unique<PolyspherocylinderTraits>(std::move(geometry));
     }
