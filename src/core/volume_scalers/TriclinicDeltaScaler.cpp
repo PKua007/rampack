@@ -4,11 +4,10 @@
 
 #include "TriclinicDeltaScaler.h"
 
-TriclinicBox TriclinicDeltaScaler::updateBox(const TriclinicBox &oldBox, double scalingStepSize,
-                                             std::mt19937 &mt) const
+TriclinicBox TriclinicDeltaScaler::updateBox(const TriclinicBox &oldBox, std::mt19937 &mt) const
 {
     auto dimensions = oldBox.getDimensions();
-    std::uniform_real_distribution<double> stepDistribution(-scalingStepSize, scalingStepSize);
+    std::uniform_real_distribution<double> stepDistribution(-this->stepSize, this->stepSize);
 
     if (this->scaleTogether) {
         for (std::size_t i{}; i < 3; i++)

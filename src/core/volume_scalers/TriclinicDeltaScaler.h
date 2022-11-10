@@ -21,10 +21,11 @@ public:
      * @param scaleTogether If @a true, all sides will be scaled at once. Otherwise, only a single, randomly chosen
      * side will be perturbed.
      */
-    explicit TriclinicDeltaScaler(bool scaleTogether) : scaleTogether{scaleTogether} { }
+    explicit TriclinicDeltaScaler(double stepSize, bool scaleTogether)
+            : TriclinicBoxScaler(stepSize), scaleTogether{scaleTogether}
+    { }
 
-    [[nodiscard]] TriclinicBox updateBox(const TriclinicBox &oldBox, double scalingStepSize,
-                                         std::mt19937 &mt) const override;
+    [[nodiscard]] TriclinicBox updateBox(const TriclinicBox &oldBox, std::mt19937 &mt) const override;
 };
 
 

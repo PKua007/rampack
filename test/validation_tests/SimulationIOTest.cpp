@@ -54,8 +54,8 @@ TEST_CASE("Simulation IO: storing and restoring")
     auto packing2 = std::make_unique<Packing>(box, shapes, std::move(pbc2), interaction, 1, 1);
     std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
     moveSamplers.push_back(std::make_unique<RototranslationSampler>(0.5, 0.1));
-    auto scaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>());
-    Simulation simulation(std::move(packing2), std::move(moveSamplers), 1, 1234, std::move(scaler));
+    auto scaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>(), 1);
+    Simulation simulation(std::move(packing2), std::move(moveSamplers), 1234, std::move(scaler));
 
     SECTION("without continuation") {
         auto inout_stream = std::make_unique<std::iostream>(&inout_buf);

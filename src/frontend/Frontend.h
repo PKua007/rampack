@@ -30,6 +30,7 @@ private:
 
     Parameters loadParameters(const std::string &inputFilename);
     void overwriteMoveStepSizes(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
+                                TriclinicBoxScaler &boxScaler,
                                 const std::map<std::string, std::string> &packingAuxInfo) const;
     void appendMoveStepSizesToAuxInfo(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
                                       double scalingStepSize, std::map<std::string, std::string> &auxInfo) const;

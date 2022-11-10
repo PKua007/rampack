@@ -39,7 +39,7 @@ namespace {
     }
 
     void register_scaling_direction(char direction, std::array<bool, 3> &isDirectionUsed) {
-        if (direction < 'x' && direction > 'z')
+        if (direction < 'x' || direction > 'z')
             throw ValidationException(SCALING_USAGE);
         std::size_t directionIdx = direction - 'x';
         if (isDirectionUsed[directionIdx])
@@ -141,7 +141,8 @@ namespace {
     }
 }
 
-std::unique_ptr<TriclinicBoxScaler>TriclinicBoxScalerFactory::create(const std::string &scalingType) {
+std::unique_ptr<TriclinicBoxScaler>
+TriclinicBoxScalerFactory::create(const std::string &scalingType, double initialStepSize) {
     std::string scalingTypeStripped = scalingType;
     std::string independentString = "independent ";
     bool scaleTogether = !startsWith(scalingType, independentString);
@@ -149,7 +150,7 @@ std::unique_ptr<TriclinicBoxScaler>TriclinicBoxScalerFactory::create(const std::
         scalingTypeStripped = scalingType.substr(independentString.length());
 
     if (scalingTypeStripped == "delta triclinic")
-        return std::make_unique<TriclinicDeltaScaler>(scaleTogether);
+        return std::make_unique<TriclinicDeltaScaler>(scaleTogether, initialStepSize);
     else
-        return std::make_unique<TriclinicAdapter>(create_volume_scaler(scalingType));
+        return std::make_unique<TriclinicAdapter>(create_volume_scaler(scalingType), initialStepSize);
 }
