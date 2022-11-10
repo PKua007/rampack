@@ -12,7 +12,8 @@
 
 class TriclinicBoxScalerFactory {
 public:
-    [[nodiscard]] static std::unique_ptr<TriclinicBoxScaler> create(const std::string &scalingType);
+    [[nodiscard]] static std::unique_ptr<TriclinicBoxScaler> create(const std::string &scalingType,
+                                                                    double initialStepSize);
 };
 
 

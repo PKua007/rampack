@@ -48,13 +48,12 @@ Simulation::Parameter::Parameter(double value) : parameter{std::make_unique<Cons
 }
 
 Simulation::Simulation(std::unique_ptr<Packing> packing, std::vector<std::unique_ptr<MoveSampler>> moveSamplers,
-                       double scalingStep, unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
+                       unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
                        const std::array<std::size_t, 3> &domainDivisions, bool handleSignals)
-        : moveSamplers{std::move(moveSamplers)}, scalingStep{scalingStep}, boxScaler{std::move(boxScaler)},
-          packing{std::move(packing)}, allParticleIndices(this->packing->size()), domainDivisions{domainDivisions}
+        : moveSamplers{std::move(moveSamplers)}, boxScaler{std::move(boxScaler)}, packing{std::move(packing)},
+          allParticleIndices(this->packing->size()), domainDivisions{domainDivisions}
 {
     Expects(!this->packing->empty());
-    Expects(scalingStep > 0);
     Expects(!this->moveSamplers.empty());
 
     this->numDomains = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies<>{});
@@ -77,10 +76,10 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, std::vector<std::unique
 }
 
 Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep,
-                       double scalingStep, unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
+                       unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
                        const std::array<std::size_t, 3> &domainDivisions, bool handleSignals)
-        : Simulation(std::move(packing), Simulation::makeRototranslation(translationStep, rotationStep),
-                     scalingStep, seed, std::move(boxScaler), domainDivisions, handleSignals)
+        : Simulation(std::move(packing), Simulation::makeRototranslation(translationStep, rotationStep), seed,
+                     std::move(boxScaler), domainDivisions, handleSignals)
 { }
 
 void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::size_t thermalisationCycles,
@@ -402,7 +401,7 @@ bool Simulation::tryScaling(const Interaction &interaction) {
     auto &mt = this->mts.front();
 
     TriclinicBox oldBox = this->packing->getBox();
-    TriclinicBox newBox = this->boxScaler->updateBox(oldBox, this->scalingStep, mt);
+    TriclinicBox newBox = this->boxScaler->updateBox(oldBox, mt);
     Expects(newBox.getVolume() != 0);
     double oldV = std::abs(oldBox.getVolume());
     double newV = std::abs(newBox.getVolume());
@@ -442,13 +441,17 @@ void Simulation::evaluateCounters(Logger &logger) {
         double rate = this->scalingCounter.getCurrentRate();
         this->scalingCounter.resetCurrent();
         if (rate > 0.2) {
-            this->scalingStep *= 1.1;
-            logger.info() << "-- Scaling rate: " << rate << ", step size increased: " << (this->scalingStep / 1.1);
-            logger << " -> " << this->scalingStep << std::endl;
+            double prevStepSize = this->boxScaler->getStepSize();
+            this->boxScaler->increaseStepSize();
+            double newStepSize = this->boxScaler->getStepSize();
+            logger.info() << "-- Scaling rate: " << rate << ", step size increased: " << prevStepSize;
+            logger << " -> " << newStepSize << std::endl;
         } else if (rate < 0.1) {
-            this->scalingStep /= 1.1;
-            logger.info() << "-- Scaling rate: " << rate << ", step size decreased: " << (this->scalingStep * 1.1);
-            logger << " -> " << this->scalingStep << std::endl;
+            double prevStepSize = this->boxScaler->getStepSize();
+            this->boxScaler->decreaseStepSize();
+            double newStepSize = this->boxScaler->getStepSize();
+            logger.info() << "-- Scaling rate: " << rate << ", step size decreased: " << prevStepSize;
+            logger << " -> " << newStepSize << std::endl;
         }
     }
 }
@@ -611,7 +614,7 @@ std::vector<std::unique_ptr<MoveSampler>> Simulation::makeRototranslation(double
 Simulation::MoveStatistics Simulation::getScalingStatistics() const {
     std::size_t total = this->scalingCounter.getMoves();
     std::size_t accepted = this->scalingCounter.getAcceptedMoves();
-    double stepSize = this->scalingStep;
+    double stepSize = this->boxScaler->getStepSize();
 
     return MoveStatistics("scaling", total, accepted, {StepSizeData("scaling", stepSize)});
 }

@@ -123,7 +123,6 @@ private:
     std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
     std::vector<bool> adjustmentCancelReported;
 
-    double scalingStep{};
     std::unique_ptr<TriclinicBoxScaler> boxScaler{};
     std::vector<Counter> moveCounters;
     Counter scalingCounter;
@@ -182,8 +181,8 @@ public:
      * @param domainDivisions domain divisions in each direction to use; {1, 1, 1} disables domain division
      * @param handleSignals if @a true, SIGINT and SIGCONT will be captured
      */
-    Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep,
-               double scalingStep, unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
+    Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep, unsigned long seed,
+               std::unique_ptr<TriclinicBoxScaler> boxScaler,
                const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1}, bool handleSignals = false);
 
     /**
@@ -197,7 +196,7 @@ public:
      * @param handleSignals if @a true, SIGINT and SIGCONT will be captured
      */
     Simulation(std::unique_ptr<Packing> packing, std::vector<std::unique_ptr<MoveSampler>> moveSamplers,
-               double scalingStep, unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
+               unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
                const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1}, bool handleSignals = false);
 
     /**
@@ -275,7 +274,7 @@ public:
     [[nodiscard]] double getTotalMicroseconds() const { return this->totalMicroseconds; }
 
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }
-    [[nodiscard]] double getCurrentScalingStep() const { return this->scalingStep; }
+    [[nodiscard]] double getCurrentScalingStep() const { return this->boxScaler->getStepSize(); }
 
     /**
      * @brief Returns total number of performed MC cycles (together with cycle offset)

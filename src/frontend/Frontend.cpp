@@ -205,7 +205,8 @@ int Frontend::casino(int argc, char **argv) {
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
     // Parse scaling type
-    std::unique_ptr<TriclinicBoxScaler> triclinicBoxScaler = TriclinicBoxScalerFactory::create(params.scalingType);
+    std::unique_ptr<TriclinicBoxScaler> triclinicBoxScaler = TriclinicBoxScalerFactory::create(params.scalingType,
+                                                                                               params.volumeStepSize);
 
     // Parse move type
     auto moveSamplerStrings = explode(params.moveTypes, ',');
@@ -240,10 +241,7 @@ int Frontend::casino(int argc, char **argv) {
     if (packingLoader.isRestored()) {
         packing = packingLoader.releasePacking();
         const auto &auxInfo = packingLoader.getAuxInfo();
-        this->overwriteMoveStepSizes(moveSamplers, auxInfo);
-        std::string scalingKey = Frontend::formatMoveKey("scaling", "scaling");
-        params.volumeStepSize = std::stod(auxInfo.at(scalingKey));
-        Validate(params.volumeStepSize > 0);
+        this->overwriteMoveStepSizes(moveSamplers, *triclinicBoxScaler, auxInfo);
     } else {
         // Same number of scaling and domain threads
         bc = std::make_unique<PeriodicBoundaryConditions>();
@@ -256,7 +254,7 @@ int Frontend::casino(int argc, char **argv) {
     this->createWalls(*packing, params.walls);
 
     // Perform simulations starting from initial run
-    Simulation simulation(std::move(packing), std::move(moveSamplers), params.volumeStepSize, params.seed,
+    Simulation simulation(std::move(packing), std::move(moveSamplers), params.seed,
                           std::move(triclinicBoxScaler), domainDivisions, params.saveOnSignal);
 
     for (std::size_t i = startRunIndex; i < params.runsParameters.size(); i++) {
@@ -809,14 +807,13 @@ void Frontend::printMoveStatistics(const Simulation &simulation) const {
 }
 
 void Frontend::overwriteMoveStepSizes(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
+                                      TriclinicBoxScaler &boxScaler,
                                       const std::map<std::string, std::string> &packingAuxInfo) const
 {
     std::set<std::string> notUsedStepSizes;
-    std::string scalingKey = Frontend::formatMoveKey("scaling", "scaling");
-    for (const auto &[key, value] : packingAuxInfo) {
-        if (Frontend::isStepSizeKey(key) && key != scalingKey)
+    for (const auto &[key, value] : packingAuxInfo)
+        if (Frontend::isStepSizeKey(key))
             notUsedStepSizes.insert(key);
-    }
 
     for (auto &moveSampler : moveSamplers) {
         auto groupName = moveSampler->getName();
@@ -831,6 +828,17 @@ void Frontend::overwriteMoveStepSizes(const std::vector<std::unique_ptr<MoveSamp
             notUsedStepSizes.erase(moveKey);
             moveSampler->setStepSize(moveName, std::stod(packingAuxInfo.at(moveKey)));
         }
+    }
+
+    std::string scalingKey = Frontend::formatMoveKey("scaling", "scaling");
+    if (packingAuxInfo.find(scalingKey) == packingAuxInfo.end()) {
+        this->logger.warn() << "Step size " << scalingKey << " not found in *.dat metadata. Falling back to ";
+        this->logger << "input file value " << boxScaler.getStepSize() << std::endl;
+    } else {
+        double volumeStepSize = std::stod(packingAuxInfo.at(scalingKey));
+        Validate(volumeStepSize > 0);
+        boxScaler.setStepSize(volumeStepSize);
+        notUsedStepSizes.erase(scalingKey);
     }
 
     if (notUsedStepSizes.empty())
