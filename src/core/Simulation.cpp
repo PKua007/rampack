@@ -688,3 +688,81 @@ void Simulation::fixRotationMatrix(Matrix<3, 3> &rotation) {
 double Simulation::getRotationMatrixDeviation(const Matrix<3, 3> &rotation) {
     return (rotation * rotation.transpose() - Matrix<3, 3>::identity()).norm2();
 }
+
+void Simulation::SimulationContext::combine(Simulation::SimulationContext &other) {
+    if (other.hasTemperature())
+        this->temperature = other.temperature;
+    if (other.hasPressure())
+        this->pressure = other.pressure;
+    if (other.hasMoveSamplers())
+        this->moveSamplers = other.moveSamplers;
+    if (other.hasBoxScaler())
+        this->boxScaler = other.boxScaler;
+}
+
+bool Simulation::SimulationContext::isComplete() const {
+    return this->hasTemperature() && this->hasPressure() && this->hasMoveSamplers() && this->hasBoxScaler();
+}
+
+const DynamicParameter &Simulation::SimulationContext::getTemperature() const {
+    Expects(this->hasTemperature());
+    return this->temperature;
+}
+
+DynamicParameter &Simulation::SimulationContext::getTemperature() {
+    Expects(this->hasTemperature());
+    return this->temperature;
+}
+
+void Simulation::SimulationContext::setTemperature(Simulation::Parameter temperature_) {
+    Expects(temperature_.hasValue());
+    this->temperature = std::move(temperature_);
+}
+
+const DynamicParameter &Simulation::SimulationContext::getPressure() const {
+    Expects(this->hasPressure());
+    return this->pressure;
+}
+
+DynamicParameter &Simulation::SimulationContext::getPressure() {
+    Expects(this->hasPressure());
+    return this->pressure;
+}
+
+void Simulation::SimulationContext::setPressure(Simulation::Parameter pressure_) {
+    Expects(pressure_.hasValue());
+    SimulationContext::pressure = std::move(pressure_);
+}
+
+const std::vector<std::shared_ptr<const MoveSampler>> &Simulation::SimulationContext::getMoveSamplers() const {
+    Expects(this->hasMoveSamplers());
+    return this->constMoveSamplers;
+}
+
+const std::vector<std::shared_ptr<MoveSampler>> &Simulation::SimulationContext::getMoveSamplers() {
+    Expects(this->hasMoveSamplers());
+    return this->moveSamplers;
+}
+
+void Simulation::SimulationContext::setMoveSamplers(std::vector<std::shared_ptr<MoveSampler>> moveSamplers_) {
+    Expects(!moveSamplers_.empty());
+    Expects(std::all_of(moveSamplers_.begin(), moveSamplers_.end(),
+                        [](const auto &s) { return s != nullptr; }));
+    this->moveSamplers = moveSamplers_;
+    this->constMoveSamplers.assign(moveSamplers_.begin(), moveSamplers_.end());
+}
+
+const TriclinicBoxScaler &Simulation::SimulationContext::getBoxScaler() const {
+    Expects(this->hasBoxScaler());
+    return *this->boxScaler;
+}
+
+TriclinicBoxScaler &Simulation::SimulationContext::getBoxScaler() {
+    Expects(this->hasBoxScaler());
+    return *this->boxScaler;
+}
+
+void Simulation::SimulationContext::setBoxScaler(std::shared_ptr<TriclinicBoxScaler> boxScaler_) {
+    Expects(boxScaler_ != nullptr);
+    SimulationContext::boxScaler = std::move(boxScaler_);
+}
