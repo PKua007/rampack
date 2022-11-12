@@ -15,6 +15,7 @@
 #include "move_samplers/RototranslationSampler.h"
 #include "dynamic_parameters/ConstantDynamicParameter.h"
 
+
 namespace {
     std::atomic<bool> sigint_received = false;
     static_assert(decltype(sigint_received)::is_always_lock_free);
@@ -40,9 +41,11 @@ namespace {
     };
 }
 
+
 void sigint_handler([[maybe_unused]] int signal) {
     sigint_received = true;
 }
+
 
 Simulation::Parameter::Parameter(double value) : parameter{std::make_shared<ConstantDynamicParameter>(value)} {
 
@@ -72,6 +75,10 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, unsigned long seed,
     }
 }
 
+Simulation::Simulation(std::unique_ptr<Packing> packing, unsigned long seed,
+                       const std::array<std::size_t, 3> &domainDivisions, bool handleSignals)
+        : Simulation(std::move(packing), seed, {}, domainDivisions, handleSignals)
+{ }
 
 Simulation::Simulation(std::unique_ptr<Packing> packing, std::vector<std::unique_ptr<MoveSampler>> moveSamplers,
                        unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
@@ -87,7 +94,7 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep,
                      std::move(boxScaler), domainDivisions, handleSignals)
 { }
 
-void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::size_t thermalisationCycles,
+void Simulation::integrate(Simulation::SimulationContext context_, std::size_t thermalisationCycles,
                            std::size_t averagingCycles, std::size_t averagingEvery, std::size_t snapshotEvery,
                            const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
                            std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
@@ -96,8 +103,8 @@ void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::siz
     if (averagingCycles > 0)
         Expects(averagingEvery > 0 && averagingEvery < averagingCycles);
 
-    this->context.setTemperature(std::move(temperature_));
-    this->context.setPressure(std::move(pressure_));
+    this->context.combine(context_);
+    Expects(this->context.isComplete());
 
     std::size_t maxCycles = cycleOffset + thermalisationCycles;
     this->temperature = this->context.getTemperature().getValueForCycle(cycleOffset, maxCycles);
@@ -186,14 +193,27 @@ void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::siz
     logger.info() << "Integration completed after " << this->totalCycles << " cycles." << std::endl;
 }
 
-void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std::size_t snapshotEvery,
+void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::size_t thermalisationCycles,
+                           std::size_t averagingCycles, std::size_t averagingEvery, std::size_t snapshotEvery,
+                           const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
+                           std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
+                           std::size_t cycleOffset)
+{
+    SimulationContext context_;
+    context_.setTemperature(std::move(temperature_));
+    context_.setPressure(std::move(pressure_));
+    this->integrate(std::move(context_), thermalisationCycles, averagingCycles, averagingEvery, snapshotEvery,
+                    shapeTraits, std::move(observablesCollector_), std::move(simulationRecorder), logger, cycleOffset);
+}
+
+void Simulation::relaxOverlaps(Simulation::SimulationContext context_, std::size_t snapshotEvery,
                                const ShapeTraits &shapeTraits,
                                std::unique_ptr<ObservablesCollector> observablesCollector_,
                                std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
                                std::size_t cycleOffset)
 {
-    this->context.setTemperature(std::move(temperature_));
-    this->context.setPressure(std::move(pressure_));
+    this->context.combine(context_);
+    Expects(this->context.isComplete());
 
     std::size_t maxCycles = std::numeric_limits<std::size_t>::max();
     this->temperature = this->context.getTemperature().getValueForCycle(cycleOffset, maxCycles);
@@ -245,6 +265,19 @@ void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std:
 
     if (!sigint_received)
         logger.info() << "Overlaps eliminated after " << this->totalCycles << " cycles." << std::endl;
+}
+
+void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std::size_t snapshotEvery,
+                               const ShapeTraits &shapeTraits,
+                               std::unique_ptr<ObservablesCollector> observablesCollector_,
+                               std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
+                               std::size_t cycleOffset)
+{
+    SimulationContext context_;
+    context_.setTemperature(std::move(temperature_));
+    context_.setPressure(std::move(pressure_));
+    this->relaxOverlaps(std::move(context_), snapshotEvery, shapeTraits, std::move(observablesCollector_),
+                        std::move(simulationRecorder), logger, cycleOffset);
 }
 
 void Simulation::reset() {
