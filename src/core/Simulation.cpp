@@ -759,8 +759,10 @@ void Simulation::SimulationContext::combine(Simulation::SimulationContext &other
         this->temperature = other.temperature;
     if (other.hasPressure())
         this->pressure = other.pressure;
-    if (other.hasMoveSamplers())
+    if (other.hasMoveSamplers()) {
+        this->constMoveSamplers = other.constMoveSamplers;
         this->moveSamplers = other.moveSamplers;
+    }
     if (other.hasBoxScaler())
         this->boxScaler = other.boxScaler;
 }

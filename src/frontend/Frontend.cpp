@@ -204,16 +204,8 @@ int Frontend::casino(int argc, char **argv) {
     }
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    // Parse scaling type
-    std::unique_ptr<TriclinicBoxScaler> triclinicBoxScaler = TriclinicBoxScalerFactory::create(params.scalingType,
-                                                                                               params.volumeStepSize);
-
-    // Parse move type
-    auto moveSamplerStrings = explode(params.moveTypes, ',');
-    std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
-    moveSamplers.reserve(moveSamplerStrings.size());
-    for (const auto &moveSamplerString : moveSamplerStrings)
-        moveSamplers.push_back(MoveSamplerFactory::create(moveSamplerString, *shapeTraits));
+    // Parse initial simulation context
+    auto context = Frontend::parseSimulationContext(params, *shapeTraits);
 
     // Load starting state from a previous or current run packing depending on --start-from and --continue
     // options combination
@@ -237,11 +229,16 @@ int Frontend::casino(int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
+    // Replay all inheritable parameters from all runs up to starting point and combine them
+    for (std::size_t i{}; i <= startRunIndex; i++)
+        Frontend::combineContext(context, params.runsParameters[i], *shapeTraits);
+    ValidateMsg(context.isComplete(), "Some of parameters: pressure, temperature, moveTypes, scalingType are missing");
+
     std::unique_ptr<Packing> packing;
     if (packingLoader.isRestored()) {
         packing = packingLoader.releasePacking();
         const auto &auxInfo = packingLoader.getAuxInfo();
-        this->overwriteMoveStepSizes(moveSamplers, *triclinicBoxScaler, auxInfo);
+        this->overwriteMoveStepSizes(context, auxInfo);
     } else {
         // Same number of scaling and domain threads
         bc = std::make_unique<PeriodicBoundaryConditions>();
@@ -254,16 +251,20 @@ int Frontend::casino(int argc, char **argv) {
     this->createWalls(*packing, params.walls);
 
     // Perform simulations starting from initial run
-    Simulation simulation(std::move(packing), std::move(moveSamplers), params.seed,
-                          std::move(triclinicBoxScaler), domainDivisions, params.saveOnSignal);
+    Simulation simulation(std::move(packing), params.seed, domainDivisions, params.saveOnSignal);
 
     for (std::size_t i = startRunIndex; i < params.runsParameters.size(); i++) {
-        if (std::holds_alternative<Parameters::IntegrationParameters>(params.runsParameters[i])) {
-            const auto &runParams = std::get<Parameters::IntegrationParameters>(params.runsParameters[i]);
-            this->performIntegration(simulation, runParams, *shapeTraits, cycleOffset, isContinuation);
-        } else if (std::holds_alternative<Parameters::OverlapRelaxationParameters>(params.runsParameters[i])) {
-            const auto &runParams = std::get<Parameters::OverlapRelaxationParameters>(params.runsParameters[i]);
-            this->performOverlapRelaxation(simulation, params.shapeName, params.shapeAttributes, runParams, shapeTraits,
+        const auto &runParamsI = params.runsParameters[i];
+        // Context for starting run is already prepared
+        if (i != startRunIndex)
+            Frontend::combineContext(context, runParamsI, *shapeTraits);
+
+        if (std::holds_alternative<Parameters::IntegrationParameters>(runParamsI)) {
+            const auto &runParams = std::get<Parameters::IntegrationParameters>(runParamsI);
+            this->performIntegration(simulation, context, runParams, *shapeTraits, cycleOffset, isContinuation);
+        } else if (std::holds_alternative<Parameters::OverlapRelaxationParameters>(runParamsI)) {
+            const auto &runParams = std::get<Parameters::OverlapRelaxationParameters>(runParamsI);
+            this->performOverlapRelaxation(simulation, context, params.shapeName, params.shapeAttributes, runParams, shapeTraits,
                                            cycleOffset, isContinuation);
         } else {
             throw AssertionException("Unimplemented run type");
@@ -279,8 +280,19 @@ int Frontend::casino(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-void Frontend::performIntegration(Simulation &simulation, const Parameters::IntegrationParameters &runParams,
-                                  const ShapeTraits &shapeTraits, size_t cycleOffset, bool isContinuation)
+void Frontend::combineContext(Simulation::SimulationContext &context, const Parameters::RunParameters &runParams,
+                              const ShapeTraits &traits)
+{
+    auto contextCreator = [&traits](const auto &runParams) {
+        return parseSimulationContext(runParams, traits);
+    };
+    auto runContext = std::visit(contextCreator, runParams);
+    context.combine(runContext);
+}
+
+void Frontend::performIntegration(Simulation &simulation, Simulation::SimulationContext &context,
+                                  const Parameters::IntegrationParameters &runParams, const ShapeTraits &shapeTraits,
+                                  std::size_t cycleOffset, bool isContinuation)
 {
     this->logger.setAdditionalText(runParams.runName);
     this->logger.info() << std::endl;
@@ -296,15 +308,13 @@ void Frontend::performIntegration(Simulation &simulation, const Parameters::Inte
                                                 runParams.snapshotEvery, isContinuation);
     }
 
-    auto temperatureUpdater = ParameterUpdaterFactory::create(runParams.temperature);
-    auto pressureUpdater = ParameterUpdaterFactory::create(runParams.pressure);
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','),
                                                          explode(runParams.bulkObservables, ','),
                                                          simulation.getPacking().getScalingThreads());
     this->attachSnapshotOut(*collector, runParams.observableSnapshotFilename, isContinuation);
-    simulation.integrate(std::move(temperatureUpdater), std::move(pressureUpdater), runParams.thermalisationCycles,
-                         runParams.averagingCycles, runParams.averagingEvery, runParams.snapshotEvery,
-                         shapeTraits, std::move(collector), std::move(recorder), logger, cycleOffset);
+    simulation.integrate(context, runParams.thermalisationCycles, runParams.averagingCycles, runParams.averagingEvery,
+                         runParams.snapshotEvery, shapeTraits, std::move(collector), std::move(recorder),
+                         this->logger, cycleOffset);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
     this->logger.info();
@@ -344,8 +354,8 @@ std::unique_ptr<SimulationRecorder> Frontend::loadSimulationRecorder(const std::
     return std::make_unique<SimulationRecorder>(std::move(inout), numMolecules, cycleStep, isContinuation);
 }
 
-void Frontend::performOverlapRelaxation(Simulation &simulation, const std::string &shapeName,
-                                        const std::string &shapeAttr,
+void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::SimulationContext &context,
+                                        const std::string &shapeName, const std::string &shapeAttr,
                                         const Parameters::OverlapRelaxationParameters &runParams,
                                         std::shared_ptr<ShapeTraits> shapeTraits, size_t cycleOffset,
                                         bool isContinuation)
@@ -369,14 +379,12 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, const std::strin
         shapeTraits = std::make_shared<CompoundShapeTraits>(shapeTraits, helperShape);
     }
 
-    auto temperatureUpdater = ParameterUpdaterFactory::create(runParams.temperature);
-    auto pressureUpdater = ParameterUpdaterFactory::create(runParams.pressure);
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','),
                                                          explode(runParams.bulkObservables, ','),
                                                          simulation.getPacking().getScalingThreads());
     this->attachSnapshotOut(*collector, runParams.observableSnapshotFilename, isContinuation);
-    simulation.relaxOverlaps(std::move(temperatureUpdater), std::move(pressureUpdater), runParams.snapshotEvery,
-                             *shapeTraits, std::move(collector), std::move(recorder), this->logger, cycleOffset);
+    simulation.relaxOverlaps(context, runParams.snapshotEvery, *shapeTraits, std::move(collector), std::move(recorder),
+                             this->logger, cycleOffset);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
     this->logger.info();
@@ -806,8 +814,7 @@ void Frontend::printMoveStatistics(const Simulation &simulation) const {
     }
 }
 
-void Frontend::overwriteMoveStepSizes(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
-                                      TriclinicBoxScaler &boxScaler,
+void Frontend::overwriteMoveStepSizes(Simulation::SimulationContext &context,
                                       const std::map<std::string, std::string> &packingAuxInfo) const
 {
     std::set<std::string> notUsedStepSizes;
@@ -815,7 +822,7 @@ void Frontend::overwriteMoveStepSizes(const std::vector<std::unique_ptr<MoveSamp
         if (Frontend::isStepSizeKey(key))
             notUsedStepSizes.insert(key);
 
-    for (auto &moveSampler : moveSamplers) {
+    for (auto &moveSampler : context.getMoveSamplers()) {
         auto groupName = moveSampler->getName();
         for (const auto &[moveName, stepSize] : moveSampler->getStepSizes()) {
             std::string moveKey = Frontend::formatMoveKey(groupName, moveName);
@@ -833,11 +840,11 @@ void Frontend::overwriteMoveStepSizes(const std::vector<std::unique_ptr<MoveSamp
     std::string scalingKey = Frontend::formatMoveKey("scaling", "scaling");
     if (packingAuxInfo.find(scalingKey) == packingAuxInfo.end()) {
         this->logger.warn() << "Step size " << scalingKey << " not found in *.dat metadata. Falling back to ";
-        this->logger << "input file value " << boxScaler.getStepSize() << std::endl;
+        this->logger << "input file value " << context.getBoxScaler().getStepSize() << std::endl;
     } else {
         double volumeStepSize = std::stod(packingAuxInfo.at(scalingKey));
         Validate(volumeStepSize > 0);
-        boxScaler.setStepSize(volumeStepSize);
+        context.getBoxScaler().setStepSize(volumeStepSize);
         notUsedStepSizes.erase(scalingKey);
     }
 
@@ -1305,4 +1312,32 @@ void Frontend::attachSnapshotOut(ObservablesCollector &collector, const std::str
     ValidateOpenedDesc(*out, filename, "to store observables");
     this->logger.info() << "Observable snapshots are stored on the fly to '" << filename << "'" << std::endl;
     collector.attachOnTheFlyOutput(std::move(out));
+}
+
+Simulation::SimulationContext Frontend::parseSimulationContext(const InheritableParameters &params,
+                                                               const ShapeTraits &traits)
+{
+    Simulation::SimulationContext context;
+
+    if (!params.scalingType.empty()) {
+        Validate(params.volumeStepSize > 0);
+        context.setBoxScaler(TriclinicBoxScalerFactory::create(params.scalingType, params.volumeStepSize));
+    }
+
+    if (!params.moveTypes.empty()) {
+        auto moveSamplerStrings = explode(params.moveTypes, ',');
+        std::vector<std::shared_ptr<MoveSampler>> moveSamplers;
+        moveSamplers.reserve(moveSamplerStrings.size());
+        for (const auto &moveSamplerString: moveSamplerStrings)
+            moveSamplers.push_back(MoveSamplerFactory::create(moveSamplerString, traits));
+        context.setMoveSamplers(std::move(moveSamplers));
+    }
+
+    if (!params.temperature.empty())
+        context.setTemperature(ParameterUpdaterFactory::create(params.temperature));
+
+    if (!params.pressure.empty())
+        context.setPressure(ParameterUpdaterFactory::create(params.pressure));
+
+    return context;
 }
