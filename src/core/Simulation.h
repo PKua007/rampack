@@ -211,6 +211,9 @@ public:
     Simulation(std::unique_ptr<Packing> packing, unsigned long seed, SimulationContext initialContext,
                const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1}, bool handleSignals = false);
 
+    Simulation(std::unique_ptr<Packing> packing, unsigned long seed,
+               const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1}, bool handleSignals = false);
+
     /**
      * @brief Constructs the simulation for given parameters - "legacy" version with hardcoded rototranslation moves.
      * @param packing initial configuration of shapes
@@ -262,6 +265,12 @@ public:
                    std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
                    std::size_t cycleOffset = 0);
 
+    void integrate(SimulationContext context_, std::size_t thermalisationCycles, std::size_t averagingCycles,
+                   std::size_t averagingEvery, std::size_t snapshotEvery, const ShapeTraits &shapeTraits,
+                   std::unique_ptr<ObservablesCollector> observablesCollector_,
+                   std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
+                   std::size_t cycleOffset = 0);
+
     /**
      * @brief Perform overlap reduction scheme - overlap counting is turned on and moves are continued until there is no
      * overlaps in the system.
@@ -276,6 +285,11 @@ public:
      * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
      */
     void relaxOverlaps(Parameter temperature_, Parameter pressure_, std::size_t snapshotEvery,
+                       const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
+                       std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
+                       std::size_t cycleOffset = 0);
+
+    void relaxOverlaps(SimulationContext context_, std::size_t snapshotEvery,
                        const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
                        std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
                        std::size_t cycleOffset = 0);
