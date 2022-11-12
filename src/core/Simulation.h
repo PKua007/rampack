@@ -87,11 +87,15 @@ public:
     private:
         friend class Simulation;
 
-        std::unique_ptr<DynamicParameter> parameter;
+        std::shared_ptr<DynamicParameter> parameter;
 
     public:
+        Parameter() = default;
         Parameter(double value);
+        Parameter(std::shared_ptr<DynamicParameter> updater) : parameter{std::move(updater)} { }
         Parameter(std::unique_ptr<DynamicParameter> updater) : parameter{std::move(updater)} { }
+        operator DynamicParameter&() { return *this->parameter; }
+        operator const DynamicParameter&() const { return *this->parameter; }
     };
 
 private:

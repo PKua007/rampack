@@ -43,7 +43,7 @@ void sigint_handler([[maybe_unused]] int signal) {
     sigint_received = true;
 }
 
-Simulation::Parameter::Parameter(double value) : parameter{std::make_unique<ConstantDynamicParameter>(value)} {
+Simulation::Parameter::Parameter(double value) : parameter{std::make_shared<ConstantDynamicParameter>(value)} {
 
 }
 
