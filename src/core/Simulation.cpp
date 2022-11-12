@@ -7,6 +7,7 @@
 #include <chrono>
 #include <atomic>
 #include <csignal>
+#include <ZipIterator.hpp>
 
 #include "Simulation.h"
 #include "DomainDecomposition.h"
@@ -47,14 +48,13 @@ Simulation::Parameter::Parameter(double value) : parameter{std::make_shared<Cons
 
 }
 
-Simulation::Simulation(std::unique_ptr<Packing> packing, std::vector<std::unique_ptr<MoveSampler>> moveSamplers,
-                       unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
-                       const std::array<std::size_t, 3> &domainDivisions, bool handleSignals)
-        : moveSamplers{std::move(moveSamplers)}, boxScaler{std::move(boxScaler)}, packing{std::move(packing)},
-          allParticleIndices(this->packing->size()), domainDivisions{domainDivisions}
+Simulation::Simulation(std::unique_ptr<Packing> packing, unsigned long seed,
+                       Simulation::SimulationContext initialContext, const std::array<std::size_t, 3> &domainDivisions,
+                       bool handleSignals)
+        : context{std::move(initialContext)}, packing{std::move(packing)}, allParticleIndices(this->packing->size()),
+          domainDivisions{domainDivisions}
 {
     Expects(!this->packing->empty());
-    Expects(!this->moveSamplers.empty());
 
     this->numDomains = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies<>{});
     Expects(this->numDomains > 0);
@@ -64,9 +64,6 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, std::vector<std::unique
     for (std::size_t i{}; i < this->numDomains; i++)
         this->mts.emplace_back(seed + i);
 
-    this->moveCounters.resize(this->moveSamplers.size());
-    this->adjustmentCancelReported.resize(this->moveSamplers.size(), false);
-
     std::iota(this->allParticleIndices.begin(), this->allParticleIndices.end(), 0);
 
     if (handleSignals) {
@@ -74,6 +71,14 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, std::vector<std::unique
         std::signal(SIGTERM, sigint_handler);
     }
 }
+
+
+Simulation::Simulation(std::unique_ptr<Packing> packing, std::vector<std::unique_ptr<MoveSampler>> moveSamplers,
+                       unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
+                       const std::array<std::size_t, 3> &domainDivisions, bool handleSignals)
+        : Simulation(std::move(packing), seed, Simulation::makeContext(std::move(moveSamplers), std::move(boxScaler)),
+                     domainDivisions, handleSignals)
+{ }
 
 Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep, double rotationStep,
                        unsigned long seed, std::unique_ptr<TriclinicBoxScaler> boxScaler,
@@ -91,9 +96,12 @@ void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::siz
     if (averagingCycles > 0)
         Expects(averagingEvery > 0 && averagingEvery < averagingCycles);
 
+    this->context.setTemperature(std::move(temperature_));
+    this->context.setPressure(std::move(pressure_));
+
     std::size_t maxCycles = cycleOffset + thermalisationCycles;
-    this->temperature = temperature_.parameter->getValueForCycle(cycleOffset, maxCycles);
-    this->pressure = pressure_.parameter->getValueForCycle(cycleOffset, maxCycles);
+    this->temperature = this->context.getTemperature().getValueForCycle(cycleOffset, maxCycles);
+    this->pressure = this->context.getPressure().getValueForCycle(cycleOffset, maxCycles);
     this->observablesCollector = std::move(observablesCollector_);
     this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
     this->reset();
@@ -120,8 +128,8 @@ void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::siz
         logger.info() << "Starting thermalisation..." << std::endl;
         for (std::size_t i{}; i < thermalisationCycles; i++) {
             this->performCycle(logger, shapeTraits);
-            this->temperature = temperature_.parameter->getValueForCycle(this->totalCycles, maxCycles);
-            this->pressure = pressure_.parameter->getValueForCycle(this->totalCycles, maxCycles);
+            this->temperature = this->context.getTemperature().getValueForCycle(this->totalCycles, maxCycles);
+            this->pressure = this->context.getPressure().getValueForCycle(this->totalCycles, maxCycles);
             this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
 
             if (this->totalCycles % 10000 == 0)
@@ -184,9 +192,12 @@ void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std:
                                std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
                                std::size_t cycleOffset)
 {
+    this->context.setTemperature(std::move(temperature_));
+    this->context.setPressure(std::move(pressure_));
+
     std::size_t maxCycles = std::numeric_limits<std::size_t>::max();
-    this->temperature = temperature_.parameter->getValueForCycle(cycleOffset, maxCycles);
-    this->pressure = pressure_.parameter->getValueForCycle(cycleOffset, maxCycles);
+    this->temperature = this->context.getTemperature().getValueForCycle(cycleOffset, maxCycles);
+    this->pressure = this->context.getPressure().getValueForCycle(cycleOffset, maxCycles);
     this->observablesCollector = std::move(observablesCollector_);
     this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
     this->reset();
@@ -207,8 +218,8 @@ void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std:
     logger.info() << "Starting overlap relaxation..." << std::endl;
     while (this->packing->getCachedNumberOfOverlaps() > 0) {
         this->performCycle(logger, shapeTraits);
-        this->temperature = temperature_.parameter->getValueForCycle(this->totalCycles, maxCycles);
-        this->pressure = pressure_.parameter->getValueForCycle(this->totalCycles, maxCycles);
+        this->temperature = this->context.getTemperature().getValueForCycle(this->totalCycles, maxCycles);
+        this->pressure = this->context.getPressure().getValueForCycle(this->totalCycles, maxCycles);
         this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
 
         if (this->totalCycles % 10000 == 0)
@@ -238,6 +249,9 @@ void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std:
 
 void Simulation::reset() {
     std::uniform_int_distribution<int>(0, this->packing->size() - 1);
+    std::size_t numMoveSamplers = this->context.getMoveSamplers().size();
+    this->moveCounters.resize(numMoveSamplers);
+    this->adjustmentCancelReported.resize(numMoveSamplers, false);
     for (auto &moveCounter : this->moveCounters)
         moveCounter.reset();
     this->scalingCounter.reset();
@@ -356,8 +370,9 @@ bool Simulation::tryMove(const ShapeTraits &shapeTraits, const std::vector<std::
                          std::vector<Counter> &moveCounters_, const std::vector<std::size_t> &moveTypeAccumulations,
                          std::optional<ActiveDomain> boundaries)
 {
-    Expects(moveCounters_.size() == this->moveSamplers.size());
-    Expects(moveTypeAccumulations.size() == this->moveSamplers.size());
+    const auto &moveSamplers = this->context.getMoveSamplers();
+    Expects(moveCounters_.size() == moveSamplers.size());
+    Expects(moveTypeAccumulations.size() == moveSamplers.size());
 
     std::size_t numMoves = moveTypeAccumulations.back();
     std::uniform_int_distribution<std::size_t> moveDistribution(0, numMoves - 1);
@@ -370,7 +385,7 @@ bool Simulation::tryMove(const ShapeTraits &shapeTraits, const std::vector<std::
         moveType++;
     }
 
-    auto &moveSampler = this->moveSamplers[moveType];
+    auto &moveSampler = moveSamplers[moveType];
     auto move = moveSampler->sampleMove(*this->packing, shapeTraits, particleIndices, mt);
     const auto &interaction = shapeTraits.getInteraction();
     double dE{};
@@ -399,9 +414,10 @@ bool Simulation::tryMove(const ShapeTraits &shapeTraits, const std::vector<std::
 
 bool Simulation::tryScaling(const Interaction &interaction) {
     auto &mt = this->mts.front();
+    auto &boxScaler = this->context.getBoxScaler();
 
     TriclinicBox oldBox = this->packing->getBox();
-    TriclinicBox newBox = this->boxScaler->updateBox(oldBox, mt);
+    TriclinicBox newBox = boxScaler.updateBox(oldBox, mt);
     Expects(newBox.getVolume() != 0);
     double oldV = std::abs(oldBox.getVolume());
     double newV = std::abs(newBox.getVolume());
@@ -437,19 +453,20 @@ bool Simulation::tryScaling(const Interaction &interaction) {
 void Simulation::evaluateCounters(Logger &logger) {
     this->evaluateMoleculeMoveCounter(logger);
 
+    auto &boxScaler = this->context.getBoxScaler();
     if (this->scalingCounter.getMovesSinceEvaluation() >= 100) {
         double rate = this->scalingCounter.getCurrentRate();
         this->scalingCounter.resetCurrent();
         if (rate > 0.2) {
-            double prevStepSize = this->boxScaler->getStepSize();
-            this->boxScaler->increaseStepSize();
-            double newStepSize = this->boxScaler->getStepSize();
+            double prevStepSize = boxScaler.getStepSize();
+            boxScaler.increaseStepSize();
+            double newStepSize = boxScaler.getStepSize();
             logger.info() << "-- Scaling rate: " << rate << ", step size increased: " << prevStepSize;
             logger << " -> " << newStepSize << std::endl;
         } else if (rate < 0.1) {
-            double prevStepSize = this->boxScaler->getStepSize();
-            this->boxScaler->decreaseStepSize();
-            double newStepSize = this->boxScaler->getStepSize();
+            double prevStepSize = boxScaler.getStepSize();
+            boxScaler.decreaseStepSize();
+            double newStepSize = boxScaler.getStepSize();
             logger.info() << "-- Scaling rate: " << rate << ", step size decreased: " << prevStepSize;
             logger << " -> " << newStepSize << std::endl;
         }
@@ -457,8 +474,9 @@ void Simulation::evaluateCounters(Logger &logger) {
 }
 
 void Simulation::evaluateMoleculeMoveCounter(Logger &logger) {
-    for (std::size_t i{}; i < this->moveSamplers.size(); i++) {
-        auto &moveSampler = *this->moveSamplers[i];
+    const auto &moveSamplers = this->context.getMoveSamplers();
+    for (std::size_t i{}; i < moveSamplers.size(); i++) {
+        auto &moveSampler = *moveSamplers[i];
         auto &moveCounter = this->moveCounters[i];
         std::vector<bool>::reference cancelReported = this->adjustmentCancelReported[i];
         std::size_t requestedMoves = moveSampler.getNumOfRequestedMoves(this->packing->size());
@@ -576,10 +594,11 @@ void Simulation::accumulateCounters(std::vector<Counter> &out, const std::vector
 }
 
 std::vector<std::size_t> Simulation::calculateMoveTypeAccumulations(std::size_t numParticles) const {
+    const auto &moveSamplers = this->context.getMoveSamplers();
     std::vector<std::size_t> moveTypeAccumulations;
-    moveTypeAccumulations.reserve(this->moveSamplers.size());
+    moveTypeAccumulations.reserve(moveSamplers.size());
     std::size_t moveTypeAccumulation = 0;
-    for (const auto &moveSampler : this->moveSamplers) {
+    for (const auto &moveSampler : moveSamplers) {
         moveTypeAccumulation += moveSampler->getNumOfRequestedMoves(numParticles);
         moveTypeAccumulations.push_back(moveTypeAccumulation);
     }
@@ -614,19 +633,17 @@ std::vector<std::unique_ptr<MoveSampler>> Simulation::makeRototranslation(double
 Simulation::MoveStatistics Simulation::getScalingStatistics() const {
     std::size_t total = this->scalingCounter.getMoves();
     std::size_t accepted = this->scalingCounter.getAcceptedMoves();
-    double stepSize = this->boxScaler->getStepSize();
+    double stepSize = this->context.getBoxScaler().getStepSize();
 
     return MoveStatistics("scaling", total, accepted, {StepSizeData("scaling", stepSize)});
 }
 
 std::vector<Simulation::MoveStatistics> Simulation::getMovesStatistics() const {
     std::vector<MoveStatistics> moveGroupsStatistics;
+    const auto &moveSamplers = this->context.getMoveSamplers();
 
-    Assert(this->moveSamplers.size() == this->moveCounters.size());
-    for (std::size_t i{}; i < this->moveSamplers.size(); i++) {
-        const auto &moveSampler = this->moveSamplers[i];
-        const auto &moveCounter  = this->moveCounters[i];
-
+    Assert(moveSamplers.size() == this->moveCounters.size());
+    for (const auto &[moveSampler, moveCounter] : Zip(moveSamplers, this->moveCounters)) {
         std::string groupName = moveSampler->getName();
         std::size_t total = moveCounter.getMoves();
         std::size_t accepted = moveCounter.getAcceptedMoves();
@@ -687,6 +704,21 @@ void Simulation::fixRotationMatrix(Matrix<3, 3> &rotation) {
 
 double Simulation::getRotationMatrixDeviation(const Matrix<3, 3> &rotation) {
     return (rotation * rotation.transpose() - Matrix<3, 3>::identity()).norm2();
+}
+
+Simulation::SimulationContext Simulation::makeContext(std::vector<std::unique_ptr<MoveSampler>> moveSamplers,
+                                                      std::unique_ptr<TriclinicBoxScaler> boxScaler)
+{
+    SimulationContext context;
+
+    auto beg = std::make_move_iterator(moveSamplers.begin());
+    auto end = std::make_move_iterator(moveSamplers.end());
+    std::vector<std::shared_ptr<MoveSampler>> sharedMoveSamplers(beg, end);
+    context.setMoveSamplers(std::move(sharedMoveSamplers));
+
+    context.setBoxScaler(std::move(boxScaler));
+
+    return context;
 }
 
 void Simulation::SimulationContext::combine(Simulation::SimulationContext &other) {

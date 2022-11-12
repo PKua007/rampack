@@ -158,10 +158,8 @@ private:
     double temperature{};
     double pressure{};
 
-    std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
+    SimulationContext context;
     std::vector<bool> adjustmentCancelReported;
-
-    std::unique_ptr<TriclinicBoxScaler> boxScaler{};
     std::vector<Counter> moveCounters;
     Counter scalingCounter;
     double moveMicroseconds{};
@@ -185,6 +183,8 @@ private:
 
     static std::vector<std::unique_ptr<MoveSampler>> makeRototranslation(double translationStepSize,
                                                                          double rotationStepSize);
+    static SimulationContext makeContext(std::vector<std::unique_ptr<MoveSampler>> moveSamplers,
+                                         std::unique_ptr<TriclinicBoxScaler> boxScaler);
     static void accumulateCounters(std::vector<Counter> &out, const std::vector<Counter> &in);
     static void printStepSizesChange(Logger &logger, const std::vector<std::pair<std::string, double>> &oldStepSizes,
                                      const std::vector<std::pair<std::string, double>> &newStepSizes);
@@ -208,6 +208,9 @@ private:
     [[nodiscard]] MoveStatistics getScalingStatistics() const;
 
 public:
+    Simulation(std::unique_ptr<Packing> packing, unsigned long seed, SimulationContext initialContext,
+               const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1}, bool handleSignals = false);
+
     /**
      * @brief Constructs the simulation for given parameters - "legacy" version with hardcoded rototranslation moves.
      * @param packing initial configuration of shapes
@@ -312,7 +315,7 @@ public:
     [[nodiscard]] double getTotalMicroseconds() const { return this->totalMicroseconds; }
 
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }
-    [[nodiscard]] double getCurrentScalingStep() const { return this->boxScaler->getStepSize(); }
+    [[nodiscard]] double getCurrentScalingStep() const { return this->context.getBoxScaler().getStepSize(); }
 
     /**
      * @brief Returns total number of performed MC cycles (together with cycle offset)
