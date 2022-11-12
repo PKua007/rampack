@@ -96,6 +96,40 @@ public:
         Parameter(std::unique_ptr<DynamicParameter> updater) : parameter{std::move(updater)} { }
         operator DynamicParameter&() { return *this->parameter; }
         operator const DynamicParameter&() const { return *this->parameter; }
+        [[nodiscard]] bool hasValue() const { return this->parameter != nullptr; }
+    };
+
+    struct SimulationContext {
+    private:
+        Parameter temperature;
+        Parameter pressure;
+        std::vector<std::shared_ptr<MoveSampler>> moveSamplers;
+        std::vector<std::shared_ptr<const MoveSampler>> constMoveSamplers;
+        std::shared_ptr<TriclinicBoxScaler> boxScaler;
+
+    public:
+        bool hasTemperature() const { return this->temperature.hasValue(); }
+        const DynamicParameter &getTemperature() const;
+        DynamicParameter &getTemperature();
+        void setTemperature(Parameter temperature_);
+
+        bool hasPressure() const { return this->pressure.hasValue(); }
+        const DynamicParameter &getPressure() const;
+        DynamicParameter &getPressure();
+        void setPressure(Parameter pressure_);
+
+        bool hasMoveSamplers() const { return !this->moveSamplers.empty(); }
+        const std::vector<std::shared_ptr<const MoveSampler>> &getMoveSamplers() const;
+        const std::vector<std::shared_ptr<MoveSampler>> &getMoveSamplers();
+        void setMoveSamplers(std::vector<std::shared_ptr<MoveSampler>> moveSamplers_);
+
+        bool hasBoxScaler() const { return this->boxScaler != nullptr; }
+        const TriclinicBoxScaler &getBoxScaler() const;
+        TriclinicBoxScaler &getBoxScaler();
+        void setBoxScaler(std::shared_ptr<TriclinicBoxScaler> boxScaler_);
+
+        [[nodiscard]] bool isComplete() const;
+        void combine(SimulationContext &other);
     };
 
 private:
