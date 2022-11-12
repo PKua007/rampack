@@ -10,6 +10,35 @@
 #include "utils/Assertions.h"
 #include "utils/Utils.h"
 
+
+void InheritableParameters::parseInheritableParameter(const std::string &key, const Config &config) {
+    if (key == "moveTypes")
+        this->moveTypes = config.getString("moveTypes");
+    else if (key == "scalingType")
+        this->scalingType = config.getString("scalingType");
+    else if (key == "volumeStepSize")
+        this->volumeStepSize = config.getDouble("volumeStepSize");
+    else if (key == "temperature")
+        this->temperature = config.getString("temperature");
+    else if (key == "pressure")
+        this->pressure = config.getString("pressure");
+    else
+        throw ParametersParseException("Unknown parameter " + key);
+}
+
+void InheritableParameters::validateInheritableParameters() const {
+
+}
+
+void InheritableParameters::printInheritableParameters(Logger &logger) const {
+    logger.info() << "-- Inheritable parameters:" << std::endl;
+    logger.info() << "moveTypes      : " << moveTypes << std::endl;
+    logger.info() << "scalingType    : " << scalingType << std::endl;
+    logger.info() << "volumeStepSize : " << volumeStepSize << std::endl;
+    logger.info() << "temperature    : " << temperature << std::endl;
+    logger.info() << "pressure       : " << pressure << std::endl;
+}
+
 Parameters::Parameters(std::istream &input) {
     auto config = Config::parse(input, '=', true);
 
@@ -44,7 +73,7 @@ Parameters::Parameters(std::istream &input) {
         else if (key == "saveOnSignal")
             this->saveOnSignal = generalConfig.getBoolean("saveOnSignal");
         else
-            throw ParametersParseException("Unknown parameter " + key);
+            this->parseInheritableParameter(key, config);
     }
     this->validate();
 
@@ -70,24 +99,23 @@ void Parameters::validate() const {
     Validate(this->volumeStepSize > 0);
     Validate(!this->scalingThreads.empty());
     Validate(!this->domainDivisions.empty());
-    Validate(!this->scalingType.empty());
+    this->validateInheritableParameters();
 }
 
 void Parameters::print(Logger &logger) const {
-    logger.info() << "initialDimensions : " << this->initialDimensions << std::endl;
-    logger.info() << "initialArangement : " << this->initialArrangement << std::endl;
-    logger.info() << "numOfParticles    : " << this->numOfParticles << std::endl;
-    logger.info() << "walls             : " << this->walls << std::endl;
-    logger.info() << "moveTypes         : " << this->moveTypes << std::endl;
-    logger.info() << "volumeStepSize    : " << this->volumeStepSize << std::endl;
-    logger.info() << "seed              : " << this->seed << std::endl;
-    logger.info() << "shapeName         : " << this->shapeName << std::endl;
-    logger.info() << "shapeAttributes   : " << this->shapeAttributes << std::endl;
-    logger.info() << "interaction       : " << this->interaction << std::endl;
-    logger.info() << "scalingThreads    : " << this->scalingThreads << std::endl;
-    logger.info() << "domainDivisions   : " << this->domainDivisions << std::endl;
-    logger.info() << "scalingType       : " << this->scalingType << std::endl;
-    logger.info() << "saveOnSignal      : " << (this->saveOnSignal ? "true" : "false") << std::endl;
+    this->printInheritableParameters(logger);
+    logger.info() << "-- Main parameters:" << std::endl;
+    logger.info() << "initialDimensions  : " << this->initialDimensions << std::endl;
+    logger.info() << "initialArrangement : " << this->initialArrangement << std::endl;
+    logger.info() << "numOfParticles     : " << this->numOfParticles << std::endl;
+    logger.info() << "walls              : " << this->walls << std::endl;
+    logger.info() << "seed               : " << this->seed << std::endl;
+    logger.info() << "shapeName          : " << this->shapeName << std::endl;
+    logger.info() << "shapeAttributes    : " << this->shapeAttributes << std::endl;
+    logger.info() << "interaction        : " << this->interaction << std::endl;
+    logger.info() << "scalingThreads     : " << this->scalingThreads << std::endl;
+    logger.info() << "domainDivisions    : " << this->domainDivisions << std::endl;
+    logger.info() << "saveOnSignal       : " << (this->saveOnSignal ? "true" : "false") << std::endl;
 }
 
 std::pair<std::string, std::string> Parameters::explodeRunSection(const std::string &runSectionName) {
@@ -104,11 +132,7 @@ std::pair<std::string, std::string> Parameters::explodeRunSection(const std::str
 Parameters::IntegrationParameters::IntegrationParameters(const std::string &runName, const Config &runConfig) {
     this->runName = runName;
     for (const auto &key : runConfig.getKeys()) {
-        if (key == "temperature")
-            this->temperature = runConfig.getString("temperature");
-        else if (key == "pressure")
-            this->pressure = runConfig.getString("pressure");
-        else if (key == "thermalisationCycles")
+        if (key == "thermalisationCycles")
             this->thermalisationCycles = runConfig.getUnsignedLong("thermalisationCycles");
         else if (key == "averagingCycles")
             this->averagingCycles = runConfig.getUnsignedLong("averagingCycles");
@@ -133,7 +157,7 @@ Parameters::IntegrationParameters::IntegrationParameters(const std::string &runN
         else if (key == "recordingFilename")
             this->recordingFilename = runConfig.getString("recordingFilename");
         else
-            throw ParametersParseException("Unknown parameter " + key);
+            this->parseInheritableParameter(key, runConfig);
     }
     this->validate();
 }
@@ -143,11 +167,12 @@ void Parameters::IntegrationParameters::validate() const {
     Validate(this->averagingCycles > 0);
     Validate(this->averagingEvery > 0);
     Validate(this->snapshotEvery > 0);
+    this->validateInheritableParameters();
 }
 
 void Parameters::IntegrationParameters::print(Logger &logger) const {
-    logger.info() << "temperature                   : " << this->temperature << std::endl;
-    logger.info() << "pressure                      : " << this->pressure << std::endl;
+    this->printInheritableParameters(logger);
+    logger.info() << "-- Integration parameters:" << std::endl;
     logger.info() << "thermalisationCycles          : " << this->thermalisationCycles << std::endl;
     logger.info() << "averagingCycles               : " << this->averagingCycles << std::endl;
     logger.info() << "averagingEvery                : " << this->averagingEvery << std::endl;
@@ -165,11 +190,7 @@ void Parameters::IntegrationParameters::print(Logger &logger) const {
 Parameters::OverlapRelaxationParameters::OverlapRelaxationParameters(const std::string &runName, const Config &runConfig) {
     this->runName = runName;
     for (const auto &key : runConfig.getKeys()) {
-        if (key == "temperature")
-            this->temperature = runConfig.getString("temperature");
-        else if (key == "pressure")
-            this->pressure = runConfig.getString("pressure");
-        else if (key == "snapshotEvery")
+        if (key == "snapshotEvery")
             this->snapshotEvery = runConfig.getUnsignedLong("snapshotEvery");
         else if (key == "observables")
             this->observables = runConfig.getString("observables");
@@ -188,18 +209,19 @@ Parameters::OverlapRelaxationParameters::OverlapRelaxationParameters(const std::
         else if (key == "recordingFilename")
             this->recordingFilename = runConfig.getString("recordingFilename");
         else
-            throw ParametersParseException("Unknown parameter " + key);
+            this->parseInheritableParameter(key, runConfig);
     }
     this->validate();
 }
 
 void Parameters::OverlapRelaxationParameters::validate() const {
     Validate(this->snapshotEvery > 0);
+    this->validateInheritableParameters();
 }
 
 void Parameters::OverlapRelaxationParameters::print(Logger &logger) const {
-    logger.info() << "temperature                   : " << this->temperature << std::endl;
-    logger.info() << "pressure                      : " << this->pressure << std::endl;
+    this->printInheritableParameters(logger);
+    logger.info() << "-- Overlap relaxation parameters:" << std::endl;
     logger.info() << "snapshotEvery                 : " << this->snapshotEvery << std::endl;
     logger.info() << "observables                   : " << this->observables << std::endl;
     logger.info() << "bulkObservables               : " << this->bulkObservables << std::endl;
