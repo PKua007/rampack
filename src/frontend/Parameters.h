@@ -23,20 +23,37 @@ public:
     explicit ParametersParseException(const std::string &what) : std::runtime_error(what) { }
 };
 
+
+class InheritableParameters {
+protected:
+    void validateInheritableParameters() const;
+    void parseInheritableParameter(const std::string &key, const Config &config);
+
+public:
+    std::string moveTypes{};
+    std::string scalingType{};
+    double volumeStepSize{};
+    std::string temperature{};
+    std::string pressure{};
+
+    void printInheritableParameters(Logger &logger) const;
+};
+
+
 /**
  * @brief A class which parses and stores parameters of the simulation.
  * @details The description of parameters can be found in the sample input.ini in the root folder
  */
-class Parameters {
+class Parameters : public InheritableParameters {
 private:
     void validate() const;
-    [[nodiscard]] static std::pair<std::string, std::string> explodeRunSection(const std::string &runSectionName) ;
+    [[nodiscard]] static std::pair<std::string, std::string> explodeRunSection(const std::string &runSectionName);
 
 public:
     /**
      * @brief Parameters of the integration (Monte Carlo sampling) run.
      */
-    class IntegrationParameters {
+    class IntegrationParameters : public InheritableParameters {
     private:
         void validate() const;
 
@@ -45,8 +62,6 @@ public:
         IntegrationParameters(const std::string &runName, const Config &runConfig);
 
         std::string runName{};
-        std::string temperature{};
-        std::string pressure{};
         std::size_t thermalisationCycles{};
         std::size_t averagingCycles{};
         std::size_t averagingEvery{};
@@ -66,7 +81,7 @@ public:
     /**
      * @brief Parameters of overlap relaxation run.
      */
-    class OverlapRelaxationParameters {
+    class OverlapRelaxationParameters : public InheritableParameters {
     private:
         void validate() const;
 
@@ -75,8 +90,6 @@ public:
         OverlapRelaxationParameters(const std::string &runName, const Config &runConfig);
 
         std::string runName{};
-        std::string temperature{};
-        std::string pressure{};
         std::size_t snapshotEvery{};
         std::string observables{};
         std::string bulkObservables{};
@@ -97,15 +110,12 @@ public:
     std::string initialArrangement{};
     std::size_t numOfParticles{};
     std::string walls{};
-    std::string moveTypes{};
-    double volumeStepSize{};
     unsigned long seed{};
     std::string shapeName{};
     std::string shapeAttributes{};
     std::string interaction{};
     std::string scalingThreads = "1";
     std::string domainDivisions = "1 1 1";
-    std::string scalingType = "delta V";
     bool saveOnSignal = false;
 
     std::vector<RunParameters> runsParameters;
