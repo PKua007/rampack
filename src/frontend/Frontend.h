@@ -29,8 +29,7 @@ private:
     std::ofstream auxOutStream;
 
     Parameters loadParameters(const std::string &inputFilename);
-    void overwriteMoveStepSizes(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
-                                TriclinicBoxScaler &boxScaler,
+    void overwriteMoveStepSizes(Simulation::SimulationContext &context,
                                 const std::map<std::string, std::string> &packingAuxInfo) const;
     void appendMoveStepSizesToAuxInfo(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
                                       double scalingStepSize, std::map<std::string, std::string> &auxInfo) const;
@@ -46,10 +45,12 @@ private:
     void createWalls(Packing &packing, const std::string &walls);
     void attachSnapshotOut(ObservablesCollector &collector, const std::string& filename, bool isContinuation) const;
 
-    void performIntegration(Simulation &simulation, const Parameters::IntegrationParameters &runParams,
-                            const ShapeTraits &shapeTraits, size_t cycleOffset, bool isContinuation);
+    void performIntegration(Simulation &simulation, Simulation::SimulationContext &context,
+                            const Parameters::IntegrationParameters &runParams, const ShapeTraits &shapeTraits,
+                            size_t cycleOffset, bool isContinuation);
 
-    void performOverlapRelaxation(Simulation &simulation, const std::string &shapeName, const std::string &shapeAttr,
+    void performOverlapRelaxation(Simulation &simulation, Simulation::SimulationContext &context,
+                                  const std::string &shapeName, const std::string &shapeAttr,
                                   const Parameters::OverlapRelaxationParameters &runParams,
                                   std::shared_ptr<ShapeTraits> shapeTraits, size_t cycleOffset, bool isContinuation);
 
@@ -74,6 +75,10 @@ private:
     static std::string doubleToString(double d);
     static std::string formatMoveKey(const std::string &groupName, const std::string &moveName);
     static bool isStepSizeKey(const std::string &key);
+    static Simulation::SimulationContext parseSimulationContext(const InheritableParameters &params,
+                                                                const ShapeTraits &traits);
+    static void combineContext(Simulation::SimulationContext &context, const Parameters::RunParameters &runParams,
+                               const ShapeTraits &traits);
 
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }
