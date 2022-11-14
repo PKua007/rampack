@@ -19,6 +19,7 @@
 #include "core/Simulation.h"
 #include "core/SimulationRecorder.h"
 #include "core/SimulationPlayer.h"
+#include "PackingLoader.h"
 
 /**
  * @brief Class responsible for the communication between the user and the simulation backend.
@@ -31,6 +32,8 @@ private:
     Parameters loadParameters(const std::string &inputFilename);
     void overwriteMoveStepSizes(Simulation::Environment &env,
                                 const std::map<std::string, std::string> &packingAuxInfo) const;
+    Simulation::Environment recreateEnvironment(const Parameters &params, const PackingLoader &loader,
+                                                const ShapeTraits &traits) const;
     void appendMoveStepSizesToAuxInfo(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
                                       double scalingStepSize, std::map<std::string, std::string> &auxInfo) const;
     void setVerbosityLevel(std::optional<std::string> verbosity, std::optional<std::string> auxOutput,

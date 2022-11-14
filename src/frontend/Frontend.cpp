@@ -204,9 +204,6 @@ int Frontend::casino(int argc, char **argv) {
     }
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    // Parse initial simulation environment
-    auto env = Frontend::parseSimulationEnvironment(params, *shapeTraits);
-
     // Load starting state from a previous or current run packing depending on --start-from and --continue
     // options combination
 
@@ -229,16 +226,9 @@ int Frontend::casino(int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
-    // Replay all inheritable parameters from all runs up to starting point and combine them
-    for (std::size_t i{}; i <= startRunIndex; i++)
-        Frontend::combineEnvironment(env, params.runsParameters[i], *shapeTraits);
-    ValidateMsg(env.isComplete(), "Some of parameters: pressure, temperature, moveTypes, scalingType are missing");
-
     std::unique_ptr<Packing> packing;
     if (packingLoader.isRestored()) {
         packing = packingLoader.releasePacking();
-        const auto &auxInfo = packingLoader.getAuxInfo();
-        this->overwriteMoveStepSizes(env, auxInfo);
     } else {
         // Same number of scaling and domain threads
         bc = std::make_unique<PeriodicBoundaryConditions>();
@@ -247,6 +237,8 @@ int Frontend::casino(int argc, char **argv) {
                                                      shapeTraits->getInteraction(), shapeTraits->getGeometry(),
                                                      scalingThreads, scalingThreads);
     }
+
+    auto env = this->recreateEnvironment(params, packingLoader, *shapeTraits);
 
     this->createWalls(*packing, params.walls);
 
@@ -1338,6 +1330,37 @@ Simulation::Environment Frontend::parseSimulationEnvironment(const InheritablePa
 
     if (!params.pressure.empty())
         env.setPressure(ParameterUpdaterFactory::create(params.pressure));
+
+    return env;
+}
+
+Simulation::Environment Frontend::recreateEnvironment(const Parameters &params, const PackingLoader &loader,
+                                                      const ShapeTraits &traits) const
+{
+    // Parse initial environment (from the global section)
+    auto env = Frontend::parseSimulationEnvironment(params, traits);
+
+    std::size_t startRunIndex = loader.getStartRunIndex();
+    if (loader.isContinuation()) {
+        // If it is continuation, we need to replay and combine all previous environments from all previous runs
+        // together with a continued run, and overwrite move step sizes at the end - this way we start with the same
+        // step sizes that were before
+        Assert(loader.isRestored());
+        for (std::size_t i{}; i <= startRunIndex; i++)
+            Frontend::combineEnvironment(env, params.runsParameters[i], traits);
+        this->overwriteMoveStepSizes(env, loader.getAuxInfo());
+    } else {
+        // If it is not a continuation, we replay environments of the runs BEFORE the starting point, then overwrite
+        // step sizes (because this is where the last simulation ended) and AFTER it, we apply the new environment from
+        // the starting run
+        for (std::size_t i{}; i < startRunIndex; i++)
+            Frontend::combineEnvironment(env, params.runsParameters[i], traits);
+        if (loader.isRestored())
+            this->overwriteMoveStepSizes(env, loader.getAuxInfo());
+        Frontend::combineEnvironment(env, params.runsParameters[startRunIndex], traits);
+    }
+
+    ValidateMsg(env.isComplete(), "Some of parameters: pressure, temperature, moveTypes, scalingType are missing");
 
     return env;
 }
