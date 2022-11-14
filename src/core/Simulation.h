@@ -99,7 +99,7 @@ public:
         [[nodiscard]] bool hasValue() const { return this->parameter != nullptr; }
     };
 
-    struct SimulationContext {
+    struct Environment {
     private:
         Parameter temperature;
         Parameter pressure;
@@ -108,28 +108,28 @@ public:
         std::shared_ptr<TriclinicBoxScaler> boxScaler;
 
     public:
-        bool hasTemperature() const { return this->temperature.hasValue(); }
-        const DynamicParameter &getTemperature() const;
+        [[nodiscard]] bool hasTemperature() const { return this->temperature.hasValue(); }
+        [[nodiscard]] const DynamicParameter &getTemperature() const;
         DynamicParameter &getTemperature();
         void setTemperature(Parameter temperature_);
 
-        bool hasPressure() const { return this->pressure.hasValue(); }
-        const DynamicParameter &getPressure() const;
+        [[nodiscard]] bool hasPressure() const { return this->pressure.hasValue(); }
+        [[nodiscard]] const DynamicParameter &getPressure() const;
         DynamicParameter &getPressure();
         void setPressure(Parameter pressure_);
 
-        bool hasMoveSamplers() const { return !this->moveSamplers.empty(); }
-        const std::vector<std::shared_ptr<const MoveSampler>> &getMoveSamplers() const;
+        [[nodiscard]] bool hasMoveSamplers() const { return !this->moveSamplers.empty(); }
+        [[nodiscard]] const std::vector<std::shared_ptr<const MoveSampler>> &getMoveSamplers() const;
         const std::vector<std::shared_ptr<MoveSampler>> &getMoveSamplers();
         void setMoveSamplers(std::vector<std::shared_ptr<MoveSampler>> moveSamplers_);
 
-        bool hasBoxScaler() const { return this->boxScaler != nullptr; }
-        const TriclinicBoxScaler &getBoxScaler() const;
+        [[nodiscard]] bool hasBoxScaler() const { return this->boxScaler != nullptr; }
+        [[nodiscard]] const TriclinicBoxScaler &getBoxScaler() const;
         TriclinicBoxScaler &getBoxScaler();
         void setBoxScaler(std::shared_ptr<TriclinicBoxScaler> boxScaler_);
 
         [[nodiscard]] bool isComplete() const;
-        void combine(SimulationContext &other);
+        void combine(Environment &other);
     };
 
 private:
@@ -158,7 +158,7 @@ private:
     double temperature{};
     double pressure{};
 
-    SimulationContext context;
+    Environment environment;
     std::vector<bool> adjustmentCancelReported;
     std::vector<Counter> moveCounters;
     Counter scalingCounter;
@@ -183,8 +183,8 @@ private:
 
     static std::vector<std::unique_ptr<MoveSampler>> makeRototranslation(double translationStepSize,
                                                                          double rotationStepSize);
-    static SimulationContext makeContext(std::vector<std::unique_ptr<MoveSampler>> moveSamplers,
-                                         std::unique_ptr<TriclinicBoxScaler> boxScaler);
+    static Environment makeEnvironment(std::vector<std::unique_ptr<MoveSampler>> moveSamplers,
+                                       std::unique_ptr<TriclinicBoxScaler> boxScaler);
     static void accumulateCounters(std::vector<Counter> &out, const std::vector<Counter> &in);
     static void printStepSizesChange(Logger &logger, const std::vector<std::pair<std::string, double>> &oldStepSizes,
                                      const std::vector<std::pair<std::string, double>> &newStepSizes);
@@ -208,7 +208,7 @@ private:
     [[nodiscard]] MoveStatistics getScalingStatistics() const;
 
 public:
-    Simulation(std::unique_ptr<Packing> packing, unsigned long seed, SimulationContext initialContext,
+    Simulation(std::unique_ptr<Packing> packing, unsigned long seed, Environment initialEnv,
                const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1}, bool handleSignals = false);
 
     Simulation(std::unique_ptr<Packing> packing, unsigned long seed,
@@ -265,7 +265,7 @@ public:
                    std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
                    std::size_t cycleOffset = 0);
 
-    void integrate(SimulationContext context_, std::size_t thermalisationCycles, std::size_t averagingCycles,
+    void integrate(Environment env, std::size_t thermalisationCycles, std::size_t averagingCycles,
                    std::size_t averagingEvery, std::size_t snapshotEvery, const ShapeTraits &shapeTraits,
                    std::unique_ptr<ObservablesCollector> observablesCollector_,
                    std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
@@ -289,7 +289,7 @@ public:
                        std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
                        std::size_t cycleOffset = 0);
 
-    void relaxOverlaps(SimulationContext context_, std::size_t snapshotEvery,
+    void relaxOverlaps(Environment env, std::size_t snapshotEvery,
                        const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
                        std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
                        std::size_t cycleOffset = 0);
@@ -329,7 +329,7 @@ public:
     [[nodiscard]] double getTotalMicroseconds() const { return this->totalMicroseconds; }
 
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }
-    [[nodiscard]] double getCurrentScalingStep() const { return this->context.getBoxScaler().getStepSize(); }
+    [[nodiscard]] double getCurrentScalingStep() const { return this->environment.getBoxScaler().getStepSize(); }
 
     /**
      * @brief Returns total number of performed MC cycles (together with cycle offset)
