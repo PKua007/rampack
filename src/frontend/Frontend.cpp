@@ -204,8 +204,8 @@ int Frontend::casino(int argc, char **argv) {
     }
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    // Parse initial simulation context
-    auto context = Frontend::parseSimulationContext(params, *shapeTraits);
+    // Parse initial simulation environment
+    auto env = Frontend::parseSimulationEnvironment(params, *shapeTraits);
 
     // Load starting state from a previous or current run packing depending on --start-from and --continue
     // options combination
@@ -231,14 +231,14 @@ int Frontend::casino(int argc, char **argv) {
 
     // Replay all inheritable parameters from all runs up to starting point and combine them
     for (std::size_t i{}; i <= startRunIndex; i++)
-        Frontend::combineContext(context, params.runsParameters[i], *shapeTraits);
-    ValidateMsg(context.isComplete(), "Some of parameters: pressure, temperature, moveTypes, scalingType are missing");
+        Frontend::combineEnvironment(env, params.runsParameters[i], *shapeTraits);
+    ValidateMsg(env.isComplete(), "Some of parameters: pressure, temperature, moveTypes, scalingType are missing");
 
     std::unique_ptr<Packing> packing;
     if (packingLoader.isRestored()) {
         packing = packingLoader.releasePacking();
         const auto &auxInfo = packingLoader.getAuxInfo();
-        this->overwriteMoveStepSizes(context, auxInfo);
+        this->overwriteMoveStepSizes(env, auxInfo);
     } else {
         // Same number of scaling and domain threads
         bc = std::make_unique<PeriodicBoundaryConditions>();
@@ -255,16 +255,16 @@ int Frontend::casino(int argc, char **argv) {
 
     for (std::size_t i = startRunIndex; i < params.runsParameters.size(); i++) {
         const auto &runParamsI = params.runsParameters[i];
-        // Context for starting run is already prepared
+        // Environment for starting run is already prepared
         if (i != startRunIndex)
-            Frontend::combineContext(context, runParamsI, *shapeTraits);
+            Frontend::combineEnvironment(env, runParamsI, *shapeTraits);
 
         if (std::holds_alternative<Parameters::IntegrationParameters>(runParamsI)) {
             const auto &runParams = std::get<Parameters::IntegrationParameters>(runParamsI);
-            this->performIntegration(simulation, context, runParams, *shapeTraits, cycleOffset, isContinuation);
+            this->performIntegration(simulation, env, runParams, *shapeTraits, cycleOffset, isContinuation);
         } else if (std::holds_alternative<Parameters::OverlapRelaxationParameters>(runParamsI)) {
             const auto &runParams = std::get<Parameters::OverlapRelaxationParameters>(runParamsI);
-            this->performOverlapRelaxation(simulation, context, params.shapeName, params.shapeAttributes, runParams, shapeTraits,
+            this->performOverlapRelaxation(simulation, env, params.shapeName, params.shapeAttributes, runParams, shapeTraits,
                                            cycleOffset, isContinuation);
         } else {
             throw AssertionException("Unimplemented run type");
@@ -280,17 +280,17 @@ int Frontend::casino(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-void Frontend::combineContext(Simulation::SimulationContext &context, const Parameters::RunParameters &runParams,
-                              const ShapeTraits &traits)
+void Frontend::combineEnvironment(Simulation::Environment &env, const Parameters::RunParameters &runParams,
+                                  const ShapeTraits &traits)
 {
-    auto contextCreator = [&traits](const auto &runParams) {
-        return parseSimulationContext(runParams, traits);
+    auto environmentCreator = [&traits](const auto &runParams) {
+        return parseSimulationEnvironment(runParams, traits);
     };
-    auto runContext = std::visit(contextCreator, runParams);
-    context.combine(runContext);
+    auto runEnv = std::visit(environmentCreator, runParams);
+    env.combine(runEnv);
 }
 
-void Frontend::performIntegration(Simulation &simulation, Simulation::SimulationContext &context,
+void Frontend::performIntegration(Simulation &simulation, Simulation::Environment &env,
                                   const Parameters::IntegrationParameters &runParams, const ShapeTraits &shapeTraits,
                                   std::size_t cycleOffset, bool isContinuation)
 {
@@ -312,7 +312,7 @@ void Frontend::performIntegration(Simulation &simulation, Simulation::Simulation
                                                          explode(runParams.bulkObservables, ','),
                                                          simulation.getPacking().getScalingThreads());
     this->attachSnapshotOut(*collector, runParams.observableSnapshotFilename, isContinuation);
-    simulation.integrate(context, runParams.thermalisationCycles, runParams.averagingCycles, runParams.averagingEvery,
+    simulation.integrate(env, runParams.thermalisationCycles, runParams.averagingCycles, runParams.averagingEvery,
                          runParams.snapshotEvery, shapeTraits, std::move(collector), std::move(recorder),
                          this->logger, cycleOffset);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
@@ -354,7 +354,7 @@ std::unique_ptr<SimulationRecorder> Frontend::loadSimulationRecorder(const std::
     return std::make_unique<SimulationRecorder>(std::move(inout), numMolecules, cycleStep, isContinuation);
 }
 
-void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::SimulationContext &context,
+void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Environment &env,
                                         const std::string &shapeName, const std::string &shapeAttr,
                                         const Parameters::OverlapRelaxationParameters &runParams,
                                         std::shared_ptr<ShapeTraits> shapeTraits, size_t cycleOffset,
@@ -383,7 +383,7 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Simu
                                                          explode(runParams.bulkObservables, ','),
                                                          simulation.getPacking().getScalingThreads());
     this->attachSnapshotOut(*collector, runParams.observableSnapshotFilename, isContinuation);
-    simulation.relaxOverlaps(context, runParams.snapshotEvery, *shapeTraits, std::move(collector), std::move(recorder),
+    simulation.relaxOverlaps(env, runParams.snapshotEvery, *shapeTraits, std::move(collector), std::move(recorder),
                              this->logger, cycleOffset);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
@@ -814,7 +814,7 @@ void Frontend::printMoveStatistics(const Simulation &simulation) const {
     }
 }
 
-void Frontend::overwriteMoveStepSizes(Simulation::SimulationContext &context,
+void Frontend::overwriteMoveStepSizes(Simulation::Environment &env,
                                       const std::map<std::string, std::string> &packingAuxInfo) const
 {
     std::set<std::string> notUsedStepSizes;
@@ -822,7 +822,7 @@ void Frontend::overwriteMoveStepSizes(Simulation::SimulationContext &context,
         if (Frontend::isStepSizeKey(key))
             notUsedStepSizes.insert(key);
 
-    for (auto &moveSampler : context.getMoveSamplers()) {
+    for (auto &moveSampler : env.getMoveSamplers()) {
         auto groupName = moveSampler->getName();
         for (const auto &[moveName, stepSize] : moveSampler->getStepSizes()) {
             std::string moveKey = Frontend::formatMoveKey(groupName, moveName);
@@ -840,11 +840,11 @@ void Frontend::overwriteMoveStepSizes(Simulation::SimulationContext &context,
     std::string scalingKey = Frontend::formatMoveKey("scaling", "scaling");
     if (packingAuxInfo.find(scalingKey) == packingAuxInfo.end()) {
         this->logger.warn() << "Step size " << scalingKey << " not found in *.dat metadata. Falling back to ";
-        this->logger << "input file value " << context.getBoxScaler().getStepSize() << std::endl;
+        this->logger << "input file value " << env.getBoxScaler().getStepSize() << std::endl;
     } else {
         double volumeStepSize = std::stod(packingAuxInfo.at(scalingKey));
         Validate(volumeStepSize > 0);
-        context.getBoxScaler().setStepSize(volumeStepSize);
+        env.getBoxScaler().setStepSize(volumeStepSize);
         notUsedStepSizes.erase(scalingKey);
     }
 
@@ -1314,14 +1314,14 @@ void Frontend::attachSnapshotOut(ObservablesCollector &collector, const std::str
     collector.attachOnTheFlyOutput(std::move(out));
 }
 
-Simulation::SimulationContext Frontend::parseSimulationContext(const InheritableParameters &params,
-                                                               const ShapeTraits &traits)
+Simulation::Environment Frontend::parseSimulationEnvironment(const InheritableParameters &params,
+                                                             const ShapeTraits &traits)
 {
-    Simulation::SimulationContext context;
+    Simulation::Environment env;
 
     if (!params.scalingType.empty()) {
         Validate(params.volumeStepSize > 0);
-        context.setBoxScaler(TriclinicBoxScalerFactory::create(params.scalingType, params.volumeStepSize));
+        env.setBoxScaler(TriclinicBoxScalerFactory::create(params.scalingType, params.volumeStepSize));
     }
 
     if (!params.moveTypes.empty()) {
@@ -1330,14 +1330,14 @@ Simulation::SimulationContext Frontend::parseSimulationContext(const Inheritable
         moveSamplers.reserve(moveSamplerStrings.size());
         for (const auto &moveSamplerString: moveSamplerStrings)
             moveSamplers.push_back(MoveSamplerFactory::create(moveSamplerString, traits));
-        context.setMoveSamplers(std::move(moveSamplers));
+        env.setMoveSamplers(std::move(moveSamplers));
     }
 
     if (!params.temperature.empty())
-        context.setTemperature(ParameterUpdaterFactory::create(params.temperature));
+        env.setTemperature(ParameterUpdaterFactory::create(params.temperature));
 
     if (!params.pressure.empty())
-        context.setPressure(ParameterUpdaterFactory::create(params.pressure));
+        env.setPressure(ParameterUpdaterFactory::create(params.pressure));
 
-    return context;
+    return env;
 }
