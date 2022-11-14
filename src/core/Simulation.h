@@ -29,6 +29,7 @@
 #include "SimulationRecorder.h"
 #include "DynamicParameter.h"
 
+
 /**
  * @brief A class responsible for performing Monte Carlo sampling.
  * @details Actual moves are done by Packing class - this class only check Metropolis criterion and accepts or rejects
@@ -99,6 +100,15 @@ public:
         [[nodiscard]] bool hasValue() const { return this->parameter != nullptr; }
     };
 
+    /**
+     * @brief Environment of the simulation, which may be inherited from a previous run and partially of fully
+     * overriden.
+     * @details <p> It includes temperature, pressure, MoveSampler -s and TriclinicBoxScaler. The inheritability of the
+     * last facilitates remembering step sizes from the previous run.
+     *
+     * <p> Each field is optional and may or may not have a value. By default all values are not set. When combining
+     * with another environment (see combine() method), only the values which are set override old values.
+     */
     struct Environment {
     private:
         Parameter temperature;
@@ -128,7 +138,15 @@ public:
         TriclinicBoxScaler &getBoxScaler();
         void setBoxScaler(std::shared_ptr<TriclinicBoxScaler> boxScaler_);
 
+        /**
+         * @brief Returns @a true, if all fields were set and have a value.
+         */
         [[nodiscard]] bool isComplete() const;
+
+        /**
+         * @brief Overwrited this environment with @a other, however only those values which are present in @a other
+         * are overwritten.
+         */
         void combine(Environment &other);
     };
 
@@ -208,9 +226,26 @@ private:
     [[nodiscard]] MoveStatistics getScalingStatistics() const;
 
 public:
+    /**
+     * @brief Constructs the simulation for given parameters - "new" version with some initial Simulation::Environment.
+     * @param packing initial configuration of shapes
+     * @param seed seed of the RNG
+     * @param initialEnv initial Simulation::Environment, which may be later combined with another one when performing
+     * a run
+     * @param domainDivisions domain divisions in each direction to use; {1, 1, 1} disables domain division
+     * @param handleSignals if @a true, SIGINT and SIGCONT will be captured
+     */
     Simulation(std::unique_ptr<Packing> packing, unsigned long seed, Environment initialEnv,
                const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1}, bool handleSignals = false);
 
+    /**
+     * @brief Constructs the simulation for given parameters - "new" version with empty Simulation::Environment (a full
+     * one has to be specified in the first run).
+     * @param packing initial configuration of shapes
+     * @param seed seed of the RNG
+     * @param domainDivisions domain divisions in each direction to use; {1, 1, 1} disables domain division
+     * @param handleSignals if @a true, SIGINT and SIGCONT will be captured
+     */
     Simulation(std::unique_ptr<Packing> packing, unsigned long seed,
                const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1}, bool handleSignals = false);
 
@@ -219,7 +254,6 @@ public:
      * @param packing initial configuration of shapes
      * @param translationStep initial translation step size
      * @param rotationStep initial rotation step size
-     * @param scalingStep initial volume scaling step
      * @param seed seed of the RNG
      * @param boxScaler volume move scaling sampler
      * @param domainDivisions domain divisions in each direction to use; {1, 1, 1} disables domain division
@@ -230,10 +264,9 @@ public:
                const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1}, bool handleSignals = false);
 
     /**
-     * @brief Constructs the simulation for given parameters - "new" version with programmable molecule moves.
+     * @brief Constructs the simulation for given parameters - "legacy" version with programmable molecule moves.
      * @param packing initial configuration of shapes
      * @param moveSamplers the list of move samplers to perform molecule moves
-     * @param scalingStep initial volume scaling step
      * @param seed seed of the RNG
      * @param boxScaler volume move scaling sampler
      * @param domainDivisions domain divisions in each direction to use; {1, 1, 1} disables domain division
@@ -245,9 +278,22 @@ public:
 
     /**
      * @brief Performs standard Monte Carlo integration consisting of thermalization (equilibration) phase and averaging
-     * (production) phase.
-     * @param temperature_ temperature of the system (single value or DynamicParameter)
-     * @param pressure_ system pressure (single value or DynamicParameter)
+     * (production) phase - "legacy" version.
+     * @details Calls
+     * Simulation::integrate(Environment, std::size_t, std::size_t, std::size_t, std::size_t, const ShapeTraits&, std::unique_ptr<ObservablesCollector>, std::unique_ptr<SimulationRecorder>, Logger&, std::size_t)
+     * where @a env is given passed @a temeprature_ and @a pressure_, however MoveSampler -s and TriclinicBoxScaler
+     * is inherited from the previous run or from the constructor.
+     */
+    void integrate(Parameter temperature_, Parameter pressure_, std::size_t thermalisationCycles, std::size_t averagingCycles,
+                   std::size_t averagingEvery, std::size_t snapshotEvery, const ShapeTraits &shapeTraits,
+                   std::unique_ptr<ObservablesCollector> observablesCollector_,
+                   std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
+                   std::size_t cycleOffset = 0);
+    /**
+     * @brief Performs standard Monte Carlo integration consisting of thermalization (equilibration) phase and averaging
+     * (production) phase - "new" version with Simulation::Environment.
+     * @param env Simulation::Environment, which will be combined the current simulation environment (from the
+     * constructor or the previous run)
      * @param thermalisationCycles the number of cycles in thermalization phase
      * @param averagingCycles the number of cycles in averaging (production) phase
      * @param averagingEvery how often to take observables for averaging
@@ -259,12 +305,6 @@ public:
      * @param logger Logger object to display simulation data
      * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
      */
-    void integrate(Parameter temperature_, Parameter pressure_, std::size_t thermalisationCycles, std::size_t averagingCycles,
-                   std::size_t averagingEvery, std::size_t snapshotEvery, const ShapeTraits &shapeTraits,
-                   std::unique_ptr<ObservablesCollector> observablesCollector_,
-                   std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
-                   std::size_t cycleOffset = 0);
-
     void integrate(Environment env, std::size_t thermalisationCycles, std::size_t averagingCycles,
                    std::size_t averagingEvery, std::size_t snapshotEvery, const ShapeTraits &shapeTraits,
                    std::unique_ptr<ObservablesCollector> observablesCollector_,
@@ -273,22 +313,30 @@ public:
 
     /**
      * @brief Perform overlap reduction scheme - overlap counting is turned on and moves are continued until there is no
-     * overlaps in the system.
-     * @param temperature_ temperature of the system (single value or DynamicParameter)
-     * @param pressure_ system pressure (single value or DynamicParameter)
-     * @param snapshotEvery how often to take observable snapshots
-     * @param shapeTraits shape traits describing the simulated molecules
-     * @param observablesCollector_ the observables collector with observable capturing configuration
-     * @param simulationRecorder if not @a nullptr, simulation will be recorder using it (with a snapshot every
-     * @a snapshotEveryr)
-     * @param logger  Logger object to display simulation data
-     * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
+     * overlaps in the system - "legacy" version.
+     * @details Calls
+     * Simulation::relaxOverlaps(Environment, std::size_t, const ShapeTraits&, std::unique_ptr<ObservablesCollector>, std::unique_ptr<SimulationRecorder>, Logger&, std::size_t)
+     * where @a env is given passed @a temeprature_ and @a pressure_, however MoveSampler -s and TriclinicBoxScaler is
+     * inherited from the previous run or from the constructor.
      */
     void relaxOverlaps(Parameter temperature_, Parameter pressure_, std::size_t snapshotEvery,
                        const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
                        std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
                        std::size_t cycleOffset = 0);
 
+    /**
+    * @brief Perform overlap reduction scheme - overlap counting is turned on and moves are continued until there is no
+    * overlaps in the system - "new" version with Simulation::Environment.
+    * @param env Simulation::Environment, which will be combined the current simulation environment (from the
+    * constructor or the previous run)
+    * @param snapshotEvery how often to take observable snapshots
+    * @param shapeTraits shape traits describing the simulated molecules
+    * @param observablesCollector_ the observables collector with observable capturing configuration
+    * @param simulationRecorder if not @a nullptr, simulation will be recorder using it (with a snapshot every
+    * @a snapshotEveryr)
+    * @param logger  Logger object to display simulation data
+    * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
+    */
     void relaxOverlaps(Environment env, std::size_t snapshotEvery,
                        const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
                        std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
