@@ -150,7 +150,7 @@ TriclinicBoxScalerFactory::create(const std::string &scalingType, double initial
         scalingTypeStripped = scalingType.substr(independentString.length());
 
     if (scalingTypeStripped == "delta triclinic")
-        return std::make_unique<TriclinicDeltaScaler>(scaleTogether, initialStepSize);
+        return std::make_unique<TriclinicDeltaScaler>(initialStepSize, scaleTogether);
     else
         return std::make_unique<TriclinicAdapter>(create_volume_scaler(scalingType), initialStepSize);
 }
