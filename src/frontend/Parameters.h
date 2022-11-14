@@ -15,6 +15,7 @@
 #include "utils/Config.h"
 #include "utils/Logger.h"
 
+
 /**
  * @brief Exception thrown when parsing of accessing unknown parameter.
  */
@@ -24,6 +25,9 @@ public:
 };
 
 
+/**
+ * @brief Parameters which may be inherited from previous runs.
+ */
 class InheritableParameters {
 protected:
     void validateInheritableParameters() const;

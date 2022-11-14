@@ -18,6 +18,7 @@ private:
 public:
     /**
      * @brief Constructs the scaler.
+     * @param stepSize initial step size
      * @param scaleTogether If @a true, all sides will be scaled at once. Otherwise, only a single, randomly chosen
      * side will be perturbed.
      */
