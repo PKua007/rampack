@@ -266,9 +266,12 @@ void Simulation::performCycle(Logger &logger, const ShapeTraits &shapeTraits) {
     auto end = high_resolution_clock::now();
     this->moveMicroseconds += duration<double, std::micro>(end - start).count();
 
-    #ifdef SIMULATION_SANITIZE_CACHED_OVERLAPS
-        if (this->areOverlapsCounted)
+    #ifdef SIMULATION_SANITIZE_OVERLAPS
+        if (this->areOverlapsCounted) {
             Assert(this->packing->getCachedNumberOfOverlaps() == this->packing->countTotalOverlaps(interaction, false));
+        } else {
+            Assert(this->packing->countTotalOverlaps(interaction, true) == 0);
+        }
     #endif
 
     start = high_resolution_clock::now();
@@ -277,9 +280,12 @@ void Simulation::performCycle(Logger &logger, const ShapeTraits &shapeTraits) {
     end = high_resolution_clock::now();
     this->scalingMicroseconds += duration<double, std::micro>(end - start).count();
 
-    #ifdef SIMULATION_SANITIZE_CACHED_OVERLAPS
-        if (this->areOverlapsCounted)
+    #ifdef SIMULATION_SANITIZE_OVERLAPS
+        if (this->areOverlapsCounted) {
             Assert(this->packing->getCachedNumberOfOverlaps() == this->packing->countTotalOverlaps(interaction, false));
+        } else {
+            Assert(this->packing->countTotalOverlaps(interaction, true) == 0);
+        }
     #endif
 
     if (this->shouldAdjustStepSize)

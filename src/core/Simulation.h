@@ -6,10 +6,12 @@
 #define RAMPACK_SIMULATION_H
 
 
-// Uncomment to sanitize whether cached number of overlaps is consistent with a real one after both molecule moves
-// and scaling moves
+// Uncomment to sanitize overlaps.
+// For overlap reduction sanitize whether cached number of overlaps is consistent with a real one after both molecule
+// moves and scaling moves.
+// For normal integration, sanitize whether there are no overlaps after molecule moves and after scaling moves
 
-// #define SIMULATION_SANITIZE_CACHED_OVERLAPS
+// #define SIMULATION_SANITIZE_OVERLAPS
 
 #include <random>
 #include <iosfwd>
