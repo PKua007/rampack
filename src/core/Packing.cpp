@@ -1294,7 +1294,7 @@ bool Packing::isBoxUpscaled(const TriclinicBox &oldBox, const TriclinicBox &newB
         double norm2New = newSide.norm2();
         // For now, we can handle only box transformations without sheering and rotations - exit if box vectors are not
         // co-linear
-        if (std::abs(dot*dot/norm2Old/norm2New - 1) < -EPSILON)
+        if (std::abs(dot*dot/norm2Old/norm2New - 1) > EPSILON)
             return false;
         // Factor < 1 may lead to an overlap - box is not only upscaled
         if (dot*dot/norm2Old/norm2Old < 1 + EPSILON)

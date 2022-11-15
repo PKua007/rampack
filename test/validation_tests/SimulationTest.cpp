@@ -23,7 +23,27 @@
 #include "core/move_samplers/TranslationSampler.h"
 #include "core/move_samplers/RotationSampler.h"
 #include "utils/OMPMacros.h"
+#include "core/lattice/UnitCellFactory.h"
+#include "core/lattice/Lattice.h"
+#include "core/volume_scalers/TriclinicDeltaScaler.h"
 
+
+namespace {
+    class OverlapGuard : public Observable {
+    public:
+        void calculate(const Packing &packing, [[maybe_unused]] double temperature, [[maybe_unused]] double pressure,
+                       const ShapeTraits &shapeTraits) override
+        {
+            REQUIRE(packing.countTotalOverlaps(shapeTraits.getInteraction()) == 0);
+        }
+
+        [[nodiscard]] std::vector<std::string> getIntervalHeader() const override { return {}; }
+        [[nodiscard]] std::vector<std::string> getNominalHeader() const override { return {}; }
+        [[nodiscard]] std::vector<double> getIntervalValues() const override { return {}; }
+        [[nodiscard]] std::vector<std::string> getNominalValues() const override { return {}; }
+        [[nodiscard]] std::string getName() const override { return "overlap guard"; }
+    };
+}
 
 TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
     // We choose temperature 10 and pressure 1. For particles of radius 0.05 we should obtain number density 0.0999791
@@ -305,4 +325,26 @@ TEST_CASE("Simulation: overlap reduction for hard sphere liquid", "[medium]") {
         CHECK(finalOverlaps == 0);
         CHECK(finalDensity > minimalDensity);
     }
+}
+
+TEST_CASE("Simulation: upscaling skip stress test", "[short]") {
+    omp_set_num_threads(1);
+
+    auto cell = UnitCellFactory::createFccCell(1.43);
+    Lattice lattice(cell, {3, 3, 3});
+    auto box = lattice.getLatticeBox();
+    auto shapes = lattice.generateMolecules();
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    SphereTraits sphereTraits(0.5);
+    auto packing = std::make_unique<Packing>(box, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
+    auto volumeScaler = std::make_unique<TriclinicDeltaScaler>(true);
+    std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
+    moveSamplers.push_back(std::make_unique<TranslationSampler>(0.001));
+    Simulation simulation(std::move(packing), std::move(moveSamplers), 0.0005, 1234, std::move(volumeScaler));
+    auto collector = std::make_unique<ObservablesCollector>();
+    collector->addObservable(std::make_unique<OverlapGuard>(), ObservablesCollector::SNAPSHOT);
+    std::ostringstream loggerStream;
+    Logger logger(loggerStream);
+
+    simulation.integrate(1, 100, 9000, 1000, 100, 1, sphereTraits, std::move(collector), nullptr, logger);
 }
