@@ -33,6 +33,7 @@
 #include "core/RamtrjPlayer.h"
 #include "PackingLoader.h"
 #include "ParameterUpdaterFactory.h"
+#include "core/XYZRecorder.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -892,6 +893,7 @@ int Frontend::trajectory(int argc, char **argv) {
     std::string auxOutput;
     std::string auxVerbosity;
     std::string storeFilename;
+    std::string xyzFilename;
 
     options.add_options()
         ("h,help", "prints help for this mode")
@@ -937,7 +939,9 @@ int Frontend::trajectory(int argc, char **argv) {
                                "verbosity: error, warn, info, verbose, debug. Defaults to: info",
          cxxopts::value<std::string>(auxVerbosity))
         ("s,store-trajectory", "store the trajectory; it is most useful for broken trajectories fixed using --auto-fix",
-         cxxopts::value<std::string>(storeFilename));
+         cxxopts::value<std::string>(storeFilename))
+        ("x,generate-xyz", "generates (extended) XYZ trajectory and stores it in a given file",
+         cxxopts::value<std::string>(xyzFilename));
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
@@ -967,10 +971,10 @@ int Frontend::trajectory(int argc, char **argv) {
         die("Trajectory file must be specified with option -t [input file name]", this->logger);
     if (!parsedOptions.count("observables") && !parsedOptions.count("bulk-observables")
         && !parsedOptions.count("log-info") && !parsedOptions.count("generate-dat")
-        && !parsedOptions.count("generate-wolfram"))
+        && !parsedOptions.count("generate-wolfram") && !parsedOptions.count("generate-xyz"))
     {
-        die("At least one of: --observables, --bulk-observables, --log-info, --generate-dat, --generate-wolfram "
-            "options must be specified", this->logger);
+        die("At least one of: --observables, --bulk-observables, --log-info, --generate-dat, "
+            "--generate-wolfram, --generate-xyz options must be specified", this->logger);
     }
 
     Parameters params = this->loadParameters(inputFilename);
@@ -1101,6 +1105,26 @@ int Frontend::trajectory(int argc, char **argv) {
         if (parsedOptions.count("generate-wolfram"))
             this->storeWolframVisualization(*packing, shapeTraits->getPrinter(), wolframFilename);
         this->logger.info() << std::endl;
+    }
+
+    // Store XYZ trajectory (if desired)
+    if (parsedOptions.count("generate-xyz")) {
+        auto xyzOut = std::make_unique<std::ofstream>(xyzFilename);
+        ValidateOpenedDesc(*xyzOut, xyzFilename, "to store XYZ trajectory");
+        XYZRecorder recorder(std::move(xyzOut));
+
+        this->logger.info() << "Starting simulation replay for XYZ trajectory export..." << std::endl;
+        using namespace std::chrono;
+        auto start = high_resolution_clock::now();
+        while (player->hasNext()) {
+            player->nextSnapshot(*packing, shapeTraits->getInteraction());
+            recorder.recordSnapshot(*packing, player->getCurrentSnapshotCycles());
+            this->logger.info() << "Replayed cycle " << player->getCurrentSnapshotCycles() << "; " << std::endl;
+        }
+        auto end = high_resolution_clock::now();
+        double time = duration<double>(end - start).count();
+
+        this->logger.info() << "Replay finished after " << time << " s." << std::endl;
     }
 
     return EXIT_SUCCESS;
