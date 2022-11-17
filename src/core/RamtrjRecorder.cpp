@@ -2,11 +2,11 @@
 // Created by pkua on 04.04.2022.
 //
 
-#include "SimulationRecorder.h"
+#include "RamtrjRecorder.h"
 
 
-SimulationRecorder::SimulationRecorder(std::unique_ptr<std::iostream> stream_, std::size_t numParticles,
-                                       std::size_t cycleStep, bool append)
+RamtrjRecorder::RamtrjRecorder(std::unique_ptr<std::iostream> stream_, std::size_t numParticles,
+                               std::size_t cycleStep, bool append)
         : stream{std::move(stream_)}, cycleStep{cycleStep}, numParticles{numParticles}
 {
     Expects(numParticles > 0);
@@ -22,7 +22,7 @@ SimulationRecorder::SimulationRecorder(std::unique_ptr<std::iostream> stream_, s
         this->numSnapshots = header.numSnapshots;
 
         this->stream->seekp(0, std::ios_base::end);
-        std::streamoff expectedPos = SimulationIO::streamoffForSnapshot(header, this->numSnapshots);
+        std::streamoff expectedPos = RamtrjIO::streamoffForSnapshot(header, this->numSnapshots);
         ValidateMsg(this->stream->tellp() == expectedPos, "RAMTRJ append error: broken snapshot structure");
     } else {
         this->stream->seekp(0, std::ios_base::end);
@@ -31,28 +31,28 @@ SimulationRecorder::SimulationRecorder(std::unique_ptr<std::iostream> stream_, s
         Header header;
         header.numParticles = this->numParticles;
         header.cycleStep = this->cycleStep;
-        SimulationIO::writeHeader(header, *this->stream);
+        RamtrjIO::writeHeader(header, *this->stream);
     }
 }
 
-SimulationRecorder::~SimulationRecorder() {
-    this->close();
+RamtrjRecorder::~RamtrjRecorder() {
+    this->close0();
 }
 
-void SimulationRecorder::recordSnapshot(const Packing &packing, std::size_t cycle) {
+void RamtrjRecorder::recordSnapshot(const Packing &packing, std::size_t cycle) {
     Expects(this->stream != nullptr);
     Expects(cycle > 0);
     Expects(cycle == (this->numSnapshots + 1) * this->cycleStep);
     Expects(packing.size() == this->numParticles);
 
-    SimulationIO::writeBox(packing.getBox(), *this->stream);
+    RamtrjIO::writeBox(packing.getBox(), *this->stream);
     for (const auto &shape : packing)
-        SimulationIO::writeShape(shape, *this->stream);
+        RamtrjIO::writeShape(shape, *this->stream);
 
     this->numSnapshots++;
 }
 
-void SimulationRecorder::close() {
+void RamtrjRecorder::close0() {
     if (this->stream == nullptr)
         return;
 
@@ -61,7 +61,7 @@ void SimulationRecorder::close() {
     header.numParticles = this->numParticles;
     header.cycleStep = this->cycleStep;
     this->stream->seekp(0);
-    SimulationIO::writeHeader(header, *this->stream);
+    RamtrjIO::writeHeader(header, *this->stream);
 
     this->stream = nullptr;
 }

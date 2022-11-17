@@ -4,72 +4,72 @@
 
 #include <sstream>
 
-#include "SimulationPlayer.h"
+#include "RamtrjPlayer.h"
 #include "utils/Assertions.h"
 
 
-SimulationPlayer::SimulationPlayer(std::unique_ptr<std::istream> in) : in{std::move(in)} {
+RamtrjPlayer::RamtrjPlayer(std::unique_ptr<std::istream> in) : in{std::move(in)} {
     this->in->seekg(0);
-    this->header = SimulationIO::readHeader(*this->in);
+    this->header = RamtrjIO::readHeader(*this->in);
 
     this->in->seekg(0, std::ios_base::end);
-    std::streamoff expectedPos = SimulationIO::streamoffForSnapshot(this->header, this->header.numSnapshots);
+    std::streamoff expectedPos = RamtrjIO::streamoffForSnapshot(this->header, this->header.numSnapshots);
     ValidateMsg(this->in->tellg() == expectedPos, "RAMTRJ read error: broken snapshot structure");
 
     this->reset();
 }
 
-SimulationPlayer::SimulationPlayer(std::unique_ptr<std::istream> in, SimulationPlayer::AutoFix &autoFix)
+RamtrjPlayer::RamtrjPlayer(std::unique_ptr<std::istream> in, RamtrjPlayer::AutoFix &autoFix)
         : in{std::move(in)}
 {
     this->in->seekg(0);
     try {
-        this->header = SimulationIO::readHeader(*this->in);
+        this->header = RamtrjIO::readHeader(*this->in);
     } catch (const ValidationException &ex) {
         autoFix.reportError(ex.what());
         std::rethrow_exception(std::current_exception());
     }
 
-    std::streamoff expectedPos = SimulationIO::streamoffForSnapshot(this->header, this->header.numSnapshots);
+    std::streamoff expectedPos = RamtrjIO::streamoffForSnapshot(this->header, this->header.numSnapshots);
     this->in->seekg(0, std::ios_base::end);
     std::streamoff realPos = this->in->tellg();
     if (realPos == expectedPos) {
         autoFix.reportNofix(this->header);
     } else {
-        std::size_t snapshotBytes = realPos - SimulationIO::getHeaderSize();
+        std::size_t snapshotBytes = realPos - RamtrjIO::getHeaderSize();
         autoFix.tryFixing(this->header, snapshotBytes);
     }
 
     this->reset();
 }
 
-bool SimulationPlayer::hasNext() const {
+bool RamtrjPlayer::hasNext() const {
     if (this->in == nullptr)
         return false;
 
     return this->currentSnapshot < this->header.numSnapshots;
 }
 
-void SimulationPlayer::nextSnapshot(Packing &packing, const Interaction &interaction) {
+void RamtrjPlayer::nextSnapshot(Packing &packing, const Interaction &interaction) {
     Expects(this->in != nullptr);
     Expects(packing.size() == this->header.numParticles);
 
-    TriclinicBox newBox = SimulationIO::readBox(*this->in);
+    TriclinicBox newBox = RamtrjIO::readBox(*this->in);
     std::vector<Shape> newShapes;
     newShapes.reserve(this->header.numParticles);
     for (std::size_t i{}; i < packing.size(); i++)
-        newShapes.push_back(SimulationIO::readShape(*this->in));
+        newShapes.push_back(RamtrjIO::readShape(*this->in));
 
     packing.reset(std::move(newShapes), newBox, interaction);
 
     this->currentSnapshot++;
 }
 
-void SimulationPlayer::lastSnapshot(Packing &packing, const Interaction &interaction) {
+void RamtrjPlayer::lastSnapshot(Packing &packing, const Interaction &interaction) {
     this->jumpToSnapshot(packing, interaction, this->header.numSnapshots * this->header.cycleStep);
 }
 
-void SimulationPlayer::jumpToSnapshot(Packing &packing, const Interaction &interaction, std::size_t cycleNumber) {
+void RamtrjPlayer::jumpToSnapshot(Packing &packing, const Interaction &interaction, std::size_t cycleNumber) {
     Expects(this->in != nullptr);
     Expects(this->header.numSnapshots > 0);
     Expects(cycleNumber % this->header.cycleStep == 0);
@@ -79,20 +79,20 @@ void SimulationPlayer::jumpToSnapshot(Packing &packing, const Interaction &inter
     Expects(snapshotNumber <= this->header.numSnapshots);
 
     this->currentSnapshot = snapshotNumber - 1;
-    auto offset = SimulationIO::streamoffForSnapshot(this->header, this->currentSnapshot);
+    auto offset = RamtrjIO::streamoffForSnapshot(this->header, this->currentSnapshot);
     this->in->seekg(offset);
     this->nextSnapshot(packing, interaction);
 }
 
-std::size_t SimulationPlayer::getCurrentSnapshotCycles() const {
+std::size_t RamtrjPlayer::getCurrentSnapshotCycles() const {
     return this->currentSnapshot * this->header.cycleStep;
 }
 
-void SimulationPlayer::close() {
+void RamtrjPlayer::close() {
     this->in = nullptr;
 }
 
-void SimulationPlayer::dumpHeader(Logger &out) const {
+void RamtrjPlayer::dumpHeader(Logger &out) const {
     out.info() << "RAMTRJ: RAMPACK trajectory file" << std::endl;
     out << "file version            : " << static_cast<int>(this->header.versionMajor) << ".";
     out << static_cast<int>(this->header.versionMinor) << std::endl;
@@ -102,13 +102,13 @@ void SimulationPlayer::dumpHeader(Logger &out) const {
     out << "total number of cycles  : " << (this->header.cycleStep * this->header.numSnapshots) << std::endl;
 }
 
-void SimulationPlayer::reset() {
-    auto pos = static_cast<std::streamoff>(SimulationPlayer::getHeaderSize());
+void RamtrjPlayer::reset() {
+    auto pos = static_cast<std::streamoff>(RamtrjPlayer::getHeaderSize());
     this->in->seekg(pos);
     this->currentSnapshot = 0;
 }
 
-void SimulationPlayer::AutoFix::dumpInfo(Logger &out) const {
+void RamtrjPlayer::AutoFix::dumpInfo(Logger &out) const {
     if (!this->fixingSuccessful) {
         out.error() << "Trajectory was invalid and fixing it failed. Error message: " << std::endl;
         out.error() << this->errorMessage << std::endl;
@@ -131,11 +131,11 @@ void SimulationPlayer::AutoFix::dumpInfo(Logger &out) const {
     }
 }
 
-SimulationPlayer::AutoFix::AutoFix(std::size_t expectedNumMolecules) : expectedNumMolecules{expectedNumMolecules} {
+RamtrjPlayer::AutoFix::AutoFix(std::size_t expectedNumMolecules) : expectedNumMolecules{expectedNumMolecules} {
     Expects(expectedNumMolecules > 0);
 }
 
-void SimulationPlayer::AutoFix::reportNofix(const SimulationIO::Header &header_) {
+void RamtrjPlayer::AutoFix::reportNofix(const RamtrjIO::Header &header_) {
     this->fixingSuccessful = true;
     this->bytesPerSnapshot = getSnapshotSize(header_);
     this->headerSnapshots = header_.numSnapshots;
@@ -143,13 +143,13 @@ void SimulationPlayer::AutoFix::reportNofix(const SimulationIO::Header &header_)
     this->inferredSnapshots = header_.numSnapshots;
 }
 
-void SimulationPlayer::AutoFix::reportError(const std::string &message) {
+void RamtrjPlayer::AutoFix::reportError(const std::string &message) {
     this->fixingNeeded = false;
     this->fixingSuccessful = false;
     this->errorMessage = message;
 }
 
-void SimulationPlayer::AutoFix::tryFixing(SimulationIO::Header &header_, std::size_t snapshotBytes) {
+void RamtrjPlayer::AutoFix::tryFixing(RamtrjIO::Header &header_, std::size_t snapshotBytes) {
     if (header_.numParticles == 0 || header_.cycleStep == 0) {
         Assert(header_.versionMajor == 1 && header_.versionMinor == 0);
         this->reportError("The header does not contain information about the number of particles or cycle step - it was"
@@ -166,7 +166,7 @@ void SimulationPlayer::AutoFix::tryFixing(SimulationIO::Header &header_, std::si
 
     this->fixingNeeded = true;
     this->fixingSuccessful = true;
-    this->bytesPerSnapshot = SimulationIO::getSnapshotSize(header_);
+    this->bytesPerSnapshot = RamtrjIO::getSnapshotSize(header_);
     header_.numSnapshots = this->inferredSnapshots = snapshotBytes / this->bytesPerSnapshot;
     this->bytesRemainder = snapshotBytes % this->bytesPerSnapshot;
 }
