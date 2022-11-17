@@ -11,8 +11,7 @@
 #include "utils/Assertions.h"
 
 
-
-XCPrinter::Polyhedron XCPrinter::buildPolyhedron0(const AbstractXCGeometry &geometry, std::size_t subdivisions) {
+Polyhedron XCPrinter::buildPolyhedron0(const AbstractXCGeometry &geometry, std::size_t subdivisions) {
     auto spherePoints = XCPrinter::generateSpherePoints(subdivisions);
 
     using QHVector = quickhull::Vector3<double>;
@@ -30,14 +29,14 @@ XCPrinter::Polyhedron XCPrinter::buildPolyhedron0(const AbstractXCGeometry &geom
     const auto &vertexBuffer = hull.getVertexBuffer();
     Assert(indexBuffer.size() % 3 == 0);
 
-    VertexList vertices;
+    Polyhedron::VertexList vertices;
     vertices.reserve(vertexBuffer.size());
     auto vectorConverter = [](const QHVector &vec) {
         return Vector<3>{vec.x, vec.y, vec.z};
     };
     std::transform(vertexBuffer.begin(), vertexBuffer.end(), std::back_inserter(vertices), vectorConverter);
 
-    TriangleList triangles;
+    Polyhedron::TriangleList triangles;
     triangles.reserve(indexBuffer.size() / 3);
     for (std::size_t i{}; i < indexBuffer.size(); i += 3)
         triangles.push_back({indexBuffer[i], indexBuffer[i + 1], indexBuffer[i + 2]});
@@ -45,13 +44,13 @@ XCPrinter::Polyhedron XCPrinter::buildPolyhedron0(const AbstractXCGeometry &geom
     return Polyhedron{geometry.getCenter(), std::move(vertices), std::move(triangles)};
 }
 
-XCPrinter::VertexList XCPrinter::generateSpherePoints(std::size_t subdivisions) {
-    VertexList verts = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
-    TriangleList tris = {{0, 3, 5}, {2, 0, 5}, {1, 2, 5}, {3, 1, 5},
+Polyhedron::VertexList XCPrinter::generateSpherePoints(std::size_t subdivisions) {
+    Polyhedron::VertexList verts = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
+    Polyhedron::TriangleList tris = {{0, 3, 5}, {2, 0, 5}, {1, 2, 5}, {3, 1, 5},
                          {3, 0, 4}, {0, 2, 4}, {2, 1, 4}, {1, 3, 4}};
 
     for (std::size_t i{}; i < subdivisions; i++) {
-        TriangleList newTris;
+        Polyhedron::TriangleList newTris;
         for (const auto &tri : tris) {
             std::size_t backIdx = verts.size();
             verts.push_back((verts[tri[0]] + verts[tri[1]]).normalized());
@@ -67,41 +66,4 @@ XCPrinter::VertexList XCPrinter::generateSpherePoints(std::size_t subdivisions) 
     }
 
     return verts;
-}
-
-std::string XCPrinter::Polyhedron::toWolfram() const {
-    std::ostringstream out;
-    out << std::fixed;
-
-    out << "GraphicsComplex[{" << std::endl;
-    for (std::size_t i{}; i < this->vertices.size(); i++) {
-        out << "    " << this->vertices[i];
-        if (i < this->vertices.size() - 1)
-            out << ",";
-        out << std::endl;
-    }
-    out << "}," << std::endl << "Polygon[{" << std::endl;
-    for (std::size_t i{}; i < this->triangles.size(); i++) {
-        const auto &tri = this->triangles[i];
-        out << "    {" << (tri[0] + 1) << ", " << (tri[1] + 1) << ", " << (tri[2] + 1) << "}";
-        if (i < this->triangles.size() - 1)
-            out << ",";
-        out << std::endl;
-    }
-    out << "}]]" << std::endl;
-
-    return out.str();
-}
-
-double XCPrinter::Polyhedron::getVolume() const {
-    double vol{};
-
-    for (const auto &triangle : this->triangles) {
-        Vector<3> v1 = this->vertices[triangle[2]] - this->vertices[triangle[0]];
-        Vector<3> v2 = this->vertices[triangle[2]] - this->vertices[triangle[1]];
-        Vector<3> v3 = this->vertices[triangle[2]] - this->center;
-        vol += 1./6 * std::abs((v1 ^ v2) * v3);
-    }
-
-    return vol;
 }

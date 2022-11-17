@@ -10,41 +10,15 @@
 #include <vector>
 
 #include "geometry/xenocollide/AbstractXCGeometry.h"
+#include "geometry/Polyhedron.h"
 
 
 /**
  * @brief A class responsible for creating meshes for a given CollideGeometry.
  */
 class XCPrinter {
-public:
-    using Triangle = std::array<std::size_t, 3>;
-    using VertexList = std::vector<Vector<3>>;
-    using TriangleList = std::vector<Triangle>;
-
-    /**
-     * @brief A helper structure encapsulating a polyhedron mesh.
-     */
-    struct Polyhedron {
-        /** @brief The center of the polyhedron (as given by @a CollideGeometry::getCenter()). */
-        const Vector<3> center;
-        /** @brief A list of vertices of the polyhedron. */
-        const VertexList vertices;
-        /** @brief A list of triangles building the polyhedron. Triangles are triples of inices of vertices. */
-        const TriangleList triangles;
-
-        /**
-         * @brief Constructs Wolfram Mathematica GraphicsComplex representing the polyhedron.
-         */
-        [[nodiscard]] std::string toWolfram() const;
-
-        /**
-         * @brief Returns the volume of the polyhedron.
-         */
-        [[nodiscard]] double getVolume() const;
-    };
-
 private:
-    static VertexList generateSpherePoints(std::size_t subdivisions);
+    static Polyhedron::VertexList generateSpherePoints(std::size_t subdivisions);
     static Polyhedron buildPolyhedron0(const AbstractXCGeometry &geometry, std::size_t subdivisions);
 
 public:
