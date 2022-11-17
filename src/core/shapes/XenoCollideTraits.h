@@ -14,6 +14,7 @@
 #include "geometry/xenocollide/AbstractXCGeometry.h"
 #include "geometry/xenocollide/XenoCollide.h"
 #include "geometry/xenocollide/XCPrinter.h"
+#include "geometry/Polyhedron.h"
 
 
 /**
@@ -48,7 +49,7 @@ private:
     double volume{};
 
     mutable std::optional<double> rangeRadius;
-    mutable std::vector<XCPrinter::Polyhedron> polyhedra;
+    mutable std::vector<Polyhedron> polyhedra;
 
 public:
     /** @brief The number of sphere subdivisions when printing the shape (see XCPrinter::XCPrintes @a subdivision
