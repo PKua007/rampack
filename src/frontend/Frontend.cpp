@@ -296,8 +296,8 @@ void Frontend::performIntegration(Simulation &simulation, Simulation::Environmen
 
     std::unique_ptr<RamtrjRecorder> recorder;
     if (!runParams.recordingFilename.empty()) {
-        recorder = this->loadSimulationRecorder(runParams.recordingFilename, simulation.getPacking().size(),
-                                                runParams.snapshotEvery, isContinuation);
+        recorder = this->loadRamtrjRecorder(runParams.recordingFilename, simulation.getPacking().size(),
+                                            runParams.snapshotEvery, isContinuation);
     }
 
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','),
@@ -326,9 +326,9 @@ void Frontend::performIntegration(Simulation &simulation, Simulation::Environmen
         this->storeBulkObservables(observablesCollector, runParams.bulkObservableFilenamePattern);
 }
 
-std::unique_ptr<RamtrjRecorder> Frontend::loadSimulationRecorder(const std::string &filename,
-                                                                 std::size_t numMolecules, std::size_t cycleStep,
-                                                                 bool &isContinuation) const {
+std::unique_ptr<RamtrjRecorder> Frontend::loadRamtrjRecorder(const std::string &filename, std::size_t numMolecules,
+                                                             std::size_t cycleStep, bool &isContinuation) const
+{
     std::unique_ptr<std::fstream> inout;
 
     if (isContinuation) {
@@ -362,8 +362,8 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
 
     std::unique_ptr<RamtrjRecorder> recorder;
     if (!runParams.recordingFilename.empty()) {
-        recorder = this->loadSimulationRecorder(runParams.recordingFilename, simulation.getPacking().size(),
-                                                runParams.snapshotEvery, isContinuation);
+        recorder = this->loadRamtrjRecorder(runParams.recordingFilename, simulation.getPacking().size(),
+                                            runParams.snapshotEvery, isContinuation);
     }
 
     if (!runParams.helperInteraction.empty()) {
@@ -982,7 +982,7 @@ int Frontend::trajectory(int argc, char **argv) {
     this->createWalls(*packing, params.walls);
 
     bool autoFix = parsedOptions.count("auto-fix");
-    auto player = this->loadSimulationPlayer(trajectoryFilename, packing->size(), autoFix);
+    auto player = this->loadRamtrjPlayer(trajectoryFilename, packing->size(), autoFix);
     if (player == nullptr)
         return EXIT_FAILURE;
 
@@ -999,8 +999,8 @@ int Frontend::trajectory(int argc, char **argv) {
             die("Input and output trajectory file names are identical!", this->logger);
 
         bool isContinuation = false;
-        auto recorder = this->loadSimulationRecorder(storeFilename, player->getNumMolecules(), player->getCycleStep(),
-                                                     isContinuation);
+        auto recorder = this->loadRamtrjRecorder(storeFilename, player->getNumMolecules(), player->getCycleStep(),
+                                                 isContinuation);
 
         this->logger.info() << "Storing fixed trajectory started..." << std::endl;
 
@@ -1106,8 +1106,8 @@ int Frontend::trajectory(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-std::unique_ptr<RamtrjPlayer> Frontend::loadSimulationPlayer(std::string &trajectoryFilename,
-                                                             std::size_t numMolecules, bool autoFix_)
+std::unique_ptr<RamtrjPlayer> Frontend::loadRamtrjPlayer(std::string &trajectoryFilename,
+                                                         std::size_t numMolecules, bool autoFix_)
 {
     auto trajectoryStream = std::make_unique<std::ifstream>(trajectoryFilename,
                                                             std::ios_base::in | std::ios_base::binary);
