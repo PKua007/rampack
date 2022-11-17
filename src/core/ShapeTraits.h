@@ -31,7 +31,7 @@ public:
     /**
      * @brief Returns the ShapePrinter object responsible for shape printing in supported format.
      */
-    [[nodiscard]] virtual const ShapePrinter &getPrinter() const = 0;
+    [[nodiscard]] virtual const ShapePrinter &getPrinter(const std::string &format) const = 0;
 };
 
 #endif //RAMPACK_SHAPETRAITS_H

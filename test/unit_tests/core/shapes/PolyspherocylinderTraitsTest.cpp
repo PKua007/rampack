@@ -63,7 +63,7 @@ TEST_CASE("PolyspherocylinderTraits") {
     }
 
     SECTION("toWolfram") {
-        const ShapePrinter &printer = traits.getPrinter();
+        const ShapePrinter &printer = traits.getPrinter("wolfram");
         Shape shape({-1, 0, 0}, Matrix<3, 3>::rotation(0, M_PI / 2, 0));
 
         CHECK(printer.toWolfram(shape)

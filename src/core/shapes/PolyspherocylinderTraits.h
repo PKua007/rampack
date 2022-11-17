@@ -146,7 +146,7 @@ public:
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->geometry; }
-    [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
+    [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override;
     [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const {
         return this->geometry.getSpherocylinderData();
     }

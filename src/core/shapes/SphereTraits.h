@@ -49,7 +49,7 @@ public:
     SphereTraits(double radius, std::unique_ptr<CentralInteraction> centralInteraction);
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; };
-    [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
+    [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override;
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
     [[nodiscard]] double getVolume() const override;
 

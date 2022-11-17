@@ -167,3 +167,8 @@ bool PolyspherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matri
 
     return false;
 }
+
+const ShapePrinter &PolyspherocylinderTraits::getPrinter(const std::string &format) const {
+    ExpectsMsg(format == "wolfram", "PolyspherocylinderTraits: unknown printer format: " + format);
+    return *this;
+}

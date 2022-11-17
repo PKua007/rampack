@@ -35,7 +35,9 @@ public:
 
     [[nodiscard]] const Interaction &getInteraction() const override { return this->compoundInteraction; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->mainShapeTraits->getGeometry(); }
-    [[nodiscard]] const ShapePrinter &getPrinter() const override { return this->mainShapeTraits->getPrinter(); }
+    [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override {
+        return this->mainShapeTraits->getPrinter(format);
+    }
 };
 
 

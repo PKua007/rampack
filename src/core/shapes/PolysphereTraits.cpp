@@ -42,6 +42,11 @@ PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry
     this->interaction = std::make_unique<HardInteraction>(this->getSphereData());
 }
 
+const ShapePrinter &PolysphereTraits::getPrinter(const std::string &format) const {
+    ExpectsMsg(format == "wolfram", "PolysphereTraits: unknown printer format: " + format);
+    return *this;
+}
+
 PolysphereTraits::SphereData::SphereData(const Vector<3> &position, double radius)
         : position{position}, radius{radius}
 {

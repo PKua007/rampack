@@ -142,7 +142,7 @@ public:
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->geometry; }
-    [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
+    [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override;
 
     [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
 

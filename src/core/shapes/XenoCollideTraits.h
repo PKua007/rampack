@@ -15,6 +15,7 @@
 #include "geometry/xenocollide/XenoCollide.h"
 #include "geometry/xenocollide/XCPrinter.h"
 #include "geometry/Polyhedron.h"
+#include "utils/Assertions.h"
 
 
 /**
@@ -73,7 +74,11 @@ public:
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
-    [[nodiscard]] const ShapePrinter &getPrinter() const override { return *this; }
+
+    [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override {
+        ExpectsMsg(format == "wolfram", "XenoCollideTraits: unknown printer format: " + format);
+        return *this;
+    }
 
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const final {
         return shape.getOrientation() * this->primaryAxis;
