@@ -74,3 +74,8 @@ bool SpherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matrix<3,
 
     return false;
 }
+
+const ShapePrinter &SpherocylinderTraits::getPrinter(const std::string &format) const {
+    ExpectsMsg(format == "wolfram", "SpherocylinderTraits: unknown printer format: " + format);
+    return *this;
+}

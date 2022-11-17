@@ -30,6 +30,11 @@ double SphereTraits::getVolume() const {
     return 4./3 * M_PI * std::pow(this->radius, 3);
 }
 
+const ShapePrinter &SphereTraits::getPrinter(const std::string &format) const {
+    ExpectsMsg(format == "wolfram", "SphereTraits: unknown printer format: " + format);
+    return *this;
+}
+
 bool SphereTraits::HardInteraction::overlapBetween(const Vector<3> &pos1,
                                                    [[maybe_unused]] const Matrix<3, 3> &orientation1,
                                                    [[maybe_unused]] std::size_t idx1,

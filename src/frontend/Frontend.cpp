@@ -318,7 +318,7 @@ void Frontend::performIntegration(Simulation &simulation, Simulation::Environmen
     if (!runParams.packingFilename.empty())
         this->storePacking(simulation, runParams.packingFilename);
     if (!runParams.wolframFilename.empty())
-        this->storeWolframVisualization(simulation.getPacking(), shapeTraits.getPrinter(), runParams.wolframFilename);
+        this->storeWolframVisualization(simulation.getPacking(), shapeTraits.getPrinter("wolfram"), runParams.wolframFilename);
     if (!runParams.outputFilename.empty()) {
         this->storeAverageValues(runParams.outputFilename, observablesCollector, simulation.getCurrentTemperature(),
                                  simulation.getCurrentPressure());
@@ -387,7 +387,7 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
     if (!runParams.packingFilename.empty())
         this->storePacking(simulation, runParams.packingFilename);
     if (!runParams.wolframFilename.empty())
-        this->storeWolframVisualization(simulation.getPacking(), shapeTraits->getPrinter(), runParams.wolframFilename);
+        this->storeWolframVisualization(simulation.getPacking(), shapeTraits->getPrinter("wolfram"), runParams.wolframFilename);
     if (!runParams.bulkObservableFilenamePattern.empty())
         this->storeBulkObservables(observablesCollector, runParams.bulkObservableFilenamePattern);
 }
@@ -752,7 +752,7 @@ int Frontend::preview(int argc, char **argv) {
 
     // Store Mathematica packing (if desired)
     if (parsedOptions.count("wolfram"))
-        this->storeWolframVisualization(*packing, shapeTraits->getPrinter(), wolframFilename);
+        this->storeWolframVisualization(*packing, shapeTraits->getPrinter("wolfram"), wolframFilename);
 
     return EXIT_SUCCESS;
 }
@@ -1103,7 +1103,7 @@ int Frontend::trajectory(int argc, char **argv) {
         if (parsedOptions.count("generate-dat"))
             this->generateDatFile(*packing, params, *shapeTraits, datFilename, player->getCurrentSnapshotCycles());
         if (parsedOptions.count("generate-wolfram"))
-            this->storeWolframVisualization(*packing, shapeTraits->getPrinter(), wolframFilename);
+            this->storeWolframVisualization(*packing, shapeTraits->getPrinter("wolfram"), wolframFilename);
         this->logger.info() << std::endl;
     }
 
@@ -1259,7 +1259,7 @@ int Frontend::shapePreview(int argc, char **argv) {
     if (parsedOptions.count("wolfram-preview")) {
         std::ofstream wolframFile(wolframFilename);
         ValidateOpenedDesc(wolframFile, wolframFilename, " to store Wolfram preview of the shape");
-        const auto &printer = traits->getPrinter();
+        const auto &printer = traits->getPrinter("wolfram");
         wolframFile << "Graphics3D[" << printer.toWolfram({}) << "]";
     }
 
