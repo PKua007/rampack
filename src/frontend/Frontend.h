@@ -17,8 +17,8 @@
 #include "core/Interaction.h"
 #include "core/lattice/OrthorhombicArrangingModel.h"
 #include "core/Simulation.h"
-#include "core/SimulationRecorder.h"
-#include "core/SimulationPlayer.h"
+#include "core/RamtrjRecorder.h"
+#include "core/RamtrjPlayer.h"
 #include "PackingLoader.h"
 
 /**
@@ -41,10 +41,10 @@ private:
     void generateDatFile(const Packing &packing, const Parameters &params, const ShapeTraits &traits,
                          const std::string &datFilename, std::size_t cycles = 0);
     Logger::LogType parseVerbosityLevel(const std::string &verbosityLevelName) const;
-    std::unique_ptr<SimulationRecorder> loadSimulationRecorder(const std::string &filename, std::size_t numMolecules,
-                                                               std::size_t cycleStep, bool &isContinuation) const;
-    std::unique_ptr<SimulationPlayer> loadSimulationPlayer(std::string &trajectoryFilename, size_t numMolecules,
-                                                           bool autoFix_);
+    std::unique_ptr<RamtrjRecorder> loadSimulationRecorder(const std::string &filename, std::size_t numMolecules,
+                                                           std::size_t cycleStep, bool &isContinuation) const;
+    std::unique_ptr<RamtrjPlayer> loadSimulationPlayer(std::string &trajectoryFilename, size_t numMolecules,
+                                                       bool autoFix_);
     void createWalls(Packing &packing, const std::string &walls);
     void attachSnapshotOut(ObservablesCollector &collector, const std::string& filename, bool isContinuation) const;
 

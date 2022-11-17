@@ -29,8 +29,8 @@
 #include "TriclinicBoxScalerFactory.h"
 #include "core/shapes/CompoundShapeTraits.h"
 #include "MoveSamplerFactory.h"
-#include "core/SimulationRecorder.h"
-#include "core/SimulationPlayer.h"
+#include "core/RamtrjRecorder.h"
+#include "core/RamtrjPlayer.h"
 #include "PackingLoader.h"
 #include "ParameterUpdaterFactory.h"
 
@@ -294,7 +294,7 @@ void Frontend::performIntegration(Simulation &simulation, Simulation::Environmen
     runParams.print(this->logger);
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    std::unique_ptr<SimulationRecorder> recorder;
+    std::unique_ptr<RamtrjRecorder> recorder;
     if (!runParams.recordingFilename.empty()) {
         recorder = this->loadSimulationRecorder(runParams.recordingFilename, simulation.getPacking().size(),
                                                 runParams.snapshotEvery, isContinuation);
@@ -326,9 +326,9 @@ void Frontend::performIntegration(Simulation &simulation, Simulation::Environmen
         this->storeBulkObservables(observablesCollector, runParams.bulkObservableFilenamePattern);
 }
 
-std::unique_ptr<SimulationRecorder> Frontend::loadSimulationRecorder(const std::string &filename,
-                                                                     std::size_t numMolecules, std::size_t cycleStep,
-                                                                     bool &isContinuation) const {
+std::unique_ptr<RamtrjRecorder> Frontend::loadSimulationRecorder(const std::string &filename,
+                                                                 std::size_t numMolecules, std::size_t cycleStep,
+                                                                 bool &isContinuation) const {
     std::unique_ptr<std::fstream> inout;
 
     if (isContinuation) {
@@ -343,7 +343,7 @@ std::unique_ptr<SimulationRecorder> Frontend::loadSimulationRecorder(const std::
 
     ValidateOpenedDesc(*inout, filename, "to store packing data");
     this->logger.info() << "Trajectory is stored on the fly to '" << filename << "'" << std::endl;
-    return std::make_unique<SimulationRecorder>(std::move(inout), numMolecules, cycleStep, isContinuation);
+    return std::make_unique<RamtrjRecorder>(std::move(inout), numMolecules, cycleStep, isContinuation);
 }
 
 void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Environment &env,
@@ -360,7 +360,7 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
     runParams.print(this->logger);
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    std::unique_ptr<SimulationRecorder> recorder;
+    std::unique_ptr<RamtrjRecorder> recorder;
     if (!runParams.recordingFilename.empty()) {
         recorder = this->loadSimulationRecorder(runParams.recordingFilename, simulation.getPacking().size(),
                                                 runParams.snapshotEvery, isContinuation);
@@ -1106,16 +1106,16 @@ int Frontend::trajectory(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-std::unique_ptr<SimulationPlayer> Frontend::loadSimulationPlayer(std::string &trajectoryFilename,
-                                                                 std::size_t numMolecules, bool autoFix_)
+std::unique_ptr<RamtrjPlayer> Frontend::loadSimulationPlayer(std::string &trajectoryFilename,
+                                                             std::size_t numMolecules, bool autoFix_)
 {
     auto trajectoryStream = std::make_unique<std::ifstream>(trajectoryFilename,
                                                             std::ios_base::in | std::ios_base::binary);
     ValidateOpenedDesc(*trajectoryStream, trajectoryFilename, "to read trajectory");
     if (autoFix_) {
-        SimulationPlayer::AutoFix autoFix(numMolecules);
+        RamtrjPlayer::AutoFix autoFix(numMolecules);
         try {
-            auto simulationPlayer = std::make_unique<SimulationPlayer>(std::move(trajectoryStream), autoFix);
+            auto simulationPlayer = std::make_unique<RamtrjPlayer>(std::move(trajectoryStream), autoFix);
             autoFix.dumpInfo(this->logger);
             this->logger.info() << std::endl;
             return simulationPlayer;
@@ -1124,9 +1124,9 @@ std::unique_ptr<SimulationPlayer> Frontend::loadSimulationPlayer(std::string &tr
             return nullptr;
         }
     } else {
-        std::unique_ptr<SimulationPlayer> player;
+        std::unique_ptr<RamtrjPlayer> player;
         try {
-            player = std::make_unique<SimulationPlayer>(std::move(trajectoryStream));
+            player = std::make_unique<RamtrjPlayer>(std::move(trajectoryStream));
         } catch (const ValidationException &exception) {
             this->logger.error() << "Reading the trajectory failed: " << exception.what() << std::endl;
             this->logger << "You may try to fix it by adding the --auto-fix option." << std::endl;

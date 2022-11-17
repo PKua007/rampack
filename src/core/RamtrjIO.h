@@ -2,8 +2,8 @@
 // Created by pkua on 04.04.2022.
 //
 
-#ifndef RAMPACK_SIMULATIONIO_H
-#define RAMPACK_SIMULATIONIO_H
+#ifndef RAMPACK_RAMTRJIO_H
+#define RAMPACK_RAMTRJIO_H
 
 #include <istream>
 
@@ -14,7 +14,7 @@
 /**
  * @brief Base class for storing and restoring simulation trajectories (in a propertiary RAMTRJ format)
  */
-class SimulationIO {
+class RamtrjIO {
 protected:
     /**
      * @brief Header of RAMTRJ file (as is)
@@ -76,8 +76,8 @@ protected:
     /**
      * @brief Returns the size of a single snapshot as storef in the file.
      */
-    static std::size_t getSnapshotSize(const SimulationIO::Header &header);
+    static std::size_t getSnapshotSize(const RamtrjIO::Header &header);
 };
 
 
-#endif //RAMPACK_SIMULATIONIO_H
+#endif //RAMPACK_RAMTRJIO_H

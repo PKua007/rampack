@@ -2,12 +2,12 @@
 // Created by pkua on 04.04.2022.
 //
 
-#include "SimulationIO.h"
+#include "RamtrjIO.h"
 #include "utils/Assertions.h"
 #include "geometry/EulerAngles.h"
 
 
-SimulationIO::Header SimulationIO::readHeader(std::istream &in) {
+RamtrjIO::Header RamtrjIO::readHeader(std::istream &in) {
     Header header;
     in.read(reinterpret_cast<char*>(header.magic), sizeof(header.magic));
     ValidateMsg(in && std::string(&header.magic[0], &header.magic[7]) == "RAMTRJ\n", "RAMTRJ read error: magic");
@@ -30,7 +30,7 @@ SimulationIO::Header SimulationIO::readHeader(std::istream &in) {
     return header;
 }
 
-void SimulationIO::writeHeader(const Header &header, std::ostream &out) {
+void RamtrjIO::writeHeader(const Header &header, std::ostream &out) {
     out.write(reinterpret_cast<const char*>(header.magic), sizeof(header.magic));
     out.write(reinterpret_cast<const char*>(&header.versionMinor), sizeof(header.versionMinor));
     out.write(reinterpret_cast<const char*>(&header.versionMajor), sizeof(header.versionMajor));
@@ -40,21 +40,21 @@ void SimulationIO::writeHeader(const Header &header, std::ostream &out) {
     ValidateMsg(out, "RAMTRJ write error: header");
 }
 
-TriclinicBox SimulationIO::readBox(std::istream &in) {
+TriclinicBox RamtrjIO::readBox(std::istream &in) {
     double dimensions_[9];
     in.read(reinterpret_cast<char*>(dimensions_), sizeof(dimensions_));
     ValidateMsg(in, "RAMTRJ read error: snapshot box data");
     return TriclinicBox(Matrix<3, 3>(dimensions_));
 }
 
-void SimulationIO::writeBox(const TriclinicBox &box, std::ostream &out) {
+void RamtrjIO::writeBox(const TriclinicBox &box, std::ostream &out) {
     double dimensions_[9];
     box.getDimensions().copyToArray(dimensions_);
     out.write(reinterpret_cast<const char*>(dimensions_), sizeof(dimensions_));
     ValidateMsg(out, "RAMTRJ write error: shapshot box data");
 }
 
-Shape SimulationIO::readShape(std::istream &in) {
+Shape RamtrjIO::readShape(std::istream &in) {
     double position_[3];
     double eulerAngles_[3];
     in.read(reinterpret_cast<char*>(position_), sizeof(position_));
@@ -66,7 +66,7 @@ Shape SimulationIO::readShape(std::istream &in) {
     return Shape{position, orientation};
 }
 
-void SimulationIO::writeShape(const Shape &shape, std::ostream &out) {
+void RamtrjIO::writeShape(const Shape &shape, std::ostream &out) {
     EulerAngles eulerAngles(shape.getOrientation());
     double eulerAngles_[3];
     std::copy(eulerAngles.first.begin(), eulerAngles.first.end(), std::begin(eulerAngles_));
@@ -77,18 +77,18 @@ void SimulationIO::writeShape(const Shape &shape, std::ostream &out) {
     ValidateMsg(out, "RAMTRJ write error: shapshot particle data");
 }
 
-std::streamoff SimulationIO::streamoffForSnapshot(const SimulationIO::Header &header, std::size_t snapshotNum) {
+std::streamoff RamtrjIO::streamoffForSnapshot(const RamtrjIO::Header &header, std::size_t snapshotNum) {
     return static_cast<std::streamoff>(
-        SimulationIO::getHeaderSize() + snapshotNum * SimulationIO::getSnapshotSize(header)
+        RamtrjIO::getHeaderSize() + snapshotNum * RamtrjIO::getSnapshotSize(header)
     );
 }
 
-std::size_t SimulationIO::getHeaderSize() {
+std::size_t RamtrjIO::getHeaderSize() {
     return sizeof(Header::magic) + sizeof(Header::versionMinor) + sizeof(Header::versionMajor)
            + sizeof(Header::numParticles) + sizeof(Header::numSnapshots) + sizeof(Header::cycleStep);
 }
 
-std::size_t SimulationIO::getSnapshotSize(const SimulationIO::Header &header) {
+std::size_t RamtrjIO::getSnapshotSize(const RamtrjIO::Header &header) {
     std::size_t particleSize = 3*sizeof(double) + 3*sizeof(double);
     return 9*sizeof(double) + header.numParticles * particleSize;
 }
