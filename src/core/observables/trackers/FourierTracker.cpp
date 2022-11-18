@@ -4,7 +4,12 @@
 
 #include <algorithm>
 #include <Eigen/Core>
+
+// Some stray ';' require turning off -Wpedantic for this header
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 #include <root_finder/root_finder.hpp>
+#pragma GCC diagnostic pop
 
 #include "FourierTracker.h"
 #include "utils/Assertions.h"
