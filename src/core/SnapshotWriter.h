@@ -18,10 +18,6 @@ public:
 
     virtual void write(std::ostream &out, const Packing &packing, const ShapeTraits &traits,
                        const std::map<std::string, std::string> &auxInfo) const = 0;
-
-    void write(std::ostream &out, const Packing &packing, const ShapeTraits &traits) const {
-        this->write(out, packing, traits, {});
-    }
 };
 
 

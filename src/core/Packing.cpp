@@ -14,6 +14,8 @@
 #include "utils/Assertions.h"
 #include "utils/Utils.h"
 #include "utils/ParseUtils.h"
+#include "RamsnapReader.h"
+#include "RamsnapWriter.h"
 
 
 namespace {
@@ -987,83 +989,13 @@ double Packing::getVolume() const {
 }
 
 void Packing::store(std::ostream &out, const std::map<std::string, std::string> &auxInfo) const {
-    out << auxInfo.size() << std::endl;
-    for (const auto &infoEntry : auxInfo) {
-        const auto &key = infoEntry.first;
-        const auto &value = infoEntry.second;
-        Expects(std::none_of(key.begin(), key.end(), [](char c) { return std::isspace(c); }));
-        out << key << " " << value << std::endl;
-    }
-
-    out.precision(std::numeric_limits<double>::max_digits10);
-    const auto &dimensions = this->box.getDimensions();
-    out << dimensions(0, 0) << " " << dimensions(0, 1) << " " << dimensions(0, 2) << " ";
-    out << dimensions(1, 0) << " " << dimensions(1, 1) << " " << dimensions(1, 2) << " ";
-    out << dimensions(2, 0) << " " << dimensions(2, 1) << " " << dimensions(2, 2) << std::endl;
-    out << this->size() << std::endl;
-    for (const auto &shape : *this) {
-        Vector<3> position = shape.getPosition();
-        Matrix<3, 3> orientation = shape.getOrientation();
-        out << position[0] << " " << position[1] << " " << position[2];
-        out << "        ";
-        out << orientation(0, 0) << " " << orientation(0, 1) << " " << orientation(0, 2) << " ";
-        out << orientation(1, 0) << " " << orientation(1, 1) << " " << orientation(1, 2) << " ";
-        out << orientation(2, 0) << " " << orientation(2, 1) << " " << orientation(2, 2);
-        out << std::endl;
-    }
-}
-
-std::map<std::string, std::string> Packing::restoreAuxInfo(std::istream &in) {
-    std::size_t auxInfoSize{};
-    in >> auxInfoSize;
-    ValidateMsg(in, "Broken packing file: aux info size");
-    std::map<std::string, std::string> auxInfo;
-    for (std::size_t i{}; i < auxInfoSize; i++) {
-        std::string key;
-        std::string value;
-        in >> key >> std::ws;
-        std::getline(in, value);
-        ValidateMsg(in, "Broken packing file: aux info entry " + std::to_string(i));
-        auxInfo[key] = value;
-    }
-
-    return auxInfo;
+    RamsnapWriter writer;
+    writer.write(out, *this, auxInfo);
 }
 
 std::map<std::string, std::string> Packing::restore(std::istream &in, const Interaction &interaction) {
-    auto auxInfo = Packing::restoreAuxInfo(in);
-
-    // Read box dimensions
-    TriclinicBox box_(Packing::restoreDimensions(in));
-    Validate(box_.getVolume() != 0);
-
-    // Read particles
-    std::size_t size{};
-    in >> size;
-    ValidateMsg(in, "Broken packing file: size");
-
-    std::vector<Shape> shapes_;
-    shapes_.reserve(size + this->moveThreads);  // temp shapes at the back
-    for (std::size_t i{}; i < size; i++) {
-        Vector<3> position;
-        Matrix<3, 3> orientation;
-        in >> position[0] >> position[1] >> position[2];
-        in >> orientation(0, 0) >> orientation(0, 1) >> orientation(0, 2);
-        in >> orientation(1, 0) >> orientation(1, 1) >> orientation(1, 2);
-        in >> orientation(2, 0) >> orientation(2, 1) >> orientation(2, 2);
-        ValidateMsg(in, "Broken packing file: shape " + std::to_string(shapes_.size()) + "/"
-                        + std::to_string(size));
-        shapes_.emplace_back(position, orientation);
-    }
-
-    // Load data into class
-    this->box = box_;
-    shapes_.resize(shapes_.size() + this->moveThreads);     // add temp shapes
-    this->shapes = shapes_;
-    this->bc->setBox(this->box);
-    this->setupForInteraction(interaction);
-
-    return auxInfo;
+    RamsnapReader reader;
+    return reader.read(in, *this, interaction);
 }
 
 void Packing::resetCounters() {
@@ -1147,36 +1079,6 @@ void Packing::recalculateAbsoluteInteractionCentres(std::size_t particleIdx) {
         auto pos = this->shapes[particleIdx].getPosition() + this->interactionCentres[centreIdx];
         this->absoluteInteractionCentres[centreIdx] = pos + this->bc->getCorrection(pos);
     }
-}
-
-Matrix<3, 3> Packing::restoreDimensions(std::istream &in) {
-    std::string line;
-    std::getline(in, line);
-    ValidateMsg(in, "Broken packing file: dimensions");
-
-    // We support both new and old format: in the old box was cuboidal, so only 3 numbers were stored. Now we store
-    // a whole 9-element box matrix. The format can be recognized by the number of string in the line.
-    double tokensOld[3];
-    std::istringstream dimensionsStream(line);
-    dimensionsStream >> tokensOld[0] >> tokensOld[1] >> tokensOld[2];
-    ValidateMsg(dimensionsStream, "Broken packing file: dimensions");
-
-    Matrix<3, 3> dimensions;
-    if (!ParseUtils::isAnythingLeft(dimensionsStream)) {
-        // If eof, dimensions were saved in the old format: L_x, L_y, L_z
-        dimensions(0, 0) = tokensOld[0];
-        dimensions(1, 1) = tokensOld[1];
-        dimensions(2, 2) = tokensOld[2];
-    } else {            // Otherwise, new format - box matrix
-        dimensions(0, 0) = tokensOld[0];
-        dimensions(0, 1) = tokensOld[1];
-        dimensions(0, 2) = tokensOld[2];
-        dimensionsStream >> dimensions(1, 0) >> dimensions(1, 1) >> dimensions(1, 2);
-        dimensionsStream >> dimensions(2, 0) >> dimensions(2, 1) >> dimensions(2, 2);
-        ValidateMsg(dimensionsStream, "Broken packing file: dimensions");
-    }
-
-    return dimensions;
 }
 
 void Packing::toggleOverlapCounting(bool countOverlaps, const Interaction &interaction) {

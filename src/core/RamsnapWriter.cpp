@@ -5,7 +5,7 @@
 #include "RamsnapWriter.h"
 
 
-void RamsnapWriter::write(std::ostream &out, const Packing &packing, [[maybe_unused]] const ShapeTraits &traits,
+void RamsnapWriter::write(std::ostream &out, const Packing &packing,
                           const std::map<std::string, std::string> &auxInfo) const
 {
     out << auxInfo.size() << std::endl;
