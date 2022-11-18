@@ -30,7 +30,7 @@ public:
      * @param seed seed for RNG used to translate columns
      */
     ColumnarTransformer(LatticeTraits::Axis columnAxis, unsigned long seed)
-            : columnAxis{columnAxis}, rng{seed}
+            : columnAxis{columnAxis}, rng(seed)
     { }
 
     /**

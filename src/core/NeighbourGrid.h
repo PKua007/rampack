@@ -81,13 +81,18 @@ public:
     /**
      * @brief Iterator over the cell linked-list.
      */
-    class CellViewIterator : public std::iterator<std::input_iterator_tag, const std::size_t, std::ptrdiff_t>
-    {
+    class CellViewIterator {
     private:
         const NeighbourGrid *grid;
         std::size_t head;
 
     public:
+        using iterator_category = std::input_iterator_tag;
+        using value_type = std::size_t;
+        using difference_type = std::ptrdiff_t;
+        using pointer = void;
+        using reference = std::size_t;
+
         CellViewIterator(const NeighbourGrid *grid, std::size_t head) : grid{grid}, head{head} { }
 
         CellViewIterator& operator++() {
@@ -103,7 +108,7 @@ public:
 
         bool operator==(CellViewIterator other) const { return this->head == other.head; }
         bool operator!=(CellViewIterator other) const { return !(*this == other);}
-        reference operator*() const { return this->head; }
+        value_type operator*() const { return this->head; }
     };
 
     /**
@@ -146,12 +151,7 @@ public:
      * @brief An iterator over all (or half) neighbouring cells of a given cell. Dereferencing it returns the vector of
      * identifiers lying in the given cell.
      */
-    class NeighboursViewIterator : public std::iterator<std::input_iterator_tag,
-                                                        std::pair<const std::vector<std::size_t>*, const Vector<3>*>,
-                                                        std::ptrdiff_t,
-                                                        const NeighbourCellData*,
-                                                        const NeighbourCellData>
-    {
+    class NeighboursViewIterator {
     private:
         const NeighbourGrid *grid;
         const std::vector<std::size_t> *offsets;
@@ -159,6 +159,12 @@ public:
         std::size_t offsetIdx{};
 
     public:
+        using iterator_category = std::input_iterator_tag;
+        using value_type = NeighbourCellData;
+        using difference_type = std::ptrdiff_t;
+        using pointer = void;
+        using reference = NeighbourCellData;
+
         NeighboursViewIterator(const NeighbourGrid *grid, std::size_t cellNo, std::size_t offset,
                                const std::vector<std::size_t> *offsets)
                 : grid{grid}, offsets{offsets}, cellNo{cellNo}, offsetIdx{offset}
@@ -183,7 +189,7 @@ public:
             return !(*this == other);
         }
 
-        reference operator*() const {
+        value_type operator*() const {
             std::size_t neighbourCellNo = this->cellNo + (*this->offsets)[this->offsetIdx];
             std::size_t translationIdx = grid->translationIndices[neighbourCellNo];
 
