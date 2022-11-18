@@ -7,7 +7,7 @@
 
 
 std::map<std::string, std::string> RamsnapReader::read(std::istream &in, Packing &packing,
-                                                       const ShapeTraits &traits) const
+                                                       const Interaction &interaction) const
 {
     auto auxInfo = RamsnapReader::restoreAuxInfo(in);
 
@@ -34,7 +34,7 @@ std::map<std::string, std::string> RamsnapReader::read(std::istream &in, Packing
         shapes.emplace_back(position, orientation);
     }
 
-    packing.reset(std::move(shapes), box, traits.getInteraction());
+    packing.reset(std::move(shapes), box, interaction);
     return auxInfo;
 }
 

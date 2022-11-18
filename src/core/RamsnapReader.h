@@ -10,12 +10,19 @@
 
 class RamsnapReader : public SnapshotReader {
 private:
-    static std::map<std::string, std::string> restoreAuxInfo(std::istream &in);
     static Matrix<3, 3> restoreDimensions(std::istream &in);
 
 public:
+    static std::map<std::string, std::string> restoreAuxInfo(std::istream &in);
+
     std::map<std::string, std::string> read(std::istream &in, Packing &packing,
-                                            const ShapeTraits &traits) const override;
+                                            const ShapeTraits &traits) const override
+    {
+        return this->read(in, packing, traits.getInteraction());
+    }
+
+    std::map<std::string, std::string> read(std::istream &in, Packing &packing,
+                                            const Interaction &interaction) const;
 };
 
 

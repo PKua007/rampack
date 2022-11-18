@@ -6,6 +6,7 @@
 #include <iomanip>
 
 #include "PackingLoader.h"
+#include "core/RamsnapReader.h"
 
 
 void PackingLoader::loadPacking(std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction,
@@ -205,7 +206,7 @@ std::vector<PackingLoader::PerformedRunData> PackingLoader::gatherRunData() cons
         if (datInput) {
             runData.wasPerformed = true;
             try {
-                auto auxInfo_ = Packing::restoreAuxInfo(datInput);
+                auto auxInfo_ = RamsnapReader::restoreAuxInfo(datInput);
                 Validate(auxInfo_.find("cycles") != auxInfo_.end());
                 runData.doneCycles = std::stoul(auxInfo_.at("cycles"));
             } catch (std::logic_error &) {

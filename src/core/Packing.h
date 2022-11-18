@@ -69,7 +69,6 @@ private:
 
 
     static bool areShapesWithinBox(const std::vector<Shape> &shapes, const TriclinicBox &box);
-    static Matrix<3, 3> restoreDimensions(std::istream &in);
     static bool isBoxUpscaled(const TriclinicBox &oldBox, const TriclinicBox &newBox);
 
     void rebuildNeighbourGrid();
@@ -153,8 +152,6 @@ public:
          */
         AFFINE_TRANSFORM
     };
-
-    static std::map<std::string, std::string> restoreAuxInfo(std::istream &in);
 
     /**
      * @brief Creates an empty packing. Packing::restore method can then be used to load shapes.
