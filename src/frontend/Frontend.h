@@ -62,7 +62,7 @@ private:
     void storeAverageValues(const std::string &filename, const ObservablesCollector &collector, double temperature,
                             double pressure) const;
     void storePacking(const Simulation &simulation, const std::string &packingFilename);
-    void storeWolframVisualization(const Packing &packing, const ShapePrinter &shapePrinter,
+    void storeWolframVisualization(const Packing &packing, const ShapeTraits &traits,
                                    const std::string &wolframAttr) const;
     void storeSnapshots(const ObservablesCollector &observablesCollector, bool isContinuation,
                         const std::string &observableSnapshotFilename) const;

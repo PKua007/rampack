@@ -34,6 +34,7 @@
 #include "PackingLoader.h"
 #include "ParameterUpdaterFactory.h"
 #include "core/XYZRecorder.h"
+#include "core/WolframWriter.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -318,7 +319,7 @@ void Frontend::performIntegration(Simulation &simulation, Simulation::Environmen
     if (!runParams.packingFilename.empty())
         this->storePacking(simulation, runParams.packingFilename);
     if (!runParams.wolframFilename.empty())
-        this->storeWolframVisualization(simulation.getPacking(), shapeTraits.getPrinter("wolfram"), runParams.wolframFilename);
+        this->storeWolframVisualization(simulation.getPacking(), shapeTraits, runParams.wolframFilename);
     if (!runParams.outputFilename.empty()) {
         this->storeAverageValues(runParams.outputFilename, observablesCollector, simulation.getCurrentTemperature(),
                                  simulation.getCurrentPressure());
@@ -387,7 +388,7 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
     if (!runParams.packingFilename.empty())
         this->storePacking(simulation, runParams.packingFilename);
     if (!runParams.wolframFilename.empty())
-        this->storeWolframVisualization(simulation.getPacking(), shapeTraits->getPrinter("wolfram"), runParams.wolframFilename);
+        this->storeWolframVisualization(simulation.getPacking(), *shapeTraits, runParams.wolframFilename);
     if (!runParams.bulkObservableFilenamePattern.empty())
         this->storeBulkObservables(observablesCollector, runParams.bulkObservableFilenamePattern);
 }
@@ -408,7 +409,7 @@ void Frontend::storeSnapshots(const ObservablesCollector &observablesCollector, 
     this->logger.info() << "Observable snapshots stored to " + observableSnapshotFilename << std::endl;
 }
 
-void Frontend::storeWolframVisualization(const Packing &packing, const ShapePrinter &shapePrinter,
+void Frontend::storeWolframVisualization(const Packing &packing, const ShapeTraits &traits,
                                          const std::string &wolframAttr) const
 {
     std::istringstream wolframAttrStream(wolframAttr);
@@ -418,17 +419,18 @@ void Frontend::storeWolframVisualization(const Packing &packing, const ShapePrin
     if (!wolframAttrStream)
         styleStr = "standard";
 
-    Packing::WolframStyle wolframStyle{};
+    WolframWriter::WolframStyle wolframStyle{};
     if (styleStr == "standard")
-        wolframStyle = Packing::WolframStyle::STANDARD;
+        wolframStyle = WolframWriter::WolframStyle::STANDARD;
     else if (styleStr == "affineTransform")
-        wolframStyle = Packing::WolframStyle::AFFINE_TRANSFORM;
+        wolframStyle = WolframWriter::WolframStyle::AFFINE_TRANSFORM;
     else
         throw ValidationException("Unknown Packing::toWolfram style: " + styleStr);
 
     std::ofstream out(filename);
     ValidateOpenedDesc(out, filename, "to store Wolfram packing");
-    packing.toWolfram(out, shapePrinter, wolframStyle);
+    WolframWriter writer(wolframStyle);
+    writer.write(out, packing, traits, {});
     this->logger.info() << "Wolfram packing stored to " + filename << " using '" << styleStr << "' style" << std::endl;
 }
 
@@ -752,7 +754,7 @@ int Frontend::preview(int argc, char **argv) {
 
     // Store Mathematica packing (if desired)
     if (parsedOptions.count("wolfram"))
-        this->storeWolframVisualization(*packing, shapeTraits->getPrinter("wolfram"), wolframFilename);
+        this->storeWolframVisualization(*packing, *shapeTraits, wolframFilename);
 
     return EXIT_SUCCESS;
 }
@@ -1103,7 +1105,7 @@ int Frontend::trajectory(int argc, char **argv) {
         if (parsedOptions.count("generate-ramsnap"))
             this->generateRamsnapFile(*packing, params, *shapeTraits, datFilename, player->getCurrentSnapshotCycles());
         if (parsedOptions.count("generate-wolfram"))
-            this->storeWolframVisualization(*packing, shapeTraits->getPrinter("wolfram"), wolframFilename);
+            this->storeWolframVisualization(*packing, *shapeTraits, wolframFilename);
         this->logger.info() << std::endl;
     }
 
