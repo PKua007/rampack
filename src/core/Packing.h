@@ -133,27 +133,6 @@ public:
     using const_iterator = decltype(shapes)::const_iterator;
 
     /**
-     * @brief Style of Wolfram Mathematica packing output.
-     */
-    enum class WolframStyle {
-        /**
-         * @brief A standard style - each shape is printed separately.
-         * @details The output is Graphics3D with a list of shapes, which is easy to process but may grow large. It is
-         * advised for shapes with a small footprint.
-         */
-        STANDARD,
-
-        /**
-         * @brief A single shape with the default position and orientation is printed and then, for each shape in the
-         * packing it is copied and appropriate affine transformation is applied to it.
-         * @details The output is Graphics3D with a list of positions and orientations which is mapped over a single
-         * shape using @a AffineTransform. Is is advised for shapes with a large footprint and for easy access to
-         * positions and orientations of the shapes.
-         */
-        AFFINE_TRANSFORM
-    };
-
-    /**
      * @brief Creates an empty packing. Packing::restore method can then be used to load shapes.
      * @param bc boundary conditions to use
      * @param moveThreads number of threads used for molecule moves. If 0, all OpenMP threads will be used
@@ -405,14 +384,6 @@ public:
      * @brief Resets all counters (neighbour grid rebuilds, etc.).
      */
     void resetCounters();
-
-    /**
-     * @brief Represents a packing as a Wolfram Mathematica code.
-     * @param out the output stream to store a packing
-     * @param printer the object responsible for representing a single shape
-     * @param style style of the output
-     */
-    void toWolfram(std::ostream &out, const ShapePrinter &printer, WolframStyle style = WolframStyle::STANDARD) const;
 
     /**
      * @brief Stores a packing in an internal representation form.
