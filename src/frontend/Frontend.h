@@ -38,8 +38,8 @@ private:
                                       double scalingStepSize, std::map<std::string, std::string> &auxInfo) const;
     void setVerbosityLevel(std::optional<std::string> verbosity, std::optional<std::string> auxOutput,
                            std::optional<std::string> auxVerbosity);
-    void generateDatFile(const Packing &packing, const Parameters &params, const ShapeTraits &traits,
-                         const std::string &datFilename, std::size_t cycles = 0);
+    void generateRamsnapFile(const Packing &packing, const Parameters &params, const ShapeTraits &traits,
+                             const std::string &ramsnapFilename, std::size_t cycles = 0);
     Logger::LogType parseVerbosityLevel(const std::string &verbosityLevelName) const;
     std::unique_ptr<RamtrjRecorder> loadRamtrjRecorder(const std::string &filename, std::size_t numMolecules,
                                                        std::size_t cycleStep, bool &isContinuation) const;

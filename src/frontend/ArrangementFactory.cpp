@@ -241,7 +241,7 @@ std::unique_ptr<Packing> ArrangementFactory::arrangePacking(std::size_t numOfPar
     } else if (type == "presimulated") {
         std::string filename;
         arrangementStream >> filename;
-        ValidateMsg(arrangementStream, "Malformed presimulated arrangement. Usage: presimulated [packing dat file]");
+        ValidateMsg(arrangementStream, "Malformed presimulated arrangement. Usage: presimulated [RAMSNAP file]");
 
         std::ifstream packingFile(filename);
         ValidateOpenedDesc(packingFile, filename, "to load initial configuration");
