@@ -512,7 +512,7 @@ int Frontend::printGeneralHelp(const std::string &cmd) {
     rawOut << Fold("Find minimal distances between shapes in given direction(s).")
               .width(80).margin(4) << std::endl;
     rawOut << "preview" << std::endl;
-    rawOut << Fold("Based on the input file generate initial configuration and store Wolfram and/or *.dat packing.")
+    rawOut << Fold("Based on the input file generate initial configuration and store it in a given format.")
               .width(80).margin(4) << std::endl;
     rawOut << "shape-preview" << std::endl;
     rawOut << Fold("Provides information and preview for a given shape.").width(80).margin(4) << std::endl;
@@ -719,7 +719,7 @@ int Frontend::preview(int argc, char **argv) {
          cxxopts::value<std::string>(inputFilename))
         ("w,wolfram", "if specified, Mathematica notebook with the packing will be generated",
          cxxopts::value<std::string>(wolframFilename))
-        ("d,dat", "if specified, *.dat file with packing will be generated",
+        ("s,ramsnap", "if specified, RAMSNAP file with packing will be generated",
          cxxopts::value<std::string>(datFilename));
 
     auto parsedOptions = options.parse(argc, argv);
@@ -735,8 +735,8 @@ int Frontend::preview(int argc, char **argv) {
         die("Unexpected positional arguments. See " + cmd + " --help", this->logger);
     if (!parsedOptions.count("input"))
         die("Input file must be specified with option -i [input file name]", this->logger);
-    if (!parsedOptions.count("wolfram") && !parsedOptions.count("dat"))
-        die("At least one of: --wolfram, --dat options must be specified", this->logger);
+    if (!parsedOptions.count("wolfram") && !parsedOptions.count("ramsnap"))
+        die("At least one of: --wolfram, --ramsnap options must be specified", this->logger);
 
     Parameters params = this->loadParameters(inputFilename);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
@@ -747,8 +747,8 @@ int Frontend::preview(int argc, char **argv) {
     this->createWalls(*packing, params.walls);
 
     // Store packing (if desired)
-    if (parsedOptions.count("dat"))
-        this->generateDatFile(*packing, params, *shapeTraits, datFilename);
+    if (parsedOptions.count("ramsnap"))
+        this->generateRamsnapFile(*packing, params, *shapeTraits, datFilename);
 
     // Store Mathematica packing (if desired)
     if (parsedOptions.count("wolfram"))
@@ -757,8 +757,8 @@ int Frontend::preview(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-void Frontend::generateDatFile(const Packing &packing, const Parameters &params, const ShapeTraits &traits,
-                               const std::string &datFilename, std::size_t cycles)
+void Frontend::generateRamsnapFile(const Packing &packing, const Parameters &params, const ShapeTraits &traits,
+                                   const std::string &ramsnapFilename, std::size_t cycles)
 {
     // Parse move type
     auto moveSamplerStrings = explode(params.moveTypes, ',');
@@ -771,10 +771,10 @@ void Frontend::generateDatFile(const Packing &packing, const Parameters &params,
     appendMoveStepSizesToAuxInfo(moveSamplers, params.volumeStepSize, auxInfo);
     auxInfo["cycles"] = std::to_string(cycles);
 
-    std::ofstream out(datFilename);
-    ValidateOpenedDesc(out, datFilename, "to store packing data");
+    std::ofstream out(ramsnapFilename);
+    ValidateOpenedDesc(out, ramsnapFilename, "to store packing data");
     packing.store(out, auxInfo);
-    this->logger.info() << "Packing stored to " + datFilename << std::endl;
+    this->logger.info() << "Packing stored to " + ramsnapFilename << std::endl;
 }
 
 std::string Frontend::doubleToString(double d) {
@@ -820,7 +820,7 @@ void Frontend::overwriteMoveStepSizes(Simulation::Environment &env,
         for (const auto &[moveName, stepSize] : moveSampler->getStepSizes()) {
             std::string moveKey = Frontend::formatMoveKey(groupName, moveName);
             if (packingAuxInfo.find(moveKey) == packingAuxInfo.end()) {
-                this->logger.warn() << "Step size " << moveKey << " not found in *.dat metadata. Falling back to ";
+                this->logger.warn() << "Step size " << moveKey << " not found in RAMSNAP metadata. Falling back to ";
                 this->logger << "input file value " << stepSize << std::endl;
                 continue;
             }
@@ -832,7 +832,7 @@ void Frontend::overwriteMoveStepSizes(Simulation::Environment &env,
 
     std::string scalingKey = Frontend::formatMoveKey("scaling", "scaling");
     if (packingAuxInfo.find(scalingKey) == packingAuxInfo.end()) {
-        this->logger.warn() << "Step size " << scalingKey << " not found in *.dat metadata. Falling back to ";
+        this->logger.warn() << "Step size " << scalingKey << " not found in RAMSNAP metadata. Falling back to ";
         this->logger << "input file value " << env.getBoxScaler().getStepSize() << std::endl;
     } else {
         double volumeStepSize = std::stod(packingAuxInfo.at(scalingKey));
@@ -844,7 +844,7 @@ void Frontend::overwriteMoveStepSizes(Simulation::Environment &env,
     if (notUsedStepSizes.empty())
         return;
 
-    this->logger.warn() << "Packing *.dat file contained metadata for unused move step sizes:" << std::endl;
+    this->logger.warn() << "Packing RAMSNAP file contained metadata for unused move step sizes:" << std::endl;
     for (const auto &notUsedStepSize : notUsedStepSizes)
         this->logger << notUsedStepSize << " = " << packingAuxInfo.at(notUsedStepSize) << std::endl;
 }
@@ -926,7 +926,7 @@ int Frontend::trajectory(int argc, char **argv) {
         ("T,max-threads", "specifies maximal number of OpenMP threads that may be used to calculate observables. If 0 "
                           "is passed, all available threads are used",
          cxxopts::value<std::size_t>(maxThreads)->default_value("1"))
-        ("d,generate-dat", "reads the last snapshot and recreates *.dat file from it",
+        ("S,generate-ramsnap", "reads the last snapshot and recreates RAMSNAP file from it",
          cxxopts::value<std::string>(datFilename))
         ("w,generate-wolfram", "reads the last snapshot and recreates Wolfram Mathematica file from it",
          cxxopts::value<std::string>(wolframFilename))
@@ -970,7 +970,7 @@ int Frontend::trajectory(int argc, char **argv) {
     if (!parsedOptions.count("trajectory"))
         die("Trajectory file must be specified with option -t [input file name]", this->logger);
     if (!parsedOptions.count("observables") && !parsedOptions.count("bulk-observables")
-        && !parsedOptions.count("log-info") && !parsedOptions.count("generate-dat")
+        && !parsedOptions.count("log-info") && !parsedOptions.count("generate-ramsnap")
         && !parsedOptions.count("generate-wolfram") && !parsedOptions.count("generate-xyz"))
     {
         die("At least one of: --observables, --bulk-observables, --log-info, --generate-dat, "
@@ -1094,14 +1094,14 @@ int Frontend::trajectory(int argc, char **argv) {
         this->logger.info() << std::endl;
     }
 
-    // Recreate dat file from the last snapshot (if desired)
-    if (parsedOptions.count("generate-dat") || parsedOptions.count("generate-wolfram")) {
+    // Recreate RAMSNAP file from the last snapshot (if desired)
+    if (parsedOptions.count("generate-ramsnap") || parsedOptions.count("generate-wolfram")) {
         this->logger.info() << "Reading last snapshot... " << std::flush;
         player->lastSnapshot(*packing, shapeTraits->getInteraction());
         this->logger.info() << "cycles: " << player->getCurrentSnapshotCycles() << std::endl;
 
-        if (parsedOptions.count("generate-dat"))
-            this->generateDatFile(*packing, params, *shapeTraits, datFilename, player->getCurrentSnapshotCycles());
+        if (parsedOptions.count("generate-ramsnap"))
+            this->generateRamsnapFile(*packing, params, *shapeTraits, datFilename, player->getCurrentSnapshotCycles());
         if (parsedOptions.count("generate-wolfram"))
             this->storeWolframVisualization(*packing, shapeTraits->getPrinter("wolfram"), wolframFilename);
         this->logger.info() << std::endl;
