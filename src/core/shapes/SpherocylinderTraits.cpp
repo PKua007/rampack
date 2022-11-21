@@ -5,13 +5,19 @@
 #include "SpherocylinderTraits.h"
 #include "utils/Assertions.h"
 #include "geometry/SegmentDistanceCalculator.h"
+#include "geometry/xenocollide/XCBodyBuilder.h"
+#include "XCObjShapePrinter.h"
 
-SpherocylinderTraits::SpherocylinderTraits(double length, double radius) : length{length}, radius{radius} {
+
+SpherocylinderTraits::SpherocylinderTraits(double length, double radius)
+        : length{length}, radius{radius}, wolframPrinter(*this)
+{
     Expects(length >= 0);
     Expects(radius > 0);
 
     this->registerNamedPoint("beg", this->getCapCentre(-1, {}));
     this->registerNamedPoint("end", this->getCapCentre(1, {}));
+    this->objPrinter = SpherocylinderTraits::createObjPrinter(length, radius);
 }
 
 Vector<3> SpherocylinderTraits::getCapCentre(short beginOrEnd, const Shape &shape) const {
@@ -43,15 +49,6 @@ double SpherocylinderTraits::getVolume() const {
     return M_PI*this->radius*this->radius*this->length + 4./3*M_PI*std::pow(this->radius, 3);
 }
 
-std::string SpherocylinderTraits::print(const Shape &shape) const {
-    std::stringstream out;
-    out << std::fixed;
-    Vector<3> beg = this->getCapCentre(-1, shape);
-    Vector<3> end = this->getCapCentre(1, shape);
-    out << "CapsuleShape[{" << beg << "," << end << "}," << this->radius << "]";
-    return out.str();
-}
-
 Vector<3> SpherocylinderTraits::getPrimaryAxis(const Shape &shape) const {
     return shape.getOrientation().column(0);
 }
@@ -76,6 +73,30 @@ bool SpherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matrix<3,
 }
 
 const ShapePrinter &SpherocylinderTraits::getPrinter(const std::string &format) const {
-    ExpectsMsg(format == "wolfram", "SpherocylinderTraits: unknown printer format: " + format);
-    return *this;
+    if (format == "wolfram")
+        return this->wolframPrinter;
+    else if (format == "obj")
+        return *this->objPrinter;
+    else
+        throw NoSuchShapePrinterException("SphereTraits: unknown printer format: " + format);
+}
+
+std::unique_ptr<ShapePrinter> SpherocylinderTraits::createObjPrinter(double length, double radius) {
+    XCBodyBuilder builder;
+    builder.sphere(radius);
+    builder.move(-length/2, 0, 0);
+    builder.sphere(radius);
+    builder.move(length/2, 0, 0);
+    builder.wrap();
+
+    return std::make_unique<XCObjShapePrinter>(*builder.releaseCollideGeometry(), 4);
+}
+
+std::string SpherocylinderTraits::WolframPrinter::print(const Shape &shape) const {
+    std::stringstream out;
+    out << std::fixed;
+    Vector<3> beg = this->traits.getCapCentre(-1, shape);
+    Vector<3> end = this->traits.getCapCentre(1, shape);
+    out << "CapsuleShape[{" << beg << "," << end << "}," << this->traits.radius << "]";
+    return out.str();
 }
