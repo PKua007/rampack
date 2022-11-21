@@ -16,7 +16,7 @@
 /**
  * @brief A polymer consisting of identical or different hard of soft-interacting spheres.
  */
-class PolysphereTraits : public ShapeTraits, public ShapePrinter {
+class PolysphereTraits : public ShapeTraits {
 public:
     /**
      * @brief A helper class describing a single spherical bead.
@@ -124,8 +124,21 @@ private:
         [[nodiscard]] double getRangeRadius() const override;
     };
 
+    class WolframPrinter : public ShapePrinter {
+    private:
+        std::vector<SphereData> sphereData;
+
+    public:
+        explicit WolframPrinter(std::vector<SphereData> sphereData) : sphereData{std::move(sphereData)} { }
+        [[nodiscard]] std::string print(const Shape &shape) const override;
+    };
+
+    [[nodiscard]] std::unique_ptr<ShapePrinter> createObjPrinter() const;
+
     PolysphereGeometry geometry;
     std::unique_ptr<Interaction> interaction{};
+    WolframPrinter wolframPrinter;
+    std::unique_ptr<ShapePrinter> objPrinter;
 
 public:
     /**
@@ -144,7 +157,6 @@ public:
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->geometry; }
     [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override;
 
-    [[nodiscard]] std::string print(const Shape &shape) const override;
 
     [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->geometry.getSphereData(); }
 };
