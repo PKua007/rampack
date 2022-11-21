@@ -147,6 +147,8 @@ Parameters::IntegrationParameters::IntegrationParameters(const std::string &runN
             this->wolframFilename = runConfig.getString("wolframFilename");
         else if (key == "packingFilename")
             this->packingFilename = runConfig.getString("packingFilename");
+        else if (key == "xyzPackingFilename")
+            this->xyzPackingFilename = runConfig.getString("xyzPackingFilename");
         else if (key == "outputFilename")
             this->outputFilename = runConfig.getString("outputFilename");
         else if (key == "observableSnapshotFilename")
@@ -155,6 +157,8 @@ Parameters::IntegrationParameters::IntegrationParameters(const std::string &runN
             this->bulkObservableFilenamePattern = runConfig.getString("bulkObservableFilenamePattern");
         else if (key == "recordingFilename")
             this->recordingFilename = runConfig.getString("recordingFilename");
+        else if (key == "xyzRecordingFilename")
+            this->xyzRecordingFilename = runConfig.getString("xyzRecordingFilename");
         else
             this->parseInheritableParameter(key, runConfig);
     }
@@ -179,11 +183,13 @@ void Parameters::IntegrationParameters::print(Logger &logger) const {
     logger.info() << "observables                   : " << this->observables << std::endl;
     logger.info() << "bulkObservables               : " << this->bulkObservables << std::endl;
     logger.info() << "packingFilename               : " << this->packingFilename << std::endl;
+    logger.info() << "xyzPackingFilename            : " << this->xyzPackingFilename << std::endl;
     logger.info() << "wolframFilename               : " << this->wolframFilename << std::endl;
     logger.info() << "outputFilename                : " << this->outputFilename << std::endl;
     logger.info() << "observableSnapshotFilename    : " << this->observableSnapshotFilename << std::endl;
     logger.info() << "bulkObservableFilenamePattern : " << this->bulkObservableFilenamePattern << std::endl;
     logger.info() << "recordingFilename             : " << this->recordingFilename << std::endl;
+    logger.info() << "xyzRecordingFilename          : " << this->xyzRecordingFilename << std::endl;
 }
 
 Parameters::OverlapRelaxationParameters::OverlapRelaxationParameters(const std::string &runName, const Config &runConfig) {
@@ -207,6 +213,8 @@ Parameters::OverlapRelaxationParameters::OverlapRelaxationParameters(const std::
             this->bulkObservableFilenamePattern = runConfig.getString("bulkObservableFilenamePattern");
         else if (key == "recordingFilename")
             this->recordingFilename = runConfig.getString("recordingFilename");
+        else if (key == "xyzRecordingFilename")
+            this->xyzRecordingFilename = runConfig.getString("xyzRecordingFilename");
         else
             this->parseInheritableParameter(key, runConfig);
     }
@@ -226,8 +234,10 @@ void Parameters::OverlapRelaxationParameters::print(Logger &logger) const {
     logger.info() << "bulkObservables               : " << this->bulkObservables << std::endl;
     logger.info() << "helperInteraction             : " << this->helperInteraction << std::endl;
     logger.info() << "packingFilename               : " << this->packingFilename << std::endl;
+    logger.info() << "xyzPackingFilename            : " << this->xyzPackingFilename << std::endl;
     logger.info() << "wolframFilename               : " << this->wolframFilename << std::endl;
     logger.info() << "observableSnapshotFilename    : " << this->observableSnapshotFilename << std::endl;
     logger.info() << "bulkObservableFilenamePattern : " << this->bulkObservableFilenamePattern << std::endl;
     logger.info() << "recordingFilename             : " << this->recordingFilename << std::endl;
+    logger.info() << "xyzRecordingFilename          : " << this->xyzRecordingFilename << std::endl;
 }

@@ -59,10 +59,11 @@ TEST_CASE("Simulation IO: storing and restoring")
 
     SECTION("without continuation") {
         auto inout_stream = std::make_unique<std::iostream>(&inout_buf);
-        auto recorder = std::make_unique<RamtrjRecorder>(std::move(inout_stream), simulation.getPacking().size(),
-                                                         100, false);
+        std::vector<std::unique_ptr<SimulationRecorder>> recorders;
+        recorders.push_back(std::make_unique<RamtrjRecorder>(std::move(inout_stream), simulation.getPacking().size(),
+                                                             100, false));
         auto collector = std::make_unique<ObservablesCollector>();
-        simulation.integrate(1, 1, 1000, 1000, 100, 100, traits, std::move(collector), std::move(recorder), logger);
+        simulation.integrate(1, 1, 1000, 1000, 100, 100, traits, std::move(collector), std::move(recorders), logger);
 
         auto in_stream = std::make_unique<std::istream>(&inout_buf);
         // We also check is auto fix will correctly tell that no fixing in needed
@@ -99,17 +100,19 @@ TEST_CASE("Simulation IO: storing and restoring")
     SECTION("with continuation") {
         // Initial run
         auto inout_stream1 = std::make_unique<std::iostream>(&inout_buf);
-        auto recorder1 = std::make_unique<RamtrjRecorder>(std::move(inout_stream1), simulation.getPacking().size(),
-                                                          100, false);
+        std::vector<std::unique_ptr<SimulationRecorder>> recorders1;
+        recorders1.push_back(std::make_unique<RamtrjRecorder>(std::move(inout_stream1), simulation.getPacking().size(),
+                                                              100, false));
         auto collector1 = std::make_unique<ObservablesCollector>();
-        simulation.integrate(1, 1, 500, 500, 100, 100, traits, std::move(collector1), std::move(recorder1), logger);
+        simulation.integrate(1, 1, 500, 500, 100, 100, traits, std::move(collector1), std::move(recorders1), logger);
 
         // Continuation
         auto inout_stream2 = std::make_unique<std::iostream>(&inout_buf);
-        auto recorder2 = std::make_unique<RamtrjRecorder>(std::move(inout_stream2), simulation.getPacking().size(),
-                                                          100, true);
+        std::vector<std::unique_ptr<SimulationRecorder>> recorders2;
+        recorders2.push_back(std::make_unique<RamtrjRecorder>(std::move(inout_stream2), simulation.getPacking().size(),
+                                                              100, true));
         auto collector2 = std::make_unique<ObservablesCollector>();
-        simulation.integrate(1, 1, 500, 500, 100, 100, traits, std::move(collector2), std::move(recorder2), logger,
+        simulation.integrate(1, 1, 500, 500, 100, 100, traits, std::move(collector2), std::move(recorders2), logger,
                              1000);
 
         auto in_stream = std::make_unique<std::istream>(&inout_buf);
@@ -132,10 +135,11 @@ TEST_CASE("Simulation IO: storing and restoring")
 
         // Continuation
         auto inout_stream2 = std::make_unique<std::iostream>(&inout_buf);
-        auto recorder2 = std::make_unique<RamtrjRecorder>(std::move(inout_stream2), simulation.getPacking().size(),
-                                                          100, true);
+        std::vector<std::unique_ptr<SimulationRecorder>> recorders2;
+        recorders2.push_back(std::make_unique<RamtrjRecorder>(std::move(inout_stream2), simulation.getPacking().size(),
+                                                              100, true));
         auto collector2 = std::make_unique<ObservablesCollector>();
-        simulation.integrate(1, 1, 500, 500, 100, 100, traits, std::move(collector2), std::move(recorder2), logger);
+        simulation.integrate(1, 1, 500, 500, 100, 100, traits, std::move(collector2), std::move(recorders2), logger);
 
         auto in_stream = std::make_unique<std::istream>(&inout_buf);
         RamtrjPlayer player(std::move(in_stream));
@@ -150,10 +154,11 @@ TEST_CASE("Simulation IO: storing and restoring")
 
     SECTION("fixing trajectory") {
         auto inout_stream = std::make_unique<std::iostream>(&inout_buf);
-        auto recorder = std::make_unique<RamtrjRecorder>(std::move(inout_stream), simulation.getPacking().size(),
-                                                         100, false);
+        std::vector<std::unique_ptr<SimulationRecorder>> recorders;
+        recorders.push_back(std::make_unique<RamtrjRecorder>(std::move(inout_stream), simulation.getPacking().size(),
+                                                             100, false));
         auto collector = std::make_unique<ObservablesCollector>();
-        simulation.integrate(1, 1, 1000, 1000, 100, 100, traits, std::move(collector), std::move(recorder), logger);
+        simulation.integrate(1, 1, 1000, 1000, 100, 100, traits, std::move(collector), std::move(recorders), logger);
 
         // Add garbage bytes
         {

@@ -284,10 +284,10 @@ public:
      * where @a env is given passed @a temeprature_ and @a pressure_, however MoveSampler -s and TriclinicBoxScaler
      * is inherited from the previous run or from the constructor.
      */
-    void integrate(Parameter temperature_, Parameter pressure_, std::size_t thermalisationCycles, std::size_t averagingCycles,
-                   std::size_t averagingEvery, std::size_t snapshotEvery, const ShapeTraits &shapeTraits,
-                   std::unique_ptr<ObservablesCollector> observablesCollector_,
-                   std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
+    void integrate(Parameter temperature_, Parameter pressure_, std::size_t thermalisationCycles,
+                   std::size_t averagingCycles, std::size_t averagingEvery, std::size_t snapshotEvery,
+                   const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
+                   std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger,
                    std::size_t cycleOffset = 0);
     /**
      * @brief Performs standard Monte Carlo integration consisting of thermalization (equilibration) phase and averaging
@@ -300,7 +300,7 @@ public:
      * @param snapshotEvery how often to take observable snapshots
      * @param shapeTraits shape traits describing the simulated molecules
      * @param observablesCollector_ the observables collector with observable capturing configuration
-     * @param simulationRecorder if not @a nullptr, simulation will be recorder using it (with a snapshot every
+     * @param simulationRecorders if not @a nullptr, simulation will be recorder using it (with a snapshot every
      * @a snapshotEveryr)
      * @param logger Logger object to display simulation data
      * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
@@ -308,7 +308,7 @@ public:
     void integrate(Environment env, std::size_t thermalisationCycles, std::size_t averagingCycles,
                    std::size_t averagingEvery, std::size_t snapshotEvery, const ShapeTraits &shapeTraits,
                    std::unique_ptr<ObservablesCollector> observablesCollector_,
-                   std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
+                   std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger,
                    std::size_t cycleOffset = 0);
 
     /**
@@ -321,7 +321,7 @@ public:
      */
     void relaxOverlaps(Parameter temperature_, Parameter pressure_, std::size_t snapshotEvery,
                        const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
-                       std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
+                       std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger,
                        std::size_t cycleOffset = 0);
 
     /**
@@ -339,7 +339,7 @@ public:
     */
     void relaxOverlaps(Environment env, std::size_t snapshotEvery,
                        const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
-                       std::unique_ptr<SimulationRecorder> simulationRecorder, Logger &logger,
+                       std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger,
                        std::size_t cycleOffset = 0);
 
     [[nodiscard]] const ObservablesCollector &getObservablesCollector() { return *this->observablesCollector; }

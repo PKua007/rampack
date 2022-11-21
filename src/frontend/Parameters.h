@@ -73,11 +73,13 @@ public:
         std::string observables{};
         std::string bulkObservables{};
         std::string packingFilename{};
+        std::string xyzPackingFilename{};
         std::string wolframFilename{};
         std::string outputFilename{};
         std::string observableSnapshotFilename{};
         std::string bulkObservableFilenamePattern{};
         std::string recordingFilename{};
+        std::string xyzRecordingFilename{};
 
         void print(Logger &logger) const;
     };
@@ -99,10 +101,12 @@ public:
         std::string bulkObservables{};
         std::string helperInteraction{};
         std::string packingFilename{};
+        std::string xyzPackingFilename{};
         std::string wolframFilename{};
         std::string observableSnapshotFilename{};
         std::string bulkObservableFilenamePattern{};
         std::string recordingFilename{};
+        std::string xyzRecordingFilename{};
 
         void print(Logger &logger) const;
     };
