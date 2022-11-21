@@ -15,7 +15,7 @@
 /**
  * @brief A class analogous to PolysphereTraits, but for hard spherocylinders.
  */
-class PolyspherocylinderTraits : public ShapeTraits, public ShapePrinter, public Interaction {
+class PolyspherocylinderTraits : public ShapeTraits, public Interaction {
 public:
     /**
      * @brief A single building spherocylinder data.
@@ -122,14 +122,29 @@ public:
     };
 
 private:
+    class WolframPrinter : public ShapePrinter {
+    private:
+        std::vector<SpherocylinderData> spherocylinderData;
+
+    public:
+        explicit WolframPrinter(std::vector<SpherocylinderData> spherocylinderData)
+                : spherocylinderData{std::move(spherocylinderData)}
+        { }
+        [[nodiscard]] std::string print(const Shape &shape) const override;
+    };
+
+    [[nodiscard]] std::unique_ptr<ShapePrinter> createObjPrinter() const;
+
     PolyspherocylinderGeometry geometry;
+    WolframPrinter wolframPrinter;
+    std::unique_ptr<ShapePrinter> objPrinter;
 
 public:
     /**
      * @brief Creates the molecule from a given set of spherocylinders.
      * @param geometry PolyspherocylinderGeometry describing the shape
      */
-    explicit PolyspherocylinderTraits(PolyspherocylinderGeometry geometry) : geometry{std::move(geometry)} { }
+    explicit PolyspherocylinderTraits(PolyspherocylinderGeometry geometry);
 
     [[nodiscard]] bool hasHardPart() const override { return true; }
     [[nodiscard]] bool hasSoftPart() const override { return false; }
@@ -150,8 +165,6 @@ public:
     [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const {
         return this->geometry.getSpherocylinderData();
     }
-
-    [[nodiscard]] std::string print(const Shape &shape) const override;
 };
 
 

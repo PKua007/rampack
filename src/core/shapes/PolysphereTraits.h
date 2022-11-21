@@ -157,7 +157,6 @@ public:
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->geometry; }
     [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override;
 
-
     [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->geometry.getSphereData(); }
 };
 
