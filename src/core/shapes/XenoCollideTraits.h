@@ -13,7 +13,8 @@
 #include "core/ShapeTraits.h"
 #include "geometry/xenocollide/AbstractXCGeometry.h"
 #include "geometry/xenocollide/XenoCollide.h"
-#include "geometry/xenocollide/XCPrinter.h"
+#include "XCWolframShapePrinter.h"
+#include "XCObjShapePrinter.h"
 #include "geometry/Polyhedron.h"
 #include "utils/Assertions.h"
 
@@ -42,7 +43,7 @@
  * @endcode
  */
 template<typename ConcreteCollideTraits>
-class XenoCollideTraits : public ShapeTraits, public Interaction, public ShapeGeometry, public ShapePrinter {
+class XenoCollideTraits : public ShapeTraits, public Interaction, public ShapeGeometry {
 private:
     Vector<3> primaryAxis;
     Vector<3> secondaryAxis;
@@ -50,7 +51,29 @@ private:
     double volume{};
 
     mutable std::optional<double> rangeRadius;
-    mutable std::vector<Polyhedron> polyhedra;
+    mutable std::unique_ptr<ShapePrinter> wolframPrinter;
+    mutable std::unique_ptr<ShapePrinter> objPrinter;
+
+    template<typename Printer>
+    std::unique_ptr<Printer> createPrinter() const {
+        auto centers = this->getInteractionCentres();
+        if (centers.empty())
+            centers.push_back({0, 0, 0});
+
+        const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
+        using Geometry = decltype(thisConcreteTraits.getCollideGeometry(0));
+
+        std::vector<PolymorphicXCAdapter<Geometry>> geometries;
+        std::vector<const AbstractXCGeometry *> geometryPointers;
+        geometries.reserve(centers.size());
+        geometryPointers.reserve(centers.size());
+        for (std::size_t i{}; i < centers.size(); i++) {
+            geometries.emplace_back(thisConcreteTraits.getCollideGeometry(i));
+            geometryPointers.push_back(&geometries.back());
+        }
+
+        return std::make_unique<Printer>(geometryPointers, centers, MESH_SUBDIVISIONS);
+    }
 
 public:
     /** @brief The number of sphere subdivisions when printing the shape (see XCPrinter::XCPrintes @a subdivision
@@ -76,8 +99,17 @@ public:
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
 
     [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override {
-        ExpectsMsg(format == "wolfram", "XenoCollideTraits: unknown printer format: " + format);
-        return *this;
+        if (format == "wolfram") {
+            if (this->wolframPrinter == nullptr)
+                this->wolframPrinter = this->template createPrinter<XCWolframShapePrinter>();
+            return *this->wolframPrinter;
+        } else if (format == "obj") {
+            if (this->objPrinter == nullptr)
+                this->objPrinter = this->template createPrinter<XCObjShapePrinter>();
+            return *this->objPrinter;
+        } else {
+            throw NoSuchShapePrinterException("XenoCollideTraits: unknown printer format: " + format);
+        }
     }
 
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const final {
@@ -154,44 +186,6 @@ public:
         }
         this->rangeRadius = 2*maxRadius;
         return *this->rangeRadius;
-    }
-
-    [[nodiscard]] std::string print(const Shape &shape) const override {
-        std::ostringstream out;
-        out << std::fixed;
-        out << "{EdgeForm[None]," << std::endl;
-
-        auto centers = this->getInteraction().getInteractionCentres();
-        if (centers.empty())
-            centers.push_back({0, 0, 0});
-
-        const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
-        Matrix<3, 3> rot = shape.getOrientation();
-        for (std::size_t i{}; i < centers.size(); i++) {
-            const auto &geometry = thisConcreteTraits.getCollideGeometry(i);
-            const auto &center = centers[i];
-            if (this->polyhedra.size() <= i)
-                this->polyhedra.push_back(XCPrinter::buildPolyhedron(geometry, ConcreteCollideTraits::MESH_SUBDIVISIONS));
-            const auto &polyhedron = this->polyhedra[i];
-            std::string wolframPolyhedron = polyhedron.toWolfram();
-
-            Vector<3> pos = shape.getPosition() + rot * center;
-
-            out << "GeometricTransformation[" << wolframPolyhedron << "," << std::endl;
-            out << "AffineTransform[" << std::endl;
-            out << "    {{{" << rot(0, 0) << ", " << rot(0, 1) << ", " << rot(0, 2) << "}," << std::endl;
-            out << "      {" << rot(1, 0) << ", " << rot(1, 1) << ", " << rot(1, 2) << "}," << std::endl;
-            out << "      {" << rot(2, 0) << ", " << rot(2, 1) << ", " << rot(2, 2) << "}}," << std::endl;
-            out << "      " << pos << "}]" << std::endl;
-            out << "]";
-
-            if (i < centers.size() - 1)
-                out << ",";
-            out << std::endl;
-        }
-        out << "}";
-
-        return out.str();
     }
 };
 
