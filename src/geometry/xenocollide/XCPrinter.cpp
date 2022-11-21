@@ -38,10 +38,21 @@ Polyhedron XCPrinter::buildPolyhedron0(const AbstractXCGeometry &geometry, std::
 
     Polyhedron::TriangleList triangles;
     triangles.reserve(indexBuffer.size() / 3);
-    for (std::size_t i{}; i < indexBuffer.size(); i += 3)
-        triangles.push_back({indexBuffer[i], indexBuffer[i + 1], indexBuffer[i + 2]});
+    Vector<3> center = geometry.getCenter();
+    for (std::size_t i{}; i < indexBuffer.size(); i += 3) {
+        Polyhedron::Triangle triangle{indexBuffer[i], indexBuffer[i + 1], indexBuffer[i + 2]};
 
-    return Polyhedron{geometry.getCenter(), std::move(vertices), std::move(triangles)};
+        // Make sure that triangle's normal points outwards
+        Vector<3> s1 = vertices[triangle[1]] - vertices[triangle[0]];
+        Vector<3> s2 = vertices[triangle[2]] - vertices[triangle[1]];
+        Vector<3> r = vertices[triangle[0]] - center;
+        if ((s1 ^ s2) * r < 0)
+            std::swap(triangle[0], triangle[1]);
+
+        triangles.push_back(triangle);
+    }
+
+    return Polyhedron{center, std::move(vertices), std::move(triangles)};
 }
 
 Polyhedron::VertexList XCPrinter::generateSpherePoints(std::size_t subdivisions) {
