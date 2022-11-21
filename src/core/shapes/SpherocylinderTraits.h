@@ -13,18 +13,33 @@
  * standard named points (see ShapeGeometry::getNamedPoint()) defines points "beg" and "end" representing, respectively,
  * beginning cap center and end cap center of the spherocylinder.
  */
-class SpherocylinderTraits : public ShapeTraits, public ShapePrinter, public Interaction, public ShapeGeometry {
+class SpherocylinderTraits : public ShapeTraits, public Interaction, public ShapeGeometry {
 private:
+    class WolframPrinter : public ShapePrinter {
+    private:
+        const SpherocylinderTraits &traits;
+
+    public:
+        explicit WolframPrinter(const SpherocylinderTraits &traits) : traits{traits} { }
+        [[nodiscard]] std::string print(const Shape &shape) const override;
+    };
+
     double length{};    // distance between two spherical caps centres
     double radius{};    // radius of spherical caps
+    WolframPrinter wolframPrinter;
+    std::unique_ptr<ShapePrinter> objPrinter;
+
+    static std::unique_ptr<ShapePrinter> createObjPrinter(double length, double radius);
 
     [[nodiscard]] Vector<3> getCapCentre(short beginOrEnd, const Shape &shape) const;
+
+    friend WolframPrinter;
 
 public:
     /**
      * @brief Creates a spherocylinder spanned on x axis with a unit distance between cap centers and a unit radius.
      */
-    SpherocylinderTraits() : length{1}, radius{1} { }
+    SpherocylinderTraits() : SpherocylinderTraits(1, 1) { }
 
     /**
      * @brief Creates a spherocylinder spanned on x axis with @a length distance between cap centers and @a radius
@@ -50,8 +65,6 @@ public:
                                        const Vector<3> &wallOrigin, const Vector<3> &wallVector) const override;
 
     [[nodiscard]] double getRangeRadius() const override { return 2*this->radius + this->length; };
-
-    [[nodiscard]] std::string print(const Shape &shape) const override;
 };
 
 
