@@ -13,7 +13,7 @@
 /**
  * @brief Spherical molecules with hard of soft interactions.
  */
-class SphereTraits : public ShapeTraits, public ShapePrinter, public ShapeGeometry {
+class SphereTraits : public ShapeTraits, public ShapeGeometry {
 private:
     class HardInteraction : public Interaction {
     private:
@@ -34,8 +34,21 @@ private:
         [[nodiscard]] double getRangeRadius() const override { return 2 * this->radius; }
     };
 
+    class WolframPrinter : public ShapePrinter {
+    private:
+        double radius{};
+
+    public:
+        explicit WolframPrinter(double radius) : radius{radius} { }
+        [[nodiscard]] std::string print(const Shape &shape) const override;
+    };
+
+    static std::unique_ptr<ShapePrinter> createObjPrinter(double radius);
+
     double radius{};
     std::unique_ptr<Interaction> interaction{};
+    WolframPrinter wolframPrinter;
+    std::unique_ptr<ShapePrinter> objPrinter;
 
 public:
     /**
@@ -52,8 +65,6 @@ public:
     [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override;
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
     [[nodiscard]] double getVolume() const override;
-
-    [[nodiscard]] std::string print(const Shape &shape) const override;
 
     [[nodiscard]] double getRadius() const { return this->radius; }
 };

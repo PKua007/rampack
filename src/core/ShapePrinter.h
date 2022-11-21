@@ -6,8 +6,15 @@
 #define RAMPACK_SHAPEPRINTER_H
 
 #include <string>
+#include <stdexcept>
 
 #include "Shape.h"
+
+
+class NoSuchShapePrinterException : public std::runtime_error {
+public:
+    explicit NoSuchShapePrinterException(const std::string &what) : runtime_error(what) { }
+};
 
 /**
  * @brief An interface for printing the shape in supported formats. Currently the only format is Wolfram Mathematica.

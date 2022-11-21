@@ -1245,6 +1245,7 @@ int Frontend::shapePreview(int argc, char **argv) {
     std::string shapeAttr;
     std::string interactionName;
     std::string wolframFilename;
+    std::string objFilename;
 
     options.add_options()
         ("h,help", "prints help for this mode")
@@ -1262,7 +1263,9 @@ int Frontend::shapePreview(int argc, char **argv) {
          cxxopts::value<std::string>(interactionName))
         ("l,log-info", "prints information about the shape")
         ("w,wolfram-preview", "stores Wolfram preview of the shape in a file given as an argument",
-         cxxopts::value<std::string>(wolframFilename));
+         cxxopts::value<std::string>(wolframFilename))
+        ("o,obj-preview", "stores Wavefront OBJ model of the shape in a file given as an argument",
+         cxxopts::value<std::string>(objFilename));
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
@@ -1286,8 +1289,12 @@ int Frontend::shapePreview(int argc, char **argv) {
 
     auto traits = ShapeFactory::shapeTraitsFor(shapeName, shapeAttr, interactionName);
 
-    if (!parsedOptions.count("log-info") && !parsedOptions.count("wolfram-preview"))
-        die("At least one of options: -l (--log-info), -W (--wolfram-preview) must be specified", this->logger);
+    if (!parsedOptions.count("log-info") && !parsedOptions.count("wolfram-preview")
+        && !parsedOptions.count("obj-preview"))
+    {
+        die("At least one of options: -l (--log-info), -w (--wolfram-preview), -o (--obj-preview) must be specified",
+            this->logger);
+    }
 
     // Log info
     if (parsedOptions.count("log-info")) {
@@ -1306,6 +1313,18 @@ int Frontend::shapePreview(int argc, char **argv) {
         ValidateOpenedDesc(wolframFile, wolframFilename, " to store Wolfram preview of the shape");
         const auto &printer = traits->getPrinter("wolfram");
         wolframFile << "Graphics3D[" << printer.print({}) << "]";
+    }
+
+    // OBJ model preview
+    if (parsedOptions.count("obj-preview")) {
+        try {
+            const auto &printer = traits->getPrinter("obj");
+            std::ofstream objFile(objFilename);
+            ValidateOpenedDesc(objFile, wolframFilename, " to store Wavefront OBJ model of the shape");
+            objFile << printer.print({});
+        } catch (const NoSuchShapePrinterException &) {
+            die("Shape " + shapeName + " does not support Wavefront OBJ format");
+        }
     }
 
     return EXIT_SUCCESS;
