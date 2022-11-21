@@ -8,26 +8,28 @@
 
 #include "PolysphereTraits.h"
 #include "utils/Assertions.h"
+#include "XCObjShapePrinter.h"
+#include "geometry/xenocollide/XCPrimitives.h"
 
 
-std::string PolysphereTraits::print(const Shape &shape) const {
+
+std::string PolysphereTraits::WolframPrinter::print(const Shape &shape) const {
     std::ostringstream out;
     out << std::fixed;
     out << "{";
-    const auto &sphereData = this->getSphereData();
-    for (std::size_t i{}; i < sphereData.size() - 1; i++) {
-        const auto &data = sphereData[i];
+    for (std::size_t i{}; i < this->sphereData.size() - 1; i++) {
+        const auto &data = this->sphereData[i];
         data.toWolfram(out, shape);
         out << ",";
     }
-   sphereData.back().toWolfram(out, shape);
+    this->sphereData.back().toWolfram(out, shape);
     out << "}";
     return out.str();
 }
 
 PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry,
                                    std::unique_ptr<CentralInteraction> centralInteraction)
-        : geometry{std::move(geometry)}
+        : geometry{std::move(geometry)}, wolframPrinter{this->geometry.getSphereData()}
 {
     const auto &sphereData = this->getSphereData();
     std::vector<Vector<3>> centres;
@@ -36,15 +38,40 @@ PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry
                    [](const SphereData &data) { return data.position; });
     centralInteraction->installOnCentres(centres);
     this->interaction = std::move(centralInteraction);
+    this->objPrinter = this->createObjPrinter();
 }
 
-PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry) : geometry{std::move(geometry)} {
+PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry)
+    : geometry{std::move(geometry)}, wolframPrinter{this->geometry.getSphereData()}
+{
     this->interaction = std::make_unique<HardInteraction>(this->getSphereData());
+    this->objPrinter = this->createObjPrinter();
 }
 
 const ShapePrinter &PolysphereTraits::getPrinter(const std::string &format) const {
-    ExpectsMsg(format == "wolfram", "PolysphereTraits: unknown printer format: " + format);
-    return *this;
+    if (format == "wolfram")
+        return this->wolframPrinter;
+    else if (format == "obj")
+        return *this->objPrinter;
+    else
+        throw NoSuchShapePrinterException("PolysphereTraits: unknown printer format: " + format);
+}
+
+std::unique_ptr<ShapePrinter> PolysphereTraits::createObjPrinter() const {
+    const auto &sphereData = this->getSphereData();
+
+    std::vector<XCSphere> xcSpheres;
+    std::vector<const AbstractXCGeometry*> geometries;
+    xcSpheres.reserve(sphereData.size());
+    geometries.reserve(sphereData.size());
+    for (const auto &sphereDataEntry : sphereData) {
+        xcSpheres.emplace_back(sphereDataEntry.radius);
+        geometries.push_back(&xcSpheres.back());
+    }
+
+    auto interactionCentres = this->interaction->getInteractionCentres();
+
+    return std::make_unique<XCObjShapePrinter>(geometries, interactionCentres, 3);
 }
 
 PolysphereTraits::SphereData::SphereData(const Vector<3> &position, double radius)
