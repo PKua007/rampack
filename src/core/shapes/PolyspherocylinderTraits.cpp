@@ -9,6 +9,9 @@
 #include "PolyspherocylinderTraits.h"
 #include "utils/Assertions.h"
 #include "geometry/SegmentDistanceCalculator.h"
+#include "XCObjShapePrinter.h"
+#include "geometry/xenocollide/XCBodyBuilder.h"
+
 
 double PolyspherocylinderTraits::PolyspherocylinderGeometry::getVolume() const {
     return std::accumulate(this->spherocylinderData.begin(), this->spherocylinderData.end(), 0.,
@@ -33,21 +36,6 @@ PolyspherocylinderTraits::PolyspherocylinderGeometry
     }
 
     this->registerNamedPoints(customNamedPoints);
-}
-
-std::string PolyspherocylinderTraits::print(const Shape &shape) const {
-    std::ostringstream out;
-    out << std::fixed;
-    out << "{";
-    const auto spherocylinderData = this->getSpherocylinderData();
-    for (std::size_t i{}; i < spherocylinderData.size() - 1; i++) {
-        const auto &data = spherocylinderData[i];
-        data.toWolfram(out, shape);
-        out << ",";
-    }
-    spherocylinderData.back().toWolfram(out, shape);
-    out << "}";
-    return out.str();
 }
 
 void PolyspherocylinderTraits::PolyspherocylinderGeometry::normalizeMassCentre() {
@@ -169,6 +157,56 @@ bool PolyspherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matri
 }
 
 const ShapePrinter &PolyspherocylinderTraits::getPrinter(const std::string &format) const {
-    ExpectsMsg(format == "wolfram", "PolyspherocylinderTraits: unknown printer format: " + format);
-    return *this;
+    if (format == "wolfram")
+        return this->wolframPrinter;
+    else if (format == "obj")
+        return *this->objPrinter;
+    else
+        throw NoSuchShapePrinterException("PolyspherocylinderTraits: unknown printer format: " + format);
+}
+
+PolyspherocylinderTraits::PolyspherocylinderTraits(PolyspherocylinderTraits::PolyspherocylinderGeometry geometry)
+        : geometry{std::move(geometry)}, wolframPrinter{this->geometry.getSpherocylinderData()}
+{
+    this->objPrinter = this->createObjPrinter();
+}
+
+std::unique_ptr<ShapePrinter> PolyspherocylinderTraits::createObjPrinter() const {
+    const auto &spherocylinderData = this->getSpherocylinderData();
+
+    std::vector<std::shared_ptr<AbstractXCGeometry>> xcSpherocylinders;
+    std::vector<const AbstractXCGeometry*> geometries;
+    xcSpherocylinders.reserve(spherocylinderData.size());
+    geometries.reserve(spherocylinderData.size());
+    for (const auto &scData : spherocylinderData) {
+        XCBodyBuilder builder;
+        builder.sphere(scData.radius);
+        Vector<3> pos1 = -scData.halfAxis;
+        builder.move(pos1[0], pos1[1], pos1[2]);
+        builder.sphere(scData.radius);
+        Vector<3> pos2 = scData.halfAxis;
+        builder.move(pos2[0], pos2[1], pos2[2]);
+        builder.wrap();
+
+        xcSpherocylinders.push_back(builder.releaseCollideGeometry());
+        geometries.push_back(xcSpherocylinders.back().get());
+    }
+
+    auto interactionCentres = this->getInteractionCentres();
+
+    return std::make_unique<XCObjShapePrinter>(geometries, interactionCentres, 3);
+}
+
+std::string PolyspherocylinderTraits::WolframPrinter::print(const Shape &shape) const {
+    std::ostringstream out;
+    out << std::fixed;
+    out << "{";
+    for (std::size_t i{}; i < this->spherocylinderData.size() - 1; i++) {
+        const auto &data = this->spherocylinderData[i];
+        data.toWolfram(out, shape);
+        out << ",";
+    }
+    this->spherocylinderData.back().toWolfram(out, shape);
+    out << "}";
+    return out.str();
 }
