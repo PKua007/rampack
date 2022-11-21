@@ -7,23 +7,23 @@
 
 #include "SphereTraits.h"
 #include "utils/Assertions.h"
+#include "XCObjShapePrinter.h"
+#include "geometry/xenocollide/XCPrimitives.h"
 
-SphereTraits::SphereTraits(double radius) : radius{radius}, interaction{std::make_unique<HardInteraction>(radius)} {
+
+SphereTraits::SphereTraits(double radius)
+        : radius{radius}, interaction{std::make_unique<HardInteraction>(radius)}, wolframPrinter(radius),
+          objPrinter{SphereTraits::createObjPrinter(radius)}
+{
     Expects(radius > 0);
 }
 
 SphereTraits::SphereTraits(double radius, std::unique_ptr<CentralInteraction> centralInteraction)
-        : radius{radius}
+        : radius{radius}, wolframPrinter(radius), objPrinter{SphereTraits::createObjPrinter(radius)}
 {
     Expects(radius > 0);
     centralInteraction->installOnSphere();
     this->interaction = std::move(centralInteraction);
-}
-
-std::string SphereTraits::print(const Shape &shape) const {
-    std::ostringstream out;
-    out << "Sphere[" << (shape.getPosition()) << "," << this->radius << "]";
-    return out.str();
 }
 
 double SphereTraits::getVolume() const {
@@ -31,8 +31,16 @@ double SphereTraits::getVolume() const {
 }
 
 const ShapePrinter &SphereTraits::getPrinter(const std::string &format) const {
-    ExpectsMsg(format == "wolfram", "SphereTraits: unknown printer format: " + format);
-    return *this;
+    if (format == "wolfram")
+        return this->wolframPrinter;
+    else if (format == "obj")
+        return *this->objPrinter;
+    else
+        throw NoSuchShapePrinterException("SphereTraits: unknown printer format: " + format);
+}
+
+std::unique_ptr<ShapePrinter> SphereTraits::createObjPrinter(double radius) {
+    return std::make_unique<XCObjShapePrinter>(XCSphere{radius}, 4);
 }
 
 bool SphereTraits::HardInteraction::overlapBetween(const Vector<3> &pos1,
@@ -54,4 +62,10 @@ bool SphereTraits::HardInteraction::overlapWithWall(const Vector<3> &pos,
 {
     double dotProduct = wallVector * (pos - wallOrigin);
     return dotProduct < this->radius;
+}
+
+std::string SphereTraits::WolframPrinter::print(const Shape &shape) const {
+    std::ostringstream out;
+    out << "Sphere[" << (shape.getPosition()) << "," << this->radius << "]";
+    return out.str();
 }

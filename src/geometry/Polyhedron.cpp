@@ -42,11 +42,21 @@ double Polyhedron::getVolume() const {
     return vol;
 }
 
-void Polyhedron::storeWavefrontObj(std::ostream &out) const {
+void Polyhedron::storeWavefrontObj(std::ostream &out, std::size_t vertexOffset) const {
     for (const auto &v : this->vertices)
         out << "v " << v[0] << " " << v[1] << " " << v[2] << std::endl;
     out << std::endl;
 
+    std::size_t o = vertexOffset;
     for (const auto &tri : this->triangles)
-        out << "f " << (tri[0] + 1) << " " << (tri[1] + 1) << " " << (tri[2] + 1) << std::endl;
+        out << "f " << (tri[0] + 1 + o) << " " << (tri[1] + 1 + o) << " " << (tri[2] + 1 + o) << std::endl;
+}
+
+Polyhedron Polyhedron::transformed(const Vector<3> &pos, const Matrix<3, 3> &rot) const {
+    VertexList newVertices;
+    newVertices.reserve(this->vertices.size());
+    for (const auto &vertex : this->vertices)
+        newVertices.push_back(rot*vertex + pos);
+
+    return {this->center + pos, std::move(newVertices), this->triangles};
 }

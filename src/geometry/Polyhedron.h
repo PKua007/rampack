@@ -33,12 +33,14 @@ public:
      */
     [[nodiscard]] std::string toWolfram() const;
 
-    void storeWavefrontObj(std::ostream &out) const;
+    void storeWavefrontObj(std::ostream &out, std::size_t vertexOffset = 0) const;
 
     /**
      * @brief Returns the volume of the polyhedron.
      */
     [[nodiscard]] double getVolume() const;
+
+    [[nodiscard]] Polyhedron transformed(const Vector<3> &pos, const Matrix<3, 3> &rot) const;
 };
 
 
