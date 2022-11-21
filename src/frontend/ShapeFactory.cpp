@@ -172,7 +172,7 @@ namespace {
 
     std::shared_ptr<ShapeTraits> parse_generic_xeno_collide(std::istream &in) {
         auto [fieldsMap, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints]
-            = parse_generic_shape_traits(in, GENERIC_XENO_COLLIDE_USAGE, {"scripts"});
+            = parse_generic_shape_traits(in, GENERIC_XENO_COLLIDE_USAGE, {"script"});
         auto commands = explode(fieldsMap.at("script"), '&');
         ValidateMsg(!commands.empty(), "At least one script command should be passed");
 
