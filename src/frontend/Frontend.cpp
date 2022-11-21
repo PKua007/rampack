@@ -35,6 +35,7 @@
 #include "ParameterUpdaterFactory.h"
 #include "core/XYZRecorder.h"
 #include "core/WolframWriter.h"
+#include "core/XYZWriter.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -296,18 +297,20 @@ void Frontend::performIntegration(Simulation &simulation, Simulation::Environmen
     runParams.print(this->logger);
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    std::unique_ptr<RamtrjRecorder> recorder;
+    std::vector<std::unique_ptr<SimulationRecorder>> recorders;
     if (!runParams.recordingFilename.empty()) {
-        recorder = this->loadRamtrjRecorder(runParams.recordingFilename, simulation.getPacking().size(),
-                                            runParams.snapshotEvery, isContinuation);
+        recorders.push_back(this->loadRamtrjRecorder(runParams.recordingFilename, simulation.getPacking().size(),
+                                                     runParams.snapshotEvery, isContinuation));
     }
+    if (!runParams.xyzRecordingFilename.empty())
+        recorders.push_back(this->loadXYZRecorder(runParams.xyzRecordingFilename, isContinuation));
 
     auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','),
                                                          explode(runParams.bulkObservables, ','),
                                                          simulation.getPacking().getScalingThreads());
     this->attachSnapshotOut(*collector, runParams.observableSnapshotFilename, isContinuation);
     simulation.integrate(env, runParams.thermalisationCycles, runParams.averagingCycles, runParams.averagingEvery,
-                         runParams.snapshotEvery, shapeTraits, std::move(collector), std::move(recorder),
+                         runParams.snapshotEvery, shapeTraits, std::move(collector), std::move(recorders),
                          this->logger, cycleOffset);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
@@ -317,7 +320,9 @@ void Frontend::performIntegration(Simulation &simulation, Simulation::Environmen
     this->printPerformanceInfo(simulation);
 
     if (!runParams.packingFilename.empty())
-        this->storePacking(simulation, runParams.packingFilename);
+        this->storeRamsnap(simulation, runParams.packingFilename);
+    if (!runParams.xyzPackingFilename.empty())
+        this->storeXYZ(simulation, shapeTraits, runParams.xyzPackingFilename);
     if (!runParams.wolframFilename.empty())
         this->storeWolframVisualization(simulation.getPacking(), shapeTraits, runParams.wolframFilename);
     if (!runParams.outputFilename.empty()) {
@@ -329,7 +334,7 @@ void Frontend::performIntegration(Simulation &simulation, Simulation::Environmen
 }
 
 std::unique_ptr<RamtrjRecorder> Frontend::loadRamtrjRecorder(const std::string &filename, std::size_t numMolecules,
-                                                             std::size_t cycleStep, bool &isContinuation) const
+                                                             std::size_t cycleStep, bool isContinuation) const
 {
     std::unique_ptr<std::fstream> inout;
 
@@ -343,9 +348,28 @@ std::unique_ptr<RamtrjRecorder> Frontend::loadRamtrjRecorder(const std::string &
         );
     }
 
-    ValidateOpenedDesc(*inout, filename, "to store packing data");
-    this->logger.info() << "Trajectory is stored on the fly to '" << filename << "'" << std::endl;
+    ValidateOpenedDesc(*inout, filename, "to store RAMTRJ trajectory");
+    this->logger.info() << "RAMTRJ trajectory is stored on the fly to '" << filename << "'" << std::endl;
     return std::make_unique<RamtrjRecorder>(std::move(inout), numMolecules, cycleStep, isContinuation);
+}
+
+std::unique_ptr<XYZRecorder> Frontend::loadXYZRecorder(const std::string &filename, bool isContinuation) const
+{
+    std::unique_ptr<std::fstream> inout;
+
+    if (isContinuation) {
+        inout = std::make_unique<std::fstream>(
+            filename, std::ios_base::app | std::ios_base::binary
+        );
+    } else {
+        inout = std::make_unique<std::fstream>(
+            filename, std::ios_base::out | std::ios_base::binary
+        );
+    }
+
+    ValidateOpenedDesc(*inout, filename, "to store XYZ trajectory");
+    this->logger.info() << "XYZ trajectory is stored on the fly to '" << filename << "'" << std::endl;
+    return std::make_unique<XYZRecorder>(std::move(inout));
 }
 
 void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Environment &env,
@@ -362,11 +386,13 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
     runParams.print(this->logger);
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    std::unique_ptr<RamtrjRecorder> recorder;
+    std::vector<std::unique_ptr<SimulationRecorder>> recorders;
     if (!runParams.recordingFilename.empty()) {
-        recorder = this->loadRamtrjRecorder(runParams.recordingFilename, simulation.getPacking().size(),
-                                            runParams.snapshotEvery, isContinuation);
+        recorders.push_back(this->loadRamtrjRecorder(runParams.recordingFilename, simulation.getPacking().size(),
+                                                     runParams.snapshotEvery, isContinuation));
     }
+    if (!runParams.xyzRecordingFilename.empty())
+        recorders.push_back(this->loadXYZRecorder(runParams.xyzRecordingFilename, isContinuation));
 
     if (!runParams.helperInteraction.empty()) {
         auto helperShape = ShapeFactory::shapeTraitsFor(shapeName, shapeAttr, runParams.helperInteraction);
@@ -377,7 +403,7 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
                                                          explode(runParams.bulkObservables, ','),
                                                          simulation.getPacking().getScalingThreads());
     this->attachSnapshotOut(*collector, runParams.observableSnapshotFilename, isContinuation);
-    simulation.relaxOverlaps(env, runParams.snapshotEvery, *shapeTraits, std::move(collector), std::move(recorder),
+    simulation.relaxOverlaps(env, runParams.snapshotEvery, *shapeTraits, std::move(collector), std::move(recorders),
                              this->logger, cycleOffset);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
@@ -386,7 +412,9 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
     this->printPerformanceInfo(simulation);
 
     if (!runParams.packingFilename.empty())
-        this->storePacking(simulation, runParams.packingFilename);
+        this->storeRamsnap(simulation, runParams.packingFilename);
+    if (!runParams.xyzPackingFilename.empty())
+        this->storeXYZ(simulation, *shapeTraits, runParams.packingFilename);
     if (!runParams.wolframFilename.empty())
         this->storeWolframVisualization(simulation.getPacking(), *shapeTraits, runParams.wolframFilename);
     if (!runParams.bulkObservableFilenamePattern.empty())
@@ -434,25 +462,25 @@ void Frontend::storeWolframVisualization(const Packing &packing, const ShapeTrai
     this->logger.info() << "Wolfram packing stored to " + filename << " using '" << styleStr << "' style" << std::endl;
 }
 
-void Frontend::storePacking(const Simulation &simulation, const std::string &packingFilename) {
-    std::map<std::string, std::string> auxInfo;
-
-    auxInfo["cycles"] = std::to_string(simulation.getTotalCycles());
-
-    const auto &movesStatistics = simulation.getMovesStatistics();
-    for (const auto &moveStatistics : movesStatistics) {
-        auto groupName = moveStatistics.groupName;
-        for (const auto &stepSizeData : moveStatistics.stepSizeDatas) {
-            std::string moveKey = Frontend::formatMoveKey(groupName, stepSizeData.moveName);
-            auxInfo[moveKey] = doubleToString(stepSizeData.stepSize);
-        }
-    }
-
+void Frontend::storeRamsnap(const Simulation &simulation, const std::string &packingFilename) {
+    auto auxInfo = this->prepareAuxInfo(simulation);
     std::ofstream out(packingFilename);
-    ValidateOpenedDesc(out, packingFilename, "to store packing data");
+    ValidateOpenedDesc(out, packingFilename, "to store RAMSNAP packing data");
     simulation.getPacking().store(out, auxInfo);
 
-    this->logger.info() << "Packing stored to " + packingFilename << std::endl;
+    this->logger.info() << "RAMSNAP packing stored to " + packingFilename << std::endl;
+}
+
+void Frontend::storeXYZ(const Simulation &simulation, const ShapeTraits &traits, const std::string &packingFilename) {
+    std::ofstream out(packingFilename);
+    ValidateOpenedDesc(out, packingFilename, "to store XYZ packing data");
+
+    auto auxInfo = this->prepareAuxInfo(simulation);
+    const auto &packing = simulation.getPacking();
+    XYZWriter writer;
+    writer.write(out, packing, traits, auxInfo);
+
+    this->logger.info() << "XYZ packing stored to " + packingFilename << std::endl;
 }
 
 void Frontend::printPerformanceInfo(const Simulation &simulation) {
@@ -712,7 +740,8 @@ int Frontend::preview(int argc, char **argv) {
     cxxopts::Options options(argv[0], "Initial arrangement preview.");
 
     std::string inputFilename;
-    std::string datFilename;
+    std::string ramsnapFilename;
+    std::string xyzFilename;
     std::string wolframFilename;
 
     options.add_options()
@@ -722,7 +751,8 @@ int Frontend::preview(int argc, char **argv) {
         ("w,wolfram", "if specified, Mathematica notebook with the packing will be generated",
          cxxopts::value<std::string>(wolframFilename))
         ("s,ramsnap", "if specified, RAMSNAP file with packing will be generated",
-         cxxopts::value<std::string>(datFilename));
+         cxxopts::value<std::string>(ramsnapFilename))
+        ("x,xyz", "if specified, XYZ file with packing will be generated", cxxopts::value<std::string>(xyzFilename));
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
@@ -737,8 +767,8 @@ int Frontend::preview(int argc, char **argv) {
         die("Unexpected positional arguments. See " + cmd + " --help", this->logger);
     if (!parsedOptions.count("input"))
         die("Input file must be specified with option -i [input file name]", this->logger);
-    if (!parsedOptions.count("wolfram") && !parsedOptions.count("ramsnap"))
-        die("At least one of: --wolfram, --ramsnap options must be specified", this->logger);
+    if (!parsedOptions.count("wolfram") && !parsedOptions.count("ramsnap") && !parsedOptions.count("xyz"))
+        die("At least one of: --wolfram, --ramsnap, --xyz options must be specified", this->logger);
 
     Parameters params = this->loadParameters(inputFilename);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
@@ -748,9 +778,13 @@ int Frontend::preview(int argc, char **argv) {
                                                       shapeTraits->getInteraction(), shapeTraits->getGeometry(), 1, 1);
     this->createWalls(*packing, params.walls);
 
-    // Store packing (if desired)
+    // Store ramsnap packing (if desired)
     if (parsedOptions.count("ramsnap"))
-        this->generateRamsnapFile(*packing, params, *shapeTraits, datFilename);
+        this->generateRamsnapFile(*packing, ramsnapFilename);
+
+    // Store xyz packing (if desired)
+    if (parsedOptions.count("xyz"))
+        this->generateXYZFile(*packing, *shapeTraits, xyzFilename);
 
     // Store Mathematica packing (if desired)
     if (parsedOptions.count("wolfram"))
@@ -759,24 +793,25 @@ int Frontend::preview(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-void Frontend::generateRamsnapFile(const Packing &packing, const Parameters &params, const ShapeTraits &traits,
-                                   const std::string &ramsnapFilename, std::size_t cycles)
-{
-    // Parse move type
-    auto moveSamplerStrings = explode(params.moveTypes, ',');
-    std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
-    moveSamplers.reserve(moveSamplerStrings.size());
-    for (const auto &moveSamplerString : moveSamplerStrings)
-        moveSamplers.push_back(MoveSamplerFactory::create(moveSamplerString, traits));
-
+void Frontend::generateRamsnapFile(const Packing &packing, const std::string &ramsnapFilename, std::size_t cycles) {
     std::map<std::string, std::string> auxInfo;
-    appendMoveStepSizesToAuxInfo(moveSamplers, params.volumeStepSize, auxInfo);
     auxInfo["cycles"] = std::to_string(cycles);
-
     std::ofstream out(ramsnapFilename);
-    ValidateOpenedDesc(out, ramsnapFilename, "to store packing data");
+    ValidateOpenedDesc(out, ramsnapFilename, "to store RAMSNAP packing data");
     packing.store(out, auxInfo);
-    this->logger.info() << "Packing stored to " + ramsnapFilename << std::endl;
+    this->logger.info() << "RAMSNAP packing stored to " + ramsnapFilename << std::endl;
+}
+
+void Frontend::generateXYZFile(const Packing &packing, const ShapeTraits &traits, const std::string &ramsnapFilename,
+                               std::size_t cycles)
+{
+    std::map<std::string, std::string> auxInfo;
+    auxInfo["cycles"] = std::to_string(cycles);
+    std::ofstream out(ramsnapFilename);
+    ValidateOpenedDesc(out, ramsnapFilename, "to store XYZ packing data");
+    XYZWriter writer;
+    writer.write(out, packing, traits, auxInfo);
+    this->logger.info() << "XYZ packing stored to " + ramsnapFilename << std::endl;
 }
 
 std::string Frontend::doubleToString(double d) {
@@ -889,13 +924,14 @@ int Frontend::trajectory(int argc, char **argv) {
     std::vector<std::string> bulkObservables;
     std::size_t averagingStart{};
     std::size_t maxThreads{};
-    std::string datFilename;
+    std::string ramsnapFilename;
+    std::string xyzFilename;
     std::string wolframFilename;
     std::string verbosity;
     std::string auxOutput;
     std::string auxVerbosity;
     std::string storeFilename;
-    std::string xyzFilename;
+    std::string xyzTrajectoryFilename;
 
     options.add_options()
         ("h,help", "prints help for this mode")
@@ -929,7 +965,9 @@ int Frontend::trajectory(int argc, char **argv) {
                           "is passed, all available threads are used",
          cxxopts::value<std::size_t>(maxThreads)->default_value("1"))
         ("S,generate-ramsnap", "reads the last snapshot and recreates RAMSNAP file from it",
-         cxxopts::value<std::string>(datFilename))
+         cxxopts::value<std::string>(ramsnapFilename))
+        ("X,generate-xyz", "reads the last snapshot and recreates XYZ file from it",
+         cxxopts::value<std::string>(xyzFilename))
         ("w,generate-wolfram", "reads the last snapshot and recreates Wolfram Mathematica file from it",
          cxxopts::value<std::string>(wolframFilename))
         ("I,log-info", "print basic information about the recorded trajectory on a standard output")
@@ -942,8 +980,8 @@ int Frontend::trajectory(int argc, char **argv) {
          cxxopts::value<std::string>(auxVerbosity))
         ("s,store-trajectory", "store the trajectory; it is most useful for broken trajectories fixed using --auto-fix",
          cxxopts::value<std::string>(storeFilename))
-        ("x,generate-xyz", "generates (extended) XYZ trajectory and stores it in a given file",
-         cxxopts::value<std::string>(xyzFilename));
+        ("x,store-xyz-trajectory", "generates (extended) XYZ trajectory and stores it in a given file",
+         cxxopts::value<std::string>(xyzTrajectoryFilename));
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
@@ -973,10 +1011,11 @@ int Frontend::trajectory(int argc, char **argv) {
         die("Trajectory file must be specified with option -t [input file name]", this->logger);
     if (!parsedOptions.count("observables") && !parsedOptions.count("bulk-observables")
         && !parsedOptions.count("log-info") && !parsedOptions.count("generate-ramsnap")
-        && !parsedOptions.count("generate-wolfram") && !parsedOptions.count("generate-xyz"))
+        && !parsedOptions.count("generate-xyz") && !parsedOptions.count("generate-wolfram")
+        && !parsedOptions.count("store-xyz-trajectory"))
     {
-        die("At least one of: --observables, --bulk-observables, --log-info, --generate-dat, "
-            "--generate-wolfram, --generate-xyz options must be specified", this->logger);
+        die("At least one of: --observables, --bulk-observables, --log-info, --generate-ramsnap, --generate-xyz, "
+            "--generate-wolfram, --store-xyz-trajectory options must be specified", this->logger);
     }
 
     Parameters params = this->loadParameters(inputFilename);
@@ -1096,23 +1135,27 @@ int Frontend::trajectory(int argc, char **argv) {
         this->logger.info() << std::endl;
     }
 
-    // Recreate RAMSNAP file from the last snapshot (if desired)
-    if (parsedOptions.count("generate-ramsnap") || parsedOptions.count("generate-wolfram")) {
+    // Recreate RAMSNAP/XYZ/Wolfram file from the last snapshot (if desired)
+    if (parsedOptions.count("generate-ramsnap") || parsedOptions.count("generate-xyz")
+        || parsedOptions.count("generate-wolfram"))
+    {
         this->logger.info() << "Reading last snapshot... " << std::flush;
         player->lastSnapshot(*packing, shapeTraits->getInteraction());
         this->logger.info() << "cycles: " << player->getCurrentSnapshotCycles() << std::endl;
 
         if (parsedOptions.count("generate-ramsnap"))
-            this->generateRamsnapFile(*packing, params, *shapeTraits, datFilename, player->getCurrentSnapshotCycles());
+            this->generateRamsnapFile(*packing, ramsnapFilename, player->getCurrentSnapshotCycles());
+        if (parsedOptions.count("generate-xyz"))
+            this->generateXYZFile(*packing, *shapeTraits, xyzFilename, player->getCurrentSnapshotCycles());
         if (parsedOptions.count("generate-wolfram"))
             this->storeWolframVisualization(*packing, *shapeTraits, wolframFilename);
         this->logger.info() << std::endl;
     }
 
     // Store XYZ trajectory (if desired)
-    if (parsedOptions.count("generate-xyz")) {
-        auto xyzOut = std::make_unique<std::ofstream>(xyzFilename);
-        ValidateOpenedDesc(*xyzOut, xyzFilename, "to store XYZ trajectory");
+    if (parsedOptions.count("store-xyz-trajectory")) {
+        auto xyzOut = std::make_unique<std::ofstream>(xyzTrajectoryFilename);
+        ValidateOpenedDesc(*xyzOut, xyzTrajectoryFilename, "to store XYZ trajectory");
         XYZRecorder recorder(std::move(xyzOut));
 
         this->logger.info() << "Starting simulation replay for XYZ trajectory export..." << std::endl;
@@ -1389,4 +1432,21 @@ Simulation::Environment Frontend::recreateEnvironment(const Parameters &params, 
     ValidateMsg(env.isComplete(), "Some of parameters: pressure, temperature, moveTypes, scalingType are missing");
 
     return env;
+}
+
+std::map<std::string, std::string> Frontend::prepareAuxInfo(const Simulation &simulation) const {
+    std::map<std::string, std::string> auxInfo;
+
+    auxInfo["cycles"] = std::to_string(simulation.getTotalCycles());
+
+    const auto &movesStatistics = simulation.getMovesStatistics();
+    for (const auto &moveStatistics : movesStatistics) {
+        auto groupName = moveStatistics.groupName;
+        for (const auto &stepSizeData : moveStatistics.stepSizeDatas) {
+            std::string moveKey = Frontend::formatMoveKey(groupName, stepSizeData.moveName);
+            auxInfo[moveKey] = doubleToString(stepSizeData.stepSize);
+        }
+    }
+
+    return auxInfo;
 }

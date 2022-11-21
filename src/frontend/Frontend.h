@@ -20,6 +20,7 @@
 #include "core/RamtrjRecorder.h"
 #include "core/RamtrjPlayer.h"
 #include "PackingLoader.h"
+#include "core/XYZRecorder.h"
 
 /**
  * @brief Class responsible for the communication between the user and the simulation backend.
@@ -38,11 +39,13 @@ private:
                                       double scalingStepSize, std::map<std::string, std::string> &auxInfo) const;
     void setVerbosityLevel(std::optional<std::string> verbosity, std::optional<std::string> auxOutput,
                            std::optional<std::string> auxVerbosity);
-    void generateRamsnapFile(const Packing &packing, const Parameters &params, const ShapeTraits &traits,
-                             const std::string &ramsnapFilename, std::size_t cycles = 0);
+    void generateRamsnapFile(const Packing &packing, const std::string &ramsnapFilename, std::size_t cycles = 0);
+    void generateXYZFile(const Packing &packing, const ShapeTraits &traits, const std::string &ramsnapFilename,
+                         std::size_t cycles = 0);
     Logger::LogType parseVerbosityLevel(const std::string &verbosityLevelName) const;
     std::unique_ptr<RamtrjRecorder> loadRamtrjRecorder(const std::string &filename, std::size_t numMolecules,
-                                                       std::size_t cycleStep, bool &isContinuation) const;
+                                                       std::size_t cycleStep, bool isContinuation) const;
+    std::unique_ptr<XYZRecorder> loadXYZRecorder(const std::string &filename, bool isContinuation) const;
     std::unique_ptr<RamtrjPlayer> loadRamtrjPlayer(std::string &trajectoryFilename, size_t numMolecules, bool autoFix_);
     void createWalls(Packing &packing, const std::string &walls);
     void attachSnapshotOut(ObservablesCollector &collector, const std::string& filename, bool isContinuation) const;
@@ -61,7 +64,9 @@ private:
 
     void storeAverageValues(const std::string &filename, const ObservablesCollector &collector, double temperature,
                             double pressure) const;
-    void storePacking(const Simulation &simulation, const std::string &packingFilename);
+    [[nodiscard]] std::map<std::string, std::string> prepareAuxInfo(const Simulation &simulation) const;
+    void storeRamsnap(const Simulation &simulation, const std::string &packingFilename);
+    void storeXYZ(const Simulation &simulation, const ShapeTraits &traits, const std::string &packingFilename);
     void storeWolframVisualization(const Packing &packing, const ShapeTraits &traits,
                                    const std::string &wolframAttr) const;
     void storeSnapshots(const ObservablesCollector &observablesCollector, bool isContinuation,
