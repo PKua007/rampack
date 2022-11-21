@@ -65,7 +65,7 @@ TEST_CASE("Sphere: toWolfram") {
     PeriodicBoundaryConditions pbc(10);
     Shape sphere({2, 4, 6});
 
-    CHECK(sphereTraits.getPrinter("wolfram").toWolfram(sphere) == "Sphere[{2, 4, 6},2]");
+    CHECK(sphereTraits.getPrinter("wolfram").print(sphere) == "Sphere[{2, 4, 6},2]");
 }
 
 TEST_CASE("Sphere: geometry") {

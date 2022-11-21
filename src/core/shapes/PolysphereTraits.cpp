@@ -10,7 +10,7 @@
 #include "utils/Assertions.h"
 
 
-std::string PolysphereTraits::toWolfram(const Shape &shape) const {
+std::string PolysphereTraits::print(const Shape &shape) const {
     std::ostringstream out;
     out << std::fixed;
     out << "{";

@@ -1305,7 +1305,7 @@ int Frontend::shapePreview(int argc, char **argv) {
         std::ofstream wolframFile(wolframFilename);
         ValidateOpenedDesc(wolframFile, wolframFilename, " to store Wolfram preview of the shape");
         const auto &printer = traits->getPrinter("wolfram");
-        wolframFile << "Graphics3D[" << printer.toWolfram({}) << "]";
+        wolframFile << "Graphics3D[" << printer.print({}) << "]";
     }
 
     return EXIT_SUCCESS;

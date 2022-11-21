@@ -53,7 +53,7 @@ public:
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
     [[nodiscard]] double getVolume() const override;
 
-    [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
+    [[nodiscard]] std::string print(const Shape &shape) const override;
 
     [[nodiscard]] double getRadius() const { return this->radius; }
 };

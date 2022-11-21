@@ -70,7 +70,7 @@ TEST_CASE("PolysphereTraits: hard interactions") {
 
         std::string expected = "{Sphere[{9.000000, 5.000000, 5.000000},0.500000],"
                                "Sphere[{6.000000, 5.000000, 5.000000},1.000000]}";
-        CHECK(traits.getPrinter("wolfram").toWolfram(shape) == expected);
+        CHECK(traits.getPrinter("wolfram").print(shape) == expected);
     }
 
     SECTION("getVolume") {
