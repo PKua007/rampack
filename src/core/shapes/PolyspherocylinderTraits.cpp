@@ -35,7 +35,7 @@ PolyspherocylinderTraits::PolyspherocylinderGeometry
     this->registerNamedPoints(customNamedPoints);
 }
 
-std::string PolyspherocylinderTraits::toWolfram(const Shape &shape) const {
+std::string PolyspherocylinderTraits::print(const Shape &shape) const {
     std::ostringstream out;
     out << std::fixed;
     out << "{";

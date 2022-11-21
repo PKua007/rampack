@@ -66,7 +66,7 @@ TEST_CASE("PolyspherocylinderTraits") {
         const ShapePrinter &printer = traits.getPrinter("wolfram");
         Shape shape({-1, 0, 0}, Matrix<3, 3>::rotation(0, M_PI / 2, 0));
 
-        CHECK(printer.toWolfram(shape)
+        CHECK(printer.print(shape)
               == "{Tube[{{0.000000, 0.000000, 0.000000},{-2.000000, 0.000000, -0.000000}},1.000000]"
                  ",Tube[{{2.000000, 0.000000, 0.000000},{0.000000, 0.000000, 0.000000}},0.500000]}");
     }

@@ -20,7 +20,7 @@ SphereTraits::SphereTraits(double radius, std::unique_ptr<CentralInteraction> ce
     this->interaction = std::move(centralInteraction);
 }
 
-std::string SphereTraits::toWolfram(const Shape &shape) const {
+std::string SphereTraits::print(const Shape &shape) const {
     std::ostringstream out;
     out << "Sphere[" << (shape.getPosition()) << "," << this->radius << "]";
     return out.str();

@@ -151,7 +151,7 @@ public:
         return this->geometry.getSpherocylinderData();
     }
 
-    [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
+    [[nodiscard]] std::string print(const Shape &shape) const override;
 };
 
 

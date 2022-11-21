@@ -43,7 +43,7 @@ double SpherocylinderTraits::getVolume() const {
     return M_PI*this->radius*this->radius*this->length + 4./3*M_PI*std::pow(this->radius, 3);
 }
 
-std::string SpherocylinderTraits::toWolfram(const Shape &shape) const {
+std::string SpherocylinderTraits::print(const Shape &shape) const {
     std::stringstream out;
     out << std::fixed;
     Vector<3> beg = this->getCapCentre(-1, shape);

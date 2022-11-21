@@ -51,7 +51,7 @@ public:
 
     [[nodiscard]] double getRangeRadius() const override { return 2*this->radius + this->length; };
 
-    [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
+    [[nodiscard]] std::string print(const Shape &shape) const override;
 };
 
 

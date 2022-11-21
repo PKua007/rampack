@@ -144,7 +144,7 @@ public:
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->geometry; }
     [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override;
 
-    [[nodiscard]] std::string toWolfram(const Shape &shape) const override;
+    [[nodiscard]] std::string print(const Shape &shape) const override;
 
     [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->geometry.getSphereData(); }
 };

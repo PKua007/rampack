@@ -156,7 +156,7 @@ public:
         return *this->rangeRadius;
     }
 
-    [[nodiscard]] std::string toWolfram(const Shape &shape) const override {
+    [[nodiscard]] std::string print(const Shape &shape) const override {
         std::ostringstream out;
         out << std::fixed;
         out << "{EdgeForm[None]," << std::endl;

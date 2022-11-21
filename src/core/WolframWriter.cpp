@@ -17,7 +17,7 @@ void WolframWriter::write(std::ostream &out, const Packing &packing, const Shape
             out << "Graphics3D[{" << std::endl;
             for (std::size_t i{}; i < size; i++) {
                 const auto &shape = packing[i];
-                out << shapePrinter.toWolfram(shape);
+                out << shapePrinter.print(shape);
                 if (i != size - 1)
                     out << "," << std::endl;
             }
@@ -27,7 +27,7 @@ void WolframWriter::write(std::ostream &out, const Packing &packing, const Shape
 
         case WolframStyle::AFFINE_TRANSFORM: {
             out << "Graphics3D[GeometricTransformation[" << std::endl;
-            out << shapePrinter.toWolfram({});
+            out << shapePrinter.print({});
             out << ",AffineTransform@#]& /@ {" << std::endl;
             for (std::size_t i{}; i < size; i++) {
                 const auto &pos = packing[i].getPosition();
