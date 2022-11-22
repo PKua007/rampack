@@ -17,7 +17,7 @@ void XYZRecorder::recordSnapshot(const Packing &packing, std::size_t cycle) {
     *this->out << boxMatrix(0, 0) << " " << boxMatrix(1, 0) << " " << boxMatrix(2, 0) << " ";
     *this->out << boxMatrix(0, 1) << " " << boxMatrix(1, 1) << " " << boxMatrix(2, 1) << " ";
     *this->out << boxMatrix(0, 2) << " " << boxMatrix(1, 2) << " " << boxMatrix(2, 2);
-    *this->out << "\" Properties=species:S:1:pos:R:3:orientation:R:4 Time=" << cycle << std::endl;
+    *this->out << "\" Properties=species:S:1:pos:R:3:orientation:R:4 cycles=" << cycle << std::endl;
 
     for (const auto &shape : packing) {
         const auto &pos = shape.getPosition();
