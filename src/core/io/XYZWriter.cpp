@@ -9,6 +9,13 @@
 void XYZWriter::write(std::ostream &out, const Packing &packing,
                       const std::map<std::string, std::string> &auxInfo) const
 {
+    XYZWriter::storeHeader(out, packing, auxInfo);
+    XYZWriter::storeShapes(out, packing);
+}
+
+void XYZWriter::storeHeader(std::ostream &out, const Packing &packing,
+                            const std::map<std::string, std::string> &auxInfo)
+{
     std::size_t numMolecules = packing.size();
     const auto &boxMatrix = packing.getBox().getDimensions();
 
@@ -18,10 +25,14 @@ void XYZWriter::write(std::ostream &out, const Packing &packing,
     out << boxMatrix(0, 1) << " " << boxMatrix(1, 1) << " " << boxMatrix(2, 1) << " ";
     out << boxMatrix(0, 2) << " " << boxMatrix(1, 2) << " " << boxMatrix(2, 2);
     out << "\" Properties=species:S:1:pos:R:3:orientation:R:4";
+    XYZWriter::storeAuxInfo(out, auxInfo);
+    out << std::endl;
+}
 
+void XYZWriter::storeAuxInfo(std::ostream &out, const std::map<std::string, std::string> &auxInfo) {
     for (const auto &[key, value] : auxInfo) {
         auto hasWhitespace = [](const std::string &str) {
-            return std::any_of(str.begin(), str.end(), [](char c) -> bool { return std::isspace(c); });
+            return std::any_of(str.begin(), str.end(), [](char c) -> bool { return isspace(c); });
         };
         Assert(!hasWhitespace(key));
         out << " " << key << "=";
@@ -30,8 +41,9 @@ void XYZWriter::write(std::ostream &out, const Packing &packing,
         else
             out << value;
     }
-    out << std::endl;
+}
 
+void XYZWriter::storeShapes(std::ostream &out, const Packing &packing) {
     for (const auto &shape : packing) {
         const auto &pos = shape.getPosition();
         const auto &rot = shape.getOrientation();
