@@ -35,8 +35,7 @@ private:
                                 const std::map<std::string, std::string> &packingAuxInfo) const;
     Simulation::Environment recreateEnvironment(const Parameters &params, const PackingLoader &loader,
                                                 const ShapeTraits &traits) const;
-    void appendMoveStepSizesToAuxInfo(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
-                                      double scalingStepSize, std::map<std::string, std::string> &auxInfo) const;
+
     void setVerbosityLevel(std::optional<std::string> verbosity, std::optional<std::string> auxOutput,
                            std::optional<std::string> auxVerbosity);
     void generateRamsnapFile(const Packing &packing, const std::string &ramsnapFilename, std::size_t cycles = 0);
