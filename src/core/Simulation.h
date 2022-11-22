@@ -300,8 +300,8 @@ public:
      * @param snapshotEvery how often to take observable snapshots
      * @param shapeTraits shape traits describing the simulated molecules
      * @param observablesCollector_ the observables collector with observable capturing configuration
-     * @param simulationRecorders if not @a nullptr, simulation will be recorder using it (with a snapshot every
-     * @a snapshotEveryr)
+     * @param simulationRecorders a list of SimulationRecorders to record the simulation (with a snapshot every
+     * @a snapshotEvery). It may be empty
      * @param logger Logger object to display simulation data
      * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
      */
@@ -332,9 +332,9 @@ public:
     * @param snapshotEvery how often to take observable snapshots
     * @param shapeTraits shape traits describing the simulated molecules
     * @param observablesCollector_ the observables collector with observable capturing configuration
-    * @param simulationRecorder if not @a nullptr, simulation will be recorder using it (with a snapshot every
-    * @a snapshotEveryr)
-    * @param logger  Logger object to display simulation data
+    * @param simulationRecorders a list of SimulationRecorders to record the simulation (with a snapshot every
+     * @a snapshotEvery). It may be empty
+    * @param logger Logger object to display simulation data
     * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
     */
     void relaxOverlaps(Environment env, std::size_t snapshotEvery,
@@ -379,9 +379,7 @@ public:
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }
     [[nodiscard]] double getCurrentScalingStep() const { return this->environment.getBoxScaler().getStepSize(); }
 
-    /**
-     * @brief Returns total number of performed MC cycles (together with cycle offset)
-     */
+
     [[nodiscard]] std::size_t getTotalCycles() const { return this->totalCycles; }
 
     /**

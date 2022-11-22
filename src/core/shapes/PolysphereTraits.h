@@ -155,6 +155,15 @@ public:
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->geometry; }
+
+    /**
+     * @brief Returns ShapePrinter for a given @a format.
+     * @details The following formats are supported:
+     * <ol>
+     *     <li> `wolfram` - Wolfram Mathematica shape
+     *     <li> `obj` - Wavefront OBJ triangle mesh
+     * </ol>
+     */
     [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override;
 
     [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->geometry.getSphereData(); }

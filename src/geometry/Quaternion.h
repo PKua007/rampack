@@ -9,6 +9,9 @@
 #include "Vector.h"
 
 
+/**
+ * @brief Helper class converting rotation matrix to a quaternion.
+ */
 class Quaternion {
 public:
     static Vector<4> fromMatrix(const Matrix<3, 3> &mat);

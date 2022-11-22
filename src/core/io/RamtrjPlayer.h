@@ -14,7 +14,7 @@
 
 
 /**
- * @brief Class which enables replaying particle trajectories stored in binary.
+ * @brief Class which enables replaying particle trajectories stored in RAMTRJ binary format.
  */
 class RamtrjPlayer : RamtrjIO, public SimulationPlayer {
 private:
@@ -89,58 +89,17 @@ public:
      */
     explicit RamtrjPlayer(std::unique_ptr<std::istream> in, AutoFix &autoFix);
 
-    /**
-     * @brief Returns true if there is next snapshot to move to.
-     */
     [[nodiscard]] bool hasNext() const override;
-
-    /**
-     * @brief Moves to the next snapshot (the first one is an original invocation) and prints it on @a packing.
-     */
     void nextSnapshot(Packing &packing, const Interaction &interaction) override;
-
-    /**
-     * @brief Moves back to the beginning of the trajectory. Calling nextSnapshot() afterwards will then jump to the
-     * first one.
-     */
     void reset() override;
-
-    /**
-     * @brief Moves to the last snapshot and prints it on @a packing.
-     */
     void lastSnapshot(Packing &packing, const Interaction &interaction) override;
-
-    /**
-     * @brief Jumps to a given snapshot and prints it on @a packing.
-     */
     void jumpToSnapshot(Packing &packing, const Interaction &interaction, std::size_t cycleNumber) override;
-
-    /**
-     * @brief Returns number of cycles for a current snapshot (which was recently moved to using
-     * SimyulationPlayer::nextSnapshot()).
-     */
     [[nodiscard]] std::size_t getCurrentSnapshotCycles() const override;
-
-    /**
-     * @brief Returns total number of recorded cycles.
-     */
     [[nodiscard]] std::size_t getTotalCycles() const override {
         return this->header.cycleStep * this->header.numSnapshots;
     }
-
-    /**
-     * @brief Returns cycle step between snapshots.
-     */
     [[nodiscard]] std::size_t getCycleStep() const override { return this->header.cycleStep; }
-
-    /**
-     * @brief Returns number of molecules in the trajectory.
-     */
     [[nodiscard]] std::size_t getNumMolecules() const override { return this->header.numParticles; }
-
-    /**
-     * @brief Closes the stream on demand and prevents any further operations.
-     */
     void close() override;
 
     /**
