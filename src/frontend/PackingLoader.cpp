@@ -6,7 +6,7 @@
 #include <iomanip>
 
 #include "PackingLoader.h"
-#include "core/RamsnapReader.h"
+#include "core/io/RamsnapReader.h"
 
 
 void PackingLoader::loadPacking(std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction,

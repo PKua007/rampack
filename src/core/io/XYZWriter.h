@@ -5,7 +5,7 @@
 #ifndef RAMPACK_XYZWRITER_H
 #define RAMPACK_XYZWRITER_H
 
-#include "SnapshotWriter.h"
+#include "core/SnapshotWriter.h"
 
 
 class XYZWriter : public SnapshotWriter {

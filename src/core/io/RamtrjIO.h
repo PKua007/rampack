@@ -7,8 +7,8 @@
 
 #include <istream>
 
-#include "TriclinicBox.h"
-#include "Shape.h"
+#include "core/TriclinicBox.h"
+#include "core/Shape.h"
 
 
 /**

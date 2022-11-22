@@ -8,8 +8,8 @@
 #include "matchers/VectorApproxMatcher.h"
 
 #include "core/Simulation.h"
-#include "core/RamtrjRecorder.h"
-#include "core/RamtrjPlayer.h"
+#include "core/io/RamtrjRecorder.h"
+#include "core/io/RamtrjPlayer.h"
 #include "core/shapes/KMerTraits.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/volume_scalers/DeltaVolumeScaler.h"
