@@ -1343,6 +1343,12 @@ void Frontend::printGeometryInfo(const ShapeGeometry &geometry) {
     } catch (std::runtime_error &) {
         this->logger << "Secondary axis   : UNSPECIFIED" << std::endl;
     }
+    try {
+        auto axis = geometry.getAuxiliaryAxis({});
+        this->logger << "Auxiliary axis   : " << axis << std::endl;
+    } catch (std::runtime_error &) {
+        this->logger << "Auxiliary axis   : UNSPECIFIED" << std::endl;
+    }
 
     // Named points
     this->logger << "Named points     :" << std::endl;
