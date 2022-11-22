@@ -21,8 +21,10 @@ public:
     enum class Axis {
         /** @brief Primary (long) molecular axis. */
         PRIMARY_AXIS,
-        /** @brief Secondary (polarization) molecular axis. */
-        SECONDARY_AXIS
+        /** @brief Secondary molecular axis. */
+        SECONDARY_AXIS,
+        /** @brief Auxiliary (third) molecular axis. */
+        AUXILIARY_AXIS
     };
 
 private:

@@ -55,10 +55,17 @@ public:
     }
 
     /**
-     * @brief Returns the secondary (polarization) molecular axis for a given @a shape.
+     * @brief Returns the secondary molecular axis for a given @a shape.
      */
     [[nodiscard]] virtual Vector<3> getSecondaryAxis([[maybe_unused]] const Shape &shape) const {
         throw std::runtime_error("ShapeGeometry::getSecondaryAxis : unsupported");
+    }
+
+    /**
+     * @brief Returns the auxiliary (third) molecular axis for a given @a shape, orthogonal to the other two.
+     */
+    [[nodiscard]] Vector<3> getAuxiliaryAxis(const Shape &shape) const {
+        return (this->getPrimaryAxis(shape) ^ this->getSecondaryAxis(shape)).normalized();
     }
 
     /**

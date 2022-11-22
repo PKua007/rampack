@@ -53,7 +53,7 @@
                                        "[binning specification] :=\n"\
                                        BINNING_SPEC_ALTERNATIVES
 
-#define CORR_FUN_ALTERNATIVES "1. S110 (primary|secondary)"
+#define CORR_FUN_ALTERNATIVES "1. S110 (primary|secondary|auxiliary)"
 
 #define CORR_FUN_USAGE "Malformed correlation function. Available alternatives:\n" \
                        CORR_FUN_ALTERNATIVES
@@ -70,7 +70,7 @@
                               "fourierTracker [wavenumber x] [... y] [... z] [function]\n" \
                               "[function] :=\n" \
                               "1. const\n" \
-                              "2. (primaryAxis|secondaryAxis) (x|y|z)"
+                              "2. (primaryAxis|secondaryAxis|auxiliaryAxis) (x|y|z)"
 
 #define DENSITY_HISTOGRAM_USAGE "Malformed density histogram, usage:\n" \
                                 "densityHistogram n_bins [number of bins x] [... y] [... z] " \
@@ -278,6 +278,8 @@ namespace {
                 return std::make_unique<S110Correlation>(S110Correlation::Axis::PRIMARY_AXIS);
             else if (axisName == "secondary")
                 return std::make_unique<S110Correlation>(S110Correlation::Axis::SECONDARY_AXIS);
+            else if (axisName == "auxiliary")
+                return std::make_unique<S110Correlation>(S110Correlation::Axis::AUXILIARY_AXIS);
             else
                 throw ValidationException(CORR_FUN_USAGE);
         } else {
@@ -299,7 +301,10 @@ namespace {
         if (functionName == "const") {
             function = [](const Shape &, const ShapeTraits &) -> double { return 1; };
             functionShortName = "c";
-        } else if (functionName == "primaryAxis" || functionName == "secondaryAxis") {
+        } else if (functionName == "primaryAxis"
+                   || functionName == "secondaryAxis"
+                   || functionName == "auxiliaryAxis")
+        {
             char coord{};
             observableStream >> coord;
             ValidateMsg(observableStream, FOURIER_TRACKER_USAGE);
@@ -311,11 +316,16 @@ namespace {
                     return traits.getGeometry().getPrimaryAxis(shape)[coordIdx];
                 };
                 functionShortName = "pa_";
-            } else {    // secondaryAxis
+            } else if (functionName == "secondaryAxis") {
                 function = [coordIdx](const Shape &shape, const ShapeTraits &traits) {
                     return traits.getGeometry().getSecondaryAxis(shape)[coordIdx];
                 };
                 functionShortName = "sa_";
+            } else {   // auxiliaryAxis
+                function = [coordIdx](const Shape &shape, const ShapeTraits &traits) {
+                    return traits.getGeometry().getAuxiliaryAxis(shape)[coordIdx];
+                };
+                functionShortName = "aa_";
             }
             functionShortName += coord;
         } else {
