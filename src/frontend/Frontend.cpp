@@ -898,20 +898,6 @@ std::string Frontend::formatMoveKey(const std::string &groupName, const std::str
     return moveKey;
 }
 
-void Frontend::appendMoveStepSizesToAuxInfo(const std::vector<std::unique_ptr<MoveSampler>> &moveSamplers,
-                                            double scalingStepSize, std::map<std::string, std::string> &auxInfo) const
-{
-    for (const auto &moveSampler : moveSamplers) {
-        auto groupName = moveSampler->getName();
-        for (auto [moveName, stepSize] : moveSampler->getStepSizes()) {
-            std::string moveKey = Frontend::formatMoveKey(groupName, moveName);
-            auxInfo[moveKey] = Frontend::doubleToString(stepSize);
-        }
-    }
-    std::string scalingKey = Frontend::formatMoveKey("scaling", "scaling");
-    auxInfo[scalingKey] = Frontend::doubleToString(scalingStepSize);
-}
-
 int Frontend::trajectory(int argc, char **argv) {
     // Prepare and parse options
     cxxopts::Options options(argv[0], "Recorded trajectories analyzer.");
@@ -938,7 +924,7 @@ int Frontend::trajectory(int argc, char **argv) {
         ("i,input", "an INI file with parameters that was used to generate the trajectories. See sample_inputs "
                     "folder for full parameters documentation",
          cxxopts::value<std::string>(inputFilename))
-        ("t,trajectory", "a file with recorder trajectory",
+        ("t,trajectory", "a file with recorded RAMTRJ trajectory",
          cxxopts::value<std::string>(trajectoryFilename))
         ("f,auto-fix", "tries to auto-fix the trajectory if it is broken")
         ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
@@ -978,7 +964,8 @@ int Frontend::trajectory(int argc, char **argv) {
         ("log-file-verbosity", "how verbose the output to the log file should be. Allowed values, with increasing "
                                "verbosity: error, warn, info, verbose, debug. Defaults to: info",
          cxxopts::value<std::string>(auxVerbosity))
-        ("s,store-trajectory", "store the trajectory; it is most useful for broken trajectories fixed using --auto-fix",
+        ("s,store-ramtrj-trajectory", "store the RAMTRJ trajectory; it is most useful for broken trajectories fixed "
+                                      "using --auto-fix",
          cxxopts::value<std::string>(storeFilename))
         ("x,store-xyz-trajectory", "generates (extended) XYZ trajectory and stores it in a given file",
          cxxopts::value<std::string>(xyzTrajectoryFilename));
@@ -1012,10 +999,18 @@ int Frontend::trajectory(int argc, char **argv) {
     if (!parsedOptions.count("observables") && !parsedOptions.count("bulk-observables")
         && !parsedOptions.count("log-info") && !parsedOptions.count("generate-ramsnap")
         && !parsedOptions.count("generate-xyz") && !parsedOptions.count("generate-wolfram")
-        && !parsedOptions.count("store-xyz-trajectory"))
+        && !parsedOptions.count("store-ramtrj-trajectory") && !parsedOptions.count("store-xyz-trajectory"))
     {
-        die("At least one of: --observables, --bulk-observables, --log-info, --generate-ramsnap, --generate-xyz, "
-            "--generate-wolfram, --store-xyz-trajectory options must be specified", this->logger);
+        die("At least one of:\n"
+            " -O (--observables)\n"
+            " -B (--bulk-observables)\n"
+            " -I (--log-info)\n"
+            " -S (--generate-ramsnap)\n"
+            " -X (--generate-xyz)\n"
+            " -w (--generate-wolfram)\n"
+            " -s (--store-ramtrj-trajectory)\n"
+            " -x (--store-xyz-trajectory)\n"
+            "options must be specified", this->logger);
     }
 
     Parameters params = this->loadParameters(inputFilename);
@@ -1039,7 +1034,7 @@ int Frontend::trajectory(int argc, char **argv) {
     }
 
     // Stored trajectory (if desired)
-    if (parsedOptions.count("store-trajectory")) {
+    if (parsedOptions.count("store-ramtrj-trajectory")) {
         if (storeFilename == trajectoryFilename)
             die("Input and output trajectory file names are identical!", this->logger);
 
@@ -1331,50 +1326,50 @@ int Frontend::shapePreview(int argc, char **argv) {
 }
 
 void Frontend::printGeometryInfo(const ShapeGeometry &geometry) {
-    logger << "## Geometry info" << std::endl;
-    logger << "Volume           : " << geometry.getVolume() << std::endl;
-    logger << "Geometric origin : " << geometry.getGeometricOrigin({}) << std::endl;
+    this->logger << "## Geometry info" << std::endl;
+    this->logger << "Volume           : " << geometry.getVolume() << std::endl;
+    this->logger << "Geometric origin : " << geometry.getGeometricOrigin({}) << std::endl;
 
     // Axes
     try {
         auto axis = geometry.getPrimaryAxis({});
-        logger << "Primary axis     : " << axis << std::endl;
+        this->logger << "Primary axis     : " << axis << std::endl;
     } catch (std::runtime_error &) {
-        logger << "Primary axis     : UNSPECIFIED" << std::endl;
+        this->logger << "Primary axis     : UNSPECIFIED" << std::endl;
     }
     try {
         auto axis = geometry.getSecondaryAxis({});
-        logger << "Secondary axis   : " << axis << std::endl;
+        this->logger << "Secondary axis   : " << axis << std::endl;
     } catch (std::runtime_error &) {
-        logger << "Secondary axis   : UNSPECIFIED" << std::endl;
+        this->logger << "Secondary axis   : UNSPECIFIED" << std::endl;
     }
 
     // Named points
-    logger << "Named points     :" << std::endl;
+    this->logger << "Named points     :" << std::endl;
     auto points = geometry.getNamedPoints();
     std::size_t maxLength = std::max_element(points.begin(), points.end(), [](const auto &p1, const auto &p2) {
         return p1.first.length() < p2.first.length();
     })->first.length();
 
     for (const auto &[name, point] : points) {
-        logger << "    " << std::left << std::setw(maxLength) << name << " = " << point << std::endl;
+        this->logger << "    " << std::left << std::setw(maxLength) << name << " = " << point << std::endl;
     }
 }
 
 void Frontend::printInteractionInfo(const Interaction &interaction) {
     auto displayBool = [](bool b) { return b ? "true" : "false"; };
-    logger << "## Interaction info" << std::endl;
-    logger << "Has hard part            : " << displayBool(interaction.hasHardPart()) << std::endl;
-    logger << "Has soft part            : " << displayBool(interaction.hasSoftPart()) << std::endl;
-    logger << "Has wall part            : " << displayBool(interaction.hasWallPart()) << std::endl;
-    logger << "Interaction center range : " << interaction.getRangeRadius() << std::endl;
-    logger << "Total range              : " << interaction.getTotalRangeRadius() << std::endl;
-    logger << "Interaction centers      :" << std::endl;
+    this->logger << "## Interaction info" << std::endl;
+    this->logger << "Has hard part            : " << displayBool(interaction.hasHardPart()) << std::endl;
+    this->logger << "Has soft part            : " << displayBool(interaction.hasSoftPart()) << std::endl;
+    this->logger << "Has wall part            : " << displayBool(interaction.hasWallPart()) << std::endl;
+    this->logger << "Interaction center range : " << interaction.getRangeRadius() << std::endl;
+    this->logger << "Total range              : " << interaction.getTotalRangeRadius() << std::endl;
+    this->logger << "Interaction centers      :" << std::endl;
     auto interactionCentres = interaction.getInteractionCentres();
     if (interactionCentres.empty())
         interactionCentres.emplace_back();
     for (std::size_t i{}; i < interactionCentres.size(); i++)
-        logger << "    [" << i << "] = " << interactionCentres[i] << std::endl;
+        this->logger << "    [" << i << "] = " << interactionCentres[i] << std::endl;
 }
 
 void Frontend::attachSnapshotOut(ObservablesCollector &collector, const std::string &filename,
