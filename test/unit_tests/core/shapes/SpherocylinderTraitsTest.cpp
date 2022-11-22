@@ -140,8 +140,9 @@ TEST_CASE("Spherocylinder: toWolfram") {
     SpherocylinderTraits traits(3, 2);
     Shape shape({2, 4, 6}, Matrix<3, 3>::rotation(0, M_PI/2, 0));    // spherocylinder parallel to z axis
 
-    CHECK(traits.print(shape) == "CapsuleShape[{{2.000000, 4.000000, 7.500000},"
-                                        "{2.000000, 4.000000, 4.500000}},2.000000]");
+    const auto &printer = traits.getPrinter("wolfram");
+    CHECK(printer.print(shape) == "CapsuleShape[{{2.000000, 4.000000, 7.500000},"
+                                  "{2.000000, 4.000000, 4.500000}},2.000000]");
 }
 
 TEST_CASE("Spherocylinder: primary axis") {
