@@ -17,10 +17,10 @@
 #include "core/Interaction.h"
 #include "core/lattice/OrthorhombicArrangingModel.h"
 #include "core/Simulation.h"
-#include "core/RamtrjRecorder.h"
-#include "core/RamtrjPlayer.h"
+#include "core/io/RamtrjRecorder.h"
+#include "core/io/RamtrjPlayer.h"
 #include "PackingLoader.h"
-#include "core/XYZRecorder.h"
+#include "core/io/XYZRecorder.h"
 
 /**
  * @brief Class responsible for the communication between the user and the simulation backend.

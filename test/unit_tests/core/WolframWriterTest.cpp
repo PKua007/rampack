@@ -4,7 +4,7 @@
 
 #include <catch2/catch.hpp>
 
-#include "core/WolframWriter.h"
+#include "core/io/WolframWriter.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/shapes/SphereTraits.h"
 

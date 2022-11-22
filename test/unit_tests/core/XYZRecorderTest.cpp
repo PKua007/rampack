@@ -4,7 +4,7 @@
 
 #include <catch2/catch.hpp>
 
-#include "core/XYZRecorder.h"
+#include "core/io/XYZRecorder.h"
 
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/shapes/SphereTraits.h"

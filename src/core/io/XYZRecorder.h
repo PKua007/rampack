@@ -7,7 +7,7 @@
 
 #include <ostream>
 
-#include "SimulationRecorder.h"
+#include "core/SimulationRecorder.h"
 
 
 class XYZRecorder : public SimulationRecorder {

@@ -8,8 +8,8 @@
 #include <memory>
 
 #include "RamtrjIO.h"
-#include "Packing.h"
-#include "SimulationPlayer.h"
+#include "core/Packing.h"
+#include "core/SimulationPlayer.h"
 #include "utils/Logger.h"
 
 

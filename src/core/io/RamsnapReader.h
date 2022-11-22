@@ -5,7 +5,7 @@
 #ifndef RAMPACK_RAMSNAPREADER_H
 #define RAMPACK_RAMSNAPREADER_H
 
-#include "SnapshotReader.h"
+#include "core/SnapshotReader.h"
 
 
 class RamsnapReader : public SnapshotReader {

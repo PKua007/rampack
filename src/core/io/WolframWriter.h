@@ -5,7 +5,7 @@
 #ifndef RAMPACK_WOLFRAMWRITER_H
 #define RAMPACK_WOLFRAMWRITER_H
 
-#include "SnapshotWriter.h"
+#include "core/SnapshotWriter.h"
 
 
 class WolframWriter : public SnapshotWriter {

@@ -14,8 +14,8 @@
 #include "utils/Assertions.h"
 #include "utils/Utils.h"
 #include "utils/ParseUtils.h"
-#include "RamsnapReader.h"
-#include "RamsnapWriter.h"
+#include "core/io/RamsnapReader.h"
+#include "core/io/RamsnapWriter.h"
 
 
 namespace {

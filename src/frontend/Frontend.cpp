@@ -29,13 +29,13 @@
 #include "TriclinicBoxScalerFactory.h"
 #include "core/shapes/CompoundShapeTraits.h"
 #include "MoveSamplerFactory.h"
-#include "core/RamtrjRecorder.h"
-#include "core/RamtrjPlayer.h"
+#include "core/io/RamtrjRecorder.h"
+#include "core/io/RamtrjPlayer.h"
 #include "PackingLoader.h"
 #include "ParameterUpdaterFactory.h"
-#include "core/XYZRecorder.h"
-#include "core/WolframWriter.h"
-#include "core/XYZWriter.h"
+#include "core/io/XYZRecorder.h"
+#include "core/io/WolframWriter.h"
+#include "core/io/XYZWriter.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {

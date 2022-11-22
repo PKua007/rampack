@@ -4,8 +4,8 @@
 
 #include <catch2/catch.hpp>
 
-#include "core/RamsnapReader.h"
-#include "core/RamsnapWriter.h"
+#include "core/io/RamsnapReader.h"
+#include "core/io/RamsnapWriter.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/shapes/SphereTraits.h"
 
