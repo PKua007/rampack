@@ -12,20 +12,23 @@
 
 #include "geometry/Vector.h"
 
-class VectorApproxMatcher : public Catch::MatcherBase<Vector<3>> {
+
+template <std::size_t DIM>
+class VectorApproxMatcher : public Catch::MatcherBase<Vector<DIM>> {
 private:
-    Vector<3> expected;
+    Vector<DIM> expected;
     double epsilon;
 
 public:
-    VectorApproxMatcher(const Vector<3> &expected, double epsilon)
+    VectorApproxMatcher(const Vector<DIM> &expected, double epsilon)
             : expected(expected), epsilon(epsilon)
     { }
 
-    bool match(const Vector<3> &actual) const override {
-        return this->expected[0] == Approx(actual[0]).margin(this->epsilon)
-               && this->expected[1] == Approx(actual[1]).margin(this->epsilon)
-               && this->expected[2] == Approx(actual[2]).margin(this->epsilon);
+    bool match(const Vector<DIM> &actual) const override {
+        for (std::size_t i{}; i < DIM; i++)
+            if (this->expected[i] != Approx(actual[i]).margin(this->epsilon))
+                return false;
+        return true;
     }
 
     [[nodiscard]] std::string describe() const override {
@@ -35,9 +38,15 @@ public:
     }
 };
 
-inline VectorApproxMatcher IsApproxEqual(const Vector<3> &expected, double epsilon)
+template <std::size_t DIM>
+inline VectorApproxMatcher<DIM> IsApproxEqual(const Vector<DIM> &expected, double epsilon)
 {
-    return VectorApproxMatcher(expected, epsilon);
+    return VectorApproxMatcher<DIM>(expected, epsilon);
+}
+
+inline VectorApproxMatcher<3> IsApproxEqual(const Vector<3> &expected, double epsilon)
+{
+    return VectorApproxMatcher<3>(expected, epsilon);
 }
 
 #endif //RAMPACK_VECTORAPPROXMATCHER_H
