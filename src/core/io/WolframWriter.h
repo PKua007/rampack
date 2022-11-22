@@ -34,6 +34,9 @@ public:
 private:
     WolframStyle style{};
 
+    static void storeStandard(std::ostream &out, const Packing &packing, const ShapePrinter &shapePrinter);
+    static void storeAffineTransform(std::ostream &out, const Packing &packing, const ShapePrinter &shapePrinter);
+
 public:
     explicit WolframWriter(WolframStyle style = WolframStyle::STANDARD) : style{style} { }
 

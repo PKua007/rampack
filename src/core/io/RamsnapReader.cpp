@@ -10,12 +10,13 @@ std::map<std::string, std::string> RamsnapReader::read(std::istream &in, Packing
                                                        const Interaction &interaction) const
 {
     auto auxInfo = RamsnapReader::restoreAuxInfo(in);
+    TriclinicBox box = RamsnapReader::restoreBox(in);
+    std::vector<Shape> shapes = RamsnapReader::restoreShapes(in);
+    packing.reset(std::move(shapes), box, interaction);
+    return auxInfo;
+}
 
-    // Read box dimensions
-    TriclinicBox box(RamsnapReader::restoreDimensions(in));
-    Validate(box.getVolume() != 0);
-
-    // Read particles
+std::vector<Shape> RamsnapReader::restoreShapes(std::istream &in) {
     std::size_t size{};
     in >> size;
     ValidateMsg(in, "Broken RAMSNAP file: size");
@@ -33,9 +34,7 @@ std::map<std::string, std::string> RamsnapReader::read(std::istream &in, Packing
                         + std::to_string(size));
         shapes.emplace_back(position, orientation);
     }
-
-    packing.reset(std::move(shapes), box, interaction);
-    return auxInfo;
+    return shapes;
 }
 
 std::map<std::string, std::string> RamsnapReader::restoreAuxInfo(std::istream &in) {
@@ -55,7 +54,7 @@ std::map<std::string, std::string> RamsnapReader::restoreAuxInfo(std::istream &i
     return auxInfo;
 }
 
-Matrix<3, 3> RamsnapReader::restoreDimensions(std::istream &in) {
+TriclinicBox RamsnapReader::restoreBox(std::istream &in) {
     std::string line;
     std::getline(in, line);
     ValidateMsg(in, "Broken RAMSNAP file: dimensions");
@@ -82,5 +81,7 @@ Matrix<3, 3> RamsnapReader::restoreDimensions(std::istream &in) {
         ValidateMsg(dimensionsStream, "Broken RAMSNAP file: dimensions");
     }
 
-    return dimensions;
+    TriclinicBox box(dimensions);
+    Validate(box.getVolume() != 0);
+    return box;
 }

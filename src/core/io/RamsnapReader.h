@@ -10,7 +10,8 @@
 
 class RamsnapReader : public SnapshotReader {
 private:
-    static Matrix<3, 3> restoreDimensions(std::istream &in);
+    static TriclinicBox restoreBox(std::istream &in);
+    static std::vector<Shape> restoreShapes(std::istream &in);
 
 public:
     static std::map<std::string, std::string> restoreAuxInfo(std::istream &in);
