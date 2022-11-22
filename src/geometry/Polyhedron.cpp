@@ -5,8 +5,7 @@
 #include "Polyhedron.h"
 
 
-std::string Polyhedron::toWolfram() const {
-    std::ostringstream out;
+void Polyhedron::storeWolframGraphicsComplex(std::ostream &out) const {
     out << std::fixed;
 
     out << "GraphicsComplex[{" << std::endl;
@@ -25,8 +24,6 @@ std::string Polyhedron::toWolfram() const {
         out << std::endl;
     }
     out << "}]]" << std::endl;
-
-    return out.str();
 }
 
 double Polyhedron::getVolume() const {
@@ -52,11 +49,11 @@ void Polyhedron::storeWavefrontObj(std::ostream &out, std::size_t vertexOffset) 
         out << "f " << (tri[0] + 1 + o) << " " << (tri[1] + 1 + o) << " " << (tri[2] + 1 + o) << std::endl;
 }
 
-Polyhedron Polyhedron::transformed(const Vector<3> &pos, const Matrix<3, 3> &rot) const {
+Polyhedron Polyhedron::transformed(const Vector<3> &pos, const Matrix<3, 3> &transform) const {
     VertexList newVertices;
     newVertices.reserve(this->vertices.size());
     for (const auto &vertex : this->vertices)
-        newVertices.push_back(rot*vertex + pos);
+        newVertices.push_back(transform * vertex + pos);
 
     return {this->center + pos, std::move(newVertices), this->triangles};
 }

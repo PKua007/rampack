@@ -29,10 +29,9 @@ public:
     const TriangleList triangles;
 
     /**
-     * @brief Constructs Wolfram Mathematica GraphicsComplex representing the polyhedron.
+     * @brief Stores Wolfram Mathematica GraphicsComplex representing the polyhedron.
      */
-    [[nodiscard]] std::string toWolfram() const;
-
+    void storeWolframGraphicsComplex(std::ostream &out) const;
     void storeWavefrontObj(std::ostream &out, std::size_t vertexOffset = 0) const;
 
     /**
@@ -40,7 +39,7 @@ public:
      */
     [[nodiscard]] double getVolume() const;
 
-    [[nodiscard]] Polyhedron transformed(const Vector<3> &pos, const Matrix<3, 3> &rot) const;
+    [[nodiscard]] Polyhedron transformed(const Vector<3> &pos, const Matrix<3, 3> &transform) const;
 };
 
 

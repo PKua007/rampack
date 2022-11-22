@@ -21,11 +21,12 @@ std::string XCWolframShapePrinter::print(const Shape &shape) const {
     for (std::size_t i{}; i < this->interactionCentres.size(); i++) {
         const auto &center = this->interactionCentres[i];
         const auto &polyhedron = this->polyhedra[i];
-        std::string wolframPolyhedron = polyhedron.toWolfram();
 
         Vector<3> pos = shape.getPosition() + rot * center;
 
-        out << "GeometricTransformation[" << wolframPolyhedron << "," << std::endl;
+        out << "GeometricTransformation[";
+        polyhedron.storeWolframGraphicsComplex(out);
+        out << "," << std::endl;
         out << "AffineTransform[" << std::endl;
         out << "    {{{" << rot(0, 0) << ", " << rot(0, 1) << ", " << rot(0, 2) << "}," << std::endl;
         out << "      {" << rot(1, 0) << ", " << rot(1, 1) << ", " << rot(1, 2) << "}," << std::endl;
