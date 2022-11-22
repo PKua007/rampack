@@ -21,7 +21,7 @@ void WolframWriter::write(std::ostream &out, const Packing &packing, const Shape
                 if (i != size - 1)
                     out << "," << std::endl;
             }
-            out << "}]";
+            out << "}]" << std::endl;
             break;
         }
 
