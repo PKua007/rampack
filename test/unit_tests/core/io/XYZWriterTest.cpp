@@ -2,7 +2,7 @@
 // Created by pkua on 22.11.22.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
 #include "core/io/XYZWriter.h"
 #include "core/PeriodicBoundaryConditions.h"

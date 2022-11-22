@@ -2,7 +2,7 @@
 // Created by pkua on 22.11.22.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
 #include "core/io/RamsnapReader.h"
 #include "core/io/RamsnapWriter.h"
