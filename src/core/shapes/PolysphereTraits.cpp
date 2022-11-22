@@ -17,19 +17,20 @@ std::string PolysphereTraits::WolframPrinter::print(const Shape &shape) const {
     std::ostringstream out;
     out << std::fixed;
     out << "{";
-    for (std::size_t i{}; i < this->sphereData.size() - 1; i++) {
-        const auto &data = this->sphereData[i];
+    const auto &sphereData = this->traits.getSphereData();
+    for (std::size_t i{}; i < sphereData.size() - 1; i++) {
+        const auto &data = sphereData[i];
         data.toWolfram(out, shape);
         out << ",";
     }
-    this->sphereData.back().toWolfram(out, shape);
+    sphereData.back().toWolfram(out, shape);
     out << "}";
     return out.str();
 }
 
 PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry,
                                    std::unique_ptr<CentralInteraction> centralInteraction)
-        : geometry{std::move(geometry)}, wolframPrinter{this->geometry.getSphereData()}
+        : geometry{std::move(geometry)}, wolframPrinter(*this)
 {
     const auto &sphereData = this->getSphereData();
     std::vector<Vector<3>> centres;
@@ -42,7 +43,7 @@ PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry
 }
 
 PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry)
-    : geometry{std::move(geometry)}, wolframPrinter{this->geometry.getSphereData()}
+    : geometry{std::move(geometry)}, wolframPrinter(*this)
 {
     this->interaction = std::make_unique<HardInteraction>(this->getSphereData());
     this->objPrinter = this->createObjPrinter();
@@ -61,7 +62,7 @@ std::unique_ptr<ShapePrinter> PolysphereTraits::createObjPrinter() const {
     const auto &sphereData = this->getSphereData();
 
     std::vector<XCSphere> xcSpheres;
-    std::vector<const AbstractXCGeometry*> geometries;
+    std::vector<const AbstractXCGeometry *> geometries;
     xcSpheres.reserve(sphereData.size());
     geometries.reserve(sphereData.size());
     for (const auto &sphereDataEntry : sphereData) {

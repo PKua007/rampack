@@ -10,6 +10,7 @@
 #include <map>
 
 #include "core/ShapeTraits.h"
+#include "geometry/xenocollide/AbstractXCGeometry.h"
 
 
 /**
@@ -124,14 +125,15 @@ public:
 private:
     class WolframPrinter : public ShapePrinter {
     private:
-        std::vector<SpherocylinderData> spherocylinderData;
+        const PolyspherocylinderTraits &traits;
 
     public:
-        explicit WolframPrinter(std::vector<SpherocylinderData> spherocylinderData)
-                : spherocylinderData{std::move(spherocylinderData)}
-        { }
+        explicit WolframPrinter( const PolyspherocylinderTraits &traits) : traits{traits} { }
+
         [[nodiscard]] std::string print(const Shape &shape) const override;
     };
+
+    static std::shared_ptr<AbstractXCGeometry> buildXCSpherocylinder(const SpherocylinderData &scData);
 
     [[nodiscard]] std::unique_ptr<ShapePrinter> createObjPrinter() const;
 
