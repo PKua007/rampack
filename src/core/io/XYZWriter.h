@@ -10,8 +10,13 @@
 
 class XYZWriter : public SnapshotWriter {
 public:
-    void write(std::ostream &out, const Packing &packing, const ShapeTraits &traits,
-               const std::map<std::string, std::string> &auxInfo) const override;
+    void write(std::ostream &out, const Packing &packing, [[maybe_unused]] const ShapeTraits &traits,
+               const std::map<std::string, std::string> &auxInfo) const override
+    {
+        this->write(out, packing, auxInfo);
+    }
+
+    void write(std::ostream &out, const Packing &packing, const std::map<std::string, std::string> &auxInfo) const;
 };
 
 
