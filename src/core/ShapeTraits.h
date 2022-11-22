@@ -29,7 +29,8 @@ public:
     [[nodiscard]] virtual const ShapeGeometry &getGeometry() const = 0;
 
     /**
-     * @brief Returns the ShapePrinter object responsible for shape printing in supported format.
+     * @brief Returns the ShapePrinter object responsible for shape printing in a given @a format.
+     * @throws NoSuchShapePrinterException when @a format doesn't specify existing ShapePrinter type
      */
     [[nodiscard]] virtual const ShapePrinter &getPrinter(const std::string &format) const = 0;
 };

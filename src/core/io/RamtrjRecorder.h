@@ -40,14 +40,12 @@ public:
 
     /**
      * @brief Records the next snapshot.
-     * @details For each invocation, @a cycle should be a subsequent multiple of cycle step size (which is detected
-     * automatically). For example, subsequent invocations can be with @a cycle equal 200, 400, 600, etc.
+     * @details For each invocation, @a cycle should be a subsequent multiple of cycle step size (in agreement with
+     * the one passed in the constructor). For example, subsequent invocations can be with @a cycle equal 200, 400,
+     * 600, etc.
      */
     void recordSnapshot(const Packing &packing, std::size_t cycle) override;
 
-    /**
-     * @brief Closes the stream on demand and prevents any further operations.
-     */
     void close() override { this->close0(); }
 };
 

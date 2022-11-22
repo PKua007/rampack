@@ -11,13 +11,16 @@
 #include "Shape.h"
 
 
+/**
+ * @brief Exception thrown when given ShapePrinter format does not exist.
+ */
 class NoSuchShapePrinterException : public std::runtime_error {
 public:
     explicit NoSuchShapePrinterException(const std::string &what) : runtime_error(what) { }
 };
 
 /**
- * @brief An interface for printing the shape in supported formats. Currently the only format is Wolfram Mathematica.
+ * @brief An interface for printing the shape in supported formats.
  */
 class ShapePrinter {
 public:

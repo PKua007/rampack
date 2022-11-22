@@ -98,6 +98,14 @@ public:
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
 
+    /**
+     * @brief Returns ShapePrinter for a given @a format.
+     * @details The following formats are supported:
+     * <ol>
+     *     <li> `wolfram` - Wolfram Mathematica shape
+     *     <li> `obj` - Wavefront OBJ triangle mesh
+     * </ol>
+     */
     [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override {
         if (format == "wolfram") {
             if (this->wolframPrinter == nullptr)

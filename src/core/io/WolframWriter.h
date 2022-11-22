@@ -8,10 +8,13 @@
 #include "core/SnapshotWriter.h"
 
 
+/**
+ * @brief Stores a snapshot in Wolfram Mathematica format.
+ */
 class WolframWriter : public SnapshotWriter {
 public:
     /**
-     * @brief Style of Wolfram Mathematica packing output.
+     * @brief Style of Wolfram Mathematica snapshot output.
      */
     enum class WolframStyle {
         /**
@@ -38,6 +41,10 @@ private:
     static void storeAffineTransform(std::ostream &out, const Packing &packing, const ShapePrinter &shapePrinter);
 
 public:
+    /**
+     * @brief Creates the class.
+     * @param style style of the output
+     */
     explicit WolframWriter(WolframStyle style = WolframStyle::STANDARD) : style{style} { }
 
     [[nodiscard]] WolframStyle getStyle() const { return style; }
