@@ -126,10 +126,10 @@ private:
 
     class WolframPrinter : public ShapePrinter {
     private:
-        std::vector<SphereData> sphereData;
+        const PolysphereTraits &traits;
 
     public:
-        explicit WolframPrinter(std::vector<SphereData> sphereData) : sphereData{std::move(sphereData)} { }
+        explicit WolframPrinter( const PolysphereTraits &traits) : traits{traits} { }
         [[nodiscard]] std::string print(const Shape &shape) const override;
     };
 

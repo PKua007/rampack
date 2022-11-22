@@ -166,7 +166,7 @@ const ShapePrinter &PolyspherocylinderTraits::getPrinter(const std::string &form
 }
 
 PolyspherocylinderTraits::PolyspherocylinderTraits(PolyspherocylinderTraits::PolyspherocylinderGeometry geometry)
-        : geometry{std::move(geometry)}, wolframPrinter{this->geometry.getSpherocylinderData()}
+        : geometry{std::move(geometry)}, wolframPrinter(*this)
 {
     this->objPrinter = this->createObjPrinter();
 }
@@ -175,20 +175,11 @@ std::unique_ptr<ShapePrinter> PolyspherocylinderTraits::createObjPrinter() const
     const auto &spherocylinderData = this->getSpherocylinderData();
 
     std::vector<std::shared_ptr<AbstractXCGeometry>> xcSpherocylinders;
-    std::vector<const AbstractXCGeometry*> geometries;
+    std::vector<const AbstractXCGeometry *> geometries;
     xcSpherocylinders.reserve(spherocylinderData.size());
     geometries.reserve(spherocylinderData.size());
     for (const auto &scData : spherocylinderData) {
-        XCBodyBuilder builder;
-        builder.sphere(scData.radius);
-        Vector<3> pos1 = -scData.halfAxis;
-        builder.move(pos1[0], pos1[1], pos1[2]);
-        builder.sphere(scData.radius);
-        Vector<3> pos2 = scData.halfAxis;
-        builder.move(pos2[0], pos2[1], pos2[2]);
-        builder.wrap();
-
-        xcSpherocylinders.push_back(builder.releaseCollideGeometry());
+        xcSpherocylinders.push_back(PolyspherocylinderTraits::buildXCSpherocylinder(scData));
         geometries.push_back(xcSpherocylinders.back().get());
     }
 
@@ -197,16 +188,29 @@ std::unique_ptr<ShapePrinter> PolyspherocylinderTraits::createObjPrinter() const
     return std::make_unique<XCObjShapePrinter>(geometries, interactionCentres, 3);
 }
 
+std::shared_ptr<AbstractXCGeometry> PolyspherocylinderTraits::buildXCSpherocylinder(const SpherocylinderData &scData) {
+    XCBodyBuilder builder;
+    builder.sphere(scData.radius);
+    Vector<3> pos1 = -scData.halfAxis;
+    builder.move(pos1[0], pos1[1], pos1[2]);
+    builder.sphere(scData.radius);
+    Vector<3> pos2 = scData.halfAxis;
+    builder.move(pos2[0], pos2[1], pos2[2]);
+    builder.wrap();
+    return builder.releaseCollideGeometry();
+}
+
 std::string PolyspherocylinderTraits::WolframPrinter::print(const Shape &shape) const {
     std::ostringstream out;
     out << std::fixed;
     out << "{";
-    for (std::size_t i{}; i < this->spherocylinderData.size() - 1; i++) {
-        const auto &data = this->spherocylinderData[i];
+    const auto &spherocylinderData = this->traits.getSpherocylinderData();
+    for (std::size_t i{}; i < spherocylinderData.size() - 1; i++) {
+        const auto &data = spherocylinderData[i];
         data.toWolfram(out, shape);
         out << ",";
     }
-    this->spherocylinderData.back().toWolfram(out, shape);
+    spherocylinderData.back().toWolfram(out, shape);
     out << "}";
     return out.str();
 }
