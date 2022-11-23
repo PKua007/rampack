@@ -59,12 +59,18 @@ int lastIndexOf(const std::string &s, char target){
 }
 
 std::vector<std::string> explode(const std::string &s, char delim) {
+    if (s.empty())
+        return {};
+
     std::vector<std::string> result;
     std::istringstream iss(s);
 
     std::string token;
     while(std::getline(iss, token, delim))
         result.push_back(std::move(token));
+
+    if (s.back() == delim)
+        result.push_back("");
 
     return result;
 }
