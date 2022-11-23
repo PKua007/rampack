@@ -41,7 +41,12 @@
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
     std::ifstream paramsFile(inputFilename);
     ValidateOpenedDesc(paramsFile, inputFilename, "to load input parameters");
-    return Parameters(paramsFile);
+    Parameters params(paramsFile);
+    Version paramsVersion = params.version;
+    ValidateMsg(paramsVersion <= RAMPACK_VERSION,
+                "'" + inputFilename + "' version (" + paramsVersion.str() + ") is higher than RAMPACK version ("
+                + RAMPACK_VERSION.str() + ")");
+    return params;
 }
 
 void Frontend::setVerbosityLevel(std::optional<std::string> verbosity, std::optional<std::string> auxOutput,

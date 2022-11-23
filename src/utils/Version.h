@@ -22,7 +22,7 @@ private:
 public:
     Version() = default;
 
-    Version(std::size_t major, std::size_t minor = 0, std::size_t patch = 0)
+    constexpr Version(std::size_t major, std::size_t minor = 0, std::size_t patch = 0)
             : major{major}, minor{minor}, patch{patch}
     { }
 

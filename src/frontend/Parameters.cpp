@@ -44,7 +44,9 @@ Parameters::Parameters(std::istream &input) {
 
     auto generalConfig = config.fetchSubconfig("");
     for (const auto &key : generalConfig.getKeys()) {
-        if (key == "initialDimensions")
+        if (key == "version")
+            this->version = generalConfig.getString("version");
+        else if (key == "initialDimensions")
             this->initialDimensions = generalConfig.getString("initialDimensions");
         else if (key == "numOfParticles")
             this->numOfParticles = generalConfig.getUnsignedLong("numOfParticles");
@@ -95,6 +97,7 @@ Parameters::Parameters(std::istream &input) {
 }
 
 void Parameters::validate() const {
+    Validate(!this->version.empty());
     Validate(this->numOfParticles > 0);
     Validate(!this->scalingThreads.empty());
     Validate(!this->domainDivisions.empty());
@@ -104,6 +107,7 @@ void Parameters::validate() const {
 void Parameters::print(Logger &logger) const {
     this->printInheritableParameters(logger);
     logger.info() << "-- Main parameters:" << std::endl;
+    logger.info() << "version            : " << this->version << std::endl;
     logger.info() << "initialDimensions  : " << this->initialDimensions << std::endl;
     logger.info() << "initialArrangement : " << this->initialArrangement << std::endl;
     logger.info() << "numOfParticles     : " << this->numOfParticles << std::endl;

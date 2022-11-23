@@ -21,6 +21,8 @@
 #include "core/io/RamtrjPlayer.h"
 #include "PackingLoader.h"
 #include "core/io/XYZRecorder.h"
+#include "utils/Version.h"
+
 
 /**
  * @brief Class responsible for the communication between the user and the simulation backend.
@@ -87,6 +89,8 @@ private:
                                    const ShapeTraits &traits);
 
 public:
+    static constexpr Version RAMPACK_VERSION = {0, 1, 0};
+
     explicit Frontend(Logger &logger) : logger{logger} { }
     ~Frontend() { this->logger.removeOutput(this->auxOutStream); }
 
