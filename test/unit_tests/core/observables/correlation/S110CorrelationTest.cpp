@@ -25,4 +25,9 @@ TEST_CASE("S110Correlation") {
         S110Correlation s110Correlation(S110Correlation::Axis::SECONDARY_AXIS);
         CHECK(s110Correlation.calculate(s1, s2, traits) == Approx(1));
     }
+
+    SECTION("auxiliary axis") {
+        S110Correlation s110Correlation(S110Correlation::Axis::AUXILIARY_AXIS);
+        CHECK(s110Correlation.calculate(s1, s2, traits) == Approx(M_SQRT1_2));
+    }
 }
