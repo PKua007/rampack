@@ -58,16 +58,16 @@ TEST_CASE("SmecticOrder: without vector dump") {
 
 TEST_CASE("SmecticOrder: non-standard focal point") {
     SpherocylinderTraits traits(1, 0.5);
-    SmecticOrder smecticOrder({3, 3, 3,}, false, "end");
+    SmecticOrder smecticOrder({3, 3, 3}, false, "end");
 
-    // Two layers along x, where second (positive) spherocylinders' caps perfectly meet on x coordinate. y and z
+    // Two layers along z, where second (positive) spherocylinders' caps perfectly meet on z coordinate. x and y
     // coordinates have worse order
-    auto rotated = Matrix<3, 3>::rotation(0, M_PI, 0);
+    auto rotated = Matrix<3, 3>::rotation(M_PI, 0, 0);
     auto notRotated = Matrix<3, 3>::identity();
-    std::vector<Shape> shapes = {{{1.5, 2, 2}, notRotated}, {{2.5, 2, 5}, rotated},
-                                 {{1.5, 5, 5}, notRotated}, {{2.5, 5, 2}, rotated},
-                                 {{5.5, 2, 2}, notRotated}, {{6.5, 2, 5}, rotated},
-                                 {{5.5, 5, 5}, notRotated}, {{6.5, 5, 2}, rotated}};
+    std::vector<Shape> shapes = {{{2, 2, 1.5}, notRotated}, {{2, 5, 2.5}, rotated},
+                                 {{5, 5, 1.5}, notRotated}, {{5, 2, 2.5}, rotated},
+                                 {{2, 2, 5.5}, notRotated}, {{2, 5, 6.5}, rotated},
+                                 {{5, 5, 5.5}, notRotated}, {{5, 2, 6.5}, rotated}};
     auto fbc = std::make_unique<FreeBoundaryConditions>();
     Packing packing({8, 8, 8}, shapes, std::move(fbc), traits.getInteraction());
 
@@ -76,5 +76,5 @@ TEST_CASE("SmecticOrder: non-standard focal point") {
     auto nominalValues = smecticOrder.getNominalValues();
 
     CHECK(intervalValues[0] == Approx(8/(8.0*8*8)));
-    CHECK(nominalValues == std::vector<std::string>{"2.0.0"});
+    CHECK(nominalValues == std::vector<std::string>{"0.0.2"});
 }

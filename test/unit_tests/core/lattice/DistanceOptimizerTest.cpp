@@ -37,17 +37,17 @@ TEST_CASE("DiscanceOptimizer: axis optimization") {
 TEST_CASE("DistanceOptimizer: shrink packing - layer orthorhombic") {
     // BCC spherocylinders
     UnitCell unitCell(TriclinicBox(5), {Shape({0.25, 0.25, 0.25}), Shape({0.75, 0.75, 0.75})});
-    Lattice lattice(unitCell, {2, 4, 4});
+    Lattice lattice(unitCell, {4, 4, 2});
     auto shapes = lattice.generateMolecules();
     SpherocylinderTraits scTraits(1, 0.5);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     Packing packing(lattice.getLatticeBox(), shapes, std::move(pbc), scTraits.getInteraction());
 
-    DistanceOptimizer::shrinkPacking(packing, scTraits, "yzx");
+    DistanceOptimizer::shrinkPacking(packing, scTraits, "xyz");
 
-    double Lx = 2*(2 + M_SQRT2);
+    double Lx = 4;
     double Ly = 4;
-    double Lz = 4;
+    double Lz = 2*(2 + M_SQRT2);
     CHECK_THAT(packing.getBox().getDimensions(), IsApproxEqual(Matrix<3, 3>{Lx, 0, 0, 0, Ly, 0, 0, 0, Lz}, 1e-12));
 }
 

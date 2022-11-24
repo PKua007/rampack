@@ -8,8 +8,8 @@
 #include "core/ShapeTraits.h"
 
 /**
- * @brief Hard spherocylinder spanned on X axis.
- * @details Primary axis is naturally x axis. Mass centre coincides with geometric origin. The class, apart from
+ * @brief Hard spherocylinder spanned on Z axis.
+ * @details Primary axis is naturally z axis. Mass centre coincides with geometric origin. The class, apart from
  * standard named points (see ShapeGeometry::getNamedPoint()) defines points "beg" and "end" representing, respectively,
  * beginning cap center and end cap center of the spherocylinder.
  */

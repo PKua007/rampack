@@ -21,8 +21,7 @@ SpherocylinderTraits::SpherocylinderTraits(double length, double radius)
 }
 
 Vector<3> SpherocylinderTraits::getCapCentre(short beginOrEnd, const Shape &shape) const {
-    Vector<3> alignedCentre{1, 0, 0};
-    return shape.getPosition() + (shape.getOrientation() * alignedCentre) * (0.5 * beginOrEnd * this->length);
+    return shape.getPosition() + shape.getOrientation().column(2) * (0.5 * beginOrEnd * this->length);
 }
 
 bool SpherocylinderTraits::overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1,
@@ -50,14 +49,14 @@ double SpherocylinderTraits::getVolume() const {
 }
 
 Vector<3> SpherocylinderTraits::getPrimaryAxis(const Shape &shape) const {
-    return shape.getOrientation().column(0);
+    return shape.getOrientation().column(2);
 }
 
 bool SpherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation,
                                            [[maybe_unused]] std::size_t idx, const Vector<3> &wallOrigin,
                                            const Vector<3> &wallVector) const
 {
-    Vector<3> halfAxis = orientation.column(0) * (this->length/2);
+    Vector<3> halfAxis = orientation.column(2) * (this->length/2);
 
     Vector<3> cap1 = pos + halfAxis;
     double dotProduct1 = wallVector * (cap1 - wallOrigin);
@@ -84,9 +83,9 @@ const ShapePrinter &SpherocylinderTraits::getPrinter(const std::string &format) 
 std::unique_ptr<ShapePrinter> SpherocylinderTraits::createObjPrinter(double length, double radius) {
     XCBodyBuilder builder;
     builder.sphere(radius);
-    builder.move(-length/2, 0, 0);
+    builder.move(0, 0, -length/2);
     builder.sphere(radius);
-    builder.move(length/2, 0, 0);
+    builder.move(0, 0, length/2);
     builder.wrap();
 
     return std::make_unique<XCObjShapePrinter>(*builder.releaseCollideGeometry(), 4);
