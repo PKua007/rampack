@@ -10,67 +10,64 @@
 
 
 TEST_CASE("PolyspherocylinderBananaTraits") {
-    SECTION("without subdivisions") {
-        PolyspherocylinderBananaTraits traits(2, M_PI, 2, 1, 1, false);
+    SECTION("below half-angle") {
+        SECTION("without subdivisions") {
+            PolyspherocylinderBananaTraits traits(2, 2*M_PI/3, 2, 1);
 
-        SECTION("sphere data") {
-            const auto &data = traits.getSpherocylinderData();
-            REQUIRE(data.size() == 2);
-            CHECK(data[0].radius == 1);
-            CHECK(data[1].radius == 1);
-            CHECK_THAT(data[0].position, IsApproxEqual({-1, 1, 0}, 1e-12));
-            CHECK_THAT(data[0].halfAxis, IsApproxEqual({-1, -1, 0}, 1e-12));
-            CHECK_THAT(data[1].position, IsApproxEqual({-1, -1, 0}, 1e-12));
-            CHECK_THAT(data[1].halfAxis, IsApproxEqual({1, -1, 0}, 1e-12));
+            SECTION("spehre data") {
+                const auto &scData = traits.getSpherocylinderData();
+                REQUIRE(scData.size() == 2);
+                CHECK_THAT(scData[0].position, IsApproxEqual({-0.5, 0, -0.5*std::sqrt(3)}, 1e-12));
+                CHECK_THAT(scData[0].halfAxis, IsApproxEqual({-0.5, 0, +0.5*std::sqrt(3)}, 1e-12));
+                CHECK(scData[0].radius == 1);
+                CHECK_THAT(scData[1].position, IsApproxEqual({-0.5, 0, +0.5*std::sqrt(3)}, 1e-12));
+                CHECK_THAT(scData[1].halfAxis, IsApproxEqual({+0.5, 0, +0.5*std::sqrt(3)}, 1e-12));
+                CHECK(scData[1].radius == 1);
+            }
+
+            SECTION("interaction") {
+                const auto &interaction = traits.getInteraction();
+                CHECK(interaction.getRangeRadius() == Approx(4));
+                CHECK(interaction.getTotalRangeRadius() == Approx(6));
+            }
+
+            SECTION("geometry") {
+                const auto &geom = traits.getGeometry();
+                CHECK_THAT(geom.getPrimaryAxis({}), IsApproxEqual({0, 0, 1}, 1e-12));
+                CHECK_THAT(geom.getSecondaryAxis({}), IsApproxEqual({-1, 0, 0}, 1e-12));
+                CHECK_THAT(geom.getNamedPoint("beg"), IsApproxEqual({0, 0, -std::sqrt(3)}, 1e-12));
+                CHECK_THAT(geom.getNamedPoint("end"), IsApproxEqual({0, 0, +std::sqrt(3)}, 1e-12));
+            }
         }
 
-        SECTION("geometry") {
-            const auto &geometry = traits.getGeometry();
+        SECTION("with subdivisions") {
+            PolyspherocylinderBananaTraits traits(2, 2*M_PI/3, 2, 1, 2);
 
-            CHECK_THAT(geometry.getPrimaryAxis({}), IsApproxEqual({0, 1, 0}, 1e-12));
-            CHECK_THAT(geometry.getSecondaryAxis({}), IsApproxEqual({-1, 0, 0}, 1e-12));
-            CHECK_THAT(geometry.getGeometricOrigin({}), IsApproxEqual({-1, 0, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPointForShape("o0", {}), IsApproxEqual({-1, 1, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPointForShape("b0", {}), IsApproxEqual({0, 2, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPointForShape("beg", {}), IsApproxEqual({0, 2, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPointForShape("e1", {}), IsApproxEqual({0, -2, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPointForShape("end", {}), IsApproxEqual({0, -2, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPointForShape("o", {}), IsApproxEqual({-1, 0, 0}, 1e-12));
-            CHECK_THAT(geometry.getNamedPointForShape("cm", {}), IsApproxEqual({0, 0, 0}, 1e-12));
+            const auto &scData = traits.getSpherocylinderData();
+            REQUIRE(scData.size() == 4);
+            CHECK_THAT(scData[0].position, IsApproxEqual({-0.25, 0, -0.75*std::sqrt(3)}, 1e-12));
+            CHECK_THAT(scData[0].halfAxis, IsApproxEqual({-0.25, 0, +0.25*std::sqrt(3)}, 1e-12));
+            CHECK_THAT(scData[1].position, IsApproxEqual({-0.75, 0, -0.25*std::sqrt(3)}, 1e-12));
+            CHECK_THAT(scData[1].halfAxis, IsApproxEqual({-0.25, 0, +0.25*std::sqrt(3)}, 1e-12));
+            CHECK_THAT(scData[2].position, IsApproxEqual({-0.75, 0, +0.25*std::sqrt(3)}, 1e-12));
+            CHECK_THAT(scData[2].halfAxis, IsApproxEqual({+0.25, 0, +0.25*std::sqrt(3)}, 1e-12));
+            CHECK_THAT(scData[3].position, IsApproxEqual({-0.25, 0, +0.75*std::sqrt(3)}, 1e-12));
+            CHECK_THAT(scData[3].halfAxis, IsApproxEqual({+0.25, 0, +0.25*std::sqrt(3)}, 1e-12));
+            for (const auto &data : scData)
+                CHECK(data.radius == 1);
         }
     }
 
-    SECTION("without subdivisions normalized") {
-        PolyspherocylinderBananaTraits traits(2, M_PI, 2, 1, 1, true);
+    SECTION("above half-angle") {
+        PolyspherocylinderBananaTraits traits(2, 4*M_PI/3, 2, 1);
 
-        const auto &data = traits.getSpherocylinderData();
-        REQUIRE(data.size() == 2);
-        CHECK(data[0].radius == 1);
-        CHECK(data[1].radius == 1);
-        CHECK_THAT(data[0].position, IsApproxEqual({0, 1, 0}, 1e-12));
-        CHECK_THAT(data[0].halfAxis, IsApproxEqual({-1, -1, 0}, 1e-12));
-        CHECK_THAT(data[1].position, IsApproxEqual({0, -1, 0}, 1e-12));
-        CHECK_THAT(data[1].halfAxis, IsApproxEqual({1, -1, 0}, 1e-12));
-        CHECK(traits.getGeometry().getGeometricOrigin({}) == Vector<3>{0, 0, 0});
-    }
-
-    SECTION("with subdivisions") {
-        PolyspherocylinderBananaTraits traits(2, M_PI, 2, 1, 2, false);
-
-        const auto &data = traits.getSpherocylinderData();
-        REQUIRE(data.size() == 4);
-        CHECK(data[0].radius == 1);
-        CHECK(data[1].radius == 1);
-        CHECK(data[2].radius == 1);
-        CHECK(data[3].radius == 1);
-        CHECK_THAT(data[0].position, IsApproxEqual({-0.5, 1.5, 0}, 1e-12));
-        CHECK_THAT(data[0].halfAxis, IsApproxEqual({-0.5, -0.5, 0}, 1e-12));
-        CHECK_THAT(data[1].position, IsApproxEqual({-1.5, 0.5, 0}, 1e-12));
-        CHECK_THAT(data[1].halfAxis, IsApproxEqual({-0.5, -0.5, 0}, 1e-12));
-        CHECK_THAT(data[2].position, IsApproxEqual({-1.5, -0.5, 0}, 1e-12));
-        CHECK_THAT(data[2].halfAxis, IsApproxEqual({0.5, -0.5, 0}, 1e-12));
-        CHECK_THAT(data[3].position, IsApproxEqual({-0.5, -1.5, 0}, 1e-12));
-        CHECK_THAT(data[3].halfAxis, IsApproxEqual({0.5, -0.5, 0}, 1e-12));
-        CHECK_THAT(traits.getGeometry().getGeometricOrigin({}), IsApproxEqual({-1, 0, 0}, 1e-12));
+        const auto &scData = traits.getSpherocylinderData();
+        REQUIRE(scData.size() == 2);
+        CHECK_THAT(scData[0].position, IsApproxEqual({-0.5, 0, -0.5*std::sqrt(3)}, 1e-12));
+        CHECK_THAT(scData[0].halfAxis, IsApproxEqual({-1.5, 0, +0.5*std::sqrt(3)}, 1e-12));
+        CHECK(scData[0].radius == 1);
+        CHECK_THAT(scData[1].position, IsApproxEqual({-0.5, 0, +0.5*std::sqrt(3)}, 1e-12));
+        CHECK_THAT(scData[1].halfAxis, IsApproxEqual({+1.5, 0, +0.5*std::sqrt(3)}, 1e-12));
+        CHECK(scData[1].radius == 1);
     }
 }

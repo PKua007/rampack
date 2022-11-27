@@ -17,8 +17,7 @@ class PolyspherocylinderBananaTraits : public PolyspherocylinderTraits {
 private:
     static PolyspherocylinderTraits::PolyspherocylinderGeometry generateGeometry(double arcRadius, double arcAngle,
                                                                                  std::size_t segmentsNum, double radius,
-                                                                                 std::size_t subdivisions,
-                                                                                 bool normalizeMassCentre);
+                                                                                 std::size_t subdivisions);
 
 public:
     /**
@@ -34,9 +33,8 @@ public:
      * PolyspherocylinderTraits::PolyspherocylinderGeometry::normalizeMassCentre()
      */
     PolyspherocylinderBananaTraits(double arcRadius, double arcAngle, std::size_t segmentsNum, double radius,
-                                   std::size_t subdivisions = 1, bool normalizeMassCentre = true)
-            : PolyspherocylinderTraits(generateGeometry(arcRadius, arcAngle, segmentsNum, radius, subdivisions,
-                                                        normalizeMassCentre))
+                                   std::size_t subdivisions = 1)
+            : PolyspherocylinderTraits(generateGeometry(arcRadius, arcAngle, segmentsNum, radius, subdivisions))
     { }
 };
 
