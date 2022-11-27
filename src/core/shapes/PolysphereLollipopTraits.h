@@ -20,7 +20,7 @@ class PolysphereLollipopTraits : public PolysphereTraits {
 private:
     static PolysphereGeometry generateGeometry(std::size_t sphereNum, double smallSphereRadius,
                                                double largeSphereRadius, double smallSpherePenetration,
-                                               double largeSpherePenetration, bool normalizeMassCentre);
+                                               double largeSpherePenetration);
 
 public:
     /**
@@ -33,10 +33,9 @@ public:
      * @param normalizeMassCentre if @a true, particle origin will be placed in its mass centre
      */
     PolysphereLollipopTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
-                             double smallSpherePenetration, double largeSpherePenetration,
-                             bool normalizeMassCentre = true)
+                             double smallSpherePenetration, double largeSpherePenetration)
             : PolysphereTraits(generateGeometry(sphereNum, smallSphereRadius, largeSphereRadius,
-                                                smallSpherePenetration, largeSpherePenetration, normalizeMassCentre))
+                                                smallSpherePenetration, largeSpherePenetration))
     { }
 
     /**
@@ -46,10 +45,9 @@ public:
      */
     PolysphereLollipopTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
                              double smallSpherePenetration, double largeSpherePenetration,
-                             std::unique_ptr<CentralInteraction> centralInteraction,
-                             bool normalizeMassCentre = true)
+                             std::unique_ptr<CentralInteraction> centralInteraction)
             : PolysphereTraits(generateGeometry(sphereNum, smallSphereRadius, largeSphereRadius,
-                                                smallSpherePenetration, largeSpherePenetration, normalizeMassCentre),
+                                                smallSpherePenetration, largeSpherePenetration),
                                std::move(centralInteraction))
     { }
 };
