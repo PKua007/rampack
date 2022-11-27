@@ -19,34 +19,30 @@
  */
 class PolysphereWedgeTraits : public PolysphereTraits {
 private:
-    static PolysphereGeometry generateGeometry(std::size_t sphereNum, double smallSphereRadius,
-                                               double largeSphereRadius, double spherePenetration,
-                                               bool normalizeMassCentre);
+    static PolysphereGeometry generateGeometry(std::size_t sphereNum, double bottomSphereRadius, double topSphereRadius,
+                                               double spherePenetration);
 
 public:
     /**
      * @brief Constructs the class for hard interactions.
      * @param sphereNum number of all spheres
-     * @param smallSphereRadius radius of the smallest (first) sphere
-     * @param largeSphereRadius radius of the largest (last) sphere
+     * @param topSphereRadius radius of the smallest (first) sphere
+     * @param bottomSphereRadius radius of the largest (last) sphere
      * @param spherePenetration how much spheres overlap (in particular 0 means tangent spheres)
      * @param normalizeMassCentre if @a true, particle origin will be placed in its mass centre
      */
-    PolysphereWedgeTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
-                          double spherePenetration, bool normalizeMassCentre = true)
-            : PolysphereTraits(generateGeometry(sphereNum, smallSphereRadius, largeSphereRadius, spherePenetration,
-                                                normalizeMassCentre))
+    PolysphereWedgeTraits(std::size_t sphereNum, double bottomSphereRadius, double topSphereRadius,
+                          double spherePenetration)
+            : PolysphereTraits(generateGeometry(sphereNum, bottomSphereRadius, topSphereRadius, spherePenetration))
     { }
 
     /**
      * @brief Similar as PolysphereWedgeTraits::PolysphereWedgeTraits(std::size_t, double, double, double, bool), but
      * with soft central interaction given by @a centralInteraction.
      */
-    PolysphereWedgeTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
-                             double spherePenetration, std::unique_ptr<CentralInteraction> centralInteraction,
-                             bool normalizeMassCentre = true)
-            : PolysphereTraits(generateGeometry(sphereNum, smallSphereRadius, largeSphereRadius, spherePenetration,
-                                                normalizeMassCentre),
+    PolysphereWedgeTraits(std::size_t sphereNum, double bottomSphereRadius, double topSphereRadius,
+                          double spherePenetration, std::unique_ptr<CentralInteraction> centralInteraction)
+            : PolysphereTraits(generateGeometry(sphereNum, bottomSphereRadius, topSphereRadius, spherePenetration),
                                std::move(centralInteraction))
     { }
 };

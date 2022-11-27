@@ -335,19 +335,19 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
                                                                  sphereNum, smallSphereRadius, largeSphereRadius,
                                                                  smallSpherePenetration, largeSpherePenetration);
     } else if (shapeName == "PolysphereWedge") {
-        double smallSphereRadius, largeSphereRadius, spherePenetration;
+        double bottomSphereRadius, topSphereRadius, spherePenetration;
         std::size_t sphereNum;
-        shapeAttrStream >> sphereNum >> smallSphereRadius >> largeSphereRadius >> spherePenetration;
+        shapeAttrStream >> sphereNum >> bottomSphereRadius >> topSphereRadius >> spherePenetration;
         ValidateMsg(shapeAttrStream, "Malformed PolysphereWedge attributes; expected: "
-                                     "[number of spheres] [small sphere radius] [large sphere radius] "
+                                     "[number of spheres] [bottom sphere radius] [top sphere radius] "
                                      "[spheres penetration]");
         Validate(sphereNum >= 2);
-        Validate(smallSphereRadius > 0);
-        Validate(largeSphereRadius > 0);
-        Validate(spherePenetration < 2*std::min(smallSphereRadius, largeSphereRadius));
+        Validate(bottomSphereRadius > 0);
+        Validate(topSphereRadius > 0);
+        Validate(spherePenetration < 2*std::min(bottomSphereRadius, topSphereRadius));
 
         return parse_polysphere_traits<PolysphereWedgeTraits>(shapeName, interactionName, interactionAttrStream,
-                                                              sphereNum, smallSphereRadius, largeSphereRadius,
+                                                              sphereNum, bottomSphereRadius, topSphereRadius,
                                                               spherePenetration);
     } else if (shapeName == "Spherocylinder") {
         double r, length;
