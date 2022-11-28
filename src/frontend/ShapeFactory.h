@@ -9,11 +9,14 @@
 #include <string>
 
 #include "core/ShapeTraits.h"
+#include "utils/Version.h"
+
 
 class ShapeFactory {
 public:
     static std::shared_ptr<ShapeTraits> shapeTraitsFor(const std::string &shapeName, const std::string &shapeAttributes,
-                                                       const std::string &interaction);
+                                                       const std::string &interaction,
+                                                       const Version &version = CURRENT_VERSION);
 };
 
 

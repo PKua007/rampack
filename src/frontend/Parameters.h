@@ -14,6 +14,7 @@
 
 #include "utils/Config.h"
 #include "utils/Logger.h"
+#include "utils/Version.h"
 
 
 /**
@@ -114,7 +115,7 @@ public:
     using RunParameters = std::variant<IntegrationParameters, OverlapRelaxationParameters>;
 
     /* All of these are described in input.ini */
-    std::string version{};
+    Version version;
     std::string initialDimensions{};
     std::string initialArrangement{};
     std::size_t numOfParticles{};

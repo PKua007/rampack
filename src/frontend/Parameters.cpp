@@ -97,7 +97,6 @@ Parameters::Parameters(std::istream &input) {
 }
 
 void Parameters::validate() const {
-    Validate(!this->version.empty());
     Validate(this->numOfParticles > 0);
     Validate(!this->scalingThreads.empty());
     Validate(!this->domainDivisions.empty());
