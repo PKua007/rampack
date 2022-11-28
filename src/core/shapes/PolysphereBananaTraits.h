@@ -23,7 +23,7 @@ private:
                                                double sphereRadius);
 
     static PolysphereGeometry generateGeometry(LegacyTag<0, 0, 0> tag, double arcRadius, double arcAngle,
-                                               std::size_t sphereNum, double sphereRadius, bool normalizeMassCentre);
+                                               std::size_t sphereNum, double sphereRadius);
 
 public:
     /**
@@ -41,8 +41,8 @@ public:
     { }
 
     PolysphereBananaTraits(LegacyTag<0, 0, 0> tag, double arcRadius, double arcAngle, std::size_t sphereNum,
-                           double sphereRadius, bool normalizeMassCentre = true)
-            : PolysphereTraits(generateGeometry(tag, arcRadius, arcAngle, sphereNum, sphereRadius, normalizeMassCentre))
+                           double sphereRadius)
+            : PolysphereTraits(generateGeometry(tag, arcRadius, arcAngle, sphereNum, sphereRadius))
     { }
 
     /**
@@ -57,9 +57,8 @@ public:
 
 
     PolysphereBananaTraits(LegacyTag<0, 0, 0> tag, double arcRadius, double arcAngle, std::size_t sphereNum,
-                           double sphereRadius, std::unique_ptr<CentralInteraction> centralInteraction,
-                           bool normalizeMassCentre = true)
-            : PolysphereTraits(generateGeometry(tag, arcRadius, arcAngle, sphereNum, sphereRadius, normalizeMassCentre),
+                           double sphereRadius, std::unique_ptr<CentralInteraction> centralInteraction)
+            : PolysphereTraits(generateGeometry(tag, arcRadius, arcAngle, sphereNum, sphereRadius),
                                std::move(centralInteraction))
     { }
 };

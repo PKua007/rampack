@@ -43,7 +43,7 @@ PolysphereBananaTraits::generateGeometry(double arcRadius, double arcAngle, std:
 
 PolysphereBananaTraits::PolysphereGeometry
 PolysphereBananaTraits::generateGeometry([[maybe_unused]] LegacyTag<0, 0, 0> tag, double arcRadius, double arcAngle,
-                                         std::size_t sphereNum, double sphereRadius, bool normalizeMassCentre)
+                                         std::size_t sphereNum, double sphereRadius)
 {
     Expects(arcRadius > 0);
     Expects(arcAngle > 0);
