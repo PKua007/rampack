@@ -379,9 +379,16 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         Validate(smallSpherePenetration < 2*smallSphereRadius);
         Validate(largeSpherePenetration < 2*std::min(smallSphereRadius, largeSphereRadius));
 
-        return parse_polysphere_traits<PolysphereLollipopTraits>(shapeName, interactionName, interactionAttrStream,
-                                                                 sphereNum, smallSphereRadius, largeSphereRadius,
-                                                                 smallSpherePenetration, largeSpherePenetration);
+        if (version >= Version{0, 1, 0}) {
+            return parse_polysphere_traits<PolysphereLollipopTraits>(shapeName, interactionName, interactionAttrStream,
+                                                                     sphereNum, smallSphereRadius, largeSphereRadius,
+                                                                     smallSpherePenetration, largeSpherePenetration);
+        } else {
+            return parse_polysphere_traits<PolysphereLollipopTraits>(shapeName, interactionName, interactionAttrStream,
+                                                                     LegacyTag<0, 0, 0>{}, sphereNum, smallSphereRadius,
+                                                                     largeSphereRadius, smallSpherePenetration,
+                                                                     largeSpherePenetration);
+        }
     } else if (shapeName == "PolysphereWedge") {
         if (version >= Version{0, 1, 0})
             return parse_polysphere_wedge(shapeName, interactionName, shapeAttrStream, interactionAttrStream);
@@ -399,8 +406,8 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
     } else if (shapeName == "SmoothWedge") {
         double R, r, length;
         shapeAttrStream >> length >> R >> r;
-        ValidateMsg(shapeAttrStream, "Malformed SmoothWedge attributes; expected: [length] [large radius] "
-                                     "[small radius] ([subdivisions = 1])");
+        ValidateMsg(shapeAttrStream, "Malformed SmoothWedge attributes; expected: [length] [bottom radius] "
+                                     "[top radius] ([subdivisions = 1])");
         std::size_t subdivisions;
         shapeAttrStream >> subdivisions;
         if (!shapeAttrStream)
