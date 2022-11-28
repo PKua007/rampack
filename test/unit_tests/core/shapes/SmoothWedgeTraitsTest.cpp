@@ -22,8 +22,8 @@ TEST_CASE("SmoothWedge: geometry") {
     CHECK(geometry.getVolume() == Approx(272*M_PI/15));
     CHECK_THAT(geometry.getNamedPointForShape("cm", shape), IsApproxEqual({1, 2, 3}, 1e-12));
     CHECK_THAT(geometry.getNamedPointForShape("o", shape), IsApproxEqual({1, 2, 3}, 1e-12));
-    CHECK_THAT(geometry.getNamedPointForShape("ss", shape), IsApproxEqual({4.0, 2, 3}, 1e-12));
-    CHECK_THAT(geometry.getNamedPointForShape("sl", shape), IsApproxEqual({-1.0, 2, 3}, 1e-12));
+    CHECK_THAT(geometry.getNamedPointForShape("beg", shape), IsApproxEqual({-1.0, 2, 3}, 1e-12));
+    CHECK_THAT(geometry.getNamedPointForShape("end", shape), IsApproxEqual({4.0, 2, 3}, 1e-12));
     CHECK(interaction.getRangeRadius() == 8);
 }
 

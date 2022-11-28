@@ -27,12 +27,12 @@ double SmoothWedgeTraits::getVolume(double R, double r, double l) {
 SmoothWedgeTraits::SmoothWedgeTraits(double R, double r, double l, std::size_t subdivisions)
         : XenoCollideTraits({0, 0, 1}, {1, 0, 0}, {0, 0, 0},
                             SmoothWedgeTraits::getVolume(R, r, l),
-                            {{"sl", {0, 0, (-l + R - r)/2}}, {"ss", {0, 0, (l + R - r)/2}}}),
+                            {{"beg", {0, 0, (-l + R - r)/2}}, {"end", {0, 0, (l + R - r)/2}}}),
           R{R}, r{r}, l{l}
 {
     Expects(r > 0);
-    Expects(R > r);
-    Expects(l >= R - r);
+    Expects(R > 0);
+    Expects(l >= std::abs(R - r));
 
     if (subdivisions == 0 || subdivisions == 1) {
         this->interactionCentres = {};
@@ -85,5 +85,4 @@ SmoothWedgeTraits::CollideGeometry::CollideGeometry(double R, double r, double l
     Expects(R > 0);
     Expects(r > 0);
     Expects(l > 0);
-    Expects(R >= r);
 }

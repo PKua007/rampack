@@ -34,8 +34,8 @@ public:
          * @brief Creates the wedge along the z axis, with a sphere of radius @a R at the bottom and a sphere of radius
          * @a r at the top, distance by l.
          * @details They are placed along z axis in such a way, that the point {0, 0, 0} is the center of the best
-         * (smallest) circumscribed sphere. Namely, large sphere is placed in {0, 0, (@a R - @a r - @a l)/2} and the
-         * small one in {0, 0, (@a R - @a r + @a l)/2}.
+         * (smallest) circumscribed sphere. Namely, bottom sphere is placed in {0, 0, (@a R - @a r - @a l)/2} and the
+         * top one in {0, 0, (@a R - @a r + @a l)/2}.
          */
         CollideGeometry(double R, double r, double l);
 

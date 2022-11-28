@@ -370,8 +370,7 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
 
         Validate(r > 0);
         Validate(R > 0);
-        Validate(R >= r);
-        Validate(length >= 0);
+        Validate(length >= std::abs(R - r));
         ValidateMsg(interactionName == "hard" || interactionName.empty(), "SmoothWedge supports only hard interactions");
         return std::make_shared<SmoothWedgeTraits>(R, r, length, subdivisions);
     } else if (shapeName == "GenericXenoCollide") {
