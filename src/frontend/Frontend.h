@@ -58,7 +58,8 @@ private:
     void performOverlapRelaxation(Simulation &simulation, Simulation::Environment &envfco,
                                   const std::string &shapeName, const std::string &shapeAttr,
                                   const Parameters::OverlapRelaxationParameters &runParams,
-                                  std::shared_ptr<ShapeTraits> shapeTraits, size_t cycleOffset, bool isContinuation);
+                                  std::shared_ptr<ShapeTraits> shapeTraits, size_t cycleOffset, bool isContinuation,
+                                  const Version &paramsVersion);
 
     void printPerformanceInfo(const Simulation &simulation);
     void printAverageValues(const ObservablesCollector &collector);
@@ -89,8 +90,6 @@ private:
                                    const ShapeTraits &traits);
 
 public:
-    static constexpr Version RAMPACK_VERSION = {0, 1, 0};
-
     explicit Frontend(Logger &logger) : logger{logger} { }
     ~Frontend() { this->logger.removeOutput(this->auxOutStream); }
 

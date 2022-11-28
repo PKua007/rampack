@@ -42,10 +42,9 @@ Parameters Frontend::loadParameters(const std::string &inputFilename) {
     std::ifstream paramsFile(inputFilename);
     ValidateOpenedDesc(paramsFile, inputFilename, "to load input parameters");
     Parameters params(paramsFile);
-    Version paramsVersion = params.version;
-    ValidateMsg(paramsVersion <= RAMPACK_VERSION,
-                "'" + inputFilename + "' version (" + paramsVersion.str() + ") is higher than RAMPACK version ("
-                + RAMPACK_VERSION.str() + ")");
+    ValidateMsg(params.version <= CURRENT_VERSION,
+                "'" + inputFilename + "' version (" + params.version.str() + ") is higher than RAMPACK version ("
+                + CURRENT_VERSION.str() + ")");
     return params;
 }
 
@@ -169,7 +168,8 @@ int Frontend::casino(int argc, char **argv) {
 
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
+    auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction,
+                                                    params.version);
 
     this->logger << "Interaction centre range : " << shapeTraits->getInteraction().getRangeRadius() << std::endl;
     this->logger << "Total interaction range  : " << shapeTraits->getInteraction().getTotalRangeRadius() << std::endl;
@@ -265,7 +265,7 @@ int Frontend::casino(int argc, char **argv) {
         } else if (std::holds_alternative<Parameters::OverlapRelaxationParameters>(runParamsI)) {
             const auto &runParams = std::get<Parameters::OverlapRelaxationParameters>(runParamsI);
             this->performOverlapRelaxation(simulation, env, params.shapeName, params.shapeAttributes, runParams, shapeTraits,
-                                           cycleOffset, isContinuation);
+                                           cycleOffset, isContinuation, params.version);
         } else {
             throw AssertionException("Unimplemented run type");
         }
@@ -381,7 +381,7 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
                                         const std::string &shapeName, const std::string &shapeAttr,
                                         const Parameters::OverlapRelaxationParameters &runParams,
                                         std::shared_ptr<ShapeTraits> shapeTraits, size_t cycleOffset,
-                                        bool isContinuation)
+                                        bool isContinuation, const Version &paramsVersion)
 {
     this->logger.setAdditionalText(runParams.runName);
     this->logger.info() << std::endl;
@@ -400,7 +400,8 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
         recorders.push_back(this->loadXYZRecorder(runParams.xyzRecordingFilename, isContinuation));
 
     if (!runParams.helperInteraction.empty()) {
-        auto helperShape = ShapeFactory::shapeTraitsFor(shapeName, shapeAttr, runParams.helperInteraction);
+        auto helperShape = ShapeFactory::shapeTraitsFor(shapeName, shapeAttr, runParams.helperInteraction,
+                                                        paramsVersion);
         shapeTraits = std::make_shared<CompoundShapeTraits>(shapeTraits, helperShape);
     }
 
@@ -672,8 +673,10 @@ int Frontend::optimize_distance(int argc, char **argv) {
         die("You must specify at least one --direction or use --axes", this->logger);
 
     // Load parameters from file if specified
+    Version paramsVersion = CURRENT_VERSION;
     if (parsedOptions.count("input")) {
         Parameters params = this->loadParameters(inputFilename);
+        paramsVersion = params.version;
         this->logger.info() << "Loaded shape parameters from '" << inputFilename << "'" << std::endl;
         if (!parsedOptions.count("shape-name"))
             shapeName = params.shapeName;
@@ -719,7 +722,7 @@ int Frontend::optimize_distance(int argc, char **argv) {
     shape1.setOrientation(rotation1);
     shape2.setOrientation(rotation2);
 
-    auto shapeTraits = ShapeFactory::shapeTraitsFor(shapeName, shapeAttributes, interaction);
+    auto shapeTraits = ShapeFactory::shapeTraitsFor(shapeName, shapeAttributes, interaction, paramsVersion);
 
     this->logger.info() << "Shape name       : " << shapeName << std::endl;
     this->logger.info() << "Shape attributes : " << shapeAttributes << std::endl;
@@ -777,7 +780,8 @@ int Frontend::preview(int argc, char **argv) {
 
     Parameters params = this->loadParameters(inputFilename);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
-    auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
+    auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction,
+                                                    params.version);
     auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
                                                       params.initialArrangement, std::move(bc),
                                                       shapeTraits->getInteraction(), shapeTraits->getGeometry(), 1, 1);
@@ -1020,7 +1024,8 @@ int Frontend::trajectory(int argc, char **argv) {
 
     Parameters params = this->loadParameters(inputFilename);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
-    auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction);
+    auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction,
+                                                    params.version);
     auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
                                                       params.initialArrangement, std::move(bc),
                                                       shapeTraits->getInteraction(), shapeTraits->getGeometry(), 1, 1);
@@ -1246,6 +1251,7 @@ int Frontend::shapePreview(int argc, char **argv) {
     std::string interactionName;
     std::string wolframFilename;
     std::string objFilename;
+    std::string paramsVersion;
 
     options.add_options()
         ("h,help", "prints help for this mode")
@@ -1261,6 +1267,8 @@ int Frontend::shapePreview(int argc, char **argv) {
         ("I,interaction", "manually specified interactionName (instead of reading from INI file using -i); it "
                           "has to be combined with -S and -A options",
          cxxopts::value<std::string>(interactionName))
+        ("V,params-version", "manually specified version of RAMPACK input for parameters format",
+         cxxopts::value<std::string>(paramsVersion)->default_value(CURRENT_VERSION.str()))
         ("l,log-info", "prints information about the shape")
         ("w,wolfram-preview", "stores Wolfram preview of the shape in a file given as an argument",
          cxxopts::value<std::string>(wolframFilename))
@@ -1280,6 +1288,7 @@ int Frontend::shapePreview(int argc, char **argv) {
         shapeName = parameters.shapeName;
         shapeAttr = parameters.shapeAttributes;
         interactionName = parameters.interaction;
+        paramsVersion = parameters.version.str();
     } else if (!parsedOptions.count("shape-name") || !parsedOptions.count("shape-attr")
                || !parsedOptions.count("interaction"))
     {
@@ -1287,7 +1296,12 @@ int Frontend::shapePreview(int argc, char **argv) {
             this->logger);
     }
 
-    auto traits = ShapeFactory::shapeTraitsFor(shapeName, shapeAttr, interactionName);
+    if (paramsVersion > CURRENT_VERSION) {
+        die("Version of parameters (" + paramsVersion + ") is higher than RAMPACK version (" + CURRENT_VERSION.str()
+            + ")", this->logger);
+    }
+
+    auto traits = ShapeFactory::shapeTraitsFor(shapeName, shapeAttr, interactionName, paramsVersion);
 
     if (!parsedOptions.count("log-info") && !parsedOptions.count("wolfram-preview")
         && !parsedOptions.count("obj-preview"))

@@ -55,7 +55,14 @@ public:
     friend std::ostream &operator<<(std::ostream &os, const Version &version);
 
     [[nodiscard]] std::string str() const;
+
+    [[nodiscard]] constexpr std::size_t getMajor() const { return this->major; }
+    [[nodiscard]] constexpr std::size_t getMinor() const { return this->minor; }
+    [[nodiscard]] constexpr std::size_t getPatch() const { return this->patch; }
 };
+
+
+constexpr Version CURRENT_VERSION{0, 1, 0};
 
 
 #endif //RAMPACK_VERSION_H

@@ -6,6 +6,8 @@
 #define RAMPACK_POLYSPHEREBANANATRAITS_H
 
 #include "PolysphereTraits.h"
+#include "utils/LegacyTag.h"
+
 
 /**
  * @brief The banana-shaped hard polymer built by placing spheres on an arc. The sphere can be tangent or overlapping,
@@ -19,6 +21,9 @@ class PolysphereBananaTraits : public PolysphereTraits {
 private:
     static PolysphereGeometry generateGeometry(double arcRadius, double arcAngle, std::size_t sphereNum,
                                                double sphereRadius);
+
+    static PolysphereGeometry generateGeometry(LegacyTag<0, 0, 0> tag, double arcRadius, double arcAngle,
+                                               std::size_t sphereNum, double sphereRadius, bool normalizeMassCentre);
 
 public:
     /**
@@ -35,6 +40,11 @@ public:
             : PolysphereTraits(generateGeometry(arcRadius, arcAngle, sphereNum, sphereRadius))
     { }
 
+    PolysphereBananaTraits(LegacyTag<0, 0, 0> tag, double arcRadius, double arcAngle, std::size_t sphereNum,
+                           double sphereRadius, bool normalizeMassCentre = true)
+            : PolysphereTraits(generateGeometry(tag, arcRadius, arcAngle, sphereNum, sphereRadius, normalizeMassCentre))
+    { }
+
     /**
      * @brief Similar as PolysphereBananaTraits::PolysphereBananaTraits(double, double, std::size_t, double, bool), but
      * for soft central interactions given by @a centralInteraction.
@@ -42,6 +52,14 @@ public:
     PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
                            std::unique_ptr<CentralInteraction> centralInteraction)
             : PolysphereTraits(generateGeometry(arcRadius, arcAngle, sphereNum, sphereRadius),
+                               std::move(centralInteraction))
+    { }
+
+
+    PolysphereBananaTraits(LegacyTag<0, 0, 0> tag, double arcRadius, double arcAngle, std::size_t sphereNum,
+                           double sphereRadius, std::unique_ptr<CentralInteraction> centralInteraction,
+                           bool normalizeMassCentre = true)
+            : PolysphereTraits(generateGeometry(tag, arcRadius, arcAngle, sphereNum, sphereRadius, normalizeMassCentre),
                                std::move(centralInteraction))
     { }
 };

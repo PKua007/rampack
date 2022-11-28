@@ -259,7 +259,7 @@ namespace {
 
 std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &shapeName,
                                                           const std::string &shapeAttributes,
-                                                          const std::string &interaction)
+                                                          const std::string &interaction, const Version &version)
 {
     std::istringstream shapeAttrStream(shapeAttributes);
     std::istringstream interactionAttrStream(interaction);
@@ -282,8 +282,14 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         Validate(sphereNum > 0);
         Validate(sphereRadius > 0);
 
-        return parse_polysphere_traits<PolysphereBananaTraits>(shapeName, interactionName, interactionAttrStream,
-                                                               arcRadius, arcAngle, sphereNum, sphereRadius);
+        if (version >= Version{0, 1, 0}) {
+            return parse_polysphere_traits<PolysphereBananaTraits>(shapeName, interactionName, interactionAttrStream,
+                                                                   arcRadius, arcAngle, sphereNum, sphereRadius);
+        } else {
+            return parse_polysphere_traits<PolysphereBananaTraits>(shapeName, interactionName, interactionAttrStream,
+                                                                   LegacyTag<0, 0, 0>{}, arcRadius, arcAngle, sphereNum,
+                                                                   sphereRadius);
+        }
     } else if (shapeName == "PolyspherocylinderBanana") {
         double arcRadius, arcAngle, radius;
         std::size_t segmentNum, subdivisions;
