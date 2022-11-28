@@ -6,6 +6,7 @@
 #define RAMPACK_POLYSPHERELOLLIPOPTRAITS_H
 
 #include "PolysphereTraits.h"
+#include "utils/LegacyTag.h"
 
 /**
  * @brief A class representing linear sphere polymer capped with one larger sphere (lollipop-shaped).
@@ -19,6 +20,10 @@
 class PolysphereLollipopTraits : public PolysphereTraits {
 private:
     static PolysphereGeometry generateGeometry(std::size_t sphereNum, double smallSphereRadius,
+                                               double largeSphereRadius, double smallSpherePenetration,
+                                               double largeSpherePenetration);
+
+    static PolysphereGeometry generateGeometry(LegacyTag<0, 0, 0> tag, std::size_t sphereNum, double smallSphereRadius,
                                                double largeSphereRadius, double smallSpherePenetration,
                                                double largeSpherePenetration);
 
@@ -38,6 +43,12 @@ public:
                                                 smallSpherePenetration, largeSpherePenetration))
     { }
 
+    PolysphereLollipopTraits(LegacyTag<0, 0, 0> tag, std::size_t sphereNum, double smallSphereRadius,
+                             double largeSphereRadius, double smallSpherePenetration, double largeSpherePenetration)
+            : PolysphereTraits(generateGeometry(tag, sphereNum, smallSphereRadius, largeSphereRadius,
+                                                smallSpherePenetration, largeSpherePenetration))
+    { }
+
     /**
      * @brief Similar as
      * PolysphereLollipopTraits::PolysphereLollipopTraits(std::size_t, double, double, double, double, bool), but with
@@ -47,6 +58,14 @@ public:
                              double smallSpherePenetration, double largeSpherePenetration,
                              std::unique_ptr<CentralInteraction> centralInteraction)
             : PolysphereTraits(generateGeometry(sphereNum, smallSphereRadius, largeSphereRadius,
+                                                smallSpherePenetration, largeSpherePenetration),
+                               std::move(centralInteraction))
+    { }
+
+    PolysphereLollipopTraits(LegacyTag<0, 0, 0> tag, std::size_t sphereNum, double smallSphereRadius,
+                             double largeSphereRadius, double smallSpherePenetration, double largeSpherePenetration,
+                             std::unique_ptr<CentralInteraction> centralInteraction)
+            : PolysphereTraits(generateGeometry(tag, sphereNum, smallSphereRadius, largeSphereRadius,
                                                 smallSpherePenetration, largeSpherePenetration),
                                std::move(centralInteraction))
     { }
