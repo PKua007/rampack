@@ -6,6 +6,7 @@
 #define RAMPACK_POLYSPHEREWEDGETRAITS_H
 
 #include "PolysphereTraits.h"
+#include "utils/LegacyTag.h"
 
 
 /**
@@ -22,6 +23,9 @@ private:
     static PolysphereGeometry generateGeometry(std::size_t sphereNum, double bottomSphereRadius, double topSphereRadius,
                                                double spherePenetration);
 
+    static PolysphereGeometry generateGeometry(LegacyTag<0, 0, 0> tag, std::size_t sphereNum, double smallSphereRadius,
+                                               double largeSphereRadius, double spherePenetration);
+
 public:
     /**
      * @brief Constructs the class for hard interactions.
@@ -36,6 +40,12 @@ public:
             : PolysphereTraits(generateGeometry(sphereNum, bottomSphereRadius, topSphereRadius, spherePenetration))
     { }
 
+    PolysphereWedgeTraits(LegacyTag<0, 0, 0> tag, std::size_t sphereNum, double smallSphereRadius,
+                          double largeSphereRadius, double spherePenetration)
+            : PolysphereTraits(generateGeometry(tag, sphereNum, smallSphereRadius, largeSphereRadius,
+                                                spherePenetration))
+    { }
+
     /**
      * @brief Similar as PolysphereWedgeTraits::PolysphereWedgeTraits(std::size_t, double, double, double, bool), but
      * with soft central interaction given by @a centralInteraction.
@@ -43,6 +53,14 @@ public:
     PolysphereWedgeTraits(std::size_t sphereNum, double bottomSphereRadius, double topSphereRadius,
                           double spherePenetration, std::unique_ptr<CentralInteraction> centralInteraction)
             : PolysphereTraits(generateGeometry(sphereNum, bottomSphereRadius, topSphereRadius, spherePenetration),
+                               std::move(centralInteraction))
+    { }
+
+    PolysphereWedgeTraits(LegacyTag<0, 0, 0> tag, std::size_t sphereNum, double smallSphereRadius,
+                          double largeSphereRadius, double spherePenetration,
+                          std::unique_ptr<CentralInteraction> centralInteraction)
+            : PolysphereTraits(generateGeometry(tag, sphereNum, smallSphereRadius, largeSphereRadius,
+                                                spherePenetration),
                                std::move(centralInteraction))
     { }
 };

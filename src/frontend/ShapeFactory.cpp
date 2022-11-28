@@ -254,6 +254,48 @@ namespace {
         );
         return std::make_unique<PolyspherocylinderTraits>(std::move(geometry));
     }
+
+    std::shared_ptr<ShapeTraits> parse_polysphere_wedge(const std::string &shapeName,
+                                                        const std::string &interactionName,
+                                                        std::istringstream &shapeAttrStream,
+                                                        std::istringstream &interactionAttrStream)
+    {
+        double bottomSphereRadius, topSphereRadius, spherePenetration;
+        std::size_t sphereNum;
+        shapeAttrStream >> sphereNum >> bottomSphereRadius >> topSphereRadius >> spherePenetration;
+        ValidateMsg(shapeAttrStream, "Malformed PolysphereWedge attributes; expected: "
+                                     "[number of spheres] [bottom sphere radius] [top sphere radius] "
+                                     "[spheres penetration]");
+        Validate(sphereNum >= 2);
+        Validate(bottomSphereRadius > 0);
+        Validate(topSphereRadius > 0);
+        Validate(spherePenetration < 2 * std::min(bottomSphereRadius, topSphereRadius));
+
+        return parse_polysphere_traits<PolysphereWedgeTraits>(shapeName, interactionName, interactionAttrStream,
+                                                              sphereNum, bottomSphereRadius, topSphereRadius,
+                                                              spherePenetration);
+    }
+
+    std::shared_ptr<ShapeTraits> parse_polysphere_wedge_legacy(const std::string &shapeName,
+                                                               const std::string &interactionName,
+                                                               std::istringstream &shapeAttrStream,
+                                                               std::istringstream &interactionAttrStream)
+    {
+        double smallSphereRadius, largeSphereRadius, spherePenetration;
+        std::size_t sphereNum;
+        shapeAttrStream >> sphereNum >> smallSphereRadius >> largeSphereRadius >> spherePenetration;
+        ValidateMsg(shapeAttrStream, "Malformed PolysphereWedge attributes; expected: "
+                                     "[number of spheres] [small sphere radius] [large sphere radius] "
+                                     "[spheres penetration]");
+        Validate(sphereNum >= 2);
+        Validate(smallSphereRadius > 0);
+        Validate(largeSphereRadius > 0);
+        Validate(spherePenetration < 2*std::min(smallSphereRadius, largeSphereRadius));
+
+        return parse_polysphere_traits<PolysphereWedgeTraits>(shapeName, interactionName, interactionAttrStream,
+                                                              LegacyTag<0, 0, 0>{}, sphereNum, smallSphereRadius,
+                                                              largeSphereRadius, spherePenetration);
+    }
 }
 
 
@@ -341,20 +383,10 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
                                                                  sphereNum, smallSphereRadius, largeSphereRadius,
                                                                  smallSpherePenetration, largeSpherePenetration);
     } else if (shapeName == "PolysphereWedge") {
-        double bottomSphereRadius, topSphereRadius, spherePenetration;
-        std::size_t sphereNum;
-        shapeAttrStream >> sphereNum >> bottomSphereRadius >> topSphereRadius >> spherePenetration;
-        ValidateMsg(shapeAttrStream, "Malformed PolysphereWedge attributes; expected: "
-                                     "[number of spheres] [bottom sphere radius] [top sphere radius] "
-                                     "[spheres penetration]");
-        Validate(sphereNum >= 2);
-        Validate(bottomSphereRadius > 0);
-        Validate(topSphereRadius > 0);
-        Validate(spherePenetration < 2*std::min(bottomSphereRadius, topSphereRadius));
-
-        return parse_polysphere_traits<PolysphereWedgeTraits>(shapeName, interactionName, interactionAttrStream,
-                                                              sphereNum, bottomSphereRadius, topSphereRadius,
-                                                              spherePenetration);
+        if (version >= Version{0, 1, 0})
+            return parse_polysphere_wedge(shapeName, interactionName, shapeAttrStream, interactionAttrStream);
+        else
+            return parse_polysphere_wedge_legacy(shapeName, interactionName, shapeAttrStream, interactionAttrStream);
     } else if (shapeName == "Spherocylinder") {
         double r, length;
         shapeAttrStream >> length >> r;
