@@ -65,6 +65,7 @@
     "There is also one optional\n" \
     "    namedPoints [name 1] [x1] [y1] [z1] [name 2] [x2] [y2] [z2] ..."
 
+
 namespace {
     using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
 
@@ -271,9 +272,10 @@ namespace {
         Validate(topSphereRadius > 0);
         Validate(spherePenetration < 2 * std::min(bottomSphereRadius, topSphereRadius));
 
-        return parse_polysphere_traits<PolysphereWedgeTraits>(shapeName, interactionName, interactionAttrStream,
-                                                              sphereNum, bottomSphereRadius, topSphereRadius,
-                                                              spherePenetration);
+        return parse_polysphere_traits<PolysphereWedgeTraits>(
+            shapeName, interactionName, interactionAttrStream,
+            sphereNum, bottomSphereRadius, topSphereRadius, spherePenetration
+        );
     }
 
     std::shared_ptr<ShapeTraits> parse_polysphere_wedge_legacy(const std::string &shapeName,
@@ -292,9 +294,10 @@ namespace {
         Validate(largeSphereRadius > 0);
         Validate(spherePenetration < 2*std::min(smallSphereRadius, largeSphereRadius));
 
-        return parse_polysphere_traits<PolysphereWedgeTraits>(shapeName, interactionName, interactionAttrStream,
-                                                              LegacyTag<0, 0, 0>{}, sphereNum, smallSphereRadius,
-                                                              largeSphereRadius, spherePenetration);
+        return parse_polysphere_traits<legacy::PolysphereWedgeTraits>(
+            shapeName, interactionName, interactionAttrStream,
+            sphereNum, smallSphereRadius, largeSphereRadius, spherePenetration
+        );
     }
 }
 
@@ -328,9 +331,10 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
             return parse_polysphere_traits<PolysphereBananaTraits>(shapeName, interactionName, interactionAttrStream,
                                                                    arcRadius, arcAngle, sphereNum, sphereRadius);
         } else {
-            return parse_polysphere_traits<PolysphereBananaTraits>(shapeName, interactionName, interactionAttrStream,
-                                                                   LegacyTag<0, 0, 0>{}, arcRadius, arcAngle, sphereNum,
-                                                                   sphereRadius);
+            return parse_polysphere_traits<legacy::PolysphereBananaTraits>(
+                shapeName, interactionName, interactionAttrStream,
+                arcRadius, arcAngle, sphereNum, sphereRadius
+            );
         }
     } else if (shapeName == "PolyspherocylinderBanana") {
         double arcRadius, arcAngle, radius;
@@ -380,14 +384,15 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         Validate(largeSpherePenetration < 2*std::min(smallSphereRadius, largeSphereRadius));
 
         if (version >= Version{0, 1, 0}) {
-            return parse_polysphere_traits<PolysphereLollipopTraits>(shapeName, interactionName, interactionAttrStream,
-                                                                     sphereNum, smallSphereRadius, largeSphereRadius,
-                                                                     smallSpherePenetration, largeSpherePenetration);
+            return parse_polysphere_traits<PolysphereLollipopTraits>(
+                shapeName, interactionName, interactionAttrStream,
+                sphereNum, smallSphereRadius, largeSphereRadius, smallSpherePenetration, largeSpherePenetration
+            );
         } else {
-            return parse_polysphere_traits<PolysphereLollipopTraits>(shapeName, interactionName, interactionAttrStream,
-                                                                     LegacyTag<0, 0, 0>{}, sphereNum, smallSphereRadius,
-                                                                     largeSphereRadius, smallSpherePenetration,
-                                                                     largeSpherePenetration);
+            return parse_polysphere_traits<legacy::PolysphereLollipopTraits>(
+                shapeName, interactionName, interactionAttrStream,
+                sphereNum, smallSphereRadius, largeSphereRadius, smallSpherePenetration, largeSpherePenetration
+            );
         }
     } else if (shapeName == "PolysphereWedge") {
         if (version >= Version{0, 1, 0})
