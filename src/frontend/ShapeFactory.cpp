@@ -327,7 +327,7 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         Validate(sphereNum > 0);
         Validate(sphereRadius > 0);
 
-        if (version >= Version{0, 1, 0}) {
+        if (version >= Version{0, 2, 0}) {
             return parse_polysphere_traits<PolysphereBananaTraits>(shapeName, interactionName, interactionAttrStream,
                                                                    arcRadius, arcAngle, sphereNum, sphereRadius);
         } else {
@@ -383,7 +383,7 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
         Validate(smallSpherePenetration < 2*smallSphereRadius);
         Validate(largeSpherePenetration < 2*std::min(smallSphereRadius, largeSphereRadius));
 
-        if (version >= Version{0, 1, 0}) {
+        if (version >= Version{0, 2, 0}) {
             return parse_polysphere_traits<PolysphereLollipopTraits>(
                 shapeName, interactionName, interactionAttrStream,
                 sphereNum, smallSphereRadius, largeSphereRadius, smallSpherePenetration, largeSpherePenetration
@@ -395,7 +395,7 @@ std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &sha
             );
         }
     } else if (shapeName == "PolysphereWedge") {
-        if (version >= Version{0, 1, 0})
+        if (version >= Version{0, 2, 0})
             return parse_polysphere_wedge(shapeName, interactionName, shapeAttrStream, interactionAttrStream);
         else
             return parse_polysphere_wedge_legacy(shapeName, interactionName, shapeAttrStream, interactionAttrStream);
