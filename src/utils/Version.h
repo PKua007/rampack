@@ -22,11 +22,17 @@ private:
 public:
     Version() = default;
 
-    constexpr Version(std::size_t major, std::size_t minor = 0, std::size_t patch = 0)
+    constexpr Version(std::size_t major, std::size_t minor, std::size_t patch = 0)
             : major{major}, minor{minor}, patch{patch}
     { }
 
+    template<typename MAJOR_T>
+    constexpr Version(MAJOR_T major)
+            : major(major)      // () to allow narrowing conversion
+    { }
+
     Version(const std::string &versionStr);
+    Version(const char *versionStr) : Version(std::string{versionStr}) { }
 
     friend bool operator==(const Version &lhs, const Version &rhs) {
         return std::tie(lhs.major, lhs.minor, lhs.patch) == std::tie(rhs.major, rhs.minor, rhs.patch);
