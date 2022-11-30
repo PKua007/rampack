@@ -10,12 +10,15 @@
 #include <vector>
 
 #include "core/ObservablesCollector.h"
+#include "utils/Version.h"
+
 
 class ObservablesCollectorFactory {
 public:
     static std::unique_ptr<ObservablesCollector> create(const std::vector<std::string> &observables,
                                                         const std::vector<std::string> &bulkObservables,
-                                                        std::size_t maxThreads = 1);
+                                                        std::size_t maxThreads = 1,
+                                                        const Version &version = CURRENT_VERSION);
 };
 
 

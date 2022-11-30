@@ -79,8 +79,8 @@ public:
 
     /**
      * @brief Returns a special, named point lying somewhere on a shape with default position and orientation.
-     * @details Default points are mass' center ("cm") and geometric origin ("o"). Deriving classes can supplement their
-     * own special points using registerNamedPoint() and registerNamedPoints() methods.
+     * @details Geometric origin ("o") is a default point. Deriving classes can supplement their own special points
+     * using registerNamedPoint() and registerNamedPoints() methods.
      * @param pointName name of the point
      * @return a special, named point
      */

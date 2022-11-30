@@ -31,7 +31,8 @@ namespace legacy {
         geometry.normalizeMassCentre();
         geometry.setGeometricOrigin({0, 0, 0});
         const auto &newSphereData = geometry.getSphereData();
-        geometry.addCustomNamedPoints({{"beg", newSphereData.front().position},
+        geometry.addCustomNamedPoints({{"cm", {0, 0, 0}},
+                                       {"beg", newSphereData.front().position},
                                        {"end", newSphereData.back().position}});
         return geometry;
     }
