@@ -69,9 +69,9 @@ public:
     }
 
     /**
-     * @brief Returns the geometric origin a given @a shape which is usually the center of its bounding box.
-     * @details Geometric origin may be different from mass center (which is always {0, 0, 0}). It is used for example
-     * for flip moves.
+     * @brief Returns the geometric origin a given @a shape (with respect to its centre) which is usually the center of
+     * its bounding box.
+     * @details Geometric origin may be different from mass center. It is used for example for flip moves.
      */
     [[nodiscard]] virtual Vector<3> getGeometricOrigin([[maybe_unused]] const Shape &shape) const {
         return {0, 0, 0};

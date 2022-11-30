@@ -42,8 +42,8 @@
                          "NEW SYNTAX: bondOrder millerIdx [nx].[ny].[nz] ranks [rank 1] [rank 2] ... " \
                          "(layeringPoint [point name]) (bondOrderPoint [point name])"
 
-#define BINNING_SPEC_ALTERNATIVES "1. radial [focal point = cm]\n" \
-                                  "2. layerwiseRadial [nx].[ny].[nz] [focal point = cm]"
+#define BINNING_SPEC_ALTERNATIVES "1. radial [focal point = o]\n" \
+                                  "2. layerwiseRadial [nx].[ny].[nz] [focal point = o]"
 
 #define BINNING_SPEC_USAGE "Malformed binning specifications. Available alternatives:\n" \
                            BINNING_SPEC_ALTERNATIVES
