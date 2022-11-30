@@ -211,6 +211,9 @@ TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
     double linearSize = std::cbrt(V);
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
     auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
+    // TODO: fix is properly
+    for (auto &shape : shapes)
+        shape.rotate(Matrix<3, 3>::rotation(0, M_PI/2, 0));
     auto interaction = std::make_unique<RepulsiveLennardJonesInteraction>(1, 1);
     KMerTraits kmerTraits(2, 0.5, 1, std::move(interaction));
     auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), kmerTraits.getInteraction());
