@@ -84,7 +84,6 @@ TEST_CASE("PolyspherocylinderTraits") {
         CHECK_THAT(geometry.getNamedPointForShape("b1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1, 0, 0}, 1e-8));
         CHECK_THAT(geometry.getNamedPointForShape("e1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{3, 0, 0}, 1e-8));
         CHECK_THAT(geometry.getNamedPointForShape("o", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPointForShape("cm", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-8));
     }
 }
 

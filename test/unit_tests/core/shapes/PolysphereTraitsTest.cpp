@@ -126,5 +126,4 @@ TEST_CASE("PolysphereTraits: named points") {
     CHECK_THAT(geometry.getNamedPointForShape("s1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-12));
     CHECK_THAT(geometry.getNamedPointForShape("named1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{-2, 0, 0}, 1e-12));
     CHECK_THAT(geometry.getNamedPointForShape("o", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-12));
-    CHECK_THAT(geometry.getNamedPointForShape("cm", shape), IsApproxEqual({1, 2, 3}, 1e-12));
 }

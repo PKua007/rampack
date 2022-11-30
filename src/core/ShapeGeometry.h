@@ -37,7 +37,7 @@ protected:
     void registerNamedPoints(const std::vector<std::pair<std::string, Vector<3>>> &namedPoints_);
 
     /**
-     * @brief Translates all named points, except for "o" and "cm" by a given @a translation.
+     * @brief Translates all named points, except for "o" by a given @a translation.
      */
     void moveNamedPoints(const Vector<3> &translation);
 

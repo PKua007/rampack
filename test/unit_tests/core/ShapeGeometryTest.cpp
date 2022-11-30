@@ -35,16 +35,15 @@ TEST_CASE("ShapeGeometry: named points") {
     geometry.publicRegisterNamedPoints({{"c", {0, 2, 0}}, {"t", {0, 3, 0}}});
 
     SECTION("getNamedPoint(s)") {
-        ShapeGeometry::NamedPoints expected{{"cm", {0, 0, 0}}, {"o",  {1, 0, 0}}, {"z",  {0, 1, 0}},
-                                            {"c",  {0, 2, 0}}, {"t",  {0, 3, 0}}};
-        CHECK_THAT(geometry.getNamedPoint("cm"), IsApproxEqual(expected[0].second, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("o"), IsApproxEqual(expected[1].second, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("z"), IsApproxEqual(expected[2].second, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("c"), IsApproxEqual(expected[3].second, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("t"), IsApproxEqual(expected[4].second, 1e-12));
+        ShapeGeometry::NamedPoints expected{{"o",  {1, 0, 0}}, {"z",  {0, 1, 0}}, {"c",  {0, 2, 0}},
+                                            {"t",  {0, 3, 0}}};
+        CHECK_THAT(geometry.getNamedPoint("o"), IsApproxEqual(expected[0].second, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("z"), IsApproxEqual(expected[1].second, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("c"), IsApproxEqual(expected[2].second, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("t"), IsApproxEqual(expected[3].second, 1e-12));
         CHECK_THROWS(geometry.getNamedPoint("nonexistent"));
         auto actual = geometry.getNamedPoints();
-        REQUIRE(actual.size() == 5);
+        REQUIRE(actual.size() == 4);
         for (const auto &[actualItem, expectedItem]: Zip(actual, expected)) {
             CHECK(actualItem.first == expectedItem.first);
             CHECK_THAT(actualItem.second, IsApproxEqual(expectedItem.second, 1e-12));
@@ -58,8 +57,13 @@ TEST_CASE("ShapeGeometry: named points") {
 
     SECTION("moveNamedPoint") {
         geometry.publicMoveNamedPoints({1, 0, 0});
-        CHECK_THAT(geometry.getNamedPoint("cm"), IsApproxEqual({0, 0, 0}, 1e-12));
         CHECK_THAT(geometry.getNamedPoint("o"), IsApproxEqual({1, 0, 0}, 1e-12));
         CHECK_THAT(geometry.getNamedPoint("z"), IsApproxEqual({1, 1, 0}, 1e-12));
+    }
+
+    SECTION("hasNamedPoint") {
+        CHECK(geometry.hasNamedPoint("o"));
+        CHECK(geometry.hasNamedPoint("z"));
+        CHECK_FALSE(geometry.hasNamedPoint("I'm just a poor boy, nobody loves me"));
     }
 }
