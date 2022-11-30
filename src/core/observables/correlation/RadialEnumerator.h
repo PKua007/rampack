@@ -21,7 +21,7 @@ public:
      * @brief Constructs the class. Points named @a focalPoint will be used to calculate distances (see
      * ShapeGeometry::getNamedPointForShape).
      */
-    explicit RadialEnumerator(std::string focalPoint = "cm") : focalPointName{std::move(focalPoint)} { }
+    explicit RadialEnumerator(std::string focalPoint = "o") : focalPointName{std::move(focalPoint)} { }
 
     /**
      * @brief Returns expected number of molecules in the @a packing in thin spherical shells between adjacent radii in

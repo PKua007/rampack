@@ -167,7 +167,7 @@ namespace {
             dumpTauVector = true;
         }
 
-        std::string focalPoint = "cm";
+        std::string focalPoint = "o";
         if (fieldMap.find("focalPoint") != fieldMap.end())
             focalPoint = fieldMap["focalPoint"];
 
@@ -225,11 +225,11 @@ namespace {
         std::array<int, 3> millerIndices = parse_miller_indices(fieldMap.at("millerIdx"));
         std::vector<size_t> ranks = parse_bond_order_ranks(fieldMap);
 
-        std::string layeringPoint = "cm";
+        std::string layeringPoint = "o";
         if (fieldMap.find("layeringPoint") != fieldMap.end())
             layeringPoint = fieldMap["layeringPoint"];
 
-        std::string bondOrderPoint = "cm";
+        std::string bondOrderPoint = "o";
         if (fieldMap.find("bondOrderPoint") != fieldMap.end())
             bondOrderPoint = fieldMap["bondOrderPoint"];
 
@@ -242,7 +242,7 @@ namespace {
         ValidateMsg(observableStream, BINNING_SPEC_USAGE);
 
         if (enumeratorName == "radial") {
-            std::string focalPoint = "cm";
+            std::string focalPoint = "o";
             if (ParseUtils::isAnythingLeft(observableStream))
                 observableStream >> focalPoint;
             ValidateMsg(observableStream, BINNING_SPEC_USAGE);
@@ -254,7 +254,7 @@ namespace {
             ValidateMsg(observableStream, BINNING_SPEC_USAGE);
             auto millerIndices = parse_miller_indices(millerString);
 
-            std::string focalPoint = "cm";
+            std::string focalPoint = "o";
             if (ParseUtils::isAnythingLeft(observableStream))
                 observableStream >> focalPoint;
             ValidateMsg(observableStream, BINNING_SPEC_USAGE);

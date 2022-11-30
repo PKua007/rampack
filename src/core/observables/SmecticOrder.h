@@ -35,7 +35,7 @@ public:
      * calculate smectic order.
      */
     explicit SmecticOrder(const std::array<int, 3> &nTauRanges = {5, 5, 5}, bool dumpTauVector_ = false,
-                          std::string focalPoint = "cm");
+                          std::string focalPoint = "o");
 
     void calculate(const Packing &packing, double temperature, double pressure,
                    const ShapeTraits &shapeTraits) override;
