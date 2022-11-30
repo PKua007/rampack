@@ -12,14 +12,12 @@ Vector<3> ShapeGeometry::getNamedPointForShape(const std::string &pointName, con
 }
 
 Vector<3> ShapeGeometry::getNamedPoint(const std::string &pointName) const {
-    if (pointName == "cm")
-        return {};
-    else if (pointName == "o")
+    if (pointName == "o")
         return this->getGeometricOrigin({});
 
     auto point = this->namedPoints.find(pointName);
     if (point == this->namedPoints.end())
-        throw std::runtime_error("ShapeGeometry::getNamedPoint : unknown point name '" + pointName + "'");
+        throw PreconditionException("ShapeGeometry::getNamedPoint : unknown point name '" + pointName + "'");
     return point->second;
 }
 
@@ -31,7 +29,6 @@ void ShapeGeometry::registerNamedPoint(const std::string &pointName, const Vecto
 
 ShapeGeometry::NamedPoints ShapeGeometry::getNamedPoints() const {
     NamedPoints namedPoints_;
-    namedPoints_.emplace_back("cm", Vector<3>{});
     namedPoints_.emplace_back("o", this->getGeometricOrigin({}));
     namedPoints_.insert(namedPoints_.end(), this->namedPointsOrdered.begin(), this->namedPointsOrdered.end());
     return namedPoints_;
@@ -47,4 +44,11 @@ void ShapeGeometry::moveNamedPoints(const Vector<3> &translation) {
         point += translation;
     for (auto &[name, point] : this->namedPointsOrdered)
         point += translation;
+}
+
+bool ShapeGeometry::hasNamedPoint(const std::string &pointName) const {
+    if (pointName == "o")
+        return true;
+    else
+        return this->namedPoints.find(pointName) != this->namedPoints.end();
 }

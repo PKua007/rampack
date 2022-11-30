@@ -38,5 +38,20 @@ TEST_CASE("PolysphereWedgeTraits") {
         CHECK_THAT(geometry.getNamedPoint("s2"), IsApproxEqual({0, 0, 6}, 1e-12));
         CHECK_THAT(geometry.getNamedPoint("end"), IsApproxEqual({0, 0, 6}, 1e-12));
         CHECK_THAT(geometry.getNamedPoint("o"), IsApproxEqual({0, 0, 0}, 1e-12));
+        // Named point "cm" has its own test
+    }
+}
+
+TEST_CASE("PolysphereWedgeTraits: mass centre") {
+    SECTION("existing") {
+        PolysphereWedgeTraits traits(3, 1, 2, 0);
+
+        CHECK_THAT(traits.getGeometry().getNamedPoint("cm"), IsApproxEqual({0, 0, 35./33}, 1e-12));
+    }
+
+    SECTION("not existing") {
+        PolysphereWedgeTraits traits(3, 1, 2, 0.1);
+
+        CHECK_FALSE(traits.getGeometry().hasNamedPoint("cm"));
     }
 }
