@@ -83,7 +83,8 @@ public:
         [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->sphereData; }
 
         /**
-         * @brief Calculates mass centre and moves it to {0, 0, 0} (geometric origin is moved accordingly).
+         * @brief Calculates mass centre and moves it to {0, 0, 0} (geometric origin and named points are moved
+         * accordingly).
          * @details Sphere overlaps are not accounted for.
          */
         void normalizeMassCentre();

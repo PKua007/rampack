@@ -104,7 +104,8 @@ public:
         }
 
         /**
-         * @brief Calculates mass centre and moves it to {0, 0, 0} (geometric origin is moved accordingly).
+         * @brief Calculates mass centre and moves it to {0, 0, 0} (geometric origin and named points are moved
+         * accordingly).
          * @details Overlaps are not accounted for.
          */
         void normalizeMassCentre();
