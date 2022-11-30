@@ -34,7 +34,7 @@ namespace {
         void calculate(const Packing &packing, [[maybe_unused]] double temperature, [[maybe_unused]] double pressure,
                        const ShapeTraits &shapeTraits) override
         {
-            REQUIRE(packing.countTotalOverlaps(shapeTraits.getInteraction()) == 0);
+            Assert(packing.countTotalOverlaps(shapeTraits.getInteraction()) == 0);
         }
 
         [[nodiscard]] std::vector<std::string> getIntervalHeader() const override { return {}; }
