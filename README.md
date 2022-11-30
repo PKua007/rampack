@@ -96,9 +96,8 @@ by `./rampack shape-preview --help`.
 ### trajectory
 
 The `trajectory` mode is used to analyze trajectories recorded during the simulation (see `recordingFilename` parameter
-description in `sample_inputs/integration.ini`). Using appropriate options (see `./rampack optimize-distance --help`)
-one can for example replay the simulation and calculate some observables which were not computed during the original
-run.
+description in `sample_inputs/integration.ini`). Using appropriate options (see `./rampack trajectory --help`) one can
+for example replay the simulation and calculate some observables which were not computed during the original run.
 
 ## Compilation
 
