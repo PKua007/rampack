@@ -9,7 +9,7 @@
 #include "core/shapes/PolysphereBananaTraits.h"
 
 
-TEST_CASE("PolysphereBananaTraits") {
+TEST_CASE("PolysphereBananaTraits: basics") {
     SECTION("below half-angle") {
         PolysphereBananaTraits traits(2, 2*M_PI/3, 3, 1);
 
@@ -29,6 +29,7 @@ TEST_CASE("PolysphereBananaTraits") {
             CHECK_THAT(geom.getSecondaryAxis({}), IsApproxEqual({-1, 0, 0}, 1e-12));
             CHECK_THAT(geom.getNamedPoint("beg"), IsApproxEqual({0, 0, -std::sqrt(3)}, 1e-12));
             CHECK_THAT(geom.getNamedPoint("end"), IsApproxEqual({0, 0, +std::sqrt(3)}, 1e-12));
+            // "cm" named point has a separate test
         }
     }
 
@@ -42,5 +43,19 @@ TEST_CASE("PolysphereBananaTraits") {
         CHECK_THAT(sphereData[2].position, IsApproxEqual({1, 0, +std::sqrt(3)}, 1e-12));
         for (const auto &data : sphereData)
             CHECK(data.radius == 1);
+    }
+}
+
+TEST_CASE("PolysphereBananaTraits: mass centre") {
+    SECTION("existing") {
+        PolysphereBananaTraits traits(3, M_PI, 3, 0.5);
+
+        CHECK_THAT(traits.getGeometry().getNamedPoint("cm"), IsApproxEqual({-1, 0, 0}, 1e-12));
+    }
+
+    SECTION("not existing") {
+        PolysphereBananaTraits traits(3, 0.1, 3, 0.5);
+
+        CHECK_FALSE(traits.getGeometry().hasNamedPoint("cm"));
     }
 }

@@ -9,7 +9,7 @@
 #include "core/shapes/PolysphereLollipopTraits.h"
 
 
-TEST_CASE("PolysphereLollipopTraits") {
+TEST_CASE("PolysphereLollipopTraits: basics") {
     std::size_t sphereNum = 3;
     double smallSphereRadius = 2;
     double largeSphereRadius = 4;
@@ -39,5 +39,22 @@ TEST_CASE("PolysphereLollipopTraits") {
         CHECK_THAT(geometry.getNamedPoint("s2"), IsApproxEqual({0, 0, 2.5}, 1e-12));
         CHECK_THAT(geometry.getNamedPoint("sl"), IsApproxEqual({0, 0, 2.5}, 1e-12));
         CHECK_THAT(geometry.getNamedPoint("o"), IsApproxEqual({0, 0, 0}, 1e-12));
+        // Named point "cm" has its own test
+    }
+}
+
+TEST_CASE("PolysphereLollipopTraits: mass centre") {
+    SECTION("existing") {
+        PolysphereLollipopTraits traits(3, 1, 2, 0, 0);
+
+        CHECK_THAT(traits.getGeometry().getNamedPoint("cm"), IsApproxEqual({0, 0, 1.2}, 1e-12));
+    }
+
+    SECTION("not existing") {
+        PolysphereLollipopTraits smallPenetrates(3, 1, 2, 0.1, 0);
+        PolysphereLollipopTraits largePenetrates(3, 1, 2, 0, 0.1);
+
+        CHECK_FALSE(smallPenetrates.getGeometry().hasNamedPoint("cm"));
+        CHECK_FALSE(largePenetrates.getGeometry().hasNamedPoint("cm"));
     }
 }

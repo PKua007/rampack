@@ -16,6 +16,7 @@ SphereTraits::SphereTraits(double radius)
           objPrinter{SphereTraits::createObjPrinter(radius)}
 {
     Expects(radius > 0);
+    this->registerNamedPoint("cm", {0, 0, 0});
 }
 
 SphereTraits::SphereTraits(double radius, std::unique_ptr<CentralInteraction> centralInteraction)
@@ -24,6 +25,7 @@ SphereTraits::SphereTraits(double radius, std::unique_ptr<CentralInteraction> ce
     Expects(radius > 0);
     centralInteraction->installOnSphere();
     this->interaction = std::move(centralInteraction);
+    this->registerNamedPoint("cm", {0, 0, 0});
 }
 
 double SphereTraits::getVolume() const {

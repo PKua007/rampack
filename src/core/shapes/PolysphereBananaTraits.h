@@ -61,6 +61,7 @@ class PolysphereBananaTraits : public PolysphereTraits {
 private:
     static PolysphereGeometry generateGeometry(double arcRadius, double arcAngle, std::size_t sphereNum,
                                                double sphereRadius);
+    static void addMassCentre(PolysphereGeometry &geometry);
 
 public:
     /**

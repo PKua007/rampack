@@ -32,7 +32,8 @@ namespace legacy {
         double end1 = geometry.getSphereData().front().position[0];
         double end2 = geometry.getSphereData().back().position[0];
         geometry.setGeometricOrigin({(end2 + largeSphereRadius + end1 - smallSphereRadius)/2, 0, 0});
-        geometry.addCustomNamedPoints({{"ss", geometry.getSphereData().front().position},
+        geometry.addCustomNamedPoints({{"cm", {0, 0, 0}},
+                                       {"ss", geometry.getSphereData().front().position},
                                        {"sl", geometry.getSphereData().back().position}});
         return geometry;
     }
@@ -73,5 +74,7 @@ PolysphereWedgeTraits::generateGeometry(std::size_t sphereNum, double bottomSphe
 
     PolysphereGeometry geometry(data, {0, 0, 1}, {1, 0, 0}, {0, 0, 0});
     geometry.addCustomNamedPoints({{"beg", data.front().position}, {"end", data.back().position}});
+    if (spherePenetration == 0)
+        geometry.addCustomNamedPoints({{"cm", geometry.calculateMassCentre()}});
     return geometry;
 }

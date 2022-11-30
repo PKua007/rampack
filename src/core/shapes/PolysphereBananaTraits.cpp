@@ -70,5 +70,17 @@ PolysphereBananaTraits::generateGeometry(double arcRadius, double arcAngle, std:
 
     PolysphereGeometry geometry(std::move(sphereData), {0, 0, 1}, {-1, 0, 0});
     geometry.addCustomNamedPoints({{"beg", spherePos.front()}, {"end", spherePos.back()}});
+    PolysphereBananaTraits::addMassCentre(geometry);
     return geometry;
+}
+
+void PolysphereBananaTraits::addMassCentre(PolysphereTraits::PolysphereGeometry &geometry) {
+    const auto &sphereData = geometry.getSphereData();
+    const auto &p1 = sphereData[0].position;
+    const auto &p2 = sphereData[1].position;
+    double r = sphereData[0].radius;
+    double dist2 = (p2 - p1).norm2();
+    constexpr double EPSILON = 1e-12;
+    if (dist2 + EPSILON*EPSILON >= r*r)
+        geometry.addCustomNamedPoints({{"cm", geometry.calculateMassCentre()}});
 }

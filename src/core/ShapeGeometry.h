@@ -93,9 +93,14 @@ public:
     [[nodiscard]] Vector<3> getNamedPointForShape(const std::string &pointName, const Shape &shape) const;
 
     /**
-     * @brief Returns a list of all named points (see getNamedPoint())
+     * @brief Returns a list of all named points (see getNamedPoint()).
      */
     [[nodiscard]] NamedPoints getNamedPoints() const;
+
+    /**
+     * @brief Returns @a true is named point @a namedPoint exists.
+     */
+    [[nodiscard]] bool hasNamedPoint(const std::string &pointName) const;
 };
 
 
