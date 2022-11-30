@@ -152,7 +152,7 @@ namespace {
         return maxN;
     }
 
-    std::unique_ptr<SmecticOrder> parse_smectic_order(std::istream &observableStream) {
+    std::unique_ptr<SmecticOrder> parse_smectic_order(std::istream &observableStream, const Version &version) {
         std::vector<std::string> tokens = ParseUtils::tokenize<std::string>(observableStream);
         auto fieldMap = ParseUtils::parseFields({"", "max_n", "dumpTauVector", "focalPoint"}, tokens);
 
@@ -167,7 +167,7 @@ namespace {
             dumpTauVector = true;
         }
 
-        std::string focalPoint = "o";
+        std::string focalPoint = (version >= Version{0, 2, 0} ? "o" : "cm");
         if (fieldMap.find("focalPoint") != fieldMap.end())
             focalPoint = fieldMap["focalPoint"];
 
@@ -212,7 +212,7 @@ namespace {
         return ranks;
     }
 
-    std::unique_ptr<BondOrder> parse_bond_order(std::istream &observableStream) {
+    std::unique_ptr<BondOrder> parse_bond_order(std::istream &observableStream, const Version &version) {
         std::vector<std::string> tokens = ParseUtils::tokenize<std::string>(observableStream);
         auto fieldMap = ParseUtils::parseFields({"", "millerIdx", "ranks", "layeringPoint", "bondOrderPoint"}, tokens);
 
@@ -225,24 +225,24 @@ namespace {
         std::array<int, 3> millerIndices = parse_miller_indices(fieldMap.at("millerIdx"));
         std::vector<size_t> ranks = parse_bond_order_ranks(fieldMap);
 
-        std::string layeringPoint = "o";
+        std::string layeringPoint = (version >= Version{0, 2, 0} ? "o" : "cm");
         if (fieldMap.find("layeringPoint") != fieldMap.end())
             layeringPoint = fieldMap["layeringPoint"];
 
-        std::string bondOrderPoint = "o";
+        std::string bondOrderPoint = (version >= Version{0, 2, 0} ? "o" : "cm");
         if (fieldMap.find("bondOrderPoint") != fieldMap.end())
             bondOrderPoint = fieldMap["bondOrderPoint"];
 
         return std::make_unique<BondOrder>(ranks, millerIndices, layeringPoint, bondOrderPoint);
     }
 
-    std::unique_ptr<PairEnumerator> parse_pair_enumerator(std::istream &observableStream) {
+    std::unique_ptr<PairEnumerator> parse_pair_enumerator(std::istream &observableStream, const Version &version) {
         std::string enumeratorName;
         observableStream >> enumeratorName;
         ValidateMsg(observableStream, BINNING_SPEC_USAGE);
 
         if (enumeratorName == "radial") {
-            std::string focalPoint = "o";
+            std::string focalPoint = (version >= Version{0, 2, 0} ? "o" : "cm");
             if (ParseUtils::isAnythingLeft(observableStream))
                 observableStream >> focalPoint;
             ValidateMsg(observableStream, BINNING_SPEC_USAGE);
@@ -254,7 +254,7 @@ namespace {
             ValidateMsg(observableStream, BINNING_SPEC_USAGE);
             auto millerIndices = parse_miller_indices(millerString);
 
-            std::string focalPoint = "o";
+            std::string focalPoint = (version >= Version{0, 2, 0} ? "o" : "cm");
             if (ParseUtils::isAnythingLeft(observableStream))
                 observableStream >> focalPoint;
             ValidateMsg(observableStream, BINNING_SPEC_USAGE);
@@ -343,7 +343,9 @@ namespace {
         }
     }
 
-    std::unique_ptr<Observable> parse_observable(const std::string &observableName, std::istream &observableStream) {
+    std::unique_ptr<Observable> parse_observable(const std::string &observableName, std::istream &observableStream,
+                                                 const Version &version)
+    {
         if (observableName == "numberDensity") {
             return std::make_unique<NumberDensity>();
         } else if (observableName == "boxDimensions") {
@@ -365,9 +367,9 @@ namespace {
             ValidateMsg(QTensorString == "dumpQTensor", "Malformed nematic order, usage: nematicOrder (dumpQTensor)");
             return std::make_unique<NematicOrder>(true);
         } else if (observableName == "smecticOrder") {
-            return parse_smectic_order(observableStream);
+            return parse_smectic_order(observableStream, version);
         } else if (observableName == "bondOrder") {
-            return parse_bond_order(observableStream);
+            return parse_bond_order(observableStream, version);
         } else if (observableName == "rotationMatrixDrift") {
             return std::make_unique<RotationMatrixDrift>();
         } else if (observableName == "temperature") {
@@ -404,19 +406,21 @@ namespace {
         return std::make_unique<DensityHistogram>(nBins, std::move(tracker));
     }
 
-    void parse_observables(const std::vector<std::string> &observables, ObservablesCollector &collector) {
+    void parse_observables(const std::vector<std::string> &observables, ObservablesCollector &collector,
+                           const Version &version)
+    {
         std::regex typePattern(R"(^(?:inline|snapshot|averaging)(?:\/(?:inline|snapshot|averaging))*$)");
 
         for (auto observable : observables) {
             trim(observable);
             std::istringstream observableStream(observable);
             auto [observableName, observableType] = parse_observable_name_and_type(observableStream, typePattern);
-            collector.addObservable(parse_observable(observableName, observableStream), observableType);
+            collector.addObservable(parse_observable(observableName, observableStream, version), observableType);
         }
     }
 
     void parse_bulk_observables(const std::vector<std::string> &bulkObservables, size_t maxThreads,
-                                ObservablesCollector &collector)
+                                ObservablesCollector &collector, const Version &version)
     {
         for (const auto &bulkObservable : bulkObservables) {
             std::istringstream observableStream(bulkObservable);
@@ -432,7 +436,7 @@ namespace {
                 Validate(maxDistance > 0);
                 Validate(numBins >= 2);
 
-                auto pairEnumerator = parse_pair_enumerator(observableStream);
+                auto pairEnumerator = parse_pair_enumerator(observableStream, version);
                 auto rhoCorr = std::make_unique<PairDensityCorrelation>(
                         std::move(pairEnumerator), maxDistance, numBins, maxThreads
                 );
@@ -446,7 +450,7 @@ namespace {
                 Validate(numBins >= 2);
 
                 auto correlationFunction = parse_correlation_function(observableStream);
-                auto pairEnumerator = parse_pair_enumerator(observableStream);
+                auto pairEnumerator = parse_pair_enumerator(observableStream, version);
                 auto avgCorr = std::make_unique<PairAveragedCorrelation>(
                         std::move(pairEnumerator), std::move(correlationFunction), maxDistance, numBins, maxThreads
                 );
@@ -462,10 +466,11 @@ namespace {
 
 std::unique_ptr<ObservablesCollector>
 ObservablesCollectorFactory::create(const std::vector<std::string> &observables,
-                                    const std::vector<std::string> &bulkObservables, std::size_t maxThreads)
+                                    const std::vector<std::string> &bulkObservables, std::size_t maxThreads,
+                                    const Version &version)
 {
     auto collector = std::make_unique<ObservablesCollector>();
-    parse_observables(observables, *collector);
-    parse_bulk_observables(bulkObservables, maxThreads, *collector);
+    parse_observables(observables, *collector, version);
+    parse_bulk_observables(bulkObservables, maxThreads, *collector, version);
     return collector;
 }
