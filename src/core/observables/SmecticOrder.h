@@ -34,7 +34,7 @@ public:
      * Moreover, @a focalPoint specifies which named point (see ShapeGeometry::getNamedPointForShape) should be used to
      * calculate smectic order.
      */
-    explicit SmecticOrder(const std::array<int, 3> &nTauRanges = {5, 5, 5}, bool dumpTauVector_ = false,
+    explicit SmecticOrder(const std::array<std::size_t, 3> &nTauRanges = {5, 5, 5}, bool dumpTauVector_ = false,
                           std::string focalPoint = "o");
 
     void calculate(const Packing &packing, double temperature, double pressure,

@@ -38,12 +38,17 @@ void SmecticOrder::calculate(const Packing &packing, [[maybe_unused]] double tem
     this->tau = 0;
     this->nTau = {0, 0, 0};
 
+    // Make sure that the first non-zero range coordinate i get iterated from 0, not from -nTauRanges[i]
+    // This way we make sure that equivalent k and -k vectors aren't calculated twice
     for (int cx{}; cx <= this->nTauRanges[0]; cx++) {
         int cyBeg = (cx == 0 ? 0 : -this->nTauRanges[1]);
         for (int cy = cyBeg; cy <= this->nTauRanges[1]; cy++) {
-            int czBeg = ((cx == 0 && cy == 0) ? 1 : -this->nTauRanges[2]);
-            for (int cz = czBeg; cz < this->nTauRanges[2]; cz++) {
+            int czBeg = ((cx == 0 && cy == 0) ? 0 : -this->nTauRanges[2]);
+            for (int cz = czBeg; cz <= this->nTauRanges[2]; cz++) {
                 std::array<int, 3> nTau_{cx, cy, cz};
+                if (nTau_ == std::array<int, 3>{0, 0, 0})
+                    continue;
+
                 auto [tau_, kTauVector_] = calculateTau(nTau_, packing, focalPoints);
                 if (std::abs(tau_) > std::abs(this->tau)) {
                     this->tau = tau_;
@@ -61,11 +66,12 @@ std::vector<std::string> SmecticOrder::getNominalValues() const {
     return {ostr.str()};
 }
 
-SmecticOrder::SmecticOrder(const std::array<int, 3> &nTauRanges, bool dumpTauVector_, std::string focalPoint)
-        : dumpTauVector{dumpTauVector_}, focalPoint{std::move(focalPoint)}, nTauRanges{nTauRanges}
+SmecticOrder::SmecticOrder(const std::array<std::size_t, 3> &nTauRanges, bool dumpTauVector_, std::string focalPoint)
+        : dumpTauVector{dumpTauVector_}, focalPoint{std::move(focalPoint)}
 {
     Expects(std::any_of(nTauRanges.begin(), nTauRanges.end(), [](int i) { return i != 0; }));
     Expects(std::all_of(nTauRanges.begin(), nTauRanges.end(), [](int i) { return i >= 0; }));
+    std::copy(nTauRanges.begin(), nTauRanges.end(), this->nTauRanges.begin());
 }
 
 std::vector<std::string> SmecticOrder::getIntervalHeader() const {

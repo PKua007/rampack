@@ -133,13 +133,13 @@ namespace {
         return fieldMap;
     }
 
-    std::array<int, 3> parse_smectic_order_max_n(const std::map<std::string, std::string> &fieldMap) {
+    std::array<std::size_t, 3> parse_smectic_order_max_n(const std::map<std::string, std::string> &fieldMap) {
         if (!(fieldMap.find("max_n") != fieldMap.end()))
             return {5, 5, 5};
 
-        auto maxNToneks = ParseUtils::tokenize<int>(fieldMap.at("max_n"));
+        auto maxNToneks = ParseUtils::tokenize<std::size_t>(fieldMap.at("max_n"));
         ValidateMsg(maxNToneks.size() == 1 || maxNToneks.size() == 3, "smectic order: max_n should be 1 or 3 ints");
-        std::array<int, 3> maxN{};
+        std::array<std::size_t, 3> maxN{};
         if (maxNToneks.size() == 1)
             maxN = {maxNToneks[0], maxNToneks[0], maxNToneks[0]};
         else // maxNToneks.size() == 3
@@ -159,7 +159,7 @@ namespace {
         if (fieldMap.find("") != fieldMap.end())
             fieldMap = parse_smectic_order_old_syntax(tokens);
 
-        std::array<int, 3> maxN = parse_smectic_order_max_n(fieldMap);
+        std::array<std::size_t, 3> maxN = parse_smectic_order_max_n(fieldMap);
 
         bool dumpTauVector = false;
         if (fieldMap.find("dumpTauVector") != fieldMap.end()) {
