@@ -190,39 +190,47 @@ namespace {
         return std::make_pair(parse_lattice_dim(fieldMap.at("ncell")), cell.getBox());
     }
 
+    std::array<std::size_t, 3> calculate_best_lattice_dim(std::size_t numParticles, const TriclinicBox &requestedBox,
+                                                          const UnitCell &cell)
+    {
+        std::size_t numAllCells;
+        if (numParticles % cell.size() == 0)
+            numAllCells = numParticles / cell.size();
+        else
+            numAllCells = numParticles / cell.size() + 1;
+
+        auto heights = requestedBox.getHeights();
+        double pseudoVolume = std::accumulate(heights.begin(), heights.end(), 1., std::multiplies<>{});
+        double targetCellSize = std::cbrt(pseudoVolume / static_cast<double>(numAllCells));
+
+        // Find the best integer number of cells
+        std::array<std::size_t, 3> latticeDim{};
+        auto dimCalculator = [targetCellSize](double height) {
+            double bestNumCells = height/targetCellSize;
+            return static_cast<std::size_t>(std::round(bestNumCells));
+        };
+        std::transform(heights.begin(), heights.end(), latticeDim.begin(), dimCalculator);
+
+        // Increase number of cells along the longest side if there are too few cells to fit all particles
+        while (std::accumulate(latticeDim.begin(), latticeDim.end(), 1ul, std::multiplies<>{}) < numAllCells) {
+            auto maxDim = std::max_element(latticeDim.begin(), latticeDim.end());
+            (*maxDim)++;
+        }
+
+        return latticeDim;
+    }
+
     auto calculate_automatic_lattice_spec(std::size_t numParticles, const TriclinicBox &requestedBox,
                                           const UnitCell &cell, const std::map<std::string, std::string> &fieldMap)
     {
         std::array<std::size_t, 3> latticeDim{};
         if (fieldMap.find("ncell") == fieldMap.end()) {
             // User didn't specify number of cells - number of cells will be calculated in such a way that the unit cell
-            // will be as cubic as possible (with similar heights)
+            // will be as cubic as possible (with heights as similar as possible)
             ValidateMsg(fieldMap.find("default") != fieldMap.end(),
                         "If 'ncell' field not present, 'default' should be specified");
             ValidateMsg(fieldMap.at("default").empty(), "Unexpected token: " + fieldMap.at("default"));
-
-            std::size_t allCells;
-            if (numParticles % cell.size() == 0)
-                allCells = numParticles / cell.size();
-            else
-                allCells = numParticles / cell.size() + 1;
-
-            auto heights = requestedBox.getHeights();
-            double pseudoVolume = std::accumulate(heights.begin(), heights.end(), 1., std::multiplies<>{});
-            double targetCellSize = std::cbrt(pseudoVolume / static_cast<double>(allCells));
-
-            // Find the best integer number of cells
-            auto dimCalculator = [targetCellSize](double height) {
-                double bestNumCells = height/targetCellSize;
-                return static_cast<std::size_t>(std::round(bestNumCells));
-            };
-            std::transform(heights.begin(), heights.end(), latticeDim.begin(), dimCalculator);
-
-            // Increase number of cells along the longest side if there are too few cells to fit all particles
-            while (std::accumulate(latticeDim.begin(), latticeDim.end(), 1ul, std::multiplies<>{}) < allCells) {
-                auto maxDim = std::max_element(latticeDim.begin(), latticeDim.end());
-                (*maxDim)++;
-            }
+            latticeDim = calculate_best_lattice_dim(numParticles, requestedBox, cell);
         } else {
             // User specified explicitly number of cells - cell dimensions are calculated based on box dimensions
             ValidateMsg(fieldMap.find("default") == fieldMap.end(),
@@ -236,8 +244,8 @@ namespace {
         return std::make_pair(latticeDim, TriclinicBox(cellSides));
     }
 
-    auto parse_lattice_dim(std::size_t numParticles, std::optional<TriclinicBox> requestedBox, const UnitCell &cell,
-                           const std::map<std::string, std::string> &fieldMap)
+    auto parse_lattice_spec(std::size_t numParticles, std::optional<TriclinicBox> requestedBox, const UnitCell &cell,
+                            const std::map<std::string, std::string> &fieldMap)
     {
         if (fieldMap.find("dim") != fieldMap.end()) {
             // Cell dim "dim" is explicitly specified, so the lattice size should also be specified explicitly, which
@@ -261,7 +269,7 @@ namespace {
 
         auto fieldMap = ParseUtils::parseFields({"ncell", "dim", "default", "axis", "shapes"}, tokens);
         auto cell = parse_unit_cell(cellType, fieldMap);
-        auto [latticeDim, newCellBox] = parse_lattice_dim(numParticles, requestedBox, cell, fieldMap);
+        auto [latticeDim, newCellBox] = parse_lattice_spec(numParticles, requestedBox, cell, fieldMap);
         cell.getBox() = newCellBox;
 
         return Lattice(cell, latticeDim);
