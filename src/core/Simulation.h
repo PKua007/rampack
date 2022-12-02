@@ -150,6 +150,23 @@ public:
         void combine(Environment &other);
     };
 
+    struct IntegrationParameters {
+        std::size_t thermalisationCycles{};
+        std::size_t averagingCycles{};
+        std::size_t averagingEvery = 100;
+        std::size_t snapshotEvery = 100;
+        std::size_t inlineInfoEvery = 100;
+        std::size_t rotationMatrixFixEvery = 10000;
+        std::size_t cycleOffset{};
+    };
+
+    struct OverlapRelaxationParameters {
+        std::size_t snapshotEvery = 100;
+        std::size_t inlineInfoEvery = 100;
+        std::size_t rotationMatrixFixEvery = 10000;
+        std::size_t cycleOffset{};
+    };
+
 private:
     class Counter {
     private:
@@ -305,11 +322,9 @@ public:
      * @param logger Logger object to display simulation data
      * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
      */
-    void integrate(Environment env, std::size_t thermalisationCycles, std::size_t averagingCycles,
-                   std::size_t averagingEvery, std::size_t snapshotEvery, const ShapeTraits &shapeTraits,
+    void integrate(Environment env, const IntegrationParameters &params, const ShapeTraits &shapeTraits,
                    std::unique_ptr<ObservablesCollector> observablesCollector_,
-                   std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger,
-                   std::size_t cycleOffset = 0);
+                   std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger);
 
     /**
      * @brief Perform overlap reduction scheme - overlap counting is turned on and moves are continued until there is no
@@ -337,10 +352,9 @@ public:
     * @param logger Logger object to display simulation data
     * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
     */
-    void relaxOverlaps(Environment env, std::size_t snapshotEvery,
-                       const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
-                       std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger,
-                       std::size_t cycleOffset = 0);
+    void relaxOverlaps(Environment env, const OverlapRelaxationParameters &params, const ShapeTraits &shapeTraits,
+                       std::unique_ptr<ObservablesCollector> observablesCollector_,
+                       std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger);
 
     [[nodiscard]] const ObservablesCollector &getObservablesCollector() { return *this->observablesCollector; }
 
