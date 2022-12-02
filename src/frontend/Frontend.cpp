@@ -419,11 +419,10 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
 
     Simulation::OverlapRelaxationParameters relaxParams;
     relaxParams.snapshotEvery = runParams.snapshotEvery;
-    relaxParams.inlineInfoEvery = relaxParams.inlineInfoEvery;
+    relaxParams.inlineInfoEvery = runParams.inlineInfoEvery;
     relaxParams.cycleOffset = cycleOffset;
 
     simulation.relaxOverlaps(env, relaxParams, *shapeTraits, std::move(collector), std::move(recorders), this->logger);
-    const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
     this->logger.info();
     this->logger << "--------------------------------------------------------------------" << std::endl;
@@ -432,11 +431,9 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
     if (!runParams.packingFilename.empty())
         this->storeRamsnap(simulation, runParams.packingFilename);
     if (!runParams.xyzPackingFilename.empty())
-        this->storeXYZ(simulation, *shapeTraits, runParams.packingFilename);
+        this->storeXYZ(simulation, *shapeTraits, runParams.xyzPackingFilename);
     if (!runParams.wolframFilename.empty())
         this->storeWolframVisualization(simulation.getPacking(), *shapeTraits, runParams.wolframFilename);
-    if (!runParams.bulkObservableFilenamePattern.empty())
-        this->storeBulkObservables(observablesCollector, runParams.bulkObservableFilenamePattern);
 }
 
 void Frontend::storeSnapshots(const ObservablesCollector &observablesCollector, bool isContinuation,
