@@ -217,10 +217,10 @@ Parameters::OverlapRelaxationParameters::OverlapRelaxationParameters(const std::
             this->wolframFilename = runConfig.getString("wolframFilename");
         else if (key == "packingFilename")
             this->packingFilename = runConfig.getString("packingFilename");
+        else if (key == "xyzPackingFilename")
+            this->xyzPackingFilename = runConfig.getString("xyzPackingFilename");
         else if (key == "observableSnapshotFilename")
             this->observableSnapshotFilename = runConfig.getString("observableSnapshotFilename");
-        else if (key == "bulkObservableFilenamePattern")
-            this->bulkObservableFilenamePattern = runConfig.getString("bulkObservableFilenamePattern");
         else if (key == "recordingFilename")
             this->recordingFilename = runConfig.getString("recordingFilename");
         else if (key == "xyzRecordingFilename")
@@ -249,7 +249,6 @@ void Parameters::OverlapRelaxationParameters::print(Logger &logger) const {
     logger.info() << "xyzPackingFilename            : " << this->xyzPackingFilename << std::endl;
     logger.info() << "wolframFilename               : " << this->wolframFilename << std::endl;
     logger.info() << "observableSnapshotFilename    : " << this->observableSnapshotFilename << std::endl;
-    logger.info() << "bulkObservableFilenamePattern : " << this->bulkObservableFilenamePattern << std::endl;
     logger.info() << "recordingFilename             : " << this->recordingFilename << std::endl;
     logger.info() << "xyzRecordingFilename          : " << this->xyzRecordingFilename << std::endl;
 }

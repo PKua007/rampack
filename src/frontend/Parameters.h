@@ -107,7 +107,6 @@ public:
         std::string xyzPackingFilename{};
         std::string wolframFilename{};
         std::string observableSnapshotFilename{};
-        std::string bulkObservableFilenamePattern{};
         std::string recordingFilename{};
         std::string xyzRecordingFilename{};
 
