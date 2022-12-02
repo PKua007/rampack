@@ -320,6 +320,7 @@ void Frontend::performIntegration(Simulation &simulation, Simulation::Environmen
     integrationParams.averagingCycles = runParams.averagingCycles;
     integrationParams.averagingEvery = runParams.averagingEvery;
     integrationParams.snapshotEvery = runParams.snapshotEvery;
+    integrationParams.inlineInfoEvery = runParams.inlineInfoEvery;
     integrationParams.cycleOffset = cycleOffset;
 
     simulation.integrate(env, integrationParams, shapeTraits, std::move(collector), std::move(recorders), this->logger);
@@ -418,6 +419,7 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
 
     Simulation::OverlapRelaxationParameters relaxParams;
     relaxParams.snapshotEvery = runParams.snapshotEvery;
+    relaxParams.inlineInfoEvery = relaxParams.inlineInfoEvery;
     relaxParams.cycleOffset = cycleOffset;
 
     simulation.relaxOverlaps(env, relaxParams, *shapeTraits, std::move(collector), std::move(recorders), this->logger);
