@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <iterator>
 #include <variant>
+#include <ZipIterator.hpp>
 
 
 #include "utils/ParseUtils.h"
@@ -275,7 +276,17 @@ namespace {
         return Lattice(cell, latticeDim);
     }
 
-    std::unique_ptr<LatticePopulator> parse_populator(std::istringstream &operationStream) {
+    std::string optimize_axis_order(std::array<std::size_t, 3> latticeDim) {
+        std::string axisOrder = "xyz";
+        auto zipped = Zip(latticeDim, axisOrder);
+        std::sort(zipped.begin(), zipped.end());
+        std::reverse(axisOrder.begin(), axisOrder.end());
+        return axisOrder;
+    }
+
+    std::unique_ptr<LatticePopulator> parse_populator(std::istringstream &operationStream,
+                                                      const std::array<std::size_t, 3> &latticeDim)
+    {
         std::string populatorType;
         operationStream >> populatorType;
         ValidateMsg(operationStream, "Populator type has to be specified: serial, random");
@@ -287,9 +298,10 @@ namespace {
             return std::make_unique<RandomPopulator>(seed);
         } else if (populatorType == "serial") {
             std::string axisOrder;
-            operationStream >> axisOrder;
-            if (!operationStream)
-                axisOrder = "xyz";
+            if (ParseUtils::isAnythingLeft(operationStream))
+                operationStream >> axisOrder;
+            else
+                axisOrder = optimize_axis_order(latticeDim);
 
             try {
                 return std::make_unique<SerialPopulator>(axisOrder);
@@ -358,8 +370,8 @@ namespace {
         }
     }
 
-    auto parse_operations(const std::vector<std::string> &latticeOperations, const Interaction &interaction,
-                          const ShapeGeometry &geometry)
+    auto parse_operations(const Lattice &lattice, const std::vector<std::string> &latticeOperations,
+                          const Interaction &interaction, const ShapeGeometry &geometry)
     {
         std::vector<std::unique_ptr<LatticeTransformer>> transformers;
         std::unique_ptr<LatticePopulator> populator;
@@ -371,7 +383,7 @@ namespace {
             ValidateMsg(operationStream, "Lattice transformation cannot be empty");
             if (operationType == "populate") {
                 ValidateMsg(populator == nullptr, "Redefinition of lattice populator type");
-                populator = parse_populator(operationStream);
+                populator = parse_populator(operationStream, lattice.getDimensions());
             } else {
                 ValidateMsg(populator == nullptr, "Cannot apply further transformations after populating the lattice");
                 auto trans = parse_transformer(operationType, operationStream, interaction, geometry);
@@ -379,8 +391,12 @@ namespace {
             }
         }
 
-        if (populator == nullptr)
-            populator = std::make_unique<SerialPopulator>("xyz");
+        // If populator is not specified, we choose SerialPopulator and choose axis order in such a way that the
+        // outermost loop is over the maximum number of cell and the innermost one - along the minimum number of cells
+        if (populator == nullptr) {
+            auto axisOrder = optimize_axis_order(lattice.getDimensions());
+            populator = std::make_unique<SerialPopulator>(axisOrder);
+        }
 
         return std::make_pair(std::move(transformers), std::move(populator));
     }
@@ -403,7 +419,7 @@ std::unique_ptr<Packing> LatticeBuilder::buildPacking(std::size_t numParticles, 
     latticeOperations.erase(latticeOperations.begin());
 
     auto lattice = parse_lattice(numParticles, requestedBox, cellDefinition);
-    auto [transformers, populator] = parse_operations(latticeOperations, interaction, geometry);
+    auto [transformers, populator] = parse_operations(lattice, latticeOperations, interaction, geometry);
 
     for (const auto &transformer : transformers)
         transformer->transform(lattice);
