@@ -196,14 +196,33 @@ namespace {
         std::array<std::size_t, 3> latticeDim{};
         if (fieldMap.find("ncell") == fieldMap.end()) {
             // User didn't specify number of cells - number of cells will be calculated in such a way that the unit cell
-            // will be as cubic as possible
+            // will be as cubic as possible (with similar heights)
             ValidateMsg(fieldMap.find("default") != fieldMap.end(),
                         "If 'ncell' field not present, 'default' should be specified");
             ValidateMsg(fieldMap.at("default").empty(), "Unexpected token: " + fieldMap.at("default"));
 
-            double allCells = ceil(static_cast<double>(numParticles) / static_cast<double>(cell.size()));
-            auto ncell = static_cast<std::size_t>(ceil(cbrt(allCells)));
-            latticeDim = {ncell, ncell, ncell};
+            std::size_t allCells;
+            if (numParticles % cell.size() == 0)
+                allCells = numParticles / cell.size();
+            else
+                allCells = numParticles / cell.size() + 1;
+
+            auto heights = requestedBox.getHeights();
+            double pseudoVolume = std::accumulate(heights.begin(), heights.end(), 1., std::multiplies<>{});
+            double targetCellSize = std::cbrt(pseudoVolume / static_cast<double>(allCells));
+
+            // Find the best integer number of cells
+            auto dimCalculator = [targetCellSize](double height) {
+                double bestNumCells = height/targetCellSize;
+                return static_cast<std::size_t>(std::round(bestNumCells));
+            };
+            std::transform(heights.begin(), heights.end(), latticeDim.begin(), dimCalculator);
+
+            // Increase number of cells along the longest side if there are too few cells to fit all particles
+            while (std::accumulate(latticeDim.begin(), latticeDim.end(), 1ul, std::multiplies<>{}) < allCells) {
+                auto maxDim = std::max_element(latticeDim.begin(), latticeDim.end());
+                (*maxDim)++;
+            }
         } else {
             // User specified explicitly number of cells - cell dimensions are calculated based on box dimensions
             ValidateMsg(fieldMap.find("default") == fieldMap.end(),
