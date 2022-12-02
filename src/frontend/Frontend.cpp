@@ -314,9 +314,15 @@ void Frontend::performIntegration(Simulation &simulation, Simulation::Environmen
                                                          explode(runParams.bulkObservables, ','),
                                                          simulation.getPacking().getScalingThreads());
     this->attachSnapshotOut(*collector, runParams.observableSnapshotFilename, isContinuation);
-    simulation.integrate(env, runParams.thermalisationCycles, runParams.averagingCycles, runParams.averagingEvery,
-                         runParams.snapshotEvery, shapeTraits, std::move(collector), std::move(recorders),
-                         this->logger, cycleOffset);
+
+    Simulation::IntegrationParameters integrationParams;
+    integrationParams.thermalisationCycles = runParams.thermalisationCycles;
+    integrationParams.averagingCycles = runParams.averagingCycles;
+    integrationParams.averagingEvery = runParams.averagingEvery;
+    integrationParams.snapshotEvery = runParams.snapshotEvery;
+    integrationParams.cycleOffset = cycleOffset;
+
+    simulation.integrate(env, integrationParams, shapeTraits, std::move(collector), std::move(recorders), this->logger);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
     this->logger.info();
@@ -409,8 +415,12 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
                                                          explode(runParams.bulkObservables, ','),
                                                          simulation.getPacking().getScalingThreads());
     this->attachSnapshotOut(*collector, runParams.observableSnapshotFilename, isContinuation);
-    simulation.relaxOverlaps(env, runParams.snapshotEvery, *shapeTraits, std::move(collector), std::move(recorders),
-                             this->logger, cycleOffset);
+
+    Simulation::OverlapRelaxationParameters relaxParams;
+    relaxParams.snapshotEvery = runParams.snapshotEvery;
+    relaxParams.cycleOffset = cycleOffset;
+
+    simulation.relaxOverlaps(env, relaxParams, *shapeTraits, std::move(collector), std::move(recorders), this->logger);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
     this->logger.info();

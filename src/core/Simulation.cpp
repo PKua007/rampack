@@ -95,26 +95,28 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep,
                      std::move(boxScaler), domainDivisions, handleSignals)
 { }
 
-void Simulation::integrate(Simulation::Environment env, std::size_t thermalisationCycles, std::size_t averagingCycles,
-                           std::size_t averagingEvery, std::size_t snapshotEvery, const ShapeTraits &shapeTraits,
+void Simulation::integrate(Environment env, const IntegrationParameters &params, const ShapeTraits &shapeTraits,
                            std::unique_ptr<ObservablesCollector> observablesCollector_,
-                           std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger,
-                           std::size_t cycleOffset)
+                           std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger)
 {
-    if (averagingCycles > 0)
-        Expects(averagingEvery > 0 && averagingEvery < averagingCycles);
+    Expects(params.thermalisationCycles > 0 || params.averagingCycles > 0);
+    Expects(params.inlineInfoEvery > 0);
+    Expects(params.rotationMatrixFixEvery > 0);
+    if (params.averagingCycles > 0)
+        Expects(params.averagingEvery > 0 && params.averagingEvery <= params.averagingCycles);
+    Expects(params.snapshotEvery <= (params.thermalisationCycles + params.averagingCycles));
 
     this->environment.combine(env);
     Expects(this->environment.isComplete());
 
-    std::size_t maxCycles = cycleOffset + thermalisationCycles;
-    this->temperature = this->environment.getTemperature().getValueForCycle(cycleOffset, maxCycles);
-    this->pressure = this->environment.getPressure().getValueForCycle(cycleOffset, maxCycles);
+    std::size_t maxCycles = params.cycleOffset + params.thermalisationCycles;
+    this->temperature = this->environment.getTemperature().getValueForCycle(params.cycleOffset, maxCycles);
+    this->pressure = this->environment.getPressure().getValueForCycle(params.cycleOffset, maxCycles);
     this->observablesCollector = std::move(observablesCollector_);
     this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
     this->reset();
 
-    this->totalCycles = cycleOffset;
+    this->totalCycles = params.cycleOffset;
 
     const Interaction &interaction = shapeTraits.getInteraction();
     LoggerAdditionalTextAppender loggerAdditionalTextAppender(logger);
@@ -130,25 +132,25 @@ void Simulation::integrate(Simulation::Environment env, std::size_t thermalisati
 
     this->shouldAdjustStepSize = true;
     loggerAdditionalTextAppender.setAdditionalText("th");
-    if (thermalisationCycles == 0) {
+    if (params.thermalisationCycles == 0) {
         logger.info() << "Thermalization skipped." << std::endl;
     } else {
         logger.info() << "Starting thermalisation..." << std::endl;
-        for (std::size_t i{}; i < thermalisationCycles; i++) {
+        for (std::size_t i{}; i < params.thermalisationCycles; i++) {
             this->performCycle(logger, shapeTraits);
             this->temperature = this->environment.getTemperature().getValueForCycle(this->totalCycles, maxCycles);
             this->pressure = this->environment.getPressure().getValueForCycle(this->totalCycles, maxCycles);
             this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
 
-            if (this->totalCycles % 10000 == 0)
+            if (this->totalCycles % params.rotationMatrixFixEvery == 0)
                 this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
-            if (this->totalCycles % snapshotEvery == 0) {
+            if (this->totalCycles % params.snapshotEvery == 0) {
                 this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
                 if (!simulationRecorders.empty())
                     for (const auto &recorder : simulationRecorders)
                        recorder->recordSnapshot(*this->packing, this->totalCycles);
             }
-            if (this->totalCycles % 100 == 0)
+            if (this->totalCycles % params.inlineInfoEvery == 0)
                 this->printInlineInfo(this->totalCycles, shapeTraits, logger, false);
 
             if (sigint_received) {
@@ -162,23 +164,23 @@ void Simulation::integrate(Simulation::Environment env, std::size_t thermalisati
 
     this->shouldAdjustStepSize = false;
     loggerAdditionalTextAppender.setAdditionalText("av");
-    if (averagingCycles == 0) {
+    if (params.averagingCycles == 0) {
         logger.info() << "Averaging skipped." << std::endl;
     } else {
         logger.info() << "Starting averaging..." << std::endl;
-        for (std::size_t i{}; i < averagingCycles; i++) {
+        for (std::size_t i{}; i < params.averagingCycles; i++) {
             this->performCycle(logger, shapeTraits);
-            if (this->totalCycles % 10000 == 0)
+            if (this->totalCycles % params.rotationMatrixFixEvery == 0)
                 this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
-            if (this->totalCycles % snapshotEvery == 0) {
+            if (this->totalCycles % params.snapshotEvery == 0) {
                 this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
                 if (!simulationRecorders.empty())
                     for (const auto &recorder : simulationRecorders)
                         recorder->recordSnapshot(*this->packing, this->totalCycles);
             }
-            if (this->totalCycles % averagingEvery == 0)
+            if (this->totalCycles % params.averagingEvery == 0)
                 this->observablesCollector->addAveragingValues(*this->packing, shapeTraits);
-            if (this->totalCycles % 100 == 0)
+            if (this->totalCycles % params.inlineInfoEvery == 0)
                 this->printInlineInfo(this->totalCycles, shapeTraits, logger, false);
 
             if (sigint_received) {
@@ -205,27 +207,37 @@ void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::siz
     Environment env;
     env.setTemperature(std::move(temperature_));
     env.setPressure(std::move(pressure_));
-    this->integrate(std::move(env), thermalisationCycles, averagingCycles, averagingEvery, snapshotEvery,
-                    shapeTraits, std::move(observablesCollector_), std::move(simulationRecorders), logger, cycleOffset);
+
+    IntegrationParameters params;
+    params.thermalisationCycles = thermalisationCycles;
+    params.averagingCycles = averagingCycles;
+    params.averagingEvery = averagingEvery;
+    params.snapshotEvery = snapshotEvery;
+    params.cycleOffset = cycleOffset;
+
+    this->integrate(std::move(env), params, shapeTraits, std::move(observablesCollector_),
+                    std::move(simulationRecorders), logger);
 }
 
-void Simulation::relaxOverlaps(Simulation::Environment env, std::size_t snapshotEvery,
+void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameters &params,
                                const ShapeTraits &shapeTraits,
                                std::unique_ptr<ObservablesCollector> observablesCollector_,
-                               std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger,
-                               std::size_t cycleOffset)
+                               std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger)
 {
+    Expects(params.inlineInfoEvery > 0);
+    Expects(params.rotationMatrixFixEvery > 0);
+    Expects(params.snapshotEvery > 0);
     this->environment.combine(env);
     Expects(this->environment.isComplete());
 
     std::size_t maxCycles = std::numeric_limits<std::size_t>::max();
-    this->temperature = this->environment.getTemperature().getValueForCycle(cycleOffset, maxCycles);
-    this->pressure = this->environment.getPressure().getValueForCycle(cycleOffset, maxCycles);
+    this->temperature = this->environment.getTemperature().getValueForCycle(params.cycleOffset, maxCycles);
+    this->pressure = this->environment.getPressure().getValueForCycle(params.cycleOffset, maxCycles);
     this->observablesCollector = std::move(observablesCollector_);
     this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
     this->reset();
 
-    this->totalCycles = cycleOffset;
+    this->totalCycles = params.cycleOffset;
 
     const Interaction &interaction = shapeTraits.getInteraction();
     LoggerAdditionalTextAppender loggerAdditionalTextAppender(logger);
@@ -245,15 +257,15 @@ void Simulation::relaxOverlaps(Simulation::Environment env, std::size_t snapshot
         this->pressure = this->environment.getPressure().getValueForCycle(this->totalCycles, maxCycles);
         this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
 
-        if (this->totalCycles % 10000 == 0)
+        if (this->totalCycles % params.rotationMatrixFixEvery == 0)
             this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
-        if (this->totalCycles % snapshotEvery == 0) {
+        if (this->totalCycles % params.snapshotEvery == 0) {
             this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
             if (!simulationRecorders.empty())
                 for (const auto &recorder : simulationRecorders)
                     recorder->recordSnapshot(*this->packing, this->totalCycles);
         }
-        if (this->totalCycles % 100 == 0)
+        if (this->totalCycles % params.inlineInfoEvery == 0)
             this->printInlineInfo(this->totalCycles, shapeTraits, logger, true);
 
         if (sigint_received) {
@@ -280,8 +292,13 @@ void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std:
     Environment env;
     env.setTemperature(std::move(temperature_));
     env.setPressure(std::move(pressure_));
-    this->relaxOverlaps(std::move(env), snapshotEvery, shapeTraits, std::move(observablesCollector_),
-                        std::move(simulationRecorders), logger, cycleOffset);
+
+    OverlapRelaxationParameters params;
+    params.snapshotEvery = snapshotEvery;
+    params.cycleOffset = cycleOffset;
+
+    this->relaxOverlaps(std::move(env), params, shapeTraits, std::move(observablesCollector_),
+                        std::move(simulationRecorders), logger);
 }
 
 void Simulation::reset() {
