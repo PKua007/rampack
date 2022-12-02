@@ -180,22 +180,23 @@ namespace {
         }
     }
 
-    auto calculate_lattice_dim(std::size_t numParticles, std::optional<TriclinicBox> requestedBox, const UnitCell &cell,
-                               const std::map<std::string, std::string> &fieldMap)
+    auto parse_explicit_lattice_spec(std::optional<TriclinicBox> requestedBox, const UnitCell &cell,
+                                     const std::map<std::string, std::string> &fieldMap)
     {
-        if (fieldMap.find("dim") != fieldMap.end()) {
-            ValidateMsg(!requestedBox.has_value(), "If explicit cell size is specified, box size should be 'auto'");
-            ValidateMsg(fieldMap.find("ncell") != fieldMap.end(), "'ncell' must be specified together with 'dim'");
-            ValidateMsg(fieldMap.find("default") == fieldMap.end(),
-                        "'default' cannot be specified together with 'dim'");
-            return std::make_pair(parse_lattice_dim(fieldMap.at("ncell")), cell.getBox());
-        }
+        ValidateMsg(!requestedBox.has_value(), "If explicit cell size is specified, box size should be 'auto'");
+        ValidateMsg(fieldMap.find("ncell") != fieldMap.end(), "'ncell' must be specified together with 'dim'");
+        ValidateMsg(fieldMap.find("default") == fieldMap.end(),
+                    "'default' cannot be specified together with 'dim'");
+        return std::make_pair(parse_lattice_dim(fieldMap.at("ncell")), cell.getBox());
+    }
 
-        ValidateMsg(requestedBox.has_value(),
-                    "Automatic box size not supported if either of: 'dim', 'ncell' is not specified");
-
+    auto calculate_automatic_lattice_spec(std::size_t numParticles, const TriclinicBox &requestedBox,
+                                          const UnitCell &cell, const std::map<std::string, std::string> &fieldMap)
+    {
         std::array<std::size_t, 3> latticeDim{};
         if (fieldMap.find("ncell") == fieldMap.end()) {
+            // User didn't specify number of cells - number of cells will be calculated in such a way that the unit cell
+            // will be as cubic as possible
             ValidateMsg(fieldMap.find("default") != fieldMap.end(),
                         "If 'ncell' field not present, 'default' should be specified");
             ValidateMsg(fieldMap.at("default").empty(), "Unexpected token: " + fieldMap.at("default"));
@@ -204,15 +205,32 @@ namespace {
             auto ncell = static_cast<std::size_t>(ceil(cbrt(allCells)));
             latticeDim = {ncell, ncell, ncell};
         } else {
+            // User specified explicitly number of cells - cell dimensions are calculated based on box dimensions
             ValidateMsg(fieldMap.find("default") == fieldMap.end(),
                         "'default' cannot be specified together with 'ncell'");
             latticeDim = parse_lattice_dim(fieldMap.at("ncell"));
         }
 
-        auto cellSides = requestedBox->getSides();
+        auto cellSides = requestedBox.getSides();
         std::transform(cellSides.begin(), cellSides.end(), latticeDim.begin(), cellSides.begin(),
                        [](const auto &cellSide, auto dim) { return cellSide / static_cast<double>(dim); });
         return std::make_pair(latticeDim, TriclinicBox(cellSides));
+    }
+
+    auto parse_lattice_dim(std::size_t numParticles, std::optional<TriclinicBox> requestedBox, const UnitCell &cell,
+                           const std::map<std::string, std::string> &fieldMap)
+    {
+        if (fieldMap.find("dim") != fieldMap.end()) {
+            // Cell dim "dim" is explicitly specified, so the lattice size should also be specified explicitly, which
+            // in the end gives full specification
+            return parse_explicit_lattice_spec(requestedBox, cell, fieldMap);
+        } else {
+            // Cell dim "dim" is not specified explicitly, so it will be calculated automatically (based on box size
+            // and/or lattice size)
+            ValidateMsg(requestedBox.has_value(),
+                        "Automatic box size not supported if either of: 'dim', 'ncell' is not specified");
+            return calculate_automatic_lattice_spec(numParticles, *requestedBox, cell, fieldMap);
+        }
     }
 
     Lattice parse_lattice(std::size_t numParticles, std::optional<TriclinicBox> requestedBox,
@@ -224,7 +242,7 @@ namespace {
 
         auto fieldMap = ParseUtils::parseFields({"ncell", "dim", "default", "axis", "shapes"}, tokens);
         auto cell = parse_unit_cell(cellType, fieldMap);
-        auto [latticeDim, newCellBox] = calculate_lattice_dim(numParticles, requestedBox, cell, fieldMap);
+        auto [latticeDim, newCellBox] = parse_lattice_dim(numParticles, requestedBox, cell, fieldMap);
         cell.getBox() = newCellBox;
 
         return Lattice(cell, latticeDim);
