@@ -143,6 +143,8 @@ Parameters::IntegrationParameters::IntegrationParameters(const std::string &runN
             this->averagingEvery = runConfig.getUnsignedLong("averagingEvery");
         else if (key == "snapshotEvery")
             this->snapshotEvery = runConfig.getUnsignedLong("snapshotEvery");
+        else if (key == "inlineInfoEvery")
+            this->inlineInfoEvery = runConfig.getUnsignedLong("inlineInfoEvery");
         else if (key == "observables")
             this->observables = runConfig.getString("observables");
         else if (key == "bulkObservables")
@@ -174,6 +176,7 @@ void Parameters::IntegrationParameters::validate() const {
     Validate(this->averagingCycles > 0);
     Validate(this->averagingEvery > 0);
     Validate(this->snapshotEvery > 0);
+    Validate(this->inlineInfoEvery > 0);
     this->validateInheritableParameters();
 }
 
@@ -184,6 +187,7 @@ void Parameters::IntegrationParameters::print(Logger &logger) const {
     logger.info() << "averagingCycles               : " << this->averagingCycles << std::endl;
     logger.info() << "averagingEvery                : " << this->averagingEvery << std::endl;
     logger.info() << "snapshotEvery                 : " << this->snapshotEvery << std::endl;
+    logger.info() << "inlineInfoEvery               : " << this->inlineInfoEvery << std::endl;
     logger.info() << "observables                   : " << this->observables << std::endl;
     logger.info() << "bulkObservables               : " << this->bulkObservables << std::endl;
     logger.info() << "packingFilename               : " << this->packingFilename << std::endl;
@@ -201,6 +205,8 @@ Parameters::OverlapRelaxationParameters::OverlapRelaxationParameters(const std::
     for (const auto &key : runConfig.getKeys()) {
         if (key == "snapshotEvery")
             this->snapshotEvery = runConfig.getUnsignedLong("snapshotEvery");
+        else if (key == "inlineInfoEvery")
+            this->inlineInfoEvery = runConfig.getUnsignedLong("inlineInfoEvery");
         else if (key == "observables")
             this->observables = runConfig.getString("observables");
         else if (key == "bulkObservables")
@@ -227,6 +233,7 @@ Parameters::OverlapRelaxationParameters::OverlapRelaxationParameters(const std::
 
 void Parameters::OverlapRelaxationParameters::validate() const {
     Validate(this->snapshotEvery > 0);
+    Validate(this->inlineInfoEvery > 0);
     this->validateInheritableParameters();
 }
 
@@ -234,6 +241,7 @@ void Parameters::OverlapRelaxationParameters::print(Logger &logger) const {
     this->printInheritableParameters(logger);
     logger.info() << "-- Overlap relaxation parameters:" << std::endl;
     logger.info() << "snapshotEvery                 : " << this->snapshotEvery << std::endl;
+    logger.info() << "inlineInfoEvery               : " << this->inlineInfoEvery << std::endl;
     logger.info() << "observables                   : " << this->observables << std::endl;
     logger.info() << "bulkObservables               : " << this->bulkObservables << std::endl;
     logger.info() << "helperInteraction             : " << this->helperInteraction << std::endl;

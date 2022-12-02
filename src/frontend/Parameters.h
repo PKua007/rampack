@@ -69,8 +69,9 @@ public:
         std::string runName{};
         std::size_t thermalisationCycles{};
         std::size_t averagingCycles{};
-        std::size_t averagingEvery{};
-        std::size_t snapshotEvery{};
+        std::size_t averagingEvery = 100;
+        std::size_t snapshotEvery = 100;
+        std::size_t inlineInfoEvery = 100;
         std::string observables{};
         std::string bulkObservables{};
         std::string packingFilename{};
@@ -97,7 +98,8 @@ public:
         OverlapRelaxationParameters(const std::string &runName, const Config &runConfig);
 
         std::string runName{};
-        std::size_t snapshotEvery{};
+        std::size_t snapshotEvery = 100;
+        std::size_t inlineInfoEvery = 100;
         std::string observables{};
         std::string bulkObservables{};
         std::string helperInteraction{};
