@@ -6,6 +6,7 @@
 #define RAMPACK_PARSER_H
 
 #include <sstream>
+#include <optional>
 
 #include "PyonException.h"
 #include "AST.h"
@@ -17,7 +18,7 @@ namespace pyon {
         static std::string constructMsg(const std::string &in, std::size_t pos, std::string const &msg) {
             if (pos >= in.length())
                 return "pyon parse exception: " + msg + "\n\n\"" + in + ">>>>\"";
-            return "pyon parse exception: " + msg + "\n\n\"" + in.substr(0, pos) + ">>>>" + in.substr(pos + 1) + "\"";
+            return "pyon parse exception: " + msg + "\n\n\"" + in.substr(0, pos) + ">>>>" + in.substr(pos) + "\"";
         }
 
     public:
@@ -41,11 +42,11 @@ namespace pyon {
         std::shared_ptr<const ast::NodeDictionary> parseDictionary();
         std::shared_ptr<const ast::NodeDataclass> parseDataclass();
         std::shared_ptr<const ast::NodeString> parseString();
-        std::shared_ptr<const ast::NodeBoolean> parseBoolean();
-        std::shared_ptr<const ast::NodeNone> parseNone();
+        std::shared_ptr<const ast::Node> parseBooleanNone();
         std::shared_ptr<const ast::Node> parseNumeral();
         std::shared_ptr<const ast::NodeInt> parseInt();
         std::shared_ptr<const ast::NodeFloat> parseFloat();
+        std::optional<std::string> parseName();
 
     public:
         static std::shared_ptr<const ast::Node> parse(const std::string &expression);

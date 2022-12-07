@@ -44,9 +44,7 @@ namespace pyon {
         std::shared_ptr<const ast::Node> literal;
         if ((literal = this->parseString()) != nullptr)
             return literal;
-        if ((literal = this->parseBoolean()) != nullptr)
-            return literal;
-        if ((literal = this->parseNone()) != nullptr)
+        if ((literal = this->parseBooleanNone()) != nullptr)
             return literal;
         if ((literal = this->parseNumeral()) != nullptr)
             return literal;
@@ -71,14 +69,60 @@ namespace pyon {
     }
 
     std::shared_ptr<const ast::NodeString> Parser::parseString() {
-        return nullptr;
+        if (this->in.peek() != '"')
+            return nullptr;
+        this->in.get();
+
+        std::ostringstream string;
+        int c;
+        while ((c = this->in.get()) != '"') {
+            if (c == EOF)
+                throw ParseException(this->in.str(), this->idx(), "unexpected EOF while parsing string");
+
+            if (c == '"')
+                break;
+
+            if (c == '\\') {
+                int escaped = this->in.get();
+                if (escaped == EOF)
+                    throw ParseException(this->in.str(), this->idx(), "unexpected EOF after backslash");
+
+                if (escaped == '\\')
+                    c = '\\';
+                else if (escaped == '"')
+                    c = '"';
+                else if (escaped == 'n')
+                    c = '\n';
+                else if (escaped == 't')
+                    c = '\t';
+                else {
+                    throw ParseException(this->in.str(), this->idx(),
+                                         "'" + std::string(c, 1) + "' cannot follow backslash");
+                }
+            }
+
+            string << static_cast<char>(c);
+        }
+
+        return ast::NodeString::create(string.str());
     }
 
-    std::shared_ptr<const ast::NodeBoolean> Parser::parseBoolean() {
-        return nullptr;
-    }
+    std::shared_ptr<const ast::Node> Parser::parseBooleanNone() {
+        std::size_t savedIdx = this->idx();
+        std::optional<std::string> name = this->parseName();
+        if (!name.has_value()) {
+            this->backtrack(savedIdx);
+            return nullptr;
+        }
 
-    std::shared_ptr<const ast::NodeNone> Parser::parseNone() {
+        if (name == "True")
+            return ast::NodeBoolean::create(true);
+        else if (name == "False")
+            return ast::NodeBoolean::create(false);
+        else if (name == "None")
+            return ast::NodeNone::create();
+
+        this->backtrack(savedIdx);
         return nullptr;
     }
 
@@ -121,5 +165,20 @@ namespace pyon {
             return nullptr;
 
         return ast::NodeFloat::create(d);
+    }
+
+    std::optional<std::string> Parser::parseName() {
+        std::ostringstream name;
+
+        auto isFirstNameChar = [](int c) { return std::isalpha(c) || c == '_'; };
+        if (!isFirstNameChar(this->in.peek()))
+            return std::nullopt;
+        name << static_cast<char>(this->in.get());
+
+        auto isNameChar = [](int c) { return std::isalnum(c) || c == '_'; };
+        while (isNameChar(this->in.peek()))
+            name << static_cast<char>(this->in.get());
+
+        return name.str();
     }
 } // pyon
