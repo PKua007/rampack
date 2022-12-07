@@ -7,6 +7,7 @@
 
 #include <sstream>
 #include <optional>
+#include <utility>
 
 #include "PyonException.h"
 #include "AST.h"
@@ -29,12 +30,16 @@ namespace pyon {
 
     class Parser {
     private:
-        std::istringstream in;
+        std::string in;
+        std::size_t idx{};
 
-        explicit Parser(const std::string &in) : in{in} { }
+        explicit Parser(std::string in) : in{std::move(in)} { }
 
-        [[nodiscard]] std::size_t idx() { return this->in.tellg(); }
-        void backtrack(std::size_t savedIdx);
+        void ws();
+        [[nodiscard]] bool eof() const { return this->idx >= this->in.length(); }
+        [[nodiscard]] int peek() const;
+        int get();
+        void throwIfAnythingLeft();
 
         std::shared_ptr<const ast::Node> parseExpression();
         std::shared_ptr<const ast::Node> parseLiteral();

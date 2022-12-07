@@ -4,15 +4,13 @@
 
 #include "Parser.h"
 
+#include <iostream>
+
 namespace pyon {
     std::shared_ptr<const ast::Node> Parser::parse(const std::string &expression) {
         Parser parser(expression);
         auto rootNode = parser.parseExpression();
-//        if (!this->in.eof()) {
-//            this->in >> std::ws;
-//            if (!this->in.eof())
-//                throw ParseException(this->in.str(), this->idx(), "unexpected character");
-//        }
+        parser.throwIfAnythingLeft();
         return rootNode;
     }
 
@@ -23,9 +21,9 @@ namespace pyon {
     }
 
     std::shared_ptr<const ast::Node> Parser::parseExpression() {
-        this->in >> std::ws;
-        if (this->in.eof())
-            throw ParseException(this->in.str(), this->idx(), "unexpected EOF");
+        this->ws();
+        if (this->eof())
+            throw ParseException(this->in, this->idx, "unexpected EOF");
 
         std::shared_ptr<const ast::Node> expression;
         if ((expression = this->parseArray()) != nullptr)
@@ -37,7 +35,7 @@ namespace pyon {
         if ((expression = this->parseLiteral()) != nullptr)
             return expression;
 
-        throw ParseException(this->in.str(), this->idx(), "unexpected character");
+        throw ParseException(this->in, this->idx, "unexpected character");
     }
 
     std::shared_ptr<const ast::Node> Parser::parseLiteral() {
@@ -63,29 +61,24 @@ namespace pyon {
         return nullptr;
     }
 
-    void Parser::backtrack(std::size_t savedIdx) {
-        this->in.clear();
-        this->in.seekg(static_cast<std::ios::off_type>(savedIdx), std::ios::beg);
-    }
-
     std::shared_ptr<const ast::NodeString> Parser::parseString() {
-        if (this->in.peek() != '"')
+        if (this->peek() != '"')
             return nullptr;
-        this->in.get();
+        this->get();
 
         std::ostringstream string;
         int c;
-        while ((c = this->in.get()) != '"') {
+        while ((c = this->get()) != '"') {
             if (c == EOF)
-                throw ParseException(this->in.str(), this->idx(), "unexpected EOF while parsing string");
+                throw ParseException(this->in, this->idx, "unexpected EOF while parsing string");
 
             if (c == '"')
                 break;
 
             if (c == '\\') {
-                int escaped = this->in.get();
+                int escaped = this->get();
                 if (escaped == EOF)
-                    throw ParseException(this->in.str(), this->idx(), "unexpected EOF after backslash");
+                    throw ParseException(this->in, this->idx, "unexpected EOF after backslash");
 
                 if (escaped == '\\')
                     c = '\\';
@@ -96,8 +89,7 @@ namespace pyon {
                 else if (escaped == 't')
                     c = '\t';
                 else {
-                    throw ParseException(this->in.str(), this->idx(),
-                                         "'" + std::string(c, 1) + "' cannot follow backslash");
+                    throw ParseException(this->in, this->idx, "'" + std::string(c, 1) + "' cannot follow backslash");
                 }
             }
 
@@ -108,10 +100,10 @@ namespace pyon {
     }
 
     std::shared_ptr<const ast::Node> Parser::parseBooleanNone() {
-        std::size_t savedIdx = this->idx();
+        std::size_t savedIdx = this->idx;
         std::optional<std::string> name = this->parseName();
         if (!name.has_value()) {
-            this->backtrack(savedIdx);
+            this->idx = savedIdx;
             return nullptr;
         }
 
@@ -122,27 +114,27 @@ namespace pyon {
         else if (name == "None")
             return ast::NodeNone::create();
 
-        this->backtrack(savedIdx);
+        this->idx = savedIdx;
         return nullptr;
     }
 
     std::shared_ptr<const ast::Node> Parser::parseNumeral() {
-        std::size_t savedIdx = this->idx();
+        std::size_t savedIdx = this->idx;
 
         auto float_ = this->parseFloat();
-        std::size_t floatIdx = this->idx();
-        this->backtrack(savedIdx);
+        std::size_t floatIdx = this->idx;
+        this->idx = savedIdx;
 
         auto int_ = this->parseInt();
-        std::size_t intIdx = this->idx();
-        this->backtrack(savedIdx);
+        std::size_t intIdx = this->idx;
+        this->idx = savedIdx;
 
         if (float_ != nullptr) {
             if (floatIdx > intIdx) {
-                this->in.seekg(static_cast<std::ios::off_type>(floatIdx), std::ios::beg);
+                this->idx = floatIdx;
                 return float_;
             } else {
-                this->in.seekg(static_cast<std::ios::off_type>(intIdx), std::ios::beg);
+                this->idx = intIdx;
                 return int_;
             }
         }
@@ -150,35 +142,67 @@ namespace pyon {
     }
 
     std::shared_ptr<const ast::NodeInt> Parser::parseInt() {
-        long int i;
-        this->in >> i;
-        if (!this->in)
+        std::size_t savedIdx = this->idx;
+        try {
+            long int i = std::stol(this->in, &this->idx);
+            return ast::NodeInt::create(i);
+        } catch (std::invalid_argument &) {
+            this->idx = savedIdx;
             return nullptr;
-
-        return ast::NodeInt::create(i);
+        } catch (std::out_of_range &) {
+            throw ParseException(this->in, savedIdx, "integer out of range");
+        }
     }
 
     std::shared_ptr<const ast::NodeFloat> Parser::parseFloat() {
-        double d;
-        this->in >> d;
-        if (!this->in)
+        std::size_t savedIdx = this->idx;
+        try {
+            double d = std::stod(this->in, &this->idx);
+            return ast::NodeFloat::create(d);
+        } catch (std::invalid_argument &) {
+            this->idx = savedIdx;
             return nullptr;
-
-        return ast::NodeFloat::create(d);
+        } catch (std::out_of_range &) {
+            throw ParseException(this->in, savedIdx, "float out of range");
+        }
     }
 
     std::optional<std::string> Parser::parseName() {
         std::ostringstream name;
 
         auto isFirstNameChar = [](int c) { return std::isalpha(c) || c == '_'; };
-        if (!isFirstNameChar(this->in.peek()))
+        if (!isFirstNameChar(this->peek()))
             return std::nullopt;
-        name << static_cast<char>(this->in.get());
+        name << static_cast<char>(this->get());
 
         auto isNameChar = [](int c) { return std::isalnum(c) || c == '_'; };
-        while (isNameChar(this->in.peek()))
-            name << static_cast<char>(this->in.get());
+        while (isNameChar(this->peek()))
+            name << static_cast<char>(this->get());
 
         return name.str();
+    }
+
+    void Parser::throwIfAnythingLeft() {
+        this->ws();
+        if (!this->eof())
+            throw ParseException(this->in, this->idx, "unexpected character");
+    }
+
+    int Parser::peek() const {
+        if (this->eof())
+            return EOF;
+        else
+            return this->in[this->idx];
+    }
+
+    int Parser::get() {
+        if (this->eof())
+            return EOF;
+        return this->in[this->idx++];
+    }
+
+    void Parser::ws() {
+        while (std::isspace(this->peek()))
+            this->get();
     }
 } // pyon
