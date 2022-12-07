@@ -9,19 +9,11 @@
 using namespace pyon::ast;
 
 
-TEST_CASE("AST: signed") {
-    auto signedNode = NodeSigned::create(-5);
-    CHECK_NOTHROW(signedNode->shared_from_this());
-    CHECK(signedNode->getType() == Node::SIGNED);
-    CHECK(NodeSigned::NODE_TYPE == Node::SIGNED);
-    CHECK(signedNode->getValue() == -5);
-}
-
 TEST_CASE("AST: unsigned") {
-    auto unsignedNode = NodeUnsigned::create(5);
-    CHECK(unsignedNode->getType() == Node::UNSIGNED);
-    CHECK(NodeUnsigned::NODE_TYPE == Node::UNSIGNED);
-    CHECK(unsignedNode->getValue() == 5);
+    auto intNode = NodeInt::create(5);
+    CHECK(intNode->getType() == Node::INT);
+    CHECK(NodeInt::NODE_TYPE == Node::INT);
+    CHECK(intNode->getValue() == 5);
 }
 
 TEST_CASE("AST: float") {
@@ -58,12 +50,12 @@ TEST_CASE("AST: array") {
     }
 
     SECTION("non-empty") {
-        auto array = NodeArray::create({NodeSigned::create(-1), NodeString::create("abc")});
+        auto array = NodeArray::create({NodeInt::create(-1), NodeString::create("abc")});
         CHECK_FALSE(array->empty());
         CHECK(array->size() == 2);
         CHECK(array->front() == array->at(0));
         CHECK(array->back() == array->at(1));
-        CHECK(array->at(0)->as<NodeSigned>()->getValue() == -1);
+        CHECK(array->at(0)->as<NodeInt>()->getValue() == -1);
         CHECK(array->at(1)->as<NodeString>()->getValue() == "abc");
     }
 }
@@ -80,12 +72,12 @@ TEST_CASE("AST: dictionary") {
 
     SECTION("non-empty") {
         auto dict = NodeDictionary::create({
-                                                   {"b", NodeSigned::create(-1)},
-                                                   {"a", NodeString::create("abc")}
+                                               {"b", NodeInt::create(-1)},
+                                               {"a", NodeString::create("abc")}
                                            });
         CHECK_FALSE(dict->empty());
         CHECK(dict->size() == 2);
-        CHECK(dict->at("b")->as<NodeSigned>()->getValue() == -1);
+        CHECK(dict->at("b")->as<NodeInt>()->getValue() == -1);
         CHECK(dict->at("a")->as<NodeString>()->getValue() == "abc");
         CHECK(dict->hasKey("b"));
         CHECK_FALSE(dict->hasKey("c"));
@@ -102,8 +94,8 @@ TEST_CASE("AST: dataclass") {
     }
 
     SECTION("non-empty") {
-        auto positionalArguments = NodeArray::create({NodeSigned::create(-5), NodeFloat::create(1.2)});
-        auto keywordArguments = NodeDictionary::create({{"arg", NodeUnsigned::create(5)}});
+        auto positionalArguments = NodeArray::create({NodeInt::create(-5), NodeFloat::create(1.2)});
+        auto keywordArguments = NodeDictionary::create({{"arg", NodeInt::create(5)}});
         auto dataclass = NodeDataclass::create("class", positionalArguments, keywordArguments);
         CHECK_FALSE(dataclass->empty());
         CHECK(dataclass->getClassName() == "class");
