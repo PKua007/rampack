@@ -6,6 +6,7 @@
 
 #include <iostream>
 
+
 namespace pyon {
     std::shared_ptr<const ast::Node> Parser::parse(const std::string &expression) {
         Parser parser(expression);
@@ -75,7 +76,39 @@ namespace pyon {
     }
 
     std::shared_ptr<const ast::NodeDictionary> Parser::parseDictionary() {
-        return nullptr;
+        if (this->peek() != '{')
+            return nullptr;
+
+        std::vector<std::pair<std::string, std::shared_ptr<const ast::Node>>> elems;
+        this->get();  // eat '{'
+        this->ws();
+        while (this->peek() != '}') {
+            if (this->peek() == EOF)
+                throw ParseException(this->in, this->idx, "unexpected EOF while parsing dictionary");
+
+            if (!elems.empty()) {
+                if (this->get() != ',')
+                    throw ParseException(this->in, this->idx - 1, "missing comma ',' while parsing dictionary");
+                this->ws();
+            }
+
+            auto stringNode = this->parseString();
+            if (stringNode == nullptr)
+                throw ParseException(this->in, this->idx, "dictionary key should be string");
+
+            this->ws();
+            if (this->peek() == EOF)
+                throw ParseException(this->in, this->idx, "unexpected EOF while parsing dictionary");
+            if (this->get() != ':')
+                throw ParseException(this->in, this->idx - 1, "missing colon ':' after key in dictionary");
+
+            auto valueNode = this->parseExpression();
+
+            elems.emplace_back(stringNode->getValue(), std::move(valueNode));
+        }
+        this->get();    // eat '}'
+
+        return ast::NodeDictionary::create(elems);
     }
 
     std::shared_ptr<const ast::NodeDataclass> Parser::parseDataclass() {
