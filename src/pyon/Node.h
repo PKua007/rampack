@@ -67,7 +67,7 @@ namespace pyon::ast {
             auto castPtr = std::dynamic_pointer_cast<const ConcreteNode>(this->shared_from_this());
             if (!castPtr) {
                 auto expectedType = Node::nameNodeType(ConcreteNode::NODE_TYPE);
-                auto actualType = Node::nameNodeType(castPtr->getType());
+                auto actualType = Node::nameNodeType(this->nodeType);
                 throw BadNodeCastException("Trying to cast " + actualType + " node to " + expectedType);
             }
             return castPtr;

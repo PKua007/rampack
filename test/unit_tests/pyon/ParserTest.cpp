@@ -64,3 +64,52 @@ TEST_CASE("Parser: literals") {
         }
     }
 }
+
+TEST_CASE("Parser: array") {
+    SECTION("empty") {
+        auto node = Parser::parse("[]");
+        CHECK(node->as<NodeArray>()->empty());
+    }
+
+    SECTION("one element") {
+        auto node = Parser::parse("[5]");
+        auto nodeArray = node->as<NodeArray>();
+        CHECK(nodeArray->size() == 1);
+        CHECK(nodeArray->at(0)->as<NodeInt>()->getValue() == 5);
+    }
+
+    SECTION("three elements") {
+        auto node = Parser::parse(R"([5, 1.2, "abc"])");
+        auto nodeArray = node->as<NodeArray>();
+        CHECK(nodeArray->size() == 3);
+        CHECK(nodeArray->at(0)->as<NodeInt>()->getValue() == 5);
+        CHECK(nodeArray->at(1)->as<NodeFloat>()->getValue() == 1.2);
+        CHECK(nodeArray->at(2)->as<NodeString>()->getValue() == "abc");
+    }
+
+    SECTION("nested") {
+        auto node = Parser::parse("[[1, 2, 3], [4, 5, 6], [7, 8, 9]]");
+        auto nodeArray = node->as<NodeArray>();
+        REQUIRE(nodeArray->size() == 3);
+        for (std::size_t i{}; i < 3; i++) {
+            auto nodeNested = nodeArray->at(i)->as<NodeArray>();
+            REQUIRE(nodeNested->size() == 3);
+            for (std::size_t j{}; j < 3; j++)
+                CHECK(nodeNested->at(j)->as<NodeInt>()->getValue() == static_cast<long int>(3*i + j + 1));
+        }
+    }
+
+    SECTION("errors") {
+        SECTION("lacking ']'") {
+            CHECK_THROWS_AS(Parser::parse("[1, 2, 3"), ParseException);
+        }
+
+        SECTION("misplaced comma") {
+            CHECK_THROWS_AS(Parser::parse("[, 2, 3]"), ParseException);
+        }
+
+        SECTION("lack of comma") {
+            CHECK_THROWS_AS(Parser::parse("[1 2, 3]"), ParseException);
+        }
+    }
+}

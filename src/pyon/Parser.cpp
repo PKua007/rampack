@@ -50,7 +50,28 @@ namespace pyon {
     }
 
     std::shared_ptr<const ast::NodeArray> Parser::parseArray() {
-        return nullptr;
+        if (this->peek() != '[')
+            return nullptr;
+
+        std::vector<std::shared_ptr<const ast::Node>> elems;
+        this->get();  // eat '['
+        this->ws();
+        while (this->peek() != ']') {
+            if (this->peek() == EOF)
+                throw ParseException(this->in, this->idx, "unexpected EOF while parsing array");
+
+            if (!elems.empty()) {
+                if (this->get() != ',')
+                    throw ParseException(this->in, this->idx - 1, "missing comma ',' while parsing array");
+                this->ws();
+            }
+
+            elems.push_back(this->parseExpression());
+            this->ws();
+        }
+        this->get();    // eat ']'
+
+        return ast::NodeArray::create(std::move(elems));
     }
 
     std::shared_ptr<const ast::NodeDictionary> Parser::parseDictionary() {
@@ -142,29 +163,31 @@ namespace pyon {
     }
 
     std::shared_ptr<const ast::NodeInt> Parser::parseInt() {
-        std::size_t savedIdx = this->idx;
-        try {
-            long int i = std::stol(this->in, &this->idx);
-            return ast::NodeInt::create(i);
-        } catch (std::invalid_argument &) {
-            this->idx = savedIdx;
+        const char *start = this->in.c_str() + this->idx;
+        char *end;
+        long int i = std::strtol(start, &end, 0);
+
+        if (start == end)
             return nullptr;
-        } catch (std::out_of_range &) {
-            throw ParseException(this->in, savedIdx, "integer out of range");
-        }
+        if (errno == ERANGE)
+            throw ParseException(this->in, this->idx, "integer out of range");
+
+        this->idx += (end - start);
+        return ast::NodeInt::create(i);
     }
 
     std::shared_ptr<const ast::NodeFloat> Parser::parseFloat() {
-        std::size_t savedIdx = this->idx;
-        try {
-            double d = std::stod(this->in, &this->idx);
-            return ast::NodeFloat::create(d);
-        } catch (std::invalid_argument &) {
-            this->idx = savedIdx;
+        const char *start = this->in.c_str() + this->idx;
+        char *end;
+        double d = std::strtod(start, &end);
+
+        if (start == end)
             return nullptr;
-        } catch (std::out_of_range &) {
-            throw ParseException(this->in, savedIdx, "float out of range");
-        }
+        if (errno == ERANGE)
+            throw ParseException(this->in, this->idx, "float out of range");
+
+        this->idx += (end - start);
+        return ast::NodeFloat::create(d);
     }
 
     std::optional<std::string> Parser::parseName() {
