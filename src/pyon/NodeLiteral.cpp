@@ -6,12 +6,8 @@
 
 
 namespace pyon::ast {
-    std::shared_ptr<const NodeSigned> NodeSigned::create(long value) {
-        return std::shared_ptr<const NodeSigned>(new NodeSigned(value));
-    }
-
-    std::shared_ptr<const NodeUnsigned> NodeUnsigned::create(unsigned long value) {
-        return std::shared_ptr<const NodeUnsigned>(new NodeUnsigned(value));
+    std::shared_ptr<const NodeInt> NodeInt::create(unsigned long value) {
+        return std::shared_ptr<const NodeInt>(new NodeInt(value));
     }
 
     std::shared_ptr<const NodeFloat> NodeFloat::create(double value) {

@@ -13,33 +13,18 @@
 
 
 namespace pyon::ast {
-    class NodeSigned : public Node {
+    class NodeInt : public Node {
     private:
         long int value{};
 
-        explicit NodeSigned(long int value) : Node(SIGNED), value{value} { }
+        explicit NodeInt(long int value) : Node(INT), value{value} { }
 
     public:
-        static constexpr Type NODE_TYPE = SIGNED;
+        static constexpr Type NODE_TYPE = INT;
 
         [[nodiscard]] long int getValue() const { return this->value; }
 
-        static std::shared_ptr<const NodeSigned> create(long int value);
-    };
-
-
-    class NodeUnsigned : public Node {
-    private:
-        unsigned long int value{};
-
-        explicit NodeUnsigned(unsigned long int value) : Node(UNSIGNED), value{value} { }
-
-    public:
-        static constexpr Type NODE_TYPE = UNSIGNED;
-
-        [[nodiscard]] unsigned long int getValue() const { return this->value; }
-
-        static std::shared_ptr<const NodeUnsigned> create(unsigned long int value);
+        static std::shared_ptr<const NodeInt> create(unsigned long int value);
     };
 
 

@@ -15,13 +15,10 @@ namespace pyon::ast {
         using ASTException::ASTException;
     };
 
-    class AST;
-
     class Node : public std::enable_shared_from_this<Node> {
     public:
         enum Type {
-            UNSIGNED,
-            SIGNED,
+            INT,
             FLOAT,
             BOOLEAN,
             STRING,
@@ -34,10 +31,8 @@ namespace pyon::ast {
     private:
         static std::string nameNodeType(Type type) {
             switch (type) {
-                case UNSIGNED:
-                    return "UNSIGNED";
-                case SIGNED:
-                    return "SIGNED";
+                case INT:
+                    return "INT";
                 case FLOAT:
                     return "FLOAT";
                 case BOOLEAN:
