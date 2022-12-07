@@ -74,14 +74,14 @@ TEST_CASE("Parser: array") {
     SECTION("one element") {
         auto node = Parser::parse("[5]");
         auto nodeArray = node->as<NodeArray>();
-        CHECK(nodeArray->size() == 1);
+        REQUIRE(nodeArray->size() == 1);
         CHECK(nodeArray->at(0)->as<NodeInt>()->getValue() == 5);
     }
 
     SECTION("three elements") {
         auto node = Parser::parse(R"([5, 1.2, "abc"])");
         auto nodeArray = node->as<NodeArray>();
-        CHECK(nodeArray->size() == 3);
+        REQUIRE(nodeArray->size() == 3);
         CHECK(nodeArray->at(0)->as<NodeInt>()->getValue() == 5);
         CHECK(nodeArray->at(1)->as<NodeFloat>()->getValue() == 1.2);
         CHECK(nodeArray->at(2)->as<NodeString>()->getValue() == "abc");
@@ -110,6 +110,61 @@ TEST_CASE("Parser: array") {
 
         SECTION("lack of comma") {
             CHECK_THROWS_AS(Parser::parse("[1 2, 3]"), ParseException);
+        }
+    }
+}
+
+TEST_CASE("Parser: dictionary") {
+    SECTION("empty") {
+        auto node = Parser::parse("{}");
+        CHECK(node->as<NodeDictionary>()->empty());
+    }
+
+    SECTION("one element") {
+        auto node = Parser::parse(R"({"a" : 1})");
+        auto nodeDict = node->as<NodeDictionary>();
+        REQUIRE(nodeDict->size() == 1);
+        CHECK(nodeDict->at("a")->as<NodeInt>()->getValue() == 1);
+    }
+
+    SECTION("three elements") {
+        auto node = Parser::parse(R"({"a" : 1, "b" : 1.2, "c" : "abc"})");
+        auto nodeDict = node->as<NodeDictionary>();
+        REQUIRE(nodeDict->size() == 3);
+        CHECK(nodeDict->at("a")->as<NodeInt>()->getValue() == 1);
+        CHECK(nodeDict->at("b")->as<NodeFloat>()->getValue() == 1.2);
+        CHECK(nodeDict->at("c")->as<NodeString>()->getValue() == "abc");
+    }
+
+    SECTION("errors") {
+        SECTION("lacking '}'") {
+            CHECK_THROWS_AS(Parser::parse(R"({"a" : 1, "b" : 1.2)"), ParseException);
+            Parser::parse(R"({"a" : 1, "b" : 1.2)");
+        }
+
+        SECTION("misplaced comma") {
+            CHECK_THROWS_AS(Parser::parse(R"({"a" : 1, , "b" : 1.2})"), ParseException);
+            Parser::parse(R"({"a" : 1, , "b" : 1.2})");
+        }
+
+        SECTION("lack of comma") {
+            CHECK_THROWS_AS(Parser::parse(R"({"a" : 1 "b" : 1.2})"), ParseException);
+            Parser::parse(R"({"a" : 1 "b" : 1.2})");
+        }
+
+        SECTION("misplaced colon") {
+            CHECK_THROWS_AS(Parser::parse(R"({"a" : 1 : , "b" : 1.2})"), ParseException);
+            Parser::parse(R"({"a" : 1 : , "b" : 1.2})");
+        }
+
+        SECTION("lack of colon") {
+            CHECK_THROWS_AS(Parser::parse(R"({"a" 1 , "b" : 1.2})"), ParseException);
+            Parser::parse(R"({"a" 1 , "b" : 1.2})");
+        }
+
+        SECTION("key not string") {
+            CHECK_THROWS_AS(Parser::parse(R"({1.2 : 1 , "b" : 1.2})"), ParseException);
+            Parser::parse(R"({1.2 : 1 , "b" : 1.2})");
         }
     }
 }
