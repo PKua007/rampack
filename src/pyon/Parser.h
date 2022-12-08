@@ -38,7 +38,7 @@ namespace pyon {
         void ws();
         [[nodiscard]] bool eof() const { return this->idx >= this->in.length(); }
         [[nodiscard]] int peek() const;
-        int get();
+        int eat();
         void throwIfAnythingLeft();
 
         std::shared_ptr<const ast::Node> parseExpression();
