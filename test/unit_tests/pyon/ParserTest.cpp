@@ -63,6 +63,13 @@ TEST_CASE("Parser: literals") {
             }
         }
     }
+
+    SECTION("error: extra characters") {
+        CHECK_THROWS_AS(Parser::parse("1 a"), ParseException);
+        CHECK_THROWS_AS(Parser::parse("1.2e-4."), ParseException);
+        CHECK_THROWS_AS(Parser::parse("True,"), ParseException);
+        CHECK_THROWS_AS(Parser::parse(R"("abc" "")"), ParseException);
+    }
 }
 
 TEST_CASE("Parser: array") {
@@ -171,6 +178,13 @@ TEST_CASE("Parser: dataclass") {
         CHECK(nodeDataclass->empty());
     }
 
+    SECTION("correct names") {
+        CHECK(Parser::parse("_class")->as<NodeDataclass>()->getClassName() == "_class");
+        CHECK(Parser::parse("_")->as<NodeDataclass>()->getClassName() == "_");
+        CHECK(Parser::parse("class0")->as<NodeDataclass>()->getClassName() == "class0");
+        CHECK(Parser::parse("class_0")->as<NodeDataclass>()->getClassName() == "class_0");
+    }
+
     SECTION("empty with parentheses") {
         auto node = Parser::parse("class()");
         auto nodeDataclass = node->as<NodeDataclass>();
@@ -247,4 +261,48 @@ TEST_CASE("Parser: dataclass") {
             CHECK_THROWS_AS(Parser::parse("class(3, a=True, None)"), ParseException);
         }
     }
+}
+
+TEST_CASE("Parser: everything at once") {
+    auto tree = Parser::parse(R"([
+        class1({"a" : {"aa" : 1, "ab" : 2}, "b" : 3}, keyword=None),
+        ["abc", "def"],
+        1.2e-4,
+        class2(b=[True, False])
+    ])");
+
+    auto rootArray = tree->as<NodeArray>();
+    REQUIRE(rootArray->size() == 4);
+
+    auto array0Class = rootArray->at(0)->as<NodeDataclass>();
+    CHECK(array0Class->getClassName() == "class1");
+    auto array0ClassPos = array0Class->getPositionalArguments();
+    REQUIRE(array0ClassPos->size() == 1);
+    auto array0ClassPosDict = array0ClassPos->at(0)->as<NodeDictionary>();
+    REQUIRE(array0ClassPosDict->size() == 2);
+    auto array0ClassPosDictADict = array0ClassPosDict->at("a")->as<NodeDictionary>();
+    REQUIRE(array0ClassPosDictADict->size() == 2);
+    CHECK(array0ClassPosDictADict->at("aa")->as<NodeInt>()->getValue() == 1);
+    CHECK(array0ClassPosDictADict->at("ab")->as<NodeInt>()->getValue() == 2);
+    CHECK(array0ClassPosDict->at("b")->as<NodeInt>()->getValue() == 3);
+    auto array0ClassKey = array0Class->getKeywordArguments();
+    REQUIRE(array0ClassKey->size() == 1);
+    CHECK(array0ClassKey->at("keyword")->getType() == Node::NONE);
+
+    auto array1Array = rootArray->at(1)->as<NodeArray>();
+    REQUIRE(array1Array->size() == 2);
+    CHECK(array1Array->at(0)->as<NodeString>()->getValue() == "abc");
+    CHECK(array1Array->at(1)->as<NodeString>()->getValue() == "def");
+
+    auto array2Float = rootArray->at(2)->as<NodeFloat>();
+    CHECK(array2Float->getValue() == 1.2e-4);
+
+    auto array3Class = rootArray->at(3)->as<NodeDataclass>();
+    CHECK(array3Class->getClassName() == "class2");
+    auto array3ClassKey = array3Class->getKeywordArguments();
+    REQUIRE(array0ClassKey->size() == 1);
+    auto array3ClassKeyBArray = array3ClassKey->at("b")->as<NodeArray>();
+    REQUIRE(array3ClassKeyBArray->size() == 2);
+    CHECK(array3ClassKeyBArray->at(0)->as<NodeBoolean>()->getValue());
+    CHECK_FALSE(array3ClassKeyBArray->at(1)->as<NodeBoolean>()->getValue());
 }
