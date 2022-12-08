@@ -27,27 +27,28 @@ namespace pyon {
             throw ParseException(this->in, this->idx, "unexpected EOF");
 
         std::shared_ptr<const ast::Node> expression;
+
+        // First expressions with starting characters: '[', '{' and '"'
         if ((expression = this->parseArray()) != nullptr)
             return expression;
         if ((expression = this->parseDictionary()) != nullptr)
             return expression;
+        if ((expression = this->parseString()) != nullptr)
+            return expression;
+
+        // Then built-in identifiers: True, False, None
+        if ((expression = this->parseBooleanNone()) != nullptr)
+            return expression;
+
+        // Then custom identifiers - dataclasses
         if ((expression = this->parseDataclass()) != nullptr)
             return expression;
-        if ((expression = this->parseLiteral()) != nullptr)
+
+        // Lastly - numerals (identifiers cannot start with a number)
+        if ((expression = this->parseNumeral()) != nullptr)
             return expression;
 
         throw ParseException(this->in, this->idx, "unexpected character");
-    }
-
-    std::shared_ptr<const ast::Node> Parser::parseLiteral() {
-        std::shared_ptr<const ast::Node> literal;
-        if ((literal = this->parseString()) != nullptr)
-            return literal;
-        if ((literal = this->parseBooleanNone()) != nullptr)
-            return literal;
-        if ((literal = this->parseNumeral()) != nullptr)
-            return literal;
-        return nullptr;
     }
 
     std::shared_ptr<const ast::NodeArray> Parser::parseArray() {
@@ -112,7 +113,35 @@ namespace pyon {
     }
 
     std::shared_ptr<const ast::NodeDataclass> Parser::parseDataclass() {
-        return nullptr;
+        auto className = this->parseIdentifier();
+        if (!className.has_value())
+            return nullptr;
+
+        this->ws();
+        if (this->peek() != '(')
+            return ast::NodeDataclass::create(*className, ast::NodeArray::create(), ast::NodeDictionary::create());
+
+        this->get();   // eat '('
+        this->ws();
+        std::vector<std::shared_ptr<const ast::Node>> positionalArguments;
+        std::vector<std::pair<std::string, std::shared_ptr<const ast::Node>>> keywordArguments;
+        while (this->peek() != ')') {
+            if (this->peek() == EOF)
+                throw ParseException(this->in, this->idx, "unexpected EOF while parsing dataclass");
+
+            if (!positionalArguments.empty() || !keywordArguments.empty()) {
+                if (this->get() != ',')
+                    throw ParseException(this->in, this->idx - 1, "missing comma ',' while parsing dataclass");
+                this->ws();
+            }
+
+            this->parseArgument(positionalArguments, keywordArguments);
+        }
+        this->get();    // eat ')'
+
+        auto positionalNode = ast::NodeArray::create(std::move(positionalArguments));
+        auto keywordNode = ast::NodeDictionary::create(keywordArguments);
+        return ast::NodeDataclass::create(*className, std::move(positionalNode), std::move(keywordNode));
     }
 
     std::shared_ptr<const ast::NodeString> Parser::parseString() {
@@ -155,7 +184,7 @@ namespace pyon {
 
     std::shared_ptr<const ast::Node> Parser::parseBooleanNone() {
         std::size_t savedIdx = this->idx;
-        std::optional<std::string> name = this->parseName();
+        std::optional<std::string> name = this->parseIdentifier();
         if (!name.has_value()) {
             this->idx = savedIdx;
             return nullptr;
@@ -223,7 +252,7 @@ namespace pyon {
         return ast::NodeFloat::create(d);
     }
 
-    std::optional<std::string> Parser::parseName() {
+    std::optional<std::string> Parser::parseIdentifier() {
         std::ostringstream name;
 
         auto isFirstNameChar = [](int c) { return std::isalpha(c) || c == '_'; };
@@ -260,5 +289,45 @@ namespace pyon {
     void Parser::ws() {
         while (std::isspace(this->peek()))
             this->get();
+    }
+
+    void Parser::parseArgument(std::vector<std::shared_ptr<const ast::Node>> &positionalArguments,
+                               std::vector<std::pair<std::string, std::shared_ptr<const ast::Node>>> &keywordArguments)
+    {
+        auto keywordArgument = this->parseKeywordArgument();
+        if (keywordArgument.has_value()) {
+            keywordArguments.push_back(std::move(*keywordArgument));
+            return;
+        }
+
+        std::size_t savedIdx = this->idx;
+        auto positionalArgument = this->parseExpression();
+        if (!keywordArguments.empty())
+            throw ParseException(this->in, savedIdx, "positional arguments cannot follow keyword arguments");
+        positionalArguments.push_back(std::move(positionalArgument));
+    }
+
+    std::optional<std::pair<std::string, std::shared_ptr<const ast::Node>>> Parser::parseKeywordArgument() {
+        std::size_t savedIdx = this->idx;
+
+        auto argumentName = this->parseIdentifier();
+        if (!argumentName.has_value())
+            return std::nullopt;
+
+        this->ws();
+        if (this->peek() != '=') {
+            this->idx = savedIdx;
+            return std::nullopt;
+        }
+
+        this->get();   // eat '='
+        this->ws();
+        auto node = this->parseExpression();
+        if (node == nullptr) {
+            this->idx = savedIdx;
+            return std::nullopt;
+        }
+
+        return std::make_pair(*argumentName, std::move(node));
     }
 } // pyon
