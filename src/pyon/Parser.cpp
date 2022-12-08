@@ -5,6 +5,7 @@
 #include "Parser.h"
 
 #include <iostream>
+#include <cmath>
 
 
 namespace pyon {
@@ -89,25 +90,14 @@ namespace pyon {
             if (this->peek() == EOF)
                 throw ParseException(this->in, this->idx, "unexpected EOF while parsing dictionary");
 
+            // First element isn't prepended by comma
             if (!elems.empty()) {
                 if (this->eat() != ',')
                     throw ParseException(this->in, this->idx - 1, "missing comma ',' while parsing dictionary");
                 this->ws();
             }
 
-            auto stringNode = this->parseString();
-            if (stringNode == nullptr)
-                throw ParseException(this->in, this->idx, "expecting string as a dictionary key");
-
-            this->ws();
-            if (this->peek() == EOF)
-                throw ParseException(this->in, this->idx, "unexpected EOF while parsing dictionary");
-            if (this->eat() != ':')
-                throw ParseException(this->in, this->idx - 1, "missing colon ':' after key in dictionary");
-
-            auto valueNode = this->parseExpression();
-
-            elems.emplace_back(stringNode->getValue(), std::move(valueNode));
+            elems.push_back(this->parseDictionaryEntry());
 
             this->ws();
         }
@@ -122,6 +112,7 @@ namespace pyon {
             return nullptr;
 
         this->ws();
+        // '()' can be skipped for dataclass with no arguments
         if (this->peek() != '(')
             return ast::NodeDataclass::create(*className, ast::NodeArray::create(), ast::NodeDictionary::create());
 
@@ -178,7 +169,8 @@ namespace pyon {
                 else if (escaped == 't')
                     c = '\t';
                 else {
-                    throw ParseException(this->in, this->idx - 2, "'" + std::string(1, escaped) + "' cannot follow backslash");
+                    throw ParseException(this->in, this->idx - 2,
+                                         std::string("'") + static_cast<char>(escaped) + "' cannot follow backslash");
                 }
             }
 
@@ -218,43 +210,59 @@ namespace pyon {
         std::size_t intIdx = this->idx;
         this->idx = savedIdx;
 
-        if (float_ != nullptr) {
-            if (floatIdx > intIdx) {
-                this->idx = floatIdx;
-                return float_;
-            } else {
-                this->idx = intIdx;
-                return int_;
-            }
+        // If it couldn't parse as float, so it couldn't as int
+        if (float_ == nullptr)
+            return nullptr;
+
+        // How we tell if it is int or float?
+        // If float parsing ate more characters, then it is float.
+        // But if float and int ate the same, it is int.
+        if (floatIdx > intIdx) {
+            this->idx = floatIdx;
+            return float_;
+        } else {
+            this->idx = intIdx;
+            return int_;
         }
-        return nullptr;
     }
 
     std::shared_ptr<const ast::NodeInt> Parser::parseInt() {
-        const char *start = this->in.c_str() + this->idx;
-        char *end;
-        long int i = std::strtol(start, &end, 0);
+        // Add missing binary auto-detect to std::stdtol
+        int base = 0;
+        if (this->autodetectedBinary())
+            base = 2;
 
-        if (start == end)
+        const char *startPtr = this->in.c_str() + this->idx;
+        char *endPtr;
+        errno = 0;
+        long int i = std::strtol(startPtr, &endPtr, base);
+
+        if (startPtr == endPtr)
             return nullptr;
         if (errno == ERANGE)
             throw ParseException(this->in, this->idx, "integer out of range");
 
-        this->idx += (end - start);
+        std::size_t eatenChars = endPtr - startPtr;
+        this->idx += eatenChars;
         return ast::NodeInt::create(i);
     }
 
     std::shared_ptr<const ast::NodeFloat> Parser::parseFloat() {
-        const char *start = this->in.c_str() + this->idx;
-        char *end;
-        double d = std::strtod(start, &end);
+        const char *startPtr = this->in.c_str() + this->idx;
+        char *endPtr;
+        errno = 0;
+        double d = std::strtod(startPtr, &endPtr);
 
-        if (start == end)
+        if (startPtr == endPtr)
             return nullptr;
         if (errno == ERANGE)
             throw ParseException(this->in, this->idx, "float out of range");
+        
+        if (std::isnan(d) || std::isinf(d))
+            throw ParseException(this->in, this->idx, "NaN/inf is not supported");
 
-        this->idx += (end - start);
+        std::size_t eatenChars = endPtr - startPtr;
+        this->idx += eatenChars;
         return ast::NodeFloat::create(d);
     }
 
@@ -335,5 +343,33 @@ namespace pyon {
         }
 
         return std::make_pair(*argumentName, std::move(node));
+    }
+
+    std::pair<std::string, std::shared_ptr<const ast::Node>> Parser::parseDictionaryEntry() {
+        auto stringNode = this->parseString();
+        if (stringNode == nullptr)
+            throw ParseException(this->in, this->idx, "expecting string as a dictionary key");
+
+        this->ws();
+        if (this->peek() == EOF)
+            throw ParseException(this->in, this->idx, "unexpected EOF while parsing dictionary");
+        if (this->eat() != ':')
+            throw ParseException(this->in, this->idx - 1, "missing colon ':' after key in dictionary");
+
+        auto valueNode = this->parseExpression();
+
+        return std::make_pair(stringNode->getValue(), std::move(valueNode));
+    }
+
+    bool Parser::autodetectedBinary() {
+        // Two characters for "0b" and the third one for at least one digit
+        if (this->idx + 3 > this->in.length())
+            return false;
+
+        if (this->in.substr(this->idx, 2) != "0b")
+            return false;
+
+        this->idx += 2;
+        return true;
     }
 } // pyon
