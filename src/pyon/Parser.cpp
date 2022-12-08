@@ -69,6 +69,7 @@ namespace pyon {
             }
 
             elems.push_back(this->parseExpression());
+
             this->ws();
         }
         this->get();    // eat ']'
@@ -95,7 +96,7 @@ namespace pyon {
 
             auto stringNode = this->parseString();
             if (stringNode == nullptr)
-                throw ParseException(this->in, this->idx, "dictionary key should be string");
+                throw ParseException(this->in, this->idx, "expecting string as a dictionary key");
 
             this->ws();
             if (this->peek() == EOF)
@@ -106,6 +107,8 @@ namespace pyon {
             auto valueNode = this->parseExpression();
 
             elems.emplace_back(stringNode->getValue(), std::move(valueNode));
+
+            this->ws();
         }
         this->get();    // eat '}'
 
@@ -136,6 +139,8 @@ namespace pyon {
             }
 
             this->parseArgument(positionalArguments, keywordArguments);
+
+            this->ws();
         }
         this->get();    // eat ')'
 
@@ -172,7 +177,7 @@ namespace pyon {
                 else if (escaped == 't')
                     c = '\t';
                 else {
-                    throw ParseException(this->in, this->idx, "'" + std::string(c, 1) + "' cannot follow backslash");
+                    throw ParseException(this->in, this->idx - 2, "'" + std::string(1, escaped) + "' cannot follow backslash");
                 }
             }
 
