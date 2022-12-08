@@ -8,6 +8,7 @@
 
 using namespace pyon;
 using namespace pyon::ast;
+using namespace Catch;
 
 
 TEST_CASE("Parser: literals") {
@@ -51,24 +52,25 @@ TEST_CASE("Parser: literals") {
 
         SECTION("errors") {
             SECTION("EOF") {
-                CHECK_THROWS_AS(Parser::parse(R"("abc)"), ParseException);
+                CHECK_THROWS_WITH(Parser::parse(R"("abc)"), Contains(">>>>>>\n") && Contains("unexpected EOF"));
             }
 
             SECTION("EOF after backslash") {
-                CHECK_THROWS_AS(Parser::parse(R"("abc\)"), ParseException);
+                CHECK_THROWS_WITH(Parser::parse(R"("abc\)"), Contains(">>>>>>\n") && Contains("unexpected EOF"));
             }
 
             SECTION("unknown escaped char") {
-                CHECK_THROWS_AS(Parser::parse(R"("abc\x")"), ParseException);
+                CHECK_THROWS_WITH(Parser::parse(R"("abc\x")"),
+                                  Contains(">>>>>>\\x") && Contains("'x' cannot follow backslash"));
             }
         }
     }
 
     SECTION("error: extra characters") {
-        CHECK_THROWS_AS(Parser::parse("1 a"), ParseException);
-        CHECK_THROWS_AS(Parser::parse("1.2e-4."), ParseException);
-        CHECK_THROWS_AS(Parser::parse("True,"), ParseException);
-        CHECK_THROWS_AS(Parser::parse(R"("abc" "")"), ParseException);
+        CHECK_THROWS_WITH(Parser::parse("1 a"), Contains(">>>>>>a") && Contains("unexpected character"));
+        CHECK_THROWS_WITH(Parser::parse("1.2e-4."), Contains(">>>>>>.\n") && Contains("unexpected character"));
+        CHECK_THROWS_WITH(Parser::parse("True,"),  Contains(">>>>>>,") && Contains("unexpected character"));
+        CHECK_THROWS_WITH(Parser::parse(R"("abc" "")"), Contains(">>>>>>\"\"") && Contains("unexpected character"));
     }
 }
 
@@ -108,15 +110,15 @@ TEST_CASE("Parser: array") {
 
     SECTION("errors") {
         SECTION("lacking ']'") {
-            CHECK_THROWS_AS(Parser::parse("[1, 2, 3"), ParseException);
+            CHECK_THROWS_WITH(Parser::parse("[1, 2, 3"), Contains(">>>>>>\n") && Contains("unexpected EOF"));
         }
 
         SECTION("misplaced comma") {
-            CHECK_THROWS_AS(Parser::parse("[, 2, 3]"), ParseException);
+            CHECK_THROWS_WITH(Parser::parse("[, 2, 3]"), Contains(">>>>>>, 2") && Contains("unexpected character"));
         }
 
         SECTION("lack of comma") {
-            CHECK_THROWS_AS(Parser::parse("[1 2, 3]"), ParseException);
+            CHECK_THROWS_WITH(Parser::parse("[1 2, 3]"), Contains(">>>>>>2") && Contains("missing comma"));
         }
     }
 }
@@ -145,27 +147,33 @@ TEST_CASE("Parser: dictionary") {
 
     SECTION("errors") {
         SECTION("lacking '}'") {
-            CHECK_THROWS_AS(Parser::parse(R"({"a" : 1, "b" : 1.2)"), ParseException);
+            CHECK_THROWS_WITH(Parser::parse(R"({"a" : 1, "b" : 1.2)"),
+                              Contains(">>>>>>\n") && Contains("unexpected EOF"));
         }
 
         SECTION("misplaced comma") {
-            CHECK_THROWS_AS(Parser::parse(R"({"a" : 1, , "b" : 1.2})"), ParseException);
+            CHECK_THROWS_WITH(Parser::parse(R"({"a" : 1, , "b" : 1.2})"),
+                              Contains(">>>>>>, \"b") && Contains("expecting string"));
         }
 
         SECTION("lack of comma") {
-            CHECK_THROWS_AS(Parser::parse(R"({"a" : 1 "b" : 1.2})"), ParseException);
+            CHECK_THROWS_WITH(Parser::parse(R"({"a" : 1 "b" : 1.2})"),
+                              Contains(">>>>>>\"b") && Contains("missing comma"));
         }
 
         SECTION("misplaced colon") {
-            CHECK_THROWS_AS(Parser::parse(R"({"a" : 1 : , "b" : 1.2})"), ParseException);
+            CHECK_THROWS_WITH(Parser::parse(R"({"a" : 1 : , "b" : 1.2})"),
+                              Contains(">>>>>>: ,") && Contains("missing comma"));
         }
 
         SECTION("lack of colon") {
-            CHECK_THROWS_AS(Parser::parse(R"({"a" 1 , "b" : 1.2})"), ParseException);
+            CHECK_THROWS_WITH(Parser::parse(R"({"a" 1 , "b" : 1.2})"),
+                              Contains(">>>>>>1 ,") && Contains("missing colon"));
         }
 
         SECTION("key not string") {
-            CHECK_THROWS_AS(Parser::parse(R"({1.2 : 1 , "b" : 1.2})"), ParseException);
+            CHECK_THROWS_WITH(Parser::parse(R"({1.2 : 1 , "b" : 1.2})"),
+                              Contains(">>>>>>1.2") && Contains("expecting string"));
         }
     }
 }
@@ -238,27 +246,30 @@ TEST_CASE("Parser: dataclass") {
 
     SECTION("errors") {
         SECTION("unmatched '('") {
-            CHECK_THROWS_AS(Parser::parse("class(3, a=7"), ParseException);
+            CHECK_THROWS_WITH(Parser::parse("class(3, a=7"), Contains(">>>>>>\n") && Contains("unexpected EOF"));
         }
 
         SECTION("misplaced comma") {
-            CHECK_THROWS_AS(Parser::parse("class(3, ,a=7)"), ParseException);
+            CHECK_THROWS_WITH(Parser::parse("class(3, ,a=7)"),
+                              Contains(">>>>>>,a") && Contains("unexpected character"));
         }
 
-        SECTION("lacking comma") {
-            CHECK_THROWS_AS(Parser::parse("class(3 a=7)"), ParseException);
+        SECTION("missing comma") {
+            CHECK_THROWS_WITH(Parser::parse("class(3 a=7)"), Contains(">>>>>>a=7") && Contains("missing comma"));
         }
 
         SECTION("extra characters") {
-            CHECK_THROWS_AS(Parser::parse("class(1.2extra, 4)"), ParseException);
+            CHECK_THROWS_WITH(Parser::parse("class(1.2extra, 4)"),
+                              Contains(">>>>>>extra") && Contains("missing comma"));
         }
 
         SECTION("missing keyword value") {
-            CHECK_THROWS_AS(Parser::parse("class(a=, 3)"), ParseException);
+            CHECK_THROWS_WITH(Parser::parse("class(a=, 3)"), Contains(">>>>>>, ") && Contains("unexpected character"));
         }
 
         SECTION("positional after keyword") {
-            CHECK_THROWS_AS(Parser::parse("class(3, a=True, None)"), ParseException);
+            CHECK_THROWS_WITH(Parser::parse("class(3, a=True, None)"), Contains(">>>>>>None")
+                              && Contains("positional arguments cannot follow keyword arguments"));
         }
     }
 }
@@ -305,4 +316,16 @@ TEST_CASE("Parser: everything at once") {
     REQUIRE(array3ClassKeyBArray->size() == 2);
     CHECK(array3ClassKeyBArray->at(0)->as<NodeBoolean>()->getValue());
     CHECK_FALSE(array3ClassKeyBArray->at(1)->as<NodeBoolean>()->getValue());
+}
+
+TEST_CASE("Parser: whitespaces") {
+    auto input = R"( [
+        class1  (  {  "a"  :  {  "aa"  :  1  ,  "ab"  :  2 }  ,  "b"  :  3 }  ,  keyword  =  None  )  ,
+        [  "abc"  ,  "def"  ]  ,
+        1.2e-4  ,
+        class2  (  b  =  [  True  ,  False  ]  )
+    ]
+    )";
+
+    CHECK_NOTHROW(Parser::parse(input));
 }

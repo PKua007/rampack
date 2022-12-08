@@ -18,8 +18,8 @@ namespace pyon {
     private:
         static std::string constructMsg(const std::string &in, std::size_t pos, std::string const &msg) {
             if (pos >= in.length())
-                return "pyon parse exception: " + msg + "\n\n\"" + in + ">>>>\"";
-            return "pyon parse exception: " + msg + "\n\n\"" + in.substr(0, pos) + ">>>>" + in.substr(pos) + "\"";
+                return "pyon parse exception: " + msg + "\n\n\"\n" + in + ">>>>>>\n\"";
+            return "pyon parse exception: " + msg + "\n\n\"\n" + in.substr(0, pos) + ">>>>>>" + in.substr(pos) + "\n\"";
         }
 
     public:
