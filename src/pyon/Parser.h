@@ -42,7 +42,6 @@ namespace pyon {
         void throwIfAnythingLeft();
 
         std::shared_ptr<const ast::Node> parseExpression();
-        std::shared_ptr<const ast::Node> parseLiteral();
         std::shared_ptr<const ast::NodeArray> parseArray();
         std::shared_ptr<const ast::NodeDictionary> parseDictionary();
         std::shared_ptr<const ast::NodeDataclass> parseDataclass();
@@ -51,7 +50,13 @@ namespace pyon {
         std::shared_ptr<const ast::Node> parseNumeral();
         std::shared_ptr<const ast::NodeInt> parseInt();
         std::shared_ptr<const ast::NodeFloat> parseFloat();
-        std::optional<std::string> parseName();
+        std::optional<std::string> parseIdentifier();
+
+        void parseArgument(std::vector<std::shared_ptr<const ast::Node>> &positionalArguments,
+                           std::vector<std::pair<std::string, std::shared_ptr<const ast::Node>>> &keywordArguments);
+
+        std::optional<std::pair<std::string, std::shared_ptr<const ast::Node>>>
+        parseKeywordArgument();
 
     public:
         static std::shared_ptr<const ast::Node> parse(const std::string &expression);

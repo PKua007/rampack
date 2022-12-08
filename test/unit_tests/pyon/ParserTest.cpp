@@ -139,32 +139,112 @@ TEST_CASE("Parser: dictionary") {
     SECTION("errors") {
         SECTION("lacking '}'") {
             CHECK_THROWS_AS(Parser::parse(R"({"a" : 1, "b" : 1.2)"), ParseException);
-            Parser::parse(R"({"a" : 1, "b" : 1.2)");
         }
 
         SECTION("misplaced comma") {
             CHECK_THROWS_AS(Parser::parse(R"({"a" : 1, , "b" : 1.2})"), ParseException);
-            Parser::parse(R"({"a" : 1, , "b" : 1.2})");
         }
 
         SECTION("lack of comma") {
             CHECK_THROWS_AS(Parser::parse(R"({"a" : 1 "b" : 1.2})"), ParseException);
-            Parser::parse(R"({"a" : 1 "b" : 1.2})");
         }
 
         SECTION("misplaced colon") {
             CHECK_THROWS_AS(Parser::parse(R"({"a" : 1 : , "b" : 1.2})"), ParseException);
-            Parser::parse(R"({"a" : 1 : , "b" : 1.2})");
         }
 
         SECTION("lack of colon") {
             CHECK_THROWS_AS(Parser::parse(R"({"a" 1 , "b" : 1.2})"), ParseException);
-            Parser::parse(R"({"a" 1 , "b" : 1.2})");
         }
 
         SECTION("key not string") {
             CHECK_THROWS_AS(Parser::parse(R"({1.2 : 1 , "b" : 1.2})"), ParseException);
-            Parser::parse(R"({1.2 : 1 , "b" : 1.2})");
+        }
+    }
+}
+
+TEST_CASE("Parser: dataclass") {
+    SECTION("empty") {
+        auto node = Parser::parse("class");
+        auto nodeDataclass = node->as<NodeDataclass>();
+        CHECK(nodeDataclass->getClassName() == "class");
+        CHECK(nodeDataclass->empty());
+    }
+
+    SECTION("empty with parentheses") {
+        auto node = Parser::parse("class()");
+        auto nodeDataclass = node->as<NodeDataclass>();
+        CHECK(nodeDataclass->getClassName() == "class");
+        CHECK(nodeDataclass->empty());
+    }
+
+    SECTION("one positional argument") {
+        auto node = Parser::parse("class(True)");
+        auto nodeDataclass = node->as<NodeDataclass>();
+        CHECK(nodeDataclass->getClassName() == "class");
+        auto positional = nodeDataclass->getPositionalArguments();
+        REQUIRE(positional->size() == 1);
+        CHECK(positional->front()->as<NodeBoolean>()->getValue());
+        CHECK(nodeDataclass->getKeywordArguments()->empty());
+    }
+
+    SECTION("two positional arguments") {
+        auto node = Parser::parse("class(True, 1.2)");
+        auto nodeDataclass = node->as<NodeDataclass>();
+        CHECK(nodeDataclass->getClassName() == "class");
+        auto positional = nodeDataclass->getPositionalArguments();
+        REQUIRE(positional->size() == 2);
+        CHECK(positional->at(0)->as<NodeBoolean>()->getValue());
+        CHECK(positional->at(1)->as<NodeFloat>()->getValue() == 1.2);
+        CHECK(nodeDataclass->getKeywordArguments()->empty());
+    }
+
+    SECTION("two keyword arguments") {
+        auto node = Parser::parse("class(a=True, b=1.2)");
+        auto nodeDataclass = node->as<NodeDataclass>();
+        CHECK(nodeDataclass->getClassName() == "class");
+        CHECK(nodeDataclass->getPositionalArguments()->empty());
+        auto keyword = nodeDataclass->getKeywordArguments();
+        REQUIRE(keyword->size() == 2);
+        CHECK(keyword->at("a")->as<NodeBoolean>()->getValue());
+        CHECK(keyword->at("b")->as<NodeFloat>()->getValue() == 1.2);
+    }
+
+    SECTION("mixed arguments") {
+        auto node = Parser::parse("class(True, b=1.2)");
+        auto nodeDataclass = node->as<NodeDataclass>();
+        CHECK(nodeDataclass->getClassName() == "class");
+        auto positional = nodeDataclass->getPositionalArguments();
+        REQUIRE(positional->size() == 1);
+        CHECK(positional->front()->as<NodeBoolean>()->getValue());
+        auto keyword = nodeDataclass->getKeywordArguments();
+        REQUIRE(keyword->size() == 1);
+        CHECK(keyword->at("b")->as<NodeFloat>()->getValue() == 1.2);
+    }
+
+    SECTION("errors") {
+        SECTION("unmatched '('") {
+            CHECK_THROWS_AS(Parser::parse("class(3, a=7"), ParseException);
+        }
+
+        SECTION("misplaced comma") {
+            CHECK_THROWS_AS(Parser::parse("class(3, ,a=7)"), ParseException);
+        }
+
+        SECTION("lacking comma") {
+            CHECK_THROWS_AS(Parser::parse("class(3 a=7)"), ParseException);
+        }
+
+        SECTION("extra characters") {
+            CHECK_THROWS_AS(Parser::parse("class(1.2extra, 4)"), ParseException);
+        }
+
+        SECTION("missing keyword value") {
+            CHECK_THROWS_AS(Parser::parse("class(a=, 3)"), ParseException);
+        }
+
+        SECTION("positional after keyword") {
+            CHECK_THROWS_AS(Parser::parse("class(3, a=True, None)"), ParseException);
         }
     }
 }
