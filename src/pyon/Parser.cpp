@@ -28,7 +28,7 @@ namespace pyon {
 
         std::shared_ptr<const ast::Node> expression;
 
-        // First expressions with starting characters: '[', '{' and '"'
+        // First, expressions with starting characters: '[', '{' and '"'
         if ((expression = this->parseArray()) != nullptr)
             return expression;
         if ((expression = this->parseDictionary()) != nullptr)
@@ -36,15 +36,15 @@ namespace pyon {
         if ((expression = this->parseString()) != nullptr)
             return expression;
 
-        // Then built-in identifiers: True, False, None
+        // Then, built-in identifiers: True, False, None
         if ((expression = this->parseBooleanNone()) != nullptr)
             return expression;
 
-        // Then custom identifiers - dataclasses
+        // Then, custom identifiers - dataclasses
         if ((expression = this->parseDataclass()) != nullptr)
             return expression;
 
-        // Lastly - numerals (identifiers cannot start with a number)
+        // Last, numerals (identifiers cannot start with a number)
         if ((expression = this->parseNumeral()) != nullptr)
             return expression;
 
@@ -56,14 +56,15 @@ namespace pyon {
             return nullptr;
 
         std::vector<std::shared_ptr<const ast::Node>> elems;
-        this->get();  // eat '['
+        this->eat();  // eat '['
         this->ws();
         while (this->peek() != ']') {
             if (this->peek() == EOF)
                 throw ParseException(this->in, this->idx, "unexpected EOF while parsing array");
 
+            // First element isn't prepended by comma
             if (!elems.empty()) {
-                if (this->get() != ',')
+                if (this->eat() != ',')
                     throw ParseException(this->in, this->idx - 1, "missing comma ',' while parsing array");
                 this->ws();
             }
@@ -72,7 +73,7 @@ namespace pyon {
 
             this->ws();
         }
-        this->get();    // eat ']'
+        this->eat();    // eat ']'
 
         return ast::NodeArray::create(std::move(elems));
     }
@@ -82,14 +83,14 @@ namespace pyon {
             return nullptr;
 
         std::vector<std::pair<std::string, std::shared_ptr<const ast::Node>>> elems;
-        this->get();  // eat '{'
+        this->eat();  // eat '{'
         this->ws();
         while (this->peek() != '}') {
             if (this->peek() == EOF)
                 throw ParseException(this->in, this->idx, "unexpected EOF while parsing dictionary");
 
             if (!elems.empty()) {
-                if (this->get() != ',')
+                if (this->eat() != ',')
                     throw ParseException(this->in, this->idx - 1, "missing comma ',' while parsing dictionary");
                 this->ws();
             }
@@ -101,7 +102,7 @@ namespace pyon {
             this->ws();
             if (this->peek() == EOF)
                 throw ParseException(this->in, this->idx, "unexpected EOF while parsing dictionary");
-            if (this->get() != ':')
+            if (this->eat() != ':')
                 throw ParseException(this->in, this->idx - 1, "missing colon ':' after key in dictionary");
 
             auto valueNode = this->parseExpression();
@@ -110,7 +111,7 @@ namespace pyon {
 
             this->ws();
         }
-        this->get();    // eat '}'
+        this->eat();    // eat '}'
 
         return ast::NodeDictionary::create(elems);
     }
@@ -124,7 +125,7 @@ namespace pyon {
         if (this->peek() != '(')
             return ast::NodeDataclass::create(*className, ast::NodeArray::create(), ast::NodeDictionary::create());
 
-        this->get();   // eat '('
+        this->eat();   // eat '('
         this->ws();
         std::vector<std::shared_ptr<const ast::Node>> positionalArguments;
         std::vector<std::pair<std::string, std::shared_ptr<const ast::Node>>> keywordArguments;
@@ -133,7 +134,7 @@ namespace pyon {
                 throw ParseException(this->in, this->idx, "unexpected EOF while parsing dataclass");
 
             if (!positionalArguments.empty() || !keywordArguments.empty()) {
-                if (this->get() != ',')
+                if (this->eat() != ',')
                     throw ParseException(this->in, this->idx - 1, "missing comma ',' while parsing dataclass");
                 this->ws();
             }
@@ -142,7 +143,7 @@ namespace pyon {
 
             this->ws();
         }
-        this->get();    // eat ')'
+        this->eat();    // eat ')'
 
         auto positionalNode = ast::NodeArray::create(std::move(positionalArguments));
         auto keywordNode = ast::NodeDictionary::create(keywordArguments);
@@ -152,11 +153,11 @@ namespace pyon {
     std::shared_ptr<const ast::NodeString> Parser::parseString() {
         if (this->peek() != '"')
             return nullptr;
-        this->get();
+        this->eat();
 
         std::ostringstream string;
         int c;
-        while ((c = this->get()) != '"') {
+        while ((c = this->eat()) != '"') {
             if (c == EOF)
                 throw ParseException(this->in, this->idx, "unexpected EOF while parsing string");
 
@@ -164,7 +165,7 @@ namespace pyon {
                 break;
 
             if (c == '\\') {
-                int escaped = this->get();
+                int escaped = this->eat();
                 if (escaped == EOF)
                     throw ParseException(this->in, this->idx, "unexpected EOF after backslash");
 
@@ -263,11 +264,11 @@ namespace pyon {
         auto isFirstNameChar = [](int c) { return std::isalpha(c) || c == '_'; };
         if (!isFirstNameChar(this->peek()))
             return std::nullopt;
-        name << static_cast<char>(this->get());
+        name << static_cast<char>(this->eat());
 
         auto isNameChar = [](int c) { return std::isalnum(c) || c == '_'; };
         while (isNameChar(this->peek()))
-            name << static_cast<char>(this->get());
+            name << static_cast<char>(this->eat());
 
         return name.str();
     }
@@ -285,7 +286,7 @@ namespace pyon {
             return this->in[this->idx];
     }
 
-    int Parser::get() {
+    int Parser::eat() {
         if (this->eof())
             return EOF;
         return this->in[this->idx++];
@@ -293,7 +294,7 @@ namespace pyon {
 
     void Parser::ws() {
         while (std::isspace(this->peek()))
-            this->get();
+            this->eat();
     }
 
     void Parser::parseArgument(std::vector<std::shared_ptr<const ast::Node>> &positionalArguments,
@@ -325,7 +326,7 @@ namespace pyon {
             return std::nullopt;
         }
 
-        this->get();   // eat '='
+        this->eat();   // eat '='
         this->ws();
         auto node = this->parseExpression();
         if (node == nullptr) {
