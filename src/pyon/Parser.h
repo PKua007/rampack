@@ -52,11 +52,16 @@ namespace pyon {
         std::shared_ptr<const ast::NodeFloat> parseFloat();
         std::optional<std::string> parseIdentifier();
 
+        std::pair<std::string, std::shared_ptr<const ast::Node>>
+        parseDictionaryEntry();
+
         void parseArgument(std::vector<std::shared_ptr<const ast::Node>> &positionalArguments,
                            std::vector<std::pair<std::string, std::shared_ptr<const ast::Node>>> &keywordArguments);
 
         std::optional<std::pair<std::string, std::shared_ptr<const ast::Node>>>
         parseKeywordArgument();
+
+        bool autodetectedBinary();
 
     public:
         static std::shared_ptr<const ast::Node> parse(const std::string &expression);

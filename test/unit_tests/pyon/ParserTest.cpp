@@ -13,13 +13,41 @@ using namespace Catch;
 
 TEST_CASE("Parser: literals") {
     SECTION("int") {
-        auto node = Parser::parse("45");
-        CHECK(node->as<NodeInt>()->getValue() == 45);
+        SECTION("dec") {
+            CHECK(Parser::parse("-45")->as<NodeInt>()->getValue() == -45);
+        }
+
+        SECTION("hex") {
+            CHECK(Parser::parse("0xFF")->as<NodeInt>()->getValue() == 0xFF);
+        }
+
+        SECTION("oct") {
+            CHECK(Parser::parse("01234")->as<NodeInt>()->getValue() == 01234);
+        }
+
+        SECTION("bin") {
+            CHECK(Parser::parse("0b1001")->as<NodeInt>()->getValue() == 0b1001);
+        }
+
+        SECTION("error: overflow") {
+            CHECK_THROWS_WITH(Parser::parse("123111111111111111111111"),
+                              Contains(">>>>>>123") && Contains("out of range"));
+        }
     }
 
     SECTION("float") {
-        auto node = Parser::parse("1.2e-4");
-        CHECK(node->as<NodeFloat>()->getValue() == 1.2e-4);
+        SECTION("normal") {
+            CHECK(Parser::parse("-1.2e-4")->as<NodeFloat>()->getValue() == -1.2e-4);
+        }
+
+        SECTION("error: overflow") {
+            CHECK_THROWS_WITH(Parser::parse("1.2e1234"), Contains(">>>>>>1.2") && Contains("out of range"));
+        }
+
+        SECTION("error: unsupported nan and inf") {
+            CHECK_THROWS_WITH(Parser::parse("+inf"), Contains(">>>>>>+inf") && Contains("NaN/inf is not supported"));
+            CHECK_THROWS_WITH(Parser::parse("+nan"), Contains(">>>>>>+nan") && Contains("NaN/inf is not supported"));
+        }
     }
 
     SECTION("boolean") {
@@ -68,6 +96,8 @@ TEST_CASE("Parser: literals") {
 
     SECTION("error: extra characters") {
         CHECK_THROWS_WITH(Parser::parse("1 a"), Contains(">>>>>>a") && Contains("unexpected character"));
+        CHECK_THROWS_WITH(Parser::parse("0b"), Contains(">>>>>>b") && Contains("unexpected character"));
+        CHECK_THROWS_WITH(Parser::parse("0x"), Contains(">>>>>>x") && Contains("unexpected character"));
         CHECK_THROWS_WITH(Parser::parse("1.2e-4."), Contains(">>>>>>.\n") && Contains("unexpected character"));
         CHECK_THROWS_WITH(Parser::parse("True,"),  Contains(">>>>>>,") && Contains("unexpected character"));
         CHECK_THROWS_WITH(Parser::parse(R"("abc" "")"), Contains(">>>>>>\"\"") && Contains("unexpected character"));
