@@ -175,3 +175,20 @@ TEST_CASE("Matcher: Boolean") {
         CHECK(result.as<std::string>() == "true");
     }
 }
+
+TEST_CASE("Matcher: None") {
+    Any result;
+
+    SECTION("default map") {
+        MatcherNone matcher;
+        CHECK_FALSE(matcher.match(Parser::parse("45"), result));
+        CHECK(matcher.match(Parser::parse("None"), result));
+        CHECK(result.isEmpty());
+    }
+
+    SECTION("custom map") {
+        auto matcher = MatcherNone{}.mapTo([]() -> int { return 45; } );
+        CHECK(matcher.match(Parser::parse("None"), result));
+        CHECK(result.as<int>() == 45);
+    }
+}

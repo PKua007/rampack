@@ -7,5 +7,6 @@
 
 #include "MatcherNumeral.h"
 #include "MatcherBoolean.h"
+#include "MatcherNone.h"
 
 #endif //RAMPACK_MATCHER_H

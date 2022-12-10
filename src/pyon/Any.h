@@ -48,6 +48,14 @@ namespace pyon::matcher {
                 throw AnyCastException("pyon::Any::as: bad any cast");
             return std::any_cast<T>(this->value);
         }
+
+        void reset() {
+            this->value.reset();
+        }
+
+        [[nodiscard]] bool isEmpty() const {
+            return !this->value.has_value();
+        }
     };
 } // matcher
 
