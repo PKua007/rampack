@@ -4,7 +4,7 @@
 
 #include <catch2/catch.hpp>
 
-#include "pyon/MatcherInt.h"
+#include "pyon/MatcherNumeral.h"
 #include "pyon/Parser.h"
 
 using namespace pyon;
@@ -124,4 +124,12 @@ TEST_CASE("Matcher: Int") {
         CHECK(matcher.match(Parser::parse("5"), result));
         CHECK(result.as<std::string>() == "aaaaa");
     }
+}
+
+TEST_CASE("Matcher: Float") {
+    // only basic, since it is templatized and tested on int
+    Any result;
+    CHECK_FALSE(MatcherFloat{}.match(Parser::parse("True"), result));
+    CHECK(MatcherFloat{}.match(Parser::parse("7.5"), result));
+    CHECK(result.as<double>() == 7.5);
 }
