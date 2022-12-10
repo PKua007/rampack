@@ -8,5 +8,6 @@
 #include "MatcherNumeral.h"
 #include "MatcherBoolean.h"
 #include "MatcherNone.h"
+#include "MatcherString.h"
 
 #endif //RAMPACK_MATCHER_H

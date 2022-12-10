@@ -192,3 +192,151 @@ TEST_CASE("Matcher: None") {
         CHECK(result.as<int>() == 45);
     }
 }
+
+TEST_CASE("Matcher: String") {
+    Any result;
+
+    SECTION("default") {
+        CHECK_FALSE(MatcherString{}.match(Parser::parse("True"), result));
+        CHECK(MatcherString{}.match(Parser::parse(R"("abc")"), result));
+        CHECK(result.as<std::string>() == "abc");
+    }
+
+    SECTION("filters") {
+        SECTION("equals") {
+            auto matcher1 = MatcherString{}.equals("abc");
+            auto matcher2 = MatcherString("abc");
+            auto matcher = GENERATE_COPY(matcher1, matcher2);
+            CHECK_FALSE(matcher.match(Parser::parse(R"("def")"), result));
+            CHECK(matcher.match(Parser::parse(R"("abc")"), result));
+        }
+
+        SECTION("any of") {
+            auto matcher1 = MatcherString{}.anyOf({"abc", "def", "ghi"});
+            auto matcher2 = MatcherString{"abc", "def", "ghi"};
+            auto matcher = GENERATE_COPY(matcher1, matcher2);
+            CHECK_FALSE(matcher.match(Parser::parse(R"("jkl")"), result));
+            CHECK(matcher.match(Parser::parse(R"("abc")"), result));
+            CHECK(matcher.match(Parser::parse(R"("ghi")"), result));
+        }
+
+        SECTION("starts with") {
+            auto matcher = MatcherString{}.startsWith("abc");
+            CHECK_FALSE(matcher.match(Parser::parse(R"("123456")"), result));
+            CHECK(matcher.match(Parser::parse(R"("abcdef")"), result));
+        }
+
+        SECTION("ends with") {
+            auto matcher = MatcherString{}.endsWith("def");
+            CHECK_FALSE(matcher.match(Parser::parse(R"("123456")"), result));
+            CHECK(matcher.match(Parser::parse(R"("abcdef")"), result));
+        }
+
+        SECTION("contains") {
+            auto matcher = MatcherString{}.contains("cd");
+            CHECK_FALSE(matcher.match(Parser::parse(R"("123456")"), result));
+            CHECK(matcher.match(Parser::parse(R"("abcdef")"), result));
+        }
+
+        SECTION("length") {
+            auto matcher = MatcherString{}.length(3);
+            CHECK_FALSE(matcher.match(Parser::parse(R"("abcd")"), result));
+            CHECK(matcher.match(Parser::parse(R"("abc")"), result));
+        }
+
+        SECTION("empty") {
+            auto matcher = MatcherString{}.empty();
+            CHECK_FALSE(matcher.match(Parser::parse(R"("abc")"), result));
+            CHECK(matcher.match(Parser::parse(R"("")"), result));
+        }
+
+        SECTION("non-empty") {
+            auto matcher = MatcherString{}.nonEmpty();
+            CHECK_FALSE(matcher.match(Parser::parse(R"("")"), result));
+            CHECK(matcher.match(Parser::parse(R"("abc")"), result));
+        }
+
+        SECTION("contains only characters") {
+            SECTION("given") {
+                auto matcher = MatcherString{}.containsOnlyCharacters("rampckisol ");
+                CHECK_FALSE(matcher.match(Parser::parse(R"("rampack is bad")"), result));
+                CHECK(matcher.match(Parser::parse(R"("rampack is cool")"), result));
+            }
+
+            SECTION("predicate") {
+                auto isFromPartialAlphabet = [](char c) { return c >= 'b' && c <= 'y'; };
+                auto matcher = MatcherString{}.containsOnlyCharacters(isFromPartialAlphabet);
+                CHECK_FALSE(matcher.match(Parser::parse(R"("abcxyz")"), result));
+                CHECK(matcher.match(Parser::parse(R"("bcxy")"), result));
+            }
+        }
+
+        SECTION("unique characters") {
+            auto matcher = MatcherString{}.uniqueCharacters();
+            CHECK_FALSE(matcher.match(Parser::parse(R"("abcdbe")"), result));
+            CHECK(matcher.match(Parser::parse(R"("deacb")"), result));
+        }
+
+        SECTION("lowercase") {
+            auto matcher = MatcherString{}.lowercase();
+            CHECK_FALSE(matcher.match(Parser::parse(R"("AbC")"), result));
+            CHECK(matcher.match(Parser::parse(R"("abc")"), result));
+        }
+
+        SECTION("uppercase") {
+            auto matcher = MatcherString{}.uppercase();
+            CHECK_FALSE(matcher.match(Parser::parse(R"("AbC")"), result));
+            CHECK(matcher.match(Parser::parse(R"("ABC")"), result));
+        }
+
+        SECTION("numeric") {
+            auto matcher = MatcherString{}.numeric();
+            CHECK_FALSE(matcher.match(Parser::parse(R"("0x123")"), result));
+            CHECK(matcher.match(Parser::parse(R"("123")"), result));
+        }
+
+        SECTION("alpha") {
+            auto matcher = MatcherString{}.alpha();
+            CHECK_FALSE(matcher.match(Parser::parse(R"("aBc123")"), result));
+            CHECK(matcher.match(Parser::parse(R"("aBc")"), result));
+        }
+
+        SECTION("alphanumeric") {
+            auto matcher = MatcherString{}.alphanumeric();
+            CHECK_FALSE(matcher.match(Parser::parse(R"("aBc123@#")"), result));
+            CHECK(matcher.match(Parser::parse(R"("aBc123")"), result));
+        }
+
+        SECTION("custom") {
+            auto spaceFilter = [](const std::string &str) {
+                return std::all_of(str.begin(), str.end(), [](char c) { return std::isspace(c); });
+            };
+            auto matcher = MatcherString{}.filter(spaceFilter);
+            CHECK_FALSE(matcher.match(Parser::parse(R"("a b")"), result));
+            CHECK(matcher.match(Parser::parse(R"("\t  \n\n")"), result));
+        }
+
+        SECTION("joined") {
+            auto matcher = MatcherString{}
+                .length(3)
+                .lowercase()
+                .uniqueCharacters()
+                .containsOnlyCharacters("xyz");
+            CHECK_FALSE(matcher.match(Parser::parse(R"("xy")"), result));
+            CHECK_FALSE(matcher.match(Parser::parse(R"("xxz")"), result));
+            CHECK(matcher.match(Parser::parse(R"("xzy")"), result));
+        }
+    }
+
+    SECTION("map to") {
+        auto matcher = MatcherString{}.mapTo<std::runtime_error>();
+        CHECK(matcher.match(Parser::parse(R"("abc")"), result));
+        CHECK(result.as<std::runtime_error>().what() == std::string("abc"));
+    }
+
+    SECTION("custom map") {
+        auto matcher = MatcherString{}.mapTo([](const std::string &str) { return std::stoi(str); });
+        CHECK(matcher.match(Parser::parse(R"("5")"), result));
+        CHECK(result.as<int>() == 5);
+    }
+}
