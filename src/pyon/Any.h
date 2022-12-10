@@ -32,7 +32,10 @@ namespace pyon::matcher {
         Any(T &&value) : value{std::forward<T>(value)} { }
 
         template<typename T>
-        Any &operator=(T &&value_) noexcept { this->value = std::forward<T>(value_); }
+        Any &operator=(T &&value_) noexcept {
+            this->value = std::forward<T>(value_);
+            return *this;
+        }
 
         template<typename T>
         bool is() {
