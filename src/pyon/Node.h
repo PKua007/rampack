@@ -63,7 +63,7 @@ namespace pyon::ast {
         std::shared_ptr<const ConcreteNode> as() const
         {
             static_assert(std::is_base_of_v<Node, ConcreteNode>,
-                          "Template parameter of pyon::ast::Node::as() should be derived from ConcreteNode");
+                          "Template parameter of pyon::ast::Node::as() should be derived from Node");
             auto castPtr = std::dynamic_pointer_cast<const ConcreteNode>(this->shared_from_this());
             if (!castPtr) {
                 auto expectedType = Node::nameNodeType(ConcreteNode::NODE_TYPE);

@@ -16,7 +16,7 @@ namespace pyon::matcher {
     public:
         virtual ~MatcherBase() = default;
 
-        virtual Any match(std::shared_ptr<const ast::Node> node) = 0;
+        virtual bool match(std::shared_ptr<const ast::Node> node, Any &result) const = 0;
     };
 } // matcher
 
