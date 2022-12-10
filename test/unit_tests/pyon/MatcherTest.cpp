@@ -4,7 +4,7 @@
 
 #include <catch2/catch.hpp>
 
-#include "pyon/MatcherNumeral.h"
+#include "pyon/Matcher.h"
 #include "pyon/Parser.h"
 
 using namespace pyon;
@@ -132,4 +132,46 @@ TEST_CASE("Matcher: Float") {
     CHECK_FALSE(MatcherFloat{}.match(Parser::parse("True"), result));
     CHECK(MatcherFloat{}.match(Parser::parse("7.5"), result));
     CHECK(result.as<double>() == 7.5);
+}
+
+TEST_CASE("Matcher: Boolean") {
+    Any result;
+
+    SECTION("default") {
+        CHECK_FALSE(MatcherBoolean{}.match(Parser::parse("56"), result));
+        CHECK(MatcherBoolean{}.match(Parser::parse("True"), result));
+        CHECK(result.as<bool>());
+        CHECK(MatcherBoolean{}.match(Parser::parse("False"), result));
+        CHECK_FALSE(result.as<bool>());
+    }
+
+    SECTION("filters") {
+        SECTION("true") {
+            auto matcher1 = MatcherBoolean{true};
+            auto matcher2 = MatcherBoolean{}.isTrue();
+            auto matcher = GENERATE_COPY(matcher1, matcher2);
+            CHECK_FALSE(matcher.match(Parser::parse("False"), result));
+            CHECK(matcher.match(Parser::parse("True"), result));
+        }
+
+        SECTION("false") {
+            auto matcher1 = MatcherBoolean{false};
+            auto matcher2 = MatcherBoolean{}.isFalse();
+            auto matcher = GENERATE_COPY(matcher1, matcher2);
+            CHECK_FALSE(matcher.match(Parser::parse("True"), result));
+            CHECK(matcher.match(Parser::parse("False"), result));
+        }
+    }
+
+    SECTION("map to") {
+        auto matcher = MatcherBoolean{}.mapTo<std::size_t>();
+        CHECK(matcher.match(Parser::parse("True"), result));
+        CHECK(result.as<std::size_t>() == 1ul);
+    }
+
+    SECTION("custom map") {
+        auto matcher = MatcherBoolean{}.mapTo([](bool b) -> std::string { return b ? "true" : "false"; });
+        CHECK(matcher.match(Parser::parse("True"), result));
+        CHECK(result.as<std::string>() == "true");
+    }
 }
