@@ -91,6 +91,7 @@ namespace pyon::matcher {
     public:
         MatcherArray() = default;
         explicit MatcherArray(std::size_t size_);
+        explicit MatcherArray(int size_);
 
         template <typename ConcreteMatcher>
         explicit MatcherArray(const ConcreteMatcher &matcher) {
@@ -145,6 +146,7 @@ namespace pyon::matcher {
         MatcherArray &sizeAtMost(std::size_t size_);
         MatcherArray &sizeInRange(std::size_t low, std::size_t high);
         MatcherArray &empty();
+        MatcherArray &nonEmpty();
     };
 } // matcher
 

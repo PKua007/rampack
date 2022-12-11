@@ -40,6 +40,10 @@ namespace pyon::matcher {
         this->size(size_);
     }
 
+    MatcherArray::MatcherArray(int size_) {
+        this->size(size_);
+    }
+
     bool MatcherArray::match(std::shared_ptr<const ast::Node> node, Any &result) const {
         if (node->getType() != ast::Node::ARRAY)
             return false;
@@ -102,6 +106,11 @@ namespace pyon::matcher {
 
     MatcherArray &MatcherArray::empty() {
         this->filters.emplace_back([](const ArrayData &array) { return array.empty(); });
+        return *this;
+    }
+
+    MatcherArray &MatcherArray::nonEmpty() {
+        this->filters.emplace_back([](const ArrayData &array) { return !array.empty(); });
         return *this;
     }
 } // matcher
