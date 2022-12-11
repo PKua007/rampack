@@ -8,6 +8,7 @@
 #include "pyon/Parser.h"
 
 using namespace pyon;
+using namespace pyon::ast;
 using namespace pyon::matcher;
 
 
@@ -338,5 +339,19 @@ TEST_CASE("Matcher: String") {
         auto matcher = MatcherString{}.mapTo([](const std::string &str) { return std::stoi(str); });
         CHECK(matcher.match(Parser::parse(R"("5")"), result));
         CHECK(result.as<int>() == 5);
+    }
+}
+
+TEST_CASE("Matcher: Array") {
+    Any result;
+
+    SECTION("default") {
+        CHECK_FALSE(MatcherArray{}.match(Parser::parse("True"), result));
+        CHECK(MatcherArray{}.match(Parser::parse("[1, 2, 3]"), result));
+        auto array = result.as<ArrayData>();
+        REQUIRE(array.size() == 3);
+        CHECK(array[0].asNode<NodeInt>()->getValue() == 1);
+        CHECK(array[1].asNode<NodeInt>()->getValue() == 2);
+        CHECK(array[2].asNode<NodeInt>()->getValue() == 3);
     }
 }

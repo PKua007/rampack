@@ -9,6 +9,8 @@
 #include <type_traits>
 
 #include "PyonException.h"
+#include "Node.h"
+#include "utils/Utils.h"
 
 
 namespace pyon::matcher {
@@ -38,15 +40,23 @@ namespace pyon::matcher {
         }
 
         template<typename T>
-        bool is() {
+        [[nodiscard]] bool is() const {
             return this->value.type() == typeid(T);
         }
 
         template<typename T>
-        T as() {
-            if (!this->is<T>())
-                throw AnyCastException("pyon::Any::as: bad any cast");
+        [[nodiscard]] T as() const {
+            if (!this->is<T>()) {
+                auto nameFrom = demangle(this->value.type().name());
+                auto nameTo = demangle(typeid(T).name());
+                throw AnyCastException("pyon::Any::as: casting " + nameFrom + " to " + nameTo);
+            }
             return std::any_cast<T>(this->value);
+        }
+
+        template<typename ConcreteNode>
+        std::shared_ptr<const ConcreteNode> asNode() const {
+            return this->as<std::shared_ptr<const ast::Node>>()->as<ConcreteNode>();
         }
 
         void reset() {

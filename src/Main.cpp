@@ -5,24 +5,14 @@
 #include <cstdlib>
 #include <string>
 #include <iostream>
-#include <cxxabi.h>
 
 #include "frontend/Frontend.h"
 #include "utils/Logger.h"
+#include "utils/Utils.h"
 
 
 namespace {
     Logger logger(std::cout);
-
-    std::string demangle(const char *abiName) {
-        char *demangledCstr = abi::__cxa_demangle(abiName, nullptr, nullptr, nullptr);
-        if (demangledCstr == nullptr)
-            return abiName;
-
-        std::string demangledStr(demangledCstr);
-        std::free(demangledCstr);
-        return demangledStr;
-    }
 
     void logger_terminate_handler() {
         logger.error() << "Terminate called after throwing an instance of ";

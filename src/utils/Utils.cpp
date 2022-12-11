@@ -10,6 +10,8 @@
 #include <sstream>
 #include <utility>
 
+#include <cxxabi.h>
+
 #include "Utils.h"
 #include "Assertions.h"
 
@@ -83,5 +85,15 @@ void die(const std::string &reason) {
 void die(const std::string &reason, Logger &logger) {
     logger.error() << reason << std::endl;
     exit(EXIT_FAILURE);
+}
+
+std::string demangle(const char *abiName) {
+    char *demangledCstr = abi::__cxa_demangle(abiName, nullptr, nullptr, nullptr);
+    if (demangledCstr == nullptr)
+        return abiName;
+
+    std::string demangledStr(demangledCstr);
+    std::free(demangledCstr);
+    return demangledStr;
 }
 
