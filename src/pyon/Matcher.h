@@ -9,5 +9,6 @@
 #include "MatcherBoolean.h"
 #include "MatcherNone.h"
 #include "MatcherString.h"
+#include "MatcherArray.h"
 
 #endif //RAMPACK_MATCHER_H

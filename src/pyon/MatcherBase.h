@@ -12,6 +12,11 @@
 
 
 namespace pyon::matcher {
+    class MatchException : public PyonException {
+    public:
+        using PyonException::PyonException;
+    };
+
     class MatcherBase {
     public:
         virtual ~MatcherBase() = default;

@@ -61,4 +61,6 @@ T convert_string(const std::string &str) {
     return t;
 }
 
+std::string demangle(const char *abiName);
+
 #endif //RAMPACK_UTILS_H
