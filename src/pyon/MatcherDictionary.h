@@ -82,7 +82,7 @@ namespace pyon::matcher {
             static_assert(std::is_base_of_v<MatcherBase, ConcreteMatcher>,
                           "ConcreteMatcher template parameter is not a matcher derived from MatcherBase");
             // Copy construct the matcher
-            this->keyMatchers.emplace_back(keyPredicate, std::make_shared<ConcreteMatcher>(matcher));
+            this->keyMatchers.push_back({keyPredicate, std::make_shared<ConcreteMatcher>(matcher)});
             return *this;
         }
 
