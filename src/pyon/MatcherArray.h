@@ -8,7 +8,6 @@
 #include <vector>
 #include <array>
 #include <functional>
-#include <optional>
 #include <memory>
 
 #include "MatcherBase.h"
