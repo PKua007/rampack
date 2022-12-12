@@ -533,8 +533,75 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
         }
 
-        SECTION("joined") {
+        SECTION("has keys") {
+            auto matcher = MatcherDictionary{}.hasKeys({"b", "a"});
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "c" : 2})"), result));
+            CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
+            CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
+        }
 
+        SECTION("has only keys") {
+            auto matcher = MatcherDictionary{}.hasOnlyKeys({"b", "b", "a"});
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "c" : 2})"), result));
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"b" : 1, "a" : 2, "c" : 3})"), result));
+            CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
+        }
+
+        SECTION("has not keys") {
+            auto matcher = MatcherDictionary{}.hasNotKeys({"c", "d"});
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "d" : 2})"), result));
+            CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
+        }
+
+        SECTION("keys match") {
+            auto matcher = MatcherDictionary{}.keysMatch([](const std::string &key) { return key.length() == 1; });
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "bb" : 2})"), result));
+            CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
+        }
+
+        SECTION("empty") {
+            auto matcher = MatcherDictionary{}.empty();
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
+            CHECK(matcher.match(Parser::parse("{}"), result));
+        }
+
+        SECTION("size") {
+            auto matcher = MatcherDictionary{}.size(2);
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1})"), result));
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
+            CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
+        }
+
+        SECTION("sizeAtLeast") {
+            auto matcher = MatcherDictionary{}.sizeAtLeast(2);
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1})"), result));
+            CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
+            CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
+        }
+
+        SECTION("sizeAtMost") {
+            auto matcher = MatcherDictionary{}.sizeAtMost(2);
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
+            CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
+            CHECK(matcher.match(Parser::parse(R"({"a" : 1})"), result));
+        }
+
+        SECTION("sizeInRange") {
+            auto matcher = MatcherDictionary{}.sizeInRange(2, 4);
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1})"), result));
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3, "d" : 4, "e" : 5})"), result));
+            CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
+            CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3, "d" : 4})"), result));
+        }
+
+        SECTION("joined") {
+            auto matcher = MatcherDictionary{}
+                .size(3)
+                .hasKeys({"a", "b"})
+                .hasNotKeys({"c", "d"});
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
+            CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "e" : 5})"), result));
         }
     }
 
