@@ -30,10 +30,10 @@ namespace pyon::matcher {
         Any &operator=(const Any&) = default;
         Any &operator=(Any&&) noexcept = default;
 
-        template<typename T>
+        template<typename T, typename = std::enable_if_t<!std::is_same_v<Any, std::decay_t<T>>>>
         Any(T &&value) : value{std::forward<T>(value)} { }
 
-        template<typename T>
+        template<typename T, typename = std::enable_if_t<!std::is_same_v<Any, std::decay_t<T>>>>
         Any &operator=(T &&value_) noexcept {
             this->value = std::forward<T>(value_);
             return *this;

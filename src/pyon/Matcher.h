@@ -10,5 +10,6 @@
 #include "MatcherNone.h"
 #include "MatcherString.h"
 #include "MatcherArray.h"
+#include "MatcherDictionary.h"
 
 #endif //RAMPACK_MATCHER_H
