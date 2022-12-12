@@ -32,14 +32,19 @@ namespace pyon::matcher {
         for (const auto &nodeDictElem: *nodeDict) {
             Any elemResult;
 
+            bool matched = false;
             for (const auto &keyMatcher : this->keyMatchers) {
                 if (keyMatcher.keyPredicate(nodeDictElem.first)) {
-                    if (keyMatcher.matcher->match(nodeDictElem.second, elemResult))
+                    if (!keyMatcher.matcher->match(nodeDictElem.second, elemResult))
                         return false;
                     hintIt = dictDataMap.emplace_hint(hintIt, nodeDictElem.first, elemResult);
-                    continue;
+                    matched = true;
+                    break;
                 }
             }
+            if (matched)
+                continue;
+
 
             if (this->defaultMatcher != nullptr) {
                 if (!this->defaultMatcher->match(nodeDictElem.second, elemResult))

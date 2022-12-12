@@ -480,7 +480,8 @@ TEST_CASE("Matcher: Dictionary") {
 
     SECTION("default") {
         CHECK_FALSE(MatcherDictionary{}.match(Parser::parse("[1, 2, 3]"), result));
-        CHECK(MatcherDictionary{}.match(Parser::parse(R"({"b" : 2, "a" : 1, "c" : 3})"), result));
+
+        REQUIRE(MatcherDictionary{}.match(Parser::parse(R"({"b" : 2, "a" : 1, "c" : 3})"), result));
         auto dict = result.as<DictionaryData>();
         REQUIRE(dict.size() == 3);
         CHECK(dict["a"].asNode<NodeInt>()->getValue() == 1);
@@ -493,12 +494,29 @@ TEST_CASE("Matcher: Dictionary") {
         auto matcher2 = MatcherDictionary(MatcherInt{}.mapTo<std::size_t>());
         auto matcher = GENERATE_COPY(matcher1, matcher2);
         CHECK_FALSE(matcher.match(Parser::parse(R"({"b" : 2, "a" : "not int", "c" : 3})"), result));
-        CHECK(matcher.match(Parser::parse(R"({"b" : 2, "a" : 1, "c" : 3})"), result));
+
+        REQUIRE(matcher.match(Parser::parse(R"({"b" : 2, "a" : 1, "c" : 3})"), result));
         auto dict = result.as<DictionaryData>();
         REQUIRE(dict.size() == 3);
         CHECK(dict["a"].as<std::size_t>() == 1);
         CHECK(dict["b"].as<std::size_t>() == 2);
         CHECK(dict["c"].as<std::size_t>() == 3);
+    }
+
+    SECTION("key-wise element matcher") {
+        auto matcher = MatcherDictionary{}
+            .valuesMatch(MatcherInt{})
+            .valueAtKeyMatches("a", MatcherFloat{})
+            .valueAtKeyMatches([](const std::string &key) { return key.length() > 3; }, MatcherBoolean{}.isTrue());
+        CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1.2, "b" : "not int"})"), result));
+        CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1.2, "longkey" : False})"), result));
+
+        REQUIRE(matcher.match(Parser::parse(R"({"a" : 1.2, "b" : 1, "longkey" : True})"), result));
+        auto dict = result.as<DictionaryData>();
+        REQUIRE(dict.size() == 3);
+        CHECK(dict["a"].as<double>() == 1.2);
+        CHECK(dict["b"].as<long>() == 1);
+        CHECK(dict["longkey"].as<bool>() == true);
     }
 
     SECTION("filters") {
@@ -514,7 +532,7 @@ TEST_CASE("Matcher: Dictionary") {
     SECTION("maps") {
         SECTION("map to std::map") {
             auto matcher = MatcherDictionary(MatcherInt{}.mapTo<int>()).mapToStdMap<int>();
-            CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
+            REQUIRE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
             std::map<std::string, int> expected{{"a", 1}, {"b", 2}, {"c", 3}};
             CHECK(result.as<std::map<std::string, int>>() == expected);
         }
@@ -527,7 +545,7 @@ TEST_CASE("Matcher: Dictionary") {
                 return std::accumulate(dict.begin(), dict.end(), std::string{}, concatenate);
             };
             auto matcher = MatcherDictionary{}.mapTo(concatenatedKeys);
-            CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
+            REQUIRE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
             CHECK(result.as<std::string>() == "abc");
         }
     }
