@@ -100,6 +100,15 @@ namespace pyon::matcher {
 
         MatcherDictionary &mapTo(const std::function<Any(const DictionaryData&)> &mapping_);
         MatcherDictionary &filter(const std::function<bool(const DictionaryData&)> &filter);
+        MatcherDictionary &hasKeys(const std::vector<std::string> &keys);
+        MatcherDictionary &hasOnlyKeys(std::vector<std::string> keys);
+        MatcherDictionary &hasNotKeys(const std::vector<std::string> &keys);
+        MatcherDictionary &keysMatch(const std::function<bool(const std::string&)> &predicate);
+        MatcherDictionary &empty();
+        MatcherDictionary &size(std::size_t size);
+        MatcherDictionary &sizeAtLeast(std::size_t size);
+        MatcherDictionary &sizeAtMost(std::size_t size);
+        MatcherDictionary &sizeInRange(std::size_t low, std::size_t high);
     };
 } // matcher
 
