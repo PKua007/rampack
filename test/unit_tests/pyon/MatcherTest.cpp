@@ -521,7 +521,16 @@ TEST_CASE("Matcher: Dictionary") {
 
     SECTION("filters") {
         SECTION("custom filter") {
-
+            auto keysAreAlphanumeric = [](const DictionaryData &dict) {
+                for (const auto &[key, value] : dict)
+                    if (!std::all_of(key.begin(), key.end(), [](char c) { return std::isalpha(c); }))
+                        return false;
+                return true;
+            };
+            auto matcher = MatcherDictionary{}
+                .filter(keysAreAlphanumeric);
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b0" : 2})"), result));
+            CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
         }
 
         SECTION("joined") {
