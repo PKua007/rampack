@@ -11,5 +11,6 @@
 #include "MatcherString.h"
 #include "MatcherArray.h"
 #include "MatcherDictionary.h"
+#include "MatcherDataclass.h"
 
 #endif //RAMPACK_MATCHER_H
