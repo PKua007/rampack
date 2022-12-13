@@ -205,6 +205,11 @@ TEST_CASE("Parser: dictionary") {
             CHECK_THROWS_WITH(Parser::parse(R"({1.2 : 1 , "b" : 1.2})"),
                               Contains(">>>>>>1.2") && Contains("expecting string"));
         }
+
+        SECTION("duplicate key") {
+            CHECK_THROWS_WITH(Parser::parse(R"({"a" : 1 , "b" : 2, "a" : 3})"),
+                              Contains(R"(>>>>>>"a" : 3)") && Contains("duplicate dictionary key: a"));
+        }
     }
 }
 
@@ -300,6 +305,11 @@ TEST_CASE("Parser: dataclass") {
         SECTION("positional after keyword") {
             CHECK_THROWS_WITH(Parser::parse("class(3, a=True, None)"), Contains(">>>>>>None")
                               && Contains("positional arguments cannot follow keyword arguments"));
+        }
+
+        SECTION("duplicate keyword") {
+            CHECK_THROWS_WITH(Parser::parse("class(a=1, b=2, a=3)"),
+                              Contains(">>>>>>a=3") && Contains("duplicate keyword argument: a"));
         }
     }
 }

@@ -4,8 +4,8 @@
 
 #include "Parser.h"
 
-#include <iostream>
 #include <cmath>
+#include <algorithm>
 
 
 namespace pyon {
@@ -97,7 +97,12 @@ namespace pyon {
                 this->ws();
             }
 
-            elems.push_back(this->parseDictionaryEntry());
+            std::size_t savedIdx = this->idx;
+            auto newEntry = this->parseDictionaryEntry();
+            auto duplicateKey = [&newEntry](const auto &entry) { return newEntry.first == entry.first; };
+            if (std::find_if(elems.begin(), elems.end(), duplicateKey) != elems.end())
+                throw ParseException(this->in, savedIdx, "duplicate dictionary key: " + newEntry.first);
+            elems.push_back(newEntry);
 
             this->ws();
         }
@@ -308,13 +313,22 @@ namespace pyon {
     void Parser::parseArgument(std::vector<std::shared_ptr<const ast::Node>> &positionalArguments,
                                std::vector<std::pair<std::string, std::shared_ptr<const ast::Node>>> &keywordArguments)
     {
+        std::size_t savedIdx = this->idx;
         auto keywordArgument = this->parseKeywordArgument();
         if (keywordArgument.has_value()) {
+            auto duplicateName = [&keywordArgument](const auto &arg) {
+                return keywordArgument->first == arg.first;
+            };
+            if (std::find_if(keywordArguments.begin(), keywordArguments.end(), duplicateName)
+                             != keywordArguments.end())
+            {
+                throw ParseException(this->in, savedIdx, "duplicate keyword argument: " + keywordArgument->first);
+            }
             keywordArguments.push_back(std::move(*keywordArgument));
             return;
         }
 
-        std::size_t savedIdx = this->idx;
+        savedIdx = this->idx;
         auto positionalArgument = this->parseExpression();
         if (!keywordArguments.empty())
             throw ParseException(this->in, savedIdx, "positional arguments cannot follow keyword arguments");
