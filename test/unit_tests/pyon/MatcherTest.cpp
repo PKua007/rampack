@@ -626,3 +626,250 @@ TEST_CASE("Matcher: Dictionary") {
         }
     }
 }
+
+TEST_CASE("Matcher: Dataclass") {
+    Any result;
+
+    SECTION("argument specification") {
+        SECTION("empty") {
+            auto matcher = MatcherDataclass("class");
+            CHECK_FALSE(matcher.match(Parser::parse("[1, 2, 3]"), result));
+            CHECK_FALSE(matcher.match(Parser::parse("not_class()"), result));
+            CHECK_FALSE(matcher.match(Parser::parse("class(3)"), result));
+            CHECK_FALSE(matcher.match(Parser::parse("class(unwanted_argument=3)"), result));
+            REQUIRE(matcher.match(Parser::parse("class()"), result));
+            auto resultClass = result.as<DataclassData>();
+            CHECK(resultClass.empty());
+            CHECK(resultClass.positionalSize() == 0);
+            CHECK(resultClass.getVariadicArguments().empty());
+            CHECK(resultClass.getVariadicKeywordArguments().empty());
+        }
+
+        SECTION("arguments without matcher and default values") {
+            auto matcher1 = MatcherDataclass("class", {"arg1", "arg2"});
+            auto matcher2 = MatcherDataclass("class", {{"arg1"}, {"arg2"}});
+            auto matcher3 = MatcherDataclass("class")
+                    .arguments({{"arg1"}, {"arg2"}});
+            auto matcher = GENERATE_COPY(matcher1, matcher2, matcher3);
+            CHECK_FALSE(matcher.match(Parser::parse("class()"), result));
+            CHECK_FALSE(matcher.match(Parser::parse("class(1)"), result));
+            CHECK_FALSE(matcher.match(Parser::parse("class(1, 2, 3)"), result));
+            CHECK_FALSE(matcher.match(Parser::parse("class(arg1=1)"), result));
+            CHECK_FALSE(matcher.match(Parser::parse("class(arg1=1, arg3=3)"), result));
+
+            auto input = GENERATE("class(1, 2)", "class(arg2=2, arg1=1)", "class(1, arg2=2)");
+            DYNAMIC_SECTION("input: " << input) {
+                REQUIRE(matcher.match(Parser::parse(input), result));
+                auto resultClass = result.as<DataclassData>();
+                REQUIRE(resultClass.size() == 2);
+                REQUIRE(resultClass.positionalSize() == 2);
+                CHECK(resultClass[0].asNode<NodeInt>()->getValue() == 1);
+                CHECK(resultClass[1].asNode<NodeInt>()->getValue() == 2);
+                CHECK(resultClass.getVariadicArguments().empty());
+                CHECK(resultClass.getVariadicKeywordArguments().empty());
+            }
+        }
+
+        SECTION("arguments with matcher") {
+            auto matcher = MatcherDataclass("class", {{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}}});
+            CHECK_FALSE(matcher.match(Parser::parse("class(1, 2, 3)"), result));
+            CHECK_FALSE(matcher.match(Parser::parse("class(arg1=1, arg3=3)"), result));
+            CHECK_FALSE(matcher.match(Parser::parse("class(1, True)"), result));
+
+            auto input = GENERATE("class(1, 2)", "class(arg2=2, arg1=1)", "class(1, arg2=2)");
+            DYNAMIC_SECTION("input: " << input) {
+                REQUIRE(matcher.match(Parser::parse(input), result));
+                auto resultClass = result.as<DataclassData>();
+                REQUIRE(resultClass.size() == 2);
+                CHECK(resultClass[0].as<long>() == 1);
+                CHECK(resultClass[1].as<long>() == 2);
+            }
+        }
+
+        SECTION("arguments with matcher and default value") {
+            auto matcher = MatcherDataclass("class", {{"arg1", MatcherInt{}},
+                                                      {"arg2", MatcherInt{}, 2}});
+            CHECK_FALSE(matcher.match(Parser::parse("class()"), result));
+            CHECK_FALSE(matcher.match(Parser::parse("class(1, 2, 3)"), result));
+            CHECK_FALSE(matcher.match(Parser::parse("class(1, True)"), result));
+            CHECK_FALSE(matcher.match(Parser::parse("class(arg2=5)"), result));
+
+            SECTION("defaulted") {
+                auto input = GENERATE("class(1)", "class(arg1=1)");
+                DYNAMIC_SECTION("input: " << input) {
+                    REQUIRE(matcher.match(Parser::parse(input), result));
+                    auto resultClass = result.as<DataclassData>();
+                    REQUIRE(resultClass.size() == 2);
+                    CHECK(resultClass[0].as<long>() == 1);
+                    CHECK(resultClass[1].as<long>() == 2);
+                }
+            }
+
+            SECTION("not defaulted") {
+                auto input = GENERATE("class(1, 3)", "class(arg2=3, arg1=1)");
+                DYNAMIC_SECTION("input: " << input) {
+                    REQUIRE(matcher.match(Parser::parse(input), result));
+                    auto resultClass = result.as<DataclassData>();
+                    REQUIRE(resultClass.size() == 2);
+                    CHECK(resultClass[0].as<long>() == 1);
+                    CHECK(resultClass[1].as<long>() == 3);
+                }
+            }
+        }
+
+        SECTION("variadic arguments") {
+            auto matcher = MatcherDataclass("class")
+                    .arguments({{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}, 2}})
+                    .variadicArguments();
+            CHECK_FALSE(matcher.match(Parser::parse("class()"), result));
+
+            SECTION("1 argument") {
+                REQUIRE(matcher.match(Parser::parse("class(1)"), result));
+                auto resultClass = result.as<DataclassData>();
+                REQUIRE(resultClass.size() == 2);
+                REQUIRE(resultClass.positionalSize() == 2);
+                CHECK(resultClass[0].as<long>() == 1);
+                CHECK(resultClass[1].as<long>() == 2);
+                CHECK(resultClass.getVariadicArguments().empty());
+                CHECK(resultClass.getVariadicKeywordArguments().empty());
+            }
+
+            SECTION("2 arguments") {
+                REQUIRE(matcher.match(Parser::parse("class(1, 3)"), result));
+                auto resultClass = result.as<DataclassData>();
+                REQUIRE(resultClass.size() == 2);
+                REQUIRE(resultClass.positionalSize() == 2);
+                CHECK(resultClass[0].as<long>() == 1);
+                CHECK(resultClass[1].as<long>() == 3);
+                CHECK(resultClass.getVariadicArguments().empty());
+                CHECK(resultClass.getVariadicKeywordArguments().empty());
+            }
+
+            SECTION("2 arguments + 1 variadic") {
+                REQUIRE(matcher.match(Parser::parse("class(1, 3, 4)"), result));
+                auto resultClass = result.as<DataclassData>();
+                REQUIRE(resultClass.size() == 2);
+                REQUIRE(resultClass.positionalSize() == 3);
+                CHECK(resultClass[0].as<long>() == 1);
+                CHECK(resultClass[1].as<long>() == 3);
+                CHECK(resultClass[2].as<long>() == 4);
+                CHECK(resultClass.getVariadicArguments().size() == 1);
+                CHECK(resultClass.getVariadicArguments().at(0).as<long>() == 4);
+                CHECK(resultClass.getVariadicKeywordArguments().empty());
+            }
+        }
+
+        SECTION("keyword arguments") {
+            auto matcher = MatcherDataclass("class")
+                    .arguments({{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}, 2}})
+                    .variadicKeywordArguments();
+            CHECK_FALSE(matcher.match(Parser::parse("class()"), result));
+            CHECK_FALSE(matcher.match(Parser::parse("class(1, 2, 3)"), result));
+
+            SECTION("1 argument") {
+                REQUIRE(matcher.match(Parser::parse("class(1)"), result));
+                auto resultClass = result.as<DataclassData>();
+                REQUIRE(resultClass.size() == 2);
+                REQUIRE(resultClass.positionalSize() == 2);
+                CHECK(resultClass[0].as<long>() == 1);
+                CHECK(resultClass[1].as<long>() == 2);
+                CHECK(resultClass.getVariadicArguments().empty());
+                CHECK(resultClass.getVariadicKeywordArguments().empty());
+            }
+
+            SECTION("2 arguments") {
+                REQUIRE(matcher.match(Parser::parse("class(1, 3)"), result));
+                auto resultClass = result.as<DataclassData>();
+                REQUIRE(resultClass.size() == 2);
+                CHECK(resultClass.getVariadicKeywordArguments().empty());
+                CHECK(resultClass[0].as<long>() == 1);
+                CHECK(resultClass[1].as<long>() == 3);
+                CHECK(resultClass.getVariadicArguments().empty());
+                CHECK(resultClass.getVariadicKeywordArguments().empty());
+            }
+
+            SECTION("2 arguments + variadic keyword") {
+                REQUIRE(matcher.match(Parser::parse("class(1, arg2=2, arg3=3, arg4=4)"), result));
+                auto resultClass = result.as<DataclassData>();
+                REQUIRE(resultClass.size() == 2);
+                REQUIRE(resultClass.positionalSize() == 2);
+                CHECK(resultClass[0].as<long>() == 1);
+                CHECK(resultClass[1].as<long>() == 3);
+                CHECK(resultClass.getVariadicArguments().empty());
+                const auto &keywordArguments = resultClass.getVariadicKeywordArguments();
+                REQUIRE(keywordArguments.size() == 2);
+                CHECK(keywordArguments.at("arg3").as<long>() == 3);
+                CHECK(keywordArguments.at("arg4").as<long>() == 4);
+            }
+        }
+
+        SECTION("all types of arguments") {
+            auto matcher = MatcherDataclass("class")
+                    .arguments({{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}, 2}})
+                    .variadicArguments()
+                    .variadicKeywordArguments();
+            CHECK_FALSE(matcher.match(Parser::parse("class()"), result));
+
+            SECTION("1 argument") {
+                REQUIRE(matcher.match(Parser::parse("class(1)"), result));
+                auto resultClass = result.as<DataclassData>();
+                REQUIRE(resultClass.size() == 2);
+                REQUIRE(resultClass.positionalSize() == 2);
+                CHECK(resultClass[0].as<long>() == 1);
+                CHECK(resultClass[1].as<long>() == 2);
+                CHECK(resultClass.getVariadicArguments().empty());
+                CHECK(resultClass.getVariadicKeywordArguments().empty());
+            }
+
+            SECTION("2 arguments") {
+                REQUIRE(matcher.match(Parser::parse("class(1, 3)"), result));
+                auto resultClass = result.as<DataclassData>();
+                REQUIRE(resultClass.size() == 2);
+                REQUIRE(resultClass.positionalSize() == 2);
+                CHECK(resultClass[0].as<long>() == 1);
+                CHECK(resultClass[1].as<long>() == 3);
+                CHECK(resultClass.getVariadicArguments().empty());
+                CHECK(resultClass.getVariadicKeywordArguments().empty());
+            }
+
+            SECTION("2 + 1 variadic") {
+                REQUIRE(matcher.match(Parser::parse("class(1, 3, 4)"), result));
+                auto resultClass = result.as<DataclassData>();
+                REQUIRE(resultClass.size() == 2);
+                REQUIRE(resultClass.positionalSize() == 3);
+                CHECK(resultClass[0].as<long>() == 1);
+                CHECK(resultClass[1].as<long>() == 3);
+                CHECK(resultClass.getVariadicArguments().size() == 1);
+                CHECK(resultClass[2].as<long>() == 4);
+                CHECK(resultClass.getVariadicKeywordArguments().empty());
+            }
+
+            SECTION("2 + 1 variadic keyword") {
+                REQUIRE(matcher.match(Parser::parse("class(1, 3, arg3=4)"), result));
+                auto resultClass = result.as<DataclassData>();
+                REQUIRE(resultClass.size() == 2);
+                REQUIRE(resultClass.positionalSize() == 2);
+                CHECK(resultClass[0].as<long>() == 1);
+                CHECK(resultClass[1].as<long>() == 3);
+                CHECK(resultClass.getVariadicArguments().empty());
+                const auto &keywordArguments = resultClass.getVariadicKeywordArguments();
+                REQUIRE(keywordArguments.size() == 1);
+                CHECK(keywordArguments.at("arg3").as<long>() == 4);
+            }
+
+            SECTION("2 + 1 variadic + 1 variadic keyword") {
+                REQUIRE(matcher.match(Parser::parse("class(1, 3, 4, arg4=5)"), result));
+                auto resultClass = result.as<DataclassData>();
+                REQUIRE(resultClass.size() == 2);
+                REQUIRE(resultClass.positionalSize() == 3);
+                CHECK(resultClass[0].as<long>() == 1);
+                CHECK(resultClass[1].as<long>() == 3);
+                CHECK(resultClass.getVariadicArguments().size() == 1);
+                CHECK(resultClass[2].as<long>() == 4);
+                const auto &keywordArguments = resultClass.getVariadicKeywordArguments();
+                REQUIRE(keywordArguments.size() == 1);
+                CHECK(keywordArguments.at("arg4").as<long>() == 5);
+            }
+        }
+    }
+}

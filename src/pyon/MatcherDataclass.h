@@ -16,8 +16,12 @@
 
 
 namespace pyon::matcher {
-    class NoSuchArgumentException : public MatchException {
+    class DataclassException : public MatchException {
         using MatchException::MatchException;
+    };
+
+    class NoSuchArgumentException : public DataclassException {
+        using DataclassException::DataclassException;
     };
 
     struct StandardArgument {
@@ -85,6 +89,7 @@ namespace pyon::matcher {
 
     public:
         StandardArgumentSpecification(std::string name) : name{std::move(name)} {}
+        StandardArgumentSpecification(const char *const name) : name{name} {}
 
         template<typename ConcreteMatcher, typename = std::enable_if_t<std::is_base_of_v<MatcherBase, ConcreteMatcher>>>
         StandardArgumentSpecification(std::string name, const ConcreteMatcher &matcher)
@@ -104,6 +109,7 @@ namespace pyon::matcher {
 
     class MatcherDataclass : public MatcherBase {
     private:
+        std::string name;
         std::vector<StandardArgumentSpecification> argumentsSpecification;
         MatcherArray variadicArgumentsMatcher = MatcherArray{}.empty();
         MatcherDictionary variadicKeywordArgumentsMatcher = MatcherDictionary{}.empty();
@@ -111,13 +117,12 @@ namespace pyon::matcher {
         std::function<Any(const DataclassData&)> mapping = [](const DataclassData &dataclass) { return dataclass; };
 
     public:
-        MatcherDataclass() = default;
-        explicit MatcherDataclass(std::vector<StandardArgumentSpecification> argumentsSpecification)
-                : argumentsSpecification{std::move(argumentsSpecification)}
-        { }
+        explicit MatcherDataclass(std::string className);
+        MatcherDataclass(std::string className, std::vector<StandardArgumentSpecification> argumentsSpecification);
 
-        MatcherDataclass &variadicArguments(const MatcherArray &variadicMatcher);
-        MatcherDataclass &variadicKeywordArguments(const MatcherDictionary &variadicMatcher);
+        MatcherDataclass &arguments(std::vector<StandardArgumentSpecification> argumentsSpecification_);
+        MatcherDataclass &variadicArguments(const MatcherArray &variadicMatcher = MatcherArray{});
+        MatcherDataclass &variadicKeywordArguments(const MatcherDictionary &variadicMatcher = MatcherDictionary{});
 
         bool match(std::shared_ptr<const ast::Node> node, Any &result) const override;
 
