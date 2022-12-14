@@ -3,7 +3,7 @@
 //
 
 #include "MatcherDataclass.h"
-#include "NodeArray.h"
+#include "NodeDataclass.h"
 
 
 namespace pyon::matcher {
@@ -14,7 +14,8 @@ namespace pyon::matcher {
             return arg.name;
         });
         std::sort(names.begin(), names.end());
-        ExpectsMsg(std::unique(names.begin(), names.end()) == names.end(), "Duplicata argument names");
+        if (std::unique(names.begin(), names.end()) != names.end())
+            throw DataclassException("pyon::matcher::StandardArguments: duplicate argument names");
 
         this->arguments = std::move(arguments);
     }
@@ -115,7 +116,27 @@ namespace pyon::matcher {
     }
 
     bool MatcherDataclass::match(std::shared_ptr<const ast::Node> node, Any &result) const {
-        return false;
+        if (node->getType() != ast::Node::DATACLASS)
+            return false;
+
+        const auto &nodeClass = node->as<ast::NodeDataclass>();
+        if (nodeClass->getClassName() != this->name)
+            return false;
+
+        const auto &nodePositional = nodeClass->getPositionalArguments();
+
+        StandardArguments standardArguments;
+        ArrayData variadicArguments;
+        DictionaryData variadicKeywordArguments;
+
+        DataclassData classData(standardArguments, variadicArguments, variadicKeywordArguments);
+
+        for (const auto &filter: this->filters)
+            if (!filter(classData))
+                return false;
+
+        result = this->mapping(classData);
+        return true;
     }
 
     MatcherDataclass &MatcherDataclass::mapTo(const std::function<Any(const DataclassData &)> &mapping_) {
@@ -125,6 +146,33 @@ namespace pyon::matcher {
 
     MatcherDataclass &MatcherDataclass::filter(const std::function<bool(const DataclassData &)> &filter) {
         this->filters.emplace_back(filter);
+        return *this;
+    }
+
+    MatcherDataclass::MatcherDataclass(std::string className,
+                                       std::vector<StandardArgumentSpecification> argumentsSpecification)
+            : MatcherDataclass(std::move(className))
+    {
+        this->arguments(std::move(argumentsSpecification));
+    }
+
+    MatcherDataclass::MatcherDataclass(std::string className) : name{std::move(className)} {
+        if (this->name.empty())
+            throw DataclassException("Dataclass name cannot be empty");
+    }
+
+    MatcherDataclass &MatcherDataclass::arguments(std::vector<StandardArgumentSpecification> argumentsSpecification_) {
+        for (std::size_t i = 1; i < argumentsSpecification_.size(); i++) {
+            const auto &prevArg = argumentsSpecification_[i - 1];
+            const auto &currArg = argumentsSpecification_[i];
+            if (prevArg.getDefaultValue().has_value() && !currArg.getDefaultValue().has_value()) {
+                throw DataclassException("pyon::matcher::MatcherDataclass::arguments: argument with default value: "
+                                         + currArg.getName() + " follows argument withour default value: "
+                                         + prevArg.getName());
+            }
+        }
+
+        this->argumentsSpecification = std::move(argumentsSpecification_);
         return *this;
     }
 } // matcher
