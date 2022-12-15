@@ -640,7 +640,7 @@ TEST_CASE("Matcher: Dataclass") {
             REQUIRE(matcher.match(Parser::parse("class()"), result));
             auto resultClass = result.as<DataclassData>();
             CHECK(resultClass.empty());
-            CHECK(resultClass.positionalSize() == 0);
+            CHECK(resultClass.positionalEmpty());
             CHECK(resultClass.getVariadicArguments().empty());
             CHECK(resultClass.getVariadicKeywordArguments().empty());
         }
@@ -894,5 +894,29 @@ TEST_CASE("Matcher: Dataclass") {
                 CHECK(keywordArguments.at("arg4").as<long>() == 5);
             }
         }
+    }
+
+    SECTION("filter") {
+        auto validateRange = [](const DataclassData &dataclass) {
+            return dataclass["start"].as<long>() <= dataclass["end"].as<long>();
+        };
+        auto matcher = MatcherDataclass("range", {{"start", MatcherInt{}}, {"end", MatcherInt{}}})
+            .filter(validateRange);
+        CHECK_FALSE(matcher.match(Parser::parse("range(4, 2)"), result));
+        CHECK(matcher.match(Parser::parse("range(2, 4)"), result));
+    }
+
+    SECTION("map to") {
+        auto createRange = [](const DataclassData &dataclass) {
+            auto start = dataclass["start"].as<long>();
+            auto end = dataclass["end"].as<long>();
+            std::vector<long> result(end - start + 1);
+            std::iota(result.begin(), result.end(), start);
+            return result;
+        };
+        auto matcher = MatcherDataclass("range", {{"start", MatcherInt{}}, {"end", MatcherInt{}}})
+            .mapTo(createRange);
+        REQUIRE(matcher.match(Parser::parse("range(2, 4)"), result));
+        CHECK(result.as<std::vector<long>>() == std::vector<long>{2, 3, 4});
     }
 }
