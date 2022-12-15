@@ -717,6 +717,12 @@ TEST_CASE("Matcher: Dataclass") {
             }
         }
 
+        SECTION("error: overriding positional with keyword") {
+            auto matcher = MatcherDataclass("class", {{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}}})
+                .variadicKeywordArguments();
+            CHECK_FALSE(matcher.match(Parser::parse("class(1, 2, arg1=3)"), result));
+        }
+
         SECTION("variadic arguments") {
             auto matcher = MatcherDataclass("class")
                 .arguments({{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}, long{2}}})
