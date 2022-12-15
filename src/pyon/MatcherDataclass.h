@@ -27,6 +27,9 @@ namespace pyon::matcher {
     struct StandardArgument {
         std::string name;
         Any value;
+
+        StandardArgument() = default;
+        StandardArgument(std::string name, Any value) : name{std::move(name)}, value{std::move(value)} { }
     };
 
     class StandardArguments {
@@ -104,7 +107,9 @@ namespace pyon::matcher {
 
         [[nodiscard]] const std::string &getName() const { return this->name; }
         [[nodiscard]] const std::shared_ptr<MatcherBase> &getMatcher() const { return this->matcher; }
+        [[nodiscard]] bool hasMatcher() const { return this->matcher != nullptr;}
         [[nodiscard]] const std::optional<Any> &getDefaultValue() const { return this->defaultValue; }
+        [[nodiscard]] bool hasDefaultValue() const { return this->defaultValue != std::nullopt; }
     };
 
     class MatcherDataclass : public MatcherBase {
