@@ -765,6 +765,14 @@ TEST_CASE("Matcher: Dataclass") {
             }
         }
 
+        SECTION("variadic arguments with matcher") {
+            auto matcher = MatcherDataclass("class")
+                .variadicArguments(MatcherArray(MatcherInt{}).sizeAtLeast(1));
+            CHECK_FALSE(matcher.match(Parser::parse("class()"), result));
+            CHECK(matcher.match(Parser::parse("class(1)"), result));
+            CHECK(matcher.match(Parser::parse("class(1, 2)"), result));
+        }
+
         SECTION("keyword arguments") {
             auto matcher = MatcherDataclass("class")
                 .arguments({{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}, long{2}}})
@@ -808,6 +816,14 @@ TEST_CASE("Matcher: Dataclass") {
                 CHECK(keywordArguments.at("arg3").as<long>() == 4);
                 CHECK(keywordArguments.at("arg4").as<long>() == 5);
             }
+        }
+
+        SECTION("variadic keyword arguments with matcher") {
+            auto matcher = MatcherDataclass("class")
+                .variadicKeywordArguments(MatcherDictionary(MatcherInt{}).sizeAtLeast(1));
+            CHECK_FALSE(matcher.match(Parser::parse("class()"), result));
+            CHECK(matcher.match(Parser::parse("class(arg1=1)"), result));
+            CHECK(matcher.match(Parser::parse("class(arg1=1, arg2=2)"), result));
         }
 
         SECTION("all types of arguments") {
