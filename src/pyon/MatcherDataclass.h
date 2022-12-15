@@ -121,6 +121,20 @@ namespace pyon::matcher {
         std::vector<std::function<bool(const DataclassData&)>> filters;
         std::function<Any(const DataclassData&)> mapping = [](const DataclassData &dataclass) { return dataclass; };
 
+        bool matchStandardArguments(StandardArguments &arguments,
+                                    const std::shared_ptr<const ast::NodeArray> &nodePositional,
+                                    const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const;
+
+        bool matchVariadicArguments(ArrayData &arguments,
+                                    const std::shared_ptr<const ast::NodeArray> &nodePositional) const;
+
+        bool matchKeywordVariadicArguments(DictionaryData &arguments,
+                                           const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const;
+
+        bool emplaceArgument(std::vector<StandardArgument> &standardArgumentsVec,
+                             const StandardArgumentSpecification &argumentSpecification,
+                             const std::shared_ptr<const ast::Node> &argumentNode) const;
+
     public:
         explicit MatcherDataclass(std::string className);
         MatcherDataclass(std::string className, std::vector<StandardArgumentSpecification> argumentsSpecification);
