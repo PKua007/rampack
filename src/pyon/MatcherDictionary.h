@@ -99,6 +99,7 @@ namespace pyon::matcher {
         }
 
         MatcherDictionary &mapTo(const std::function<Any(const DictionaryData&)> &mapping_);
+        MatcherDictionary &mapToDefault();
         MatcherDictionary &filter(const std::function<bool(const DictionaryData&)> &filter);
         MatcherDictionary &hasKeys(const std::vector<std::string> &keys);
         MatcherDictionary &hasOnlyKeys(std::vector<std::string> keys);
