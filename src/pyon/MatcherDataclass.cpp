@@ -130,15 +130,14 @@ namespace pyon::matcher {
         const auto &nodeKeyword = nodeClass->getKeywordArguments();
 
         ArrayData variadicArguments;
-        if (nodePositional->size() > this->argumentsSpecification.size()) {
-            std::vector<std::shared_ptr<const ast::Node>> variadicNodes;
+        std::vector<std::shared_ptr<const ast::Node>> variadicNodes;
+        if (nodePositional->size() > this->argumentsSpecification.size())
             variadicNodes.assign(nodePositional->begin() + this->argumentsSpecification.size(), nodePositional->end());
-            auto variadicNodesArray = ast::NodeArray::create(std::move(variadicNodes));
-            Any variadicResult;
-            if (!this->variadicArgumentsMatcher.match(variadicNodesArray, variadicResult))
-                return false;
-            variadicArguments = variadicResult.as<ArrayData>();
-        }
+        auto variadicNodesArray = ast::NodeArray::create(std::move(variadicNodes));
+        Any variadicResult;
+        if (!this->variadicArgumentsMatcher.match(variadicNodesArray, variadicResult))
+            return false;
+        variadicArguments = variadicResult.as<ArrayData>();
 
         DictionaryData variadicKeywordArguments;
         std::vector<std::pair<std::string, std::shared_ptr<const ast::Node>>> variadicKeywordNodes;
@@ -152,10 +151,10 @@ namespace pyon::matcher {
             }
         }
         auto keywordVariadicNodesDictionary = ast::NodeDictionary::create(variadicKeywordNodes);
-        Any variadicResult;
-        if (!this->variadicKeywordArgumentsMatcher.match(keywordVariadicNodesDictionary, variadicResult))
+        Any variadicKeywordResult;
+        if (!this->variadicKeywordArgumentsMatcher.match(keywordVariadicNodesDictionary, variadicKeywordResult))
             return false;
-        variadicKeywordArguments = variadicResult.as<DictionaryData>();
+        variadicKeywordArguments = variadicKeywordResult.as<DictionaryData>();
 
         std::vector<StandardArgument> standardArgumentsVec;
         standardArgumentsVec.reserve(this->argumentsSpecification.size());
