@@ -108,10 +108,15 @@ namespace pyon::matcher {
         return *this;
     }
 
-    MatcherDictionary &MatcherDictionary::hasOnlyKeys(std::vector<std::string> keys) {
-        std::sort(keys.begin(), keys.end());
-        keys.erase(std::unique(keys.begin(), keys.end()), keys.end());
-        this->filters.emplace_back([keys](const DictionaryData &dict) { return dict.getKeys() == keys; });
+    MatcherDictionary &MatcherDictionary::hasOnlyKeys(const std::vector<std::string> &keys) {
+        auto areKeysAllowed = [keys](const DictionaryData &dict) {
+            auto isKeyAllowed = [keys](const std::string &key) {
+                return std::find(keys.begin(), keys.end(), key) != keys.end();
+            };
+            const auto &dictKeys = dict.getKeys();
+            return std::all_of(dictKeys.begin(), dictKeys.end(), isKeyAllowed);
+        };
+        this->filters.emplace_back(areKeysAllowed);
         return *this;
     }
 
