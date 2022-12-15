@@ -541,10 +541,11 @@ TEST_CASE("Matcher: Dictionary") {
         }
 
         SECTION("has only keys") {
-            auto matcher = MatcherDictionary{}.hasOnlyKeys({"b", "b", "a"});
+            auto matcher = MatcherDictionary{}.hasOnlyKeys({"a", "b"});
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "c" : 2})"), result));
             CHECK_FALSE(matcher.match(Parser::parse(R"({"b" : 1, "a" : 2, "c" : 3})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
+            CHECK(matcher.match(Parser::parse(R"({"a" : 1})"), result));
         }
 
         SECTION("has not keys") {
@@ -963,4 +964,45 @@ TEST_CASE("Matcher: Alternative") {
             CHECK(result.as<int>() == 1);
         }
     }
+}
+
+TEST_CASE("Matcher: combined") {
+    auto doConcatenate =
+        [](const auto &arraylike, const std::string &beg, const std::string &end, const std::string &delim) {
+            std::ostringstream result;
+            result << beg;
+            for (std::size_t i{}; i < arraylike.size(); i++) {
+                result << arraylike[i].template as<std::string>();
+                if (i != arraylike.size() - 1)
+                    result << delim;
+            }
+            result << end;
+            return result.str();
+        };
+
+    auto matcherInt = MatcherInt{}.mapTo([](long i) { return std::to_string(i); });
+    auto matcherFloat = MatcherFloat{}.mapTo([](double d) { return std::to_string(d); });
+    auto matcherString = MatcherString{};
+    auto anyPrimitive = matcherInt | matcherFloat | matcherString;
+    auto matcherArray = MatcherArray(anyPrimitive).mapTo([doConcatenate](const ArrayData &array) {
+        return doConcatenate(array, "[", "]", ", ");
+    });
+    auto anyPrintable = anyPrimitive | matcherArray;
+    auto kwargsDelimiter = MatcherDictionary(MatcherString{})
+        .hasOnlyKeys({"delimiter"});
+    auto concatenator = MatcherDataclass("concatenator")
+        .variadicArguments(MatcherArray(anyPrintable))
+        .variadicKeywordArguments(kwargsDelimiter)
+        .mapTo([doConcatenate](const DataclassData &dataclass) {
+            std::string delimiter = " ";
+            if (!dataclass.getVariadicKeywordArguments().empty())
+                delimiter = dataclass["delimiter"].as<std::string>();
+            return doConcatenate(dataclass.getVariadicArguments(), "", "", delimiter);
+        });
+
+    Any result;
+    REQUIRE(concatenator.match(Parser::parse(R"(concatenator(1, 1.2, "abc", [2, "e"], delimiter="-"))"), result));
+    CHECK(result.as<std::string>() == "1-1.200000-abc-[2, e]");
+    REQUIRE(concatenator.match(Parser::parse(R"(concatenator(1, 1.2, "abc", [2, "e"]))"), result));
+    CHECK(result.as<std::string>() == "1 1.200000 abc [2, e]");
 }

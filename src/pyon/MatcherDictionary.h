@@ -102,7 +102,7 @@ namespace pyon::matcher {
         MatcherDictionary &mapToDefault();
         MatcherDictionary &filter(const std::function<bool(const DictionaryData&)> &filter);
         MatcherDictionary &hasKeys(const std::vector<std::string> &keys);
-        MatcherDictionary &hasOnlyKeys(std::vector<std::string> keys);
+        MatcherDictionary &hasOnlyKeys(const std::vector<std::string> &keys);
         MatcherDictionary &hasNotKeys(const std::vector<std::string> &keys);
         MatcherDictionary &keysMatch(const std::function<bool(const std::string&)> &predicate);
         MatcherDictionary &empty();
