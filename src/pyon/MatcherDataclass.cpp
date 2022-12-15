@@ -117,7 +117,6 @@ namespace pyon::matcher {
 
     // TODO: ArrayData and DictionaryData may be mapped in variadic arguments
     // TODO: Tests for matching variadic arguments (for example forcing their minimal number)
-    // TODO: Test for overriding positional argument by keyword argument
     bool MatcherDataclass::match(std::shared_ptr<const ast::Node> node, Any &result) const {
         if (node->getType() != ast::Node::DATACLASS)
             return false;
@@ -162,6 +161,9 @@ namespace pyon::matcher {
         std::size_t maxSize = std::min(nodePositional->size(), this->argumentsSpecification.size());
         for (std::size_t i{}; i < maxSize; i++) {
             const auto &argumentSpecification = this->argumentsSpecification[i];
+            if (nodeKeyword->hasKey(argumentSpecification.getName()))
+                return false;
+
             Any argumentValue;
             if (argumentSpecification.hasMatcher()) {
                 if (!argumentSpecification.getMatcher()->match(nodePositional->at(i), argumentValue))
