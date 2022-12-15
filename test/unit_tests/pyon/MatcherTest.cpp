@@ -920,3 +920,47 @@ TEST_CASE("Matcher: Dataclass") {
         CHECK(result.as<std::vector<long>>() == std::vector<long>{2, 3, 4});
     }
 }
+
+TEST_CASE("Matcher: Alternative") {
+    Any result;
+
+    SECTION("2 alternatives") {
+        auto matcher = MatcherInt{} | MatcherFloat{};
+        CHECK_FALSE(matcher.match(Parser::parse("True"), result));
+        CHECK(matcher.match(Parser::parse("1"), result));
+        CHECK(result.as<long>() == 1);
+        CHECK(matcher.match(Parser::parse("1.2"), result));
+        CHECK(result.as<double>() == 1.2);
+    }
+
+    SECTION("3 alternatives") {
+        auto matcher = MatcherInt{} | MatcherFloat{} | MatcherString{};
+        CHECK_FALSE(matcher.match(Parser::parse("True"), result));
+        CHECK(matcher.match(Parser::parse("1"), result));
+        CHECK(result.as<long>() == 1);
+        CHECK(matcher.match(Parser::parse("1.2"), result));
+        CHECK(result.as<double>() == 1.2);
+        CHECK(matcher.match(Parser::parse(R"("abc")"), result));
+        CHECK(result.as<std::string>() == "abc");
+    }
+
+    SECTION("matching order") {
+        auto matcher1 = MatcherInt{}.mapTo([](const auto&) -> int { return 1; });
+        auto matcher2 = MatcherInt{}.mapTo([](const auto&) -> int { return 2; });
+        auto matcher3 = MatcherInt{}.mapTo([](const auto&) -> int { return 3; });
+
+        SECTION("1 | (2 | 3)") {
+            auto matcher23 = matcher2 | matcher3;
+            auto matcher123 = matcher1 | matcher23;
+            REQUIRE(matcher123.match(Parser::parse("1337"), result));
+            CHECK(result.as<int>() == 1);
+        }
+
+        SECTION("(1 | 2) | 3") {
+            auto matcher12 = matcher1 | matcher2;
+            auto matcher123 = matcher12 | matcher3;
+            REQUIRE(matcher123.match(Parser::parse("1337"), result));
+            CHECK(result.as<int>() == 1);
+        }
+    }
+}
