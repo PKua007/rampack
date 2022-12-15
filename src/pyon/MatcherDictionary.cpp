@@ -71,6 +71,11 @@ namespace pyon::matcher {
         return *this;
     }
 
+    MatcherDictionary &MatcherDictionary::mapToDefault() {
+        this->mapping = [](const DictionaryData &dict) { return dict; };
+        return *this;
+    }
+
     MatcherDictionary &MatcherDictionary::filter(const std::function<bool(const DictionaryData &)> &filter) {
         this->filters.push_back(filter);
         return *this;

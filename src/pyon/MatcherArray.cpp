@@ -76,6 +76,11 @@ namespace pyon::matcher {
         return *this;
     }
 
+    MatcherArray &MatcherArray::mapToDefault() {
+        this->mapping = [](const ArrayData &array) { return array; };
+        return *this;
+    }
+
     MatcherArray &MatcherArray::filter(const std::function<bool(const ArrayData&)> &filter) {
         this->filters.push_back(filter);
         return *this;

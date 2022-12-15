@@ -138,6 +138,7 @@ namespace pyon::matcher {
             return *this;
         }
 
+        MatcherArray &mapToDefault();
         MatcherArray &mapTo(const std::function<Any(const ArrayData&)> &mapping_);
         MatcherArray &filter(const std::function<bool(const ArrayData&)> &filter);
         MatcherArray &size(std::size_t size_);

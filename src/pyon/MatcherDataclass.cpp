@@ -107,15 +107,16 @@ namespace pyon::matcher {
 
     MatcherDataclass &MatcherDataclass::variadicArguments(const MatcherArray &variadicMatcher) {
         this->variadicArgumentsMatcher = variadicMatcher;
+        this->variadicArgumentsMatcher.mapToDefault();
         return *this;
     }
 
     MatcherDataclass &MatcherDataclass::variadicKeywordArguments(const MatcherDictionary &variadicMatcher) {
         this->variadicKeywordArgumentsMatcher = variadicMatcher;
+        this->variadicKeywordArgumentsMatcher.mapToDefault();
         return *this;
     }
 
-    // TODO: ArrayData and DictionaryData may be mapped in variadic arguments
     // TODO: Tests for matching variadic arguments (for example forcing their minimal number)
     bool MatcherDataclass::match(std::shared_ptr<const ast::Node> node, Any &result) const {
         if (node->getType() != ast::Node::DATACLASS)
