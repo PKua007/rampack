@@ -10,7 +10,7 @@ namespace pyon::matcher {
     StandardArguments::StandardArguments(std::vector<StandardArgument> arguments) {
         std::vector<std::string> names;
         names.reserve(arguments.size());
-        std::transform(arguments.begin(), arguments.end(), names.begin(), [](const StandardArgument &arg) {
+        std::transform(arguments.begin(), arguments.end(), std::back_inserter(names), [](const StandardArgument &arg) {
             return arg.name;
         });
         std::sort(names.begin(), names.end());
@@ -115,6 +115,9 @@ namespace pyon::matcher {
         return *this;
     }
 
+    // TODO: ArrayData and DictionaryData may be mapped in variadic arguments
+    // TODO: Tests for matching variadic arguments (for example forcing their minimal number)
+    // TODO: Test for overriding positional argument by keyword argument
     bool MatcherDataclass::match(std::shared_ptr<const ast::Node> node, Any &result) const {
         if (node->getType() != ast::Node::DATACLASS)
             return false;
@@ -124,10 +127,73 @@ namespace pyon::matcher {
             return false;
 
         const auto &nodePositional = nodeClass->getPositionalArguments();
+        const auto &nodeKeyword = nodeClass->getKeywordArguments();
 
-        StandardArguments standardArguments;
         ArrayData variadicArguments;
+        if (nodePositional->size() > this->argumentsSpecification.size()) {
+            std::vector<std::shared_ptr<const ast::Node>> variadicNodes;
+            variadicNodes.assign(nodePositional->begin() + this->argumentsSpecification.size(), nodePositional->end());
+            auto variadicNodesArray = ast::NodeArray::create(std::move(variadicNodes));
+            Any variadicResult;
+            if (!this->variadicArgumentsMatcher.match(variadicNodesArray, variadicResult))
+                return false;
+            variadicArguments = variadicResult.as<ArrayData>();
+        }
+
         DictionaryData variadicKeywordArguments;
+        std::vector<std::pair<std::string, std::shared_ptr<const ast::Node>>> variadicKeywordNodes;
+        for (const auto &keyNodePair : *nodeKeyword) {
+            const auto &key = keyNodePair.first;
+            auto isStandardArgument = [&key](const auto &arg) { return arg.getName() == key; };
+            if (std::find_if(this->argumentsSpecification.begin(), this->argumentsSpecification.end(),
+                             isStandardArgument) == this->argumentsSpecification.end())
+            {
+                variadicKeywordNodes.emplace_back(keyNodePair);
+            }
+        }
+        auto keywordVariadicNodesDictionary = ast::NodeDictionary::create(variadicKeywordNodes);
+        Any variadicResult;
+        if (!this->variadicKeywordArgumentsMatcher.match(keywordVariadicNodesDictionary, variadicResult))
+            return false;
+        variadicKeywordArguments = variadicResult.as<DictionaryData>();
+
+        std::vector<StandardArgument> standardArgumentsVec;
+        standardArgumentsVec.reserve(this->argumentsSpecification.size());
+        std::size_t maxSize = std::min(nodePositional->size(), this->argumentsSpecification.size());
+        for (std::size_t i{}; i < maxSize; i++) {
+            const auto &argumentSpecification = this->argumentsSpecification[i];
+            Any argumentValue;
+            if (argumentSpecification.hasMatcher()) {
+                if (!argumentSpecification.getMatcher()->match(nodePositional->at(i), argumentValue))
+                    return false;
+            } else {
+                argumentValue = nodePositional->at(i);
+            }
+            standardArgumentsVec.emplace_back(argumentSpecification.getName(), argumentValue);
+        }
+
+        for (std::size_t i = nodePositional->size(); i < this->argumentsSpecification.size(); i++) {
+            const auto &argumentSpecification = this->argumentsSpecification[i];
+            if (nodeKeyword->hasKey(argumentSpecification.getName())) {
+                const auto &argumentNode = nodeKeyword->at(argumentSpecification.getName());
+                Any argumentValue;
+                if (argumentSpecification.hasMatcher()) {
+                    if (!argumentSpecification.getMatcher()->match(argumentNode, argumentValue))
+                        return false;
+                } else {
+                    argumentValue = argumentNode;
+                }
+                standardArgumentsVec.emplace_back(argumentSpecification.getName(), argumentValue);
+            } else if (argumentSpecification.hasDefaultValue()) {
+                standardArgumentsVec.emplace_back(argumentSpecification.getName(),
+                                                  *argumentSpecification.getDefaultValue());
+            } else {
+                return false;
+            }
+
+        }
+
+        StandardArguments standardArguments(std::move(standardArgumentsVec));
 
         DataclassData classData(standardArguments, variadicArguments, variadicKeywordArguments);
 
