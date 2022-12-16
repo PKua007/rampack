@@ -178,7 +178,7 @@ namespace pyon::matcher {
             const auto &currArg = argumentsSpecification_[i];
             if (prevArg.getDefaultValue().has_value() && !currArg.getDefaultValue().has_value()) {
                 throw DataclassException("pyon::matcher::MatcherDataclass::arguments: argument with default value: "
-                                         + currArg.getName() + " follows argument withour default value: "
+                                         + currArg.getName() + " follows argument without default value: "
                                          + prevArg.getName());
             }
         }
