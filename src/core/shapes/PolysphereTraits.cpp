@@ -29,7 +29,7 @@ std::string PolysphereTraits::WolframPrinter::print(const Shape &shape) const {
 }
 
 PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry,
-                                   std::unique_ptr<CentralInteraction> centralInteraction)
+                                   std::shared_ptr<CentralInteraction> centralInteraction)
         : geometry{std::move(geometry)}, wolframPrinter{std::make_shared<WolframPrinter>(*this)}
 {
     const auto &sphereData = this->getSphereData();
@@ -44,7 +44,7 @@ PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry
 PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry)
     : geometry{std::move(geometry)}, wolframPrinter{std::make_shared<WolframPrinter>(*this)}
 {
-    this->interaction = std::make_unique<HardInteraction>(this->getSphereData());
+    this->interaction = std::make_shared<HardInteraction>(this->getSphereData());
 }
 
 std::shared_ptr<const ShapePrinter>

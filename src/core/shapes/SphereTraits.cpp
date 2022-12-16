@@ -12,14 +12,14 @@
 
 
 SphereTraits::SphereTraits(double radius)
-        : radius{radius}, interaction{std::make_unique<HardInteraction>(radius)},
+        : radius{radius}, interaction{std::make_shared<HardInteraction>(radius)},
           wolframPrinter{std::make_shared<WolframPrinter>(radius)}
 {
     Expects(radius > 0);
     this->registerNamedPoint("cm", {0, 0, 0});
 }
 
-SphereTraits::SphereTraits(double radius, std::unique_ptr<CentralInteraction> centralInteraction)
+SphereTraits::SphereTraits(double radius, std::shared_ptr<CentralInteraction> centralInteraction)
         : radius{radius}, wolframPrinter{std::make_shared<WolframPrinter>(radius)}
 {
     Expects(radius > 0);
