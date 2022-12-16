@@ -34,7 +34,7 @@ public:
      * @a centralInteraction.
      */
     KMerTraits(std::size_t sphereNum, double sphereRadius, double distance,
-               std::unique_ptr<CentralInteraction> centralInteraction)
+               std::shared_ptr<CentralInteraction> centralInteraction)
             : PolysphereTraits(generateGeometry(sphereNum, sphereRadius, distance), std::move(centralInteraction))
     { }
 };

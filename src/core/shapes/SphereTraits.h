@@ -46,7 +46,7 @@ private:
     static std::shared_ptr<ShapePrinter> createObjPrinter(double radius, std::size_t subdivisions);
 
     double radius{};
-    std::unique_ptr<Interaction> interaction{};
+    std::shared_ptr<Interaction> interaction{};
     std::shared_ptr<WolframPrinter> wolframPrinter;
 
 public:
@@ -62,7 +62,7 @@ public:
     /**
      * @brief Creates a sphere interacting via @a centralInteraction soft potential.
      */
-    SphereTraits(double radius, std::unique_ptr<CentralInteraction> centralInteraction);
+    SphereTraits(double radius, std::shared_ptr<CentralInteraction> centralInteraction);
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; };
 

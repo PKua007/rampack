@@ -94,7 +94,7 @@ public:
      */
     PolysphereLollipopTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
                              double smallSpherePenetration, double largeSpherePenetration,
-                             std::unique_ptr<CentralInteraction> centralInteraction)
+                             std::shared_ptr<CentralInteraction> centralInteraction)
             : PolysphereTraits(generateGeometry(sphereNum, smallSphereRadius, largeSphereRadius,
                                                 smallSpherePenetration, largeSpherePenetration),
                                std::move(centralInteraction))

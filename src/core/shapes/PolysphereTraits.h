@@ -137,7 +137,7 @@ private:
     [[nodiscard]] std::shared_ptr<ShapePrinter> createObjPrinter(std::size_t subdivisions) const;
 
     PolysphereGeometry geometry;
-    std::unique_ptr<Interaction> interaction{};
+    std::shared_ptr<Interaction> interaction{};
     std::shared_ptr<WolframPrinter> wolframPrinter;
 
 public:
@@ -155,7 +155,7 @@ public:
      * @brief Similar as PolysphereTraits::PolysphereTraits(const std::vector<SphereData> &, const Vector<3> &, bool),
      * but for soft central interaction given by @a centralInteraction.
      */
-    PolysphereTraits(PolysphereGeometry geometry, std::unique_ptr<CentralInteraction> centralInteraction);
+    PolysphereTraits(PolysphereGeometry geometry, std::shared_ptr<CentralInteraction> centralInteraction);
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->geometry; }
