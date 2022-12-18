@@ -131,8 +131,10 @@ TEST_CASE("Matcher: Float") {
     // only basic, since it is templatized and tested on int
     Any result;
     CHECK_FALSE(MatcherFloat{}.match(Parser::parse("True"), result));
-    CHECK(MatcherFloat{}.match(Parser::parse("7.5"), result));
+    REQUIRE(MatcherFloat{}.match(Parser::parse("7.5"), result));
     CHECK(result.as<double>() == 7.5);
+    REQUIRE(MatcherFloat{}.match(Parser::parse("7"), result));
+    CHECK(result.as<double>() == 7);
 }
 
 TEST_CASE("Matcher: Boolean") {
