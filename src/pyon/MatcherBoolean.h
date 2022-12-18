@@ -22,6 +22,8 @@ namespace pyon::matcher {
         MatcherBoolean() = default;
         explicit MatcherBoolean(bool b) : filterValue{b} { }
 
+        [[nodiscard]] MatcherBoolean copy() const { return *this; }
+
         bool match(std::shared_ptr<const ast::Node> node, Any &result) const override;
 
         MatcherBoolean &isTrue();

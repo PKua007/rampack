@@ -139,6 +139,8 @@ namespace pyon::matcher {
         explicit MatcherDataclass(std::string className);
         MatcherDataclass(std::string className, std::vector<StandardArgumentSpecification> argumentsSpecification);
 
+        [[nodiscard]] MatcherDataclass copy() const { return *this; }
+
         MatcherDataclass &arguments(std::vector<StandardArgumentSpecification> argumentsSpecification_);
         MatcherDataclass &variadicArguments(const MatcherArray &variadicMatcher = MatcherArray{});
         MatcherDataclass &variadicKeywordArguments(const MatcherDictionary &variadicMatcher = MatcherDictionary{});

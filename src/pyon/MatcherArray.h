@@ -92,6 +92,8 @@ namespace pyon::matcher {
         explicit MatcherArray(std::size_t size_);
         explicit MatcherArray(int size_);
 
+        [[nodiscard]] MatcherArray copy() const { return *this; }
+
         template <typename ConcreteMatcher>
         explicit MatcherArray(const ConcreteMatcher &matcher) {
             this->elementsMatch(matcher);
