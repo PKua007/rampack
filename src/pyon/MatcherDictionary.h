@@ -64,6 +64,8 @@ namespace pyon::matcher {
             this->valuesMatch(matcher);
         }
 
+        [[nodiscard]] MatcherDictionary copy() const { return *this; }
+
         bool match(std::shared_ptr<const ast::Node> node, Any &result) const override;
 
         template <typename ConcreteMatcher>

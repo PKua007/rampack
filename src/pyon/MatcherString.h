@@ -22,6 +22,8 @@ namespace pyon::matcher {
     public:
         MatcherString() = default;
 
+        [[nodiscard]] MatcherString copy() const { return *this; }
+
         explicit MatcherString(const std::string &str);
         MatcherString(std::initializer_list<std::string> values);
 

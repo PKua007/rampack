@@ -37,6 +37,10 @@ namespace pyon::matcher {
                 this->anyOf(values);
             }
 
+            [[nodiscard]] ConcreteNumeral copy() const {
+                return this->concrete();
+            }
+
             bool match(std::shared_ptr<const ast::Node> node, Any &result) const override {
                 NumeralT numeral{};
                 if (!this->matchNodeType(node, numeral))

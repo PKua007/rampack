@@ -18,6 +18,8 @@ namespace pyon::matcher {
     public:
         MatcherAlternative() = default;
 
+        [[nodiscard]] MatcherAlternative copy() const { return *this; }
+
         bool match(std::shared_ptr<const ast::Node> node, Any &result) const override;
 
         template<typename ConcreteMatcher>
