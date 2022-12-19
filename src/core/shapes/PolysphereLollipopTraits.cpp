@@ -5,6 +5,7 @@
 #include "PolysphereLollipopTraits.h"
 
 #include "utils/Assertions.h"
+#include "geometry/VolumeCalculator.h"
 
 
 namespace legacy {
@@ -16,8 +17,8 @@ namespace legacy {
         Expects(sphereNum >= 2);
         Expects(smallSphereRadius > 0);
         Expects(largeSphereRadius > 0);
-        Expects(smallSpherePenetration < 2*smallSphereRadius);
-        Expects(largeSpherePenetration < 2*std::min(smallSphereRadius, largeSphereRadius));
+        ExpectsMsg(smallSpherePenetration == 0 && largeSpherePenetration == 0,
+                   "sphere penetration is disabled for version 0.1 because of incorrect volume calculation");
 
         std::vector<SphereData> data;
 
@@ -80,10 +81,37 @@ PolysphereLollipopTraits::generateGeometry(std::size_t sphereNum, double smallSp
         std::swap(data, newData);
     }
 
-    PolysphereGeometry geometry(data, {0, 0, 1}, {1, 0, 0});
+    double volume = PolysphereLollipopTraits::calculateVolume(data, smallSpherePenetration, largeSpherePenetration);
+    PolysphereGeometry geometry(data, {0, 0, 1}, {1, 0, 0}, {0, 0, 0}, volume);
     geometry.addCustomNamedPoints({{"ss", data.front().position}, {"sl", data.back().position}});
     if (smallSpherePenetration == 0 && largeSpherePenetration == 0)
         geometry.addCustomNamedPoints({{"cm", geometry.calculateMassCentre()}});
     return geometry;
+}
+
+double PolysphereLollipopTraits::calculateVolume(const std::vector<SphereData> &sphereData,
+                                                 double smallSpherePenetration, double largeSpherePenetration)
+{
+    auto volumeAccumulator = [](double volume, const SphereData &data) {
+        return volume + 4./3*M_PI*std::pow(data.radius, 3);
+    };
+    double baseVolume = std::accumulate(sphereData.begin(), sphereData.end(), 0.0, volumeAccumulator);
+
+    std::size_t sphereNum = sphereData.size();
+
+    if (smallSpherePenetration > 0) {
+        double smallSphereRadius = sphereData.front().radius;
+        double capVolume = VolumeCalculator::sphericalCap(smallSphereRadius, smallSpherePenetration/2);
+        baseVolume -= 2 * static_cast<double>(sphereNum - 2) * capVolume;
+    }
+
+    if (largeSpherePenetration > 0) {
+        const auto &dataLarge = sphereData[sphereNum - 1];
+        const auto &dataSmall = sphereData[sphereNum - 2];
+        double distance = dataLarge.position[2] - dataSmall.position[2];
+        baseVolume -= VolumeCalculator::sphereIntersection(dataLarge.radius, dataSmall.radius, distance);
+    }
+
+    return baseVolume;
 }
 

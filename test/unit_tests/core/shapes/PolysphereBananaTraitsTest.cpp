@@ -59,3 +59,32 @@ TEST_CASE("PolysphereBananaTraits: mass centre") {
         CHECK_FALSE(traits.getGeometry().hasNamedPoint("cm"));
     }
 }
+
+TEST_CASE("PolysphereBananaTraits: volume") {
+    SECTION("non-overlapping") {
+        PolysphereBananaTraits traits(M_SQRT1_2, M_PI, 3, 0.5);
+        CHECK(traits.getGeometry().getVolume() == Approx(3*4./3*M_PI*0.5*0.5*0.5));
+    }
+
+    SECTION("overlapping below half-circle") {
+        PolysphereBananaTraits traits(2, M_PI/3, 3, 1);
+        CHECK(traits.getGeometry().getVolume() == Approx(4./3*M_PI*(1 + M_SQRT2)));
+    }
+
+    SECTION("overlapping over half-circle") {
+        SECTION("not overlapping ends") {
+            PolysphereBananaTraits traits(3, 4*M_PI/3, 5, 2);
+            CHECK(traits.getGeometry().getVolume() == Approx(156.032435128293));
+        }
+
+        SECTION("overlapping ends") {
+            PolysphereBananaTraits traits(3, 7*M_PI/4, 5, 2.5);
+            CHECK(traits.getGeometry().getVolume() == Approx(283.1146697687217));
+        }
+
+        SECTION("overlapping ends for 2 spheres") {
+            PolysphereBananaTraits traits(3, 7*M_PI/4, 2, 2);
+            CHECK(traits.getGeometry().getVolume() == Approx(59.19483315048983));
+        }
+    }
+}

@@ -16,6 +16,7 @@
  */
 class KMerTraits : public PolysphereTraits {
 private:
+    static double caluclateVolume(std::size_t sphereNum, double sphereRadius, double distance);
     static PolysphereGeometry generateGeometry(std::size_t sphereNum, double sphereRadius, double distance);
 
 public:

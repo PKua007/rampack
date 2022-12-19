@@ -200,7 +200,9 @@ namespace {
             ValidateMsg(r > 0, "Radius of sphere " + std::to_string(i/4) + " is <= 0");
             sphereData.emplace_back(pos, r);
         }
-        return {std::move(sphereData), primaryAxis, secondaryAxis, geometricOrigin, namedPoints};
+        return PolysphereTraits::PolysphereGeometry(
+            std::move(sphereData), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
+        );
     }
 
     void parse_chain(const std::string &chainStr, std::vector<SpherocylinderData> &spherocylinderData) {

@@ -4,6 +4,7 @@
 
 #include "PolysphereWedgeTraits.h"
 #include "utils/Assertions.h"
+#include "geometry/VolumeCalculator.h"
 
 
 namespace legacy {
@@ -14,7 +15,8 @@ namespace legacy {
         Expects(sphereNum >= 2);
         Expects(smallSphereRadius > 0);
         Expects(largeSphereRadius > 0);
-        Expects(spherePenetration < 2*std::min(smallSphereRadius, largeSphereRadius));
+        ExpectsMsg(spherePenetration == 0,
+                   "sphere penetration is disabled for version 0.1 because of incorrect volume calculation");
 
         std::vector<SphereData> data;
 
@@ -72,9 +74,28 @@ PolysphereWedgeTraits::generateGeometry(std::size_t sphereNum, double bottomSphe
         std::swap(data, newData);
     }
 
-    PolysphereGeometry geometry(data, {0, 0, 1}, {1, 0, 0}, {0, 0, 0});
+    double volume = PolysphereWedgeTraits::calculateVolume(data, spherePenetration);
+    PolysphereGeometry geometry(data, {0, 0, 1}, {1, 0, 0}, {0, 0, 0}, volume);
     geometry.addCustomNamedPoints({{"beg", data.front().position}, {"end", data.back().position}});
     if (spherePenetration == 0)
         geometry.addCustomNamedPoints({{"cm", geometry.calculateMassCentre()}});
     return geometry;
+}
+
+double PolysphereWedgeTraits::calculateVolume(const std::vector<SphereData> &sphereData, double spherePenetration) {
+    auto volumeAccumulator = [](double volume, const SphereData &data) {
+        return volume + 4./3*M_PI*std::pow(data.radius, 3);
+    };
+    double baseVolume = std::accumulate(sphereData.begin(), sphereData.end(), 0.0, volumeAccumulator);
+
+    if (spherePenetration > 0) {
+        for (std::size_t i{}; i < sphereData.size() - 1; i++) {
+            const auto &data1 = sphereData[i];
+            const auto &data2 = sphereData[i + 1];
+            double distance = data2.position[2] - data1.position[2];
+            baseVolume -= VolumeCalculator::sphereIntersection(data1.radius, data2.radius, distance);
+        }
+    }
+
+    return baseVolume;
 }

@@ -18,8 +18,9 @@ TEST_CASE("LayerWiseCellOptimizationTransformer: 3 layers") {
     //   #####
     //    ###       <- 2x smaller, tangent ball
     //    ###
+    double volume = 1; // volume is not important, we are laze and pick arbitrary number
     PolysphereTraits::PolysphereGeometry geometry({{{0, 0, 0}, 2}, {{0, 0, -3}, 1}},
-                                                  {0, 0, -1}, {0, 1, 0}, {0, 0, -1});
+                                                  {0, 0, -1}, {0, 1, 0}, {0, 0, -1}, volume);
     PolysphereTraits traits(std::move(geometry));
     // Unit cell:
     //   ####    ####
@@ -73,8 +74,9 @@ TEST_CASE("LayerWiseCellOptimizationTransformer: 1 layer") {
     // distance and initial cell was already small (but not optimal)
 
     // Dimer, but mass centre in a middle of a monomer => total range = 3
+    double volume = 1; // volume is not important, we are laze and pick arbitrary number
     PolysphereTraits::PolysphereGeometry geometry({{{0, 0, 0}, 0.5}, {{0, 0, 1}, 0.5}},
-                                                  {0, 0, 1}, {0, 1, 0}, {0, 0, 0});
+                                                  {0, 0, 1}, {0, 1, 0}, {0, 0, 0}, volume);
     PolysphereTraits traits(std::move(geometry));
     TriclinicBox initialBox(std::array<double, 3>{5, 5, 3});
     Lattice lattice(UnitCell(initialBox, {Shape({0.5, 0.5, 0.5})}), {2, 2, 2});

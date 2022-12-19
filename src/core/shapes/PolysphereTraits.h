@@ -8,9 +8,11 @@
 #include <utility>
 #include <ostream>
 #include <map>
+#include <optional>
 
 #include "core/ShapeTraits.h"
 #include "core/interactions/CentralInteraction.h"
+#include "OptionalAxis.h"
 
 
 /**
@@ -48,9 +50,12 @@ public:
     class PolysphereGeometry : public ShapeGeometry {
     private:
         std::vector<SphereData> sphereData;
-        Vector<3> primaryAxis;
-        Vector<3> secondaryAxis;
+        std::optional<Vector<3>> primaryAxis;
+        std::optional<Vector<3>> secondaryAxis;
         Vector<3> geometricOrigin;
+        double volume{};
+
+        [[nodiscard]] double calculateVolume() const;
 
     public:
         /**
@@ -62,23 +67,29 @@ public:
          * @param customNamedPoints custom named points in addition to default ones (see
          * PolysphereGeometry::getNamedPoint)
          */
-        PolysphereGeometry(std::vector<SphereData> sphereData, const Vector<3> &primaryAxis,
-                           const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin = {0, 0, 0},
-                           const ShapeGeometry::NamedPoints& customNamedPoints = {});
-
-        [[nodiscard]] double getVolume() const override;
+        explicit PolysphereGeometry(std::vector<SphereData> sphereData, OptionalAxis primaryAxis = std::nullopt,
+                                    OptionalAxis secondaryAxis = std::nullopt,
+                                    const Vector<3> &geometricOrigin = {0, 0, 0},
+                                    std::optional<double> volume = std::nullopt,
+                                    const ShapeGeometry::NamedPoints &customNamedPoints = {});
 
         [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override {
-            return shape.getOrientation() * this->primaryAxis;
+            if (!this->primaryAxis.has_value())
+                throw std::runtime_error("PolysphereGeometry::getPrimaryAxis: primary axis not defined");
+            return shape.getOrientation() * this->primaryAxis.value();
         }
 
         [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override {
-            return shape.getOrientation() * this->secondaryAxis;
+            if (!this->secondaryAxis.has_value())
+                throw std::runtime_error("PolysphereGeometry::getSecondaryAxis: secondary axis not defined");
+            return shape.getOrientation() * this->secondaryAxis.value();
         }
 
         [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const override {
             return shape.getOrientation() * this->geometricOrigin;
         }
+
+        [[nodiscard]] double getVolume() const override { return this->volume; }
 
         [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->sphereData; }
 
@@ -100,6 +111,8 @@ public:
         void addCustomNamedPoints(const ShapeGeometry::NamedPoints &namedPoints) {
             this->registerNamedPoints(namedPoints);
         }
+
+        [[nodiscard]] bool spheresOverlap() const;
     };
 
 private:

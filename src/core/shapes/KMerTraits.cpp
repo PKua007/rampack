@@ -4,6 +4,7 @@
 
 #include "KMerTraits.h"
 #include "utils/Assertions.h"
+#include "geometry/VolumeCalculator.h"
 
 
 KMerTraits::PolysphereGeometry KMerTraits::generateGeometry(std::size_t sphereNum, double sphereRadius, double distance)
@@ -19,7 +20,8 @@ KMerTraits::PolysphereGeometry KMerTraits::generateGeometry(std::size_t sphereNu
         data.emplace_back(SphereData({0, 0, sphereZ}, sphereRadius));
         sphereZ += distance;
     }
-    PolysphereGeometry geometry(std::move(data), {0, 0, 1}, {1, 0, 0});
+    double volume = KMerTraits::caluclateVolume(sphereNum, sphereRadius, distance);
+    PolysphereGeometry geometry(std::move(data), {0, 0, 1}, {1, 0, 0}, {0, 0, 0}, volume);
     geometry.normalizeMassCentre();
     geometry.setGeometricOrigin({0, 0, 0});
     const auto &newSphereData = geometry.getSphereData();
@@ -27,4 +29,16 @@ KMerTraits::PolysphereGeometry KMerTraits::generateGeometry(std::size_t sphereNu
                                    {"beg", newSphereData.front().position},
                                    {"end", newSphereData.back().position}});
     return geometry;
+}
+
+double KMerTraits::caluclateVolume(std::size_t sphereNum, double sphereRadius, double distance) {
+    double sphereVolume = 4./3*M_PI*sphereRadius*sphereRadius*sphereRadius;
+    double baseVolume = static_cast<double>(sphereNum) * sphereVolume;
+
+    if (distance < 2*sphereRadius) {
+        double capHeight = sphereRadius - distance/2;
+        baseVolume -= 2 * static_cast<double>(sphereNum - 1) * VolumeCalculator::sphericalCap(sphereRadius, capHeight);
+    }
+
+    return baseVolume;
 }
