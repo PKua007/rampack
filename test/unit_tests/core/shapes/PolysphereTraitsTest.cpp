@@ -104,8 +104,9 @@ TEST_CASE("PolysphereTraits: soft interactions") {
 }
 
 TEST_CASE("PolysphereTraits: mass centre normalization") {
+    double volume = 1;     // Volume is not important here, we are lazy and choose an arbitrary number
     PolysphereTraits::PolysphereGeometry geometry({{{0, 0, 0}, 1}, {{1, 0, 0}, std::cbrt(3)}},
-                                                  {1, 0, 0}, {0, 1, 0}, {1, 0, 0},
+                                                  {1, 0, 0}, {0, 1, 0}, {1, 0, 0}, volume,
                                                   {{"point1", {1, 0, 0}}});
     geometry.normalizeMassCentre();
     PolysphereTraits traits(geometry);
@@ -117,8 +118,9 @@ TEST_CASE("PolysphereTraits: mass centre normalization") {
 }
 
 TEST_CASE("PolysphereTraits: named points") {
+    double volume = 1;     // Volume is not important here, we are lazy and choose an arbitrary number
     PolysphereTraits::PolysphereGeometry geometry({{{0, 0, 0}, 1}, {{1, 0, 0}, 1}},
-                                                  {1, 0, 0}, {0, 1, 0}, {1, 0, 0},
+                                                  {1, 0, 0}, {0, 1, 0}, {1, 0, 0}, volume,
                                                   {{"named1", {0, 2, 0}}});
 
     Shape shape({1, 2, 3}, Matrix<3, 3>::rotation(0, 0, M_PI/2));

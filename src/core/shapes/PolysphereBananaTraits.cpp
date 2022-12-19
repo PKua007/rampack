@@ -4,6 +4,7 @@
 
 #include "PolysphereBananaTraits.h"
 #include "utils/Assertions.h"
+#include "geometry/VolumeCalculator.h"
 
 
 namespace legacy {
@@ -27,7 +28,9 @@ namespace legacy {
             sphereData.emplace_back(pos, sphereRadius);
         }
 
-        PolysphereGeometry geometry(std::move(sphereData), {0, 1, 0}, {-1, 0, 0});
+        // Calculate volume disregarding sphere overlaps - behaviour consistent with simulations pre version 0.2
+        double volume = static_cast<double>(sphereNum) * 4./3*M_PI * std::pow(sphereRadius, 3);
+        PolysphereGeometry geometry(std::move(sphereData), {0, 1, 0}, {-1, 0, 0}, {0, 0, 0}, volume);
         geometry.normalizeMassCentre();
         geometry.setGeometricOrigin({0, 0, 0});
         const auto &newSphereData = geometry.getSphereData();
@@ -47,6 +50,8 @@ PolysphereBananaTraits::generateGeometry(double arcRadius, double arcAngle, std:
     Expects(arcAngle < 2*M_PI);
     Expects(sphereNum >= 2);
     Expects(sphereRadius > 0);
+    // Reason: volume calculation is not implemented for sphereRadius > argRadius
+    Expects(sphereRadius <= arcRadius);
 
     double angleStep = arcAngle/static_cast<double>(sphereNum - 1);
     std::vector<Vector<3>> spherePos;
@@ -69,7 +74,8 @@ PolysphereBananaTraits::generateGeometry(double arcRadius, double arcAngle, std:
     for (const auto &pos : spherePos)
         sphereData.emplace_back(pos, sphereRadius);
 
-    PolysphereGeometry geometry(std::move(sphereData), {0, 0, 1}, {-1, 0, 0});
+    double volume = PolysphereBananaTraits::calculateVolume(sphereData, arcAngle);
+    PolysphereGeometry geometry(std::move(sphereData), {0, 0, 1}, {-1, 0, 0}, {0, 0, 0}, volume);
     geometry.addCustomNamedPoints({{"beg", spherePos.front()}, {"end", spherePos.back()}});
     PolysphereBananaTraits::addMassCentre(geometry);
     return geometry;
@@ -84,4 +90,27 @@ void PolysphereBananaTraits::addMassCentre(PolysphereTraits::PolysphereGeometry 
     constexpr double EPSILON = 1e-12;
     if (dist2 + EPSILON*EPSILON >= r*r)
         geometry.addCustomNamedPoints({{"cm", geometry.calculateMassCentre()}});
+}
+
+double PolysphereBananaTraits::calculateVolume(const std::vector<SphereData> &sphereData, double arcAngle) {
+    std::size_t numSpheres = sphereData.size();
+    double sphereRadius = sphereData.front().radius;
+    double baseVolume = static_cast<double>(numSpheres) * 4./3*M_PI * std::pow(sphereRadius, 3);
+
+    const auto &data1 = sphereData[0];
+    const auto &data2 = sphereData[1];
+    double distance = (data1.position - data2.position).norm();
+    if (distance < data1.radius + data2.radius) {
+        double overlapVolume = VolumeCalculator::sphereIntersection(data1.radius, data2.radius, distance);
+        baseVolume -= static_cast<double>(numSpheres - 1) * overlapVolume;
+    }
+
+    if (arcAngle > M_PI && numSpheres > 2) {
+        const auto &data3 = sphereData.back();
+        distance = (data1.position - data3.position).norm();
+        if (distance < data1.radius + data3.radius)
+            baseVolume -= VolumeCalculator::sphereIntersection(data1.radius, data3.radius, distance);
+    }
+
+    return baseVolume;
 }

@@ -62,6 +62,7 @@ namespace legacy {
  */
 class PolysphereBananaTraits : public PolysphereTraits {
 private:
+    static double calculateVolume(const std::vector<SphereData> &sphereData, double arcAngle);
     static PolysphereGeometry generateGeometry(double arcRadius, double arcAngle, std::size_t sphereNum,
                                                double sphereRadius);
     static void addMassCentre(PolysphereGeometry &geometry);

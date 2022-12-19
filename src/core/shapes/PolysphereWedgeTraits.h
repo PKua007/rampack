@@ -61,6 +61,7 @@ namespace legacy {
  */
 class PolysphereWedgeTraits : public PolysphereTraits {
 private:
+    static double calculateVolume(const std::vector<SphereData> &sphereData, double spherePenetration);
     static PolysphereGeometry generateGeometry(std::size_t sphereNum, double bottomSphereRadius, double topSphereRadius,
                                                double spherePenetration);
 

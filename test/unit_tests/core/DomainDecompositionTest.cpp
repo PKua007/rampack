@@ -14,8 +14,9 @@ TEST_CASE("DomainDecomposition") {
     // ghost layer middles theoretically go to 0th: 19 and 1st: 6.5, to they are rounded to ranges
     // 0th: (14, 19), 1st: (5, 10), which makes the domains as 0th: (19, 5) - through pbc, 1st: (10, 14)
 
+    double volume = 1; // volume is not important, we are laze and pick arbitrary number
     PolysphereTraits::PolysphereGeometry geometry({{{0, 0, 0}, 1}, {{1, 0, 0}, 1}},
-                                                  {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
+                                                  {1, 0, 0}, {0, 1, 0}, {0, 0, 0}, volume);
     PolysphereTraits dimer(std::move(geometry));
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
 

@@ -135,9 +135,12 @@ bool PolysphereTraits::HardInteraction::overlapWithWall(const Vector<3> &pos,
     return dotProduct < this->sphereData[idx].radius;
 }
 
-double PolysphereTraits::PolysphereGeometry::getVolume() const {
-    auto volumeAccumulator = [](double volume, const SphereData &data) {
-        return volume + 4*M_PI/3 * data.radius * data.radius * data.radius;
+double PolysphereTraits::PolysphereGeometry::calculateVolume() const {
+    ExpectsMsg(!this->spheresOverlap(), "PolysphereTraits::PolysphereGeometry::calculateVolume: automati volume "
+                                        "not supported for overlapping spheres");
+
+    auto volumeAccumulator = [](double volume_, const SphereData &data) {
+        return volume_ + 4 * M_PI / 3 * data.radius * data.radius * data.radius;
     };
     return std::accumulate(this->sphereData.begin(), this->sphereData.end(), 0., volumeAccumulator);
 }
@@ -159,14 +162,25 @@ void PolysphereTraits::PolysphereGeometry::normalizeMassCentre() {
     this->moveNamedPoints(-massCentre);
 }
 
-PolysphereTraits::PolysphereGeometry::PolysphereGeometry(std::vector<SphereData> sphereData,
-                                                         const Vector<3> &primaryAxis, const Vector<3> &secondaryAxis,
-                                                         const Vector<3> &geometricOrigin,
+PolysphereTraits::PolysphereGeometry::PolysphereGeometry(std::vector<SphereData> sphereData, OptionalAxis primaryAxis,
+                                                         OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin,
+                                                         std::optional<double> volume,
                                                          const ShapeGeometry::NamedPoints &customNamedPoints)
-        : sphereData{std::move(sphereData)}, primaryAxis{primaryAxis.normalized()},
-          secondaryAxis{secondaryAxis.normalized()}, geometricOrigin{geometricOrigin}
+        : sphereData{std::move(sphereData)}, primaryAxis{primaryAxis},
+          secondaryAxis{secondaryAxis}, geometricOrigin{geometricOrigin}
 {
     Expects(!this->sphereData.empty());
+    if (!this->primaryAxis.has_value())
+        Expects(!this->secondaryAxis.has_value());
+    if (this->primaryAxis.has_value())
+        this->primaryAxis = this->primaryAxis->normalized();
+    if (this->secondaryAxis.has_value())
+        this->secondaryAxis = this->secondaryAxis->normalized();
+
+    if (volume.has_value())
+        this->volume = *volume;
+    else
+        this->volume = this->calculateVolume();
 
     for (std::size_t i{}; i < this->sphereData.size(); i++) {
         const auto &ssData = this->sphereData[i];
@@ -192,4 +206,21 @@ Vector<3> PolysphereTraits::PolysphereGeometry::calculateMassCentre() const {
     double weightSum = std::accumulate(this->sphereData.begin(), this->sphereData.end(), 0., weightAccumulator);
     massCentre /= weightSum;
     return massCentre;
+}
+
+bool PolysphereTraits::PolysphereGeometry::spheresOverlap() const {
+    for (std::size_t i{}; i < this->sphereData.size(); i++) {
+        for (std::size_t j = i + 1; j < this->sphereData.size(); j++) {
+            const auto &data1 = this->sphereData[i];
+            const auto &data2 = this->sphereData[j];
+
+            constexpr double EPSILON = 1e-12;
+            double distance2 = (data1.position - data2.position).norm2();
+            double radii2 = std::pow(data1.radius + data2.radius + EPSILON, 2);
+            if (distance2 < radii2)
+                return true;
+        }
+    }
+
+    return false;
 }

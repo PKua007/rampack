@@ -68,6 +68,9 @@ namespace legacy {
  */
 class PolysphereLollipopTraits : public PolysphereTraits {
 private:
+    static double calculateVolume(const std::vector<SphereData> &sphereData, double smallSpherePenetration,
+                                  double largeSpherePenetration);
+
     static PolysphereGeometry generateGeometry(std::size_t sphereNum, double smallSphereRadius,
                                                double largeSphereRadius, double smallSpherePenetration,
                                                double largeSpherePenetration);
