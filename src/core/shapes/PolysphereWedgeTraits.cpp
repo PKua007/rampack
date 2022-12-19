@@ -88,6 +88,7 @@ double PolysphereWedgeTraits::calculateVolume(const std::vector<SphereData> &sph
     };
     double baseVolume = std::accumulate(sphereData.begin(), sphereData.end(), 0.0, volumeAccumulator);
 
+    // Subtract overlapping parts between spheres
     if (spherePenetration > 0) {
         for (std::size_t i{}; i < sphereData.size() - 1; i++) {
             const auto &data1 = sphereData[i];

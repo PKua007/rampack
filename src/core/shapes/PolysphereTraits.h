@@ -64,6 +64,10 @@ public:
          * @param primaryAxis the primary axis of the polymer
          * @param secondaryAxis the secondary axis of the polymer (should be orthogonal to the primary one)
          * @param geometricOrigin geometric origin of the molecule which can be different that the mass centre
+         * @param volume volume of the polymer; if not specified, it is calculated automatically, but only for
+         * non-overlapping spheres
+         *
+         *
          * @param customNamedPoints custom named points in addition to default ones (see
          * PolysphereGeometry::getNamedPoint)
          */

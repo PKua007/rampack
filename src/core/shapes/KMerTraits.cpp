@@ -35,6 +35,7 @@ double KMerTraits::caluclateVolume(std::size_t sphereNum, double sphereRadius, d
     double sphereVolume = 4./3*M_PI*sphereRadius*sphereRadius*sphereRadius;
     double baseVolume = static_cast<double>(sphereNum) * sphereVolume;
 
+    // Subtract overlapping parts
     if (distance < 2*sphereRadius) {
         double capHeight = sphereRadius - distance/2;
         baseVolume -= 2 * static_cast<double>(sphereNum - 1) * VolumeCalculator::sphericalCap(sphereRadius, capHeight);
