@@ -6,6 +6,7 @@
 #define RAMPACK_NODE_H
 
 #include <memory>
+#include <string>
 
 #include "PyonException.h"
 
