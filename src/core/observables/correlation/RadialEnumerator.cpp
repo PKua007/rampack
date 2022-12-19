@@ -14,7 +14,7 @@ void RadialEnumerator::enumeratePairs(const Packing &packing, const ShapeTraits 
 {
     const auto &bc = packing.getBoundaryConditions();
     auto focalPoints = packing.dumpNamedPoints(shapeTraits.getGeometry(), this->focalPointName);
-    std::size_t maxThreads = pairConsumer.getMaxThreads();
+    [[maybe_unused]] std::size_t maxThreads = pairConsumer.getMaxThreads();     // maybe-unused if OpenMP not available
 
     #pragma omp parallel for shared(packing, focalPoints, bc, pairConsumer, shapeTraits) default(none) \
             schedule(dynamic) num_threads(maxThreads)

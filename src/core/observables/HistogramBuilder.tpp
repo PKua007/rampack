@@ -20,7 +20,7 @@ void HistogramBuilder<DIM>::add(const Vector<DIM> &pos, double value) {
         Expects(posItem <= maxItem);
     }
 
-    std::size_t threadId = _OMP_THREAD_ID;
+    std::size_t threadId = OMP_THREAD_ID;
     Expects(threadId < this->currentHistograms.size());
 
     auto binIdx = this->calculateFlatBinIndex(pos);
@@ -98,7 +98,7 @@ HistogramBuilder<DIM>::HistogramBuilder(const std::array<double, DIM> &min, cons
         this->step[i] = (max[i] - min[i]) / static_cast<double>(numBins[i]);
 
     if (numThreads == 0)
-        numThreads = _OMP_MAXTHREADS;
+        numThreads = OMP_MAXTHREADS;
     this->currentHistograms.resize(numThreads, Histogram{this->flatNumBins});
 
     for (std::size_t i{}; i < this->flatNumBins; i++) {

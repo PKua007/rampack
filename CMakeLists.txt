@@ -1,22 +1,42 @@
 cmake_minimum_required(VERSION 3.10)
 project(rampack)
 
-if (NOT (CMAKE_COMPILER_IS_GNUCXX AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.0))
-    message(FATAL_ERROR "Only GCC 7+ is supporter")
+
+# Check compiler support
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.0)
+        message(FATAL_ERROR "Only versions 7+ of GNU are supported")
+    endif()
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.0)
+        message(FATAL_ERROR "Only versions 7+ of Clang are supported")
+    endif()
+else()
+    message(WARNING "Compilers other than GNU 7+ and Clang 7+ were not tested; there may be problems")
 endif()
+
 
 set(CMAKE_CXX_STANDARD 17)
 
+# Check build type
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
     message(STATUS "No CMAKE_BUILD_TYPE specified; using Release. Use -DCMAKE_BUILD_TYPE=... to specify it manually")
 endif()
 
+# Configure compiler options
 add_compile_options(-Wall -Wextra -pedantic)
 if (CMAKE_BUILD_TYPE MATCHES "Release")
-    add_compile_options(-O3 -march=native)
+    # Apple silicon does not like -march=native option
+    if (NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"))
+        add_compile_options(-march=native)
+    endif()
+    add_compile_options(-O3)
 elseif (CMAKE_BUILD_TYPE MATCHES "Debug")
-    add_compile_definitions(_GLIBCXX_CONCEPT_CHECKS _GLIBCXX_DEBUG _GLIBCXX_DEBUG_PEDANTIC _GLIBCXX_CONCEPT_CHECKS)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        add_compile_definitions(_GLIBCXX_CONCEPT_CHECKS _GLIBCXX_DEBUG _GLIBCXX_DEBUG_PEDANTIC _GLIBCXX_CONCEPT_CHECKS)
+    endif()
+    add_compile_options(-gdwarf-4)
 endif()
 
 # Check for submodules
@@ -40,14 +60,19 @@ if(OpenMP_CXX_FOUND)
     link_libraries(OpenMP::OpenMP_CXX)
 endif()
 
+# Explicitly link filesystem library for older versions of GCC
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    link_libraries(stdc++fs)
+endif()
+
 add_library(quickhull STATIC extern/quickhull/QuickHull.cpp)
 target_include_directories(quickhull PUBLIC extern/quickhull/)
-target_compile_options(quickhull PRIVATE -Wno-maybe-uninitialized)
-# unset _GLIBCXX_CONCEPT_CHECKS for quickhull because it causes compilation errors
-target_compile_options(quickhull PRIVATE -U_GLIBCXX_CONCEPT_CHECKS)
 
-# Explicitly link filesystem library for older versions of GCC
-link_libraries(stdc++fs)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(quickhull PRIVATE -Wno-maybe-uninitialized)
+    # unset _GLIBCXX_CONCEPT_CHECKS for quickhull because it causes compilation errors
+    target_compile_options(quickhull PRIVATE -U_GLIBCXX_CONCEPT_CHECKS)
+endif()
 
 # Allow overriding CMake options with set() and turn off tests for cxxopts
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)

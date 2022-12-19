@@ -26,7 +26,7 @@ void LayerwiseRadialEnumerator::enumeratePairs(const Packing &packing, const Sha
     auto focalPoints = packing.dumpNamedPoints(traits.getGeometry(), this->focalPointName);
     double tauAngle = LayerwiseRadialEnumerator::calculateTauAngle(kVector, focalPoints);
     const auto &bc = packing.getBoundaryConditions();
-    std::size_t maxThreads = pairConsumer.getMaxThreads();
+    [[maybe_unused]] std::size_t maxThreads = pairConsumer.getMaxThreads(); // maybe_unused is OpenMP not avaliable
 
     #pragma omp parallel for shared(packing, focalPoints, bc, pairConsumer, kVector, tauAngle, kVectorNorm, traits) \
             default(none) schedule(dynamic) num_threads(maxThreads)

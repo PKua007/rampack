@@ -178,11 +178,11 @@ int Frontend::casino(int argc, char **argv) {
     // Parse number of scaling threads
     std::size_t scalingThreads{};
     if (params.scalingThreads == "max")
-        scalingThreads = _OMP_MAXTHREADS;
+        scalingThreads = OMP_MAXTHREADS;
     else
         scalingThreads = std::stoul(params.scalingThreads);
     Validate(scalingThreads > 0);
-    Validate(scalingThreads <= static_cast<std::size_t>(_OMP_MAXTHREADS));
+    Validate(scalingThreads <= static_cast<std::size_t>(OMP_MAXTHREADS));
 
     // Parse domain divisions
     std::array<std::size_t, 3> domainDivisions{};
@@ -192,7 +192,7 @@ int Frontend::casino(int argc, char **argv) {
 
     std::size_t numDomains = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies<>{});
     Validate(numDomains > 0);
-    Validate(numDomains <= static_cast<std::size_t>(_OMP_MAXTHREADS));
+    Validate(numDomains <= static_cast<std::size_t>(OMP_MAXTHREADS));
 
     // We use the same number of threads for scaling and particle moves, otherwise OpenMP leaks memory
     // Too many domain threads are ok, some will just be jobless. But we cannot use less scaling threads than
@@ -202,7 +202,7 @@ int Frontend::casino(int argc, char **argv) {
     Validate(numDomains <= scalingThreads);
 
     // Info about threads
-    this->logger << _OMP_MAXTHREADS << " OpenMP threads are available" << std::endl;
+    this->logger << OMP_MAXTHREADS << " OpenMP threads are available" << std::endl;
     this->logger << "Using " << scalingThreads << " threads for scaling moves" << std::endl;
     if (numDomains == 1) {
         this->logger << "Using 1 thread without domain decomposition for particle moves" << std::endl;

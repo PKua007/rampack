@@ -48,7 +48,7 @@ namespace {
 TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
     // We choose temperature 10 and pressure 1. For particles of radius 0.05 we should obtain number density 0.0999791
     // We start with density 0.01 and too small step ranges. The program should adjust and equilibrate correctly
-    omp_set_num_threads(1);
+    OMP_SET_NUM_THREADS(1);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 5000;
     double linearSize = std::cbrt(V);
@@ -74,7 +74,7 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
 }
 
 TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
-    omp_set_num_threads(1);
+    OMP_SET_NUM_THREADS(1);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 200;
     double linearSize = std::cbrt(V);
@@ -100,7 +100,7 @@ TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
 }
 
 TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") {
-    omp_set_num_threads(1);
+    OMP_SET_NUM_THREADS(1);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     std::array<double, 3> dimensions = {10, 10, 10};
     auto shapes = OrthorhombicArrangingModel{}.arrange(50, {5, 5, 2}, {2, 2, 5}, dimensions);
@@ -149,7 +149,7 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
 TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
     // For parameters chosen compressibility factor should be around 1.2 and equation of state seem to be well
     // approximated by the second virial coefficient known analytically
-    omp_set_num_threads(1);
+    OMP_SET_NUM_THREADS(1);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 200;
     double linearSize = std::cbrt(V);
@@ -178,7 +178,7 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
 TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
     // Semi-Theoretical values from "An equation of state for hard dumbell fluids"
     // D.J. Tildesley a & W.B. Streett (1980)
-    omp_set_num_threads(1);
+    OMP_SET_NUM_THREADS(1);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 600;
     double linearSize = std::cbrt(V);
@@ -205,7 +205,7 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
 }
 
 TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
-    omp_set_num_threads(4);
+    OMP_SET_NUM_THREADS(4);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 500;
     double linearSize = std::cbrt(V);
@@ -243,7 +243,7 @@ TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
 }
 
 TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
-    omp_set_num_threads(4);
+    OMP_SET_NUM_THREADS(4);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     double V = 1000;
     double linearSize = std::cbrt(V);
@@ -295,7 +295,7 @@ TEST_CASE("Simulation: overlap reduction for hard sphere liquid", "[medium]") {
     std::size_t numDomains = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies<>{});
 
     DYNAMIC_SECTION("domains: " << numDomains) {
-        omp_set_num_threads(1);
+        OMP_SET_NUM_THREADS(1);
         auto pbc = std::make_unique<PeriodicBoundaryConditions>();
         double linearSize = 5;
         std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
@@ -329,7 +329,7 @@ TEST_CASE("Simulation: overlap reduction for hard sphere liquid", "[medium]") {
 }
 
 TEST_CASE("Simulation: upscaling skip stress test", "[short]") {
-    omp_set_num_threads(1);
+    OMP_SET_NUM_THREADS(1);
 
     auto cell = UnitCellFactory::createFccCell(1.43);
     Lattice lattice(cell, {3, 3, 3});

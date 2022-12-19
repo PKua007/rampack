@@ -2,7 +2,7 @@
 // Created by pkua on 18.11.22.
 //
 
-#include <debug/vector>
+#include <vector>
 #include "WolframWriter.h"
 
 

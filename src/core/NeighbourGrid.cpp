@@ -402,7 +402,7 @@ NeighbourGrid::cellCoordinatesToCellBounds(const std::array<std::size_t, 3> &coo
 }
 
 void NeighbourGrid::sanitizeRaceCondition(std::size_t cellNo, const std::string &methodSignature) {
-    auto tid = static_cast<std::size_t>(_OMP_THREAD_ID);
+    auto tid = static_cast<std::size_t>(OMP_THREAD_ID);
     auto cellThread = this->cellOwningThreads[cellNo];
     if (cellThread == NeighbourGrid::LIST_END) {
         this->cellOwningThreads[cellNo] = tid;

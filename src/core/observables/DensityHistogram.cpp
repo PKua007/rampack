@@ -47,7 +47,7 @@ DensityHistogram::DensityHistogram(const std::array<std::size_t, 3> &numBins, st
                                    std::size_t numThreads)
         : numBins{normalizeNumBins(numBins)}, tracker{std::move(tracker)},
           histogramBuilder({0, 0, 0}, {1, 1, 1}, this->numBins, numThreads),
-          numThreads{numThreads == 0 ? _OMP_MAXTHREADS : numThreads}
+          numThreads{numThreads == 0 ? OMP_MAXTHREADS : numThreads}
 {
     if (this->tracker == nullptr)
         this->tracker = std::make_unique<DummyTracker>();

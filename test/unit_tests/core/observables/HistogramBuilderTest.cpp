@@ -47,13 +47,14 @@ TEST_CASE("Histogram 1D: reduction methods") {
     }
 }
 
+#ifdef _OPENMP
 TEST_CASE("Histogram 1D: OpenMP") {
     // The same as the above, but in parallel
     HistogramBuilder<1> histogram(1, 3, 2, 2);
 
     #pragma omp parallel num_threads(2) shared(histogram) default(none)
     {
-        if (_OMP_THREAD_ID == 0) {
+        if (OMP_THREAD_ID == 0) {
             histogram.add(1.1, 2);
         } else {
             histogram.add(2.1, 4);
@@ -64,7 +65,7 @@ TEST_CASE("Histogram 1D: OpenMP") {
 
     #pragma omp parallel num_threads(2) shared(histogram) default(none)
     {
-        if (_OMP_THREAD_ID == 0)
+        if (OMP_THREAD_ID == 0)
             histogram.add(1.9, 6);
         else
             histogram.add(2.5, 15);
@@ -74,6 +75,7 @@ TEST_CASE("Histogram 1D: OpenMP") {
     auto values = histogram.dumpValues(HistogramBuilder<1>::ReductionMethod::SUM);
     CHECK(values == std::vector<HistogramBuilder<1>::BinValue>{{1.5, 4}, {2.5, 12}});
 }
+#endif // _OPENMP
 
 TEST_CASE("Histogram 1D: empty histogram") {
     // Bins: [1, 2), [2, 3]

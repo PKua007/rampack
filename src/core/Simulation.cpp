@@ -371,7 +371,7 @@ void Simulation::performMovesWithoutDomainDivision(const ShapeTraits &shapeTrait
 
 void Simulation::performMovesWithDomainDivision(const ShapeTraits &shapeTraits) {
     const auto &packingBox = this->packing->getBox();
-    auto &mt = this->mts[_OMP_THREAD_ID];
+    auto &mt = this->mts[OMP_THREAD_ID];
     const auto &interaction = shapeTraits.getInteraction();
 
     Vector<3> randomOrigin{this->unitIntervalDistribution(mt),
@@ -430,7 +430,7 @@ bool Simulation::tryMove(const ShapeTraits &shapeTraits, const std::vector<std::
 
     std::size_t numMoves = moveTypeAccumulations.back();
     std::uniform_int_distribution<std::size_t> moveDistribution(0, numMoves - 1);
-    auto &mt = this->mts[_OMP_THREAD_ID];
+    auto &mt = this->mts[OMP_THREAD_ID];
     std::size_t sampledMoveType = moveDistribution(mt);
     std::size_t moveType{};
     for (auto moveTypeAccumulation : moveTypeAccumulations) {

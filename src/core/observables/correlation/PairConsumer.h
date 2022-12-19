@@ -22,7 +22,7 @@ public:
      * @brief Constructs a class declaring the support of at most @a numThreads threads.
      * @details Is @a numThreads is equal 0, @a omp_get_max_threads() theads will be used
      */
-    explicit PairConsumer(std::size_t numThreads = 1) : numThreads{numThreads == 0 ? _OMP_MAXTHREADS : numThreads} { }
+    explicit PairConsumer(std::size_t numThreads = 1) : numThreads{numThreads == 0 ? OMP_MAXTHREADS : numThreads} { }
     virtual ~PairConsumer() = default;
 
     /**

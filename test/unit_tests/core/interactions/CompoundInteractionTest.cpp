@@ -143,6 +143,8 @@ TEST_CASE("CompoundInteraction") {
     Vector<3> wallVector{0, 0, 1};
     PeriodicBoundaryConditions bc;
 
+    bool ov1{}, ov2{}, result{};
+
     SECTION("hard + soft overlap and energy") {
         REQUIRE_CALL(hard, overlapBetween(pos1, rot1, idx1, pos2, rot2, idx2, _)).RETURN(true);
         REQUIRE_CALL(soft, calculateEnergyBetween(pos1, rot1, idx1, pos2, rot2, idx2, _)).RETURN(2);
@@ -155,10 +157,10 @@ TEST_CASE("CompoundInteraction") {
     SECTION("hard + hard overlap") {
         MAKE_HARD_MOCK(hard2);
 
-        auto [ov1, ov2, result] = GENERATE(std::make_tuple(false, false, false),
-                                           std::make_tuple(false, true, true),
-                                           std::make_tuple(true, false, true),
-                                           std::make_tuple(true, true, true));
+        std::tie(ov1, ov2, result) = GENERATE(std::make_tuple(false, false, false),
+                                              std::make_tuple(false, true, true),
+                                              std::make_tuple(true, false, true),
+                                              std::make_tuple(true, true, true));
 
         DYNAMIC_SECTION(std::boolalpha << ov1 << " and " << ov2 << " give " << result) {
             ALLOW_CALL(hard, overlapBetween(pos1, rot1, idx1, pos2, rot2, idx2, _)).RETURN(ov1);
@@ -172,10 +174,10 @@ TEST_CASE("CompoundInteraction") {
     SECTION("wall + wall overlap") {
         MAKE_WALL_MOCK(wall2);
 
-        auto [ov1, ov2, result] = GENERATE(std::make_tuple(false, false, false),
-                                           std::make_tuple(false, true, true),
-                                           std::make_tuple(true, false, true),
-                                           std::make_tuple(true, true, true));
+        std::tie(ov1, ov2, result) = GENERATE(std::make_tuple(false, false, false),
+                                              std::make_tuple(false, true, true),
+                                              std::make_tuple(true, false, true),
+                                              std::make_tuple(true, true, true));
 
         DYNAMIC_SECTION(std::boolalpha << ov1 << " and " << ov2 << " give " << result) {
             ALLOW_CALL(wall, overlapWithWall(pos1, rot1, idx1, wallOrigin, wallVector)).RETURN(ov1);

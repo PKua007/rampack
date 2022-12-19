@@ -47,8 +47,8 @@ Packing::Packing(const TriclinicBox &box, std::vector<Shape> shapes, std::unique
                  const Interaction &interaction, std::size_t moveThreads, std::size_t scalingThreads)
         : bc{std::move(bc)}
 {
-    this->moveThreads = (moveThreads == 0 ? _OMP_MAXTHREADS : moveThreads);
-    this->scalingThreads = (scalingThreads == 0 ? _OMP_MAXTHREADS : scalingThreads);
+    this->moveThreads = (moveThreads == 0 ? OMP_MAXTHREADS : moveThreads);
+    this->scalingThreads = (scalingThreads == 0 ? OMP_MAXTHREADS : scalingThreads);
 
     this->reset(std::move(shapes), box, interaction);
 }
@@ -56,8 +56,8 @@ Packing::Packing(const TriclinicBox &box, std::vector<Shape> shapes, std::unique
 Packing::Packing(std::unique_ptr<BoundaryConditions> bc, std::size_t moveThreads, std::size_t scalingThreads)
         : bc{std::move(bc)}
 {
-    this->moveThreads = (moveThreads == 0 ? _OMP_MAXTHREADS : moveThreads);
-    this->scalingThreads = (scalingThreads == 0 ? _OMP_MAXTHREADS : scalingThreads);
+    this->moveThreads = (moveThreads == 0 ? OMP_MAXTHREADS : moveThreads);
+    this->scalingThreads = (scalingThreads == 0 ? OMP_MAXTHREADS : scalingThreads);
 
     this->lastAlteredParticleIdx.resize(this->moveThreads, 0);
     this->lastMoveOverlapDeltas.resize(this->moveThreads, 0);
@@ -86,8 +86,8 @@ double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, c
     Expects(particleIdx < this->size());
     Expects(interaction.getRangeRadius() <= this->interactionRange);
 
-    std::size_t tempParticleIdx = this->size() + _OMP_THREAD_ID;
-    this->lastAlteredParticleIdx[_OMP_THREAD_ID] = particleIdx;
+    std::size_t tempParticleIdx = this->size() + OMP_THREAD_ID;
+    this->lastAlteredParticleIdx[OMP_THREAD_ID] = particleIdx;
     this->shapes[tempParticleIdx] = this->shapes[particleIdx];
     this->shapes[tempParticleIdx].translate(translation, *this->bc);
 
@@ -112,8 +112,8 @@ double Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotatio
     Expects(particleIdx < this->size());
     Expects(interaction.getRangeRadius() <= this->interactionRange);
 
-    std::size_t tempParticleIdx = this->size() + _OMP_THREAD_ID;
-    this->lastAlteredParticleIdx[_OMP_THREAD_ID] = particleIdx;
+    std::size_t tempParticleIdx = this->size() + OMP_THREAD_ID;
+    this->lastAlteredParticleIdx[OMP_THREAD_ID] = particleIdx;
     this->shapes[tempParticleIdx] = this->shapes[particleIdx];
 
     this->shapes[tempParticleIdx].rotate(rotation);
@@ -138,8 +138,8 @@ double Packing::tryMove(std::size_t particleIdx, const Vector<3> &translation, c
     Expects(particleIdx < this->size());
     Expects(interaction.getRangeRadius() <= this->interactionRange);
 
-    std::size_t tempParticleIdx = this->size() + _OMP_THREAD_ID;
-    this->lastAlteredParticleIdx[_OMP_THREAD_ID] = particleIdx;
+    std::size_t tempParticleIdx = this->size() + OMP_THREAD_ID;
+    this->lastAlteredParticleIdx[OMP_THREAD_ID] = particleIdx;
     this->shapes[tempParticleIdx] = this->shapes[particleIdx];
     this->shapes[tempParticleIdx].translate(translation, *this->bc);
 
@@ -231,7 +231,7 @@ double Packing::getNumberDensity() const {
 }
 
 void Packing::acceptTranslation() {
-    std::size_t lastAlteredIdx = this->lastAlteredParticleIdx[_OMP_THREAD_ID];
+    std::size_t lastAlteredIdx = this->lastAlteredParticleIdx[OMP_THREAD_ID];
     if (this->neighbourGrid.has_value()) {
         if (this->numInteractionCentres == 0)
             this->neighbourGrid->remove(lastAlteredIdx, this->shapes[lastAlteredIdx].getPosition());
@@ -239,7 +239,7 @@ void Packing::acceptTranslation() {
             this->removeInteractionCentresFromNeighbourGrid(lastAlteredIdx);
     }
 
-    this->shapes[lastAlteredIdx].setPosition(this->shapes[this->size() + _OMP_THREAD_ID].getPosition());
+    this->shapes[lastAlteredIdx].setPosition(this->shapes[this->size() + OMP_THREAD_ID].getPosition());
     if (this->numInteractionCentres != 0)
         this->acceptTempInteractionCentres();
 
@@ -252,16 +252,16 @@ void Packing::acceptTranslation() {
 
     if (this->overlapCounting) {
         #pragma omp critical
-        this->numOverlaps += this->lastMoveOverlapDeltas[_OMP_THREAD_ID];
+        this->numOverlaps += this->lastMoveOverlapDeltas[OMP_THREAD_ID];
     }
 }
 
 void Packing::acceptRotation() {
-    std::size_t lastAlteredIdx = this->lastAlteredParticleIdx[_OMP_THREAD_ID];
+    std::size_t lastAlteredIdx = this->lastAlteredParticleIdx[OMP_THREAD_ID];
     if (this->neighbourGrid.has_value() && this->numInteractionCentres != 0)
         this->removeInteractionCentresFromNeighbourGrid(lastAlteredIdx);
 
-    this->shapes[lastAlteredIdx].setOrientation(this->shapes[size() + _OMP_THREAD_ID].getOrientation());
+    this->shapes[lastAlteredIdx].setOrientation(this->shapes[size() + OMP_THREAD_ID].getOrientation());
     if (this->numInteractionCentres != 0)
         this->acceptTempInteractionCentres();
 
@@ -270,12 +270,12 @@ void Packing::acceptRotation() {
 
     if (this->overlapCounting) {
         #pragma omp critical
-        this->numOverlaps += this->lastMoveOverlapDeltas[_OMP_THREAD_ID];
+        this->numOverlaps += this->lastMoveOverlapDeltas[OMP_THREAD_ID];
     }
 }
 
 void Packing::acceptMove() {
-    std::size_t lastAlteredIdx = this->lastAlteredParticleIdx[_OMP_THREAD_ID];
+    std::size_t lastAlteredIdx = this->lastAlteredParticleIdx[OMP_THREAD_ID];
     if (this->neighbourGrid.has_value()) {
         if (this->numInteractionCentres == 0)
             this->neighbourGrid->remove(lastAlteredIdx, this->shapes[lastAlteredIdx].getPosition());
@@ -283,7 +283,7 @@ void Packing::acceptMove() {
             this->removeInteractionCentresFromNeighbourGrid(lastAlteredIdx);
     }
 
-    this->shapes[lastAlteredIdx] = this->shapes[this->size() + _OMP_THREAD_ID];
+    this->shapes[lastAlteredIdx] = this->shapes[this->size() + OMP_THREAD_ID];
     if (this->numInteractionCentres != 0)
         this->acceptTempInteractionCentres();
 
@@ -296,7 +296,7 @@ void Packing::acceptMove() {
 
     if (this->overlapCounting) {
         #pragma omp critical
-        this->numOverlaps += this->lastMoveOverlapDeltas[_OMP_THREAD_ID];
+        this->numOverlaps += this->lastMoveOverlapDeltas[OMP_THREAD_ID];
     }
 }
 
@@ -307,7 +307,7 @@ double Packing::calculateMoveOverlapEnergy(size_t particleIdx, size_t tempPartic
         if (this->overlapCounting) {
             std::size_t initialOverlaps = this->countParticleOverlaps(particleIdx, particleIdx, interaction, false);
             std::size_t finalOverlaps = this->countParticleOverlaps(particleIdx, tempParticleIdx, interaction, false);
-            auto &lastMoveOverlapDelta = this->lastMoveOverlapDeltas[_OMP_THREAD_ID];
+            auto &lastMoveOverlapDelta = this->lastMoveOverlapDeltas[OMP_THREAD_ID];
             lastMoveOverlapDelta = static_cast<int>(finalOverlaps) - initialOverlaps;
             if (lastMoveOverlapDelta < 0)
                 return -INF;
@@ -336,8 +336,8 @@ void Packing::removeInteractionCentresFromNeighbourGrid(std::size_t particleIdx)
 }
 
 void Packing::acceptTempInteractionCentres() {
-    std::size_t fromOrigin = (this->size() + _OMP_THREAD_ID) * this->numInteractionCentres;
-    std::size_t toOrigin = this->lastAlteredParticleIdx[_OMP_THREAD_ID] * this->numInteractionCentres;
+    std::size_t fromOrigin = (this->size() + OMP_THREAD_ID) * this->numInteractionCentres;
+    std::size_t toOrigin = this->lastAlteredParticleIdx[OMP_THREAD_ID] * this->numInteractionCentres;
     for (std::size_t i{}; i < this->numInteractionCentres; i++) {
         std::size_t toCentreIdx = toOrigin + i;
         std::size_t fromCentreIdx = fromOrigin + i;
@@ -348,13 +348,13 @@ void Packing::acceptTempInteractionCentres() {
 
 void Packing::prepareTempInteractionCentres(std::size_t particleIdx) {
     std::size_t fromOrigin = particleIdx * this->numInteractionCentres;
-    std::size_t toOrigin = (this->size() + _OMP_THREAD_ID) * this->numInteractionCentres;
+    std::size_t toOrigin = (this->size() + OMP_THREAD_ID) * this->numInteractionCentres;
     for (std::size_t i{}; i < this->numInteractionCentres; i++)
         this->interactionCentres[toOrigin + i] = this->interactionCentres[fromOrigin + i];
 }
 
 void Packing::rotateTempInteractionCentres(const Matrix<3, 3> &rotation) {
-    std::size_t idxOrigin = (this->size() + _OMP_THREAD_ID) * this->numInteractionCentres;
+    std::size_t idxOrigin = (this->size() + OMP_THREAD_ID) * this->numInteractionCentres;
     for (std::size_t i{}; i < this->numInteractionCentres; i++)
         this->interactionCentres[idxOrigin + i] = rotation * this->interactionCentres[idxOrigin + i];
 }

@@ -10,8 +10,6 @@
 
 // Based on: http://eecs.qmul.ac.uk/~gslabaugh/publications/euler.pdf
 std::pair<std::array<double, 3>, std::array<double, 3>> EulerAngles::forMatrix(const Matrix<3, 3> &matrix) {
-    std::pair<std::array<double, 3>, std::array<double, 3>> result;
-
     double R11 = matrix(0, 0);
     double R12 = matrix(0, 1);
     double R13 = matrix(0, 2);
