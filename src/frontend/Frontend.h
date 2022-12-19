@@ -33,12 +33,12 @@ private:
     std::ofstream auxOutStream;
 
     Parameters loadParameters(const std::string &inputFilename);
+    std::unique_ptr<Packing> recreatePacking(PackingLoader &loader, const Parameters &params,
+                                             const ShapeTraits &traits, std::size_t maxThreads);
     void overwriteMoveStepSizes(Simulation::Environment &env,
                                 const std::map<std::string, std::string> &packingAuxInfo) const;
     Simulation::Environment recreateEnvironment(const Parameters &params, const PackingLoader &loader,
                                                 const ShapeTraits &traits) const;
-    Simulation::Environment recreateRawEnvironment(const Parameters &params, std::size_t startRunIndex,
-                                                   const ShapeTraits &traits) const;
 
     void setVerbosityLevel(std::optional<std::string> verbosity, std::optional<std::string> auxOutput,
                            std::optional<std::string> auxVerbosity);
