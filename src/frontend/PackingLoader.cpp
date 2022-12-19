@@ -80,6 +80,16 @@ void PackingLoader::findStartRunIndex() {
         return;
     }
 
+    if (this->startFrom == ".first") {
+        this->startRunIndex = 0;
+        return;
+    }
+
+    if (this->startFrom == ".last") {
+        this->startRunIndex = this->runsParameters.size() - 1;
+        return;
+    }
+
     auto nameMatchesStartFrom = [this](const auto &params) {
         auto runNameGetter = [](auto &&run) { return run.runName; };
         return std::visit(runNameGetter, params) == this->startFrom;

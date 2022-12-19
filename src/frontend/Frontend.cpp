@@ -921,7 +921,7 @@ int Frontend::trajectory(int argc, char **argv) {
     cxxopts::Options options(argv[0], "Recorded trajectories analyzer.");
 
     std::string inputFilename;
-    std::string trajectoryFilename;
+    std::string runName;
     std::string obsOutputFilename;
     std::vector<std::string> observables;
     std::string bulkObsOutputFilename;
@@ -942,8 +942,8 @@ int Frontend::trajectory(int argc, char **argv) {
         ("i,input", "an INI file with parameters that was used to generate the trajectories. See sample_inputs "
                     "folder for full parameters documentation",
          cxxopts::value<std::string>(inputFilename))
-        ("t,trajectory", "a file with recorded RAMTRJ trajectory",
-         cxxopts::value<std::string>(trajectoryFilename))
+        ("r,run-name", "name of the run, for which the trajectory was generated",
+         cxxopts::value<std::string>(runName)->default_value(".last"))
         ("f,auto-fix", "tries to auto-fix the trajectory if it is broken")
         ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
                         "error, warn, info, verbose, debug. Defaults to: info if --log-file not specified, "
@@ -1012,8 +1012,6 @@ int Frontend::trajectory(int argc, char **argv) {
         die("Unexpected positional arguments. See " + cmd + " --help", this->logger);
     if (!parsedOptions.count("input"))
         die("Input file must be specified with option -i [input file name]", this->logger);
-    if (!parsedOptions.count("trajectory"))
-        die("Trajectory file must be specified with option -t [input file name]", this->logger);
     if (!parsedOptions.count("observables") && !parsedOptions.count("bulk-observables")
         && !parsedOptions.count("log-info") && !parsedOptions.count("generate-ramsnap")
         && !parsedOptions.count("generate-xyz") && !parsedOptions.count("generate-wolfram")
@@ -1031,14 +1029,48 @@ int Frontend::trajectory(int argc, char **argv) {
             "options must be specified", this->logger);
     }
 
+    if (runName == ".auto")
+        die("'.auto' run is not supported in the trajectory mode", this->logger);
+
     Parameters params = this->loadParameters(inputFilename);
-    auto bc = std::make_unique<PeriodicBoundaryConditions>();
+
     auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction,
                                                     params.version);
-    auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
-                                                      params.initialArrangement, std::move(bc),
-                                                      shapeTraits->getInteraction(), shapeTraits->getGeometry(), 1, 1);
+
+    PackingLoader packingLoader(this->logger, runName, std::nullopt, params.runsParameters);
+    auto bc = std::make_unique<PeriodicBoundaryConditions>();
+    packingLoader.loadPacking(std::move(bc), shapeTraits->getInteraction(), maxThreads, maxThreads);
+    std::size_t startRunIndex = packingLoader.getStartRunIndex();
+
+    std::unique_ptr<Packing> packing;
+    if (packingLoader.isRestored()) {
+        packing = packingLoader.releasePacking();
+    } else {
+        // Same number of scaling and domain threads
+        bc = std::make_unique<PeriodicBoundaryConditions>();
+        packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
+                                                     params.initialArrangement, std::move(bc),
+                                                     shapeTraits->getInteraction(), shapeTraits->getGeometry(),
+                                                     maxThreads, maxThreads);
+    }
+
     this->createWalls(*packing, params.walls);
+
+    const auto &startRun = params.runsParameters[startRunIndex];
+    std::string trajectoryFilename = std::visit([](const auto &run) { return run.recordingFilename; }, startRun);
+    std::string foundRunName = std::visit([](const auto &run) { return run.runName; }, startRun);
+
+    if (foundRunName == runName) {
+        this->logger.info() << "Trajectory of the run '" << foundRunName << "' will be processed" << std::endl;
+    } else {
+        this->logger.info() << "Trajectory of the run '" << runName << "' ('" << foundRunName << "') will be processed";
+        this->logger << std::endl;
+    }
+
+    if (trajectoryFilename.empty())
+        die("RAMTRJ trajectory was not recorded for the run '" + foundRunName + "'", this->logger);
+
+    Simulation::Environment environment = this->recreateRawEnvironment(params, startRunIndex, *shapeTraits);
 
     bool autoFix = parsedOptions.count("auto-fix");
     auto player = this->loadRamtrjPlayer(trajectoryFilename, packing->size(), autoFix);
@@ -1091,6 +1123,11 @@ int Frontend::trajectory(int argc, char **argv) {
         auto start = high_resolution_clock::now();
         while (player->hasNext()) {
             player->nextSnapshot(*packing, shapeTraits->getInteraction());
+            std::size_t cycles = player->getCurrentSnapshotCycles();
+            std::size_t totalCycles = player->getTotalCycles();
+            double temperature = environment.getTemperature().getValueForCycle(cycles, totalCycles);
+            double pressure = environment.getPressure().getValueForCycle(cycles, totalCycles);
+            collector->setThermodynamicParameters(temperature, pressure);
             collector->addSnapshot(*packing, player->getCurrentSnapshotCycles(), *shapeTraits);
             this->logger.info() << "Replayed cycle " << player->getCurrentSnapshotCycles() << "; ";
             this->logger << collector->generateInlineObservablesString(*packing, *shapeTraits);
@@ -1478,6 +1515,21 @@ Simulation::Environment Frontend::recreateEnvironment(const Parameters &params, 
     }
 
     ValidateMsg(env.isComplete(), "Some of parameters: pressure, temperature, moveTypes, scalingType are missing");
+
+    return env;
+}
+
+Simulation::Environment Frontend::recreateRawEnvironment(const Parameters &params, std::size_t startRunIndex,
+                                                         const ShapeTraits &traits) const
+{
+    Expects(startRunIndex < params.runsParameters.size());
+
+    // Parse initial environment (from the global section)
+    auto env = Frontend::parseSimulationEnvironment(params, traits);
+
+    // Replay all environments up to the current run
+    for (std::size_t i{}; i <= startRunIndex; i++)
+        Frontend::combineEnvironment(env, params.runsParameters[i], traits);
 
     return env;
 }
