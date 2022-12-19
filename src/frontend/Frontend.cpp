@@ -223,32 +223,18 @@ int Frontend::casino(int argc, char **argv) {
         optionalContinuationCycles = continuationCycles;
 
     PackingLoader packingLoader(this->logger, optionalStartFrom, optionalContinuationCycles, params.runsParameters);
-    auto bc = std::make_unique<PeriodicBoundaryConditions>();
-    packingLoader.loadPacking(std::move(bc), shapeTraits->getInteraction(), scalingThreads, scalingThreads);
-    std::size_t startRunIndex = packingLoader.getStartRunIndex();
-    std::size_t cycleOffset = packingLoader.getCycleOffset();
-    bool isContinuation = packingLoader.isContinuation();
+    auto packing = this->recreatePacking(packingLoader, params, *shapeTraits, scalingThreads);
 
     if (packingLoader.isAllFinished()) {
         this->logger.warn() << "No runs left to be performed. Exiting." << std::endl;
         return EXIT_SUCCESS;
     }
 
-    std::unique_ptr<Packing> packing;
-    if (packingLoader.isRestored()) {
-        packing = packingLoader.releasePacking();
-    } else {
-        // Same number of scaling and domain threads
-        bc = std::make_unique<PeriodicBoundaryConditions>();
-        packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
-                                                     params.initialArrangement, std::move(bc),
-                                                     shapeTraits->getInteraction(), shapeTraits->getGeometry(),
-                                                     scalingThreads, scalingThreads);
-    }
+    std::size_t startRunIndex = packingLoader.getStartRunIndex();
+    std::size_t cycleOffset = packingLoader.getCycleOffset();
+    bool isContinuation = packingLoader.isContinuation();
 
     auto env = this->recreateEnvironment(params, packingLoader, *shapeTraits);
-
-    this->createWalls(*packing, params.walls);
 
     // Perform simulations starting from initial run
     Simulation simulation(std::move(packing), params.seed, domainDivisions, params.saveOnSignal);
@@ -290,7 +276,8 @@ void Frontend::combineEnvironment(Simulation::Environment &env, const Parameters
     env.combine(runEnv);
 }
 
-void Frontend::performIntegration(Simulation &simulation, Simulation::Environment &env,
+void Frontend::
+performIntegration(Simulation &simulation, Simulation::Environment &env,
                                   const Parameters::IntegrationParameters &runParams, const ShapeTraits &shapeTraits,
                                   std::size_t cycleOffset, bool isContinuation)
 {
@@ -1032,30 +1019,15 @@ int Frontend::trajectory(int argc, char **argv) {
     if (runName == ".auto")
         die("'.auto' run is not supported in the trajectory mode", this->logger);
 
+    // Prepare initial packing
     Parameters params = this->loadParameters(inputFilename);
-
     auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction,
                                                     params.version);
-
     PackingLoader packingLoader(this->logger, runName, std::nullopt, params.runsParameters);
-    auto bc = std::make_unique<PeriodicBoundaryConditions>();
-    packingLoader.loadPacking(std::move(bc), shapeTraits->getInteraction(), maxThreads, maxThreads);
+    auto packing = this->recreatePacking(packingLoader, params, *shapeTraits, maxThreads);
+
+    // Validate run whose trajectory we want to process
     std::size_t startRunIndex = packingLoader.getStartRunIndex();
-
-    std::unique_ptr<Packing> packing;
-    if (packingLoader.isRestored()) {
-        packing = packingLoader.releasePacking();
-    } else {
-        // Same number of scaling and domain threads
-        bc = std::make_unique<PeriodicBoundaryConditions>();
-        packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
-                                                     params.initialArrangement, std::move(bc),
-                                                     shapeTraits->getInteraction(), shapeTraits->getGeometry(),
-                                                     maxThreads, maxThreads);
-    }
-
-    this->createWalls(*packing, params.walls);
-
     const auto &startRun = params.runsParameters[startRunIndex];
     std::string trajectoryFilename = std::visit([](const auto &run) { return run.recordingFilename; }, startRun);
     std::string foundRunName = std::visit([](const auto &run) { return run.runName; }, startRun);
@@ -1070,8 +1042,10 @@ int Frontend::trajectory(int argc, char **argv) {
     if (trajectoryFilename.empty())
         die("RAMTRJ trajectory was not recorded for the run '" + foundRunName + "'", this->logger);
 
-    Simulation::Environment environment = this->recreateRawEnvironment(params, startRunIndex, *shapeTraits);
+    // Recreate environment
+    auto environment = this->recreateEnvironment(params, packingLoader, *shapeTraits);
 
+    // Autofix trajectory if desired
     bool autoFix = parsedOptions.count("auto-fix");
     auto player = this->loadRamtrjPlayer(trajectoryFilename, packing->size(), autoFix);
     if (player == nullptr)
@@ -1519,21 +1493,6 @@ Simulation::Environment Frontend::recreateEnvironment(const Parameters &params, 
     return env;
 }
 
-Simulation::Environment Frontend::recreateRawEnvironment(const Parameters &params, std::size_t startRunIndex,
-                                                         const ShapeTraits &traits) const
-{
-    Expects(startRunIndex < params.runsParameters.size());
-
-    // Parse initial environment (from the global section)
-    auto env = Frontend::parseSimulationEnvironment(params, traits);
-
-    // Replay all environments up to the current run
-    for (std::size_t i{}; i <= startRunIndex; i++)
-        Frontend::combineEnvironment(env, params.runsParameters[i], traits);
-
-    return env;
-}
-
 std::map<std::string, std::string> Frontend::prepareAuxInfo(const Simulation &simulation) const {
     std::map<std::string, std::string> auxInfo;
 
@@ -1549,4 +1508,29 @@ std::map<std::string, std::string> Frontend::prepareAuxInfo(const Simulation &si
     }
 
     return auxInfo;
+}
+
+std::unique_ptr<Packing> Frontend::recreatePacking(PackingLoader &loader, const Parameters &params,
+                                                   const ShapeTraits &traits, std::size_t maxThreads)
+{
+    auto bc = std::make_unique<PeriodicBoundaryConditions>();
+    loader.loadPacking(std::move(bc), traits.getInteraction(), maxThreads, maxThreads);
+
+    if (loader.isAllFinished())
+        return nullptr;
+
+    std::unique_ptr<Packing> packing;
+    if (loader.isRestored()) {
+        packing = loader.releasePacking();
+    } else {
+        // Same number of scaling and domain threads
+        bc = std::make_unique<PeriodicBoundaryConditions>();
+        packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
+                                                     params.initialArrangement, std::move(bc), traits.getInteraction(),
+                                                     traits.getGeometry(), maxThreads, maxThreads);
+    }
+
+    this->createWalls(*packing, params.walls);
+
+    return packing;
 }
