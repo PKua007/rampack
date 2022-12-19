@@ -10,6 +10,9 @@
 #include "geometry/Vector.h"
 
 
+/**
+ * @brief Helper class for optional axis adding support of initializer list to raw `std::optional<Vector<3>>`
+ */
 class OptionalAxis : public std::optional<Vector<3>> {
 public:
     using std::optional<Vector<3>>::optional;

@@ -97,6 +97,7 @@ double PolysphereBananaTraits::calculateVolume(const std::vector<SphereData> &sp
     double sphereRadius = sphereData.front().radius;
     double baseVolume = static_cast<double>(numSpheres) * 4./3*M_PI * std::pow(sphereRadius, 3);
 
+    // Subtract overlapping parts between all spheres from first to last
     const auto &data1 = sphereData[0];
     const auto &data2 = sphereData[1];
     double distance = (data1.position - data2.position).norm();
@@ -105,6 +106,7 @@ double PolysphereBananaTraits::calculateVolume(const std::vector<SphereData> &sp
         baseVolume -= static_cast<double>(numSpheres - 1) * overlapVolume;
     }
 
+    // Subtract overlapping part between first and last sphere if they touch
     if (arcAngle > M_PI && numSpheres > 2) {
         const auto &data3 = sphereData.back();
         distance = (data1.position - data3.position).norm();

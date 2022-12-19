@@ -99,12 +99,14 @@ double PolysphereLollipopTraits::calculateVolume(const std::vector<SphereData> &
 
     std::size_t sphereNum = sphereData.size();
 
+    // Subtract overlapping parts between small spheres
     if (smallSpherePenetration > 0) {
         double smallSphereRadius = sphereData.front().radius;
         double capVolume = VolumeCalculator::sphericalCap(smallSphereRadius, smallSpherePenetration/2);
         baseVolume -= 2 * static_cast<double>(sphereNum - 2) * capVolume;
     }
 
+    // Subtract overlapping parts between last small sphere and the large one
     if (largeSpherePenetration > 0) {
         const auto &dataLarge = sphereData[sphereNum - 1];
         const auto &dataSmall = sphereData[sphereNum - 2];
