@@ -48,6 +48,9 @@ private:
     void warnIfOverlapRelaxation() const;
 
 public:
+    static std::size_t findStartRunIndex(const std::string &runName,
+                                         const std::vector<Parameters::RunParameters> &runsParameters);
+
     PackingLoader(Logger &logger, std::optional<std::string> startFrom, std::optional<std::size_t> continuationCycles,
                   std::vector<Parameters::RunParameters> &runsParameters)
             : logger{logger}, startFrom{std::move(startFrom)}, continuationCycles{continuationCycles},

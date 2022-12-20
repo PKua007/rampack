@@ -30,9 +30,9 @@ void PackingLoader::loadPacking(std::unique_ptr<BoundaryConditions> bc, const In
     auto &startingPackingRun = this->runsParameters[startingPackingRunIndex];
 
     auto packingFilenameGetter = [](auto &&run) { return run.packingFilename; };
-    std::string previousPackingFilename = std::visit(packingFilenameGetter, startingPackingRun);
-    std::ifstream packingFile(previousPackingFilename);
-    ValidateOpenedDesc(packingFile, previousPackingFilename, "to load previous packing");
+    std::string startingPackingFilename = std::visit(packingFilenameGetter, startingPackingRun);
+    std::ifstream packingFile(startingPackingFilename);
+    ValidateOpenedDesc(packingFile, startingPackingFilename, "to load initial packing");
     // Same number of scaling and domain decemposition threads
     this->packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
     this->auxInfo = this->packing->restore(packingFile, interaction);
@@ -63,8 +63,10 @@ void PackingLoader::loadPacking(std::unique_ptr<BoundaryConditions> bc, const In
         }
     }
 
-    this->logger.info() << "Loaded packing from the run '" << previousPackingFilename << "' as a starting point.";
-    this->logger << std::endl;
+    auto runNameGetter = [](auto &&run) { return run.runName; };
+    std::string startingRunName = std::visit(runNameGetter, startingPackingRun);
+    this->logger.info() << "Loaded packing '" << startingPackingFilename << "' from the run '" << startingRunName;
+    this->logger << "' as a starting point." << std::endl;
 
     this->isRestored_ = true;
 }
@@ -80,24 +82,7 @@ void PackingLoader::findStartRunIndex() {
         return;
     }
 
-    if (this->startFrom == ".first") {
-        this->startRunIndex = 0;
-        return;
-    }
-
-    if (this->startFrom == ".last") {
-        this->startRunIndex = this->runsParameters.size() - 1;
-        return;
-    }
-
-    auto nameMatchesStartFrom = [this](const auto &params) {
-        auto runNameGetter = [](auto &&run) { return run.runName; };
-        return std::visit(runNameGetter, params) == this->startFrom;
-    };
-    auto it = std::find_if(this->runsParameters.begin(), this->runsParameters.end(), nameMatchesStartFrom);
-
-    ValidateMsg(it != this->runsParameters.end(), "Invalid run name to start from");
-    this->startRunIndex = it - this->runsParameters.begin();
+    this->startRunIndex = PackingLoader::findStartRunIndex(*this->startFrom, this->runsParameters);
 }
 
 void PackingLoader::reset() {
@@ -230,4 +215,23 @@ std::vector<PackingLoader::PerformedRunData> PackingLoader::gatherRunData() cons
     }
 
     return runDatas;
+}
+
+std::size_t PackingLoader::findStartRunIndex(const std::string &runName,
+                                             const std::vector<Parameters::RunParameters> &runsParameters)
+{
+    if (runName == ".first")
+        return 0;
+
+    if (runName == ".last")
+        return runsParameters.size() - 1;
+
+    auto nameMatchesStartFrom = [&runName](const auto &params) {
+        auto runNameGetter = [](auto &&run) { return run.runName; };
+        return std::visit(runNameGetter, params) == runName;
+    };
+    auto it = std::find_if(runsParameters.begin(), runsParameters.end(), nameMatchesStartFrom);
+
+    ValidateMsg(it != runsParameters.end(), "Invalid run name to start from");
+    return it - runsParameters.begin();
 }
