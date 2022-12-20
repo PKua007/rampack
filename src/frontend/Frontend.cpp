@@ -112,11 +112,13 @@ int Frontend::casino(int argc, char **argv) {
              cxxopts::value<std::string>(verbosity))
             ("s,start-from", "when specified, the simulation will be started from the run with the name given. If not "
                              "used in conjunction with --continue option, the packing will be restored from the "
-                             "internal representation file of the preceding run. If --continue is used, the current "
-                             "run, but finished or aborted in the past, will be loaded instead. When a special value "
-                             "'.auto' is specified, auto-detection of starting run will be attempted based on internal "
-                             "representation files (all runs in configuration have to output them). If last attempted "
-                             "run was unfinished, --continue option without argument is implicitly added",
+                             "RAMSNAP file of the preceding run. If --continue is used, the current run, but finished "
+                             "or aborted in the past, will be loaded instead. There are also some special values. "
+                             "'.start' and '.end' correspond to, respectively, first and last run in the "
+                             "configuration file. When a special value '.auto' is specified, auto-detection of the "
+                             "starting run will be attempted based on RAMSNAP files (all runs in configuration have to "
+                             "output them). If last attempted run was unfinished, --continue option without argument "
+                             "is implicitly added",
              cxxopts::value<std::string>(startFrom))
             ("c,continue", "when specified, the thermalization of previously finished or aborted run will be continued "
                            "for as many more cycles as specified. It can be used together with --start-from to specify "
@@ -551,7 +553,7 @@ int Frontend::printGeneralHelp(const std::string &cmd) {
     std::ostream &rawOut = this->logger;
 
     rawOut << Fold("Random and Maximal PACKing PACKage - computational package dedicated to simulate various packing "
-                   "models (currently only Monte Carlo is available).").width(80) << std::endl;
+                   "models using Monte Carlo method.").width(80) << std::endl;
     rawOut << std::endl;
     rawOut << "Usage: " << cmd << " [mode] (mode dependent parameters). " << std::endl;
     rawOut << std::endl;
@@ -948,7 +950,8 @@ int Frontend::trajectory(int argc, char **argv) {
         ("i,input", "an INI file with parameters that was used to generate the trajectories. See sample_inputs "
                     "folder for full parameters documentation",
          cxxopts::value<std::string>(inputFilename))
-        ("r,run-name", "name of the run, for which the trajectory was generated",
+        ("r,run-name", "name of the run, for which the trajectory was generated. Special values '.first' "
+                       "and '.last' (for the first and the last run in the configuration file) are also accepted",
          cxxopts::value<std::string>(runName)->default_value(".last"))
         ("f,auto-fix", "tries to auto-fix the trajectory if it is broken")
         ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
