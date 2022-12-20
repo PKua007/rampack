@@ -1023,13 +1023,17 @@ int Frontend::trajectory(int argc, char **argv) {
 
     // Prepare initial packing
     Parameters params = this->loadParameters(inputFilename);
+    auto bc = std::make_unique<PeriodicBoundaryConditions>();
     auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction,
                                                     params.version);
-    PackingLoader packingLoader(this->logger, runName, std::nullopt, params.runsParameters);
-    auto packing = this->recreatePacking(packingLoader, params, *shapeTraits, maxThreads);
+    auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
+                                                      params.initialArrangement, std::move(bc),
+                                                      shapeTraits->getInteraction(), shapeTraits->getGeometry(),
+                                                      maxThreads, maxThreads);
+    this->createWalls(*packing, params.walls);
 
-    // Validate run whose trajectory we want to process
-    std::size_t startRunIndex = packingLoader.getStartRunIndex();
+    // Find and validate run whose trajectory we want to process
+    std::size_t startRunIndex = PackingLoader::findStartRunIndex(runName, params.runsParameters);
     const auto &startRun = params.runsParameters[startRunIndex];
     std::string trajectoryFilename = std::visit([](const auto &run) { return run.recordingFilename; }, startRun);
     std::string foundRunName = std::visit([](const auto &run) { return run.runName; }, startRun);
@@ -1045,7 +1049,7 @@ int Frontend::trajectory(int argc, char **argv) {
         die("RAMTRJ trajectory was not recorded for the run '" + foundRunName + "'", this->logger);
 
     // Recreate environment
-    auto environment = this->recreateEnvironment(params, packingLoader, *shapeTraits);
+    auto environment = this->recreateRawEnvironment(params, startRunIndex, *shapeTraits);
 
     // Autofix trajectory if desired
     bool autoFix = parsedOptions.count("auto-fix");
@@ -1492,6 +1496,16 @@ Simulation::Environment Frontend::recreateEnvironment(const Parameters &params, 
 
     ValidateMsg(env.isComplete(), "Some of parameters: pressure, temperature, moveTypes, scalingType are missing");
 
+    return env;
+}
+
+Simulation::Environment Frontend::recreateRawEnvironment(const Parameters &params, std::size_t startRunIndex,
+                                                         const ShapeTraits &traits) const
+{
+    Expects(startRunIndex < params.runsParameters.size());
+    auto env = Frontend::parseSimulationEnvironment(params, traits);
+    for (std::size_t i{}; i <= startRunIndex; i++)
+        Frontend::combineEnvironment(env, params.runsParameters[i], traits);
     return env;
 }
 
