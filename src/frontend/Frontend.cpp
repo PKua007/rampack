@@ -247,6 +247,8 @@ int Frontend::casino(int argc, char **argv) {
 
         if (std::holds_alternative<Parameters::IntegrationParameters>(runParamsI)) {
             const auto &runParams = std::get<Parameters::IntegrationParameters>(runParamsI);
+            this->verifyDynamicParameter(env.getTemperature(), "temperature", runParams, cycleOffset);
+            this->verifyDynamicParameter(env.getPressure(), "pressure", runParams, cycleOffset);
             this->performIntegration(simulation, env, runParams, *shapeTraits, cycleOffset, isContinuation);
         } else if (std::holds_alternative<Parameters::OverlapRelaxationParameters>(runParamsI)) {
             const auto &runParams = std::get<Parameters::OverlapRelaxationParameters>(runParamsI);
@@ -1533,4 +1535,36 @@ std::unique_ptr<Packing> Frontend::recreatePacking(PackingLoader &loader, const 
     this->createWalls(*packing, params.walls);
 
     return packing;
+}
+
+void Frontend::verifyDynamicParameter(const DynamicParameter &dynamicParameter, const std::string &parameterName,
+                                      const Parameters::IntegrationParameters &params, std::size_t cycleOffset) const
+{
+    if (params.averagingCycles == 0)
+        return;
+
+    std::size_t firstAveragingCycle = params.thermalisationCycles + cycleOffset;
+    std::size_t totalCycles = firstAveragingCycle + params.averagingCycles;
+    double constantValue = dynamicParameter.getValueForCycle(firstAveragingCycle, totalCycles);
+    for (std::size_t averagingCycle = firstAveragingCycle + 1; averagingCycle < totalCycles; averagingCycle++) {
+        double cycleValue = dynamicParameter.getValueForCycle(averagingCycle, totalCycles);
+        if (cycleValue != constantValue) {
+            // Calculate precision which is just large enough (plus some margin) to show the difference between values
+            double relativeDiff = (cycleValue - constantValue)/std::max(std::abs(cycleValue), std::abs(constantValue));
+            int minimalPrecision = static_cast<int>(-std::log10(std::abs(relativeDiff)));
+            const int margin = 3;
+            int precision = minimalPrecision + margin;
+            this->logger << std::setprecision(precision);
+
+            this->logger.error() << "Dynamic parameter '" << parameterName << "' is not constant in the averaging ";
+            this->logger << "phase (for cycle >= " << firstAveragingCycle << ")." << std::endl;
+            this->logger << "Namely, for cycles from " << firstAveragingCycle << " to " << (averagingCycle - 1) << " ";
+            this->logger << "it is equal " << constantValue << ", but at cycle " << averagingCycle << " it changes to ";
+            this->logger << cycleValue << std::endl;
+            this->logger << std::setprecision(std::numeric_limits<double>::max_digits10);
+            this->logger << "Use piecewise parameter and set it to constant value " << constantValue << " starting ";
+            this->logger << "from cycle " << firstAveragingCycle << " or disable averaging phase." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    }
 }
