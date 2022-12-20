@@ -172,8 +172,7 @@ Parameters::IntegrationParameters::IntegrationParameters(const std::string &runN
 }
 
 void Parameters::IntegrationParameters::validate() const {
-    Validate(this->thermalisationCycles > 0);
-    Validate(this->averagingCycles > 0);
+    Validate(this->thermalisationCycles > 0 || this->averagingCycles > 0);
     Validate(this->averagingEvery > 0);
     Validate(this->snapshotEvery > 0);
     Validate(this->inlineInfoEvery > 0);
