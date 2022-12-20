@@ -53,6 +53,9 @@ private:
     void createWalls(Packing &packing, const std::string &walls);
     void attachSnapshotOut(ObservablesCollector &collector, const std::string& filename, bool isContinuation) const;
 
+    void verifyDynamicParameter(const DynamicParameter &dynamicParameter, const std::string &parameterName,
+                                const Parameters::IntegrationParameters &params, std::size_t cycleOffset) const;
+
     void performIntegration(Simulation &simulation, Simulation::Environment &env,
                             const Parameters::IntegrationParameters &runParams, const ShapeTraits &shapeTraits,
                             size_t cycleOffset, bool isContinuation);

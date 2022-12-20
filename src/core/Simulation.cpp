@@ -109,7 +109,7 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
     this->environment.combine(env);
     Expects(this->environment.isComplete());
 
-    std::size_t maxCycles = params.cycleOffset + params.thermalisationCycles;
+    std::size_t maxCycles = params.cycleOffset + params.thermalisationCycles + params.averagingCycles;
     this->temperature = this->environment.getTemperature().getValueForCycle(params.cycleOffset, maxCycles);
     this->pressure = this->environment.getPressure().getValueForCycle(params.cycleOffset, maxCycles);
     this->observablesCollector = std::move(observablesCollector_);
