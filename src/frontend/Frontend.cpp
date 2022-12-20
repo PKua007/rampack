@@ -278,8 +278,7 @@ void Frontend::combineEnvironment(Simulation::Environment &env, const Parameters
     env.combine(runEnv);
 }
 
-void Frontend::
-performIntegration(Simulation &simulation, Simulation::Environment &env,
+void Frontend::performIntegration(Simulation &simulation, Simulation::Environment &env,
                                   const Parameters::IntegrationParameters &runParams, const ShapeTraits &shapeTraits,
                                   std::size_t cycleOffset, bool isContinuation)
 {
@@ -315,23 +314,40 @@ performIntegration(Simulation &simulation, Simulation::Environment &env,
     simulation.integrate(env, integrationParams, shapeTraits, std::move(collector), std::move(recorders), this->logger);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
-    this->logger.info();
-    this->logger << "--------------------------------------------------------------------" << std::endl;
-    this->printAverageValues(observablesCollector);
+    this->logger.info() << "--------------------------------------------------------------------" << std::endl;
+    if (integrationParams.averagingCycles != 0 && !simulation.wasInterrupted()) {
+        this->printAverageValues(observablesCollector);
+    } else {
+        this->logger.warn() << "Printing averages skipped due to incomplete averaging phase." << std::endl;
+        this->logger.info() << "--------------------------------------------------------------------" << std::endl;
+    }
+
     this->printPerformanceInfo(simulation);
 
     if (!runParams.packingFilename.empty())
         this->storeRamsnap(simulation, runParams.packingFilename);
+
     if (!runParams.xyzPackingFilename.empty())
         this->storeXYZ(simulation, shapeTraits, runParams.xyzPackingFilename);
+
     if (!runParams.wolframFilename.empty())
         this->storeWolframVisualization(simulation.getPacking(), shapeTraits, runParams.wolframFilename);
+
     if (!runParams.outputFilename.empty()) {
-        this->storeAverageValues(runParams.outputFilename, observablesCollector, simulation.getCurrentTemperature(),
-                                 simulation.getCurrentPressure());
+        if (integrationParams.averagingCycles != 0 && !simulation.wasInterrupted()) {
+            this->storeAverageValues(runParams.outputFilename, observablesCollector, simulation.getCurrentTemperature(),
+                                     simulation.getCurrentPressure());
+        } else {
+            this->logger.warn() << "Storing averages skipped due to incomplete averaging phase." << std::endl;
+        }
     }
-    if (!runParams.bulkObservableFilenamePattern.empty())
-        this->storeBulkObservables(observablesCollector, runParams.bulkObservableFilenamePattern);
+
+    if (!runParams.bulkObservableFilenamePattern.empty()) {
+        if (integrationParams.averagingCycles != 0 && !simulation.wasInterrupted())
+            this->storeBulkObservables(observablesCollector, runParams.bulkObservableFilenamePattern);
+        else
+            this->logger.warn() << "Storing bulk observables skipped due to incomplete averaging phase." << std::endl;
+    }
 }
 
 std::unique_ptr<RamtrjRecorder> Frontend::loadRamtrjRecorder(const std::string &filename, std::size_t numMolecules,
@@ -511,7 +527,7 @@ void Frontend::printPerformanceInfo(const Simulation &simulation) {
     double otherPercent = otherSeconds / totalSeconds * 100;
 
     this->printMoveStatistics(simulation);
-    this->logger << "--------------------------------------------------------------------" << std::endl;
+    this->logger.info() << "--------------------------------------------------------------------" << std::endl;
     this->logger << "Neighbour grid resizes/rebuilds : " << ngResizes << "/" << ngRebuilds << std::endl;
     this->logger << "Average neighbours per centre   : " << simulatedPacking.getAverageNumberOfNeighbours();
     this->logger << std::endl;
@@ -724,7 +740,8 @@ int Frontend::optimize_distance(int argc, char **argv) {
 
     this->logger.info() << "Shape name       : " << shapeName << std::endl;
     this->logger.info() << "Shape attributes : " << shapeAttributes << std::endl;
-    this->logger.info() << "Interaction      : " << interaction<< std::endl;
+    this->logger.info() << "Interaction      : " << interaction
+    << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
     for (const auto &direction : directions) {
