@@ -38,6 +38,8 @@
 #include "core/io/XYZWriter.h"
 #include "core/io/TruncatedPlayer.h"
 #include "utils/ParseUtils.h"
+#include "pyon_matchers/NewShapeFactory.h"
+#include "pyon/Parser.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -172,8 +174,8 @@ int Frontend::casino(int argc, char **argv) {
 
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction,
-                                                    params.version);
+    auto shapeTraits = this->createShapeTraits(params.shapeName, params.shapeAttributes, params.interaction,
+                                               params.version);
 
     this->logger << "Interaction centre range : " << shapeTraits->getInteraction().getRangeRadius() << std::endl;
     this->logger << "Total interaction range  : " << shapeTraits->getInteraction().getTotalRangeRadius() << std::endl;
@@ -417,8 +419,7 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
         recorders.push_back(this->loadXYZRecorder(runParams.xyzRecordingFilename, isContinuation));
 
     if (!runParams.helperInteraction.empty()) {
-        auto helperShape = ShapeFactory::shapeTraitsFor(shapeName, shapeAttr, runParams.helperInteraction,
-                                                        paramsVersion);
+        auto helperShape = this->createShapeTraits(shapeName, shapeAttr, runParams.helperInteraction, paramsVersion);
         shapeTraits = std::make_shared<CompoundShapeTraits>(shapeTraits, helperShape);
     }
 
@@ -742,12 +743,11 @@ int Frontend::optimize_distance(int argc, char **argv) {
     shape1.setOrientation(rotation1);
     shape2.setOrientation(rotation2);
 
-    auto shapeTraits = ShapeFactory::shapeTraitsFor(shapeName, shapeAttributes, interaction, paramsVersion);
+    auto shapeTraits = this->createShapeTraits(shapeName, shapeAttributes, interaction, paramsVersion);
 
     this->logger.info() << "Shape name       : " << shapeName << std::endl;
     this->logger.info() << "Shape attributes : " << shapeAttributes << std::endl;
-    this->logger.info() << "Interaction      : " << interaction
-    << std::endl;
+    this->logger.info() << "Interaction      : " << interaction << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
     for (const auto &direction : directions) {
@@ -801,8 +801,8 @@ int Frontend::preview(int argc, char **argv) {
 
     Parameters params = this->loadParameters(inputFilename);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
-    auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction,
-                                                    params.version);
+    auto shapeTraits = this->createShapeTraits(params.shapeName, params.shapeAttributes, params.interaction,
+                                               params.version);
     auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
                                                       params.initialArrangement, std::move(bc),
                                                       shapeTraits->getInteraction(), shapeTraits->getGeometry(), 1, 1);
@@ -1054,8 +1054,8 @@ int Frontend::trajectory(int argc, char **argv) {
     // Prepare initial packing
     Parameters params = this->loadParameters(inputFilename);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
-    auto shapeTraits = ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes, params.interaction,
-                                                    params.version);
+    auto shapeTraits = this->createShapeTraits(params.shapeName, params.shapeAttributes, params.interaction,
+                                               params.version);
     auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
                                                       params.initialArrangement, std::move(bc),
                                                       shapeTraits->getInteraction(), shapeTraits->getGeometry(),
@@ -1317,9 +1317,7 @@ int Frontend::shapePreview(int argc, char **argv) {
     cxxopts::Options options(argv[0], "Information and preview for the shape.");
 
     std::string inputFilename;
-    std::string shapeName;
-    std::string shapeAttr;
-    std::string interactionName;
+    std::string shape;
     std::string wolframSpec;
     std::string objSpec;
     std::string paramsVersion;
@@ -1327,17 +1325,10 @@ int Frontend::shapePreview(int argc, char **argv) {
     options.add_options()
         ("h,help", "prints help for this mode")
         ("i,input", "an INI file with parameters of the shape; it can be used instead of manually "
-                    "specifying shape parameters using -S, -A and -I",
+                    "specifying shape parameters using -S",
          cxxopts::value<std::string>(inputFilename))
-        ("S,shape-name", "manually specified shape name (instead of reading from INI file using -i); it has "
-                         "to be combined with -A and -I options",
-         cxxopts::value<std::string>(shapeName))
-        ("A,shape-attr", "manually specified shape attributes (instead of reading from INI file using -i); "
-                         "it has to be combined with -S and -I options",
-         cxxopts::value<std::string>(shapeAttr))
-        ("I,interaction", "manually specified interactionName (instead of reading from INI file using -i); it "
-                          "has to be combined with -S and -A options",
-         cxxopts::value<std::string>(interactionName))
+        ("S,shape", "manually specified shape (instead of reading from input file using -i); ",
+         cxxopts::value<std::string>(shape))
         ("V,params-version", "manually specified version of RAMPACK input for parameters format",
          cxxopts::value<std::string>(paramsVersion)->default_value(CURRENT_VERSION.str()))
         ("l,log-info", "prints information about the shape")
@@ -1356,23 +1347,21 @@ int Frontend::shapePreview(int argc, char **argv) {
     // Create shape traits
     if (parsedOptions.count("input")) {
         Parameters parameters = this->loadParameters(inputFilename);
-        shapeName = parameters.shapeName;
-        shapeAttr = parameters.shapeAttributes;
-        interactionName = parameters.interaction;
+        shape = parameters.shapeName;
         paramsVersion = parameters.version.str();
-    } else if (!parsedOptions.count("shape-name") || !parsedOptions.count("shape-attr")
-               || !parsedOptions.count("interaction"))
-    {
-        die("You must specify INI file with shape parameters using -i or do it manually using -S, -A and -I",
-            this->logger);
+    } else if (!parsedOptions.count("shape")) {
+        die("You must specify INI file with shape parameters using -i or do it manually using -S", this->logger);
     }
+
+    if (paramsVersion < Version{0, 6, 0})
+        die("shape-preview mode supports only versions 0.6.0+; " + paramsVersion + " was given", this->logger);
 
     if (paramsVersion > CURRENT_VERSION) {
         die("Version of parameters (" + paramsVersion + ") is higher than RAMPACK version (" + CURRENT_VERSION.str()
             + ")", this->logger);
     }
 
-    auto traits = ShapeFactory::shapeTraitsFor(shapeName, shapeAttr, interactionName, paramsVersion);
+    auto traits = this->createShapeTraits(shape, "", "", paramsVersion);
 
     if (!parsedOptions.count("log-info") && !parsedOptions.count("wolfram-preview")
         && !parsedOptions.count("obj-preview"))
@@ -1383,9 +1372,7 @@ int Frontend::shapePreview(int argc, char **argv) {
 
     // Log info
     if (parsedOptions.count("log-info")) {
-        this->logger.info() << "Shape name       : " << shapeName << std::endl;
-        this->logger << "Shape attributes : " << shapeAttr << std::endl;
-        this->logger << "Interaction      : " << interactionName << std::endl;
+        this->logger.info() << "Shape specification : " << shape << std::endl;
         this->logger << std::endl;
         this->printInteractionInfo(traits->getInteraction());
         this->logger << std::endl;
@@ -1410,7 +1397,7 @@ int Frontend::shapePreview(int argc, char **argv) {
             auto printer = traits->getPrinter("obj", params);
             objFile << printer->print({});
         } catch (const NoSuchShapePrinterException &) {
-            die("Shape " + shapeName + " does not support Wavefront OBJ format");
+            die("Shape " + shape + " does not support Wavefront OBJ format");
         }
     }
 
@@ -1642,4 +1629,19 @@ Frontend::parseFilenameAndParams(const std::string &str, const std::vector<std::
     in >> filename;
     auto params = ParseUtils::parseFields(fields, ParseUtils::tokenize<std::string>(in));
     return {filename, params};
+}
+
+std::shared_ptr<ShapeTraits> Frontend::createShapeTraits(const std::string &shapeName, const std::string &shapeAttributes,
+                                                         const std::string &interaction, Version version)
+{
+    if (version < Version{0, 6, 0})
+        return legacy::ShapeFactory::shapeTraitsFor(shapeName, shapeAttributes, interaction, version);
+
+    using namespace pyon::matcher;
+    Any shapeTraits;
+    auto shapeAST = pyon::Parser::parse(shapeName);
+    if (!NewShapeFactory::shape.match(shapeAST, shapeTraits))
+        throw ValidationException("Malformed shape");
+
+    return shapeTraits.as<std::shared_ptr<ShapeTraits>>();
 }

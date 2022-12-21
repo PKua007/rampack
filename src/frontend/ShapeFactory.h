@@ -12,12 +12,15 @@
 #include "utils/Version.h"
 
 
-class ShapeFactory {
-public:
-    static std::shared_ptr<ShapeTraits> shapeTraitsFor(const std::string &shapeName, const std::string &shapeAttributes,
-                                                       const std::string &interaction,
-                                                       const Version &version = CURRENT_VERSION);
-};
+namespace legacy {
+    class ShapeFactory {
+    public:
+        static std::shared_ptr<ShapeTraits> shapeTraitsFor(const std::string &shapeName,
+                                                           const std::string &shapeAttributes,
+                                                           const std::string &interaction,
+                                                           const Version &version = "0.5.0");
+    };
+}
 
 
 #endif //RAMPACK_SHAPEFACTORY_H
