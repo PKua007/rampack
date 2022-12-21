@@ -128,7 +128,7 @@ public:
     }
 
     [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const final {
-        if (!this->primaryAxis.has_value())
+        if (!this->secondaryAxis.has_value())
             throw std::runtime_error("XenoCollideTraits::getSecondaryAxis: secondary axis not defined");
         return shape.getOrientation() * this->secondaryAxis.value();
     }

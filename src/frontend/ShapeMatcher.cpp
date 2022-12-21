@@ -42,8 +42,11 @@ namespace {
 
     bool validate_axes(const DataclassData &dataclass);
 
-
-    auto hardInteraction = MatcherNone{} | MatcherDataclass("hard");
+    auto hardInteractionNone = MatcherNone{}
+        .mapTo([]() -> std::shared_ptr<CentralInteraction> { return nullptr; });
+    auto hardInteractionDataclass = MatcherDataclass("hard")
+        .mapTo([](const auto &) -> std::shared_ptr<CentralInteraction> { return nullptr; });
+    auto hardInteraction = hardInteractionNone | hardInteractionDataclass;
     auto softInteraction = create_lj_matcher() | create_wca_matcher() | create_square_inverse_core_matcher();
     auto sphereInteraction = hardInteraction | softInteraction;
 
@@ -71,7 +74,7 @@ namespace {
         return MatcherDataclass("lj")
             .arguments({{"epsilon", MatcherFloat{}.positive()},
                         {"sigma", MatcherFloat{}.positive()}})
-            .mapTo([](const DataclassData &lj) {
+            .mapTo([](const DataclassData &lj) -> std::shared_ptr<CentralInteraction> {
                 return std::make_shared<LennardJonesInteraction>(
                     lj["epsilon"].as<double>(), lj["sigma"].as<double>()
                 );
@@ -82,7 +85,7 @@ namespace {
         return MatcherDataclass("wca")
             .arguments({{"epsilon", MatcherFloat{}.positive()},
                         {"sigma", MatcherFloat{}.positive()}})
-            .mapTo([](const DataclassData &wca) {
+            .mapTo([](const DataclassData &wca) -> std::shared_ptr<CentralInteraction> {
                 return std::make_shared<RepulsiveLennardJonesInteraction>(
                     wca["epsilon"].as<double>(), wca["sigma"].as<double>()
                 );
@@ -93,7 +96,7 @@ namespace {
         return MatcherDataclass("square_inverse_core")
             .arguments({{"epsilon", MatcherFloat{}.positive()},
                         {"sigma", MatcherFloat{}.positive()}})
-            .mapTo([](const DataclassData &square_inverse_core) {
+            .mapTo([](const DataclassData &square_inverse_core) -> std::shared_ptr<CentralInteraction> {
                 return std::make_shared<SquareInverseCoreInteraction>(
                     square_inverse_core["epsilon"].as<double>(), square_inverse_core["sigma"].as<double>()
                 );
@@ -137,7 +140,7 @@ namespace {
             .arguments({{"sphere_n", MatcherInt{}.greaterEquals(2).mapTo<std::size_t>()},
                         {"sphere_r", MatcherFloat{}.positive()},
                         {"arc_r", MatcherFloat{}.positive()},
-                        {"arc_angle", MatcherFloat{}.greaterEquals(0).less(M_PI)},
+                        {"arc_angle", MatcherFloat{}.greaterEquals(0).less(2*M_PI)},
                         {"interaction", sphereInteraction, std::shared_ptr<CentralInteraction>(nullptr)}})
             .mapTo([](const DataclassData &banana) -> std::shared_ptr<ShapeTraits> {
                 auto sphereN = banana["sphere_n"].as<std::size_t>();
@@ -157,8 +160,8 @@ namespace {
             .arguments({{"sphere_n", MatcherInt{}.greaterEquals(2).mapTo<std::size_t>()},
                         {"small_r", MatcherFloat{}.positive()},
                         {"large_r", MatcherFloat{}.positive()},
-                        {"small_penetration", MatcherFloat{}.positive(), 0},
-                        {"large_penetration", MatcherFloat{}.positive(), 0},
+                        {"small_penetration", MatcherFloat{}.positive(), 0.},
+                        {"large_penetration", MatcherFloat{}.positive(), 0.},
                         {"interaction", sphereInteraction, std::shared_ptr<CentralInteraction>(nullptr)}})
             .filter([](const DataclassData &lollipop) {
                 return lollipop["small_penetration"].as<double>() < 2 * lollipop["small_r"].as<double>();
@@ -194,7 +197,7 @@ namespace {
                         {"penetration", MatcherFloat{}.positive(), 0},
                         {"interaction", sphereInteraction, std::shared_ptr<CentralInteraction>(nullptr)}})
             .filter([](const DataclassData &wedge) {
-                double smallerR = std::min(wedge["small_r"].as<double>(), wedge["large_r"].as<double>());
+                double smallerR = std::min(wedge["bottom_r"].as<double>(), wedge["top_r"].as<double>());
                 return wedge["penetration"].as<double>() < 2 * smallerR;
             })
             .mapTo([](const DataclassData &wedge) -> std::shared_ptr<ShapeTraits> {
@@ -225,7 +228,7 @@ namespace {
                         {"sc_r", MatcherFloat{}.positive()},
                         {"arc_r", MatcherFloat{}.positive()},
                         {"arc_angle", MatcherFloat{}.greaterEquals(0).less(M_PI)},
-                        {"subdivisions", MatcherInt{}.positive().mapTo<std::size_t>(), 1}})
+                        {"subdivisions", MatcherInt{}.positive().mapTo<std::size_t>(), std::size_t{1}}})
             .filter([](const DataclassData &banana) {
                 auto segmentN = banana["segment_n"].as<std::size_t>();
 
@@ -256,7 +259,7 @@ namespace {
             .arguments({{"length", MatcherFloat{}.positive()},
                         {"bottom_r", MatcherFloat{}.positive()},
                         {"top_r", MatcherFloat{}.positive()},
-                        {"subdivisions", MatcherInt{}.positive().mapTo<std::size_t>(), 1}})
+                        {"subdivisions", MatcherInt{}.positive().mapTo<std::size_t>(), std::size_t{1}}})
             .filter([](const DataclassData &wedge){
                 double rDiff = std::abs(wedge["bottom_r"].as<double>() - wedge["top_r"].as<double>());
                 return wedge["length"].as<double>() >= rDiff;
@@ -344,7 +347,7 @@ namespace {
             .elementsMatch(vector)
             .sizeAtLeast(2)
             .mapToStdVector<Vector<3>>();
-        auto spherocylinder = MatcherDataclass("spherocylinder")
+        auto spherocylinder = MatcherDataclass("sc")
             .arguments({{"chain", chain},
                         {"r", MatcherFloat{}.positive()}})
             .mapTo([](const DataclassData &spherocylinder) {
@@ -375,25 +378,25 @@ namespace {
             });
 
         return MatcherDataclass("polyspherocylinder")
-            .arguments({{"spherocylinders", spherocylinder | spherocylinderArray},
+            .arguments({{"scs", spherocylinder | spherocylinderArray},
                         {"volume", MatcherFloat{}.positive()},
                         {"geometric_origin", vector, Vector<3>{}},
                         {"primary_axis", axis | MatcherNone{}, Any{}},
                         {"secondary_axis", axis | MatcherNone{}, Any{}},
                         {"named_points", namedPoints, ShapeGeometry::NamedPoints{}}})
             .filter(validate_axes)
-            .mapTo([](const DataclassData &polysphere) -> std::shared_ptr<ShapeTraits> {
+            .mapTo([](const DataclassData &polysc) -> std::shared_ptr<ShapeTraits> {
                 using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
-                auto sc = polysphere["spherocylinders"].as<std::vector<SpherocylinderData>>();
-                auto volume = polysphere["volume"].as<double>();
-                auto geometricOrigin = polysphere["geometric_origin"].as<Vector<3>>();
+                auto sc = polysc["scs"].as<std::vector<SpherocylinderData>>();
+                auto volume = polysc["volume"].as<double>();
+                auto geometricOrigin = polysc["geometric_origin"].as<Vector<3>>();
                 std::optional<Vector<3>> primaryAxis;
-                if (!polysphere["primary_axis"].isEmpty())
-                    primaryAxis = polysphere["primary_axis"].as<Vector<3>>();
+                if (!polysc["primary_axis"].isEmpty())
+                    primaryAxis = polysc["primary_axis"].as<Vector<3>>();
                 std::optional<Vector<3>> secondaryAxis;
-                if (!polysphere["secondary_axis"].isEmpty())
-                    secondaryAxis = polysphere["secondary_axis"].as<Vector<3>>();
-                auto namedPoints = polysphere["named_points"].as<ShapeGeometry::NamedPoints>();
+                if (!polysc["secondary_axis"].isEmpty())
+                    secondaryAxis = polysc["secondary_axis"].as<Vector<3>>();
+                auto namedPoints = polysc["named_points"].as<ShapeGeometry::NamedPoints>();
 
                 PolyspherocylinderTraits::PolyspherocylinderGeometry geometry(
                     std::move(sc), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
