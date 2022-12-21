@@ -110,6 +110,10 @@ public:
     int shapePreview(int argc, char **argv);
 
     int printGeneralHelp(const std::string &cmd);
+
+    std::shared_ptr<ShapeTraits>
+    createShapeTraits(const std::string &shapeName, const std::string &shapeAttributes, const std::string &interaction,
+                      Version version);
 };
 
 

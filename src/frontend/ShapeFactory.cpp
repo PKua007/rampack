@@ -304,139 +304,148 @@ namespace {
 }
 
 
-std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &shapeName,
-                                                          const std::string &shapeAttributes,
-                                                          const std::string &interaction, const Version &version)
-{
-    std::istringstream shapeAttrStream(shapeAttributes);
-    std::istringstream interactionAttrStream(interaction);
-    std::string interactionName;
-    interactionAttrStream >> interactionName;
-    if (shapeName == "Sphere") {
-        double r;
-        shapeAttrStream >> r;
-        ValidateMsg(shapeAttrStream, "Malformed Sphere attributes; expected: [radius]");
-        Validate(r > 0);
-        return parse_polysphere_traits<SphereTraits>(shapeName, interactionName, interactionAttrStream, r);
-    } else if (shapeName == "PolysphereBanana") {
-        double arcRadius, arcAngle, sphereRadius;
-        std::size_t sphereNum;
-        shapeAttrStream >> arcRadius >> arcAngle >> sphereNum >> sphereRadius;
-        ValidateMsg(shapeAttrStream, "Malformed PolysphereBanana attributes; expected: "
-                                     "[arc radius] [arc angle] [number of spheres] [sphere radius]");
-        Validate(arcRadius > 0);
-        Validate(arcAngle > 0);
-        Validate(sphereNum > 0);
-        Validate(sphereRadius > 0);
+namespace legacy {
+    std::shared_ptr<ShapeTraits> ShapeFactory::shapeTraitsFor(const std::string &shapeName,
+                                                              const std::string &shapeAttributes,
+                                                              const std::string &interaction, const Version &version)
+    {
+        if (version > Version{0, 5, 0})
+            throw std::runtime_error("legacy::ShapeFactory supports version up to 0.5.0");
 
-        if (version >= Version{0, 2, 0}) {
-            return parse_polysphere_traits<PolysphereBananaTraits>(shapeName, interactionName, interactionAttrStream,
-                                                                   arcRadius, arcAngle, sphereNum, sphereRadius);
+        std::istringstream shapeAttrStream(shapeAttributes);
+        std::istringstream interactionAttrStream(interaction);
+        std::string interactionName;
+        interactionAttrStream >> interactionName;
+        if (shapeName == "Sphere") {
+            double r;
+            shapeAttrStream >> r;
+            ValidateMsg(shapeAttrStream, "Malformed Sphere attributes; expected: [radius]");
+            Validate(r > 0);
+            return parse_polysphere_traits<SphereTraits>(shapeName, interactionName, interactionAttrStream, r);
+        } else if (shapeName == "PolysphereBanana") {
+            double arcRadius, arcAngle, sphereRadius;
+            std::size_t sphereNum;
+            shapeAttrStream >> arcRadius >> arcAngle >> sphereNum >> sphereRadius;
+            ValidateMsg(shapeAttrStream, "Malformed PolysphereBanana attributes; expected: "
+                                         "[arc radius] [arc angle] [number of spheres] [sphere radius]");
+            Validate(arcRadius > 0);
+            Validate(arcAngle > 0);
+            Validate(sphereNum > 0);
+            Validate(sphereRadius > 0);
+
+            if (version >= Version{0, 2, 0}) {
+                return parse_polysphere_traits<PolysphereBananaTraits>(shapeName, interactionName,
+                                                                       interactionAttrStream,
+                                                                       arcRadius, arcAngle, sphereNum, sphereRadius);
+            } else {
+                return parse_polysphere_traits<legacy::PolysphereBananaTraits>(
+                        shapeName, interactionName, interactionAttrStream,
+                        arcRadius, arcAngle, sphereNum, sphereRadius
+                );
+            }
+        } else if (shapeName == "PolyspherocylinderBanana") {
+            double arcRadius, arcAngle, radius;
+            std::size_t segmentNum, subdivisions;
+            shapeAttrStream >> arcRadius >> arcAngle >> segmentNum >> radius;
+            ValidateMsg(shapeAttrStream, "Malformed PolysphereBanana attributes; expected: "
+                                         "[arc radius] [arc angle] [number of segments] [radius] (subdivisions = 1)");
+            Validate(arcRadius > 0);
+            Validate(arcAngle > 0);
+            Validate(segmentNum > 0);
+            Validate(radius > 0);
+
+            shapeAttrStream >> subdivisions;
+            if (!shapeAttrStream)
+                subdivisions = 1;
+            else Validate(subdivisions > 0);
+
+            ValidateMsg(interactionName == "hard" || interactionName.empty(),
+                        "SpherocylinderBanana supports only hard interactions");
+
+            return std::make_shared<PolyspherocylinderBananaTraits>(arcRadius, arcAngle, segmentNum, radius,
+                                                                    subdivisions);
+        } else if (shapeName == "KMer") {
+            double sphereRadius, distance;
+            std::size_t sphereNum;
+            shapeAttrStream >> sphereNum >> sphereRadius >> distance;
+            ValidateMsg(shapeAttrStream, "Malformed KMer attributes; expected: "
+                                         "[number of spheres] [sphere radius] [distance between spheres]");
+            Validate(sphereNum >= 2);
+            Validate(sphereRadius > 0);
+            Validate(distance > 0);
+
+            return parse_polysphere_traits<KMerTraits>(shapeName, interactionName, interactionAttrStream, sphereNum,
+                                                       sphereRadius, distance);
+        } else if (shapeName == "PolysphereLollipop") {
+            double smallSphereRadius, largeSphereRadius, smallSpherePenetration, largeSpherePenetration;
+            std::size_t sphereNum;
+            shapeAttrStream >> sphereNum >> smallSphereRadius >> largeSphereRadius >> smallSpherePenetration;
+            shapeAttrStream >> largeSpherePenetration;
+            ValidateMsg(shapeAttrStream, "Malformed PolysphereLollipop attributes; expected: "
+                                         "[number of spheres] [small sphere radius] [large sphere radius] "
+                                         "[small spheres penetration] [large sphere penetration]");
+            Validate(sphereNum >= 2);
+            Validate(smallSphereRadius > 0);
+            Validate(largeSphereRadius > 0);
+            Validate(smallSpherePenetration < 2 * smallSphereRadius);
+            Validate(largeSpherePenetration < 2 * std::min(smallSphereRadius, largeSphereRadius));
+
+            if (version >= Version{0, 2, 0}) {
+                return parse_polysphere_traits<PolysphereLollipopTraits>(
+                        shapeName, interactionName, interactionAttrStream,
+                        sphereNum, smallSphereRadius, largeSphereRadius, smallSpherePenetration, largeSpherePenetration
+                );
+            } else {
+                return parse_polysphere_traits<legacy::PolysphereLollipopTraits>(
+                        shapeName, interactionName, interactionAttrStream,
+                        sphereNum, smallSphereRadius, largeSphereRadius, smallSpherePenetration, largeSpherePenetration
+                );
+            }
+        } else if (shapeName == "PolysphereWedge") {
+            if (version >= Version{0, 2, 0})
+                return parse_polysphere_wedge(shapeName, interactionName, shapeAttrStream, interactionAttrStream);
+            else
+                return parse_polysphere_wedge_legacy(shapeName, interactionName, shapeAttrStream,
+                                                     interactionAttrStream);
+        } else if (shapeName == "Spherocylinder") {
+            double r, length;
+            shapeAttrStream >> length >> r;
+            ValidateMsg(shapeAttrStream, "Malformed Spherocylinder attributes; expected: [length] [radius]");
+            Validate(r > 0);
+            Validate(length >= 0);
+            ValidateMsg(interactionName == "hard" || interactionName.empty(),
+                        "Spherocylinder supports only hard interactions");
+            return std::make_shared<SpherocylinderTraits>(length, r);
+        } else if (shapeName == "SmoothWedge") {
+            double R, r, length;
+            shapeAttrStream >> length >> R >> r;
+            ValidateMsg(shapeAttrStream, "Malformed SmoothWedge attributes; expected: [length] [bottom radius] "
+                                         "[top radius] ([subdivisions = 1])");
+            std::size_t subdivisions;
+            shapeAttrStream >> subdivisions;
+            if (!shapeAttrStream)
+                subdivisions = 1;
+
+            Validate(r > 0);
+            Validate(R > 0);
+            Validate(length >= std::abs(R - r));
+            ValidateMsg(interactionName == "hard" || interactionName.empty(),
+                        "SmoothWedge supports only hard interactions");
+            return std::make_shared<SmoothWedgeTraits>(R, r, length, subdivisions);
+        } else if (shapeName == "GenericXenoCollide") {
+            ValidateMsg(interactionName == "hard" || interactionName.empty(),
+                        "GenericXenoCollide supports only hard interactions");
+            return parse_generic_xeno_collide(shapeAttrStream);
+        } else if (shapeName == "Polysphere") {
+            auto geometry = parse_polysphere_geometry(shapeAttrStream);
+            return parse_polysphere_traits<PolysphereTraits>(shapeName, interactionName, interactionAttrStream,
+                                                             geometry);
+        } else if (shapeName == "Polyspherocylinder") {
+            ValidateMsg(interactionName == "hard" || interactionName.empty(),
+                        "Polyspherocylinder supports only hard interactions");
+            return parse_polyspherocylinder(shapeAttrStream);
         } else {
-            return parse_polysphere_traits<legacy::PolysphereBananaTraits>(
-                shapeName, interactionName, interactionAttrStream,
-                arcRadius, arcAngle, sphereNum, sphereRadius
-            );
+            throw ValidationException("Unknown particle name: " + shapeName);
         }
-    } else if (shapeName == "PolyspherocylinderBanana") {
-        double arcRadius, arcAngle, radius;
-        std::size_t segmentNum, subdivisions;
-        shapeAttrStream >> arcRadius >> arcAngle >> segmentNum >> radius;
-        ValidateMsg(shapeAttrStream, "Malformed PolysphereBanana attributes; expected: "
-                                     "[arc radius] [arc angle] [number of segments] [radius] (subdivisions = 1)");
-        Validate(arcRadius > 0);
-        Validate(arcAngle > 0);
-        Validate(segmentNum > 0);
-        Validate(radius > 0);
-
-        shapeAttrStream >> subdivisions;
-        if (!shapeAttrStream)
-            subdivisions = 1;
-        else
-            Validate(subdivisions > 0);
-
-        ValidateMsg(interactionName == "hard" || interactionName.empty(),
-                    "SpherocylinderBanana supports only hard interactions");
-
-        return std::make_shared<PolyspherocylinderBananaTraits>(arcRadius, arcAngle, segmentNum, radius, subdivisions);
-    } else if (shapeName == "KMer") {
-        double sphereRadius, distance;
-        std::size_t sphereNum;
-        shapeAttrStream >> sphereNum >> sphereRadius >> distance;
-        ValidateMsg(shapeAttrStream, "Malformed KMer attributes; expected: "
-                                     "[number of spheres] [sphere radius] [distance between spheres]");
-        Validate(sphereNum >= 2);
-        Validate(sphereRadius > 0);
-        Validate(distance > 0);
-
-        return parse_polysphere_traits<KMerTraits>(shapeName, interactionName, interactionAttrStream, sphereNum,
-                                                   sphereRadius, distance);
-    } else if (shapeName == "PolysphereLollipop") {
-        double smallSphereRadius, largeSphereRadius, smallSpherePenetration, largeSpherePenetration;
-        std::size_t sphereNum;
-        shapeAttrStream >> sphereNum >> smallSphereRadius >> largeSphereRadius >> smallSpherePenetration;
-        shapeAttrStream >> largeSpherePenetration;
-        ValidateMsg(shapeAttrStream, "Malformed PolysphereLollipop attributes; expected: "
-                                     "[number of spheres] [small sphere radius] [large sphere radius] "
-                                     "[small spheres penetration] [large sphere penetration]");
-        Validate(sphereNum >= 2);
-        Validate(smallSphereRadius > 0);
-        Validate(largeSphereRadius > 0);
-        Validate(smallSpherePenetration < 2*smallSphereRadius);
-        Validate(largeSpherePenetration < 2*std::min(smallSphereRadius, largeSphereRadius));
-
-        if (version >= Version{0, 2, 0}) {
-            return parse_polysphere_traits<PolysphereLollipopTraits>(
-                shapeName, interactionName, interactionAttrStream,
-                sphereNum, smallSphereRadius, largeSphereRadius, smallSpherePenetration, largeSpherePenetration
-            );
-        } else {
-            return parse_polysphere_traits<legacy::PolysphereLollipopTraits>(
-                shapeName, interactionName, interactionAttrStream,
-                sphereNum, smallSphereRadius, largeSphereRadius, smallSpherePenetration, largeSpherePenetration
-            );
-        }
-    } else if (shapeName == "PolysphereWedge") {
-        if (version >= Version{0, 2, 0})
-            return parse_polysphere_wedge(shapeName, interactionName, shapeAttrStream, interactionAttrStream);
-        else
-            return parse_polysphere_wedge_legacy(shapeName, interactionName, shapeAttrStream, interactionAttrStream);
-    } else if (shapeName == "Spherocylinder") {
-        double r, length;
-        shapeAttrStream >> length >> r;
-        ValidateMsg(shapeAttrStream, "Malformed Spherocylinder attributes; expected: [length] [radius]");
-        Validate(r > 0);
-        Validate(length >= 0);
-        ValidateMsg(interactionName == "hard" || interactionName.empty(),
-                    "Spherocylinder supports only hard interactions");
-        return std::make_shared<SpherocylinderTraits>(length, r);
-    } else if (shapeName == "SmoothWedge") {
-        double R, r, length;
-        shapeAttrStream >> length >> R >> r;
-        ValidateMsg(shapeAttrStream, "Malformed SmoothWedge attributes; expected: [length] [bottom radius] "
-                                     "[top radius] ([subdivisions = 1])");
-        std::size_t subdivisions;
-        shapeAttrStream >> subdivisions;
-        if (!shapeAttrStream)
-            subdivisions = 1;
-
-        Validate(r > 0);
-        Validate(R > 0);
-        Validate(length >= std::abs(R - r));
-        ValidateMsg(interactionName == "hard" || interactionName.empty(), "SmoothWedge supports only hard interactions");
-        return std::make_shared<SmoothWedgeTraits>(R, r, length, subdivisions);
-    } else if (shapeName == "GenericXenoCollide") {
-        ValidateMsg(interactionName == "hard" || interactionName.empty(),
-                    "GenericXenoCollide supports only hard interactions");
-        return parse_generic_xeno_collide(shapeAttrStream);
-    } else if (shapeName == "Polysphere") {
-        auto geometry = parse_polysphere_geometry(shapeAttrStream);
-        return parse_polysphere_traits<PolysphereTraits>(shapeName, interactionName, interactionAttrStream, geometry);
-    } else if (shapeName == "Polyspherocylinder") {
-        ValidateMsg(interactionName == "hard" || interactionName.empty(),
-                    "Polyspherocylinder supports only hard interactions");
-        return parse_polyspherocylinder(shapeAttrStream);
-    } else {
-        throw ValidationException("Unknown particle name: " + shapeName);
     }
 }
