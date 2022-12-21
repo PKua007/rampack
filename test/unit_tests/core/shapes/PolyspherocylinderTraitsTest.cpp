@@ -78,6 +78,7 @@ TEST_CASE("PolyspherocylinderTraits") {
         CHECK_THAT(geometry.getPrimaryAxis(shape), IsApproxEqual({1, 0, 0}, 1e-8));
         CHECK_THAT(geometry.getSecondaryAxis(shape), IsApproxEqual({0, 0, -1}, 1e-8));
         CHECK_THAT(geometry.getGeometricOrigin(shape), IsApproxEqual({0, 1, 0}, 1e-8));
+        CHECK(geometry.spherocylindersOverlap());
         CHECK_THAT(geometry.getNamedPointForShape("o0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-8));
         CHECK_THAT(geometry.getNamedPointForShape("b0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{-1, 0, 0}, 1e-8));
         CHECK_THAT(geometry.getNamedPointForShape("e0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1, 0, 0}, 1e-8));

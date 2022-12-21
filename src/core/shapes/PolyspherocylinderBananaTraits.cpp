@@ -24,7 +24,7 @@ bool PolyspherocylinderBananaTraits::isArcOriginOutside(double arcRadius, double
     double segmentAngle = arcAngle/static_cast<double>(segmentsNum);
     double segmentDistance = arcRadius * std::cos(segmentAngle/2);
     constexpr double EPSILON = 1e-12;
-    return segmentDistance + EPSILON >= radius;
+    return segmentDistance * (1 + EPSILON) >= radius;
 }
 
 bool PolyspherocylinderBananaTraits::isArcOpen(double arcRadius, double arcAngle, std::size_t segmentsNum,
@@ -37,7 +37,7 @@ bool PolyspherocylinderBananaTraits::isArcOpen(double arcRadius, double arcAngle
 
     double endDistance = 2 * std::sin(arcAngle/2) * arcRadius;
     constexpr double EPSILON = 1e-12;
-    return endDistance + EPSILON >= 2*radius;
+    return endDistance * (1 + EPSILON) >= 2*radius;
 }
 
 double PolyspherocylinderBananaTraits::calculateVolume(double arcRadius, double arcAngle, std::size_t segmentsNum,
