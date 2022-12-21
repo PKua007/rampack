@@ -71,22 +71,22 @@ inline Matrix<ROWS, COLS, E> operator-(Matrix<ROWS, COLS, E> matrix1, const Matr
 }
 
 
-template <std::size_t ROWS, std::size_t COLS, typename E>
-inline Matrix<ROWS, COLS, E> operator*(Matrix<ROWS, COLS, E> matrix, E x)
+template <std::size_t ROWS, std::size_t COLS, typename E, typename T, typename>
+inline Matrix<ROWS, COLS, E> operator*(Matrix<ROWS, COLS, E> matrix, T x)
 {
     return (matrix *= x);
 }
 
 
-template <std::size_t ROWS, std::size_t COLS, typename E>
-inline Matrix<ROWS, COLS, E> operator*(E x, Matrix<ROWS, COLS, E> matrix)
+template <std::size_t ROWS, std::size_t COLS, typename E, typename T, typename>
+inline Matrix<ROWS, COLS, E> operator*(T x, Matrix<ROWS, COLS, E> matrix)
 {
     return (matrix *= x);
 }
 
 
-template <std::size_t ROWS, std::size_t COLS, typename E>
-inline Matrix<ROWS, COLS, E> operator/(Matrix<ROWS, COLS, E> matrix, E x)
+template <std::size_t ROWS, std::size_t COLS, typename E, typename T, typename>
+inline Matrix<ROWS, COLS, E> operator/(Matrix<ROWS, COLS, E> matrix, T x)
 {
     return (matrix /= x);
 }
@@ -162,13 +162,14 @@ inline Matrix<ROWS, COLS, E> & Matrix<ROWS, COLS, E>::operator*=(const Matrix<CO
 
 
 template <std::size_t ROWS, std::size_t COLS, typename E>
-Matrix<ROWS, COLS, E> & Matrix<ROWS, COLS, E>::operator*=(E x)
+template <typename T, typename>
+Matrix<ROWS, COLS, E> & Matrix<ROWS, COLS, E>::operator*=(T x)
 {
     if (x == 0) {
         std::fill(arr, arr + (ROWS * COLS), 0);
     } else if (x != 1) {
         for (std::size_t i = 0; i < ROWS * COLS; i++)
-            arr[i] *= x;
+            arr[i] *= E(x);
     }
     return *this;
 }
@@ -177,11 +178,12 @@ Matrix<ROWS, COLS, E> & Matrix<ROWS, COLS, E>::operator*=(E x)
 // Matrix division by scalar assignment operator
 //--------------------------------------------------------------------------------------------
 template <std::size_t ROWS, std::size_t COLS, typename E>
-Matrix<ROWS, COLS, E> & Matrix<ROWS, COLS, E>::operator/=(E x)
+template <typename T, typename>
+Matrix<ROWS, COLS, E> & Matrix<ROWS, COLS, E>::operator/=(T x)
 {
     if (x != 1)
         for (std::size_t i = 0; i < ROWS * COLS; i++)
-            arr[i] /= x;
+            arr[i] /= T(x);
     return *this;
 }
 

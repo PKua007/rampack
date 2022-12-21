@@ -115,20 +115,28 @@ TEST_CASE("Matrix: arithmetic") {
 
         auto times1 = mat * 2.;
         auto times2 = 2. * mat;
+        // int convertible to double
+        auto times3 = mat * 2;
+        auto times4 = 2 * mat;
         mat *= 2;
 
         REQUIRE(times1 == Matrix<2, 2>{{2, 6, 10, 14}});
         REQUIRE(times2 == Matrix<2, 2>{{2, 6, 10, 14}});
+        REQUIRE(times3 == Matrix<2, 2>{{2, 6, 10, 14}});
+        REQUIRE(times4 == Matrix<2, 2>{{2, 6, 10, 14}});
         REQUIRE(mat == Matrix<2, 2>{{2, 6, 10, 14}});
     }
 
     SECTION("division by a constant") {
         Matrix<2, 2> mat = {{2, 6, 10, 14}};
 
-        auto div = mat / 2.;
+        // int convertible to double
+        auto div1 = mat / 2.;
+        auto div2 = mat / 2;
         mat /= 2.;
 
-        REQUIRE(div == Matrix<2, 2>{{1, 3, 5, 7}});
+        REQUIRE(div1 == Matrix<2, 2>{{1, 3, 5, 7}});
+        REQUIRE(div2 == Matrix<2, 2>{{1, 3, 5, 7}});
         REQUIRE(mat == Matrix<2, 2>{{1, 3, 5, 7}});
     }
 

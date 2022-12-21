@@ -24,17 +24,16 @@ Vector<DIM, E> operator-(const Vector<DIM, E> & _v1, const Vector<DIM, E> & _v2)
 
 // Multiplication by scalar
 //--------------------------------------------------------------------------------------------
-template <std::size_t DIM, typename E>
-Vector<DIM, E> operator*(E _x, const Vector<DIM, E> & _v)
+template <std::size_t DIM, typename E, typename T, typename>
+Vector<DIM, E> operator*(T _x, const Vector<DIM, E> & _v)
 {
     return Vector<DIM, E>(std::move(_x * _v.v));
 }
 
 
 // Multiplication by scalar (different operands order)
-//--------------------------------------------------------------------------------------------
-template <std::size_t DIM, typename E>
-Vector<DIM, E> operator*(const Vector<DIM, E> & _v, E _x)
+template <std::size_t DIM, typename E, typename T, typename>
+Vector<DIM, E> operator*(const Vector<DIM, E> & _v, T _x)
 {
     return Vector<DIM, E>(std::move(_x * _v.v));
 }
@@ -42,8 +41,8 @@ Vector<DIM, E> operator*(const Vector<DIM, E> & _v, E _x)
 
 // Division by scalar
 //--------------------------------------------------------------------------------------------
-template <std::size_t DIM, typename E>
-Vector<DIM, E> operator/(const Vector<DIM, E> & _v, E _x)
+template <std::size_t DIM, typename E, typename T, typename>
+Vector<DIM, E> operator/(const Vector<DIM, E> & _v, T _x)
 {
     return Vector<DIM, E>(std::move(_v.v / _x));
 }
