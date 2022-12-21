@@ -101,8 +101,9 @@ Matrix<ROWS, COLS, E> operator-(Matrix<ROWS, COLS, E> matrix1, const Matrix<ROWS
  * @param x scalar to multiply by
  * @return @a matrix multiplied by a scalar @a x
  */
-template <std::size_t ROWS, std::size_t COLS, typename E>
-Matrix<ROWS, COLS, E> operator*(Matrix<ROWS, COLS, E> matrix, E x);
+template <std::size_t ROWS, std::size_t COLS, typename E, typename T,
+          typename = std::enable_if_t<std::is_convertible_v<T, E>>>
+Matrix<ROWS, COLS, E> operator*(Matrix<ROWS, COLS, E> matrix, T x);
 
 /**
  * @brief Multiplies @a matrix by a scalar @a x. Version `x * matrix`.
@@ -110,8 +111,9 @@ Matrix<ROWS, COLS, E> operator*(Matrix<ROWS, COLS, E> matrix, E x);
  * @param x scalar to multiply by
  * @return @a matrix multiplied by a scalar @a x
  */
-template <std::size_t ROWS, std::size_t COLS, typename E>
-Matrix<ROWS, COLS, E> operator*(E x, Matrix<ROWS, COLS, E> matrix);
+template <std::size_t ROWS, std::size_t COLS, typename E, typename T,
+          typename = std::enable_if_t<std::is_convertible_v<T, E>>>
+Matrix<ROWS, COLS, E> operator*(T x, Matrix<ROWS, COLS, E> matrix);
 
 /**
  * @brief divides @a matrix by a scalar @a x.
@@ -119,8 +121,9 @@ Matrix<ROWS, COLS, E> operator*(E x, Matrix<ROWS, COLS, E> matrix);
  * @param x scalar to multiply by
  * @return @a matrix divided by a scalar @a x
  */
-template <std::size_t ROWS, std::size_t COLS, typename E>
-Matrix<ROWS, COLS, E> operator/(Matrix<ROWS, COLS, E> matrix, E x);
+template <std::size_t ROWS, std::size_t COLS, typename E, typename T,
+          typename = std::enable_if_t<std::is_convertible_v<T, E>>>
+Matrix<ROWS, COLS, E> operator/(Matrix<ROWS, COLS, E> matrix, T x);
 
 /**
  * @brief Unary minus. Returns a matrix consisting of the same elements as `this` but with opposite signs
@@ -244,7 +247,8 @@ public:
      * @param x scalar to divide matrix by
      * @return `*this`
      */
-    Matrix<ROWS, COLS, E> & operator/=(E x);
+    template <typename T, typename = std::enable_if<std::is_convertible_v<T, E>>>
+    Matrix<ROWS, COLS, E> & operator/=(T x);
 
     /**
      * @brief Multiplies matrix by @a other, resulting in a matrix of the same size as initial and assigns result to
@@ -259,7 +263,8 @@ public:
      * @param x scalar to divide matrix by
      * @return `*this`
      */
-    Matrix<ROWS, COLS, E> & operator*=(E x);
+    template <typename T, typename = std::enable_if<std::is_convertible_v<T, E>>>
+    Matrix<ROWS, COLS, E> & operator*=(T x);
 
     /**
      * @brief Gives read/write access to the element from @a row + 1 row and @a column + 1 column.
@@ -303,9 +308,16 @@ public:
     friend std::ostream & operator<< <> (std::ostream & _stream, const Matrix & _matrix);
     friend Matrix operator+ <> (Matrix matrix1, const Matrix &matrix2);
     friend Matrix operator- <> (Matrix matrix1, const Matrix &matrix2);
-    friend Matrix operator* <> (Matrix matrix, E x);
-    friend Matrix operator* <> (E x, Matrix matrix);
-    friend Matrix operator/ <> (Matrix matrix, E x);
+
+    template <std::size_t ROWS_, std::size_t COLS_, typename E_, typename T, typename>
+    friend Matrix<ROWS_, COLS_, E_> operator* (Matrix<ROWS_, COLS_, E_> matrix, T x);
+
+    template <std::size_t ROWS_, std::size_t COLS_, typename E_, typename T, typename>
+    friend Matrix<ROWS_, COLS_, E_> operator* (T x, Matrix<ROWS_, COLS_, E_> matrix);
+
+    template <std::size_t ROWS_, std::size_t COLS_, typename E_, typename T, typename>
+    friend Matrix<ROWS_, COLS_, E_> operator/ (Matrix<ROWS_, COLS_, E_> matrix, T x);
+
     friend Matrix operator- <> (Matrix matrix);
 
     // Other operations

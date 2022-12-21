@@ -62,20 +62,26 @@ TEST_CASE("Vector: arithmetic") {
 
         auto res1 = vec * 2.;
         auto res2 = 2. * vec;
+        auto res3 = vec * 2;
+        auto res4 = 2 * vec;
         vec *= 2.;
 
         REQUIRE(res1 == Vector<2>{{2, 4}});
         REQUIRE(res2 == Vector<2>{{2, 4}});
+        REQUIRE(res3 == Vector<2>{{2, 4}});
+        REQUIRE(res4 == Vector<2>{{2, 4}});
         REQUIRE(vec == Vector<2>{{2, 4}});
     }
 
     SECTION("division by a constant") {
         Vector<2> vec{{2, 4}};
 
-        auto res = vec / 2.;
+        auto res1 = vec / 2.;
+        auto res2 = vec / 2;
         vec /= 2.;
 
-        REQUIRE(res == Vector<2>{{1, 2}});
+        REQUIRE(res1 == Vector<2>{{1, 2}});
+        REQUIRE(res2 == Vector<2>{{1, 2}});
         REQUIRE(vec == Vector<2>{{1, 2}});
     }
 
