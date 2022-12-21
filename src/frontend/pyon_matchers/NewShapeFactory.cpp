@@ -12,11 +12,14 @@
 #include "core/shapes/SpherocylinderTraits.h"
 #include "core/shapes/PolyspherocylinderBananaTraits.h"
 #include "core/shapes/SmoothWedgeTraits.h"
+#include "core/shapes/GenericXenoCollideTraits.h"
 
 #include "core/interactions/CentralInteraction.h"
 #include "core/interactions/LennardJonesInteraction.h"
 #include "core/interactions/RepulsiveLennardJonesInteraction.h"
 #include "core/interactions/SquareInverseCoreInteraction.h"
+
+#include "geometry/xenocollide/XCBodyBuilder.h"
 
 
 using namespace pyon::matcher;
@@ -225,7 +228,7 @@ namespace {
                         {"subdivisions", MatcherInt{}.positive().mapTo<std::size_t>(), 1}})
             .filter([](const DataclassData &banana) {
                 auto segmentN = banana["segment_n"].as<std::size_t>();
-                
+
                 auto spherocylinderR = banana["sc_r"].as<double>();
                 auto arcR = banana["arc_r"].as<double>();
                 auto argAngle = banana["arc_angle"].as<double>();
@@ -400,6 +403,47 @@ namespace {
             });
     }
 
+    MatcherDataclass create_generic_convex_matcher() {
+        auto script = MatcherString{}
+            .filter([](const std::string &script){
+                return !explode(script, '&').empty();
+            })
+            .mapTo([](const std::string &script) -> std::shared_ptr<AbstractXCGeometry> {
+                auto commands = explode(script, '&');
+
+                XCBodyBuilder builder;
+                for (const auto &command : commands)
+                    builder.processCommand(command);
+
+                return builder.releaseCollideGeometry();
+            });
+
+        return MatcherDataclass("generic_convex")
+            .arguments({{"script", script},
+                        {"volume", MatcherFloat{}.positive()},
+                        {"geometric_origin", vector, Vector<3>{}},
+                        {"primary_axis", axis | MatcherNone{}, Any{}},
+                        {"secondary_axis", axis | MatcherNone{}, Any{}},
+                        {"named_points", namedPoints, ShapeGeometry::NamedPoints{}}})
+            .filter(validate_axes)
+            .mapTo([](const DataclassData &convex) -> std::shared_ptr<ShapeTraits> {
+                auto geometry = convex["script"].as<std::shared_ptr<AbstractXCGeometry>>();
+                auto volume = convex["volume"].as<double>();
+                auto geometricOrigin = convex["geometric_origin"].as<Vector<3>>();
+                std::optional<Vector<3>> primaryAxis;
+                if (!convex["primary_axis"].isEmpty())
+                    primaryAxis = convex["primary_axis"].as<Vector<3>>();
+                std::optional<Vector<3>> secondaryAxis;
+                if (!convex["secondary_axis"].isEmpty())
+                    secondaryAxis = convex["secondary_axis"].as<Vector<3>>();
+                auto namedPoints = convex["named_points"].as<ShapeGeometry::NamedPoints>();
+
+                return std::make_shared<GenericXenoCollideTraits>(
+                    geometry, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
+                );
+            });
+    }
+
     bool validate_axes(const DataclassData &dataclass) {
         if (dataclass["primary_axis"].isEmpty()) {
             return dataclass["secondary_axis"].isEmpty();
@@ -424,4 +468,5 @@ pyon::matcher::MatcherAlternative const NewShapeFactory::shape =
     | create_polyspherocylinder_banana_matcher()
     | create_smooth_wedge_matcher()
     | create_polysphere_matcher()
-    | create_polyspherocylinder_matcher();
+    | create_polyspherocylinder_matcher()
+    | create_generic_convex_matcher();
