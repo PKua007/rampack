@@ -35,6 +35,7 @@ namespace {
     MatcherDataclass create_polyspherocylinder_banana_matcher();
     MatcherDataclass create_smooth_wedge_matcher();
     MatcherDataclass create_polysphere_matcher();
+    MatcherDataclass create_polyspherocylinder_matcher();
 
     bool validate_axes(const DataclassData &dataclass);
 
@@ -217,11 +218,24 @@ namespace {
 
     MatcherDataclass create_polyspherocylinder_banana_matcher() {
         return MatcherDataclass("polyspherocylinder_banana")
-            .arguments({{"segment_n", MatcherInt{}.positive().mapTo<std::size_t>()},
+            .arguments({{"segment_n", MatcherInt{}.greaterEquals(2).mapTo<std::size_t>()},
                         {"sc_r", MatcherFloat{}.positive()},
                         {"arc_r", MatcherFloat{}.positive()},
                         {"arc_angle", MatcherFloat{}.greaterEquals(0).less(M_PI)},
                         {"subdivisions", MatcherInt{}.positive().mapTo<std::size_t>(), 1}})
+            .filter([](const DataclassData &banana) {
+                auto segmentN = banana["segment_n"].as<std::size_t>();
+                
+                auto spherocylinderR = banana["sc_r"].as<double>();
+                auto arcR = banana["arc_r"].as<double>();
+                auto argAngle = banana["arc_angle"].as<double>();
+
+                if (!PolyspherocylinderBananaTraits::isArcOpen(arcR, argAngle, segmentN, spherocylinderR))
+                    return false;
+                if (segmentN == 2)
+                    return true;
+                return PolyspherocylinderBananaTraits::isArcOriginOutside(arcR, argAngle, segmentN, spherocylinderR);
+            })
             .mapTo([](const DataclassData &banana) -> std::shared_ptr<ShapeTraits> {
                 auto segmentN = banana["segment_n"].as<std::size_t>();
                 auto spherocylinderR = banana["sc_r"].as<double>();
@@ -320,7 +334,71 @@ namespace {
                 else
                     return std::make_shared<PolysphereTraits>(std::move(geometry), interaction);
             });
-        }
+    }
+
+    MatcherDataclass create_polyspherocylinder_matcher() {
+        auto chain = MatcherArray()
+            .elementsMatch(vector)
+            .sizeAtLeast(2)
+            .mapToStdVector<Vector<3>>();
+        auto spherocylinder = MatcherDataclass("spherocylinder")
+            .arguments({{"chain", chain},
+                        {"r", MatcherFloat{}.positive()}})
+            .mapTo([](const DataclassData &spherocylinder) {
+                using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
+                std::vector<SpherocylinderData> result;
+                auto chain = spherocylinder["chain"].as<std::vector<Vector<3>>>();
+                auto r = spherocylinder["r"].as<double>();
+                for (std::size_t i{}; i < chain.size() - 1; i++) {
+                    const Vector<3> &pos1 = chain[i];
+                    const Vector<3> &pos2 = chain[i + 1];
+                    Vector<3> origin = (pos1 + pos2)/2;
+                    Vector<3> halfAxis = (pos2 - pos1)/2;
+                    result.emplace_back(origin, halfAxis, r);
+                }
+                return result;
+            });
+
+        auto spherocylinderArray = MatcherArray()
+            .elementsMatch(spherocylinder)
+            .nonEmpty()
+            .mapTo([](const ArrayData &array) {
+                using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
+                std::vector<SpherocylinderData> allScDatas;
+                for (const auto &scData : array.asStdVector<std::vector<SpherocylinderData>>())
+                    for (const auto &sphereData : scData)
+                        allScDatas.push_back(sphereData);
+                return allScDatas;
+            });
+
+        return MatcherDataclass("polyspherocylinder")
+            .arguments({{"spherocylinders", spherocylinder | spherocylinderArray},
+                        {"volume", MatcherFloat{}.positive()},
+                        {"geometric_origin", vector, Vector<3>{}},
+                        {"primary_axis", axis | MatcherNone{}, Any{}},
+                        {"secondary_axis", axis | MatcherNone{}, Any{}},
+                        {"named_points", namedPoints, ShapeGeometry::NamedPoints{}}})
+            .filter(validate_axes)
+            .mapTo([](const DataclassData &polysphere) -> std::shared_ptr<ShapeTraits> {
+                using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
+                auto sc = polysphere["spherocylinders"].as<std::vector<SpherocylinderData>>();
+                auto volume = polysphere["volume"].as<double>();
+                auto geometricOrigin = polysphere["geometric_origin"].as<Vector<3>>();
+                std::optional<Vector<3>> primaryAxis;
+                if (!polysphere["primary_axis"].isEmpty())
+                    primaryAxis = polysphere["primary_axis"].as<Vector<3>>();
+                std::optional<Vector<3>> secondaryAxis;
+                if (!polysphere["secondary_axis"].isEmpty())
+                    secondaryAxis = polysphere["secondary_axis"].as<Vector<3>>();
+                auto namedPoints = polysphere["named_points"].as<ShapeGeometry::NamedPoints>();
+
+                PolyspherocylinderTraits::PolyspherocylinderGeometry geometry(
+                    std::move(sc), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
+                );
+
+                return std::make_shared<PolyspherocylinderTraits>(std::move(geometry));
+            });
+    }
 
     bool validate_axes(const DataclassData &dataclass) {
         if (dataclass["primary_axis"].isEmpty()) {
@@ -336,7 +414,6 @@ namespace {
 }
 
 
-
 pyon::matcher::MatcherAlternative const NewShapeFactory::shape =
     create_sphere_matcher()
     | create_kmer_matcher()
@@ -346,4 +423,5 @@ pyon::matcher::MatcherAlternative const NewShapeFactory::shape =
     | create_spherocylinder_matcher()
     | create_polyspherocylinder_banana_matcher()
     | create_smooth_wedge_matcher()
-    | create_polysphere_matcher();
+    | create_polysphere_matcher()
+    | create_polyspherocylinder_matcher();
