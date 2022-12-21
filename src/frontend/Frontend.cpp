@@ -18,7 +18,7 @@
 #include "utils/Fold.h"
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
-#include "ShapeFactory.h"
+#include "frontend/legacy/ShapeFactory.h"
 #include "ObservablesCollectorFactory.h"
 #include "core/Simulation.h"
 #include "core/PeriodicBoundaryConditions.h"
@@ -38,7 +38,8 @@
 #include "core/io/XYZWriter.h"
 #include "core/io/TruncatedPlayer.h"
 #include "utils/ParseUtils.h"
-#include "pyon_matchers/NewShapeFactory.h"
+#include "legacy/ShapeFactory.h"
+#include "ShapeMatcher.h"
 #include "pyon/Parser.h"
 
 
@@ -1640,7 +1641,7 @@ std::shared_ptr<ShapeTraits> Frontend::createShapeTraits(const std::string &shap
     using namespace pyon::matcher;
     Any shapeTraits;
     auto shapeAST = pyon::Parser::parse(shapeName);
-    if (!NewShapeFactory::shape.match(shapeAST, shapeTraits))
+    if (!ShapeMatcher::shape.match(shapeAST, shapeTraits))
         throw ValidationException("Malformed shape");
 
     return shapeTraits.as<std::shared_ptr<ShapeTraits>>();

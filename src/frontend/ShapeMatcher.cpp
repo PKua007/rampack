@@ -2,7 +2,7 @@
 // Created by Piotr Kubala on 16/12/2022.
 //
 
-#include "NewShapeFactory.h"
+#include "ShapeMatcher.h"
 
 #include "core/shapes/SphereTraits.h"
 #include "core/shapes/KMerTraits.h"
@@ -458,7 +458,7 @@ namespace {
 }
 
 
-pyon::matcher::MatcherAlternative const NewShapeFactory::shape =
+pyon::matcher::MatcherAlternative const ShapeMatcher::shape =
     create_sphere_matcher()
     | create_kmer_matcher()
     | create_polysphere_banana_matcher()
