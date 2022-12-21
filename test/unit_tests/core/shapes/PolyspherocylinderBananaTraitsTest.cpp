@@ -9,7 +9,31 @@
 #include "core/shapes/PolyspherocylinderBananaTraits.h"
 
 
-TEST_CASE("PolyspherocylinderBananaTraits") {
+TEST_CASE("PolyspherocylinderBananaTraits: validation") {
+    SECTION("origin outside") {
+        // 2 spherocylinders on equilateral triangle sides; one case barely misses triangle's origin, the second one
+        // barely touches it
+        double side = 2;
+        double h = side * std::sqrt(3) / 2;
+        double epsilon = 0.001;
+        CHECK(PolyspherocylinderBananaTraits::isArcOriginOutside(2*h/3, 4*M_PI/3, 2, h/3 - epsilon));
+        CHECK_FALSE(PolyspherocylinderBananaTraits::isArcOriginOutside(2*h/3, 4*M_PI/3, 2, h/3 + epsilon));
+    }
+
+    SECTION("arc open") {
+        SECTION("hexagon") {
+            double epsilon = 0.001;
+            CHECK(PolyspherocylinderBananaTraits::isArcOpen(2, 5 * M_PI / 3, 5, 1 - epsilon));
+            CHECK_FALSE(PolyspherocylinderBananaTraits::isArcOpen(2, 5 * M_PI / 3, 5, 1 + epsilon));
+        }
+
+        SECTION("almost straight") {
+            CHECK(PolyspherocylinderBananaTraits::isArcOpen(2, M_PI/3, 3, 1.5));
+        }
+    }
+}
+
+TEST_CASE("PolyspherocylinderBananaTraits: points") {
     SECTION("below half-angle") {
         SECTION("without subdivisions") {
             PolyspherocylinderBananaTraits traits(2, 2*M_PI/3, 2, 1);
@@ -69,5 +93,18 @@ TEST_CASE("PolyspherocylinderBananaTraits") {
         CHECK_THAT(scData[1].position, IsApproxEqual({-0.5, 0, +0.5*std::sqrt(3)}, 1e-12));
         CHECK_THAT(scData[1].halfAxis, IsApproxEqual({+1.5, 0, +0.5*std::sqrt(3)}, 1e-12));
         CHECK(scData[1].radius == 1);
+    }
+}
+
+
+TEST_CASE("PolyspherocylinderBananaTraits: volume") {
+    SECTION("2 acute segments") {
+        PolyspherocylinderBananaTraits traits(3, 5*M_PI/3, 2, 1);
+        CHECK(traits.getGeometry().getVolume() == Approx(37.3725974707442));    // Mathematica value
+    }
+
+    SECTION("3 obtuse segments") {
+        PolyspherocylinderBananaTraits traits(2, M_PI/3, 3, 1);
+        CHECK(traits.getGeometry().getVolume() == Approx(10.73038812797451));    // Mathematica value
     }
 }

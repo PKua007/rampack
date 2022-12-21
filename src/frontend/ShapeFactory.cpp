@@ -253,7 +253,7 @@ namespace {
         ValidateMsg(!spherocylinderData.empty(), GENERIC_POLYSPHEROCYLINDER_USAGE);
 
         PolyspherocylinderTraits::PolyspherocylinderGeometry geometry(
-            std::move(spherocylinderData), primaryAxis, secondaryAxis, geometricOrigin, namedPoints
+            std::move(spherocylinderData), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
         );
         return std::make_unique<PolyspherocylinderTraits>(std::move(geometry));
     }

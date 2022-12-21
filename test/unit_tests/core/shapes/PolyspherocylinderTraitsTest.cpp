@@ -28,9 +28,10 @@ TEST_CASE("PolyspherocylinderTraits") {
     // C - cap centres of spherocylinders (non-common)
     // X - common cap of both spherocylinders
 
+    double volume = 1;  // Arbitrary value, it is not important here
     PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({Data{{0, 0, 0}, {0, 0, 1}, 1},
                                                                    Data{{0, 0, 2}, {0, 0, 1}, 0.5}},
-                                                                  {0, 0, 1}, {1, 0, 0}, {0, 1, 0},
+                                                                  {0, 0, 1}, {1, 0, 0}, {0, 1, 0}, volume,
                                                                   {{"point1", {0, 1, 0}}});
     PolyspherocylinderTraits traits(geometry);
 
@@ -213,19 +214,4 @@ TEST_CASE("PolyspherocylinderTraits: tests from SpherocylinderTraits") {
             CHECK_FALSE(traits.overlapBetweenShapes(sc2, sc1, pbc));
         }
     }
-}
-
-TEST_CASE("PolyspherocylnderTraits: mass centre normalization") {
-    // First spherocylinder has 2 times bigger volume than the second
-    PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({Data{{0, 0, 0}, {0, 0, 1}, 1},
-                                                                   Data{{0, 0, 6}, {0, 0, 3}, 0.5}},
-                                                                  {0, 0, 1}, {0, 1, 0}, {1, 0, 0},
-                                                                  {{"point1", {1, 0, 0}}});
-    geometry.normalizeMassCentre();
-    PolyspherocylinderTraits traits(geometry);
-
-    const auto &scData = traits.getSpherocylinderData();
-    CHECK(scData == std::vector<Data>{Data{{0, 0, -2}, {0, 0, 1}, 1}, Data{{0, 0, 4}, {0, 0, 3}, 0.5}});
-    CHECK_THAT(geometry.getGeometricOrigin({}), IsApproxEqual({1, 0, -2}, 1e-12));
-    CHECK_THAT(geometry.getNamedPointForShape("point1", {}), IsApproxEqual({1, 0, -2}, 1e-12));
 }
