@@ -11,6 +11,7 @@
 
 #include "core/ShapeTraits.h"
 #include "geometry/xenocollide/AbstractXCGeometry.h"
+#include "OptionalAxis.h"
 
 
 /**
@@ -67,9 +68,12 @@ public:
     class PolyspherocylinderGeometry : public ShapeGeometry {
     private:
         std::vector<SpherocylinderData> spherocylinderData;
-        Vector<3> primaryAxis;
-        Vector<3> secondaryAxis;
+        std::optional<Vector<3>> primaryAxis;
+        std::optional<Vector<3>> secondaryAxis;
         Vector<3> geometricOrigin;
+        double volume{};
+
+        [[nodiscard]] double calculateVolume() const;
 
     public:
         /**
@@ -81,18 +85,23 @@ public:
          * @param customNamedPoints custom named points in addition to default ones (see
          * PolyspherocylinderGeometry::getNamedPoint)
          */
-        PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, const Vector<3> &primaryAxis,
-                                   const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin = {0, 0, 0},
+        PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, OptionalAxis primaryAxis,
+                                   OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin = {0, 0, 0},
+                                   std::optional<double> volume = 0,
                                    const ShapeGeometry::NamedPoints& customNamedPoints = {});
 
-        [[nodiscard]] double getVolume() const override;
+        [[nodiscard]] double getVolume() const override { return this->volume; }
 
         [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override {
-            return shape.getOrientation() * this->primaryAxis;
+            if (!this->primaryAxis.has_value())
+                throw std::runtime_error("PolyspherocylinderGeometry::getPrimaryAxis: primary axis not defined");
+            return shape.getOrientation() * this->primaryAxis.value();
         }
 
         [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override {
-            return shape.getOrientation() * this->secondaryAxis;
+            if (!this->primaryAxis.has_value())
+                throw std::runtime_error("PolyspherocylinderGeometry::getSecondaryAxis: secondary axis not defined");
+            return shape.getOrientation() * this->secondaryAxis.value();
         }
 
         [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const override {
@@ -102,19 +111,6 @@ public:
         [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const {
             return this->spherocylinderData;
         }
-
-        /**
-         * @brief Calculates mass centre and moves it to {0, 0, 0} (geometric origin and named points are moved
-         * accordingly).
-         * @details Overlaps are not accounted for.
-         */
-        void normalizeMassCentre();
-
-        /**
-         * @brief Calculates and returns mass centre.
-         * @details Overlaps are not accounted for.
-         */
-        [[nodiscard]] Vector<3> calculateMassCentre() const;
 
         void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
 

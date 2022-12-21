@@ -166,8 +166,8 @@ PolysphereTraits::PolysphereGeometry::PolysphereGeometry(std::vector<SphereData>
                                                          OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin,
                                                          std::optional<double> volume,
                                                          const ShapeGeometry::NamedPoints &customNamedPoints)
-        : sphereData{std::move(sphereData)}, primaryAxis{primaryAxis},
-          secondaryAxis{secondaryAxis}, geometricOrigin{geometricOrigin}
+        : sphereData{std::move(sphereData)}, primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis},
+          geometricOrigin{geometricOrigin}
 {
     Expects(!this->sphereData.empty());
     if (!this->primaryAxis.has_value())

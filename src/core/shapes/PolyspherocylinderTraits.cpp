@@ -13,19 +13,32 @@
 #include "geometry/xenocollide/XCBodyBuilder.h"
 
 
-double PolyspherocylinderTraits::PolyspherocylinderGeometry::getVolume() const {
-    return std::accumulate(this->spherocylinderData.begin(), this->spherocylinderData.end(), 0.,
-                           [](double volume, const SpherocylinderData &data) { return volume + data.getVolume(); });
+double PolyspherocylinderTraits::PolyspherocylinderGeometry::calculateVolume() const {
+    auto volumeAccumulator = [](double volume_, const SpherocylinderData &data) {
+        return volume_ + data.getVolume();
+    };
+    return std::accumulate(this->spherocylinderData.begin(), this->spherocylinderData.end(), 0., volumeAccumulator);
 }
 
 PolyspherocylinderTraits::PolyspherocylinderGeometry
-    ::PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, const Vector<3> &primaryAxis,
-                                 const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin,
-                                 const ShapeGeometry::NamedPoints &customNamedPoints)
-        : spherocylinderData{std::move(spherocylinderData)}, primaryAxis{primaryAxis.normalized()},
-          secondaryAxis{secondaryAxis.normalized()}, geometricOrigin{geometricOrigin}
+    ::PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, OptionalAxis primaryAxis,
+                                 OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin,
+                                 std::optional<double> volume, const ShapeGeometry::NamedPoints &customNamedPoints)
+        : spherocylinderData{std::move(spherocylinderData)}, primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis},
+          geometricOrigin{geometricOrigin}
 {
     Expects(!this->spherocylinderData.empty());
+    if (!this->primaryAxis.has_value())
+        Expects(!this->secondaryAxis.has_value());
+    if (this->primaryAxis.has_value())
+        this->primaryAxis = this->primaryAxis->normalized();
+    if (this->secondaryAxis.has_value())
+        this->secondaryAxis = this->secondaryAxis->normalized();
+
+    if (volume.has_value())
+        this->volume = *volume;
+    else
+        this->volume = this->calculateVolume();
 
     for (std::size_t i{}; i < this->spherocylinderData.size(); i++) {
         const auto &scData = this->spherocylinderData[i];
@@ -36,30 +49,6 @@ PolyspherocylinderTraits::PolyspherocylinderGeometry
     }
 
     this->registerNamedPoints(customNamedPoints);
-}
-
-void PolyspherocylinderTraits::PolyspherocylinderGeometry::normalizeMassCentre() {
-    Vector<3> massCentre = this->calculateMassCentre();
-    std::vector<SpherocylinderData> newSpherocylinderData;
-    newSpherocylinderData.reserve(this->spherocylinderData.size());
-    auto massCentreShifter = [massCentre](const SpherocylinderData &data) {
-        return SpherocylinderData(data.position - massCentre, data.halfAxis, data.radius);
-    };
-    std::transform(this->spherocylinderData.begin(), this->spherocylinderData.end(),
-                   std::back_inserter(newSpherocylinderData), massCentreShifter);
-    this->spherocylinderData = std::move(newSpherocylinderData);
-    this->geometricOrigin -= massCentre;
-    this->moveNamedPoints(-massCentre);
-}
-
-Vector<3> PolyspherocylinderTraits::PolyspherocylinderGeometry::calculateMassCentre() const {
-    auto massCentreAccumulator = [](const Vector<3> &sum, const SpherocylinderData &data) {
-        return sum + data.getVolume() * data.position;
-    };
-    Vector<3> massCentre = std::accumulate(this->spherocylinderData.begin(), this->spherocylinderData.end(), Vector<3>{},
-                                           massCentreAccumulator);
-    massCentre /= this->getVolume();
-    return massCentre;
 }
 
 PolyspherocylinderTraits::SpherocylinderData::SpherocylinderData(const Vector<3> &position, const Vector<3> &halfAxis,
