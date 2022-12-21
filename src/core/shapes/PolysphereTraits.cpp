@@ -136,7 +136,7 @@ bool PolysphereTraits::HardInteraction::overlapWithWall(const Vector<3> &pos,
 }
 
 double PolysphereTraits::PolysphereGeometry::calculateVolume() const {
-    ExpectsMsg(!this->spheresOverlap(), "PolysphereTraits::PolysphereGeometry::calculateVolume: automati volume "
+    ExpectsMsg(!this->spheresOverlap(), "PolysphereTraits::PolysphereGeometry::calculateVolume: automatic volume "
                                         "not supported for overlapping spheres");
 
     auto volumeAccumulator = [](double volume_, const SphereData &data) {
@@ -216,8 +216,8 @@ bool PolysphereTraits::PolysphereGeometry::spheresOverlap() const {
 
             constexpr double EPSILON = 1e-12;
             double distance2 = (data1.position - data2.position).norm2();
-            double radii2 = std::pow(data1.radius + data2.radius + EPSILON, 2);
-            if (distance2 < radii2)
+            double radii2 = std::pow(data1.radius + data2.radius, 2);
+            if (distance2 * (EPSILON + 1) < radii2)
                 return true;
         }
     }

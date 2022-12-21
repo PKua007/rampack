@@ -14,6 +14,9 @@
 
 
 double PolyspherocylinderTraits::PolyspherocylinderGeometry::calculateVolume() const {
+    ExpectsMsg(!this->spherocylindersOverlap(), "PolyspherocylinderTraits::PolyspherocylinderGeometry::calculateVolume:"
+                                                " automatic volume not supported for overlapping spheres");
+
     auto volumeAccumulator = [](double volume_, const SpherocylinderData &data) {
         return volume_ + data.getVolume();
     };
@@ -49,6 +52,27 @@ PolyspherocylinderTraits::PolyspherocylinderGeometry
     }
 
     this->registerNamedPoints(customNamedPoints);
+}
+
+bool PolyspherocylinderTraits::PolyspherocylinderGeometry::spherocylindersOverlap() const {
+    for (std::size_t i{}; i < this->spherocylinderData.size(); i++) {
+        for (std::size_t j = i + 1; j < this->spherocylinderData.size(); j++) {
+            const auto &data1 = spherocylinderData[i];
+            const auto &data2 = spherocylinderData[j];
+
+            Vector<3> sc11 = data1.position - data1.halfAxis;
+            Vector<3> sc12 = data1.position + data1.halfAxis;
+            Vector<3> sc21 = data2.position - data2.halfAxis;
+            Vector<3> sc22 = data2.position + data2.halfAxis;
+            double distance = SegmentDistanceCalculator::calculate(sc11, sc12, sc21, sc22);
+
+            constexpr double EPSILON = 1e-12;
+            if (distance * (1 + EPSILON) < data1.radius + data2.radius)
+                return true;
+        }
+    }
+
+    return false;
 }
 
 PolyspherocylinderTraits::SpherocylinderData::SpherocylinderData(const Vector<3> &position, const Vector<3> &halfAxis,

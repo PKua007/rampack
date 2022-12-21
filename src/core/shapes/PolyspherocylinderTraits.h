@@ -112,6 +112,8 @@ public:
             return this->spherocylinderData;
         }
 
+        [[nodiscard]] bool spherocylindersOverlap() const;
+
         void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
 
         void addCustomNamedPoints(const ShapeGeometry::NamedPoints &namedPoints) {
