@@ -17,6 +17,7 @@
 #include "XCObjShapePrinter.h"
 #include "geometry/Polyhedron.h"
 #include "utils/Assertions.h"
+#include "OptionalAxis.h"
 
 
 /**
@@ -45,8 +46,8 @@
 template<typename ConcreteCollideTraits>
 class XenoCollideTraits : public ShapeTraits, public Interaction, public ShapeGeometry {
 private:
-    Vector<3> primaryAxis;
-    Vector<3> secondaryAxis;
+    std::optional<Vector<3>> primaryAxis;
+    std::optional<Vector<3>> secondaryAxis;
     Vector<3> geometricOrigin;
     double volume{};
 
@@ -86,7 +87,7 @@ public:
      * @param volume volume of the shape (it has to be computed manually, since there is no exact general method)
      * @param customNamedPoints optional list of named points (see ShapeGeometry::getNamedPoint())
      */
-    XenoCollideTraits(const Vector<3> &primaryAxis, const Vector<3> &secondaryAxis, const Vector<3> &geometricOrigin,
+    XenoCollideTraits(OptionalAxis primaryAxis, OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin,
                       double volume, const ShapeGeometry::NamedPoints &customNamedPoints = {})
             : primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}, geometricOrigin{geometricOrigin}, volume{volume}
     {
@@ -121,11 +122,15 @@ public:
     }
 
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const final {
-        return shape.getOrientation() * this->primaryAxis;
+        if (!this->primaryAxis.has_value())
+            throw std::runtime_error("XenoCollideTraits::getPrimaryAxis: primary axis not defined");
+        return shape.getOrientation() * this->primaryAxis.value();
     }
 
     [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const final {
-        return shape.getOrientation() * this->secondaryAxis;
+        if (!this->primaryAxis.has_value())
+            throw std::runtime_error("XenoCollideTraits::getSecondaryAxis: secondary axis not defined");
+        return shape.getOrientation() * this->secondaryAxis.value();
     }
 
     [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const final {
