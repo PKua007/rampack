@@ -4,7 +4,7 @@
 
 #include <catch2/catch.hpp>
 
-#include "frontend/ShapeFactory.h"
+#include "frontend/legacy/ShapeFactory.h"
 #include "core/shapes/SphereTraits.h"
 
 TEST_CASE("ShapeFactory: Sphere") {
