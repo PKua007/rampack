@@ -65,6 +65,11 @@ namespace pyon::matcher {
 
         static std::string implodeKeys(const std::vector<std::string> &keys);
 
+        void addKeyMatchers(std::vector<std::string> &bulletPoints, size_t &linesAtLeast, std::size_t indent) const;
+        void addDefaultKeyMatcher(std::vector<std::string> &bulletPoints, size_t &linesAtLeast, size_t indent) const;
+        void addAllKeyMatchers(std::vector<std::string> &bulletPoints, std::size_t indent) const;
+        [[nodiscard]] std::vector<std::pair<std::string, std::string>> describeKeyValues(std::size_t indent) const;
+
     public:
         MatcherDictionary() = default;
         template <typename ConcreteMatcher>
