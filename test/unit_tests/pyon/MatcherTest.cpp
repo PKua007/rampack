@@ -163,6 +163,7 @@ TEST_CASE("Matcher: Boolean") {
         CHECK(result.as<bool>());
         CHECK(MatcherBoolean{}.match(Parser::parse("False"), result));
         CHECK_FALSE(result.as<bool>());
+        CHECK(MatcherBoolean{}.outline(4) == "    Boolean");
     }
 
     SECTION("filters") {
@@ -172,6 +173,7 @@ TEST_CASE("Matcher: Boolean") {
             auto matcher = GENERATE_COPY(matcher1, matcher2);
             CHECK_FALSE(matcher.match(Parser::parse("False"), result));
             CHECK(matcher.match(Parser::parse("True"), result));
+            CHECK(matcher.outline(4) == "    Boolean equal True");
         }
 
         SECTION("false") {
@@ -180,6 +182,7 @@ TEST_CASE("Matcher: Boolean") {
             auto matcher = GENERATE_COPY(matcher1, matcher2);
             CHECK_FALSE(matcher.match(Parser::parse("True"), result));
             CHECK(matcher.match(Parser::parse("False"), result));
+            CHECK(matcher.outline(4) == "    Boolean equal False");
         }
     }
 
@@ -204,6 +207,7 @@ TEST_CASE("Matcher: None") {
         CHECK_FALSE(matcher.match(Parser::parse("45"), result));
         CHECK(matcher.match(Parser::parse("None"), result));
         CHECK(result.isEmpty());
+        CHECK(matcher.outline(4) == "    None");
     }
 
     SECTION("custom map") {

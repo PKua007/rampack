@@ -25,6 +25,7 @@ namespace pyon::matcher {
         [[nodiscard]] MatcherBoolean copy() const { return *this; }
 
         bool match(std::shared_ptr<const ast::Node> node, Any &result) const override;
+        [[nodiscard]] std::string outline(std::size_t indent) const override;
 
         MatcherBoolean &isTrue();
         MatcherBoolean &isFalse();
