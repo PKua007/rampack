@@ -18,13 +18,25 @@ namespace pyon::matcher {
         template<typename NumeralT, typename ConcreteNumeral>
         class MatcherNumeral : public MatcherBase {
         private:
-            std::vector<std::function<bool(NumeralT)>> filters;
+            struct Filter {
+                std::function<bool(NumeralT)> predicate;
+                std::string description;
+            };
+
+            std::vector<Filter> filters;
             std::function<Any(NumeralT)> mapping = [](NumeralT i) { return i; };
             
             ConcreteNumeral &concrete() { return static_cast<ConcreteNumeral&>(*this); }
 
+            [[nodiscard]] std::string stringify(NumeralT i) const {
+                std::ostringstream out;
+                out << i;
+                return out.str();
+            }
+
         protected:
             virtual bool matchNodeType(const std::shared_ptr<const ast::Node> &node, NumeralT &numeral) const = 0;
+            [[nodiscard]] virtual std::string getName() const = 0;
 
         public:
             MatcherNumeral() = default;
@@ -47,11 +59,26 @@ namespace pyon::matcher {
                     return false;
 
                 for (const auto &filter: filters)
-                    if (!filter(numeral))
+                    if (!filter.predicate(numeral))
                         return false;
 
                 result = this->mapping(numeral);
                 return true;
+            }
+
+            [[nodiscard]] std::string outline(std::size_t indent) const override {
+                std::string spaces(indent, ' ');
+                std::ostringstream out;
+                out << spaces << this->getName();
+                if (this->filters.size() == 1) {
+                    out << ", which " << this->filters.front().description;
+                } else if (this->filters.size() > 1) {
+                    out << ", which:";
+                    for (const auto &filter : this->filters)
+                        out << std::endl << spaces << "- " <<
+                        filter.description;
+                }
+                return out.str();
             }
 
             template<typename T>
@@ -66,66 +93,91 @@ namespace pyon::matcher {
             }
 
             ConcreteNumeral &filter(const std::function<bool(NumeralT)> &filter) {
-                this->filters.push_back(filter);
+                this->filters.push_back({filter, "<undefined filter>"});
+                return this->concrete();
+            }
+
+            ConcreteNumeral &describe(const std::string &description) {
+                Expects(!this->filters.empty());
+                this->filters.back().description = description;
                 return this->concrete();
             }
 
             ConcreteNumeral &positive() {
-                this->filters.emplace_back([](NumeralT i) { return i > 0; });
+                this->filter([](NumeralT i) { return i > 0; });
+                this->describe("is > 0");
                 return this->concrete();
             }
 
             ConcreteNumeral &negative() {
-                this->filters.emplace_back([](NumeralT i) { return i < 0; });
+                this->filter([](NumeralT i) { return i < 0; });
+                this->describe("is < 0");
                 return this->concrete();
             }
 
             ConcreteNumeral &nonPositive() {
-                this->filters.emplace_back([](NumeralT i) { return i <= 0; });
+                this->filter([](NumeralT i) { return i <= 0; });
+                this->describe("is <= 0");
                 return this->concrete();
             }
 
             ConcreteNumeral &nonNegative() {
-                this->filters.emplace_back([](NumeralT i) { return i >= 0; });
+                this->filter([](NumeralT i) { return i >= 0; });
+                this->describe("is >= 0");
                 return this->concrete();
             }
 
             ConcreteNumeral &greater(NumeralT value) {
-                this->filters.emplace_back([value](NumeralT i) { return i > value; });
+                this->filter([value](NumeralT i) { return i > value; });
+                this->describe("is > " + this->stringify(value));
                 return this->concrete();
             }
 
             ConcreteNumeral &greaterEquals(NumeralT value) {
-                this->filters.emplace_back([value](NumeralT i) { return i >= value; });
+                this->filter([value](NumeralT i) { return i >= value; });
+                this->describe("is >= " + this->stringify(value));
                 return this->concrete();
             }
 
             ConcreteNumeral &less(NumeralT value) {
-                this->filters.emplace_back([value](NumeralT i) { return i < value; });
+                this->filter([value](NumeralT i) { return i < value; });
+                this->describe("is < " + this->stringify(value));
                 return this->concrete();
             }
 
             ConcreteNumeral &lessEquals(NumeralT value) {
-                this->filters.emplace_back([value](NumeralT i) { return i <= value; });
+                this->filter([value](NumeralT i) { return i <= value; });
+                this->describe("is <= " + this->stringify(value));
                 return this->concrete();
             }
 
             ConcreteNumeral &inRange(NumeralT low, NumeralT high) {
                 Expects(low <= high);
-                this->filters.emplace_back([low, high](NumeralT i) { return i >= low && i <= high; });
+                this->filter([low, high](NumeralT i) { return i >= low && i <= high; });
+                this->describe("is in range [" + this->stringify(low) + ", " + this->stringify(high) + "]");
                 return this->concrete();
             }
 
             ConcreteNumeral &equals(NumeralT value) {
-                this->filters.emplace_back([value](NumeralT i) { return i == value; });
+                this->filter([value](NumeralT i) { return i == value; });
+                this->describe("equals " + this->stringify(value));
                 return this->concrete();
             }
 
             ConcreteNumeral &anyOf(const std::vector<NumeralT> &values) {
+                Expects(!values.empty());
                 auto filter = [values](NumeralT i) {
                     return std::find(values.begin(), values.end(), i) != values.end();
                 };
-                this->filters.emplace_back(filter);
+                this->filter(filter);
+
+                std::ostringstream out;
+                out << "is one of: ";
+                for (std::size_t i{}; i < values.size() - 1; i++)
+                    out << values[i] << ", ";
+                out << values.back();
+                this->describe(out.str());
+
                 return this->concrete();
             }
         };
@@ -140,6 +192,10 @@ namespace pyon::matcher {
 
             numeral = node->as<ast::NodeInt>()->getValue();
             return true;
+        }
+
+        [[nodiscard]] std::string getName() const override {
+            return "Integer";
         }
 
     public:
@@ -160,6 +216,10 @@ namespace pyon::matcher {
                 default:
                     return false;
             }
+        }
+
+        [[nodiscard]] std::string getName() const override {
+            return "Float";
         }
 
     public:

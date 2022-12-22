@@ -19,6 +19,7 @@ TEST_CASE("Matcher: Int") {
         CHECK_FALSE(MatcherInt{}.match(Parser::parse("True"), result));
         CHECK(MatcherInt{}.match(Parser::parse("7"), result));
         CHECK(result.as<long>() == 7);
+        CHECK(MatcherInt{}.outline(4) == "    Integer");
     }
 
     SECTION("filters") {
@@ -26,12 +27,14 @@ TEST_CASE("Matcher: Int") {
             auto matcher = MatcherInt{}.positive();
             CHECK_FALSE(matcher.match(Parser::parse("0"), result));
             CHECK(matcher.match(Parser::parse("7"), result));
+            CHECK(matcher.outline(4) == "    Integer, which is > 0");
         }
 
         SECTION("negative") {
             auto matcher = MatcherInt{}.negative();
             CHECK_FALSE(matcher.match(Parser::parse("0"), result));
             CHECK(matcher.match(Parser::parse("-7"), result));
+            CHECK(matcher.outline(4) == "    Integer, which is < 0");
         }
 
         SECTION("non-positive") {
@@ -39,6 +42,7 @@ TEST_CASE("Matcher: Int") {
             CHECK_FALSE(matcher.match(Parser::parse("1"), result));
             CHECK(matcher.match(Parser::parse("0"), result));
             CHECK(matcher.match(Parser::parse("-1"), result));
+            CHECK(matcher.outline(4) == "    Integer, which is <= 0");
         }
 
         SECTION("non-negative") {
@@ -46,30 +50,35 @@ TEST_CASE("Matcher: Int") {
             CHECK_FALSE(matcher.match(Parser::parse("-1"), result));
             CHECK(matcher.match(Parser::parse("0"), result));
             CHECK(matcher.match(Parser::parse("1"), result));
+            CHECK(matcher.outline(4) == "    Integer, which is >= 0");
         }
 
         SECTION("greater") {
             auto matcher = MatcherInt{}.greater(5);
             CHECK_FALSE(matcher.match(Parser::parse("5"), result));
             CHECK(matcher.match(Parser::parse("6"), result));
+            CHECK(matcher.outline(4) == "    Integer, which is > 5");
         }
 
         SECTION("greater equals") {
             auto matcher = MatcherInt{}.greaterEquals(5);
             CHECK_FALSE(matcher.match(Parser::parse("4"), result));
             CHECK(matcher.match(Parser::parse("5"), result));
+            CHECK(matcher.outline(4) == "    Integer, which is >= 5");
         }
 
         SECTION("less") {
             auto matcher = MatcherInt{}.less(5);
             CHECK_FALSE(matcher.match(Parser::parse("5"), result));
             CHECK(matcher.match(Parser::parse("4"), result));
+            CHECK(matcher.outline(4) == "    Integer, which is < 5");
         }
 
         SECTION("less equals") {
             auto matcher = MatcherInt{}.lessEquals(5);
             CHECK_FALSE(matcher.match(Parser::parse("6"), result));
             CHECK(matcher.match(Parser::parse("5"), result));
+            CHECK(matcher.outline(4) == "    Integer, which is <= 5");
         }
 
         SECTION("equals") {
@@ -79,6 +88,7 @@ TEST_CASE("Matcher: Int") {
             CHECK_FALSE(matcher.match(Parser::parse("4"), result));
             CHECK_FALSE(matcher.match(Parser::parse("6"), result));
             CHECK(matcher.match(Parser::parse("5"), result));
+            CHECK(matcher.outline(4) == "    Integer, which equals 5");
         }
 
         SECTION("any of") {
@@ -88,6 +98,7 @@ TEST_CASE("Matcher: Int") {
             CHECK_FALSE(matcher.match(Parser::parse("2"), result));
             CHECK(matcher.match(Parser::parse("1"), result));
             CHECK(matcher.match(Parser::parse("5"), result));
+            CHECK(matcher.outline(4) == "    Integer, which is one of: 1, 3, 5");
         }
 
         SECTION("in range") {
@@ -96,21 +107,27 @@ TEST_CASE("Matcher: Int") {
             CHECK_FALSE(matcher.match(Parser::parse("4"), result));
             CHECK(matcher.match(Parser::parse("1"), result));
             CHECK(matcher.match(Parser::parse("3"), result));
+            CHECK(matcher.outline(4) == "    Integer, which is in range [1, 3]");
         }
 
         SECTION("custom") {
             auto matcher = MatcherInt{}.filter([](long i) { return i % 2 == 0; });
             CHECK_FALSE(matcher.match(Parser::parse("3"), result));
             CHECK(matcher.match(Parser::parse("4"), result));
+            CHECK(matcher.outline(4) == "    Integer, which <undefined filter>");
+            matcher.describe("is even");
+            CHECK(matcher.outline(4) == "    Integer, which is even");
         }
 
         SECTION("joined") {
             auto matcher = MatcherInt{}
                 .greater(5)
-                .filter([](long i) { return i % 2 == 0; });
+                .filter([](long i) { return i % 2 == 0; })
+                .describe("is even");
             CHECK_FALSE(matcher.match(Parser::parse("4"), result));
             CHECK_FALSE(matcher.match(Parser::parse("7"), result));
             CHECK(matcher.match(Parser::parse("8"), result));
+            CHECK(matcher.outline(4) == "    Integer, which:\n    - is > 5\n    - is even");
         }
     }
 

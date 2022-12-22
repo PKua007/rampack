@@ -6,6 +6,7 @@
 #define RAMPACK_MATCHERBASE_H
 
 #include <memory>
+#include <string>
 
 #include "Any.h"
 #include "Node.h"
@@ -22,6 +23,7 @@ namespace pyon::matcher {
         virtual ~MatcherBase() = default;
 
         virtual bool match(std::shared_ptr<const ast::Node> node, Any &result) const = 0;
+        [[nodiscard]] virtual std::string outline([[maybe_unused]] std::size_t indent) const { return ""; }
     };
 } // matcher
 
