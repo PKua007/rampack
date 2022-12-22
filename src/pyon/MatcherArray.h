@@ -83,9 +83,16 @@ namespace pyon::matcher {
 
     class MatcherArray : public MatcherBase {
     private:
-        std::vector<std::function<bool(const ArrayData&)>> filters;
+        struct Filter {
+            std::function<bool(const ArrayData&)> predicate;
+            std::string description;
+        };
+
+        std::vector<Filter> filters;
         std::function<Any(const ArrayData&)> mapping = [](const ArrayData &array) { return array; };
         std::shared_ptr<MatcherBase> elementMatcher;
+
+        static bool isMultiline(const std::string &str);
 
     public:
         MatcherArray() = default;
@@ -106,6 +113,7 @@ namespace pyon::matcher {
         }
 
         bool match(std::shared_ptr<const ast::Node> node, Any &result) const override;
+        [[nodiscard]] std::string outline(std::size_t indent) const override;
 
         template<typename T, std::size_t SIZE>
         MatcherArray &mapToStdArray() {
@@ -143,6 +151,7 @@ namespace pyon::matcher {
         MatcherArray &mapToDefault();
         MatcherArray &mapTo(const std::function<Any(const ArrayData&)> &mapping_);
         MatcherArray &filter(const std::function<bool(const ArrayData&)> &filter);
+        MatcherArray &describe(const std::string &description);
         MatcherArray &size(std::size_t size_);
         MatcherArray &sizeAtLeast(std::size_t size_);
         MatcherArray &sizeAtMost(std::size_t size_);

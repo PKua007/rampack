@@ -3,6 +3,7 @@
 //
 
 #include <sstream>
+#include <optional>
 
 #include "MatcherArray.h"
 #include "utils/Assertions.h"
@@ -36,6 +37,10 @@ namespace pyon::matcher {
         std::swap(this->data, data);
     }
 
+    bool MatcherArray::isMultiline(const std::string &str) {
+        return str.find('\n') != std::string::npos;
+    }
+
     MatcherArray::MatcherArray(std::size_t size_) {
         this->size(size_);
     }
@@ -64,11 +69,48 @@ namespace pyon::matcher {
         ArrayData arrayData(std::move(arrayDataVec));
 
         for (const auto &filter: this->filters)
-            if (!filter(arrayData))
+            if (!filter.predicate(arrayData))
                 return false;
 
         result = this->mapping(arrayData);
         return true;
+    }
+
+    std::string MatcherArray::outline(std::size_t indent) const {
+        std::size_t linesAtLeast{};
+        std::optional<std::string> elementOutline;
+        if (this->elementMatcher != nullptr) {
+            elementOutline = this->elementMatcher->outline(indent + 2);
+            elementOutline = "with elements: " + elementOutline->substr(indent + 2);
+            linesAtLeast++;
+            if (MatcherArray::isMultiline(*elementOutline))
+                linesAtLeast++;
+        }
+
+        linesAtLeast += this->filters.size();
+
+        std::ostringstream out;
+        std::string spaces(indent, ' ');
+        if (linesAtLeast == 0)
+            out << spaces << "Array";
+        else if (linesAtLeast == 1)
+            out << spaces << "Array, ";
+        else
+            out << spaces << "Array:";
+
+        if (elementOutline.has_value()) {
+            if (linesAtLeast >= 2)
+                out << std::endl << spaces << "- ";
+            out << *elementOutline;
+        }
+
+        for (const auto &filter : this->filters) {
+            if (linesAtLeast >= 2)
+                out << std::endl << spaces << "- ";
+            out << filter.description;
+        }
+
+        return out.str();
     }
 
     MatcherArray &MatcherArray::mapTo(const std::function<Any(const ArrayData&)> &mapping_) {
@@ -82,40 +124,52 @@ namespace pyon::matcher {
     }
 
     MatcherArray &MatcherArray::filter(const std::function<bool(const ArrayData&)> &filter) {
-        this->filters.push_back(filter);
+        this->filters.push_back({filter, "<undefined filter>"});
+        return *this;
+    }
+
+    MatcherArray &MatcherArray::describe(const std::string &description) {
+        Expects(!this->filters.empty());
+        this->filters.back().description = description;
         return *this;
     }
 
     MatcherArray &MatcherArray::size(std::size_t size_) {
-        this->filters.emplace_back([size_](const ArrayData &array) { return array.size() == size_; });
+        this->filter([size_](const ArrayData &array) { return array.size() == size_; });
+        this->describe("with size = " + std::to_string(size_));
         return *this;
     }
 
     MatcherArray &MatcherArray::sizeAtLeast(std::size_t size_) {
-        this->filters.emplace_back([size_](const ArrayData &array) { return array.size() >= size_; });
+        this->filter([size_](const ArrayData &array) { return array.size() >= size_; });
+        this->describe("with size >= " + std::to_string(size_));
         return *this;
     }
 
     MatcherArray &MatcherArray::sizeAtMost(std::size_t size_) {
-        this->filters.emplace_back([size_](const ArrayData &array) { return array.size() <= size_; });
+        this->filter([size_](const ArrayData &array) { return array.size() <= size_; });
+        this->describe("with size <= " + std::to_string(size_));
         return *this;
     }
 
     MatcherArray &MatcherArray::sizeInRange(std::size_t low, std::size_t high) {
         Expects(low <= high);
-        this->filters.emplace_back([low, high](const ArrayData &array) {
+        this->filter([low, high](const ArrayData &array) {
             return array.size() >= low && array.size() <= high;
         });
+        this->describe("with size in range [" + std::to_string(low) + ", " + std::to_string(high) + "]");
         return *this;
     }
 
     MatcherArray &MatcherArray::empty() {
-        this->filters.emplace_back([](const ArrayData &array) { return array.empty(); });
+        this->filter([](const ArrayData &array) { return array.empty(); });
+        this->describe("empty");
         return *this;
     }
 
     MatcherArray &MatcherArray::nonEmpty() {
-        this->filters.emplace_back([](const ArrayData &array) { return !array.empty(); });
+        this->filter([](const ArrayData &array) { return !array.empty(); });
+        this->describe("non-empty");
         return *this;
     }
 } // matcher

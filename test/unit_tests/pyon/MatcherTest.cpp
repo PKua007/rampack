@@ -272,7 +272,7 @@ TEST_CASE("Matcher: String") {
             auto matcher = MatcherString{}.length(3);
             CHECK_FALSE(matcher.match(Parser::parse(R"("abcd")"), result));
             CHECK(matcher.match(Parser::parse(R"("abc")"), result));
-            CHECK(matcher.outline(4) == R"(    String, with length 3)");
+            CHECK(matcher.outline(4) == R"(    String, with length = 3)");
         }
 
         SECTION("empty") {
@@ -370,7 +370,7 @@ TEST_CASE("Matcher: String") {
             CHECK_FALSE(matcher.match(Parser::parse(R"("xxz")"), result));
             CHECK(matcher.match(Parser::parse(R"("xzy")"), result));
             CHECK(matcher.outline(4) == R"(    String:
-    - with length 3
+    - with length = 3
     - lowercase
     - with unique characters
     - with only characters: "xyz")");
@@ -414,12 +414,36 @@ TEST_CASE("Matcher: Array") {
         CHECK(array[1].as<std::size_t>() == 2);
     }
 
+    SECTION("outline layout") {
+        CHECK(MatcherArray{}.outline(4) == "    Array");
+        CHECK(MatcherArray(MatcherInt{}).outline(4) == "    Array, with elements: Integer");
+        CHECK(MatcherArray(MatcherInt{}.positive()).outline(4) == "    Array, with elements: Integer, > 0");
+
+        CHECK(MatcherArray(MatcherInt{}.positive().less(5)).outline(4) == R"(    Array:
+    - with elements: Integer:
+      - > 0
+      - < 5)");
+
+        CHECK(MatcherArray(MatcherInt{}.positive()).size(3).outline(4) == R"(    Array:
+    - with elements: Integer, > 0
+    - with size = 3)");
+    }
+
     SECTION("filters") {
         SECTION("custom filter") {
             auto matcher = MatcherArray(MatcherInt{}.mapTo<int>())
-                    .filter([](const ArrayData &array) { return array.size() % 2 == 0; });
+                .filter([](const ArrayData &array) { return array.size() % 2 == 0; });
             CHECK_FALSE(matcher.match(Parser::parse("[1, 2, 3]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2, 3, 4]"), result));
+
+            CHECK(matcher.outline(4) == R"(    Array:
+    - with elements: Integer
+    - <undefined filter>)");
+
+            matcher.describe("with even size");
+            CHECK(matcher.outline(4) == R"(    Array:
+    - with elements: Integer
+    - with even size)");
         }
 
         SECTION("size") {
@@ -428,6 +452,9 @@ TEST_CASE("Matcher: Array") {
             auto matcher = GENERATE_COPY(matcher1, matcher2);
             CHECK_FALSE(matcher.match(Parser::parse("[1, 2]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2, 3]"), result));
+            CHECK(matcher.outline(4) == R"(    Array:
+    - with elements: Integer
+    - with size = 3)");
         }
 
         SECTION("naked size constructor") {
@@ -436,6 +463,7 @@ TEST_CASE("Matcher: Array") {
             auto matcher = GENERATE_COPY(matcher1, matcher2);
             CHECK_FALSE(matcher.match(Parser::parse("[1, True]"), result));
             CHECK(matcher.match(Parser::parse("[1, True, 1.2]"), result));
+            CHECK(matcher.outline(4) == R"(    Array, with size = 3)");
         }
 
         SECTION("size at least") {
@@ -443,6 +471,9 @@ TEST_CASE("Matcher: Array") {
             CHECK_FALSE(matcher.match(Parser::parse("[1, 2]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2, 3]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2, 3, 4]"), result));
+            CHECK(matcher.outline(4) == R"(    Array:
+    - with elements: Integer
+    - with size >= 3)");
         }
 
         SECTION("size at most") {
@@ -450,6 +481,9 @@ TEST_CASE("Matcher: Array") {
             CHECK_FALSE(matcher.match(Parser::parse("[1, 2, 3, 4]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2, 3]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2]"), result));
+            CHECK(matcher.outline(4) == R"(    Array:
+    - with elements: Integer
+    - with size <= 3)");
         }
 
         SECTION("size in range") {
@@ -458,18 +492,27 @@ TEST_CASE("Matcher: Array") {
             CHECK_FALSE(matcher.match(Parser::parse("[1, 2, 3, 4, 5]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2, 3, 4]"), result));
+            CHECK(matcher.outline(4) == R"(    Array:
+    - with elements: Integer
+    - with size in range [2, 4])");
         }
 
         SECTION("empty") {
             auto matcher = MatcherArray(MatcherInt{}.mapTo<int>()).empty();
             CHECK_FALSE(matcher.match(Parser::parse("[1, 2]"), result));
             CHECK(matcher.match(Parser::parse("[]"), result));
+            CHECK(matcher.outline(4) == R"(    Array:
+    - with elements: Integer
+    - empty)");
         }
 
         SECTION("non empty") {
             auto matcher = MatcherArray(MatcherInt{}.mapTo<int>()).nonEmpty();
             CHECK_FALSE(matcher.match(Parser::parse("[]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2]"), result));
+            CHECK(matcher.outline(4) == R"(    Array:
+    - with elements: Integer
+    - non-empty)");
         }
 
         SECTION("joined") {
@@ -481,6 +524,10 @@ TEST_CASE("Matcher: Array") {
             CHECK_FALSE(matcher.match(Parser::parse("[1, 2, 3, 4, 5]"), result));
             CHECK_FALSE(matcher.match(Parser::parse("[-1, 2, 3]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2, 3]"), result));
+            CHECK(matcher.outline(4) == R"(    Array:
+    - with elements: Integer, > 0
+    - with size >= 2
+    - with size <= 4)");
         }
     }
 
