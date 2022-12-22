@@ -18,4 +18,8 @@ namespace pyon::matcher {
         result = this->mapping();
         return true;
     }
+
+    std::string MatcherNone::outline(std::size_t indent) const {
+        return std::string(indent, ' ') + "None";
+    }
 }
