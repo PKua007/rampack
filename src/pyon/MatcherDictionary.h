@@ -69,6 +69,9 @@ namespace pyon::matcher {
         void addDefaultKeyMatcher(std::vector<std::string> &bulletPoints, size_t &linesAtLeast, size_t indent) const;
         void addAllKeyMatchers(std::vector<std::string> &bulletPoints, std::size_t indent) const;
         [[nodiscard]] std::vector<std::pair<std::string, std::string>> describeKeyValues(std::size_t indent) const;
+        void addFilters(std::vector<std::string> &bulletPoints, std::size_t &linesAtLeast) const;
+        [[nodiscard]] std::string doPrintOutline(const std::vector<std::string> &bulletPoints, std::size_t linesAtLeast,
+                                                 std::size_t indent) const;
 
     public:
         MatcherDictionary() = default;
