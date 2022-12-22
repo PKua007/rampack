@@ -24,8 +24,6 @@ namespace pyon::matcher {
         std::vector<Filter> filters;
         std::function<Any(const std::string&)> mapping = [](const std::string &str) { return str; };
 
-        static std::string quoted(const std::string &string);
-
     public:
         MatcherString() = default;
 

@@ -3,7 +3,6 @@
 //
 
 #include <algorithm>
-#include <iomanip>
 #include <sstream>
 
 #include "MatcherString.h"
@@ -11,12 +10,6 @@
 
 
 namespace pyon::matcher {
-    std::string MatcherString::quoted(const std::string &string) {
-        std::ostringstream out;
-        out << std::quoted(string);
-        return out.str();
-    }
-
     MatcherString::MatcherString(const std::string &str) {
         this->equals(str);
     }
@@ -71,7 +64,7 @@ namespace pyon::matcher {
 
     MatcherString &MatcherString::equals(const std::string &expected) {
         this->filter([expected](const std::string &str) { return str == expected; });
-        this->describe("= " + MatcherString::quoted(expected));
+        this->describe("= " + quoted(expected));
         return *this;
     }
 
@@ -84,8 +77,8 @@ namespace pyon::matcher {
         std::ostringstream out;
         out << "one of: ";
         for (std::size_t i{}; i < values.size() - 1; i++)
-            out << MatcherString::quoted(values[i]) << ", ";
-        out << MatcherString::quoted(values.back());
+            out << quoted(values[i]) << ", ";
+        out << quoted(values.back());
         this->describe(out.str());
 
         return *this;
@@ -93,13 +86,13 @@ namespace pyon::matcher {
 
     MatcherString &MatcherString::startsWith(const std::string &prefix) {
         this->filter([prefix](const std::string &str) { return ::startsWith(str, prefix); });
-        this->describe("starting with " + MatcherString::quoted(prefix));
+        this->describe("starting with " + quoted(prefix));
         return *this;
     }
 
     MatcherString &MatcherString::endsWith(const std::string &suffix) {
         this->filter([suffix](const std::string &str) { return ::endsWith(str, suffix); });
-        this->describe("ending with " + MatcherString::quoted(suffix));
+        this->describe("ending with " + quoted(suffix));
         return *this;
     }
 
@@ -108,7 +101,7 @@ namespace pyon::matcher {
             return str.find(fragment) != std::string::npos;
         };
         this->filter(filter);
-        this->describe("containing " + MatcherString::quoted(fragment));
+        this->describe("containing " + quoted(fragment));
         return *this;
     }
 
@@ -133,7 +126,7 @@ namespace pyon::matcher {
     MatcherString &MatcherString::containsOnlyCharacters(const std::string &chars) {
         auto isCharAllowed = [chars](char c) { return chars.find(c) != std::string::npos; };
         this->containsOnlyCharacters(isCharAllowed);
-        this->describe("with only characters: " + MatcherString::quoted(chars));
+        this->describe("with only characters: " + quoted(chars));
         return *this;
     }
 

@@ -92,8 +92,6 @@ namespace pyon::matcher {
         std::function<Any(const ArrayData&)> mapping = [](const ArrayData &array) { return array; };
         std::shared_ptr<MatcherBase> elementMatcher;
 
-        static bool isMultiline(const std::string &str);
-
     public:
         MatcherArray() = default;
         explicit MatcherArray(std::size_t size_);

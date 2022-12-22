@@ -27,9 +27,31 @@ std::string replaceAll(std::string source, const std::string& search, const std:
 
 std::vector<std::string> explode(const std::string &s, char delim);
 
+template <typename Iter>
+std::string implode(Iter begin, Iter end, const std::string &delim = ", ") {
+    if (begin == end)
+        return "";
+
+    std::ostringstream out;
+    for (auto it = begin; it != end; it++)
+        out << *it << delim;
+
+    std::string outStr = out.str();
+    return outStr.substr(0, outStr.length() - delim.length());
+}
+
+template <typename Container>
+std::string implode(const Container &container, const std::string &delim = ", ") {
+    return implode(container.begin(), container.end(), delim);
+}
+
+bool isMultiline(const std::string &str);
+
 bool endsWith(const std::string& str, const std::string& suffix);
 bool startsWith(const std::string& str, const std::string& prefix);
 int lastIndexOf(const std::string &s, char target);
+
+std::string quoted(const std::string &str);
 
 void die(const std::string &reason);
 void die(const std::string &reason, Logger &logger);
