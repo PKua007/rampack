@@ -16,8 +16,15 @@
 namespace pyon::matcher {
     class MatcherString : public MatcherBase {
     private:
-        std::vector<std::function<bool(const std::string&)>> filters;
+        struct Filter {
+            std::function<bool(const std::string&)> predicate;
+            std::string description;
+        };
+
+        std::vector<Filter> filters;
         std::function<Any(const std::string&)> mapping = [](const std::string &str) { return str; };
+
+        static std::string quoted(const std::string &string);
 
     public:
         MatcherString() = default;
@@ -28,6 +35,7 @@ namespace pyon::matcher {
         MatcherString(std::initializer_list<std::string> values);
 
         bool match(std::shared_ptr<const ast::Node> node, Any &result) const override;
+        [[nodiscard]] std::string outline(std::size_t indent) const override;
 
         template<typename T>
         MatcherString &mapTo() {
@@ -37,6 +45,7 @@ namespace pyon::matcher {
 
         MatcherString &mapTo(const std::function<Any(const std::string&)> &mapping_);
         MatcherString &filter(const std::function<bool(const std::string&)> &filter);
+        MatcherString &describe(const std::string &description);
         MatcherString &equals(const std::string &expected);
         MatcherString &anyOf(const std::vector<std::string> &values);
         MatcherString &startsWith(const std::string &prefix);
