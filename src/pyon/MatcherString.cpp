@@ -114,7 +114,7 @@ namespace pyon::matcher {
 
     MatcherString &MatcherString::length(std::size_t len) {
         this->filter([len](const std::string &str) { return str.length() == len; });
-        this->describe("with length " + std::to_string(len));
+        this->describe("with length = " + std::to_string(len));
         return *this;
     }
 
