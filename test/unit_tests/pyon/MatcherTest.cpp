@@ -710,7 +710,7 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1})"), result));
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
-            CHECK(matcher.outline(4) == R"(    Dictionary, size = 2)");
+            CHECK(matcher.outline(4) == R"(    Dictionary, with size = 2)");
         }
 
         SECTION("sizeAtLeast") {
@@ -718,7 +718,7 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
-            CHECK(matcher.outline(4) == R"(    Dictionary, size >= 2)");
+            CHECK(matcher.outline(4) == R"(    Dictionary, with size >= 2)");
         }
 
         SECTION("sizeAtMost") {
@@ -726,7 +726,7 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1})"), result));
-            CHECK(matcher.outline(4) == R"(    Dictionary, size <= 2)");
+            CHECK(matcher.outline(4) == R"(    Dictionary, with size <= 2)");
         }
 
         SECTION("sizeInRange") {
@@ -735,7 +735,7 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3, "d" : 4, "e" : 5})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3, "d" : 4})"), result));
-            CHECK(matcher.outline(4) == R"(    Dictionary, size in range [2, 4])");
+            CHECK(matcher.outline(4) == R"(    Dictionary, with size in range [2, 4])");
         }
 
         SECTION("joined") {
@@ -747,7 +747,7 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "e" : 5})"), result));
             CHECK(matcher.outline(4) == R"(    Dictionary:
-    - size = 3
+    - with size = 3
     - mandatory keys: "a", "b"
     - forbidden keys: "c", "d")");
         }
