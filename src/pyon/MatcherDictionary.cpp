@@ -255,19 +255,19 @@ namespace pyon::matcher {
 
     MatcherDictionary &MatcherDictionary::size(std::size_t size) {
         this->filter([size](const DictionaryData &dict) { return dict.size() == size; });
-        this->describe("size = " + std::to_string(size));
+        this->describe("with size = " + std::to_string(size));
         return *this;
     }
 
     MatcherDictionary &MatcherDictionary::sizeAtLeast(std::size_t size) {
         this->filter([size](const DictionaryData &dict) { return dict.size() >= size; });
-        this->describe("size >= " + std::to_string(size));
+        this->describe("with size >= " + std::to_string(size));
         return *this;
     }
 
     MatcherDictionary &MatcherDictionary::sizeAtMost(std::size_t size) {
         this->filter([size](const DictionaryData &dict) { return dict.size() <= size; });
-        this->describe("size <= " + std::to_string(size));
+        this->describe("with size <= " + std::to_string(size));
         return *this;
     }
 
@@ -277,7 +277,7 @@ namespace pyon::matcher {
             return dict.size() >= low && dict.size() <= high;
         };
         this->filter(isSizeInRange);
-        this->describe("size in range [" + std::to_string(low) + ", " + std::to_string(high) + "]");
+        this->describe("with size in range [" + std::to_string(low) + ", " + std::to_string(high) + "]");
         return *this;
     }
 } // matcher
