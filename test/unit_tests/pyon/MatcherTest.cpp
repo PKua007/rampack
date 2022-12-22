@@ -614,6 +614,40 @@ TEST_CASE("Matcher: Dictionary") {
         CHECK(dict["longkey"].as<bool>() == true);
     }
 
+    SECTION("outline layout") {
+        CHECK(MatcherDictionary{}.outline(4) == "    Dictionary");
+        CHECK(MatcherDictionary(MatcherInt{}).outline(4) == "    Dictionary, with values: Integer");
+        CHECK(MatcherDictionary(MatcherInt{}.positive()).outline(4) == "    Dictionary, with values: Integer, > 0");
+
+        CHECK(MatcherDictionary(MatcherInt{}.positive().less(5)).outline(4) == R"(    Dictionary:
+    - with values: Integer:
+      - > 0
+      - < 5)");
+
+        CHECK(MatcherDictionary().valueAtKeyMatches("abc", MatcherInt{}).outline(4) == R"(    Dictionary:
+    - with values at keys:
+      - "abc" : Integer)");
+
+        auto matcher = MatcherDictionary{}
+            .valuesMatch(MatcherInt{})
+            .valueAtKeyMatches("a", MatcherFloat{})
+            .valueAtKeyMatches([](const std::string &key) { return key.length() > 3; }, MatcherBoolean{}.isTrue());
+
+        CHECK(matcher.outline(4) == R"(    Dictionary:
+    - with values at keys:
+      - "a"                   : Float
+      - <undefined predicate> : Boolean equal True
+      - other keys            : Integer)");
+
+        matcher.describeKey("keys with length > 3");
+
+        CHECK(matcher.outline(4) == R"(    Dictionary:
+    - with values at keys:
+      - "a"                  : Float
+      - keys with length > 3 : Boolean equal True
+      - other keys           : Integer)");
+    }
+
     SECTION("filters") {
         SECTION("custom filter") {
             auto keysAreAlphanumeric = [](const DictionaryData &dict) {
@@ -626,6 +660,9 @@ TEST_CASE("Matcher: Dictionary") {
                 .filter(keysAreAlphanumeric);
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b0" : 2})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
+            CHECK(matcher.outline(4) == R"(    Dictionary, <undefined filter>)");
+            matcher.describe("with alphanumeric keys");
+            CHECK(matcher.outline(4) == R"(    Dictionary, with alphanumeric keys)");
         }
 
         SECTION("has keys") {
@@ -633,6 +670,7 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "c" : 2})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
+            CHECK(matcher.outline(4) == R"(    Dictionary, mandatory keys: "b", "a")");
         }
 
         SECTION("has only keys") {
@@ -641,24 +679,30 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK_FALSE(matcher.match(Parser::parse(R"({"b" : 1, "a" : 2, "c" : 3})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1})"), result));
+            CHECK(matcher.outline(4) == R"(    Dictionary, allowed keys: "a", "b")");
         }
 
         SECTION("has not keys") {
             auto matcher = MatcherDictionary{}.hasNotKeys({"c", "d"});
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "d" : 2})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
+            CHECK(matcher.outline(4) == R"(    Dictionary, forbidden keys: "c", "d")");
         }
 
         SECTION("keys match") {
             auto matcher = MatcherDictionary{}.keysMatch([](const std::string &key) { return key.length() == 1; });
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "bb" : 2})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
+            CHECK(matcher.outline(4) == R"(    Dictionary, keys match <undefined predicate>)");
+            matcher.describe("1-character keys");
+            CHECK(matcher.outline(4) == R"(    Dictionary, 1-character keys)");
         }
 
         SECTION("empty") {
             auto matcher = MatcherDictionary{}.empty();
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
             CHECK(matcher.match(Parser::parse("{}"), result));
+            CHECK(matcher.outline(4) == R"(    Dictionary, empty)");
         }
 
         SECTION("size") {
@@ -666,6 +710,7 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1})"), result));
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
+            CHECK(matcher.outline(4) == R"(    Dictionary, size = 2)");
         }
 
         SECTION("sizeAtLeast") {
@@ -673,6 +718,7 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
+            CHECK(matcher.outline(4) == R"(    Dictionary, size >= 2)");
         }
 
         SECTION("sizeAtMost") {
@@ -680,6 +726,7 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1})"), result));
+            CHECK(matcher.outline(4) == R"(    Dictionary, size <= 2)");
         }
 
         SECTION("sizeInRange") {
@@ -688,6 +735,7 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3, "d" : 4, "e" : 5})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3, "d" : 4})"), result));
+            CHECK(matcher.outline(4) == R"(    Dictionary, size in range [2, 4])");
         }
 
         SECTION("joined") {
@@ -698,6 +746,10 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "e" : 5})"), result));
+            CHECK(matcher.outline(4) == R"(    Dictionary:
+    - size = 3
+    - mandatory keys: "a", "b"
+    - forbidden keys: "c", "d")");
         }
     }
 

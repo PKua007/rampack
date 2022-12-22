@@ -49,13 +49,21 @@ namespace pyon::matcher {
     private:
         struct KeyMatcher {
             std::function<bool(const std::string &)> keyPredicate;
+            std::string keyDescription;
             std::shared_ptr<MatcherBase> matcher;
         };
 
-        std::vector<std::function<bool(const DictionaryData&)>> filters;
+        struct Filter {
+            std::function<bool(const DictionaryData&)> predicate;
+            std::string description;
+        };
+
+        std::vector<Filter> filters;
         std::function<Any(const DictionaryData&)> mapping = [](const DictionaryData &dict) { return dict; };
         std::shared_ptr<MatcherBase> defaultMatcher;
         std::vector<KeyMatcher> keyMatchers;
+
+        static std::string implodeKeys(const std::vector<std::string> &keys);
 
     public:
         MatcherDictionary() = default;
@@ -67,6 +75,7 @@ namespace pyon::matcher {
         [[nodiscard]] MatcherDictionary copy() const { return *this; }
 
         bool match(std::shared_ptr<const ast::Node> node, Any &result) const override;
+        [[nodiscard]] std::string outline(std::size_t indent) const override;
 
         template <typename ConcreteMatcher>
         MatcherDictionary &valuesMatch(const ConcreteMatcher &matcher) {
@@ -84,15 +93,19 @@ namespace pyon::matcher {
             static_assert(std::is_base_of_v<MatcherBase, ConcreteMatcher>,
                           "ConcreteMatcher template parameter is not a matcher derived from MatcherBase");
             // Copy construct the matcher
-            this->keyMatchers.push_back({keyPredicate, std::make_shared<ConcreteMatcher>(matcher)});
+            this->keyMatchers.push_back({keyPredicate, "<undefined predicate>",
+                                         std::make_shared<ConcreteMatcher>(matcher)});
             return *this;
         }
 
         template <typename ConcreteMatcher>
         MatcherDictionary &valueAtKeyMatches(const std::string &key_, const ConcreteMatcher &matcher) {
             this->valueAtKeyMatches([key_](const std::string &key) { return key == key_; }, matcher);
+            this->describeKey(quoted(key_));
             return *this;
         }
+
+        MatcherDictionary &describeKey(const std::string &description);
 
         template<typename T>
         MatcherDictionary &mapToStdMap() {
@@ -103,6 +116,7 @@ namespace pyon::matcher {
         MatcherDictionary &mapTo(const std::function<Any(const DictionaryData&)> &mapping_);
         MatcherDictionary &mapToDefault();
         MatcherDictionary &filter(const std::function<bool(const DictionaryData&)> &filter);
+        MatcherDictionary &describe(const std::string &description);
         MatcherDictionary &hasKeys(const std::vector<std::string> &keys);
         MatcherDictionary &hasOnlyKeys(const std::vector<std::string> &keys);
         MatcherDictionary &hasNotKeys(const std::vector<std::string> &keys);

@@ -9,6 +9,7 @@
 #include <vector>
 #include <sstream>
 #include <utility>
+#include <iomanip>
 
 #include <cxxabi.h>
 
@@ -95,5 +96,15 @@ std::string demangle(const char *abiName) {
     std::string demangledStr(demangledCstr);
     std::free(demangledCstr);
     return demangledStr;
+}
+
+std::string quoted(const std::string &str) {
+    std::ostringstream out;
+    out << std::quoted(str);
+    return out.str();
+}
+
+bool isMultiline(const std::string &str) {
+    return str.find('\n') != std::string::npos;
 }
 

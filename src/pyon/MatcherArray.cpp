@@ -37,10 +37,6 @@ namespace pyon::matcher {
         std::swap(this->data, data);
     }
 
-    bool MatcherArray::isMultiline(const std::string &str) {
-        return str.find('\n') != std::string::npos;
-    }
-
     MatcherArray::MatcherArray(std::size_t size_) {
         this->size(size_);
     }
@@ -83,7 +79,7 @@ namespace pyon::matcher {
             elementOutline = this->elementMatcher->outline(indent + 2);
             elementOutline = "with elements: " + elementOutline->substr(indent + 2);
             linesAtLeast++;
-            if (MatcherArray::isMultiline(*elementOutline))
+            if (isMultiline(*elementOutline))
                 linesAtLeast++;
         }
 
