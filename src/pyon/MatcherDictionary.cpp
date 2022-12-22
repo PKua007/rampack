@@ -36,6 +36,68 @@ namespace pyon::matcher {
         return out.str();
     }
 
+    void MatcherDictionary::addKeyMatchers(std::vector<std::string> &bulletPoints, size_t &linesAtLeast,
+                                           std::size_t indent) const
+    {
+        if (this->keyMatchers.empty()) {
+            this->addDefaultKeyMatcher(bulletPoints, linesAtLeast, indent);
+        } else {
+            linesAtLeast = 2;
+            
+            this->addAllKeyMatchers(bulletPoints, indent);
+        }
+    }
+
+    void MatcherDictionary::addDefaultKeyMatcher(std::vector<std::string> &bulletPoints, std::size_t &linesAtLeast,
+                                                 std::size_t indent) const
+    {
+        if (this->defaultMatcher != nullptr) {
+            std::string defaultMatcherOutline = this->defaultMatcher->outline(indent + 2);
+            defaultMatcherOutline = "with values: " + defaultMatcherOutline.substr(indent + 2);
+            linesAtLeast++;
+            if (isMultiline(defaultMatcherOutline))
+                linesAtLeast++;
+
+            bulletPoints.push_back(defaultMatcherOutline);
+        }
+    }
+
+    void MatcherDictionary::addAllKeyMatchers(std::vector<std::string> &bulletPoints, std::size_t indent) const {
+        std::string spaces(indent, ' ');
+        std::vector<std::pair<std::string, std::string>> keyValues = this->describeKeyValues(indent);
+
+        auto keyLength = [](const auto &keyValue1, const auto &keyValue2) {
+            return keyValue1.first.length() < keyValue2.first.length();
+        };
+        std::size_t maxKeyLength = std::max_element(keyValues.begin(), keyValues.end(), keyLength)->first.length();
+
+        std::ostringstream bulletOut;
+        bulletOut << "with values at keys:";
+        for (const auto &keyValue : keyValues) {
+            bulletOut << std::endl << spaces << "  - ";
+            bulletOut << std::setw(static_cast<int>(maxKeyLength)) << std::left << keyValue.first << " : ";
+            bulletOut << keyValue.second;
+        }
+        bulletPoints.push_back(bulletOut.str());
+    }
+
+    std::vector<std::pair<std::string, std::string>> MatcherDictionary::describeKeyValues(std::size_t indent) const {
+        std::vector<std::pair<std::string, std::string>> keyValues;
+
+        for (const auto &keyMatcher : keyMatchers) {
+            std::string keyOutline = keyMatcher.matcher->outline(indent + 4);
+            keyOutline = keyOutline.substr(indent + 4);
+            keyValues.emplace_back(keyMatcher.keyDescription, keyOutline);
+        }
+
+        if (defaultMatcher != nullptr) {
+            std::string defaultMatcherOutline = defaultMatcher->outline(indent + 4);
+            defaultMatcherOutline = defaultMatcherOutline.substr(indent + 4);
+            keyValues.emplace_back("other keys", defaultMatcherOutline);
+        }
+        return keyValues;
+    }
+
     bool MatcherDictionary::match(std::shared_ptr<const ast::Node> node, Any &result) const {
         if (node->getType() != ast::Node::DICTIONARY)
             return false;
@@ -82,55 +144,15 @@ namespace pyon::matcher {
     std::string MatcherDictionary::outline(std::size_t indent) const {
         std::size_t linesAtLeast{};
         std::vector<std::string> bulletPoints;
-        std::string spaces(indent, ' ');
 
-        if (this->keyMatchers.empty()) {
-            if (this->defaultMatcher != nullptr) {
-                std::string defaultMatcherOutline = this->defaultMatcher->outline(indent + 2);
-                defaultMatcherOutline = "with values: " + defaultMatcherOutline.substr(indent + 2);
-                linesAtLeast++;
-                if (isMultiline(defaultMatcherOutline))
-                    linesAtLeast++;
-
-                bulletPoints.push_back(defaultMatcherOutline);
-            }
-        } else {
-            linesAtLeast = 2;
-            std::vector<std::pair<std::string, std::string>> keyValues;
-
-            for (const auto &keyMatcher : this->keyMatchers) {
-                std::string keyOutline = keyMatcher.matcher->outline(indent + 4);
-                keyOutline = keyOutline.substr(indent + 4);
-                keyValues.emplace_back(keyMatcher.keyDescription, keyOutline);
-            }
-
-            if (this->defaultMatcher != nullptr) {
-                std::string defaultMatcherOutline = this->defaultMatcher->outline(indent + 4);
-                defaultMatcherOutline = defaultMatcherOutline.substr(indent + 4);
-                keyValues.emplace_back("other keys", defaultMatcherOutline);
-            }
-
-            auto keyLength = [](const auto &keyValue1, const auto &keyValue2) {
-                return keyValue1.first.length() < keyValue2.first.length();
-            };
-            std::size_t maxKeyLength = std::max_element(keyValues.begin(), keyValues.end(), keyLength)->first.length();
-
-            std::ostringstream bulletOut;
-            bulletOut << "with values at keys:";
-            for (const auto &keyValue : keyValues) {
-                bulletOut << std::endl << spaces << "  - ";
-                bulletOut << std::setw(static_cast<int>(maxKeyLength)) << std::left << keyValue.first << " : ";
-                bulletOut << keyValue.second;
-            }
-            bulletPoints.push_back(bulletOut.str());
-        }
+        this->addKeyMatchers(bulletPoints, linesAtLeast, indent);
 
         linesAtLeast += this->filters.size();
-
         for (const auto &filter : this->filters)
             bulletPoints.push_back(filter.description);
 
         std::ostringstream out;
+        std::string spaces(indent, ' ');
         if (linesAtLeast == 0)
             out << spaces << "Dictionary";
         else if (linesAtLeast == 1)
