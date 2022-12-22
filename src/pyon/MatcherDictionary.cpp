@@ -42,8 +42,7 @@ namespace pyon::matcher {
         if (this->keyMatchers.empty()) {
             this->addDefaultKeyMatcher(bulletPoints, linesAtLeast, indent);
         } else {
-            linesAtLeast = 2;
-            
+            linesAtLeast = 2;   // If there are any key specific matchers, we for sure have multiline output
             this->addAllKeyMatchers(bulletPoints, indent);
         }
     }
@@ -84,18 +83,48 @@ namespace pyon::matcher {
     std::vector<std::pair<std::string, std::string>> MatcherDictionary::describeKeyValues(std::size_t indent) const {
         std::vector<std::pair<std::string, std::string>> keyValues;
 
-        for (const auto &keyMatcher : keyMatchers) {
+        for (const auto &keyMatcher : this->keyMatchers) {
             std::string keyOutline = keyMatcher.matcher->outline(indent + 4);
             keyOutline = keyOutline.substr(indent + 4);
             keyValues.emplace_back(keyMatcher.keyDescription, keyOutline);
         }
 
-        if (defaultMatcher != nullptr) {
-            std::string defaultMatcherOutline = defaultMatcher->outline(indent + 4);
+        if (this->defaultMatcher != nullptr) {
+            std::string defaultMatcherOutline = this->defaultMatcher->outline(indent + 4);
             defaultMatcherOutline = defaultMatcherOutline.substr(indent + 4);
             keyValues.emplace_back("other keys", defaultMatcherOutline);
         }
         return keyValues;
+    }
+
+    void MatcherDictionary::addFilters(std::vector<std::string> &bulletPoints, std::size_t &linesAtLeast) const {
+        linesAtLeast += this->filters.size();   // each filter adds one line
+        for (const auto &filter : this->filters)
+            bulletPoints.push_back(filter.description);
+    }
+
+    std::string MatcherDictionary::doPrintOutline(const std::vector<std::string> &bulletPoints,
+                                                  std::size_t linesAtLeast, std::size_t indent) const
+    {
+        std::ostringstream out;
+        std::string spaces(indent, ' ');
+
+        if (linesAtLeast == 0) {
+            // No specification
+            Assert(bulletPoints.empty());
+            out << spaces << "Dictionary";
+        } else if (linesAtLeast == 1) {
+            // Specification can be shown inline with "Dictionary"
+            Assert(bulletPoints.size() == 1);
+            out << spaces << "Dictionary, " << bulletPoints.back();
+        } else {
+            // Specification is split between multiple lines
+            out << spaces << "Dictionary:";
+            for (const auto &bulletPoint : bulletPoints)
+                out << std::endl << spaces << "- " << bulletPoint;
+        }
+
+        return out.str();
     }
 
     bool MatcherDictionary::match(std::shared_ptr<const ast::Node> node, Any &result) const {
@@ -121,7 +150,6 @@ namespace pyon::matcher {
             if (matched)
                 continue;
 
-
             if (this->defaultMatcher != nullptr) {
                 if (!this->defaultMatcher->match(nodeDictElem.second, elemResult))
                     return false;
@@ -142,34 +170,11 @@ namespace pyon::matcher {
     }
 
     std::string MatcherDictionary::outline(std::size_t indent) const {
-        std::size_t linesAtLeast{};
+        std::size_t linesAtLeast{};     // How much lines has the description (for 2+ lines the number may be not exact)
         std::vector<std::string> bulletPoints;
-
         this->addKeyMatchers(bulletPoints, linesAtLeast, indent);
-
-        linesAtLeast += this->filters.size();
-        for (const auto &filter : this->filters)
-            bulletPoints.push_back(filter.description);
-
-        std::ostringstream out;
-        std::string spaces(indent, ' ');
-        if (linesAtLeast == 0)
-            out << spaces << "Dictionary";
-        else if (linesAtLeast == 1)
-            out << spaces << "Dictionary, ";
-        else
-            out << spaces << "Dictionary:";
-
-        if (linesAtLeast < 2) {
-            Assert(bulletPoints.size() < 2);
-            if (!bulletPoints.empty())
-                out << bulletPoints.back();
-        } else {
-            for (const auto &bulletPoint : bulletPoints)
-                out << std::endl << spaces << "- " << bulletPoint;
-        }
-
-        return out.str();
+        this->addFilters(bulletPoints, linesAtLeast);
+        return this->doPrintOutline(bulletPoints, linesAtLeast, indent);
     }
 
     MatcherDictionary &MatcherDictionary::describeKey(const std::string &description) {
