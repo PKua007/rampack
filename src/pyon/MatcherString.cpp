@@ -3,12 +3,20 @@
 //
 
 #include <algorithm>
+#include <iomanip>
+#include <sstream>
 
 #include "MatcherString.h"
 #include "utils/Utils.h"
 
 
 namespace pyon::matcher {
+    std::string MatcherString::quoted(const std::string &string) {
+        std::ostringstream out;
+        out << std::quoted(string);
+        return out.str();
+    }
+
     MatcherString::MatcherString(const std::string &str) {
         this->equals(str);
     }
@@ -23,11 +31,26 @@ namespace pyon::matcher {
 
         const std::string &str = node->as<ast::NodeString>()->getValue();
         for (const auto &filter: this->filters)
-            if (!filter(str))
+            if (!filter.predicate(str))
                 return false;
 
         result = this->mapping(str);
         return true;
+    }
+
+    std::string MatcherString::outline(std::size_t indent) const {
+        std::string spaces(indent, ' ');
+        std::ostringstream out;
+        out << spaces << "String";
+        if (this->filters.size() == 1) {
+            out << ", " << this->filters.front().description;
+        } else if (this->filters.size() > 1) {
+            out << ":";
+            for (const auto &filter : this->filters)
+                out << std::endl << spaces << "- " <<
+                    filter.description;
+        }
+        return out.str();
     }
 
     MatcherString &MatcherString::mapTo(const std::function<Any(const std::string &)> &mapping_) {
@@ -36,12 +59,19 @@ namespace pyon::matcher {
     }
 
     MatcherString &MatcherString::filter(const std::function<bool(const std::string &)> &filter) {
-        this->filters.push_back(filter);
+        this->filters.push_back({filter, "<undefined filter>"});
+        return *this;
+    }
+
+    MatcherString &MatcherString::describe(const std::string &description) {
+        Expects(!this->filters.empty());
+        this->filters.back().description = description;
         return *this;
     }
 
     MatcherString &MatcherString::equals(const std::string &expected) {
-        this->filters.emplace_back([expected](const std::string &str) { return str == expected; });
+        this->filter([expected](const std::string &str) { return str == expected; });
+        this->describe("= " + MatcherString::quoted(expected));
         return *this;
     }
 
@@ -49,17 +79,27 @@ namespace pyon::matcher {
         auto filter = [values](const std::string &str) {
             return std::find(values.begin(), values.end(), str) != values.end();
         };
-        this->filters.emplace_back(filter);
+        this->filter(filter);
+
+        std::ostringstream out;
+        out << "one of: ";
+        for (std::size_t i{}; i < values.size() - 1; i++)
+            out << MatcherString::quoted(values[i]) << ", ";
+        out << MatcherString::quoted(values.back());
+        this->describe(out.str());
+
         return *this;
     }
 
     MatcherString &MatcherString::startsWith(const std::string &prefix) {
-        this->filters.emplace_back([prefix](const std::string &str) { return ::startsWith(str, prefix); });
+        this->filter([prefix](const std::string &str) { return ::startsWith(str, prefix); });
+        this->describe("starting with " + MatcherString::quoted(prefix));
         return *this;
     }
 
     MatcherString &MatcherString::endsWith(const std::string &suffix) {
-        this->filters.emplace_back([suffix](const std::string &str) { return ::endsWith(str, suffix); });
+        this->filter([suffix](const std::string &str) { return ::endsWith(str, suffix); });
+        this->describe("ending with " + MatcherString::quoted(suffix));
         return *this;
     }
 
@@ -67,35 +107,42 @@ namespace pyon::matcher {
         auto filter = [fragment](const std::string &str) {
             return str.find(fragment) != std::string::npos;
         };
-        this->filters.emplace_back(filter);
+        this->filter(filter);
+        this->describe("containing " + MatcherString::quoted(fragment));
         return *this;
     }
 
     MatcherString &MatcherString::length(std::size_t len) {
-        this->filters.emplace_back([len](const std::string &str) { return str.length() == len; });
+        this->filter([len](const std::string &str) { return str.length() == len; });
+        this->describe("with length " + std::to_string(len));
         return *this;
     }
 
     MatcherString &MatcherString::empty() {
-        this->filters.emplace_back([](const std::string &str) { return str.empty(); });
+        this->filter([](const std::string &str) { return str.empty(); });
+        this->describe("empty");
         return *this;
     }
 
     MatcherString &MatcherString::nonEmpty() {
-        this->filters.emplace_back([](const std::string &str) { return !str.empty(); });
+        this->filter([](const std::string &str) { return !str.empty(); });
+        this->describe("non-empty");
         return *this;
     }
 
     MatcherString &MatcherString::containsOnlyCharacters(const std::string &chars) {
         auto isCharAllowed = [chars](char c) { return chars.find(c) != std::string::npos; };
-        return this->containsOnlyCharacters(isCharAllowed);
+        this->containsOnlyCharacters(isCharAllowed);
+        this->describe("with only characters: " + MatcherString::quoted(chars));
+        return *this;
     }
 
     MatcherString &MatcherString::containsOnlyCharacters(const std::function<bool(char)> &charPredicate) {
         auto filter = [charPredicate](const std::string &str) {
             return std::all_of(str.begin(), str.end(), charPredicate);
         };
-        this->filters.emplace_back(filter);
+        this->filter(filter);
+        this->describe("with only characters: <undefined predicate>");
         return *this;
     }
 
@@ -105,27 +152,38 @@ namespace pyon::matcher {
             std::sort(strCopy.begin(), strCopy.end());
             return std::unique(strCopy.begin(), strCopy.end()) == strCopy.end();
         };
-        this->filters.emplace_back(filter);
+        this->filter(filter);
+        this->describe("with unique characters");
         return *this;
     }
 
     MatcherString &MatcherString::lowercase() {
-        return this->containsOnlyCharacters([](char c) { return std::islower(c); });
+        this->containsOnlyCharacters([](char c) { return std::islower(c); });
+        this->describe("lowercase");
+        return *this;
     }
 
     MatcherString &MatcherString::uppercase() {
-        return this->containsOnlyCharacters([](char c) { return std::isupper(c); });
+        this->containsOnlyCharacters([](char c) { return std::isupper(c); });
+        this->describe("uppercase");
+        return *this;
     }
 
     MatcherString &MatcherString::numeric() {
-        return this->containsOnlyCharacters([](char c) { return std::isdigit(c); });
+        this->containsOnlyCharacters([](char c) { return std::isdigit(c); });
+        this->describe("with only numbers");
+        return *this;
     }
 
     MatcherString &MatcherString::alpha() {
-        return this->containsOnlyCharacters([](char c) { return std::isalpha(c); });
+        this->containsOnlyCharacters([](char c) { return std::isalpha(c); });
+        this->describe("with only letters");
+        return *this;
     }
 
     MatcherString &MatcherString::alphanumeric() {
-        return this->containsOnlyCharacters([](char c) { return std::isalnum(c); });
+        this->containsOnlyCharacters([](char c) { return std::isalnum(c); });
+        this->describe("with only numbers and letters");
+        return *this;
     }
 } // matcher

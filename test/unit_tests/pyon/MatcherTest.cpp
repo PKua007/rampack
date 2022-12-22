@@ -27,14 +27,14 @@ TEST_CASE("Matcher: Int") {
             auto matcher = MatcherInt{}.positive();
             CHECK_FALSE(matcher.match(Parser::parse("0"), result));
             CHECK(matcher.match(Parser::parse("7"), result));
-            CHECK(matcher.outline(4) == "    Integer, which is > 0");
+            CHECK(matcher.outline(4) == "    Integer, > 0");
         }
 
         SECTION("negative") {
             auto matcher = MatcherInt{}.negative();
             CHECK_FALSE(matcher.match(Parser::parse("0"), result));
             CHECK(matcher.match(Parser::parse("-7"), result));
-            CHECK(matcher.outline(4) == "    Integer, which is < 0");
+            CHECK(matcher.outline(4) == "    Integer, < 0");
         }
 
         SECTION("non-positive") {
@@ -42,7 +42,7 @@ TEST_CASE("Matcher: Int") {
             CHECK_FALSE(matcher.match(Parser::parse("1"), result));
             CHECK(matcher.match(Parser::parse("0"), result));
             CHECK(matcher.match(Parser::parse("-1"), result));
-            CHECK(matcher.outline(4) == "    Integer, which is <= 0");
+            CHECK(matcher.outline(4) == "    Integer, <= 0");
         }
 
         SECTION("non-negative") {
@@ -50,35 +50,35 @@ TEST_CASE("Matcher: Int") {
             CHECK_FALSE(matcher.match(Parser::parse("-1"), result));
             CHECK(matcher.match(Parser::parse("0"), result));
             CHECK(matcher.match(Parser::parse("1"), result));
-            CHECK(matcher.outline(4) == "    Integer, which is >= 0");
+            CHECK(matcher.outline(4) == "    Integer, >= 0");
         }
 
         SECTION("greater") {
             auto matcher = MatcherInt{}.greater(5);
             CHECK_FALSE(matcher.match(Parser::parse("5"), result));
             CHECK(matcher.match(Parser::parse("6"), result));
-            CHECK(matcher.outline(4) == "    Integer, which is > 5");
+            CHECK(matcher.outline(4) == "    Integer, > 5");
         }
 
         SECTION("greater equals") {
             auto matcher = MatcherInt{}.greaterEquals(5);
             CHECK_FALSE(matcher.match(Parser::parse("4"), result));
             CHECK(matcher.match(Parser::parse("5"), result));
-            CHECK(matcher.outline(4) == "    Integer, which is >= 5");
+            CHECK(matcher.outline(4) == "    Integer, >= 5");
         }
 
         SECTION("less") {
             auto matcher = MatcherInt{}.less(5);
             CHECK_FALSE(matcher.match(Parser::parse("5"), result));
             CHECK(matcher.match(Parser::parse("4"), result));
-            CHECK(matcher.outline(4) == "    Integer, which is < 5");
+            CHECK(matcher.outline(4) == "    Integer, < 5");
         }
 
         SECTION("less equals") {
             auto matcher = MatcherInt{}.lessEquals(5);
             CHECK_FALSE(matcher.match(Parser::parse("6"), result));
             CHECK(matcher.match(Parser::parse("5"), result));
-            CHECK(matcher.outline(4) == "    Integer, which is <= 5");
+            CHECK(matcher.outline(4) == "    Integer, <= 5");
         }
 
         SECTION("equals") {
@@ -88,7 +88,7 @@ TEST_CASE("Matcher: Int") {
             CHECK_FALSE(matcher.match(Parser::parse("4"), result));
             CHECK_FALSE(matcher.match(Parser::parse("6"), result));
             CHECK(matcher.match(Parser::parse("5"), result));
-            CHECK(matcher.outline(4) == "    Integer, which equals 5");
+            CHECK(matcher.outline(4) == "    Integer, = 5");
         }
 
         SECTION("any of") {
@@ -98,7 +98,7 @@ TEST_CASE("Matcher: Int") {
             CHECK_FALSE(matcher.match(Parser::parse("2"), result));
             CHECK(matcher.match(Parser::parse("1"), result));
             CHECK(matcher.match(Parser::parse("5"), result));
-            CHECK(matcher.outline(4) == "    Integer, which is one of: 1, 3, 5");
+            CHECK(matcher.outline(4) == "    Integer, one of: 1, 3, 5");
         }
 
         SECTION("in range") {
@@ -107,27 +107,27 @@ TEST_CASE("Matcher: Int") {
             CHECK_FALSE(matcher.match(Parser::parse("4"), result));
             CHECK(matcher.match(Parser::parse("1"), result));
             CHECK(matcher.match(Parser::parse("3"), result));
-            CHECK(matcher.outline(4) == "    Integer, which is in range [1, 3]");
+            CHECK(matcher.outline(4) == "    Integer, in range [1, 3]");
         }
 
         SECTION("custom") {
             auto matcher = MatcherInt{}.filter([](long i) { return i % 2 == 0; });
             CHECK_FALSE(matcher.match(Parser::parse("3"), result));
             CHECK(matcher.match(Parser::parse("4"), result));
-            CHECK(matcher.outline(4) == "    Integer, which <undefined filter>");
-            matcher.describe("is even");
-            CHECK(matcher.outline(4) == "    Integer, which is even");
+            CHECK(matcher.outline(4) == "    Integer, <undefined filter>");
+            matcher.describe("even");
+            CHECK(matcher.outline(4) == "    Integer, even");
         }
 
         SECTION("joined") {
             auto matcher = MatcherInt{}
                 .greater(5)
                 .filter([](long i) { return i % 2 == 0; })
-                .describe("is even");
+                .describe("even");
             CHECK_FALSE(matcher.match(Parser::parse("4"), result));
             CHECK_FALSE(matcher.match(Parser::parse("7"), result));
             CHECK(matcher.match(Parser::parse("8"), result));
-            CHECK(matcher.outline(4) == "    Integer, which:\n    - is > 5\n    - is even");
+            CHECK(matcher.outline(4) == "    Integer:\n    - > 5\n    - even");
         }
     }
 
@@ -224,6 +224,7 @@ TEST_CASE("Matcher: String") {
         CHECK_FALSE(MatcherString{}.match(Parser::parse("True"), result));
         CHECK(MatcherString{}.match(Parser::parse(R"("abc")"), result));
         CHECK(result.as<std::string>() == "abc");
+        CHECK(MatcherString{}.outline(4) == "    String");
     }
 
     SECTION("filters") {
@@ -233,6 +234,7 @@ TEST_CASE("Matcher: String") {
             auto matcher = GENERATE_COPY(matcher1, matcher2);
             CHECK_FALSE(matcher.match(Parser::parse(R"("def")"), result));
             CHECK(matcher.match(Parser::parse(R"("abc")"), result));
+            CHECK(matcher.outline(4) == R"(    String, = "abc")");
         }
 
         SECTION("any of") {
@@ -242,42 +244,49 @@ TEST_CASE("Matcher: String") {
             CHECK_FALSE(matcher.match(Parser::parse(R"("jkl")"), result));
             CHECK(matcher.match(Parser::parse(R"("abc")"), result));
             CHECK(matcher.match(Parser::parse(R"("ghi")"), result));
+            CHECK(matcher.outline(4) == R"(    String, one of: "abc", "def", "ghi")");
         }
 
         SECTION("starts with") {
             auto matcher = MatcherString{}.startsWith("abc");
             CHECK_FALSE(matcher.match(Parser::parse(R"("123456")"), result));
             CHECK(matcher.match(Parser::parse(R"("abcdef")"), result));
+            CHECK(matcher.outline(4) == R"(    String, starting with "abc")");
         }
 
         SECTION("ends with") {
             auto matcher = MatcherString{}.endsWith("def");
             CHECK_FALSE(matcher.match(Parser::parse(R"("123456")"), result));
             CHECK(matcher.match(Parser::parse(R"("abcdef")"), result));
+            CHECK(matcher.outline(4) == R"(    String, ending with "def")");
         }
 
         SECTION("contains") {
             auto matcher = MatcherString{}.contains("cd");
             CHECK_FALSE(matcher.match(Parser::parse(R"("123456")"), result));
             CHECK(matcher.match(Parser::parse(R"("abcdef")"), result));
+            CHECK(matcher.outline(4) == R"(    String, containing "cd")");
         }
 
         SECTION("length") {
             auto matcher = MatcherString{}.length(3);
             CHECK_FALSE(matcher.match(Parser::parse(R"("abcd")"), result));
             CHECK(matcher.match(Parser::parse(R"("abc")"), result));
+            CHECK(matcher.outline(4) == R"(    String, with length 3)");
         }
 
         SECTION("empty") {
             auto matcher = MatcherString{}.empty();
             CHECK_FALSE(matcher.match(Parser::parse(R"("abc")"), result));
             CHECK(matcher.match(Parser::parse(R"("")"), result));
+            CHECK(matcher.outline(4) == R"(    String, empty)");
         }
 
         SECTION("non-empty") {
             auto matcher = MatcherString{}.nonEmpty();
             CHECK_FALSE(matcher.match(Parser::parse(R"("")"), result));
             CHECK(matcher.match(Parser::parse(R"("abc")"), result));
+            CHECK(matcher.outline(4) == R"(    String, non-empty)");
         }
 
         SECTION("contains only characters") {
@@ -285,6 +294,7 @@ TEST_CASE("Matcher: String") {
                 auto matcher = MatcherString{}.containsOnlyCharacters("rampckisol ");
                 CHECK_FALSE(matcher.match(Parser::parse(R"("rampack is bad")"), result));
                 CHECK(matcher.match(Parser::parse(R"("rampack is cool")"), result));
+                CHECK(matcher.outline(4) == R"(    String, with only characters: "rampckisol ")");
             }
 
             SECTION("predicate") {
@@ -292,6 +302,7 @@ TEST_CASE("Matcher: String") {
                 auto matcher = MatcherString{}.containsOnlyCharacters(isFromPartialAlphabet);
                 CHECK_FALSE(matcher.match(Parser::parse(R"("abcxyz")"), result));
                 CHECK(matcher.match(Parser::parse(R"("bcxy")"), result));
+                CHECK(matcher.outline(4) == R"(    String, with only characters: <undefined predicate>)");
             }
         }
 
@@ -299,36 +310,42 @@ TEST_CASE("Matcher: String") {
             auto matcher = MatcherString{}.uniqueCharacters();
             CHECK_FALSE(matcher.match(Parser::parse(R"("abcdbe")"), result));
             CHECK(matcher.match(Parser::parse(R"("deacb")"), result));
+            CHECK(matcher.outline(4) == R"(    String, with unique characters)");
         }
 
         SECTION("lowercase") {
             auto matcher = MatcherString{}.lowercase();
             CHECK_FALSE(matcher.match(Parser::parse(R"("AbC")"), result));
             CHECK(matcher.match(Parser::parse(R"("abc")"), result));
+            CHECK(matcher.outline(4) == R"(    String, lowercase)");
         }
 
         SECTION("uppercase") {
             auto matcher = MatcherString{}.uppercase();
             CHECK_FALSE(matcher.match(Parser::parse(R"("AbC")"), result));
             CHECK(matcher.match(Parser::parse(R"("ABC")"), result));
+            CHECK(matcher.outline(4) == R"(    String, uppercase)");
         }
 
         SECTION("numeric") {
             auto matcher = MatcherString{}.numeric();
             CHECK_FALSE(matcher.match(Parser::parse(R"("0x123")"), result));
             CHECK(matcher.match(Parser::parse(R"("123")"), result));
+            CHECK(matcher.outline(4) == R"(    String, with only numbers)");
         }
 
         SECTION("alpha") {
             auto matcher = MatcherString{}.alpha();
             CHECK_FALSE(matcher.match(Parser::parse(R"("aBc123")"), result));
             CHECK(matcher.match(Parser::parse(R"("aBc")"), result));
+            CHECK(matcher.outline(4) == R"(    String, with only letters)");
         }
 
         SECTION("alphanumeric") {
             auto matcher = MatcherString{}.alphanumeric();
             CHECK_FALSE(matcher.match(Parser::parse(R"("aBc123@#")"), result));
             CHECK(matcher.match(Parser::parse(R"("aBc123")"), result));
+            CHECK(matcher.outline(4) == R"(    String, with only numbers and letters)");
         }
 
         SECTION("custom") {
@@ -338,6 +355,9 @@ TEST_CASE("Matcher: String") {
             auto matcher = MatcherString{}.filter(spaceFilter);
             CHECK_FALSE(matcher.match(Parser::parse(R"("a b")"), result));
             CHECK(matcher.match(Parser::parse(R"("\t  \n\n")"), result));
+            CHECK(matcher.outline(4) == R"(    String, <undefined filter>)");
+            matcher.describe("with only white characters");
+            CHECK(matcher.outline(4) == R"(    String, with only white characters)");
         }
 
         SECTION("joined") {
@@ -349,6 +369,11 @@ TEST_CASE("Matcher: String") {
             CHECK_FALSE(matcher.match(Parser::parse(R"("xy")"), result));
             CHECK_FALSE(matcher.match(Parser::parse(R"("xxz")"), result));
             CHECK(matcher.match(Parser::parse(R"("xzy")"), result));
+            CHECK(matcher.outline(4) == R"(    String:
+    - with length 3
+    - lowercase
+    - with unique characters
+    - with only characters: "xyz")");
         }
     }
 

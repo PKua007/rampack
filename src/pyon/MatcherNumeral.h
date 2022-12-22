@@ -71,9 +71,9 @@ namespace pyon::matcher {
                 std::ostringstream out;
                 out << spaces << this->getName();
                 if (this->filters.size() == 1) {
-                    out << ", which " << this->filters.front().description;
+                    out << ", " << this->filters.front().description;
                 } else if (this->filters.size() > 1) {
-                    out << ", which:";
+                    out << ":";
                     for (const auto &filter : this->filters)
                         out << std::endl << spaces << "- " <<
                         filter.description;
@@ -105,62 +105,62 @@ namespace pyon::matcher {
 
             ConcreteNumeral &positive() {
                 this->filter([](NumeralT i) { return i > 0; });
-                this->describe("is > 0");
+                this->describe("> 0");
                 return this->concrete();
             }
 
             ConcreteNumeral &negative() {
                 this->filter([](NumeralT i) { return i < 0; });
-                this->describe("is < 0");
+                this->describe("< 0");
                 return this->concrete();
             }
 
             ConcreteNumeral &nonPositive() {
                 this->filter([](NumeralT i) { return i <= 0; });
-                this->describe("is <= 0");
+                this->describe("<= 0");
                 return this->concrete();
             }
 
             ConcreteNumeral &nonNegative() {
                 this->filter([](NumeralT i) { return i >= 0; });
-                this->describe("is >= 0");
+                this->describe(">= 0");
                 return this->concrete();
             }
 
             ConcreteNumeral &greater(NumeralT value) {
                 this->filter([value](NumeralT i) { return i > value; });
-                this->describe("is > " + this->stringify(value));
+                this->describe("> " + this->stringify(value));
                 return this->concrete();
             }
 
             ConcreteNumeral &greaterEquals(NumeralT value) {
                 this->filter([value](NumeralT i) { return i >= value; });
-                this->describe("is >= " + this->stringify(value));
+                this->describe(">= " + this->stringify(value));
                 return this->concrete();
             }
 
             ConcreteNumeral &less(NumeralT value) {
                 this->filter([value](NumeralT i) { return i < value; });
-                this->describe("is < " + this->stringify(value));
+                this->describe("< " + this->stringify(value));
                 return this->concrete();
             }
 
             ConcreteNumeral &lessEquals(NumeralT value) {
                 this->filter([value](NumeralT i) { return i <= value; });
-                this->describe("is <= " + this->stringify(value));
+                this->describe("<= " + this->stringify(value));
                 return this->concrete();
             }
 
             ConcreteNumeral &inRange(NumeralT low, NumeralT high) {
                 Expects(low <= high);
                 this->filter([low, high](NumeralT i) { return i >= low && i <= high; });
-                this->describe("is in range [" + this->stringify(low) + ", " + this->stringify(high) + "]");
+                this->describe("in range [" + this->stringify(low) + ", " + this->stringify(high) + "]");
                 return this->concrete();
             }
 
             ConcreteNumeral &equals(NumeralT value) {
                 this->filter([value](NumeralT i) { return i == value; });
-                this->describe("equals " + this->stringify(value));
+                this->describe("= " + this->stringify(value));
                 return this->concrete();
             }
 
@@ -172,7 +172,7 @@ namespace pyon::matcher {
                 this->filter(filter);
 
                 std::ostringstream out;
-                out << "is one of: ";
+                out << "one of: ";
                 for (std::size_t i{}; i < values.size() - 1; i++)
                     out << values[i] << ", ";
                 out << values.back();
