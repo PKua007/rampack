@@ -3,9 +3,18 @@
 //
 
 #include <algorithm>
-#include <Eigen/Core>
 
-// Some stray ';' require turning off -Wpedantic for this header
+// Ignore -Wclass-memaccess warnings in Eigen in GCC arm64 compilation
+#ifndef __clang__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wclass-memaccess"
+#endif
+#include <Eigen/Core>
+#ifndef __clang__
+    #pragma GCC diagnostic pop
+#endif
+
+// Some stray ';' require turning off -Wpedantic for this header (for both GCC and Clang)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
 #include <root_finder/root_finder.hpp>
@@ -278,8 +287,8 @@ std::array<double, 7> FourierTracker::calculateTanZCoefficients(double U, double
     };
 }
 
-std::pair<double, double> FourierTracker::findBestSinCosZ(const std::set<double> &roots, double U, double V, double W,
-                                                          double X, double Y, double Z) const
+std::tuple<double, double> FourierTracker::findBestSinCosZ(const std::set<double> &roots, double U, double V, double W,
+                                                           double X, double Y, double Z) const
 {
     double bestSz{};
     double bestCz{};

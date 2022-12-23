@@ -90,8 +90,8 @@ private:
     [[nodiscard]] Vector<3> normalizeOriginPos(const Vector<3> &originPosRel);
     [[nodiscard]] std::array<double, 7> calculateTanZCoefficients(double U, double V, double W, double X, double Y,
                                                                   double Z) const;
-    [[nodiscard]] std::pair<double, double> findBestSinCosZ(const std::set<double> &roots, double U, double V, double W,
-                                                            double X, double Y, double Z) const;
+    [[nodiscard]] std::tuple<double, double> findBestSinCosZ(const std::set<double> &roots, double U, double V,
+                                                             double W, double X, double Y, double Z) const;
 
 public:
     /**
