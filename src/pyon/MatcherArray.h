@@ -100,11 +100,6 @@ namespace pyon::matcher {
         [[nodiscard]] MatcherArray copy() const { return *this; }
 
         template <typename ConcreteMatcher>
-        explicit MatcherArray(const ConcreteMatcher &matcher) {
-            this->elementsMatch(matcher);
-        }
-
-        template <typename ConcreteMatcher>
         explicit MatcherArray(const ConcreteMatcher &matcher, std::size_t size_) {
             this->elementsMatch(matcher);
             this->size(size_);

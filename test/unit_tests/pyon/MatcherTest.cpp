@@ -404,9 +404,7 @@ TEST_CASE("Matcher: Array") {
     }
 
     SECTION("element matcher") {
-        auto matcher1 = MatcherArray{}.elementsMatch(MatcherInt{}.mapTo<std::size_t>());
-        auto matcher2 = MatcherArray(MatcherInt{}.mapTo<std::size_t>());
-        auto matcher = GENERATE_COPY(matcher1, matcher2);
+        auto matcher = MatcherArray{}.elementsMatch(MatcherInt{}.mapTo<std::size_t>());
         CHECK_FALSE(matcher.match(Parser::parse("[True, False]"), result));
         CHECK(matcher.match(Parser::parse("[1, 2]"), result));
         auto array = result.as<ArrayData>();
@@ -416,22 +414,22 @@ TEST_CASE("Matcher: Array") {
 
     SECTION("outline layout") {
         CHECK(MatcherArray{}.outline(4) == "    Array");
-        CHECK(MatcherArray(MatcherInt{}).outline(4) == "    Array, with elements: Integer");
-        CHECK(MatcherArray(MatcherInt{}.positive()).outline(4) == "    Array, with elements: Integer, > 0");
+        CHECK(MatcherArray{}.elementsMatch(MatcherInt{}).outline(4) == "    Array, with elements: Integer");
+        CHECK(MatcherArray{}.elementsMatch(MatcherInt{}.positive()).outline(4) == "    Array, with elements: Integer, > 0");
 
-        CHECK(MatcherArray(MatcherInt{}.positive().less(5)).outline(4) == R"(    Array:
+        CHECK(MatcherArray{}.elementsMatch(MatcherInt{}.positive().less(5)).outline(4) == R"(    Array:
     - with elements: Integer:
       - > 0
       - < 5)");
 
-        CHECK(MatcherArray(MatcherInt{}.positive()).size(3).outline(4) == R"(    Array:
+        CHECK(MatcherArray(MatcherInt{}.positive(), 3).outline(4) == R"(    Array:
     - with elements: Integer, > 0
     - with size = 3)");
     }
 
     SECTION("filters") {
         SECTION("custom filter") {
-            auto matcher = MatcherArray(MatcherInt{}.mapTo<int>())
+            auto matcher = MatcherArray{}.elementsMatch(MatcherInt{}.mapTo<int>())
                 .filter([](const ArrayData &array) { return array.size() % 2 == 0; });
             CHECK_FALSE(matcher.match(Parser::parse("[1, 2, 3]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2, 3, 4]"), result));
@@ -447,9 +445,7 @@ TEST_CASE("Matcher: Array") {
         }
 
         SECTION("size") {
-            auto matcher1 = MatcherArray(MatcherInt{}.mapTo<int>(), 3);
-            auto matcher2 = MatcherArray(MatcherInt{}.mapTo<int>()).size(3);
-            auto matcher = GENERATE_COPY(matcher1, matcher2);
+            auto matcher = MatcherArray(MatcherInt{}.mapTo<int>(), 3);
             CHECK_FALSE(matcher.match(Parser::parse("[1, 2]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2, 3]"), result));
             CHECK(matcher.outline(4) == R"(    Array:
@@ -467,7 +463,7 @@ TEST_CASE("Matcher: Array") {
         }
 
         SECTION("size at least") {
-            auto matcher = MatcherArray(MatcherInt{}.mapTo<int>()).sizeAtLeast(3);
+            auto matcher = MatcherArray{}.elementsMatch(MatcherInt{}.mapTo<int>()).sizeAtLeast(3);
             CHECK_FALSE(matcher.match(Parser::parse("[1, 2]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2, 3]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2, 3, 4]"), result));
@@ -477,7 +473,7 @@ TEST_CASE("Matcher: Array") {
         }
 
         SECTION("size at most") {
-            auto matcher = MatcherArray(MatcherInt{}.mapTo<int>()).sizeAtMost(3);
+            auto matcher = MatcherArray{}.elementsMatch(MatcherInt{}.mapTo<int>()).sizeAtMost(3);
             CHECK_FALSE(matcher.match(Parser::parse("[1, 2, 3, 4]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2, 3]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2]"), result));
@@ -487,7 +483,7 @@ TEST_CASE("Matcher: Array") {
         }
 
         SECTION("size in range") {
-            auto matcher = MatcherArray(MatcherInt{}.mapTo<int>()).sizeInRange(2, 4);
+            auto matcher = MatcherArray{}.elementsMatch(MatcherInt{}.mapTo<int>()).sizeInRange(2, 4);
             CHECK_FALSE(matcher.match(Parser::parse("[1]"), result));
             CHECK_FALSE(matcher.match(Parser::parse("[1, 2, 3, 4, 5]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2]"), result));
@@ -498,7 +494,7 @@ TEST_CASE("Matcher: Array") {
         }
 
         SECTION("empty") {
-            auto matcher = MatcherArray(MatcherInt{}.mapTo<int>()).empty();
+            auto matcher = MatcherArray{}.elementsMatch(MatcherInt{}.mapTo<int>()).empty();
             CHECK_FALSE(matcher.match(Parser::parse("[1, 2]"), result));
             CHECK(matcher.match(Parser::parse("[]"), result));
             CHECK(matcher.outline(4) == R"(    Array:
@@ -507,7 +503,7 @@ TEST_CASE("Matcher: Array") {
         }
 
         SECTION("non empty") {
-            auto matcher = MatcherArray(MatcherInt{}.mapTo<int>()).nonEmpty();
+            auto matcher = MatcherArray{}.elementsMatch(MatcherInt{}.mapTo<int>()).nonEmpty();
             CHECK_FALSE(matcher.match(Parser::parse("[]"), result));
             CHECK(matcher.match(Parser::parse("[1, 2]"), result));
             CHECK(matcher.outline(4) == R"(    Array:
@@ -539,7 +535,7 @@ TEST_CASE("Matcher: Array") {
         }
 
         SECTION("map to std::vector") {
-            auto matcher = MatcherArray(MatcherInt{}.mapTo<int>()).mapToStdVector<int>();
+            auto matcher = MatcherArray{}.elementsMatch(MatcherInt{}.mapTo<int>()).mapToStdVector<int>();
             CHECK(matcher.match(Parser::parse("[1, 2, 3]"), result));
             CHECK(result.as<std::vector<int>>() == std::vector<int>{1, 2, 3});
         }
@@ -563,7 +559,7 @@ TEST_CASE("Matcher: Array") {
                 auto plus = [](int sum, const Any &next) { return sum + next.as<int>(); };
                 return std::accumulate(array.begin(), array.end(), 0, plus);
             };
-            auto matcher = MatcherArray(MatcherInt{}.mapTo<int>()).mapTo(summedArray);
+            auto matcher = MatcherArray{}.elementsMatch(MatcherInt{}.mapTo<int>()).mapTo(summedArray);
             CHECK(matcher.match(Parser::parse("[0, 2, 3]"), result));
             CHECK(result.as<int>() == 5);
         }
@@ -585,9 +581,7 @@ TEST_CASE("Matcher: Dictionary") {
     }
 
     SECTION("element matcher") {
-        auto matcher1 = MatcherDictionary{}.valuesMatch(MatcherInt{}.mapTo<std::size_t>());
-        auto matcher2 = MatcherDictionary(MatcherInt{}.mapTo<std::size_t>());
-        auto matcher = GENERATE_COPY(matcher1, matcher2);
+        auto matcher = MatcherDictionary{}.valuesMatch(MatcherInt{}.mapTo<std::size_t>());
         CHECK_FALSE(matcher.match(Parser::parse(R"({"b" : 2, "a" : "not int", "c" : 3})"), result));
 
         REQUIRE(matcher.match(Parser::parse(R"({"b" : 2, "a" : 1, "c" : 3})"), result));
@@ -616,10 +610,11 @@ TEST_CASE("Matcher: Dictionary") {
 
     SECTION("outline layout") {
         CHECK(MatcherDictionary{}.outline(4) == "    Dictionary");
-        CHECK(MatcherDictionary(MatcherInt{}).outline(4) == "    Dictionary, with values: Integer");
-        CHECK(MatcherDictionary(MatcherInt{}.positive()).outline(4) == "    Dictionary, with values: Integer, > 0");
+        CHECK(MatcherDictionary{}.valuesMatch(MatcherInt{}).outline(4) == "    Dictionary, with values: Integer");
+        CHECK(MatcherDictionary{}.valuesMatch(MatcherInt{}.positive()).outline(4)
+              == "    Dictionary, with values: Integer, > 0");
 
-        CHECK(MatcherDictionary(MatcherInt{}.positive().less(5)).outline(4) == R"(    Dictionary:
+        CHECK(MatcherDictionary{}.valuesMatch(MatcherInt{}.positive().less(5)).outline(4) == R"(    Dictionary:
     - with values: Integer:
       - > 0
       - < 5)");
@@ -762,7 +757,7 @@ TEST_CASE("Matcher: Dictionary") {
 
     SECTION("maps") {
         SECTION("map to std::map") {
-            auto matcher = MatcherDictionary(MatcherInt{}.mapTo<int>()).mapToStdMap<int>();
+            auto matcher = MatcherDictionary{}.valuesMatch(MatcherInt{}.mapTo<int>()).mapToStdMap<int>();
             REQUIRE(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2, "c" : 3})"), result));
             std::map<std::string, int> expected{{"a", 1}, {"b", 2}, {"c", 3}};
             CHECK(result.as<std::map<std::string, int>>() == expected);
@@ -881,7 +876,7 @@ TEST_CASE("Matcher: Dataclass") {
         SECTION("variadic arguments") {
             auto matcher = MatcherDataclass("class")
                 .arguments({{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}, "2"}})
-                .variadicArguments(MatcherArray(MatcherInt{}));
+                .variadicArguments(MatcherArray{}.elementsMatch(MatcherInt{}));
             CHECK_FALSE(matcher.match(Parser::parse("class()"), result));
 
             SECTION("1 argument") {
@@ -922,7 +917,7 @@ TEST_CASE("Matcher: Dataclass") {
 
         SECTION("variadic arguments with matcher") {
             auto matcher = MatcherDataclass("class")
-                .variadicArguments(MatcherArray(MatcherInt{}).sizeAtLeast(1));
+                .variadicArguments(MatcherArray{}.elementsMatch(MatcherInt{}).sizeAtLeast(1));
             CHECK_FALSE(matcher.match(Parser::parse("class()"), result));
             CHECK(matcher.match(Parser::parse("class(1)"), result));
             CHECK(matcher.match(Parser::parse("class(1, 2)"), result));
@@ -931,7 +926,7 @@ TEST_CASE("Matcher: Dataclass") {
         SECTION("keyword arguments") {
             auto matcher = MatcherDataclass("class")
                 .arguments({{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}, "2"}})
-                .variadicKeywordArguments(MatcherDictionary(MatcherInt{}));
+                .variadicKeywordArguments(MatcherDictionary{}.valuesMatch(MatcherInt{}));
             CHECK_FALSE(matcher.match(Parser::parse("class()"), result));
             CHECK_FALSE(matcher.match(Parser::parse("class(1, 2, 3)"), result));
 
@@ -975,7 +970,7 @@ TEST_CASE("Matcher: Dataclass") {
 
         SECTION("variadic keyword arguments with matcher") {
             auto matcher = MatcherDataclass("class")
-                .variadicKeywordArguments(MatcherDictionary(MatcherInt{}).sizeAtLeast(1));
+                .variadicKeywordArguments(MatcherDictionary{}.valuesMatch(MatcherInt{}).sizeAtLeast(1));
             CHECK_FALSE(matcher.match(Parser::parse("class()"), result));
             CHECK(matcher.match(Parser::parse("class(arg1=1)"), result));
             CHECK(matcher.match(Parser::parse("class(arg1=1, arg2=2)"), result));
@@ -984,8 +979,8 @@ TEST_CASE("Matcher: Dataclass") {
         SECTION("all types of arguments") {
             auto matcher = MatcherDataclass("class")
                 .arguments({{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}, "2"}})
-                .variadicArguments(MatcherArray(MatcherInt{}))
-                .variadicKeywordArguments(MatcherDictionary(MatcherInt{}));
+                .variadicArguments(MatcherArray{}.elementsMatch(MatcherInt{}))
+                .variadicKeywordArguments(MatcherDictionary{}.valuesMatch(MatcherInt{}));
             CHECK_FALSE(matcher.match(Parser::parse("class()"), result));
 
             SECTION("1 argument") {
@@ -1254,14 +1249,14 @@ TEST_CASE("Matcher: combined") {
     auto matcherFloat = MatcherFloat{}.mapTo([](double d) { return std::to_string(d); });
     auto matcherString = MatcherString{};
     auto anyPrimitive = matcherInt | matcherFloat | matcherString;
-    auto matcherArray = MatcherArray(anyPrimitive).mapTo([doConcatenate](const ArrayData &array) {
+    auto matcherArray = MatcherArray{}.elementsMatch(anyPrimitive).mapTo([doConcatenate](const ArrayData &array) {
         return doConcatenate(array, "[", "]", ", ");
     });
     auto anyPrintable = anyPrimitive | matcherArray;
-    auto kwargsDelimiter = MatcherDictionary(MatcherString{})
+    auto kwargsDelimiter = MatcherDictionary{}.valuesMatch(MatcherString{})
         .hasOnlyKeys({"delimiter"});
     auto concatenator = MatcherDataclass("concatenator")
-        .variadicArguments(MatcherArray(anyPrintable))
+        .variadicArguments(MatcherArray{}.elementsMatch(anyPrintable))
         .variadicKeywordArguments(kwargsDelimiter)
         .mapTo([doConcatenate](const DataclassData &dataclass) {
             std::string delimiter = " ";

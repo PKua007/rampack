@@ -75,10 +75,6 @@ namespace pyon::matcher {
 
     public:
         MatcherDictionary() = default;
-        template <typename ConcreteMatcher>
-        explicit MatcherDictionary(const ConcreteMatcher &matcher) {
-            this->valuesMatch(matcher);
-        }
 
         [[nodiscard]] MatcherDictionary copy() const { return *this; }
 
