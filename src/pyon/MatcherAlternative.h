@@ -22,6 +22,8 @@ namespace pyon::matcher {
 
         bool match(std::shared_ptr<const ast::Node> node, Any &result) const override;
 
+        std::string outline(std::size_t indent) const override;
+
         template<typename ConcreteMatcher>
         MatcherAlternative &operator|=(const ConcreteMatcher &matcher) {
             static_assert(std::is_base_of_v<MatcherBase, ConcreteMatcher>,
