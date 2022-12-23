@@ -1275,4 +1275,20 @@ TEST_CASE("Matcher: combined") {
     CHECK(result.as<std::string>() == "1-1.200000-abc-[2, e]");
     REQUIRE(concatenator.match(Parser::parse(R"(concatenator(1, 1.2, "abc", [2, "e"]))"), result));
     CHECK(result.as<std::string>() == "1 1.200000 abc [2, e]");
+
+    CHECK(concatenator.outline(0) == R"(concatenator class:
+- arguments: empty
+- *args: Array:
+  - with elements: Alternative:
+    1. Integer
+    2. Float
+    3. String
+    4. Array:
+       - with elements: Alternative:
+         1. Integer
+         2. Float
+         3. String
+- **kwargs: Dictionary:
+  - with values: String
+  - allowed keys: "delimiter")");
 }
