@@ -705,6 +705,13 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK(matcher.outline(4) == R"(    Dictionary, empty)");
         }
 
+        SECTION("non-empty") {
+            auto matcher = MatcherDictionary{}.nonEmpty();
+            CHECK_FALSE(matcher.match(Parser::parse("{}"), result));
+            CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
+            CHECK(matcher.outline(4) == R"(    Dictionary, non-empty)");
+        }
+
         SECTION("size") {
             auto matcher = MatcherDictionary{}.size(2);
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1})"), result));
@@ -1044,6 +1051,78 @@ TEST_CASE("Matcher: Dataclass") {
         }
     }
 
+    SECTION("outline") {
+        SECTION("empty") {
+            CHECK(MatcherDataclass("clazz").outline(4) == "    clazz class:\n    - arguments: empty");
+        }
+
+        SECTION("standard arguments") {
+            auto matcher = MatcherDataclass("clazz")
+                .arguments({{"arg1", MatcherInt{}},
+                            {"arg2", MatcherFloat{}.positive().less(5), 5}});
+            CHECK(matcher.outline(4) == R"(    clazz class:
+    - arguments:
+      - arg1: Integer
+      - arg2 (=5): Float:
+        - > 0
+        - < 5)");
+        }
+
+        SECTION("*args") {
+            SECTION("short") {
+                auto matcher = MatcherDataclass("clazz")
+                    .variadicArguments(MatcherArray{}.sizeAtLeast(5));
+                CHECK(matcher.outline(4) == R"(    clazz class:
+    - arguments: empty
+    - *args: Array, with size >= 5)");
+            }
+
+            SECTION("long") {
+                auto matcher = MatcherDataclass("clazz")
+                    .variadicArguments(MatcherArray{}.sizeAtLeast(5).sizeAtMost(7));
+                CHECK(matcher.outline(4) == R"(    clazz class:
+    - arguments: empty
+    - *args: Array:
+      - with size >= 5
+      - with size <= 7)");
+            }
+        }
+
+        SECTION("**kwargs") {
+            SECTION("short") {
+                auto matcher = MatcherDataclass("clazz")
+                    .variadicKeywordArguments(MatcherDictionary{}.sizeAtLeast(5));
+                CHECK(matcher.outline(4) == R"(    clazz class:
+    - arguments: empty
+    - **kwargs: Dictionary, with size >= 5)");
+            }
+
+            SECTION("long") {
+                auto matcher = MatcherDataclass("clazz")
+                    .variadicKeywordArguments(MatcherDictionary{}.sizeAtLeast(5).sizeAtMost(7));
+                CHECK(matcher.outline(4) == R"(    clazz class:
+    - arguments: empty
+    - **kwargs: Dictionary:
+      - with size >= 5
+      - with size <= 7)");
+            }
+
+            SECTION("all at once") {
+                auto matcher = MatcherDataclass("clazz")
+                    .arguments({{"arg1", MatcherInt{}}})
+                    .variadicArguments(MatcherArray{}.sizeAtLeast(5).sizeAtMost(7))
+                    .variadicKeywordArguments(MatcherDictionary{}.nonEmpty());
+                CHECK(matcher.outline(4) == R"(    clazz class:
+    - arguments:
+      - arg1: Integer
+    - *args: Array:
+      - with size >= 5
+      - with size <= 7
+    - **kwargs: Dictionary, non-empty)");
+            }
+        }
+    }
+
     SECTION("filter") {
         auto validateRange = [](const DataclassData &dataclass) {
             return dataclass["start"].as<long>() <= dataclass["end"].as<long>();
@@ -1052,6 +1131,19 @@ TEST_CASE("Matcher: Dataclass") {
             .filter(validateRange);
         CHECK_FALSE(matcher.match(Parser::parse("range(4, 2)"), result));
         CHECK(matcher.match(Parser::parse("range(2, 4)"), result));
+
+        CHECK(matcher.outline(4) == R"(    range class:
+    - arguments:
+      - start: Integer
+      - end: Integer
+    - <undefined filter>)");
+
+        matcher.describe("start <= end");
+        CHECK(matcher.outline(4) == R"(    range class:
+    - arguments:
+      - start: Integer
+      - end: Integer
+    - start <= end)");
     }
 
     SECTION("map to") {

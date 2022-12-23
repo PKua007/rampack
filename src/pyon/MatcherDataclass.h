@@ -114,11 +114,18 @@ namespace pyon::matcher {
 
     class MatcherDataclass : public MatcherBase {
     private:
+        struct Filter {
+            std::function<bool(const DataclassData&)> predicate;
+            std::string description;
+        };
+
         std::string name;
         std::vector<StandardArgumentSpecification> argumentsSpecification;
         MatcherArray variadicArgumentsMatcher = MatcherArray{}.empty();
         MatcherDictionary variadicKeywordArgumentsMatcher = MatcherDictionary{}.empty();
-        std::vector<std::function<bool(const DataclassData&)>> filters;
+        bool hasVariadicArguments = false;
+        bool hasKeywordVariadicArguments = false;
+        std::vector<Filter> filters;
         std::function<Any(const DataclassData&)> mapping = [](const DataclassData &dataclass) { return dataclass; };
 
         bool matchStandardArguments(StandardArguments &arguments,
@@ -146,9 +153,11 @@ namespace pyon::matcher {
         MatcherDataclass &variadicKeywordArguments(const MatcherDictionary &variadicMatcher = MatcherDictionary{});
 
         bool match(std::shared_ptr<const ast::Node> node, Any &result) const override;
+        [[nodiscard]] std::string outline(std::size_t indent) const override;
 
         MatcherDataclass &mapTo(const std::function<Any(const DataclassData&)> &mapping_);
         MatcherDataclass &filter(const std::function<bool(const DataclassData&)> &filter);
+        MatcherDataclass &describe(const std::string &description);
     };
 } // matcher
 
