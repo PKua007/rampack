@@ -1108,20 +1108,20 @@ TEST_CASE("Matcher: Dataclass") {
       - with size >= 5
       - with size <= 7)");
             }
+        }
 
-            SECTION("all at once") {
-                auto matcher = MatcherDataclass("clazz")
-                    .arguments({{"arg1", MatcherInt{}}})
-                    .variadicArguments(MatcherArray{}.sizeAtLeast(5).sizeAtMost(7))
-                    .variadicKeywordArguments(MatcherDictionary{}.nonEmpty());
-                CHECK(matcher.outline(4) == R"(    clazz class:
+        SECTION("all at once") {
+            auto matcher = MatcherDataclass("clazz")
+                .arguments({{"arg1", MatcherInt{}}})
+                .variadicArguments(MatcherArray{}.sizeAtLeast(5).sizeAtMost(7))
+                .variadicKeywordArguments(MatcherDictionary{}.nonEmpty());
+            CHECK(matcher.outline(4) == R"(    clazz class:
     - arguments:
       - arg1: Integer
     - *args: Array:
       - with size >= 5
       - with size <= 7
     - **kwargs: Dictionary, non-empty)");
-            }
         }
     }
 
