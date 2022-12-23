@@ -158,6 +158,13 @@ namespace pyon::matcher {
                              const StandardArgumentSpecification &argumentSpecification,
                              const std::shared_ptr<const ast::Node> &argumentNode) const;
 
+        void outlineStandardArguments(std::ostringstream &out, std::size_t indent) const;
+        void outlineArgument(const StandardArgumentSpecification &argument, std::ostringstream &out,
+                             std::size_t indent) const;
+        void outlineVariadicArguments(std::ostringstream &out, std::size_t indent) const;
+        void outlineKeywordVariadicArguments(std::ostringstream &out, std::size_t indent) const;
+        void outlineFilters(std::ostringstream &out, std::size_t indent) const;
+
     public:
         explicit MatcherDataclass(std::string className);
         MatcherDataclass(std::string className, std::vector<StandardArgumentSpecification> argumentsSpecification);

@@ -155,47 +155,67 @@ namespace pyon::matcher {
     std::string MatcherDataclass::outline(std::size_t indent) const {
         std::ostringstream out;
         std::string spaces(indent, ' ');
-        out << spaces << this->name << " class:" << std::endl;
-        out << spaces << "- arguments:";
+        out << spaces << this->name << " class:";
+
+        this->outlineStandardArguments(out, indent);
+        this->outlineVariadicArguments(out, indent);
+        this->outlineKeywordVariadicArguments(out, indent);
+        this->outlineFilters(out, indent);
+
+        return out.str();
+    }
+
+    void MatcherDataclass::outlineStandardArguments(std::ostringstream &out, std::size_t indent) const {
+        std::string spaces(indent, ' ');
+        out << std::endl << spaces << "- arguments:";
 
         if (this->argumentsSpecification.empty()) {
             out << " empty";
-        } else {
-            for (const auto &argument : argumentsSpecification) {
-                out << std::endl << spaces << "  - " << argument.getName();
-                if (argument.hasDefaultValue())
-                    out << " (=" << argument.getDefaultValueString() << "): ";
-                else
-                    out << ": ";
-
-                if (!argument.hasMatcher()) {
-                    out << "any expression";
-                } else {
-                    std::string argumentOutline = argument.getMatcher()->outline(indent + 4);
-                    argumentOutline = argumentOutline.substr(indent + 4);
-                    out << argumentOutline;
-                }
-            }
+            return;
         }
 
-        if (this->hasVariadicArguments) {
-            out << std::endl << spaces << "- *args: ";
-            std::string argumentsOutline = this->variadicArgumentsMatcher.outline(indent + 2);
-            argumentsOutline = argumentsOutline.substr(indent + 2);
-            out << argumentsOutline;
-        }
+        for (const auto &argument: this->argumentsSpecification)
+            this->outlineArgument(argument, out, indent);
+    }
 
-        if (this->hasKeywordVariadicArguments) {
-            out << std::endl << spaces << "- **kwargs: ";
-            std::string argumentsOutline = this->variadicKeywordArgumentsMatcher.outline(indent + 2);
-            argumentsOutline = argumentsOutline.substr(indent + 2);
-            out << argumentsOutline;
-        }
+    void MatcherDataclass::outlineArgument(const StandardArgumentSpecification &argument, std::ostringstream &out,
+                                           std::size_t indent) const
+    {
+        std::string spaces(indent, ' ');
+        out << std::endl << spaces << "  - " << argument.getName();
+        if (argument.hasDefaultValue())
+            out << " (=" << argument.getDefaultValueString() << "): ";
+        else
+            out << ": ";
 
-        for (const auto &filter : this->filters)
+        if (!argument.hasMatcher())
+            out << "any expression";
+        else
+            out << argument.getMatcher()->outline(indent + 4).substr(indent + 4);
+    }
+
+    void MatcherDataclass::outlineVariadicArguments(std::ostringstream &out, std::size_t indent) const {
+        if (!this->hasVariadicArguments)
+            return;
+
+        std::string spaces(indent, ' ');
+        out << std::endl << spaces << "- *args: ";
+        out << this->variadicArgumentsMatcher.outline(indent + 2).substr(indent + 2);;
+    }
+
+    void MatcherDataclass::outlineKeywordVariadicArguments(std::ostringstream &out, std::size_t indent) const {
+        if (!this->hasKeywordVariadicArguments)
+            return;
+
+        std::string spaces(indent, ' ');
+        out << std::endl << spaces << "- **kwargs: ";
+        out << this->variadicKeywordArgumentsMatcher.outline(indent + 2).substr(indent + 2);
+    }
+
+    void MatcherDataclass::outlineFilters(std::ostringstream &out, std::size_t indent) const {
+        std::string spaces(indent, ' ');
+        for (const auto &filter: this->filters)
             out << std::endl << spaces << "- " << filter.description;
-
-        return out.str();
     }
 
     MatcherDataclass &MatcherDataclass::mapTo(const std::function<Any(const DataclassData &)> &mapping_) {
