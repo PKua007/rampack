@@ -60,7 +60,7 @@ namespace {
             return data.asVector<3>().normalized();
         });
 
-    auto namedPoints = MatcherDictionary(vector)
+    auto namedPoints = MatcherDictionary{}.valuesMatch(vector)
         .mapTo([](const DictionaryData &dict) {
             auto map = dict.asStdMap<Vector<3>>();
             ShapeGeometry::NamedPoints points(map.begin(), map.end());
@@ -306,7 +306,7 @@ namespace {
                 return sphereData;
             });
 
-        auto sphereArray = MatcherArray(sphere)
+        auto sphereArray = MatcherArray{}.elementsMatch(sphere)
             .nonEmpty()
             .mapTo([](const ArrayData &array) {
                 std::vector<PolysphereTraits::SphereData> allSphereDatas;
