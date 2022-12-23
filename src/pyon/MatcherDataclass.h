@@ -13,6 +13,7 @@
 #include "MatcherArray.h"
 #include "MatcherDictionary.h"
 #include "NodeDataclass.h"
+#include "Parser.h"
 
 
 namespace pyon::matcher {
@@ -88,6 +89,7 @@ namespace pyon::matcher {
     private:
         std::string name;
         std::shared_ptr<MatcherBase> matcher;
+        std::string defaultValueString;
         std::optional<Any> defaultValue;
 
     public:
@@ -100,15 +102,29 @@ namespace pyon::matcher {
         { }
 
         template<typename ConcreteMatcher, typename = std::enable_if_t<std::is_base_of_v<MatcherBase, ConcreteMatcher>>>
-        StandardArgumentSpecification(std::string name, const ConcreteMatcher &matcher, const Any &defaultValue)
+        StandardArgumentSpecification(std::string name, const ConcreteMatcher &matcher, const std::string &defaultValue)
                 : name{std::move(name)}, matcher{std::make_shared<ConcreteMatcher>(matcher)},
-                  defaultValue{defaultValue}
-        { }
+                  defaultValueString{defaultValue}
+        {
+            try {
+                auto node = Parser::parse(defaultValue);
+
+                Any result;
+                if (!this->matcher->match(node, result)) {
+                    throw PreconditionException("Default value '" + defaultValue + "' does not match the matcher: "
+                                                + this->matcher->outline(0));
+                }
+                this->defaultValue = result;
+            } catch (const ParseException &e) {
+                throw PreconditionException(std::string("Default value parsing failed: \n") + e.what());
+            }
+        }
 
         [[nodiscard]] const std::string &getName() const { return this->name; }
         [[nodiscard]] const std::shared_ptr<MatcherBase> &getMatcher() const { return this->matcher; }
         [[nodiscard]] bool hasMatcher() const { return this->matcher != nullptr;}
         [[nodiscard]] const std::optional<Any> &getDefaultValue() const { return this->defaultValue; }
+        [[nodiscard]] const std::string &getDefaultValueString() const { return this->defaultValueString; }
         [[nodiscard]] bool hasDefaultValue() const { return this->defaultValue != std::nullopt; }
     };
 
