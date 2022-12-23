@@ -157,8 +157,8 @@ namespace {
             .arguments({{"sphere_n", MatcherInt{}.greaterEquals(2).mapTo<std::size_t>()},
                         {"small_r", MatcherFloat{}.positive()},
                         {"large_r", MatcherFloat{}.positive()},
-                        {"small_penetration", MatcherFloat{}.positive(), "0"},
-                        {"large_penetration", MatcherFloat{}.positive(), "0"},
+                        {"small_penetration", MatcherFloat{}.nonNegative(), "0"},
+                        {"large_penetration", MatcherFloat{}.nonNegative(), "0"},
                         {"interaction", sphereInteraction, "hard"}})
             .filter([](const DataclassData &lollipop) {
                 return lollipop["small_penetration"].as<double>() < 2 * lollipop["small_r"].as<double>();
@@ -191,7 +191,7 @@ namespace {
             .arguments({{"sphere_n", MatcherInt{}.greaterEquals(2).mapTo<std::size_t>()},
                         {"bottom_r", MatcherFloat{}.positive()},
                         {"top_r", MatcherFloat{}.positive()},
-                        {"penetration", MatcherFloat{}.positive(), "0"},
+                        {"penetration", MatcherFloat{}.nonNegative(), "0"},
                         {"interaction", sphereInteraction, "hard"}})
             .filter([](const DataclassData &wedge) {
                 double smallerR = std::min(wedge["bottom_r"].as<double>(), wedge["top_r"].as<double>());
