@@ -843,7 +843,7 @@ TEST_CASE("Matcher: Dataclass") {
 
         SECTION("arguments with matcher and default value") {
             auto matcher = MatcherDataclass("class", {{"arg1", MatcherInt{}},
-                                                      {"arg2", MatcherInt{}, long{2}}});
+                                                      {"arg2", MatcherInt{}, "2"}});
             CHECK_FALSE(matcher.match(Parser::parse("class()"), result));
             CHECK_FALSE(matcher.match(Parser::parse("class(1, 2, 3)"), result));
             CHECK_FALSE(matcher.match(Parser::parse("class(1, True)"), result));
@@ -880,7 +880,7 @@ TEST_CASE("Matcher: Dataclass") {
 
         SECTION("variadic arguments") {
             auto matcher = MatcherDataclass("class")
-                .arguments({{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}, long{2}}})
+                .arguments({{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}, "2"}})
                 .variadicArguments(MatcherArray(MatcherInt{}));
             CHECK_FALSE(matcher.match(Parser::parse("class()"), result));
 
@@ -930,7 +930,7 @@ TEST_CASE("Matcher: Dataclass") {
 
         SECTION("keyword arguments") {
             auto matcher = MatcherDataclass("class")
-                .arguments({{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}, long{2}}})
+                .arguments({{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}, "2"}})
                 .variadicKeywordArguments(MatcherDictionary(MatcherInt{}));
             CHECK_FALSE(matcher.match(Parser::parse("class()"), result));
             CHECK_FALSE(matcher.match(Parser::parse("class(1, 2, 3)"), result));
@@ -983,7 +983,7 @@ TEST_CASE("Matcher: Dataclass") {
 
         SECTION("all types of arguments") {
             auto matcher = MatcherDataclass("class")
-                .arguments({{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}, long{2}}})
+                .arguments({{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}, "2"}})
                 .variadicArguments(MatcherArray(MatcherInt{}))
                 .variadicKeywordArguments(MatcherDictionary(MatcherInt{}));
             CHECK_FALSE(matcher.match(Parser::parse("class()"), result));
@@ -1058,14 +1058,16 @@ TEST_CASE("Matcher: Dataclass") {
 
         SECTION("standard arguments") {
             auto matcher = MatcherDataclass("clazz")
-                .arguments({{"arg1", MatcherInt{}},
-                            {"arg2", MatcherFloat{}.positive().less(5), 5}});
+                .arguments({{"arg1"},
+                            {"arg2", MatcherInt{}},
+                            {"arg3", MatcherFloat{}.positive().less(6), "5"}});
             CHECK(matcher.outline(4) == R"(    clazz class:
     - arguments:
-      - arg1: Integer
-      - arg2 (=5): Float:
+      - arg1: any expression
+      - arg2: Integer
+      - arg3 (=5): Float:
         - > 0
-        - < 5)");
+        - < 6)");
         }
 
         SECTION("*args") {

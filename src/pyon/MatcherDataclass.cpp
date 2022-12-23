@@ -162,7 +162,12 @@ namespace pyon::matcher {
             out << " empty";
         } else {
             for (const auto &argument : argumentsSpecification) {
-                out << std::endl << spaces << "  - " << argument.getName() << ": ";
+                out << std::endl << spaces << "  - " << argument.getName();
+                if (argument.hasDefaultValue())
+                    out << " (=" << argument.getDefaultValueString() << "): ";
+                else
+                    out << ": ";
+
                 if (!argument.hasMatcher()) {
                     out << "any expression";
                 } else {
