@@ -108,12 +108,14 @@ namespace pyon::matcher {
     MatcherDataclass &MatcherDataclass::variadicArguments(const MatcherArray &variadicMatcher) {
         this->variadicArgumentsMatcher = variadicMatcher;
         this->variadicArgumentsMatcher.mapToDefault();
+        this->hasVariadicArguments = true;
         return *this;
     }
 
     MatcherDataclass &MatcherDataclass::variadicKeywordArguments(const MatcherDictionary &variadicMatcher) {
         this->variadicKeywordArgumentsMatcher = variadicMatcher;
         this->variadicKeywordArgumentsMatcher.mapToDefault();
+        this->hasKeywordVariadicArguments = true;
         return *this;
     }
 
@@ -143,11 +145,52 @@ namespace pyon::matcher {
         DataclassData classData(standardArguments, variadicArguments, variadicKeywordArguments);
 
         for (const auto &filter: this->filters)
-            if (!filter(classData))
+            if (!filter.predicate(classData))
                 return false;
 
         result = this->mapping(classData);
         return true;
+    }
+
+    std::string MatcherDataclass::outline(std::size_t indent) const {
+        std::ostringstream out;
+        std::string spaces(indent, ' ');
+        out << spaces << this->name << " class:" << std::endl;
+        out << spaces << "- arguments:";
+
+        if (this->argumentsSpecification.empty()) {
+            out << " empty";
+        } else {
+            for (const auto &argument : argumentsSpecification) {
+                out << std::endl << spaces << "  - " << argument.getName() << ": ";
+                if (!argument.hasMatcher()) {
+                    out << "any expression";
+                } else {
+                    std::string argumentOutline = argument.getMatcher()->outline(indent + 4);
+                    argumentOutline = argumentOutline.substr(indent + 4);
+                    out << argumentOutline;
+                }
+            }
+        }
+
+        if (this->hasVariadicArguments) {
+            out << std::endl << spaces << "- *args: ";
+            std::string argumentsOutline = this->variadicArgumentsMatcher.outline(indent + 2);
+            argumentsOutline = argumentsOutline.substr(indent + 2);
+            out << argumentsOutline;
+        }
+
+        if (this->hasKeywordVariadicArguments) {
+            out << std::endl << spaces << "- **kwargs: ";
+            std::string argumentsOutline = this->variadicKeywordArgumentsMatcher.outline(indent + 2);
+            argumentsOutline = argumentsOutline.substr(indent + 2);
+            out << argumentsOutline;
+        }
+
+        for (const auto &filter : this->filters)
+            out << std::endl << spaces << "- " << filter.description;
+
+        return out.str();
     }
 
     MatcherDataclass &MatcherDataclass::mapTo(const std::function<Any(const DataclassData &)> &mapping_) {
@@ -156,7 +199,13 @@ namespace pyon::matcher {
     }
 
     MatcherDataclass &MatcherDataclass::filter(const std::function<bool(const DataclassData &)> &filter) {
-        this->filters.emplace_back(filter);
+        this->filters.push_back({filter, "<undefined filter>"});
+        return *this;
+    }
+
+    MatcherDataclass &MatcherDataclass::describe(const std::string &description) {
+        Expects(!this->filters.empty());
+        this->filters.back().description = description;
         return *this;
     }
 

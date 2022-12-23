@@ -130,6 +130,7 @@ namespace pyon::matcher {
         MatcherDictionary &hasNotKeys(const std::vector<std::string> &keys);
         MatcherDictionary &keysMatch(const std::function<bool(const std::string&)> &predicate);
         MatcherDictionary &empty();
+        MatcherDictionary &nonEmpty();
         MatcherDictionary &size(std::size_t size);
         MatcherDictionary &sizeAtLeast(std::size_t size);
         MatcherDictionary &sizeAtMost(std::size_t size);

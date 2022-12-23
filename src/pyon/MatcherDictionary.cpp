@@ -253,6 +253,12 @@ namespace pyon::matcher {
         return *this;
     }
 
+    MatcherDictionary &MatcherDictionary::nonEmpty() {
+        this->filter([](const DictionaryData &dict) { return !dict.empty(); });
+        this->describe("non-empty");
+        return *this;
+    }
+
     MatcherDictionary &MatcherDictionary::size(std::size_t size) {
         this->filter([size](const DictionaryData &dict) { return dict.size() == size; });
         this->describe("with size = " + std::to_string(size));
