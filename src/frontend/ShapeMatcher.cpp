@@ -55,6 +55,7 @@ namespace {
                 return std::abs(comp.as<double>()) > 1e-10;
             });
         })
+        .describe("non-zero norm")
         .mapTo([](const ArrayData &data){
             return data.asVector<3>().normalized();
         });
@@ -163,10 +164,12 @@ namespace {
             .filter([](const DataclassData &lollipop) {
                 return lollipop["small_penetration"].as<double>() < 2 * lollipop["small_r"].as<double>();
             })
+            .describe("small_penetration < 2 * small_r")
             .filter([](const DataclassData &lollipop) {
                 double smallerR = std::min(lollipop["small_r"].as<double>(), lollipop["large_r"].as<double>());
                 return lollipop["small_penetration"].as<double>() < 2 * smallerR;
             })
+            .describe("small_penetration < 2 * min(small_r, large_r)")
             .mapTo([](const DataclassData &lollipop) -> std::shared_ptr<ShapeTraits> {
                 auto sphereN = lollipop["sphere_n"].as<std::size_t>();
                 auto smallR = lollipop["small_r"].as<double>();
@@ -197,6 +200,7 @@ namespace {
                 double smallerR = std::min(wedge["bottom_r"].as<double>(), wedge["top_r"].as<double>());
                 return wedge["penetration"].as<double>() < 2 * smallerR;
             })
+            .describe("penetration < 2 * min(bottom_r, top_r)")
             .mapTo([](const DataclassData &wedge) -> std::shared_ptr<ShapeTraits> {
                 auto sphereN = wedge["sphere_n"].as<std::size_t>();
                 auto bottomR = wedge["bottom_r"].as<double>();
@@ -228,17 +232,22 @@ namespace {
                         {"subdivisions", MatcherInt{}.positive().mapTo<std::size_t>(), "1"}})
             .filter([](const DataclassData &banana) {
                 auto segmentN = banana["segment_n"].as<std::size_t>();
-
                 auto spherocylinderR = banana["sc_r"].as<double>();
                 auto arcR = banana["arc_r"].as<double>();
                 auto argAngle = banana["arc_angle"].as<double>();
-
-                if (!PolyspherocylinderBananaTraits::isArcOpen(arcR, argAngle, segmentN, spherocylinderR))
-                    return false;
+                return PolyspherocylinderBananaTraits::isArcOpen(arcR, argAngle, segmentN, spherocylinderR);
+            })
+            .describe("end cups must not overlap")
+            .filter([](const DataclassData &banana) {
+                auto segmentN = banana["segment_n"].as<std::size_t>();
+                auto spherocylinderR = banana["sc_r"].as<double>();
+                auto arcR = banana["arc_r"].as<double>();
+                auto argAngle = banana["arc_angle"].as<double>();
                 if (segmentN == 2)
                     return true;
                 return PolyspherocylinderBananaTraits::isArcOriginOutside(arcR, argAngle, segmentN, spherocylinderR);
             })
+            .describe("for segment_n >= 3, arc origin must lies outside of the shape")
             .mapTo([](const DataclassData &banana) -> std::shared_ptr<ShapeTraits> {
                 auto segmentN = banana["segment_n"].as<std::size_t>();
                 auto spherocylinderR = banana["sc_r"].as<double>();
@@ -261,6 +270,7 @@ namespace {
                 double rDiff = std::abs(wedge["bottom_r"].as<double>() - wedge["top_r"].as<double>());
                 return wedge["length"].as<double>() >= rDiff;
             })
+            .describe("length >= |bottom_r - top_r|")
             .mapTo([](const DataclassData &wedge) -> std::shared_ptr<ShapeTraits> {
                 auto length = wedge["length"].as<double>();
                 auto bottomR = wedge["bottom_r"].as<double>();
@@ -315,6 +325,7 @@ namespace {
                         {"named_points", namedPoints, "{}"},
                         {"interaction", sphereInteraction, "hard"}})
             .filter(validate_axes)
+            .describe("primary_axis and secondary_axis must be orthogonal")
             .mapTo([](const DataclassData &polysphere) -> std::shared_ptr<ShapeTraits> {
                 auto spheres = polysphere["spheres"].as<std::vector<PolysphereTraits::SphereData>>();
                 auto volume = polysphere["volume"].as<double>();
@@ -382,6 +393,7 @@ namespace {
                         {"secondary_axis", axis | MatcherNone{}, "None"},
                         {"named_points", namedPoints, "{}"}})
             .filter(validate_axes)
+            .describe("primary_axis and secondary_axis must be orthogonal")
             .mapTo([](const DataclassData &polysc) -> std::shared_ptr<ShapeTraits> {
                 using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
                 auto sc = polysc["scs"].as<std::vector<SpherocylinderData>>();
@@ -408,6 +420,7 @@ namespace {
             .filter([](const std::string &script){
                 return !explode(script, '&').empty();
             })
+            .describe("at least one '&'-separated command")
             .mapTo([](const std::string &script) -> std::shared_ptr<AbstractXCGeometry> {
                 auto commands = explode(script, '&');
 
@@ -426,6 +439,7 @@ namespace {
                         {"secondary_axis", axis | MatcherNone{}, "None"},
                         {"named_points", namedPoints, "{}"}})
             .filter(validate_axes)
+            .describe("primary_axis and secondary_axis must be orthogonal")
             .mapTo([](const DataclassData &convex) -> std::shared_ptr<ShapeTraits> {
                 auto geometry = convex["script"].as<std::shared_ptr<AbstractXCGeometry>>();
                 auto volume = convex["volume"].as<double>();
