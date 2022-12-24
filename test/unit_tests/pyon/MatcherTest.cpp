@@ -2,6 +2,16 @@
 // Created by pkua on 10.12.22.
 //
 
+// Silence not useful maybe uninitialized warning in GCC 12.2 on Apple Silicon in the Release build (when inlining is
+// performed) appearing in some but no all test cases with MatcherInt and MatcherFloat (weird)
+// <functional> has to be manually included before Catch2
+#ifndef __clang__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+    #include <functional>
+    #pragma GCC diagnostic pop
+#endif
+
 #include <catch2/catch.hpp>
 
 #include "pyon/Matcher.h"
