@@ -16,3 +16,5 @@ target_include_directories(valid_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 enable_testing()
 add_test(NAME unit_tests COMMAND $<TARGET_FILE:unit_tests>)
 add_test(NAME valid_tests COMMAND $<TARGET_FILE:valid_tests>)
+# Test if rampack executable even starts and can show basic help
+add_test(NAME rampack_show_help COMMAND $<TARGET_FILE:rampack> --help)
