@@ -34,6 +34,14 @@ namespace pyon::matcher {
                 return out.str();
             }
 
+            [[nodiscard]] std::string generateUnmatchedReport(const std::string &reason) const {
+                std::ostringstream out;
+                out << "Matching " << this->getName() << " failed:" << std::endl;
+                out << "✖ " << reason << std::endl;
+                out << "✓ Expected format: " << this->outline(0);
+                return out.str();
+            }
+
         protected:
             virtual bool matchNodeType(const std::shared_ptr<const ast::Node> &node, NumeralT &numeral) const = 0;
             [[nodiscard]] virtual std::string getName() const = 0;
@@ -56,11 +64,11 @@ namespace pyon::matcher {
             MatchReport match(std::shared_ptr<const ast::Node> node, Any &result) const override {
                 NumeralT numeral{};
                 if (!this->matchNodeType(node, numeral))
-                    return false;
+                    return this->generateUnmatchedReport("Got incorrect node type: " + node->getNodeName());
 
                 for (const auto &filter: filters)
                     if (!filter.predicate(numeral))
-                        return false;
+                        return this->generateUnmatchedReport("Condition not satisfied: " + filter.description);
 
                 result = this->mapping(numeral);
                 return true;

@@ -5,7 +5,6 @@
 #include <catch2/catch.hpp>
 
 #include "matchers/UnmatchedWithReason.h"
-#include "matchers/VectorApproxMatcher.h"
 
 #include "pyon/Matcher.h"
 #include "pyon/Parser.h"
@@ -21,7 +20,7 @@ TEST_CASE("Matcher: Int") {
     SECTION("default") {
         CHECK_THAT(MatcherInt{}.match(Parser::parse("True"), result),
                    UnmatchedWithReason(R"(Matching Integer failed:
-✖ Got incorrect node type: Boolean,
+✖ Got incorrect node type: Boolean
 ✓ Expected format: Integer)"));
 
         CHECK(MatcherInt{}.match(Parser::parse("7"), result));
@@ -35,7 +34,7 @@ TEST_CASE("Matcher: Int") {
 
             CHECK_THAT(matcher.match(Parser::parse("0"), result),
                        UnmatchedWithReason(R"(Matching Integer failed:
-✖ Condition not satisfied: > 0,
+✖ Condition not satisfied: > 0
 ✓ Expected format: Integer, > 0)"));
 
             CHECK(matcher.match(Parser::parse("7"), result));
@@ -162,7 +161,7 @@ TEST_CASE("Matcher: Float") {
 
     CHECK_THAT(MatcherFloat{}.match(Parser::parse("True"), result),
                UnmatchedWithReason(R"(Matching Float failed:
-✖ Got incorrect node type: Boolean,
+✖ Got incorrect node type: Boolean
 ✓ Expected format: Float)"));
 
     REQUIRE(MatcherFloat{}.match(Parser::parse("7.5"), result));

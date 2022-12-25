@@ -33,21 +33,21 @@ namespace pyon::ast {
         static std::string nameNodeType(Type type) {
             switch (type) {
                 case INT:
-                    return "INT";
+                    return "Integer";
                 case FLOAT:
-                    return "FLOAT";
+                    return "Float";
                 case BOOLEAN:
-                    return "BOOLEAN";
+                    return "Boolean";
                 case STRING:
-                    return "STRING";
+                    return "String";
                 case NONE:
-                    return "NONE";
+                    return "None";
                 case ARRAY:
-                    return "ARRAY";
+                    return "Array";
                 case DICTIONARY:
-                    return "DICTIONARY";
+                    return "Dictionary";
                 case DATACLASS:
-                    return "DATACLASS";
+                    return "Dataclass";
                 default:
                     throw std::runtime_error("Unknown node type");
             }
@@ -75,6 +75,7 @@ namespace pyon::ast {
         }
 
         [[nodiscard]] Type getType() const { return this->nodeType; }
+        [[nodiscard]] std::string getNodeName() const { return Node::nameNodeType(this->nodeType); }
     };
 } // ast
 
