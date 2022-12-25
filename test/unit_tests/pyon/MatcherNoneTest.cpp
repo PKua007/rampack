@@ -19,7 +19,12 @@ TEST_CASE("Matcher: None") {
 
     SECTION("default map") {
         MatcherNone matcher;
-        CHECK_FALSE(matcher.match(Parser::parse("45"), result));
+
+        CHECK_THAT(matcher.match(Parser::parse("45"), result),
+                   UnmatchedWithReason(R"(Matching None failed:
+✖ Got incorrect node type: Integer
+✓ Expected format: None)"));
+
         CHECK(matcher.match(Parser::parse("None"), result));
         CHECK(result.isEmpty());
         CHECK(matcher.outline(4) == "    None");
