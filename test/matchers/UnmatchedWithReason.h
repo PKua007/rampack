@@ -28,7 +28,7 @@ protected:
 };
 
 
-std::ostream &operator<<(std::ostream &out, const pyon::matcher::MatchReport &report) {
+inline std::ostream &operator<<(std::ostream &out, const pyon::matcher::MatchReport &report) {
     if (report.isMatched())
         return out << "matched";
     else
