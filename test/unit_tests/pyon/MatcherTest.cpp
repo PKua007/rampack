@@ -14,6 +14,8 @@
 
 #include <catch2/catch.hpp>
 
+#include "matchers/UnmatchedWithReason.h"
+
 #include "pyon/Matcher.h"
 #include "pyon/Parser.h"
 
