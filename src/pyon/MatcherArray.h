@@ -105,7 +105,7 @@ namespace pyon::matcher {
             this->size(size_);
         }
 
-        bool match(std::shared_ptr<const ast::Node> node, Any &result) const override;
+        MatchReport match(std::shared_ptr<const ast::Node> node, Any &result) const override;
         [[nodiscard]] std::string outline(std::size_t indent) const override;
 
         template<typename T, std::size_t SIZE>

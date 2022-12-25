@@ -53,7 +53,7 @@ namespace pyon::matcher {
                 return this->concrete();
             }
 
-            bool match(std::shared_ptr<const ast::Node> node, Any &result) const override {
+            MatchReport match(std::shared_ptr<const ast::Node> node, Any &result) const override {
                 NumeralT numeral{};
                 if (!this->matchNodeType(node, numeral))
                     return false;

@@ -127,7 +127,7 @@ namespace pyon::matcher {
         return out.str();
     }
 
-    bool MatcherDictionary::match(std::shared_ptr<const ast::Node> node, Any &result) const {
+    MatchReport MatcherDictionary::match(std::shared_ptr<const ast::Node> node, Any &result) const {
         if (node->getType() != ast::Node::DICTIONARY)
             return false;
 
