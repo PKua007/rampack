@@ -119,7 +119,7 @@ namespace pyon::matcher {
         return *this;
     }
 
-    bool MatcherDataclass::match(std::shared_ptr<const ast::Node> node, Any &result) const {
+    MatchReport MatcherDataclass::match(std::shared_ptr<const ast::Node> node, Any &result) const {
         if (node->getType() != ast::Node::DATACLASS)
             return false;
 

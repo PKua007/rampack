@@ -18,7 +18,7 @@ namespace pyon::matcher {
         this->anyOf(values);
     }
 
-    bool MatcherString::match(std::shared_ptr<const ast::Node> node, Any &result) const {
+    MatchReport MatcherString::match(std::shared_ptr<const ast::Node> node, Any &result) const {
         if (node->getType() != ast::Node::STRING)
             return false;
 

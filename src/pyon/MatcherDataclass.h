@@ -175,7 +175,7 @@ namespace pyon::matcher {
         MatcherDataclass &variadicArguments(const MatcherArray &variadicMatcher = MatcherArray{});
         MatcherDataclass &variadicKeywordArguments(const MatcherDictionary &variadicMatcher = MatcherDictionary{});
 
-        bool match(std::shared_ptr<const ast::Node> node, Any &result) const override;
+        MatchReport match(std::shared_ptr<const ast::Node> node, Any &result) const override;
         [[nodiscard]] std::string outline(std::size_t indent) const override;
 
         MatcherDataclass &mapTo(const std::function<Any(const DataclassData&)> &mapping_);

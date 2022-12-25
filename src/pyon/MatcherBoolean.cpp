@@ -7,7 +7,7 @@
 #include "MatcherBoolean.h"
 
 
-bool pyon::matcher::MatcherBoolean::match(std::shared_ptr<const ast::Node> node, Any &result) const {
+pyon::matcher::MatchReport pyon::matcher::MatcherBoolean::match(std::shared_ptr<const ast::Node> node, Any &result) const {
     if (node->getType() != ast::Node::BOOLEAN)
         return false;
 

@@ -8,7 +8,7 @@
 
 
 namespace pyon::matcher {
-    bool MatcherAlternative::match(std::shared_ptr<const ast::Node> node, Any &result) const {
+    MatchReport MatcherAlternative::match(std::shared_ptr<const ast::Node> node, Any &result) const {
         for (const auto &alternative : this->alternatives)
             if (alternative->match(node, result))
                 return true;

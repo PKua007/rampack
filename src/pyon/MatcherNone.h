@@ -18,7 +18,7 @@ namespace pyon::matcher {
     public:
         [[nodiscard]] MatcherNone copy() const { return *this; }
 
-        bool match(std::shared_ptr<const ast::Node> node, Any &result) const override;
+        MatchReport match(std::shared_ptr<const ast::Node> node, Any &result) const override;
         [[nodiscard]] std::string outline(std::size_t indent) const override;
 
         MatcherNone &mapTo(const std::function<Any()> &mapping_);
