@@ -16,9 +16,9 @@
  */
 class Version {
 private:
-    std::size_t major{};
-    std::size_t minor{};
-    std::size_t patch{};
+    std::size_t major_{};
+    std::size_t minor_{};
+    std::size_t patch_{};
 
     static std::size_t parseToken(std::string token);
 
@@ -29,28 +29,28 @@ public:
     Version() = default;
 
     /**
-     * @brief Constructor for @a major.0.0 version, where @a major can be of any type implicitly convertible to
+     * @brief Constructor for @a major_.0.0 version, where @a major_ can be of any type implicitly convertible to
      * @a std::size_t.
      * @details It is templated in order to prevent overload resolution from using Version(const char*) constructor for
      * some integral types such as @a int.
      */
     template<typename MAJOR_T>
-    constexpr Version(MAJOR_T major)
-            : major(major)      // () to allow narrowing conversion
+    constexpr Version(MAJOR_T major_)
+            : major_(major_)      // () to allow narrowing conversion
     { }
 
     /**
-     * @brief Constructor for @a major.@a minor.0 version.
+     * @brief Constructor for @a major_.@a minor_.0 version.
      */
-    constexpr Version(std::size_t major, std::size_t minor)
-            : major{major}, minor{minor}
+    constexpr Version(std::size_t major_, std::size_t minor_)
+            : major_{major_}, minor_{minor_}
     { }
 
     /**
-     * @brief Constructor for @a major.@a minor.@a patch version.
+     * @brief Constructor for @a major_.@a minor_.@a patch_ version.
      */
-    constexpr Version(std::size_t major, std::size_t minor, std::size_t patch)
-            : major{major}, minor{minor}, patch{patch}
+    constexpr Version(std::size_t major_, std::size_t minor_, std::size_t patch_)
+            : major_{major_}, minor_{minor_}, patch_{patch_}
     { }
 
     /**
@@ -64,7 +64,7 @@ public:
     Version(const char *versionStr) : Version(std::string{versionStr}) { }
 
     friend bool operator==(const Version &lhs, const Version &rhs) {
-        return std::tie(lhs.major, lhs.minor, lhs.patch) == std::tie(rhs.major, rhs.minor, rhs.patch);
+        return std::tie(lhs.major_, lhs.minor_, lhs.patch_) == std::tie(rhs.major_, rhs.minor_, rhs.patch_);
     }
 
     friend bool operator!=(const Version &lhs, const Version &rhs) {
@@ -72,7 +72,7 @@ public:
     }
 
     friend bool operator<(const Version &lhs, const Version &rhs) {
-        return std::tie(lhs.major, lhs.minor, lhs.patch) < std::tie(rhs.major, rhs.minor, rhs.patch);
+        return std::tie(lhs.major_, lhs.minor_, lhs.patch_) < std::tie(rhs.major_, rhs.minor_, rhs.patch_);
     }
 
     friend bool operator>(const Version &lhs, const Version &rhs) {
@@ -91,9 +91,9 @@ public:
 
     [[nodiscard]] std::string str() const;
 
-    [[nodiscard]] constexpr std::size_t getMajor() const { return this->major; }
-    [[nodiscard]] constexpr std::size_t getMinor() const { return this->minor; }
-    [[nodiscard]] constexpr std::size_t getPatch() const { return this->patch; }
+    [[nodiscard]] constexpr std::size_t getMajor() const { return this->major_; }
+    [[nodiscard]] constexpr std::size_t getMinor() const { return this->minor_; }
+    [[nodiscard]] constexpr std::size_t getPatch() const { return this->patch_; }
 };
 
 

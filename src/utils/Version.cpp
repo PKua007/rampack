@@ -14,11 +14,11 @@ Version::Version(const std::string &versionStr) {
     Expects(!tokens.empty() && tokens.size() <= 3);
     switch (tokens.size()) {
         case 3:
-            this->patch = Version::parseToken(tokens[2]);
+            this->patch_ = Version::parseToken(tokens[2]);
         case 2:
-            this->minor = Version::parseToken(tokens[1]);
+            this->minor_ = Version::parseToken(tokens[1]);
         case 1:
-            this->major = Version::parseToken(tokens[0]);
+            this->major_ = Version::parseToken(tokens[0]);
             break;
         default:
             throw std::runtime_error("");
@@ -44,5 +44,5 @@ std::string Version::str() const {
 }
 
 std::ostream &operator<<(std::ostream &os, const Version &version) {
-    return os << version.major << "." << version.minor << "." << version.patch;
+    return os << version.major_ << "." << version.minor_ << "." << version.patch_;
 }
