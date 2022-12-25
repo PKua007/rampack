@@ -12,8 +12,13 @@ namespace pyon::matcher {
     }
 
     MatchReport MatcherNone::match(std::shared_ptr<const ast::Node> node, Any &result) const {
-        if (node->getType() != ast::Node::NONE)
-            return false;
+        if (node->getType() != ast::Node::NONE) {
+            std::ostringstream out;
+            out << "Matching None failed:" << std::endl;
+            out << "✖ Got incorrect node type: " << node->getNodeName() << std::endl;
+            out << "✓ Expected format: None";
+            return out.str();
+        }
 
         result = this->mapping();
         return true;
