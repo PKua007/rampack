@@ -18,6 +18,21 @@ namespace pyon::matcher {
         using PyonException::PyonException;
     };
 
+    class MatchReport {
+    private:
+        bool matched{};
+        std::string reason;
+
+    public:
+        MatchReport() = default;
+        MatchReport(bool matched) : matched{matched} { }
+        MatchReport(std::string reason) : matched{false}, reason{std::move(reason)} { }
+
+        [[nodiscard]] operator bool() const { return this->matched; }
+        [[nodiscard]] bool isMatched() const { return this->matched; }
+        [[nodiscard]] const std::string &getReason() const { return this->reason; }
+    };
+
     class MatcherBase {
     public:
         virtual ~MatcherBase() = default;
