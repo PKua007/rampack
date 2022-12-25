@@ -18,6 +18,8 @@ namespace pyon::matcher {
         std::function<Any(bool)> mapping = [](bool b) { return b; };
         std::optional<bool> filterValue;
 
+        [[nodiscard]] std::string generateUnmatchedReport(const std::string &reason) const;
+
     public:
         MatcherBoolean() = default;
         explicit MatcherBoolean(bool b) : filterValue{b} { }

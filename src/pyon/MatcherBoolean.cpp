@@ -7,14 +7,22 @@
 #include "MatcherBoolean.h"
 
 
+std::string pyon::matcher::MatcherBoolean::generateUnmatchedReport(const std::string &reason) const {
+    std::ostringstream out;
+    out << "Matching Boolean failed:" << std::endl;
+    out << "✖ " << reason << std::endl;
+    out << "✓ Expected format: " << this->outline(0);
+    return out.str();
+}
+
 pyon::matcher::MatchReport pyon::matcher::MatcherBoolean::match(std::shared_ptr<const ast::Node> node, Any &result) const {
     if (node->getType() != ast::Node::BOOLEAN)
-        return false;
+        return this->generateUnmatchedReport("Got incorrect node type: " + node->getNodeName());
 
     bool b = node->as<ast::NodeBoolean>()->getValue();
     if (this->filterValue.has_value())
         if (*this->filterValue != b)
-            return false;
+            return this->generateUnmatchedReport(b ? "Boolean is True" : "Boolean is False");
 
     result = this->mapping(b);
     return true;

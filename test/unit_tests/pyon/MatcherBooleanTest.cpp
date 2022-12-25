@@ -18,7 +18,11 @@ TEST_CASE("Matcher: Boolean") {
     Any result;
 
     SECTION("default") {
-        CHECK_FALSE(MatcherBoolean{}.match(Parser::parse("56"), result));
+        CHECK_THAT(MatcherBoolean{}.match(Parser::parse("56"), result),
+                   UnmatchedWithReason(R"(Matching Boolean failed:
+✖ Got incorrect node type: Integer
+✓ Expected format: Boolean)"));
+
         CHECK(MatcherBoolean{}.match(Parser::parse("True"), result));
         CHECK(result.as<bool>());
         CHECK(MatcherBoolean{}.match(Parser::parse("False"), result));
@@ -31,7 +35,14 @@ TEST_CASE("Matcher: Boolean") {
             auto matcher1 = MatcherBoolean{true};
             auto matcher2 = MatcherBoolean{}.isTrue();
             auto matcher = GENERATE_COPY(matcher1, matcher2);
-            CHECK_FALSE(matcher.match(Parser::parse("False"), result));
+
+            CHECK_THAT(matcher.match(Parser::parse("False"), result),
+                       UnmatchedWithReason(R"(Matching Boolean failed:
+✖ Boolean is False
+✓ Expected format: Boolean equal
+
+True)"));
+
             CHECK(matcher.match(Parser::parse("True"), result));
             CHECK(matcher.outline(4) == "    Boolean equal True");
         }
@@ -40,7 +51,12 @@ TEST_CASE("Matcher: Boolean") {
             auto matcher1 = MatcherBoolean{false};
             auto matcher2 = MatcherBoolean{}.isFalse();
             auto matcher = GENERATE_COPY(matcher1, matcher2);
-            CHECK_FALSE(matcher.match(Parser::parse("True"), result));
+
+            CHECK_THAT(matcher.match(Parser::parse("True"), result),
+                       UnmatchedWithReason(R"(Matching Boolean failed:
+✖ Boolean is True
+✓ Expected format: Boolean equal False)"));
+
             CHECK(matcher.match(Parser::parse("False"), result));
             CHECK(matcher.outline(4) == "    Boolean equal False");
         }
