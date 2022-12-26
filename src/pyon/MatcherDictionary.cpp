@@ -146,33 +146,36 @@ namespace pyon::matcher {
         std::map<std::string, Any> dictDataMap;
         for (const auto &nodeDictElem: nodeDict) {
             Any elemResult;
-
-            bool matched = false;
-            for (const auto &keyMatcher : this->keyMatchers) {
-                if (keyMatcher.keyPredicate(nodeDictElem.first)) {
-                    auto matchReport = keyMatcher.matcher->match(nodeDictElem.second, elemResult);
-                    if (!matchReport)
-                        return this->generateKeyUnmatchedReport(nodeDictElem.first, matchReport.getReason());
-                    dictDataMap[nodeDictElem.first] = elemResult;
-                    matched = true;
-                    break;
-                }
-            }
-            if (matched)
-                continue;
-
-            if (this->defaultMatcher != nullptr) {
-                auto matchReport = this->defaultMatcher->match(nodeDictElem.second, elemResult);
-                if (!matchReport)
-                    return this->generateKeyUnmatchedReport(nodeDictElem.first, matchReport.getReason());
-                dictDataMap[nodeDictElem.first] = elemResult;
-                continue;
-            }
-
-            dictDataMap[nodeDictElem.first] = nodeDictElem.second;
+            MatchReport matchReport = this->matchKey(nodeDictElem.first, nodeDictElem.second, elemResult);
+            if (!matchReport)
+                return matchReport.getReason();
+            dictDataMap[nodeDictElem.first] = elemResult;
         }
 
         dictData = DictionaryData(std::move(dictDataMap));
+        return true;
+    }
+
+    MatchReport MatcherDictionary::matchKey(const std::string &key, const std::shared_ptr<const ast::Node> &value,
+                                            Any &elemResult) const
+    {
+        for (const auto &keyMatcher : this->keyMatchers) {
+            if (keyMatcher.keyPredicate(key)) {
+                auto matchReport = keyMatcher.matcher->match(value, elemResult);
+                if (!matchReport)
+                    return this->generateKeyUnmatchedReport(key, matchReport.getReason());
+                return true;
+            }
+        }
+
+        if (this->defaultMatcher == nullptr) {
+            elemResult = value;
+            return true;
+        }
+
+        auto matchReport = this->defaultMatcher->match(value, elemResult);
+        if (!matchReport)
+            return this->generateKeyUnmatchedReport(key, matchReport.getReason());
         return true;
     }
 
