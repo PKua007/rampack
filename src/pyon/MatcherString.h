@@ -24,6 +24,8 @@ namespace pyon::matcher {
         std::vector<Filter> filters;
         std::function<Any(const std::string&)> mapping = [](const std::string &str) { return str; };
 
+        std::string generateUnmatchedReport(const std::string &reason) const;
+
     public:
         MatcherString() = default;
 
