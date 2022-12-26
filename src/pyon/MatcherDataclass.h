@@ -182,6 +182,10 @@ namespace pyon::matcher {
         validateExcessiveArguments(const std::shared_ptr<const ast::NodeArray> &nodePositional) const;
 
         [[nodiscard]] MatchReport
+        validateRedefinedArguments(const std::shared_ptr<const ast::NodeArray> &nodePositional,
+                                   const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const;
+
+        [[nodiscard]] MatchReport
         validateMissingArguments(const std::shared_ptr<const ast::NodeArray> &nodePositional,
                                  const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const;
 
