@@ -154,9 +154,9 @@ namespace pyon::matcher {
         MatchReport matchKeywordVariadicArguments(DictionaryData &arguments,
                                                   const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const;
 
-        bool emplaceArgument(std::vector<StandardArgument> &standardArgumentsVec,
-                             const StandardArgumentSpecification &argumentSpecification,
-                             const std::shared_ptr<const ast::Node> &argumentNode) const;
+        MatchReport emplaceArgument(std::vector<StandardArgument> &standardArgumentsVec,
+                                    const StandardArgumentSpecification &argumentSpecification,
+                                    const std::shared_ptr<const ast::Node> &argumentNode) const;
 
         void outlineArgumentsSpecification(std::ostringstream &out, std::size_t indent) const;
         void outlineStandardArguments(std::ostringstream &out, std::size_t indent) const;

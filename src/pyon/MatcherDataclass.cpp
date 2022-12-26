@@ -368,8 +368,9 @@ namespace pyon::matcher {
                                                      + " redefined with keyword argument");
             }
 
-            if (!this->emplaceArgument(standardArgumentsVec, argumentSpecification, nodePositional->at(i)))
-                return false;
+            auto matched = this->emplaceArgument(standardArgumentsVec, argumentSpecification, nodePositional->at(i));
+            if (!matched)
+                return matched.getReason();
         }
 
         // Construct and match the rest by default values or keyword arguments
@@ -378,13 +379,14 @@ namespace pyon::matcher {
             if (nodeKeyword->hasKey(argumentSpecification.getName())) {
                 const auto &argumentNode = nodeKeyword->at(argumentSpecification.getName());
                 Any argumentValue;
-                if (!this->emplaceArgument(standardArgumentsVec, argumentSpecification, argumentNode))
-                    return false;
+                auto matched = this->emplaceArgument(standardArgumentsVec, argumentSpecification, argumentNode);
+                if (!matched)
+                    return matched.getReason();
             } else if (argumentSpecification.hasDefaultValue()) {
                 standardArgumentsVec.emplace_back(argumentSpecification.getName(),
                                                   *argumentSpecification.getDefaultValue());
             } else {
-                throw AssertionException("Missing argument should've benn caught earlier");
+                throw AssertionException("Missing argument should've been caught earlier");
             }
         }
 
@@ -392,14 +394,17 @@ namespace pyon::matcher {
         return true;
     }
 
-    bool MatcherDataclass::emplaceArgument(std::vector<StandardArgument> &standardArgumentsVec,
-                                           const StandardArgumentSpecification &argumentSpecification,
-                                           const std::shared_ptr<const ast::Node> &argumentNode) const
+    MatchReport MatcherDataclass::emplaceArgument(std::vector<StandardArgument> &standardArgumentsVec,
+                                                  const StandardArgumentSpecification &argumentSpecification,
+                                                  const std::shared_ptr<const ast::Node> &argumentNode) const
     {
         Any argumentValue;
         if (argumentSpecification.hasMatcher()) {
-            if (!argumentSpecification.getMatcher()->match(argumentNode, argumentValue))
-                return false;
+            auto matched = argumentSpecification.getMatcher()->match(argumentNode, argumentValue);
+            if (!matched) {
+                return this->generateArgumentUnmatchedReport("argument " + quoted(argumentSpecification.getName()),
+                                                             matched.getReason());
+            }
         } else {
             argumentValue = argumentNode;
         }
