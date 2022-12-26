@@ -38,7 +38,7 @@ namespace pyon::matcher {
                 std::ostringstream out;
                 out << "Matching " << this->getName() << " failed:" << std::endl;
                 out << "✖ " << reason << std::endl;
-                out << "✓ Expected format: " << this->outline(0);
+                out << "✓ Expected format: " << this->outline(2).substr(2);
                 return out.str();
             }
 

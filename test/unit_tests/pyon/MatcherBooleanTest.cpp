@@ -39,9 +39,7 @@ TEST_CASE("Matcher: Boolean") {
             CHECK_THAT(matcher.match(Parser::parse("False"), result),
                        UnmatchedWithReason(R"(Matching Boolean failed:
 ✖ Boolean is False
-✓ Expected format: Boolean equal
-
-True)"));
+✓ Expected format: Boolean equal True)"));
 
             CHECK(matcher.match(Parser::parse("True"), result));
             CHECK(matcher.outline(4) == "    Boolean equal True");
