@@ -37,6 +37,21 @@ namespace pyon::matcher {
         std::swap(this->data, data);
     }
 
+    std::string MatcherArray::generateArrayUnmatchedReport(const std::string &reason) const {
+        std::ostringstream out;
+        out << "Matching Array failed:" << std::endl;
+        out << "✖ " << reason << std::endl;
+        out << "✓ Expected format: " << this->outline(2).substr(2);
+        return out.str();
+    }
+
+    std::string MatcherArray::generateIndexUnmatchedReport(std::size_t index, const std::string &reason) const {
+        std::ostringstream out;
+        out << "Matching Array failed: Matching index " << index << " failed:" << std::endl;
+        out << "✖ " << replaceAll(reason, "\n", "\n  ");
+        return out.str();
+    }
+
     MatcherArray::MatcherArray(std::size_t size_) {
         this->size(size_);
     }
@@ -47,7 +62,7 @@ namespace pyon::matcher {
 
     MatchReport MatcherArray::match(std::shared_ptr<const ast::Node> node, Any &result) const {
         if (node->getType() != ast::Node::ARRAY)
-            return false;
+            return this->generateArrayUnmatchedReport("Got incorrect node type: " + node->getNodeName());
 
         const auto &nodeArray = node->as<ast::NodeArray>();
         std::vector<Any> arrayDataVec;
@@ -55,10 +70,12 @@ namespace pyon::matcher {
             arrayDataVec.assign(nodeArray->begin(), nodeArray->end());
         } else {
             arrayDataVec.reserve(nodeArray->size());
-            for (const auto &nodeArrayElem: *nodeArray) {
+            for (std::size_t i{}; i < nodeArray->size(); i++) {
+                const auto &nodeArrayElem = nodeArray->at(i);
                 Any elemResult;
-                if (!this->elementMatcher->match(nodeArrayElem, elemResult))
-                    return false;
+                auto matchReport = this->elementMatcher->match(nodeArrayElem, elemResult);
+                if (!matchReport)
+                    return this->generateIndexUnmatchedReport(i, matchReport.getReason());
                 arrayDataVec.push_back(elemResult);
             }
         }
@@ -66,7 +83,7 @@ namespace pyon::matcher {
 
         for (const auto &filter: this->filters)
             if (!filter.predicate(arrayData))
-                return false;
+                return this->generateArrayUnmatchedReport("Condition not satisfied: " + filter.description);
 
         result = this->mapping(arrayData);
         return true;

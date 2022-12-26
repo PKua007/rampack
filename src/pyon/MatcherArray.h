@@ -14,6 +14,7 @@
 #include "NodeArray.h"
 #include "geometry/Matrix.h"
 #include "geometry/Vector.h"
+#include "utils/Utils.h"
 
 
 namespace pyon::matcher {
@@ -91,6 +92,9 @@ namespace pyon::matcher {
         std::vector<Filter> filters;
         std::function<Any(const ArrayData&)> mapping = [](const ArrayData &array) { return array; };
         std::shared_ptr<MatcherBase> elementMatcher;
+
+        [[nodiscard]] std::string generateArrayUnmatchedReport(const std::string &reason) const;
+        [[nodiscard]] std::string generateIndexUnmatchedReport(std::size_t index, const std::string &reason) const;
 
     public:
         MatcherArray() = default;
