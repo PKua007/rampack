@@ -135,10 +135,21 @@ TEST_CASE("Matcher: Int") {
                     .greater(5)
                     .filter([](long i) { return i % 2 == 0; })
                     .describe("even");
+
             CHECK_FALSE(matcher.match(Parser::parse("4"), result));
-            CHECK_FALSE(matcher.match(Parser::parse("7"), result));
+
+            CHECK_THAT(matcher.match(Parser::parse("7"), result),
+                       UnmatchedWithReason(R"(Matching Integer failed:
+✖ Condition not satisfied: even
+✓ Expected format: Integer:
+  - > 5
+  - even)"));
+
             CHECK(matcher.match(Parser::parse("8"), result));
-            CHECK(matcher.outline(4) == "    Integer:\n    - > 5\n    - even");
+
+            CHECK(matcher.outline(4) == R"(    Integer:
+    - > 5
+    - even)");
         }
     }
 
