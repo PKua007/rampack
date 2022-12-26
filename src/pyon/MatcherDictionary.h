@@ -75,6 +75,8 @@ namespace pyon::matcher {
         [[nodiscard]] std::string generateDictionaryUnmatchedReport(const std::string &reason) const;
         [[nodiscard]] std::string generateKeyUnmatchedReport(const std::string &key, const std::string &reason) const;
         [[nodiscard]] MatchReport matchKeys(const ast::NodeDictionary &nodeDict, DictionaryData &dictData) const;
+        [[nodiscard]] MatchReport matchKey(const std::string &key, const std::shared_ptr<const ast::Node> &value,
+                                           Any &elemResult) const;
 
     public:
         MatcherDictionary() = default;
