@@ -151,6 +151,38 @@ TEST_CASE("Matcher: Array") {
         }
     }
 
+    SECTION("error reporting") {
+        SECTION("node type") {
+            CHECK_THAT(MatcherArray{}.match(Parser::parse("True"), result),
+                       UnmatchedWithReason(R"(Matching Array failed:
+✖ Got incorrect node type: Boolean
+✓ Expected format: Array)"));
+        }
+
+        SECTION("value unmatched") {
+            auto matcher = MatcherArray{}.elementsMatch(MatcherInt{}.positive().less(5));
+            CHECK_THAT(matcher.match(Parser::parse("[3, 6]"), result),
+                       UnmatchedWithReason(R"(Matching Array failed: Matching index 1 failed:
+✖ Matching Integer failed:
+  ✖ Condition not satisfied: < 5
+  ✓ Expected format: Integer:
+    - > 0
+    - < 5)"));
+        }
+
+        SECTION("filter unmatched") {
+            auto matcher = MatcherArray{}
+                .sizeAtLeast(2)
+                .sizeAtMost(4);
+            CHECK_THAT(matcher.match(Parser::parse("[1, 2, 3, 4, 5]"), result),
+                       UnmatchedWithReason(R"(Matching Array failed:
+✖ Condition not satisfied: with size <= 4
+✓ Expected format: Array:
+  - with size >= 2
+  - with size <= 4)"));
+        }
+    }
+
     SECTION("maps") {
         SECTION("map to std::array") {
             auto matcher = MatcherArray(MatcherInt{}.mapTo<int>(), 3).mapToStdArray<int, 3>();
