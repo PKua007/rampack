@@ -310,50 +310,9 @@ namespace pyon::matcher {
                                              const std::shared_ptr<const ast::NodeArray> &nodePositional,
                                              const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const
     {
-        auto[minArguments, maxArguments] = this->countRequiredArguments();
-        std::size_t argumentsSize = nodePositional->size();
-        if (argumentsSize > maxArguments) {
-            std::ostringstream out;
-            out << "Expected ";
-            if (minArguments == maxArguments) {
-                if (minArguments == 1)
-                    out << "1 positional argument";
-                else
-                    out << minArguments << " positional arguments";
-            } else {
-                out << "from " << minArguments << " to " << maxArguments << " positional arguments";
-            }
-            out << ", but " << argumentsSize;
-            out << (argumentsSize < 2 ? " was given" : " were given");
-
-            return this->generateArgumentsReport(out.str());
-        }
-
-        std::vector<std::string> missingArguments;
-        for (std::size_t i = nodePositional->size(); i < this->argumentsSpecification.size(); i++) {
-            const auto &argumentSpecification = this->argumentsSpecification[i];
-            if (nodeKeyword->hasKey(argumentSpecification.getName()))
-                continue;
-            if (argumentSpecification.hasDefaultValue())
-                continue;
-            missingArguments.push_back(argumentSpecification.getName());
-        }
-
-        if (!missingArguments.empty()) {
-            std::transform(missingArguments.begin(), missingArguments.end(), missingArguments.begin(), quoted);
-            std::ostringstream out;
-            if (missingArguments.size() == 1)
-                out << "Missing 1 required positional argument: ";
-            else
-                out << "Missing " << missingArguments.size() << " required positional arguments: ";
-            out << implode(missingArguments, ", ");
-            return this->generateArgumentsReport(out.str());
-        }
-
-        if (!this->hasKeywordVariadicArguments)
-            for (const auto &[key, value] : *nodeKeyword)
-                if (!isStandardArgument(key))
-                    return this->generateArgumentsReport("Unknown argument " + quoted(key));
+        auto matchReport = this->validateArguments(nodePositional, nodeKeyword);
+        if (!matchReport)
+            return matchReport.getReason();
 
         std::vector<StandardArgument> standardArgumentsVec;
         standardArgumentsVec.reserve(this->argumentsSpecification.size());
@@ -461,5 +420,87 @@ namespace pyon::matcher {
         return std::find_if(this->argumentsSpecification.begin(), this->argumentsSpecification.end(),
                             isStandardArgument)
                != this->argumentsSpecification.end();
+    }
+
+    MatchReport MatcherDataclass::validateArguments(const std::shared_ptr<const ast::NodeArray> &nodePositional,
+                                                    const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const
+    {
+        MatchReport matchReport = this->validateExcessiveArguments(nodePositional);
+        if (!matchReport)
+            return matchReport;
+
+        matchReport = this->validateMissingArguments(nodePositional, nodeKeyword);
+        if (!matchReport)
+            return matchReport;
+
+        matchReport = this->validateUnknownKeywordArguments(nodeKeyword);
+        if (!matchReport)
+            return matchReport;
+
+        return true;
+    }
+
+    MatchReport
+    MatcherDataclass::validateExcessiveArguments(const std::shared_ptr<const ast::NodeArray> &nodePositional) const {
+        auto[minArguments, maxArguments] = this->countRequiredArguments();
+        std::size_t argumentsSize = nodePositional->size();
+        if (argumentsSize > maxArguments) {
+            std::ostringstream out;
+            out << "Expected ";
+            if (minArguments == maxArguments) {
+                if (minArguments == 1)
+                    out << "1 positional argument";
+                else
+                    out << minArguments << " positional arguments";
+            } else {
+                out << "from " << minArguments << " to " << maxArguments << " positional arguments";
+            }
+            out << ", but " << argumentsSize;
+            out << (argumentsSize < 2 ? " was given" : " were given");
+
+            return this->generateArgumentsReport(out.str());
+        }
+
+        return true;
+    }
+
+    MatchReport
+    MatcherDataclass::validateMissingArguments(const std::shared_ptr<const ast::NodeArray> &nodePositional,
+                                               const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const
+    {
+        std::vector<std::string> missingArguments;
+        for (std::size_t i = nodePositional->size(); i < this->argumentsSpecification.size(); i++) {
+            const auto &argumentSpecification = this->argumentsSpecification[i];
+            if (nodeKeyword->hasKey(argumentSpecification.getName()))
+                continue;
+            if (argumentSpecification.hasDefaultValue())
+                continue;
+            missingArguments.push_back(argumentSpecification.getName());
+        }
+
+        if (!missingArguments.empty()) {
+            std::transform(missingArguments.begin(), missingArguments.end(), missingArguments.begin(), quoted);
+            std::ostringstream out;
+            if (missingArguments.size() == 1)
+                out << "Missing 1 required positional argument: ";
+            else
+                out << "Missing " << missingArguments.size() << " required positional arguments: ";
+            out << implode(missingArguments, ", ");
+            return this->generateArgumentsReport(out.str());
+        }
+
+        return true;
+    }
+
+    MatchReport
+    MatcherDataclass
+        ::validateUnknownKeywordArguments(const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const
+    {
+        if (!this->hasKeywordVariadicArguments)
+            for (const auto &[key, value] : *nodeKeyword)
+                if (!isStandardArgument(key))
+                    return this->generateArgumentsReport("Unknown argument " + quoted(key));
+
+        return true;
     }
 } // matcher
