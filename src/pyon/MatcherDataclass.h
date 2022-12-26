@@ -174,6 +174,17 @@ namespace pyon::matcher {
         [[nodiscard]] std::pair<std::size_t, std::size_t> countRequiredArguments() const;
         [[nodiscard]] bool isStandardArgument(const std::string &argumentName) const;
 
+        [[nodiscard]] MatchReport
+        validateArguments(const std::shared_ptr<const ast::NodeArray> &nodePositional,
+                          const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const;
+
+        [[nodiscard]] MatchReport
+        validateExcessiveArguments(const std::shared_ptr<const ast::NodeArray> &nodePositional) const;
+
+        [[nodiscard]] MatchReport
+        validateMissingArguments(const std::shared_ptr<const ast::NodeArray> &nodePositional,
+                                 const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const;
+
     public:
         explicit MatcherDataclass(std::string className);
         MatcherDataclass(std::string className, std::vector<StandardArgumentSpecification> argumentsSpecification);
@@ -191,6 +202,8 @@ namespace pyon::matcher {
         MatcherDataclass &filter(const std::function<bool(const DataclassData&)> &filter);
         MatcherDataclass &describe(const std::string &description);
 
+        MatchReport
+        validateUnknownKeywordArguments(const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const;
     };
 } // matcher
 
