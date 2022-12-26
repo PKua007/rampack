@@ -91,6 +91,49 @@ TEST_CASE("Matcher: Dictionary") {
       - other keys           : Integer)");
     }
 
+    SECTION("error reporting") {
+        SECTION("node type") {
+            CHECK_THAT(MatcherDictionary{}.match(Parser::parse("True"), result),
+                       UnmatchedWithReason(R"(Matching Dictionary failed:
+✖ Got incorrect node type: Boolean
+✓ Expected format: Dictionary)"));
+        }
+
+        SECTION("default value unmatched") {
+            auto matcher = MatcherDictionary{}
+                .valuesMatch(MatcherInt{}.positive().less(5))
+                .valueAtKeyMatches("key1", MatcherString{}.alpha().nonEmpty());
+
+            CHECK_THAT(matcher.match(Parser::parse(R"({"key1": "123"})"), result),
+                       UnmatchedWithReason(R"(Matching Dictionary failed: Matching key "key1" failed:
+✖ Matching String failed:
+  ✖ Condition not satisfied: with only letters
+  ✓ Expected format: String:
+    - with only letters
+    - non-empty)"));
+
+            CHECK_THAT(matcher.match(Parser::parse(R"({"key2": -1})"), result),
+                       UnmatchedWithReason(R"(Matching Dictionary failed: Matching key "key2" failed:
+✖ Matching Integer failed:
+  ✖ Condition not satisfied: > 0
+  ✓ Expected format: Integer:
+    - > 0
+    - < 5)"));
+        }
+
+        SECTION("filter unmatched") {
+            auto matcher = MatcherDictionary{}
+                .sizeAtLeast(1)
+                .sizeAtMost(2);
+            CHECK_THAT(matcher.match(Parser::parse(R"({"key1": 1, "key2": 2, "key3": 3})"), result),
+                       UnmatchedWithReason(R"(Matching Dictionary failed:
+✖ Condition not satisfied: with size <= 2
+✓ Expected format: Dictionary:
+  - with size >= 1
+  - with size <= 2)"));
+        }
+    }
+
     SECTION("filters") {
         SECTION("custom filter") {
             auto keysAreAlphanumeric = [](const DictionaryData &dict) {

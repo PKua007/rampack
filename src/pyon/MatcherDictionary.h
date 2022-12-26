@@ -72,6 +72,8 @@ namespace pyon::matcher {
         void addFilters(std::vector<std::string> &bulletPoints, std::size_t &linesAtLeast) const;
         [[nodiscard]] std::string doPrintOutline(const std::vector<std::string> &bulletPoints, std::size_t linesAtLeast,
                                                  std::size_t indent) const;
+        [[nodiscard]] std::string generateDictionaryUnmatchedReport(const std::string &reason) const;
+        [[nodiscard]] std::string generateKeyUnmatchedReport(const std::string &key, const std::string &reason) const;
 
     public:
         MatcherDictionary() = default;

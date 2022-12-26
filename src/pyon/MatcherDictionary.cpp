@@ -127,9 +127,24 @@ namespace pyon::matcher {
         return out.str();
     }
 
+    std::string MatcherDictionary::generateDictionaryUnmatchedReport(const std::string &reason) const {
+        std::ostringstream out;
+        out << "Matching Dictionary failed:" << std::endl;
+        out << "✖ " << reason << std::endl;
+        out << "✓ Expected format: " << this->outline(2).substr(2);
+        return out.str();
+    }
+
+    std::string MatcherDictionary::generateKeyUnmatchedReport(const std::string &key, const std::string &reason) const {
+        std::ostringstream out;
+        out << "Matching Dictionary failed: Matching key \"" << key << "\" failed:" << std::endl;
+        out << "✖ " << replaceAll(reason, "\n", "\n  ");
+        return out.str();
+    }
+
     MatchReport MatcherDictionary::match(std::shared_ptr<const ast::Node> node, Any &result) const {
         if (node->getType() != ast::Node::DICTIONARY)
-            return false;
+            return this->generateDictionaryUnmatchedReport("Got incorrect node type: " + node->getNodeName());
 
         const auto &nodeDict = node->as<ast::NodeDictionary>();
         std::map<std::string, Any> dictDataMap;
@@ -140,8 +155,9 @@ namespace pyon::matcher {
             bool matched = false;
             for (const auto &keyMatcher : this->keyMatchers) {
                 if (keyMatcher.keyPredicate(nodeDictElem.first)) {
-                    if (!keyMatcher.matcher->match(nodeDictElem.second, elemResult))
-                        return false;
+                    auto matchReport = keyMatcher.matcher->match(nodeDictElem.second, elemResult);
+                    if (!matchReport)
+                        return this->generateKeyUnmatchedReport(nodeDictElem.first, matchReport.getReason());
                     hintIt = dictDataMap.emplace_hint(hintIt, nodeDictElem.first, elemResult);
                     matched = true;
                     break;
@@ -151,8 +167,9 @@ namespace pyon::matcher {
                 continue;
 
             if (this->defaultMatcher != nullptr) {
-                if (!this->defaultMatcher->match(nodeDictElem.second, elemResult))
-                    return false;
+                auto matchReport = this->defaultMatcher->match(nodeDictElem.second, elemResult);
+                if (!matchReport)
+                    return this->generateKeyUnmatchedReport(nodeDictElem.first, matchReport.getReason());
                 hintIt = dictDataMap.emplace_hint(hintIt, nodeDictElem.first, elemResult);
                 continue;
             }
@@ -163,7 +180,7 @@ namespace pyon::matcher {
 
         for (const auto &filter: this->filters)
             if (!filter.predicate(dictData))
-                return false;
+                return this->generateDictionaryUnmatchedReport("Condition not satisfied: " + filter.description);
 
         result = this->mapping(dictData);
         return true;
