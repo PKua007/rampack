@@ -376,9 +376,10 @@ TEST_CASE("Matcher: Dataclass") {
   - arguments: empty)"));
         }
 
-        SECTION("incorrect number of arguments") {
-            SECTION("no default, no variadic") {
-                auto matcher = MatcherDataclass("class").arguments({"arg1", "arg2", "arg3"});
+        SECTION("missing arguments") {
+            auto matcher = MatcherDataclass("class").arguments({"arg1", "arg2", "arg3"});
+
+            SECTION("one") {
                 CHECK_THAT(matcher.match(Parser::parse("class(1, arg3=3)"), result),
                            UnmatchedWithReason(R"(Matching class "class" failed:
 ✖ Missing 1 required positional argument: "arg2"
@@ -389,7 +390,37 @@ TEST_CASE("Matcher: Dataclass") {
     - arg3: any expression)"));
             }
 
-            SECTION("default, no variadic") {
+            SECTION("two") {
+                CHECK_THAT(matcher.match(Parser::parse("class(arg2=2)"), result).getReason(),
+                           Catch::Contains(R"(Missing 2 required positional arguments: "arg1", "arg3")"));
+            }
+        }
+
+        SECTION("excessive arguments") {
+            SECTION("without default") {
+                SECTION("1 instead of 0") {
+                    auto matcher = MatcherDataclass("class");
+                    CHECK_THAT(matcher.match(Parser::parse("class(1)"), result),
+                               UnmatchedWithReason(R"(Matching class "class" failed:
+✖ Expected 0 positional arguments, but 1 was given
+✓ Arguments specification:
+  - arguments: empty)"));
+                }
+
+                SECTION("2 instead of 1") {
+                    auto matcher = MatcherDataclass("class").arguments({"arg1"});
+                    CHECK_THAT(matcher.match(Parser::parse("class(1, 2)"), result).getReason(),
+                               Catch::Contains("Expected 1 positional argument, but 2 were given"));
+                }
+
+                SECTION("3 instead of 2") {
+                    auto matcher = MatcherDataclass("class").arguments({"arg1", "arg2"});
+                    CHECK_THAT(matcher.match(Parser::parse("class(1, 2, 3)"), result).getReason(),
+                               Catch::Contains("Expected 2 positional arguments, but 3 were given"));
+                }
+            }
+
+            SECTION("with default") {
                 auto matcher = MatcherDataclass("class").arguments({"arg1", {"arg2", MatcherInt{}, "0"}});
                 CHECK_THAT(matcher.match(Parser::parse("class(1, 2, 3)"), result),
                            UnmatchedWithReason(R"(Matching class "class" failed:
@@ -398,34 +429,6 @@ TEST_CASE("Matcher: Dataclass") {
   - arguments:
     - arg1: any expression
     - arg2 (=0): Integer)"));
-            }
-
-            SECTION("no default, variadic") {
-                auto matcher = MatcherDataclass("class")
-                        .arguments({"arg1", "arg2"})
-                        .variadicArguments();
-                CHECK_THAT(matcher.match(Parser::parse("class(1)"), result),
-                           UnmatchedWithReason(R"(Matching class "class" failed:
-✖ Missing 1 required positional argument: "arg2"
-✓ Arguments specification:
-  - arguments:
-    - arg1: any expression
-    - arg2: any expression
-  - *args: Array)"));
-            }
-
-            SECTION("default, variadic") {
-                auto matcher = MatcherDataclass("class")
-                        .arguments({"arg1", {"arg2", MatcherInt{}, "0"}})
-                        .variadicArguments();
-                CHECK_THAT(matcher.match(Parser::parse("class()"), result),
-                           UnmatchedWithReason(R"(Matching class "class" failed:
-✖ Missing 1 required positional argument: "arg1"
-✓ Arguments specification:
-  - arguments:
-    - arg1: any expression
-    - arg2 (=0): Integer
-  - *args: Array)"));
             }
         }
 
