@@ -144,26 +144,32 @@ namespace pyon::matcher {
         std::vector<Filter> filters;
         std::function<Any(const DataclassData&)> mapping = [](const DataclassData &dataclass) { return dataclass; };
 
-        bool matchStandardArguments(StandardArguments &arguments,
-                                    const std::shared_ptr<const ast::NodeArray> &nodePositional,
-                                    const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const;
-
-        bool matchVariadicArguments(ArrayData &arguments,
-                                    const std::shared_ptr<const ast::NodeArray> &nodePositional) const;
-
-        bool matchKeywordVariadicArguments(DictionaryData &arguments,
+        MatchReport matchStandardArguments(StandardArguments &arguments,
+                                           const std::shared_ptr<const ast::NodeArray> &nodePositional,
                                            const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const;
+
+        MatchReport matchVariadicArguments(ArrayData &arguments,
+                                           const std::shared_ptr<const ast::NodeArray> &nodePositional) const;
+
+        MatchReport matchKeywordVariadicArguments(DictionaryData &arguments,
+                                                  const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const;
 
         bool emplaceArgument(std::vector<StandardArgument> &standardArgumentsVec,
                              const StandardArgumentSpecification &argumentSpecification,
                              const std::shared_ptr<const ast::Node> &argumentNode) const;
 
+        void outlineArgumentsSpecification(std::ostringstream &out, std::size_t indent) const;
         void outlineStandardArguments(std::ostringstream &out, std::size_t indent) const;
         void outlineArgument(const StandardArgumentSpecification &argument, std::ostringstream &out,
                              std::size_t indent) const;
         void outlineVariadicArguments(std::ostringstream &out, std::size_t indent) const;
         void outlineKeywordVariadicArguments(std::ostringstream &out, std::size_t indent) const;
         void outlineFilters(std::ostringstream &out, std::size_t indent) const;
+
+        [[nodiscard]] std::string generateDataclassUnmatchedReport(const std::string &reason) const;
+        [[nodiscard]] std::string generateArgumentsReport(const std::string &reason) const;
+        [[nodiscard]] std::string generateArgumentUnmatchedReport(const std::string &argumentName,
+                                                                  const std::string &reason) const;
 
     public:
         explicit MatcherDataclass(std::string className);

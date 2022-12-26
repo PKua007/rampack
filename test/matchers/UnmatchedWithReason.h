@@ -23,7 +23,7 @@ public:
 
 protected:
     std::string describe() const override {
-        return "\nis:\nnot matched with reason:\n" + this->reason;
+        return "\nis:\nnot matched with reason:\n\"" + this->reason + "\"";
     }
 };
 
@@ -34,7 +34,7 @@ struct Catch::StringMaker<pyon::matcher::MatchReport> {
         if (report.isMatched())
             return "matched";
         else
-            return "not matched with reason:\n" + report.getReason();
+            return "not matched with reason:\n\"" + report.getReason() + "\"";
     }
 };
 

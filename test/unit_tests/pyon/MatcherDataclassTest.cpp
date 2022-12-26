@@ -357,6 +357,147 @@ TEST_CASE("Matcher: Dataclass") {
         }
     }
 
+    SECTION("error reporting") {
+        SECTION("incorrect node") {
+            auto matcher = MatcherDataclass("class");
+            CHECK_THAT(matcher.match(Parser::parse("[1, 2, 3]"), result),
+                       UnmatchedWithReason(R"(Matching class "class" failed:
+✖ Got incorrect node type: Array
+✓ Expected format: class class:
+  - arguments: empty)"));
+        }
+
+        SECTION("incorrect class name") {
+            auto matcher = MatcherDataclass("class");
+            CHECK_THAT(matcher.match(Parser::parse("not_class()"), result),
+                       UnmatchedWithReason(R"(Matching class "class" failed:
+✖ Got incorrect class name: "not_class"
+✓ Expected format: class class:
+  - arguments: empty)"));
+        }
+
+        SECTION("incorrect number of arguments") {
+            SECTION("no default, no variadic") {
+                auto matcher = MatcherDataclass("class").arguments({"arg1", "arg2"});
+                CHECK_THAT(matcher.match(Parser::parse("class(1)"), result),
+                           UnmatchedWithReason(R"(Matching class "class" failed:
+✖ Expected 2 arguments, but 1 were given
+✓ Arguments specification:
+  - arguments:
+    - arg1: any expression
+    - arg2: any expression)"));
+            }
+
+            SECTION("default, no variadic") {
+                auto matcher = MatcherDataclass("class").arguments({"arg1", {"arg2", MatcherInt{}, "0"}});
+                CHECK_THAT(matcher.match(Parser::parse("class(1, 2, 3)"), result),
+                           UnmatchedWithReason(R"(Matching class "class" failed:
+✖ Expected from 1 to 2 arguments, but 3 were given
+✓ Arguments specification:
+  - arguments:
+    - arg1: any expression
+    - arg2 (=0): Integer)"));
+            }
+
+            SECTION("no default, variadic") {
+                auto matcher = MatcherDataclass("class")
+                        .arguments({"arg1", "arg2"})
+                        .variadicArguments();
+                CHECK_THAT(matcher.match(Parser::parse("class(1)"), result),
+                           UnmatchedWithReason(R"(Matching class "class" failed:
+✖ Expected 2 or more arguments, but 1 were given
+✓ Arguments specification:
+  - arguments:
+    - arg1: any expression
+    - arg2: any expression
+  - *args: Array)"));
+            }
+
+            SECTION("default, variadic") {
+                auto matcher = MatcherDataclass("class")
+                        .arguments({"arg1", {"arg2", MatcherInt{}, "0"}})
+                        .variadicArguments();
+                CHECK_THAT(matcher.match(Parser::parse("class()"), result),
+                           UnmatchedWithReason(R"(Matching class "class" failed:
+✖ Expected 1 or more arguments, but 0 were given
+✓ Arguments specification:
+  - arguments:
+    - arg1: any expression
+    - arg2 (=0): Integer
+  - *args: Array)"));
+            }
+        }
+
+        SECTION("unmatched argument") {
+            auto matcher = MatcherDataclass("class")
+                .arguments({"arg1", {"arg2", MatcherInt{}.positive().less(5)}});
+            CHECK_THAT(matcher.match(Parser::parse("class(6, 6)"), result),
+                       UnmatchedWithReason(R"(Matching class "class" failed: Matching argument "arg2" failed:
+✖ Matching Integer failed:
+  ✖ Condition not satisfied: < 5
+  ✓ Expected format: Integer:
+    - > 0
+    - < 5)"));
+        }
+
+        SECTION("unknown keyword argument") {
+            auto matcher = MatcherDataclass("class").arguments({"arg1", "arg2"});
+            CHECK_THAT(matcher.match(Parser::parse("class(1, 2, arg3=3)"), result),
+                       UnmatchedWithReason(R"(Matching class "class" failed:
+✖ Unknown argument "arg3"
+✓ Arguments specification:
+  - arguments:
+    - arg1: any expression
+    - arg2: any expression)"));
+        }
+
+        SECTION("redefined argument") {
+            auto matcher = MatcherDataclass("class").arguments({"arg1", "arg2"});
+            CHECK_THAT(matcher.match(Parser::parse("class(1, 2, arg2=3)"), result),
+                       UnmatchedWithReason(R"(Matching class "class" failed:
+✖ Positional argument "arg2" redefined with keyword argument
+✓ Arguments specification:
+  - arguments:
+    - arg1: any expression
+    - arg2: any expression)"));
+        }
+
+        SECTION("unmatched variadic arguments") {
+            auto matcher = MatcherDataclass("class").variadicArguments(MatcherArray{}.nonEmpty());
+            CHECK_THAT(matcher.match(Parser::parse("class()"), result),
+                       UnmatchedWithReason(R"(Matching class "class" failed: Matching *args failed:
+✖ Matching Array failed:
+  ✖ Condition not satisfied: non-empty
+  ✓ Expected format: Array, non-empty)"));
+        }
+
+        SECTION("unmatched keyword variadic arguments") {
+            auto matcher = MatcherDataclass("class").variadicKeywordArguments(MatcherDictionary{}.nonEmpty());
+            CHECK_THAT(matcher.match(Parser::parse("class()"), result),
+                       UnmatchedWithReason(R"(Matching class "class" failed: Matching **kwargs failed:
+✖ Matching Dictionary failed:
+  ✖ Condition not satisfied: non-empty
+  ✓ Expected format: Dictionary, non-empty)"));
+        }
+
+        SECTION("unsatisfied condition") {
+            auto matcher = MatcherDataclass("class")
+                .arguments({{"arg1", MatcherInt{}}, {"arg2", MatcherInt{}}})
+                .filter([](const DataclassData &clazz) {
+                    return clazz["arg1"].as<long>() > clazz["arg2"].as<long>();
+                })
+                .describe("arg1 > arg2");
+            CHECK_THAT(matcher.match(Parser::parse("class(1, 3)"), result),
+                       UnmatchedWithReason(R"(Matching class "class" failed:
+✖ Condition not satisfied: arg1 > arg2
+✓ Expected format: class class:
+  - arguments:
+    - arg1: Integer
+    - arg2: Integer
+  - arg1 > arg2)"));
+        }
+    }
+
     SECTION("filter") {
         auto validateRange = [](const DataclassData &dataclass) {
             return dataclass["start"].as<long>() <= dataclass["end"].as<long>();
