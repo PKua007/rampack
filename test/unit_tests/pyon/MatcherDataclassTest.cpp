@@ -378,21 +378,22 @@ TEST_CASE("Matcher: Dataclass") {
 
         SECTION("incorrect number of arguments") {
             SECTION("no default, no variadic") {
-                auto matcher = MatcherDataclass("class").arguments({"arg1", "arg2"});
-                CHECK_THAT(matcher.match(Parser::parse("class(1)"), result),
+                auto matcher = MatcherDataclass("class").arguments({"arg1", "arg2", "arg3"});
+                CHECK_THAT(matcher.match(Parser::parse("class(1, arg3=3)"), result),
                            UnmatchedWithReason(R"(Matching class "class" failed:
-✖ Expected 2 arguments, but 1 were given
+✖ Missing 1 required positional argument: "arg2"
 ✓ Arguments specification:
   - arguments:
     - arg1: any expression
-    - arg2: any expression)"));
+    - arg2: any expression
+    - arg3: any expression)"));
             }
 
             SECTION("default, no variadic") {
                 auto matcher = MatcherDataclass("class").arguments({"arg1", {"arg2", MatcherInt{}, "0"}});
                 CHECK_THAT(matcher.match(Parser::parse("class(1, 2, 3)"), result),
                            UnmatchedWithReason(R"(Matching class "class" failed:
-✖ Expected from 1 to 2 arguments, but 3 were given
+✖ Expected from 1 to 2 positional arguments, but 3 were given
 ✓ Arguments specification:
   - arguments:
     - arg1: any expression
@@ -405,7 +406,7 @@ TEST_CASE("Matcher: Dataclass") {
                         .variadicArguments();
                 CHECK_THAT(matcher.match(Parser::parse("class(1)"), result),
                            UnmatchedWithReason(R"(Matching class "class" failed:
-✖ Expected 2 or more arguments, but 1 were given
+✖ Missing 1 required positional argument: "arg2"
 ✓ Arguments specification:
   - arguments:
     - arg1: any expression
@@ -419,7 +420,7 @@ TEST_CASE("Matcher: Dataclass") {
                         .variadicArguments();
                 CHECK_THAT(matcher.match(Parser::parse("class()"), result),
                            UnmatchedWithReason(R"(Matching class "class" failed:
-✖ Expected 1 or more arguments, but 0 were given
+✖ Missing 1 required positional argument: "arg1"
 ✓ Arguments specification:
   - arguments:
     - arg1: any expression

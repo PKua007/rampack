@@ -292,15 +292,10 @@ namespace pyon::matcher {
                                                     const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const
     {
         std::vector<std::pair<std::string, std::shared_ptr<const ast::Node>>> variadicKeywordNodes;
-        for (const auto &keyNodePair : *nodeKeyword) {
-            const auto &key = keyNodePair.first;
-            auto isStandardArgument = [&key](const auto &arg) { return arg.getName() == key; };
-            if (std::find_if(this->argumentsSpecification.begin(), this->argumentsSpecification.end(),
-                             isStandardArgument) == this->argumentsSpecification.end())
-            {
+        for (const auto &keyNodePair : *nodeKeyword)
+            if (!this->isStandardArgument(keyNodePair.first))
                 variadicKeywordNodes.emplace_back(keyNodePair);
-            }
-        }
+
         auto variadicNodesDictionary = ast::NodeDictionary::create(variadicKeywordNodes);
         Any result;
         auto matched = this->variadicKeywordArgumentsMatcher.match(variadicNodesDictionary, result);
@@ -310,10 +305,56 @@ namespace pyon::matcher {
         return true;
     }
 
-    MatchReport MatcherDataclass::matchStandardArguments(StandardArguments &arguments,
-                                                         const std::shared_ptr<const ast::NodeArray> &nodePositional,
-                                                         const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const
+    MatchReport
+    MatcherDataclass::matchStandardArguments(StandardArguments &arguments,
+                                             const std::shared_ptr<const ast::NodeArray> &nodePositional,
+                                             const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const
     {
+        auto[minArguments, maxArguments] = this->countRequiredArguments();
+        std::size_t argumentsSize = nodePositional->size();
+        if (argumentsSize > maxArguments) {
+            std::ostringstream out;
+            out << "Expected ";
+            if (minArguments == maxArguments) {
+                if (minArguments == 1)
+                    out << "1 positional argument";
+                else
+                    out << minArguments << " positional arguments";
+            } else {
+                out << "from " << minArguments << " to " << maxArguments << " positional arguments";
+            }
+            out << ", but " << argumentsSize;
+            out << (argumentsSize < 2 ? " was given" : " were given");
+
+            return this->generateArgumentsReport(out.str());
+        }
+
+        std::vector<std::string> missingArguments;
+        for (std::size_t i = nodePositional->size(); i < this->argumentsSpecification.size(); i++) {
+            const auto &argumentSpecification = this->argumentsSpecification[i];
+            if (nodeKeyword->hasKey(argumentSpecification.getName()))
+                continue;
+            if (argumentSpecification.hasDefaultValue())
+                continue;
+            missingArguments.push_back(argumentSpecification.getName());
+        }
+
+        if (!missingArguments.empty()) {
+            std::transform(missingArguments.begin(), missingArguments.end(), missingArguments.begin(), quoted);
+            std::ostringstream out;
+            if (missingArguments.size() == 1)
+                out << "Missing 1 required positional argument: ";
+            else
+                out << "Missing " << missingArguments.size() << " required positional arguments: ";
+            out << implode(missingArguments, ", ");
+            return this->generateArgumentsReport(out.str());
+        }
+
+        if (!this->hasKeywordVariadicArguments)
+            for (const auto &[key, value] : *nodeKeyword)
+                if (!isStandardArgument(key))
+                    return this->generateArgumentsReport("Unknown argument " + quoted(key));
+
         std::vector<StandardArgument> standardArgumentsVec;
         standardArgumentsVec.reserve(this->argumentsSpecification.size());
 
@@ -322,8 +363,11 @@ namespace pyon::matcher {
         for (std::size_t i{}; i < numPositionalGiven; i++) {
             const auto &argumentSpecification = this->argumentsSpecification[i];
             // Forbid overriding positional argument by keyword argument with its name
-            if (nodeKeyword->hasKey(argumentSpecification.getName()))
-                return false;
+            if (nodeKeyword->hasKey(argumentSpecification.getName())) {
+                return this->generateArgumentsReport("Positional argument " + quoted(argumentSpecification.getName())
+                                                     + " redefined with keyword argument");
+            }
+
             if (!this->emplaceArgument(standardArgumentsVec, argumentSpecification, nodePositional->at(i)))
                 return false;
         }
@@ -340,7 +384,7 @@ namespace pyon::matcher {
                 standardArgumentsVec.emplace_back(argumentSpecification.getName(),
                                                   *argumentSpecification.getDefaultValue());
             } else {
-                return false;
+                throw AssertionException("Missing argument should've benn caught earlier");
             }
         }
 
@@ -375,7 +419,7 @@ namespace pyon::matcher {
         std::ostringstream out;
         out << "Matching class \"" << this->name << "\" failed:" << std::endl;
         out << "✖ " << reason << std::endl;
-        out << "✓ Arguments specification:" << std::endl;
+        out << "✓ Arguments specification:";
         this->outlineArgumentsSpecification(out, 2);
         return out.str();
     }
@@ -388,5 +432,29 @@ namespace pyon::matcher {
         out << std::endl;
         out << "✖ " << replaceAll(reason, "\n", "\n  ");
         return out.str();
+    }
+
+    std::pair<std::size_t, std::size_t> MatcherDataclass::countRequiredArguments() const {
+        auto hasDefault = [](const StandardArgumentSpecification &argument) {
+            return argument.hasDefaultValue();
+        };
+        auto firstDefaultIt = std::find_if(this->argumentsSpecification.begin(), this->argumentsSpecification.end(),
+                                        hasDefault);
+
+        std::size_t minArguments = firstDefaultIt - this->argumentsSpecification.begin();
+        std::size_t maxArguments = this->hasVariadicArguments
+                ? std::numeric_limits<std::size_t>::max()
+                : this->argumentsSpecification.size();
+        return {minArguments, maxArguments};
+    }
+
+    bool MatcherDataclass::isStandardArgument(const std::string &argumentName) const {
+        auto isStandardArgument = [&argumentName](const auto &arg) {
+            return arg.getName() == argumentName;
+        };
+
+        return std::find_if(this->argumentsSpecification.begin(), this->argumentsSpecification.end(),
+                            isStandardArgument)
+               != this->argumentsSpecification.end();
     }
 } // matcher
