@@ -142,14 +142,9 @@ namespace pyon::matcher {
         return out.str();
     }
 
-    MatchReport MatcherDictionary::match(std::shared_ptr<const ast::Node> node, Any &result) const {
-        if (node->getType() != ast::Node::DICTIONARY)
-            return this->generateDictionaryUnmatchedReport("Got incorrect node type: " + node->getNodeName());
-
-        const auto &nodeDict = node->as<ast::NodeDictionary>();
+    MatchReport MatcherDictionary::matchKeys(const ast::NodeDictionary &nodeDict, DictionaryData &dictData) const {
         std::map<std::string, Any> dictDataMap;
-        auto hintIt = dictDataMap.end();
-        for (const auto &nodeDictElem: *nodeDict) {
+        for (const auto &nodeDictElem: nodeDict) {
             Any elemResult;
 
             bool matched = false;
@@ -158,7 +153,7 @@ namespace pyon::matcher {
                     auto matchReport = keyMatcher.matcher->match(nodeDictElem.second, elemResult);
                     if (!matchReport)
                         return this->generateKeyUnmatchedReport(nodeDictElem.first, matchReport.getReason());
-                    hintIt = dictDataMap.emplace_hint(hintIt, nodeDictElem.first, elemResult);
+                    dictDataMap[nodeDictElem.first] = elemResult;
                     matched = true;
                     break;
                 }
@@ -170,13 +165,26 @@ namespace pyon::matcher {
                 auto matchReport = this->defaultMatcher->match(nodeDictElem.second, elemResult);
                 if (!matchReport)
                     return this->generateKeyUnmatchedReport(nodeDictElem.first, matchReport.getReason());
-                hintIt = dictDataMap.emplace_hint(hintIt, nodeDictElem.first, elemResult);
+                dictDataMap[nodeDictElem.first] = elemResult;
                 continue;
             }
 
-            hintIt = dictDataMap.emplace_hint(hintIt, nodeDictElem.first, nodeDictElem.second);
+            dictDataMap[nodeDictElem.first] = nodeDictElem.second;
         }
-        DictionaryData dictData(std::move(dictDataMap));
+
+        dictData = DictionaryData(std::move(dictDataMap));
+        return true;
+    }
+
+    MatchReport MatcherDictionary::match(std::shared_ptr<const ast::Node> node, Any &result) const {
+        if (node->getType() != ast::Node::DICTIONARY)
+            return this->generateDictionaryUnmatchedReport("Got incorrect node type: " + node->getNodeName());
+
+        const auto &nodeDict = node->as<ast::NodeDictionary>();
+        DictionaryData dictData;
+        auto matchReport = this->matchKeys(*nodeDict, dictData);
+        if (!matchReport)
+            return matchReport;
 
         for (const auto &filter: this->filters)
             if (!filter.predicate(dictData))
