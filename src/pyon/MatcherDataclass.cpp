@@ -321,12 +321,6 @@ namespace pyon::matcher {
         std::size_t numPositionalGiven = std::min(nodePositional->size(), this->argumentsSpecification.size());
         for (std::size_t i{}; i < numPositionalGiven; i++) {
             const auto &argumentSpecification = this->argumentsSpecification[i];
-            // Forbid overriding positional argument by keyword argument with its name
-            if (nodeKeyword->hasKey(argumentSpecification.getName())) {
-                return this->generateArgumentsReport("Positional argument " + quoted(argumentSpecification.getName())
-                                                     + " redefined with keyword argument");
-            }
-
             auto matched = this->emplaceArgument(standardArgumentsVec, argumentSpecification, nodePositional->at(i));
             if (!matched)
                 return matched.getReason();
@@ -357,15 +351,16 @@ namespace pyon::matcher {
                                                   const StandardArgumentSpecification &argumentSpecification,
                                                   const std::shared_ptr<const ast::Node> &argumentNode) const
     {
+        if (!argumentSpecification.hasMatcher()) {
+            standardArgumentsVec.emplace_back(argumentSpecification.getName(), argumentNode);
+            return true;
+        }
+
         Any argumentValue;
-        if (argumentSpecification.hasMatcher()) {
-            auto matched = argumentSpecification.getMatcher()->match(argumentNode, argumentValue);
-            if (!matched) {
-                return this->generateArgumentUnmatchedReport("argument " + quoted(argumentSpecification.getName()),
-                                                             matched.getReason());
-            }
-        } else {
-            argumentValue = argumentNode;
+        auto matched = argumentSpecification.getMatcher()->match(argumentNode, argumentValue);
+        if (!matched) {
+            return this->generateArgumentUnmatchedReport("argument " + quoted(argumentSpecification.getName()),
+                                                         matched.getReason());
         }
         standardArgumentsVec.emplace_back(argumentSpecification.getName(), argumentValue);
         return true;
@@ -433,6 +428,10 @@ namespace pyon::matcher {
         if (!matchReport)
             return matchReport;
 
+        matchReport = this->validateRedefinedArguments(nodePositional, nodeKeyword);
+        if (!matchReport)
+            return matchReport;
+
         matchReport = this->validateUnknownKeywordArguments(nodeKeyword);
         if (!matchReport)
             return matchReport;
@@ -444,24 +443,23 @@ namespace pyon::matcher {
     MatcherDataclass::validateExcessiveArguments(const std::shared_ptr<const ast::NodeArray> &nodePositional) const {
         auto[minArguments, maxArguments] = this->countRequiredArguments();
         std::size_t argumentsSize = nodePositional->size();
-        if (argumentsSize > maxArguments) {
-            std::ostringstream out;
-            out << "Expected ";
-            if (minArguments == maxArguments) {
-                if (minArguments == 1)
-                    out << "1 positional argument";
-                else
-                    out << minArguments << " positional arguments";
-            } else {
-                out << "from " << minArguments << " to " << maxArguments << " positional arguments";
-            }
-            out << ", but " << argumentsSize;
-            out << (argumentsSize < 2 ? " was given" : " were given");
+        if (argumentsSize <= maxArguments)
+            return true;
 
-            return this->generateArgumentsReport(out.str());
+        std::ostringstream out;
+        out << "Expected ";
+        if (minArguments == maxArguments) {
+            if (minArguments == 1)
+                out << "1 positional argument";
+            else
+                out << minArguments << " positional arguments";
+        } else {
+            out << "from " << minArguments << " to " << maxArguments << " positional arguments";
         }
+        out << ", but " << argumentsSize;
+        out << (argumentsSize < 2 ? " was given" : " were given");
 
-        return true;
+        return this->generateArgumentsReport(out.str());
     }
 
     MatchReport
@@ -478,28 +476,45 @@ namespace pyon::matcher {
             missingArguments.push_back(argumentSpecification.getName());
         }
 
-        if (!missingArguments.empty()) {
-            std::transform(missingArguments.begin(), missingArguments.end(), missingArguments.begin(), quoted);
-            std::ostringstream out;
-            if (missingArguments.size() == 1)
-                out << "Missing 1 required positional argument: ";
-            else
-                out << "Missing " << missingArguments.size() << " required positional arguments: ";
-            out << implode(missingArguments, ", ");
-            return this->generateArgumentsReport(out.str());
+        if (missingArguments.empty())
+            return true;
+
+        std::transform(missingArguments.begin(), missingArguments.end(), missingArguments.begin(), quoted);
+        std::ostringstream out;
+        if (missingArguments.size() == 1)
+            out << "Missing 1 required positional argument: ";
+        else
+            out << "Missing " << missingArguments.size() << " required positional arguments: ";
+        out << implode(missingArguments, ", ");
+
+        return this->generateArgumentsReport(out.str());
+    }
+
+    MatchReport
+    MatcherDataclass::validateRedefinedArguments(const std::shared_ptr<const ast::NodeArray> &nodePositional,
+                                                 const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const
+    {
+        std::size_t numPositionalGiven = std::min(nodePositional->size(), this->argumentsSpecification.size());
+        for (std::size_t i{}; i < numPositionalGiven; i++) {
+            const auto &argumentSpecification = this->argumentsSpecification[i];
+            if (nodeKeyword->hasKey(argumentSpecification.getName())) {
+                return this->generateArgumentsReport("Positional argument " + quoted(argumentSpecification.getName())
+                                                     + " redefined with keyword argument");
+            }
         }
 
         return true;
     }
 
-    MatchReport
-    MatcherDataclass
+    MatchReport MatcherDataclass
         ::validateUnknownKeywordArguments(const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const
     {
-        if (!this->hasKeywordVariadicArguments)
-            for (const auto &[key, value] : *nodeKeyword)
-                if (!isStandardArgument(key))
-                    return this->generateArgumentsReport("Unknown argument " + quoted(key));
+        if (this->hasKeywordVariadicArguments)
+            return true;
+
+        for (const auto &[key, value]: *nodeKeyword)
+            if (!isStandardArgument(key))
+                return this->generateArgumentsReport("Unknown argument " + quoted(key));
 
         return true;
     }
