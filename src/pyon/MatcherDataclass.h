@@ -171,6 +171,9 @@ namespace pyon::matcher {
         [[nodiscard]] std::string generateArgumentUnmatchedReport(const std::string &argumentName,
                                                                   const std::string &reason) const;
 
+        [[nodiscard]] std::pair<std::size_t, std::size_t> countRequiredArguments() const;
+        [[nodiscard]] bool isStandardArgument(const std::string &argumentName) const;
+
     public:
         explicit MatcherDataclass(std::string className);
         MatcherDataclass(std::string className, std::vector<StandardArgumentSpecification> argumentsSpecification);
@@ -187,6 +190,7 @@ namespace pyon::matcher {
         MatcherDataclass &mapTo(const std::function<Any(const DataclassData&)> &mapping_);
         MatcherDataclass &filter(const std::function<bool(const DataclassData&)> &filter);
         MatcherDataclass &describe(const std::string &description);
+
     };
 } // matcher
 
