@@ -10,6 +10,14 @@
 
 
 namespace pyon::matcher {
+    std::string MatcherString::generateUnmatchedReport(const std::string &reason) const {
+        std::ostringstream out;
+        out << "Matching String failed:" << std::endl;
+        out << "✖ " << reason << std::endl;
+        out << "✓ Expected format: " << this->outline(2).substr(2);
+        return out.str();
+    }
+
     MatcherString::MatcherString(const std::string &str) {
         this->equals(str);
     }
@@ -20,12 +28,12 @@ namespace pyon::matcher {
 
     MatchReport MatcherString::match(std::shared_ptr<const ast::Node> node, Any &result) const {
         if (node->getType() != ast::Node::STRING)
-            return false;
+            return this->generateUnmatchedReport("Got incorrect node type: " + node->getNodeName());
 
         const std::string &str = node->as<ast::NodeString>()->getValue();
         for (const auto &filter: this->filters)
             if (!filter.predicate(str))
-                return false;
+                return this->generateUnmatchedReport("Condition not satisfied: " + filter.description);
 
         result = this->mapping(str);
         return true;

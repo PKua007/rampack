@@ -6,7 +6,7 @@
 
 #include "matchers/UnmatchedWithReason.h"
 
-#include "pyon/Matcher.h"
+#include "pyon/MatcherNumeral.h"
 #include "pyon/Parser.h"
 
 using namespace pyon;

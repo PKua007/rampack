@@ -18,7 +18,11 @@ TEST_CASE("Matcher: String") {
     Any result;
 
     SECTION("default") {
-        CHECK_FALSE(MatcherString{}.match(Parser::parse("True"), result));
+        CHECK_THAT(MatcherString{}.match(Parser::parse("True"), result),
+                   UnmatchedWithReason(R"(Matching String failed:
+✖ Got incorrect node type: Boolean
+✓ Expected format: String)"));
+
         CHECK(MatcherString{}.match(Parser::parse(R"("abc")"), result));
         CHECK(result.as<std::string>() == "abc");
         CHECK(MatcherString{}.outline(4) == "    String");
@@ -29,7 +33,12 @@ TEST_CASE("Matcher: String") {
             auto matcher1 = MatcherString{}.equals("abc");
             auto matcher2 = MatcherString("abc");
             auto matcher = GENERATE_COPY(matcher1, matcher2);
-            CHECK_FALSE(matcher.match(Parser::parse(R"("def")"), result));
+
+            CHECK_THAT(matcher.match(Parser::parse(R"("def")"), result),
+                       UnmatchedWithReason(R"(Matching String failed:
+✖ Condition not satisfied: = "abc"
+✓ Expected format: String, = "abc")"));
+
             CHECK(matcher.match(Parser::parse(R"("abc")"), result));
             CHECK(matcher.outline(4) == R"(    String, = "abc")");
         }
@@ -164,8 +173,18 @@ TEST_CASE("Matcher: String") {
                     .uniqueCharacters()
                     .containsOnlyCharacters("xyz");
             CHECK_FALSE(matcher.match(Parser::parse(R"("xy")"), result));
-            CHECK_FALSE(matcher.match(Parser::parse(R"("xxz")"), result));
+
+            CHECK_THAT(matcher.match(Parser::parse(R"("xxz")"), result),
+                       UnmatchedWithReason(R"(Matching String failed:
+✖ Condition not satisfied: with unique characters
+✓ Expected format: String:
+  - with length = 3
+  - lowercase
+  - with unique characters
+  - with only characters: "xyz")"));
+
             CHECK(matcher.match(Parser::parse(R"("xzy")"), result));
+
             CHECK(matcher.outline(4) == R"(    String:
     - with length = 3
     - lowercase
