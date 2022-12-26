@@ -121,32 +121,39 @@ namespace pyon::matcher {
 
     MatchReport MatcherDataclass::match(std::shared_ptr<const ast::Node> node, Any &result) const {
         if (node->getType() != ast::Node::DATACLASS)
-            return false;
+            return this->generateDataclassUnmatchedReport("Got incorrect node type: " + node->getNodeName());
 
         const auto &nodeClass = node->as<ast::NodeDataclass>();
-        if (nodeClass->getClassName() != this->name)
-            return false;
+        if (nodeClass->getClassName() != this->name) {
+            return this->generateDataclassUnmatchedReport("Got incorrect class name: "
+                                                         + quoted(nodeClass->getClassName()));
+        }
 
         const auto &nodePositional = nodeClass->getPositionalArguments();
         const auto &nodeKeyword = nodeClass->getKeywordArguments();
 
+        MatchReport matchedReport;
+
         StandardArguments standardArguments;
-        if (!this->matchStandardArguments(standardArguments, nodePositional, nodeKeyword))
-            return false;
+        matchedReport = this->matchStandardArguments(standardArguments, nodePositional, nodeKeyword);
+        if (!matchedReport)
+            return matchedReport.getReason();
 
         ArrayData variadicArguments;
-        if (!this->matchVariadicArguments(variadicArguments, nodePositional))
-            return false;
+        matchedReport = this->matchVariadicArguments(variadicArguments, nodePositional);
+        if (!matchedReport)
+            return matchedReport.getReason();
 
         DictionaryData variadicKeywordArguments;
-        if (!this->matchKeywordVariadicArguments(variadicKeywordArguments, nodeKeyword))
-            return false;
+        matchedReport = this->matchKeywordVariadicArguments(variadicKeywordArguments, nodeKeyword);
+        if (!matchedReport)
+            return matchedReport.getReason();
 
         DataclassData classData(standardArguments, variadicArguments, variadicKeywordArguments);
 
         for (const auto &filter: this->filters)
             if (!filter.predicate(classData))
-                return false;
+                return this->generateDataclassUnmatchedReport("Condition not satisfied: " + filter.description);
 
         result = this->mapping(classData);
         return true;
@@ -157,12 +164,16 @@ namespace pyon::matcher {
         std::string spaces(indent, ' ');
         out << spaces << this->name << " class:";
 
-        this->outlineStandardArguments(out, indent);
-        this->outlineVariadicArguments(out, indent);
-        this->outlineKeywordVariadicArguments(out, indent);
+        this->outlineArgumentsSpecification(out, indent);
         this->outlineFilters(out, indent);
 
         return out.str();
+    }
+
+    void MatcherDataclass::outlineArgumentsSpecification(std::ostringstream &out, std::size_t indent) const {
+        this->outlineStandardArguments(out, indent);
+        this->outlineVariadicArguments(out, indent);
+        this->outlineKeywordVariadicArguments(out, indent);
     }
 
     void MatcherDataclass::outlineStandardArguments(std::ostringstream &out, std::size_t indent) const {
@@ -261,21 +272,22 @@ namespace pyon::matcher {
         return *this;
     }
 
-    bool MatcherDataclass::matchVariadicArguments(ArrayData &arguments,
-                                                  const std::shared_ptr<const ast::NodeArray> &nodePositional) const
+    MatchReport MatcherDataclass::matchVariadicArguments(ArrayData &arguments,
+                                                         const std::shared_ptr<const ast::NodeArray> &nodePositional) const
     {
         std::vector<std::shared_ptr<const ast::Node>> variadicNodes;
         if (nodePositional->size() > this->argumentsSpecification.size())
             variadicNodes.assign(nodePositional->begin() + this->argumentsSpecification.size(), nodePositional->end());
         auto variadicNodesArray = ast::NodeArray::create(std::move(variadicNodes));
         Any result;
-        if (!this->variadicArgumentsMatcher.match(variadicNodesArray, result))
-            return false;
+        auto matched = this->variadicArgumentsMatcher.match(variadicNodesArray, result);
+        if (!matched)
+            return this->generateArgumentUnmatchedReport("*args", matched.getReason());
         arguments = result.as<ArrayData>();
         return true;
     }
 
-    bool
+    MatchReport
     MatcherDataclass::matchKeywordVariadicArguments(DictionaryData &arguments,
                                                     const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const
     {
@@ -291,15 +303,16 @@ namespace pyon::matcher {
         }
         auto variadicNodesDictionary = ast::NodeDictionary::create(variadicKeywordNodes);
         Any result;
-        if (!this->variadicKeywordArgumentsMatcher.match(variadicNodesDictionary, result))
-            return false;
+        auto matched = this->variadicKeywordArgumentsMatcher.match(variadicNodesDictionary, result);
+        if (!matched)
+            return this->generateArgumentUnmatchedReport("**kwargs", matched.getReason());
         arguments = result.as<DictionaryData>();
         return true;
     }
 
-    bool MatcherDataclass::matchStandardArguments(StandardArguments &arguments,
-                                                  const std::shared_ptr<const ast::NodeArray> &nodePositional,
-                                                  const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const
+    MatchReport MatcherDataclass::matchStandardArguments(StandardArguments &arguments,
+                                                         const std::shared_ptr<const ast::NodeArray> &nodePositional,
+                                                         const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const
     {
         std::vector<StandardArgument> standardArgumentsVec;
         standardArgumentsVec.reserve(this->argumentsSpecification.size());
@@ -348,5 +361,32 @@ namespace pyon::matcher {
         }
         standardArgumentsVec.emplace_back(argumentSpecification.getName(), argumentValue);
         return true;
+    }
+
+    std::string MatcherDataclass::generateDataclassUnmatchedReport(const std::string &reason) const {
+        std::ostringstream out;
+        out << "Matching class \"" << this->name << "\" failed:" << std::endl;
+        out << "✖ " << reason << std::endl;
+        out << "✓ Expected format: " << this->outline(2).substr(2);
+        return out.str();
+    }
+
+    std::string MatcherDataclass::generateArgumentsReport(const std::string &reason) const {
+        std::ostringstream out;
+        out << "Matching class \"" << this->name << "\" failed:" << std::endl;
+        out << "✖ " << reason << std::endl;
+        out << "✓ Arguments specification:" << std::endl;
+        this->outlineArgumentsSpecification(out, 2);
+        return out.str();
+    }
+
+    std::string MatcherDataclass::generateArgumentUnmatchedReport(const std::string &argumentName,
+                                                                  const std::string &reason) const
+    {
+        std::ostringstream out;
+        out << "Matching class \"" << this->name << "\" failed: Matching " << argumentName << " failed:";
+        out << std::endl;
+        out << "✖ " << replaceAll(reason, "\n", "\n  ");
+        return out.str();
     }
 } // matcher
