@@ -227,7 +227,7 @@ std::vector<ObservablesCollector::ObservableGroupData> ObservablesCollector::get
 
 void ObservablesCollector::setThermodynamicParameters(double temperature_, double pressure_) {
     Expects(temperature_ > 0);
-    Expects(pressure_ > 0);
+    Expects(pressure_ >= 0);
 
     this->temperature = temperature_;
     this->pressure = pressure_;
