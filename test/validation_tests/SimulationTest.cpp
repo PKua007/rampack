@@ -17,6 +17,7 @@
 #include "core/volume_scalers/TriclinicAdapter.h"
 #include "core/ObservablesCollector.h"
 #include "core/observables/NumberDensity.h"
+#include "core/observables/NematicOrder.h"
 #include "core/shapes/CompoundShapeTraits.h"
 #include "core/interactions/SquareInverseCoreInteraction.h"
 #include "core/move_samplers/RototranslationSampler.h"
@@ -348,4 +349,25 @@ TEST_CASE("Simulation: upscaling skip stress test", "[short]") {
     Logger logger(loggerStream);
 
     simulation.integrate(1, 100, 9000, 1000, 100, 1, sphereTraits, std::move(collector), {}, logger);
+}
+
+TEST_CASE("Simulation: hard dumbbell NVT relaxation", "[short]") {
+    OMP_SET_NUM_THREADS(1);
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    Lattice lattice(UnitCellFactory::createScCell({7.2/6, 7.2/6, 7.2/3}), {6, 6, 3});
+    auto shapes = lattice.generateMolecules();
+    KMerTraits kmerTraits(2, 0.5, 1);
+    auto packing = std::make_unique<Packing>(lattice.getLatticeBox(), std::move(shapes), std::move(pbc), kmerTraits.getInteraction());
+    // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
+    Simulation simulation(std::move(packing), 0.3, 0.3, 1234, nullptr);
+    std::ostringstream loggerStream;
+    Logger logger(loggerStream);
+    auto collector = std::make_unique<ObservablesCollector>();
+    collector->addObservable(std::make_unique<NematicOrder>(), ObservablesCollector::AVERAGING);
+
+    simulation.integrate(1, 2, 5000, 5000, 100, 100, kmerTraits, std::move(collector), {}, logger);
+
+    Quantity P2 = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
+    CHECK(std::abs(P2.value) < 0.05);
+    CHECK(simulation.getPacking().getNumberDensity() == Approx(108/7.2/7.2/7.2));
 }

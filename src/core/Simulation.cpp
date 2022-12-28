@@ -776,7 +776,10 @@ Simulation::Environment Simulation::makeEnvironment(std::vector<std::unique_ptr<
     std::vector<std::shared_ptr<MoveSampler>> sharedMoveSamplers(beg, end);
     env.setMoveSamplers(std::move(sharedMoveSamplers));
 
-    env.setBoxScaler(std::move(boxScaler));
+    if (boxScaler == nullptr)
+        env.disableBoxScaling();
+    else
+        env.setBoxScaler(std::move(boxScaler));
 
     return env;
 }
