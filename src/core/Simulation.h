@@ -151,6 +151,8 @@ public:
 
         /**
          * @brief Returns @a true, if all fields were set and have a value.
+         * @details If box scaling is disabled (Environment::disableBoxScaling()), pressure is ignored - it may be not
+         * set and the Environment can still be regarded as complete.
          */
         [[nodiscard]] bool isComplete() const;
 
@@ -236,6 +238,7 @@ private:
     static void printStepSizesChange(Logger &logger, const std::vector<std::pair<std::string, double>> &oldStepSizes,
                                      const std::vector<std::pair<std::string, double>> &newStepSizes);
 
+    void updateThermodynamicParameters();
     void performCycle(Logger &logger, const ShapeTraits &shapeTraits);
     void performMovesWithDomainDivision(const ShapeTraits &shapeTraits);
     void performMovesWithoutDomainDivision(const ShapeTraits &shapeTraits);
@@ -427,8 +430,6 @@ public:
      * @brief Returns a current pressure of the system.
      */
     [[nodiscard]] double getCurrentPressure() const { return this->pressure; }
-
-    void updateThermodynamicParameters();
 };
 
 
