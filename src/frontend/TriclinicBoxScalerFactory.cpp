@@ -143,6 +143,9 @@ namespace {
 
 std::unique_ptr<TriclinicBoxScaler>
 TriclinicBoxScalerFactory::create(const std::string &scalingType, double initialStepSize) {
+    if (scalingType == "disabled")
+        return nullptr;
+
     std::string scalingTypeStripped = scalingType;
     std::string independentString = "independent ";
     bool scaleTogether = !startsWith(scalingType, independentString);

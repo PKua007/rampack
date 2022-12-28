@@ -403,7 +403,6 @@ public:
     [[nodiscard]] double getTotalMicroseconds() const { return this->totalMicroseconds; }
 
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }
-    [[nodiscard]] double getCurrentScalingStep() const { return this->environment.getBoxScaler().getStepSize(); }
 
 
     [[nodiscard]] std::size_t getTotalCycles() const { return this->totalCycles; }
