@@ -334,26 +334,28 @@ void Simulation::performCycle(Logger &logger, const ShapeTraits &shapeTraits) {
     this->moveMicroseconds += duration<double, std::micro>(end - start).count();
 
     #ifdef SIMULATION_SANITIZE_OVERLAPS
+    if (this->areOverlapsCounted) {
+        Assert(this->packing->getCachedNumberOfOverlaps() == this->packing->countTotalOverlaps(interaction, false));
+    } else {
+        Assert(this->packing->countTotalOverlaps(interaction, true) == 0);
+    }
+    #endif
+
+    if (this->environment.isBoxScalingEnabled()) {
+        start = high_resolution_clock::now();
+        bool wasScaled = this->tryScaling(interaction);
+        this->scalingCounter.increment(wasScaled);
+        end = high_resolution_clock::now();
+        this->scalingMicroseconds += duration<double, std::micro>(end - start).count();
+
+        #ifdef SIMULATION_SANITIZE_OVERLAPS
         if (this->areOverlapsCounted) {
             Assert(this->packing->getCachedNumberOfOverlaps() == this->packing->countTotalOverlaps(interaction, false));
         } else {
             Assert(this->packing->countTotalOverlaps(interaction, true) == 0);
         }
-    #endif
-
-    start = high_resolution_clock::now();
-    bool wasScaled = this->tryScaling(interaction);
-    this->scalingCounter.increment(wasScaled);
-    end = high_resolution_clock::now();
-    this->scalingMicroseconds += duration<double, std::micro>(end - start).count();
-
-    #ifdef SIMULATION_SANITIZE_OVERLAPS
-        if (this->areOverlapsCounted) {
-            Assert(this->packing->getCachedNumberOfOverlaps() == this->packing->countTotalOverlaps(interaction, false));
-        } else {
-            Assert(this->packing->countTotalOverlaps(interaction, true) == 0);
-        }
-    #endif
+        #endif
+    }
 
     if (this->shouldAdjustStepSize)
         this->evaluateCounters(logger);
@@ -506,24 +508,29 @@ bool Simulation::tryScaling(const Interaction &interaction) {
 
 void Simulation::evaluateCounters(Logger &logger) {
     this->evaluateMoleculeMoveCounter(logger);
+    if (this->environment.isBoxScalingEnabled())
+        this->evaluateScalingMoveCounter(logger);
+}
+
+void Simulation::evaluateScalingMoveCounter(Logger &logger) {
+    if (this->scalingCounter.getMovesSinceEvaluation() < 100)
+        return;
 
     auto &boxScaler = this->environment.getBoxScaler();
-    if (this->scalingCounter.getMovesSinceEvaluation() >= 100) {
-        double rate = this->scalingCounter.getCurrentRate();
-        this->scalingCounter.resetCurrent();
-        if (rate > 0.2) {
-            double prevStepSize = boxScaler.getStepSize();
-            boxScaler.increaseStepSize();
-            double newStepSize = boxScaler.getStepSize();
-            logger.info() << "-- Scaling rate: " << rate << ", step size increased: " << prevStepSize;
-            logger << " -> " << newStepSize << std::endl;
-        } else if (rate < 0.1) {
-            double prevStepSize = boxScaler.getStepSize();
-            boxScaler.decreaseStepSize();
-            double newStepSize = boxScaler.getStepSize();
-            logger.info() << "-- Scaling rate: " << rate << ", step size decreased: " << prevStepSize;
-            logger << " -> " << newStepSize << std::endl;
-        }
+    double rate = this->scalingCounter.getCurrentRate();
+    this->scalingCounter.resetCurrent();
+    if (rate > 0.2) {
+        double prevStepSize = boxScaler.getStepSize();
+        boxScaler.increaseStepSize();
+        double newStepSize = boxScaler.getStepSize();
+        logger.info() << "-- Scaling rate: " << rate << ", step size increased: " << prevStepSize;
+        logger << " -> " << newStepSize << std::endl;
+    } else if (rate < 0.1) {
+        double prevStepSize = boxScaler.getStepSize();
+        boxScaler.decreaseStepSize();
+        double newStepSize = boxScaler.getStepSize();
+        logger.info() << "-- Scaling rate: " << rate << ", step size decreased: " << prevStepSize;
+        logger << " -> " << newStepSize << std::endl;
     }
 }
 
@@ -784,8 +791,10 @@ void Simulation::Environment::combine(Simulation::Environment &other) {
         this->constMoveSamplers = other.constMoveSamplers;
         this->moveSamplers = other.moveSamplers;
     }
-    if (other.hasBoxScaler())
+    if (other.hasBoxScaler()) {
         this->boxScaler = other.boxScaler;
+        this->boxScalerStatus = other.boxScalerStatus;
+    }
 }
 
 bool Simulation::Environment::isComplete() const {
@@ -841,16 +850,22 @@ void Simulation::Environment::setMoveSamplers(std::vector<std::shared_ptr<MoveSa
 }
 
 const TriclinicBoxScaler &Simulation::Environment::getBoxScaler() const {
-    Expects(this->hasBoxScaler());
+    Expects(this->isBoxScalingEnabled());
     return *this->boxScaler;
 }
 
 TriclinicBoxScaler &Simulation::Environment::getBoxScaler() {
-    Expects(this->hasBoxScaler());
+    Expects(this->isBoxScalingEnabled());
     return *this->boxScaler;
 }
 
 void Simulation::Environment::setBoxScaler(std::shared_ptr<TriclinicBoxScaler> boxScaler_) {
     Expects(boxScaler_ != nullptr);
-    Environment::boxScaler = std::move(boxScaler_);
+    this->boxScaler = std::move(boxScaler_);
+    this->boxScalerStatus = BoxScalerStatus::ENEBLED_AND_SET;
+}
+
+void Simulation::Environment::disableBoxScaling() {
+    this->boxScaler = nullptr;
+    this->boxScalerStatus = BoxScalerStatus::UNSET;
 }
