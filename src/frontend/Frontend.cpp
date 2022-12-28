@@ -250,7 +250,8 @@ int Frontend::casino(int argc, char **argv) {
         if (std::holds_alternative<Parameters::IntegrationParameters>(runParamsI)) {
             const auto &runParams = std::get<Parameters::IntegrationParameters>(runParamsI);
             this->verifyDynamicParameter(env.getTemperature(), "temperature", runParams, cycleOffset);
-            this->verifyDynamicParameter(env.getPressure(), "pressure", runParams, cycleOffset);
+            if (env.isBoxScalingEnabled())
+                this->verifyDynamicParameter(env.getPressure(), "pressure", runParams, cycleOffset);
             this->performIntegration(simulation, env, runParams, *shapeTraits, cycleOffset, isContinuation);
         } else if (std::holds_alternative<Parameters::OverlapRelaxationParameters>(runParamsI)) {
             const auto &runParams = std::get<Parameters::OverlapRelaxationParameters>(runParamsI);
@@ -1128,7 +1129,9 @@ int Frontend::trajectory(int argc, char **argv) {
             std::size_t cycles = player->getCurrentSnapshotCycles();
             std::size_t totalCycles = player->getTotalCycles();
             double temperature = environment.getTemperature().getValueForCycle(cycles, totalCycles);
-            double pressure = environment.getPressure().getValueForCycle(cycles, totalCycles);
+            double pressure{};
+            if (environment.isBoxScalingEnabled())
+                pressure = environment.getPressure().getValueForCycle(cycles, totalCycles);
             collector->setThermodynamicParameters(temperature, pressure);
             collector->addSnapshot(*packing, player->getCurrentSnapshotCycles(), *shapeTraits);
             this->logger.info() << "Replayed cycle " << player->getCurrentSnapshotCycles() << "; ";

@@ -216,6 +216,7 @@ private:
     bool areOverlapsCounted{};
     std::size_t performedCycles{};
     std::size_t totalCycles{};
+    std::size_t maxCycles{};
 
     std::vector<std::mt19937> mts;
     std::uniform_real_distribution<double> unitIntervalDistribution;
@@ -426,6 +427,8 @@ public:
      * @brief Returns a current pressure of the system.
      */
     [[nodiscard]] double getCurrentPressure() const { return this->pressure; }
+
+    void updateThermodynamicParameters();
 };
 
 

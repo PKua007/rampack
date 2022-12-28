@@ -109,14 +109,12 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
     this->environment.combine(env);
     Expects(this->environment.isComplete());
 
-    std::size_t maxCycles = params.cycleOffset + params.thermalisationCycles + params.averagingCycles;
-    this->temperature = this->environment.getTemperature().getValueForCycle(params.cycleOffset, maxCycles);
-    this->pressure = this->environment.getPressure().getValueForCycle(params.cycleOffset, maxCycles);
     this->observablesCollector = std::move(observablesCollector_);
-    this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
     this->reset();
 
     this->totalCycles = params.cycleOffset;
+    this->maxCycles = params.cycleOffset + params.thermalisationCycles + params.averagingCycles;
+    this->updateThermodynamicParameters();
 
     const Interaction &interaction = shapeTraits.getInteraction();
     LoggerAdditionalTextAppender loggerAdditionalTextAppender(logger);
@@ -138,9 +136,7 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
         logger.info() << "Starting thermalisation..." << std::endl;
         for (std::size_t i{}; i < params.thermalisationCycles; i++) {
             this->performCycle(logger, shapeTraits);
-            this->temperature = this->environment.getTemperature().getValueForCycle(this->totalCycles, maxCycles);
-            this->pressure = this->environment.getPressure().getValueForCycle(this->totalCycles, maxCycles);
-            this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
+            this->updateThermodynamicParameters();
 
             if (this->totalCycles % params.rotationMatrixFixEvery == 0)
                 this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
@@ -170,6 +166,7 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
         logger.info() << "Starting averaging..." << std::endl;
         for (std::size_t i{}; i < params.averagingCycles; i++) {
             this->performCycle(logger, shapeTraits);
+
             if (this->totalCycles % params.rotationMatrixFixEvery == 0)
                 this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
             if (this->totalCycles % params.snapshotEvery == 0) {
@@ -230,14 +227,12 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
     this->environment.combine(env);
     Expects(this->environment.isComplete());
 
-    std::size_t maxCycles = std::numeric_limits<std::size_t>::max();
-    this->temperature = this->environment.getTemperature().getValueForCycle(params.cycleOffset, maxCycles);
-    this->pressure = this->environment.getPressure().getValueForCycle(params.cycleOffset, maxCycles);
     this->observablesCollector = std::move(observablesCollector_);
-    this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
     this->reset();
 
     this->totalCycles = params.cycleOffset;
+    this->maxCycles = std::numeric_limits<std::size_t>::max();
+    this->updateThermodynamicParameters();
 
     const Interaction &interaction = shapeTraits.getInteraction();
     LoggerAdditionalTextAppender loggerAdditionalTextAppender(logger);
@@ -253,9 +248,7 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
     logger.info() << "Starting overlap relaxation..." << std::endl;
     while (this->packing->getCachedNumberOfOverlaps() > 0) {
         this->performCycle(logger, shapeTraits);
-        this->temperature = this->environment.getTemperature().getValueForCycle(this->totalCycles, maxCycles);
-        this->pressure = this->environment.getPressure().getValueForCycle(this->totalCycles, maxCycles);
-        this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
+        this->updateThermodynamicParameters();
 
         if (this->totalCycles % params.rotationMatrixFixEvery == 0)
             this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
@@ -318,6 +311,7 @@ void Simulation::reset() {
     this->observablesCollector->clear();
     this->performedCycles = 0;
     this->totalCycles = 0;
+    this->maxCycles = 0;
     sigint_received = false;
 }
 
@@ -787,6 +781,15 @@ Simulation::Environment Simulation::makeEnvironment(std::vector<std::unique_ptr<
     return env;
 }
 
+void Simulation::updateThermodynamicParameters() {
+    this->temperature = this->environment.getTemperature().getValueForCycle(this->totalCycles, this->maxCycles);
+    if (this->environment.isBoxScalingEnabled())
+        this->pressure = this->environment.getPressure().getValueForCycle(this->totalCycles, this->maxCycles);
+    else
+        this->pressure = 0;
+    this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
+}
+
 void Simulation::Environment::combine(Simulation::Environment &other) {
     if (other.hasTemperature())
         this->temperature = other.temperature;
@@ -803,7 +806,13 @@ void Simulation::Environment::combine(Simulation::Environment &other) {
 }
 
 bool Simulation::Environment::isComplete() const {
-    return this->hasTemperature() && this->hasPressure() && this->hasMoveSamplers() && this->hasBoxScaler();
+    if (!this->hasBoxScaler())
+        return false;
+
+    if (this->isBoxScalingEnabled())
+        return this->hasTemperature() && this->hasPressure() && this->hasMoveSamplers();
+    else
+        return this->hasTemperature() && this->hasMoveSamplers();
 }
 
 const DynamicParameter &Simulation::Environment::getTemperature() const {
