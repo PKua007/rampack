@@ -33,11 +33,11 @@ A general built-in help is available under `./rampack --help`. Mode-specific gui
 
 ### casino
 
-The `casino` mode is used to perform Monte Carlo simulations. Currently, available simulation types are NpT integration
-and reduction of overlaps. The submodule is optimized for hard-core repulsion, however some soft interaction potentials
-are also available. The parameters of the simulation are provided within an INI input file and are passed using
-`-i [input file]` option. All details regarding the input file and NpT integration are described in an exemplary input 
-file `sample_input/integration.ini`. Overlap reduction is described in `sample_input/overlap_reduction.ini`. The
+The `casino` mode is used to perform Monte Carlo simulations. Currently, available simulation types are NpT/NVT
+integration and reduction of overlaps. The submodule is optimized for hard-core repulsion, however some soft interaction
+potentials are also available. The parameters of the simulation are provided within an INI input file and are passed
+using `-i [input file]` option. All details regarding the input file and NpT integration are described in an exemplary
+input file `sample_input/integration.ini`. Overlap reduction is described in `sample_input/overlap_reduction.ini`. The
 anonymous INI section at the beginning describes the initial conditions of the system, particle model and interaction
 model as well as specifies technical parameters such as number of threads and initial Monte Carlo step extents. Then,
 one or more Monte Carlo runs are specified. Each run can be either NpT integration or overlap reduction. The runs are
@@ -107,26 +107,27 @@ project's root folder and run:
 ```shell
 mkdir build
 cd build
-cmake ../ -DCMAKE_BUILD_TYPE=Release
+cmake ../
 ```
 
-GCC with C++17 support is required (at least version 7). If gcc and g++ commands are aliased to a lower version, or to
-clang (the default behaviour on macOS), you have to specify the path manually using cmake options
-`-DCMAKE_C_COMPILER=...`, `-DCMAKE_CXX_COMPILER=...`.
+GCC/Clang with C++17 support is required (at least version 7 in both cases). Apple Silicon is also supported. CMake
+should find an available compiler by itself. If is fails, or you want to manually specify which one to use, it can be
+done using `-DCMAKE_C_COMPILER=...`, `-DCMAKE_CXX_COMPILER=...` CMake options.
 
-Now, in the build folder, you can use `make rampack` to build the program (the binary will appear in `src` subfolder).
-You can use `-j` option with a number of threads for a parallel compilation. 
+Now, in the `build` folder, you can use `cmake --build .` to build all (`rampack` binary will appear in `src`
+subfolder). You can use `-j` option with a number of threads for a parallel compilation. 
 
 ### Automated tests
 
 It is advised to run a suite of unit and validation tests before using the program. The tests can be performed by
-compiling and running the two binaries:
+compiling and running:
 
-* `[build folder]/unit_tests/unit_tests` for short unit tests with sanity-check assertions
-* `[build folder]/validation_tests/valid_tests` for longer validation tests performing full MC sampling and comparing
-  the results with the ones from the literature
+```shell
+cd [build folder]/test
+ctest --extra-verbose
+```
 
-It is advised to build the validation tests using a Release build configuration, since compiler optimizations
+It is advised to build the test in the `Release` build configuration, since compiler optimizations
 significantly reduce the run time.
 
 ## Code extensions
