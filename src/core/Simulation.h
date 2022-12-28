@@ -111,11 +111,18 @@ public:
      */
     struct Environment {
     private:
+        enum class BoxScalerStatus {
+            UNSET,
+            DISABLED,
+            ENEBLED_AND_SET
+        };
+
         Parameter temperature;
         Parameter pressure;
         std::vector<std::shared_ptr<MoveSampler>> moveSamplers;
         std::vector<std::shared_ptr<const MoveSampler>> constMoveSamplers;
         std::shared_ptr<TriclinicBoxScaler> boxScaler;
+        BoxScalerStatus boxScalerStatus = BoxScalerStatus::UNSET;
 
     public:
         [[nodiscard]] bool hasTemperature() const { return this->temperature.hasValue(); }
@@ -133,10 +140,14 @@ public:
         const std::vector<std::shared_ptr<MoveSampler>> &getMoveSamplers();
         void setMoveSamplers(std::vector<std::shared_ptr<MoveSampler>> moveSamplers_);
 
-        [[nodiscard]] bool hasBoxScaler() const { return this->boxScaler != nullptr; }
+        [[nodiscard]] bool hasBoxScaler() const { return this->boxScalerStatus != BoxScalerStatus::UNSET; }
+        [[nodiscard]] bool isBoxScalingEnabled() const {
+            return this->boxScalerStatus == BoxScalerStatus::ENEBLED_AND_SET;
+        }
         [[nodiscard]] const TriclinicBoxScaler &getBoxScaler() const;
         TriclinicBoxScaler &getBoxScaler();
         void setBoxScaler(std::shared_ptr<TriclinicBoxScaler> boxScaler_);
+        void disableBoxScaling();
 
         /**
          * @brief Returns @a true, if all fields were set and have a value.
@@ -232,10 +243,11 @@ private:
                  std::optional<ActiveDomain> boundaries = std::nullopt);
     bool tryScaling(const Interaction &interaction);
     void evaluateCounters(Logger &logger);
+    void evaluateMoleculeMoveCounter(Logger &logger);
+    void evaluateScalingMoveCounter(Logger &logger);
     void reset();
     void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger, bool displayOverlaps);
     [[nodiscard]] std::vector<std::size_t> calculateMoveTypeAccumulations(std::size_t numParticles) const;
-    void evaluateMoleculeMoveCounter(Logger &logger);
     void fixRotationMatrices(const Interaction &interaction, Logger &logger);
     static double getRotationMatrixDeviation(const Matrix<3, 3> &rotation);
     static void fixRotationMatrix(Matrix<3, 3> &rotation);
