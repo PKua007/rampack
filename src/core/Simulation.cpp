@@ -469,6 +469,8 @@ bool Simulation::tryMove(const ShapeTraits &shapeTraits, const std::vector<std::
 }
 
 bool Simulation::tryScaling(const Interaction &interaction) {
+    Assert(this->environment.isBoxScalingEnabled());
+
     auto &mt = this->mts.front();
     auto &boxScaler = this->environment.getBoxScaler();
 
@@ -692,6 +694,8 @@ std::vector<std::unique_ptr<MoveSampler>> Simulation::makeRototranslation(double
 }
 
 Simulation::MoveStatistics Simulation::getScalingStatistics() const {
+    Assert(this->environment.isBoxScalingEnabled());
+
     std::size_t total = this->scalingCounter.getMoves();
     std::size_t accepted = this->scalingCounter.getAcceptedMoves();
     double stepSize = this->environment.getBoxScaler().getStepSize();
@@ -715,7 +719,8 @@ std::vector<Simulation::MoveStatistics> Simulation::getMovesStatistics() const {
         moveGroupsStatistics.emplace_back(groupName, total, accepted, stepSizeData);
     }
 
-    moveGroupsStatistics.push_back(this->getScalingStatistics());
+    if (this->environment.isBoxScalingEnabled())
+        moveGroupsStatistics.push_back(this->getScalingStatistics());
 
     return moveGroupsStatistics;
 }
@@ -867,5 +872,5 @@ void Simulation::Environment::setBoxScaler(std::shared_ptr<TriclinicBoxScaler> b
 
 void Simulation::Environment::disableBoxScaling() {
     this->boxScaler = nullptr;
-    this->boxScalerStatus = BoxScalerStatus::UNSET;
+    this->boxScalerStatus = BoxScalerStatus::DISABLED;
 }

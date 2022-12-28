@@ -520,7 +520,7 @@ void Frontend::printPerformanceInfo(const Simulation &simulation) {
     double cyclesPerSecond = static_cast<double>(simulation.getPerformedCycles()) / totalSeconds;
 
     double ngRebuildTotalPercent = ngRebuildSeconds / totalSeconds * 100;
-    double ngRebuildScalingPercent = ngRebuildSeconds / scalingSeconds * 100;
+    double ngRebuildScalingPercent = (scalingSeconds == 0) ? 0 : (ngRebuildSeconds / scalingSeconds * 100);
     double domainDecompTotalPercent = domainDecompositionSeconds / totalSeconds * 100;
     double domainDecompMovePercent = domainDecompositionSeconds / moveSeconds * 100;
     double movePercent = moveSeconds / totalSeconds * 100;
@@ -893,15 +893,17 @@ void Frontend::overwriteMoveStepSizes(Simulation::Environment &env,
         }
     }
 
-    std::string scalingKey = Frontend::formatMoveKey("scaling", "scaling");
-    if (packingAuxInfo.find(scalingKey) == packingAuxInfo.end()) {
-        this->logger.warn() << "Step size " << scalingKey << " not found in RAMSNAP metadata. Falling back to ";
-        this->logger << "input file value " << env.getBoxScaler().getStepSize() << std::endl;
-    } else {
-        double volumeStepSize = std::stod(packingAuxInfo.at(scalingKey));
-        Validate(volumeStepSize > 0);
-        env.getBoxScaler().setStepSize(volumeStepSize);
-        notUsedStepSizes.erase(scalingKey);
+    if (env.isBoxScalingEnabled()) {
+        std::string scalingKey = Frontend::formatMoveKey("scaling", "scaling");
+        if (packingAuxInfo.find(scalingKey) == packingAuxInfo.end()) {
+            this->logger.warn() << "Step size " << scalingKey << " not found in RAMSNAP metadata. Falling back to ";
+            this->logger << "input file value " << env.getBoxScaler().getStepSize() << std::endl;
+        } else {
+            double volumeStepSize = std::stod(packingAuxInfo.at(scalingKey));
+            Validate(volumeStepSize > 0);
+            env.getBoxScaler().setStepSize(volumeStepSize);
+            notUsedStepSizes.erase(scalingKey);
+        }
     }
 
     if (notUsedStepSizes.empty())
@@ -1466,8 +1468,13 @@ Simulation::Environment Frontend::parseSimulationEnvironment(const InheritablePa
     Simulation::Environment env;
 
     if (!params.scalingType.empty()) {
-        Validate(params.volumeStepSize > 0);
-        env.setBoxScaler(TriclinicBoxScalerFactory::create(params.scalingType, params.volumeStepSize));
+        auto boxScaler = TriclinicBoxScalerFactory::create(params.scalingType, params.volumeStepSize);
+        if (boxScaler == nullptr) {
+            env.disableBoxScaling();
+        } else {
+            Validate(params.volumeStepSize > 0);
+            env.setBoxScaler(std::move(boxScaler));
+        }
     }
 
     if (!params.moveTypes.empty()) {
