@@ -309,8 +309,8 @@ namespace legacy {
                                                               const std::string &shapeAttributes,
                                                               const std::string &interaction, const Version &version)
     {
-        if (version > Version{0, 5, 0})
-            throw std::runtime_error("legacy::ShapeFactory supports version up to 0.5.0");
+        if (version >= INPUT_REVAMP_VERSION)
+            throw std::runtime_error("legacy::ShapeFactory supports version below 0.8.0");
 
         std::istringstream shapeAttrStream(shapeAttributes);
         std::istringstream interactionAttrStream(interaction);
@@ -333,7 +333,7 @@ namespace legacy {
             Validate(sphereNum > 0);
             Validate(sphereRadius > 0);
 
-            if (version >= Version{0, 2, 0}) {
+            if (version >= CONSISTENT_SHAPES_VERSION) {
                 return parse_polysphere_traits<PolysphereBananaTraits>(shapeName, interactionName,
                                                                        interactionAttrStream,
                                                                        arcRadius, arcAngle, sphereNum, sphereRadius);
@@ -390,7 +390,7 @@ namespace legacy {
             Validate(smallSpherePenetration < 2 * smallSphereRadius);
             Validate(largeSpherePenetration < 2 * std::min(smallSphereRadius, largeSphereRadius));
 
-            if (version >= Version{0, 2, 0}) {
+            if (version >= CONSISTENT_SHAPES_VERSION) {
                 return parse_polysphere_traits<PolysphereLollipopTraits>(
                         shapeName, interactionName, interactionAttrStream,
                         sphereNum, smallSphereRadius, largeSphereRadius, smallSpherePenetration, largeSpherePenetration
@@ -402,7 +402,7 @@ namespace legacy {
                 );
             }
         } else if (shapeName == "PolysphereWedge") {
-            if (version >= Version{0, 2, 0})
+            if (version >= CONSISTENT_SHAPES_VERSION)
                 return parse_polysphere_wedge(shapeName, interactionName, shapeAttrStream, interactionAttrStream);
             else
                 return parse_polysphere_wedge_legacy(shapeName, interactionName, shapeAttrStream,

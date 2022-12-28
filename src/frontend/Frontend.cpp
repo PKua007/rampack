@@ -1354,8 +1354,9 @@ int Frontend::shapePreview(int argc, char **argv) {
         die("You must specify INI file with shape parameters using -i or do it manually using -S", this->logger);
     }
 
-    if (paramsVersion < Version{0, 6, 0})
-        die("shape-preview mode supports only versions 0.6.0+; " + paramsVersion + " was given", this->logger);
+    if (paramsVersion < INPUT_REVAMP_VERSION)
+        die("shape-preview mode supports only versions " + INPUT_REVAMP_VERSION.str() + "+; " + paramsVersion
+            + " was given", this->logger);
 
     if (paramsVersion > CURRENT_VERSION) {
         die("Version of parameters (" + paramsVersion + ") is higher than RAMPACK version (" + CURRENT_VERSION.str()
@@ -1635,7 +1636,7 @@ Frontend::parseFilenameAndParams(const std::string &str, const std::vector<std::
 std::shared_ptr<ShapeTraits> Frontend::createShapeTraits(const std::string &shapeName, const std::string &shapeAttributes,
                                                          const std::string &interaction, Version version)
 {
-    if (version < Version{0, 6, 0})
+    if (version < INPUT_REVAMP_VERSION)
         return legacy::ShapeFactory::shapeTraitsFor(shapeName, shapeAttributes, interaction, version);
 
     using namespace pyon::matcher;
