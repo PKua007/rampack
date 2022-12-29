@@ -36,6 +36,7 @@
 #include "core/io/XYZRecorder.h"
 #include "core/io/WolframWriter.h"
 #include "core/io/XYZWriter.h"
+#include "core/io/TruncatedPlayer.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -947,6 +948,7 @@ int Frontend::trajectory(int argc, char **argv) {
     std::string auxVerbosity;
     std::string storeFilename;
     std::string xyzTrajectoryFilename;
+    std::size_t truncatedCycles;
 
     options.add_options()
         ("h,help", "prints help for this mode")
@@ -995,10 +997,12 @@ int Frontend::trajectory(int argc, char **argv) {
                                "verbosity: error, warn, info, verbose, debug. Defaults to: info",
          cxxopts::value<std::string>(auxVerbosity))
         ("s,store-ramtrj-trajectory", "store the RAMTRJ trajectory; it is most useful for broken trajectories fixed "
-                                      "using --auto-fix",
+                                      "using --auto-fix or truncated using --truncate",
          cxxopts::value<std::string>(storeFilename))
         ("x,store-xyz-trajectory", "generates (extended) XYZ trajectory and stores it in a given file",
-         cxxopts::value<std::string>(xyzTrajectoryFilename));
+         cxxopts::value<std::string>(xyzTrajectoryFilename))
+        ("t,truncate", "truncates the trajectory to given number of cycles (trajectory file is unchanged)",
+         cxxopts::value<std::size_t>(truncatedCycles));
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
@@ -1076,15 +1080,28 @@ int Frontend::trajectory(int argc, char **argv) {
 
     // Autofix trajectory if desired
     bool autoFix = parsedOptions.count("auto-fix");
-    auto player = this->loadRamtrjPlayer(trajectoryFilename, packing->size(), autoFix);
+    std::unique_ptr<SimulationPlayer> player = this->loadRamtrjPlayer(trajectoryFilename, packing->size(), autoFix);
     if (player == nullptr)
         return EXIT_FAILURE;
 
     // Show info (if desired)
     if (parsedOptions.count("log-info")) {
         this->logger.info() << "-- " << trajectoryFilename << std::endl;
-        player->dumpHeader(this->logger);
+        dynamic_cast<const RamtrjPlayer&>(*player).dumpHeader(this->logger);
         this->logger.info() << std::endl;
+    }
+
+    // Truncate trajectory (if desired)
+    if (parsedOptions.count("truncate")) {
+        ValidateMsg(truncatedCycles <= player->getTotalCycles(),
+                    "Number of truncated cycles (" + std::to_string(truncatedCycles) + ") must not be greater than "
+                    + "number of recorded cycles (" + std::to_string(player->getTotalCycles()));
+        ValidateMsg(truncatedCycles % player->getCycleStep() == 0,
+                    "Number of truncated cycles (" + std::to_string(truncatedCycles) + ") has to be divisible by the "
+                    + "cycle step (" + std::to_string(player->getCycleStep()) + ")");
+
+        auto truncatedPlayer = std::make_unique<TruncatedPlayer>(std::move(player), truncatedCycles);
+        player = std::move(truncatedPlayer);
     }
 
     // Stored trajectory (if desired)
