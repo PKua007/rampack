@@ -10,12 +10,20 @@
 #include "core/SimulationPlayer.h"
 
 
+/**
+ * @brief Adapted for any SimulationPlayer, which truncated the trajectory on a given number of total cycles.
+ */
 class TruncatedPlayer : public SimulationPlayer {
 private:
     std::unique_ptr<SimulationPlayer> player;
     std::size_t totalCycles{};
 
 public:
+    /**
+     * @brief Creates the player.
+     * @param player player to truncate.
+     * @param totalCycles number of cycles to truncate on.
+     */
     TruncatedPlayer(std::unique_ptr<SimulationPlayer> player, std::size_t totalCycles);
 
     void reset() override { this->player->reset(); }

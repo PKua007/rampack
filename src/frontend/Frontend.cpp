@@ -1001,7 +1001,8 @@ int Frontend::trajectory(int argc, char **argv) {
          cxxopts::value<std::string>(storeFilename))
         ("x,store-xyz-trajectory", "generates (extended) XYZ trajectory and stores it in a given file",
          cxxopts::value<std::string>(xyzTrajectoryFilename))
-        ("t,truncate", "truncates the trajectory to given number of cycles (trajectory file is unchanged)",
+        ("t,truncate", "truncates loaded trajectory to a given number of total cycles (trajectory file remains "
+                       "unchanged)",
          cxxopts::value<std::size_t>(truncatedCycles));
 
     auto parsedOptions = options.parse(argc, argv);
