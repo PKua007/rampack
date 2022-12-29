@@ -59,6 +59,7 @@ Packing::Packing(std::unique_ptr<BoundaryConditions> bc, std::size_t moveThreads
     this->moveThreads = (moveThreads == 0 ? OMP_MAXTHREADS : moveThreads);
     this->scalingThreads = (scalingThreads == 0 ? OMP_MAXTHREADS : scalingThreads);
 
+    this->shapes.resize(this->moveThreads);    // temp shapes at the back so that Packing::end() works
     this->lastAlteredParticleIdx.resize(this->moveThreads, 0);
     this->lastMoveOverlapDeltas.resize(this->moveThreads, 0);
 }
