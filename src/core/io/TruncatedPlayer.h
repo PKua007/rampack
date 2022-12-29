@@ -1,0 +1,35 @@
+//
+// Created by Piotr Kubala on 28/12/2022.
+//
+
+#ifndef RAMPACK_TRUNCATEDPLAYER_H
+#define RAMPACK_TRUNCATEDPLAYER_H
+
+#include <memory>
+
+#include "core/SimulationPlayer.h"
+
+
+class TruncatedPlayer : public SimulationPlayer {
+private:
+    std::unique_ptr<SimulationPlayer> player;
+    std::size_t totalCycles{};
+
+public:
+    TruncatedPlayer(std::unique_ptr<SimulationPlayer> player, std::size_t totalCycles);
+
+    void reset() override { this->player->reset(); }
+    [[nodiscard]] std::size_t getCurrentSnapshotCycles() const override { return this->player->getCurrentSnapshotCycles(); }
+    [[nodiscard]] std::size_t getCycleStep() const override { return this->player->getCycleStep(); }
+    [[nodiscard]] std::size_t getNumMolecules() const override { return this->player->getNumMolecules(); }
+    void close() override { this->player->close(); }
+
+    [[nodiscard]] bool hasNext() const override;
+    void nextSnapshot(Packing &packing, const Interaction &interaction) override;
+    void lastSnapshot(Packing &packing, const Interaction &interaction) override;
+    void jumpToSnapshot(Packing &packing, const Interaction &interaction, std::size_t cycleNumber) override;
+    [[nodiscard]] std::size_t getTotalCycles() const override;
+};
+
+
+#endif //RAMPACK_TRUNCATEDPLAYER_H

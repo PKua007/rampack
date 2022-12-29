@@ -51,7 +51,7 @@ bool RamtrjPlayer::hasNext() const {
 }
 
 void RamtrjPlayer::nextSnapshot(Packing &packing, const Interaction &interaction) {
-    Expects(this->in != nullptr);
+    Expects(this->hasNext());
     Expects(packing.size() == this->header.numParticles);
 
     TriclinicBox newBox = RamtrjIO::readBox(*this->in);

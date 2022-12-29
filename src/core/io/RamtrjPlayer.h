@@ -16,7 +16,7 @@
 /**
  * @brief Class which enables replaying particle trajectories stored in RAMTRJ binary format.
  */
-class RamtrjPlayer : RamtrjIO, public SimulationPlayer {
+class RamtrjPlayer final : RamtrjIO, public SimulationPlayer {
 private:
     Header header;
     std::unique_ptr<std::istream> in;
