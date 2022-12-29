@@ -155,7 +155,7 @@ int Frontend::casino(int argc, char **argv) {
 
     // Validate parsed options
     std::string cmd(argv[0]);
-    if (argc != 1)
+    if (!parsedOptions.unmatched().empty())
         die("Unexpected positional arguments. See " + cmd + " --help", this->logger);
     if (!parsedOptions.count("input"))
         die("Input file must be specified with option -i [input file name]", this->logger);
@@ -683,7 +683,7 @@ int Frontend::optimize_distance(int argc, char **argv) {
 
     // Validate parsed options
     std::string cmd(argv[0]);
-    if (argc != 1)
+    if (!parsedOptions.unmatched().empty())
         die("Unexpected positional arguments. See " + cmd + " --help", this->logger);
     if (!parsedOptions.count("input") && !parsedOptions.count("shape-name"))
         die("You must specify --input file or --shape-name", this->logger);
@@ -790,7 +790,7 @@ int Frontend::preview(int argc, char **argv) {
 
     // Validate parsed options
     std::string cmd(argv[0]);
-    if (argc != 1)
+    if (!parsedOptions.unmatched().empty())
         die("Unexpected positional arguments. See " + cmd + " --help", this->logger);
     if (!parsedOptions.count("input"))
         die("Input file must be specified with option -i [input file name]", this->logger);
@@ -1025,7 +1025,7 @@ int Frontend::trajectory(int argc, char **argv) {
 
     // Validate parsed options
     std::string cmd(argv[0]);
-    if (argc != 1)
+    if (!parsedOptions.unmatched().empty())
         die("Unexpected positional arguments. See " + cmd + " --help", this->logger);
     if (!parsedOptions.count("input"))
         die("Input file must be specified with option -i [input file name]", this->logger);
