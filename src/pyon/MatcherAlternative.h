@@ -20,6 +20,10 @@ namespace pyon::matcher {
         [[nodiscard]] std::string generateAlternativeUnmatchedReport(const std::string &reason) const;
         [[nodiscard]] std::string generateVariantUnmatchedReport(const std::vector<std::string> &reasons,
                                                                  const std::shared_ptr<const ast::Node> &node) const;
+        [[nodiscard]] std::string nameNode(const std::shared_ptr<const ast::Node> &node) const;
+        [[nodiscard]] std::vector<std::shared_ptr<MatcherBase>>
+        collectVariants(const std::shared_ptr<const ast::Node> &node) const;
+
 
     public:
         MatcherAlternative() = default;
@@ -47,6 +51,7 @@ namespace pyon::matcher {
             }
             return *this;
         }
+
     };
 } // matcher
 
