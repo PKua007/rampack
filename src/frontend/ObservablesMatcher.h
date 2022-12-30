@@ -10,7 +10,7 @@
 class ObservableMatcher {
 public:
     static pyon::matcher::MatcherArray createObservablesMatcher(std::size_t maxThreads = 1);
-    static pyon::matcher::MatcherArray createBullObservablesMatcher(std::size_t maxThreads = 1);
+    static pyon::matcher::MatcherArray createBulkObservablesMatcher(std::size_t maxThreads = 1);
 };
 
 
