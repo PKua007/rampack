@@ -1642,8 +1642,9 @@ std::shared_ptr<ShapeTraits> Frontend::createShapeTraits(const std::string &shap
     using namespace pyon::matcher;
     Any shapeTraits;
     auto shapeAST = pyon::Parser::parse(shapeName);
-    if (!ShapeMatcher::shape.match(shapeAST, shapeTraits))
-        throw ValidationException("Malformed shape");
+    auto matchReport = ShapeMatcher::shape.match(shapeAST, shapeTraits);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
 
     return shapeTraits.as<std::shared_ptr<ShapeTraits>>();
 }
