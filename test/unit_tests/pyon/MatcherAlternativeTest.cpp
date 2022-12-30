@@ -57,6 +57,17 @@ TEST_CASE("Matcher: Alternative") {
         }
     }
 
+    SECTION("joining alternatives with dataclasses") {
+        auto matcher12 = MatcherDataclass("class1") | MatcherDataclass("class2");
+        auto matcher34 = MatcherDataclass("class3") | MatcherDataclass("class4");
+        auto matcher1234 = matcher12 | matcher34;
+
+        REQUIRE(matcher1234.match(Parser::parse("class1"), result));
+        REQUIRE(matcher1234.match(Parser::parse("class2"), result));
+        REQUIRE(matcher1234.match(Parser::parse("class3"), result));
+        REQUIRE(matcher1234.match(Parser::parse("class4"), result));
+    }
+
     SECTION("outline") {
         SECTION("layout") {
             auto matcher = MatcherInt{}.positive().lessEquals(5) | MatcherFloat{}.positive() | MatcherString{};

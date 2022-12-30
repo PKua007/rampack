@@ -52,12 +52,12 @@ namespace pyon::matcher {
         if (node->getType() == ast::Node::DATACLASS) {
             auto nodeDataclass = node->as<ast::NodeDataclass>();
             const std::string &className = nodeDataclass->getClassName();
-            for (const auto &matcherDataclass : dataclasses)
+            for (const auto &matcherDataclass : this->dataclasses)
                 if (matcherDataclass->getName() == className)
                     variants.push_back(matcherDataclass);
         } else {
             // this->alternatives also include dataclasses, but here the node type won't match
-            for (const auto &matcher: alternatives)
+            for (const auto &matcher: this->alternatives)
                 if (matcher->matchNodeType(node->getType()))
                     variants.push_back(matcher);
         }
