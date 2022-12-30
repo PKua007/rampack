@@ -21,7 +21,8 @@ namespace pyon::matcher {
     {
         std::ostringstream out;
         if (reasons.size() == 1) {
-            out << "Matching Alternative failed: " << reasons.back();
+            out << "Matching Alternative failed:" << std::endl;
+            out << "✖ " << replaceAll(reasons.back(), "\n", "\n  ");
             return out.str();
         }
 
