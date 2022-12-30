@@ -27,8 +27,8 @@ private:
     double temperature{};
     double pressure{};
 
-    std::vector<std::unique_ptr<Observable>> observables;
-    std::vector<std::unique_ptr<BulkObservable>> bulkObservables;
+    std::vector<std::shared_ptr<Observable>> observables;
+    std::vector<std::shared_ptr<BulkObservable>> bulkObservables;
     std::vector<std::string> snapshotHeader;
     std::vector<std::string> averagingHeader;
     std::vector<std::size_t> inlineObservablesIndices;
@@ -71,7 +71,11 @@ public:
     enum ObservableType : std::size_t {
         SNAPSHOT = 1,
         AVERAGING = 2,
-        INLINE = 4
+        SNAPSHOT_AVERAGING = 3,
+        INLINE = 4,
+        SNAPSHOT_INLINE = 5,
+        AVERAGING_INLINE = 6,
+        SNAPSHOT_AVERAGING_INLINE = 7
     };
 
     /**
@@ -80,12 +84,12 @@ public:
      * @param observable a new observable to be added
      * @param observableType the type of the observable as specified by ObservableType
      */
-    void addObservable(std::unique_ptr<Observable> observable, std::size_t observableType);
+    void addObservable(std::shared_ptr<Observable> observable, std::size_t observableType);
 
     /**
      * @brief Adds BulkObservable to be computed in the averaging phase.
      */
-    void addBulkObservable(std::unique_ptr<BulkObservable> observable);
+    void addBulkObservable(std::shared_ptr<BulkObservable> observable);
 
     /**
      * @brief Sets the thermodynamic parameters: @a temperature_ and @a pressure_ to be used when calculating observable

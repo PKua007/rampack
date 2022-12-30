@@ -19,7 +19,7 @@
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
 #include "frontend/legacy/ShapeFactory.h"
-#include "ObservablesCollectorFactory.h"
+#include "frontend/legacy/ObservablesCollectorFactory.h"
 #include "core/Simulation.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/Packing.h"
@@ -41,6 +41,7 @@
 #include "legacy/ShapeFactory.h"
 #include "ShapeMatcher.h"
 #include "pyon/Parser.h"
+#include "ObservablesMatcher.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -257,7 +258,8 @@ int Frontend::casino(int argc, char **argv) {
             this->verifyDynamicParameter(env.getTemperature(), "temperature", runParams, cycleOffset);
             if (env.isBoxScalingEnabled())
                 this->verifyDynamicParameter(env.getPressure(), "pressure", runParams, cycleOffset);
-            this->performIntegration(simulation, env, runParams, *shapeTraits, cycleOffset, isContinuation);
+            this->performIntegration(simulation, env, runParams, *shapeTraits, cycleOffset, isContinuation,
+                                     params.version);
         } else if (std::holds_alternative<Parameters::OverlapRelaxationParameters>(runParamsI)) {
             const auto &runParams = std::get<Parameters::OverlapRelaxationParameters>(runParamsI);
             this->performOverlapRelaxation(simulation, env, params.shapeName, params.shapeAttributes, runParams, shapeTraits,
@@ -288,7 +290,7 @@ void Frontend::combineEnvironment(Simulation::Environment &env, const Parameters
 
 void Frontend::performIntegration(Simulation &simulation, Simulation::Environment &env,
                                   const Parameters::IntegrationParameters &runParams, const ShapeTraits &shapeTraits,
-                                  std::size_t cycleOffset, bool isContinuation)
+                                  std::size_t cycleOffset, bool isContinuation, const Version &paramsVersion)
 {
     this->logger.setAdditionalText(runParams.runName);
     this->logger.info() << std::endl;
@@ -306,9 +308,8 @@ void Frontend::performIntegration(Simulation &simulation, Simulation::Environmen
     if (!runParams.xyzRecordingFilename.empty())
         recorders.push_back(this->loadXYZRecorder(runParams.xyzRecordingFilename, isContinuation));
 
-    auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','),
-                                                         explode(runParams.bulkObservables, ','),
-                                                         simulation.getPacking().getScalingThreads());
+    auto collector = this->createObservablesCollector(runParams.observables, runParams.bulkObservables,
+                                                      simulation.getPacking().getScalingThreads(), paramsVersion);
     this->attachSnapshotOut(*collector, runParams.observableSnapshotFilename, isContinuation);
 
     Simulation::IntegrationParameters integrationParams;
@@ -424,9 +425,8 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
         shapeTraits = std::make_shared<CompoundShapeTraits>(shapeTraits, helperShape);
     }
 
-    auto collector = ObservablesCollectorFactory::create(explode(runParams.observables, ','),
-                                                         explode(runParams.bulkObservables, ','),
-                                                         simulation.getPacking().getScalingThreads());
+    auto collector = this->createObservablesCollector(runParams.observables, runParams.bulkObservables,
+                                                      simulation.getPacking().getScalingThreads(), paramsVersion);
     this->attachSnapshotOut(*collector, runParams.observableSnapshotFilename, isContinuation);
 
     Simulation::OverlapRelaxationParameters relaxParams;
@@ -1141,7 +1141,7 @@ int Frontend::trajectory(int argc, char **argv) {
             die("Output file for observables must be specified with option -o [output file name]", this->logger);
 
         this->logger.info() << "Starting simulation replay for observables..." << std::endl;
-        auto collector = ObservablesCollectorFactory::create(observables, {}, maxThreads);
+        auto collector = legacy::ObservablesCollectorFactory::create(observables, {}, maxThreads);
 
         using namespace std::chrono;
         auto start = high_resolution_clock::now();
@@ -1183,7 +1183,7 @@ int Frontend::trajectory(int argc, char **argv) {
         }
 
         this->logger.info() << "Starting simulation replay for bulk observables..." << std::endl;
-        auto collector = ObservablesCollectorFactory::create({}, bulkObservables, maxThreads);
+        auto collector = legacy::ObservablesCollectorFactory::create({}, bulkObservables, maxThreads);
 
         using namespace std::chrono;
         auto start = high_resolution_clock::now();
@@ -1633,8 +1633,9 @@ Frontend::parseFilenameAndParams(const std::string &str, const std::vector<std::
     return {filename, params};
 }
 
-std::shared_ptr<ShapeTraits> Frontend::createShapeTraits(const std::string &shapeName, const std::string &shapeAttributes,
-                                                         const std::string &interaction, Version version)
+std::shared_ptr<ShapeTraits> Frontend::createShapeTraits(const std::string &shapeName,
+                                                         const std::string &shapeAttributes,
+                                                         const std::string &interaction, Version version) const
 {
     if (version < INPUT_REVAMP_VERSION)
         return legacy::ShapeFactory::shapeTraitsFor(shapeName, shapeAttributes, interaction, version);
@@ -1647,4 +1648,44 @@ std::shared_ptr<ShapeTraits> Frontend::createShapeTraits(const std::string &shap
         throw ValidationException(matchReport.getReason());
 
     return shapeTraits.as<std::shared_ptr<ShapeTraits>>();
+}
+
+std::shared_ptr<ObservablesCollector>
+Frontend::createObservablesCollector(const std::string &observablesStr, const std::string &bulkObservablesStr,
+                                     std::size_t maxThreads, Version version) const
+{
+    if (version < Version{0, 8, 0}) {
+        return legacy::ObservablesCollectorFactory::create(
+            explode(observablesStr, ','), explode(bulkObservablesStr, ','), maxThreads
+        );
+    }
+
+    using namespace pyon::matcher;
+    Any result;
+
+    auto collector = std::make_shared<ObservablesCollector>();
+
+    auto observablesMatcher = ObservableMatcher::createObservablesMatcher(maxThreads);
+    auto observablesAST = pyon::Parser::parse(observablesStr);
+    auto matchReport = observablesMatcher.match(observablesAST, result);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    using ObservableType = ObservablesCollector::ObservableType;
+    using ObservableData = std::pair<ObservableType, std::shared_ptr<Observable>>;
+    auto observables = result.as<std::vector<ObservableData>>();
+    for (const auto &observableData : observables)
+        collector->addObservable(observableData.second, observableData.first);
+
+    auto bulkObservablesMatcher = ObservableMatcher::createObservablesMatcher(maxThreads);
+    observablesAST = pyon::Parser::parse(bulkObservablesStr);
+    matchReport = bulkObservablesMatcher.match(observablesAST, result);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    auto bulkObservables = result.as<std::vector<std::shared_ptr<BulkObservable>>>();
+    for (const auto &bulkObservable : bulkObservables)
+        collector->addBulkObservable(bulkObservable);
+
+    return collector;
 }

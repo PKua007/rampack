@@ -228,7 +228,7 @@ private:
     std::array<std::size_t, 3> domainDivisions;
     std::size_t numDomains{};
 
-    std::unique_ptr<ObservablesCollector> observablesCollector;
+    std::shared_ptr<ObservablesCollector> observablesCollector;
 
     static std::vector<std::unique_ptr<MoveSampler>> makeRototranslation(double translationStepSize,
                                                                          double rotationStepSize);
@@ -318,7 +318,7 @@ public:
      */
     void integrate(Parameter temperature_, Parameter pressure_, std::size_t thermalisationCycles,
                    std::size_t averagingCycles, std::size_t averagingEvery, std::size_t snapshotEvery,
-                   const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
+                   const ShapeTraits &shapeTraits, std::shared_ptr<ObservablesCollector> observablesCollector_,
                    std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger,
                    std::size_t cycleOffset = 0);
     /**
@@ -334,7 +334,7 @@ public:
      * @param logger Logger object to display simulation data
      */
     void integrate(Environment env, const IntegrationParameters &params, const ShapeTraits &shapeTraits,
-                   std::unique_ptr<ObservablesCollector> observablesCollector_,
+                   std::shared_ptr<ObservablesCollector> observablesCollector_,
                    std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger);
 
     /**
@@ -346,7 +346,7 @@ public:
      * inherited from the previous run or from the constructor.
      */
     void relaxOverlaps(Parameter temperature_, Parameter pressure_, std::size_t snapshotEvery,
-                       const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
+                       const ShapeTraits &shapeTraits, std::shared_ptr<ObservablesCollector> observablesCollector_,
                        std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger,
                        std::size_t cycleOffset = 0);
 
@@ -363,7 +363,7 @@ public:
     * @param logger Logger object to display simulation data
     */
     void relaxOverlaps(Environment env, const OverlapRelaxationParameters &params, const ShapeTraits &shapeTraits,
-                       std::unique_ptr<ObservablesCollector> observablesCollector_,
+                       std::shared_ptr<ObservablesCollector> observablesCollector_,
                        std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger);
 
     [[nodiscard]] const ObservablesCollector &getObservablesCollector() { return *this->observablesCollector; }

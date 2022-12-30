@@ -464,13 +464,16 @@ namespace {
     }
 }
 
-std::unique_ptr<ObservablesCollector>
-ObservablesCollectorFactory::create(const std::vector<std::string> &observables,
-                                    const std::vector<std::string> &bulkObservables, std::size_t maxThreads,
-                                    const Version &version)
-{
-    auto collector = std::make_unique<ObservablesCollector>();
-    parse_observables(observables, *collector, version);
-    parse_bulk_observables(bulkObservables, maxThreads, *collector, version);
-    return collector;
+
+namespace legacy {
+    std::unique_ptr<ObservablesCollector>
+    ObservablesCollectorFactory::create(const std::vector<std::string> &observables,
+                                        const std::vector<std::string> &bulkObservables, std::size_t maxThreads,
+                                        const Version &version)
+    {
+        auto collector = std::make_unique<ObservablesCollector>();
+        parse_observables(observables, *collector, version);
+        parse_bulk_observables(bulkObservables, maxThreads, *collector, version);
+        return collector;
+    }
 }

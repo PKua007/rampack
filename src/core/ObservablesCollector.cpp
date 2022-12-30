@@ -9,7 +9,7 @@
 #include "ObservablesCollector.h"
 #include "utils/Utils.h"
 
-void ObservablesCollector::addObservable(std::unique_ptr<Observable> observable, std::size_t observableType) {
+void ObservablesCollector::addObservable(std::shared_ptr<Observable> observable, std::size_t observableType) {
     if (!this->snapshotValues.empty())
         ExpectsMsg(snapshotValues.front().empty(), "Cannot add a new observable if snapshots are already captured");
     if (!this->averagingValues.empty())
@@ -38,7 +38,7 @@ void ObservablesCollector::addObservable(std::unique_ptr<Observable> observable,
         this->inlineObservablesIndices.push_back(observableIndex);
 }
 
-void ObservablesCollector::addBulkObservable(std::unique_ptr<BulkObservable> observable) {
+void ObservablesCollector::addBulkObservable(std::shared_ptr<BulkObservable> observable) {
     this->bulkObservables.push_back(std::move(observable));
 }
 
