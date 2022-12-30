@@ -1671,13 +1671,12 @@ Frontend::createObservablesCollector(const std::string &observablesStr, const st
     if (!matchReport)
         throw ValidationException(matchReport.getReason());
 
-    using ObservableType = ObservablesCollector::ObservableType;
-    using ObservableData = std::pair<ObservableType, std::shared_ptr<Observable>>;
+    using ObservableData = std::pair<std::size_t, std::shared_ptr<Observable>>;
     auto observables = result.as<std::vector<ObservableData>>();
     for (const auto &observableData : observables)
         collector->addObservable(observableData.second, observableData.first);
 
-    auto bulkObservablesMatcher = ObservableMatcher::createObservablesMatcher(maxThreads);
+    auto bulkObservablesMatcher = ObservableMatcher::createBulkObservablesMatcher(maxThreads);
     observablesAST = pyon::Parser::parse(bulkObservablesStr);
     matchReport = bulkObservablesMatcher.match(observablesAST, result);
     if (!matchReport)
