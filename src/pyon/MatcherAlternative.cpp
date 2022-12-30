@@ -22,45 +22,58 @@ namespace pyon::matcher {
         std::ostringstream out;
         if (reasons.size() == 1) {
             out << "Matching Alternative failed: " << reasons.back();
-        } else {
-            std::string nodeName;
-            if (node->getType() == ast::Node::DATACLASS)
-                nodeName = "class \"" + node->as<ast::NodeDataclass>()->getClassName() + "\"";
-            else
-                nodeName = node->getNodeName();
-            out << "Matching Alternative failed: all " << reasons.size() << " variants of " << nodeName;
-            out << " failed to match:";
-
-            std::size_t numberWidth = std::to_string(reasons.size()).length();
-            for (std::size_t i{}; i < reasons.size(); i++) {
-                const auto &reason = reasons[i];
-                out << std::endl;
-                out << "✖ (variant " << std::setw(static_cast<int>(numberWidth)) << std::left << (i + 1) << ") ";
-                out << replaceAll(reason, "\n", "\n  ");
-            }
+            return out.str();
         }
+
+        out << "Matching Alternative failed: all " << reasons.size() << " variants of " << this->nameNode(node);
+        out << " failed to match:";
+
+        std::size_t numberWidth = std::to_string(reasons.size()).length();
+        for (std::size_t i{}; i < reasons.size(); i++) {
+            const auto &reason = reasons[i];
+            out << std::endl;
+            out << "✖ (variant " << std::setw(static_cast<int>(numberWidth)) << std::left << (i + 1) << ") ";
+            out << replaceAll(reason, "\n", "\n  ");
+        }
+
         return out.str();
     }
 
-    MatchReport MatcherAlternative::match(std::shared_ptr<const ast::Node> node, Any &result) const {
-        if (!this->matchNodeType(node->getType()))
-            return this->generateAlternativeUnmatchedReport("Got incorrect node type: " + node->getNodeName());
+    std::string MatcherAlternative::nameNode(const std::shared_ptr<const ast::Node> &node) const {
+        if (node->getType() == ast::Node::DATACLASS)
+            return "class \"" + node->as<ast::NodeDataclass>()->getClassName() + "\"";
+        else
+            return node->getNodeName();
+    }
 
+    std::vector<std::shared_ptr<MatcherBase>>
+    MatcherAlternative::collectVariants(const std::shared_ptr<const ast::Node> &node) const {
         std::vector<std::shared_ptr<MatcherBase>> variants;
         if (node->getType() == ast::Node::DATACLASS) {
             auto nodeDataclass = node->as<ast::NodeDataclass>();
-            const std::string &nodeName = nodeDataclass->getClassName();
-            for (const auto &matcherDataclass : this->dataclasses)
-                if (matcherDataclass->getName() == nodeName)
+            const std::string &className = nodeDataclass->getClassName();
+            for (const auto &matcherDataclass : dataclasses)
+                if (matcherDataclass->getName() == className)
                     variants.push_back(matcherDataclass);
-
-            if (variants.empty())
-                return this->generateAlternativeUnmatchedReport("Got unknown class: \"" + nodeName + "\"");
         } else {
             // this->alternatives also include dataclasses, but here the node type won't match
-            for (const auto &matcher: this->alternatives)
+            for (const auto &matcher: alternatives)
                 if (matcher->matchNodeType(node->getType()))
                     variants.push_back(matcher);
+        }
+        return variants;
+    }
+
+    MatchReport MatcherAlternative::match(std::shared_ptr<const ast::Node> node, Any &result) const {
+        std::vector<std::shared_ptr<MatcherBase>> variants = this->collectVariants(node);
+
+        if (variants.empty()) {
+            if (node->getType() == ast::Node::DATACLASS) {
+                const std::string &className = node->as<ast::NodeDataclass>()->getClassName();
+                return this->generateAlternativeUnmatchedReport("Got unknown class: \"" + className + "\"");
+            } else {
+                return this->generateAlternativeUnmatchedReport("Got incorrect node type: " + node->getNodeName());
+            }
         }
 
         std::vector<std::string> variantReasons;
@@ -73,6 +86,13 @@ namespace pyon::matcher {
         }
 
         return this->generateVariantUnmatchedReport(variantReasons, node);
+    }
+
+    bool MatcherAlternative::matchNodeType(ast::Node::Type type) const {
+        auto nodeTypeMatches = [type](const auto &alternative) {
+            return alternative->matchNodeType(type);
+        };
+        return std::any_of(this->alternatives.begin(), this->alternatives.end(), nodeTypeMatches);
     }
 
     std::string MatcherAlternative::outline(std::size_t indent) const {
@@ -91,12 +111,5 @@ namespace pyon::matcher {
         }
 
         return out.str();
-    }
-
-    bool MatcherAlternative::matchNodeType(ast::Node::Type type) const {
-        auto nodeTypeMatches = [type](const auto &alternative) {
-            return alternative->matchNodeType(type);
-        };
-        return std::any_of(this->alternatives.begin(), this->alternatives.end(), nodeTypeMatches);
     }
 } // matcher
