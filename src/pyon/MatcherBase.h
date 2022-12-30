@@ -38,6 +38,7 @@ namespace pyon::matcher {
         virtual ~MatcherBase() = default;
 
         virtual MatchReport match(std::shared_ptr<const ast::Node> node, Any &result) const = 0;
+        [[nodiscard]] virtual bool matchNodeType(ast::Node::Type type) const = 0;
         [[nodiscard]] virtual std::string outline([[maybe_unused]] std::size_t indent) const = 0;
     };
 } // matcher

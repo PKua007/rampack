@@ -194,12 +194,14 @@ namespace pyon::matcher {
         MatcherDataclass(std::string className, std::vector<StandardArgumentSpecification> argumentsSpecification);
 
         [[nodiscard]] MatcherDataclass copy() const { return *this; }
+        [[nodiscard]] const std::string &getName() const { return this->name; }
 
         MatcherDataclass &arguments(std::vector<StandardArgumentSpecification> argumentsSpecification_);
         MatcherDataclass &variadicArguments(const MatcherArray &variadicMatcher = MatcherArray{});
         MatcherDataclass &variadicKeywordArguments(const MatcherDictionary &variadicMatcher = MatcherDictionary{});
 
         MatchReport match(std::shared_ptr<const ast::Node> node, Any &result) const override;
+        [[nodiscard]] bool matchNodeType(ast::Node::Type type) const override { return type == ast::Node::DATACLASS; }
         [[nodiscard]] std::string outline(std::size_t indent) const override;
 
         MatcherDataclass &mapTo(const std::function<Any(const DataclassData&)> &mapping_);

@@ -43,7 +43,7 @@ namespace pyon::matcher {
             }
 
         protected:
-            virtual bool matchNodeType(const std::shared_ptr<const ast::Node> &node, NumeralT &numeral) const = 0;
+            virtual bool matchNode(const std::shared_ptr<const ast::Node> &node, NumeralT &numeral) const = 0;
             [[nodiscard]] virtual std::string getName() const = 0;
 
         public:
@@ -63,7 +63,7 @@ namespace pyon::matcher {
 
             MatchReport match(std::shared_ptr<const ast::Node> node, Any &result) const override {
                 NumeralT numeral{};
-                if (!this->matchNodeType(node, numeral))
+                if (!this->matchNode(node, numeral))
                     return this->generateUnmatchedReport("Got incorrect node type: " + node->getNodeName());
 
                 for (const auto &filter: filters)
@@ -194,7 +194,7 @@ namespace pyon::matcher {
 
     class MatcherInt : public detail::MatcherNumeral<long, MatcherInt> {
     protected:
-        bool matchNodeType(const std::shared_ptr<const ast::Node> &node, long &numeral) const override {
+        bool matchNode(const std::shared_ptr<const ast::Node> &node, long &numeral) const override {
             if (node->getType() != ast::Node::INT)
                 return false;
 
@@ -208,12 +208,14 @@ namespace pyon::matcher {
 
     public:
         using MatcherNumeral::MatcherNumeral;
+
+        [[nodiscard]] bool matchNodeType(ast::Node::Type type) const override { return type == ast::Node::INT; }
     };
 
 
     class MatcherFloat : public detail::MatcherNumeral<double, MatcherFloat> {
     protected:
-        bool matchNodeType(const std::shared_ptr<const ast::Node> &node, double &numeral) const override {
+        bool matchNode(const std::shared_ptr<const ast::Node> &node, double &numeral) const override {
             switch (node->getType()) {
                 case ast::Node::INT:
                     numeral = static_cast<double>(node->as<ast::NodeInt>()->getValue());
@@ -232,6 +234,10 @@ namespace pyon::matcher {
 
     public:
         using MatcherNumeral::MatcherNumeral;
+
+        bool matchNodeType(ast::Node::Type type) const override {
+            return type == ast::Node::INT || type == ast::Node::FLOAT;
+        }
     };
 } // matcher
 

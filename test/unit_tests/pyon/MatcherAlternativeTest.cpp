@@ -85,4 +85,71 @@ TEST_CASE("Matcher: Alternative") {
     10. Integer)");
         }
     }
+
+    SECTION("error reporting") {
+        SECTION("unmatched node") {
+            auto matcher = MatcherInt{}.positive().less(5) | MatcherString{};
+            CHECK_THAT(matcher.match(Parser::parse("True"), result),
+                       UnmatchedWithReason(R"(Matching Alternative failed:
+✖ Got incorrect node type: Boolean
+✓ Expected format: Alternative:
+  1. Integer:
+     - > 0
+     - < 5
+  2. String)"));
+        }
+
+        SECTION("matched node error") {
+            SECTION("1 variant") {
+                auto matcher = MatcherInt{}.positive().less(5) | MatcherString{};
+                CHECK_THAT(matcher.match(Parser::parse("6"), result),
+                           UnmatchedWithReason(R"(Matching Alternative failed: Matching Integer failed:
+✖ Condition not satisfied: < 5
+✓ Expected format: Integer:
+  - > 0
+  - < 5)"));
+            }
+
+            SECTION("2 variants") {
+                auto matcher = MatcherInt{}.positive() | MatcherInt{}.negative() | MatcherString{};
+                CHECK_THAT(matcher.match(Parser::parse("0"), result),
+                           UnmatchedWithReason(
+R"(Matching Alternative failed: all 2 variants of Integer failed to match:
+✖ (variant 1) Matching Integer failed:
+  ✖ Condition not satisfied: > 0
+  ✓ Expected format: Integer, > 0
+✖ (variant 2) Matching Integer failed:
+  ✖ Condition not satisfied: < 0
+  ✓ Expected format: Integer, < 0)"));
+            }
+        }
+
+        SECTION("unmatched class name") {
+            auto matcher = MatcherNone{} | MatcherDataclass("class");
+            CHECK_THAT(matcher.match(Parser::parse("class2"), result),
+                       UnmatchedWithReason(R"(Matching Alternative failed:
+✖ Got unknown class: "class2"
+✓ Expected format: Alternative:
+  1. None
+  2. class class:
+     - arguments: empty)"));
+        }
+
+        SECTION("unmatched class with 2 variants") {
+            auto matcher = MatcherDataclass("class") | MatcherDataclass("class").arguments({"arg1", "arg2"});
+            CHECK_THAT(matcher.match(Parser::parse("class(1)"), result),
+                       UnmatchedWithReason(
+R"(Matching Alternative failed: all 2 variants of class "class" failed to match:
+✖ (variant 1) Matching class "class" failed:
+  ✖ Expected 0 positional arguments, but 1 was given
+  ✓ Arguments specification:
+    - arguments: empty
+✖ (variant 2) Matching class "class" failed:
+  ✖ Missing 1 required positional argument: "arg2"
+  ✓ Arguments specification:
+    - arguments:
+      - arg1: any expression
+      - arg2: any expression)"));
+        }
+    }
 }

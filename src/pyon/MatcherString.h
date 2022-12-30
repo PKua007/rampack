@@ -35,6 +35,7 @@ namespace pyon::matcher {
         MatcherString(std::initializer_list<std::string> values);
 
         MatchReport match(std::shared_ptr<const ast::Node> node, Any &result) const override;
+        [[nodiscard]] bool matchNodeType(ast::Node::Type type) const override { return type == ast::Node::STRING; }
         [[nodiscard]] std::string outline(std::size_t indent) const override;
 
         template<typename T>

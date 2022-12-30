@@ -8,12 +8,18 @@
 #include <vector>
 
 #include "MatcherBase.h"
+#include "MatcherDataclass.h"
 
 
 namespace pyon::matcher {
     class MatcherAlternative : public MatcherBase {
     private:
+        std::vector<std::shared_ptr<MatcherDataclass>> dataclasses;
         std::vector<std::shared_ptr<MatcherBase>> alternatives;
+
+        [[nodiscard]] std::string generateAlternativeUnmatchedReport(const std::string &reason) const;
+        [[nodiscard]] std::string generateVariantUnmatchedReport(const std::vector<std::string> &reasons,
+                                                                 const std::shared_ptr<const ast::Node> &node) const;
 
     public:
         MatcherAlternative() = default;
@@ -21,6 +27,7 @@ namespace pyon::matcher {
         [[nodiscard]] MatcherAlternative copy() const { return *this; }
 
         MatchReport match(std::shared_ptr<const ast::Node> node, Any &result) const override;
+        [[nodiscard]] bool matchNodeType(ast::Node::Type type) const override;
         [[nodiscard]] std::string outline(std::size_t indent) const override;
 
         template<typename ConcreteMatcher>
@@ -31,6 +38,10 @@ namespace pyon::matcher {
             if constexpr (std::is_same_v<MatcherAlternative, std::decay_t<ConcreteMatcher>>) {
                 this->alternatives.insert(this->alternatives.end(),
                                           matcher.alternatives.begin(), matcher.alternatives.end());
+            } else if constexpr (std::is_same_v<MatcherDataclass, std::decay_t<ConcreteMatcher>>) {
+                this->dataclasses.push_back(std::make_shared<MatcherDataclass>(matcher));
+                // Add also to alternatives for easier implementation of outline()
+                this->alternatives.push_back(std::make_shared<MatcherDataclass>(matcher));
             } else {
                 this->alternatives.push_back(std::make_shared<ConcreteMatcher>(matcher));
             }
