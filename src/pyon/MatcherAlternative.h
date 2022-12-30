@@ -40,6 +40,8 @@ namespace pyon::matcher {
                           "ConcreteMatcher template parameter is not a matcher derived from MatcherBase");
 
             if constexpr (std::is_same_v<MatcherAlternative, std::decay_t<ConcreteMatcher>>) {
+                this->dataclasses.insert(this->dataclasses.end(),
+                                          matcher.dataclasses.begin(), matcher.dataclasses.end());
                 this->alternatives.insert(this->alternatives.end(),
                                           matcher.alternatives.begin(), matcher.alternatives.end());
             } else if constexpr (std::is_same_v<MatcherDataclass, std::decay_t<ConcreteMatcher>>) {
