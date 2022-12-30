@@ -60,7 +60,7 @@ private:
 
     void performIntegration(Simulation &simulation, Simulation::Environment &env,
                             const Parameters::IntegrationParameters &runParams, const ShapeTraits &shapeTraits,
-                            size_t cycleOffset, bool isContinuation);
+                            size_t cycleOffset, bool isContinuation, const Version &paramsVersion);
 
     void performOverlapRelaxation(Simulation &simulation, Simulation::Environment &envfco,
                                   const std::string &shapeName, const std::string &shapeAttr,
@@ -99,6 +99,15 @@ private:
     static void combineEnvironment(Simulation::Environment &env, const Parameters::RunParameters &runParams,
                                    const ShapeTraits &traits);
 
+    [[nodiscard]] std::shared_ptr<ShapeTraits> createShapeTraits(const std::string &shapeName,
+                                                                 const std::string &shapeAttributes,
+                                                                 const std::string &interaction, Version version) const;
+
+    [[nodiscard]] std::shared_ptr<ObservablesCollector> createObservablesCollector(const std::string &observablesStr,
+                                                                                   const std::string &bulkObservablesStr,
+                                                                                   std::size_t maxThreads,
+                                                                                   Version version) const;
+
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }
     ~Frontend() { this->logger.removeOutput(this->auxOutStream); }
@@ -110,10 +119,6 @@ public:
     int shapePreview(int argc, char **argv);
 
     int printGeneralHelp(const std::string &cmd);
-
-    std::shared_ptr<ShapeTraits>
-    createShapeTraits(const std::string &shapeName, const std::string &shapeAttributes, const std::string &interaction,
-                      Version version);
 };
 
 

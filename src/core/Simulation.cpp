@@ -96,7 +96,7 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep,
 { }
 
 void Simulation::integrate(Environment env, const IntegrationParameters &params, const ShapeTraits &shapeTraits,
-                           std::unique_ptr<ObservablesCollector> observablesCollector_,
+                           std::shared_ptr<ObservablesCollector> observablesCollector_,
                            std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger)
 {
     Expects(params.thermalisationCycles > 0 || params.averagingCycles > 0);
@@ -197,7 +197,7 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
 
 void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::size_t thermalisationCycles,
                            std::size_t averagingCycles, std::size_t averagingEvery, std::size_t snapshotEvery,
-                           const ShapeTraits &shapeTraits, std::unique_ptr<ObservablesCollector> observablesCollector_,
+                           const ShapeTraits &shapeTraits, std::shared_ptr<ObservablesCollector> observablesCollector_,
                            std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger,
                            std::size_t cycleOffset)
 {
@@ -218,7 +218,7 @@ void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::siz
 
 void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameters &params,
                                const ShapeTraits &shapeTraits,
-                               std::unique_ptr<ObservablesCollector> observablesCollector_,
+                               std::shared_ptr<ObservablesCollector> observablesCollector_,
                                std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger)
 {
     Expects(params.inlineInfoEvery > 0);
@@ -278,7 +278,7 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
 
 void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std::size_t snapshotEvery,
                                const ShapeTraits &shapeTraits,
-                               std::unique_ptr<ObservablesCollector> observablesCollector_,
+                               std::shared_ptr<ObservablesCollector> observablesCollector_,
                                std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger,
                                std::size_t cycleOffset)
 {
