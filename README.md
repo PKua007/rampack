@@ -1,6 +1,8 @@
 # rampack
 
 ![cmake workflow](https://github.com/PKua007/rampack/actions/workflows/cmake.yml/badge.svg)
+[![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
+
 
 Random And Maximal PACKing PACKage - the software enabling simulation of particle systems using different packing
 methods. Currently, it supports elastic and extensible monodisperse Monte Carlo sampling (with features such as full
