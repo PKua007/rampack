@@ -13,6 +13,7 @@
 #include "core/observables/EnergyFluctuationsPerParticle.h"
 #include "core/observables/NematicOrder.h"
 #include "core/observables/SmecticOrder.h"
+#include "core/observables/BondOrder.h"
 
 
 using namespace pyon::matcher;
@@ -36,6 +37,7 @@ namespace {
     MatcherDataclass create_energy_fluctuations_per_particle();
     MatcherDataclass create_nematic_order();
     MatcherDataclass create_smectic_order();
+    MatcherDataclass create_bond_order();
 
 
     MatcherAlternative create_observable_matcher(std::size_t maxThreads) {
@@ -46,7 +48,8 @@ namespace {
             | create_energy_per_particle()
             | create_energy_fluctuations_per_particle()
             | create_nematic_order()
-            | create_smectic_order();
+            | create_smectic_order()
+            | create_bond_order();
     }
 
     MatcherAlternative create_scoped_observable_matcher(std::size_t maxThreads) {
@@ -145,10 +148,10 @@ namespace {
             })
             .describe("with at least one non-zero index")
             .mapToStdArray<std::size_t, 3>();
-        auto hkl = singleHkl | allHkl;
+        auto maxHkl = singleHkl | allHkl;
 
         return MatcherDataclass("smectic_order")
-            .arguments({{"max_hkl", hkl},
+            .arguments({{"max_hkl", maxHkl},
                         {"dump_tau_vector", MatcherBoolean{}, "False"},
                         {"focal_point", MatcherString{}.nonEmpty(), R"("o")"}})
             .mapTo([](const DataclassData &smecticOrder) -> ObservableData {
@@ -157,6 +160,46 @@ namespace {
                 auto focalPoint = smecticOrder["focal_point"].as<std::string>();
                 auto observable = std::make_shared<SmecticOrder>(maxHkl, dumpTauVector, focalPoint);
                 return std::make_pair(FULL_SCOPE, observable);
+            });
+    }
+
+    MatcherDataclass create_bond_order() {
+        auto hkl = MatcherArray{}
+            .elementsMatch(MatcherInt{}.mapTo<int>())
+            .size(3)
+            .filter([](const ArrayData &array) {
+                return std::any_of(array.begin(), array.end(), [](const Any &any) {
+                    return any.as<int>() != 0;
+                });
+            })
+            .describe("with at least one non-zero index")
+            .mapToStdArray<int, 3>();
+
+        auto singleRank = MatcherInt{}
+            .greaterEquals(3)
+            .mapTo([](long i) {
+                return std::vector<std::size_t>{static_cast<std::size_t>(i)};
+            });
+        auto ranksArray = MatcherArray{}
+            .elementsMatch(MatcherInt{}.greaterEquals(3).mapTo<std::size_t>())
+            .nonEmpty()
+            .mapToStdVector<std::size_t>();
+        auto ranks = singleRank | ranksArray;
+
+        auto namedPoint = MatcherString{}.nonEmpty();
+
+        return MatcherDataclass("bond_order")
+            .arguments({{"hkl", hkl},
+                        {"ranks", ranks},
+                        {"layering_point", namedPoint, R"("o")"},
+                        {"focal_point", namedPoint, R"("o")"}})
+            .mapTo([](const DataclassData &bondOrder) -> ObservableData {
+                auto hkl = bondOrder["hkl"].as<std::array<int, 3>>();
+                auto ranks = bondOrder["ranks"].as<std::vector<std::size_t>>();
+                auto layeringPoint = bondOrder["layering_point"].as<std::string>();
+                auto focalPoint = bondOrder["focal_point"].as<std::string>();
+                auto observable = std::make_shared<BondOrder>(ranks, hkl, layeringPoint, focalPoint);
+                return {FULL_SCOPE, observable};
             });
     }
 }
