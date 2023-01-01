@@ -14,6 +14,9 @@
 #include "core/observables/NematicOrder.h"
 #include "core/observables/SmecticOrder.h"
 #include "core/observables/BondOrder.h"
+#include "core/observables/RotationMatrixDrift.h"
+#include "core/observables/Temperature.h"
+#include "core/observables/Pressure.h"
 
 
 using namespace pyon::matcher;
@@ -38,6 +41,9 @@ namespace {
     MatcherDataclass create_nematic_order();
     MatcherDataclass create_smectic_order();
     MatcherDataclass create_bond_order();
+    MatcherDataclass create_rotation_matrix_drift();
+    MatcherDataclass create_temperature();
+    MatcherDataclass create_pressure();
 
 
     MatcherAlternative create_observable_matcher(std::size_t maxThreads) {
@@ -49,7 +55,10 @@ namespace {
             | create_energy_fluctuations_per_particle()
             | create_nematic_order()
             | create_smectic_order()
-            | create_bond_order();
+            | create_bond_order()
+            | create_rotation_matrix_drift()
+            | create_temperature()
+            | create_pressure();
     }
 
     MatcherAlternative create_scoped_observable_matcher(std::size_t maxThreads) {
@@ -201,6 +210,24 @@ namespace {
                 auto observable = std::make_shared<BondOrder>(ranks, hkl, layeringPoint, focalPoint);
                 return {FULL_SCOPE, observable};
             });
+    }
+
+    MatcherDataclass create_rotation_matrix_drift() {
+        return MatcherDataclass("rotation_matrix_drift").mapTo([](const DataclassData &) -> ObservableData {
+            return std::make_pair(FULL_SCOPE, std::make_shared<RotationMatrixDrift>());
+        });
+    }
+
+    MatcherDataclass create_temperature() {
+        return MatcherDataclass("temperature").mapTo([](const DataclassData &) -> ObservableData {
+            return std::make_pair(FULL_SCOPE, std::make_shared<Temperature>());
+        });
+    }
+
+    MatcherDataclass create_pressure() {
+        return MatcherDataclass("pressure").mapTo([](const DataclassData &) -> ObservableData {
+            return std::make_pair(FULL_SCOPE, std::make_shared<Pressure>());
+        });
     }
 }
 
