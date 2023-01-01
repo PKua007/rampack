@@ -173,6 +173,7 @@ namespace {
             });
     }
 
+    // TODO: single hkl
     MatcherDataclass create_smectic_order() {
         auto singleHkl = MatcherInt{}
             .positive()
@@ -245,6 +246,7 @@ namespace {
         });
     }
 
+    // TODO: focal point
     MatcherDataclass create_fourier_tracker() {
         auto wavenumbers = positiveWavenumbers;
 
@@ -326,7 +328,7 @@ namespace {
         }
 
         auto compName = static_cast<char>('x' + component);
-        shortName += std::to_string(compName);
+        shortName += std::string{compName};
 
         return {shortName, function};
     }

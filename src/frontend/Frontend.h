@@ -103,10 +103,9 @@ private:
                                                                  const std::string &shapeAttributes,
                                                                  const std::string &interaction, Version version) const;
 
-    [[nodiscard]] std::shared_ptr<ObservablesCollector> createObservablesCollector(const std::string &observablesStr,
-                                                                                   const std::string &bulkObservablesStr,
-                                                                                   std::size_t maxThreads,
-                                                                                   Version version) const;
+    [[nodiscard]] std::shared_ptr<ObservablesCollector>
+    createObservablesCollector(std::optional<std::string> observablesStr, std::optional<std::string> bulkObservablesStr,
+                               std::size_t maxThreads, Version version) const;
 
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }

@@ -938,9 +938,9 @@ int Frontend::trajectory(int argc, char **argv) {
     std::string inputFilename;
     std::string runName;
     std::string obsOutputFilename;
-    std::vector<std::string> observables;
+    std::string observables;
     std::string bulkObsOutputFilename;
-    std::vector<std::string> bulkObservables;
+    std::string bulkObservables;
     std::size_t averagingStart{};
     std::size_t maxThreads{};
     std::string ramsnapFilename;
@@ -971,7 +971,7 @@ int Frontend::trajectory(int argc, char **argv) {
         ("O,observables", "replays the simulation and calculates specified observables (format as in the input file). "
                           "Observables can be passed using multiple short options (-o obs1 -o obs2) or comma-separated "
                           "in a long option (--observables=obs1,obs2)",
-         cxxopts::value<std::vector<std::string>>(observables))
+         cxxopts::value<std::string>(observables))
         ("b,bulk-obs-output", "output file pattern with the results of --bulk-observables. Every occurrence of {} is "
                               "replaced with observable signature name. If not specified, '_{}.txt' is appended at the "
                               "end",
@@ -979,7 +979,7 @@ int Frontend::trajectory(int argc, char **argv) {
         ("B,bulk-observables", "replays the simulation and calculates specified bulk observables (format as in the "
                                "input file). Observables can be passed using multiple short options (-o obs1 -o obs2) "
                                "or comma-separated in a long option (--observables=obs1,obs2)",
-         cxxopts::value<std::vector<std::string>>(bulkObservables))
+         cxxopts::value<std::string>(bulkObservables))
         ("a,averaging-start", "specifies when the averaging starts. It is used for bulk observables",
          cxxopts::value<std::size_t>(averagingStart))
         ("T,max-threads", "specifies maximal number of OpenMP threads that may be used to calculate observables. If 0 "
@@ -1141,7 +1141,7 @@ int Frontend::trajectory(int argc, char **argv) {
             die("Output file for observables must be specified with option -o [output file name]", this->logger);
 
         this->logger.info() << "Starting simulation replay for observables..." << std::endl;
-        auto collector = legacy::ObservablesCollectorFactory::create(observables, {}, maxThreads);
+        auto collector = this->createObservablesCollector(observables, std::nullopt, maxThreads, params.version);
 
         using namespace std::chrono;
         auto start = high_resolution_clock::now();
@@ -1183,7 +1183,7 @@ int Frontend::trajectory(int argc, char **argv) {
         }
 
         this->logger.info() << "Starting simulation replay for bulk observables..." << std::endl;
-        auto collector = legacy::ObservablesCollectorFactory::create({}, bulkObservables, maxThreads);
+        auto collector = this->createObservablesCollector(std::nullopt, bulkObservables, maxThreads, params.version);
 
         using namespace std::chrono;
         auto start = high_resolution_clock::now();
@@ -1651,12 +1651,13 @@ std::shared_ptr<ShapeTraits> Frontend::createShapeTraits(const std::string &shap
 }
 
 std::shared_ptr<ObservablesCollector>
-Frontend::createObservablesCollector(const std::string &observablesStr, const std::string &bulkObservablesStr,
-                                     std::size_t maxThreads, Version version) const
+Frontend::createObservablesCollector(std::optional<std::string> observablesStr,
+                                     std::optional<std::string> bulkObservablesStr, std::size_t maxThreads,
+                                     Version version) const
 {
     if (version < Version{0, 8, 0}) {
         return legacy::ObservablesCollectorFactory::create(
-            explode(observablesStr, ','), explode(bulkObservablesStr, ','), maxThreads
+            explode(observablesStr.value_or(""), ','), explode(bulkObservablesStr.value_or(""), ','), maxThreads
         );
     }
 
@@ -1665,25 +1666,29 @@ Frontend::createObservablesCollector(const std::string &observablesStr, const st
 
     auto collector = std::make_shared<ObservablesCollector>();
 
-    auto observablesMatcher = ObservablesMatcher::createObservablesMatcher(maxThreads);
-    auto observablesAST = pyon::Parser::parse(observablesStr);
-    auto matchReport = observablesMatcher.match(observablesAST, result);
-    if (!matchReport)
-        throw ValidationException(matchReport.getReason());
+    if (observablesStr.has_value()) {
+        auto observablesMatcher = ObservablesMatcher::createObservablesMatcher(maxThreads);
+        auto observablesAST = pyon::Parser::parse(*observablesStr);
+        auto matchReport = observablesMatcher.match(observablesAST, result);
+        if (!matchReport)
+            throw ValidationException(matchReport.getReason());
 
-    auto observables = result.as<std::vector<ObservablesMatcher::ObservableData>>();
-    for (const auto &observableData : observables)
-        collector->addObservable(observableData.observable, observableData.scope);
+        auto observables = result.as<std::vector<ObservablesMatcher::ObservableData>>();
+        for (const auto &observableData: observables)
+            collector->addObservable(observableData.observable, observableData.scope);
+    }
 
-    auto bulkObservablesMatcher = ObservablesMatcher::createBulkObservablesMatcher(maxThreads);
-    observablesAST = pyon::Parser::parse(bulkObservablesStr);
-    matchReport = bulkObservablesMatcher.match(observablesAST, result);
-    if (!matchReport)
-        throw ValidationException(matchReport.getReason());
+    if (bulkObservablesStr.has_value()) {
+        auto bulkObservablesMatcher = ObservablesMatcher::createBulkObservablesMatcher(maxThreads);
+        auto observablesAST = pyon::Parser::parse(*bulkObservablesStr);
+        auto matchReport = bulkObservablesMatcher.match(observablesAST, result);
+        if (!matchReport)
+            throw ValidationException(matchReport.getReason());
 
-    auto bulkObservables = result.as<std::vector<std::shared_ptr<BulkObservable>>>();
-    for (const auto &bulkObservable : bulkObservables)
-        collector->addBulkObservable(bulkObservable);
+        auto bulkObservables = result.as<std::vector<std::shared_ptr<BulkObservable>>>();
+        for (const auto &bulkObservable: bulkObservables)
+            collector->addBulkObservable(bulkObservable);
+    }
 
     return collector;
 }
