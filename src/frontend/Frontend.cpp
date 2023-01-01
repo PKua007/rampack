@@ -1665,18 +1665,17 @@ Frontend::createObservablesCollector(const std::string &observablesStr, const st
 
     auto collector = std::make_shared<ObservablesCollector>();
 
-    auto observablesMatcher = ObservableMatcher::createObservablesMatcher(maxThreads);
+    auto observablesMatcher = ObservablesMatcher::createObservablesMatcher(maxThreads);
     auto observablesAST = pyon::Parser::parse(observablesStr);
     auto matchReport = observablesMatcher.match(observablesAST, result);
     if (!matchReport)
         throw ValidationException(matchReport.getReason());
 
-    using ObservableData = std::pair<std::size_t, std::shared_ptr<Observable>>;
-    auto observables = result.as<std::vector<ObservableData>>();
+    auto observables = result.as<std::vector<ObservablesMatcher::ObservableData>>();
     for (const auto &observableData : observables)
-        collector->addObservable(observableData.second, observableData.first);
+        collector->addObservable(observableData.observable, observableData.scope);
 
-    auto bulkObservablesMatcher = ObservableMatcher::createBulkObservablesMatcher(maxThreads);
+    auto bulkObservablesMatcher = ObservablesMatcher::createBulkObservablesMatcher(maxThreads);
     observablesAST = pyon::Parser::parse(bulkObservablesStr);
     matchReport = bulkObservablesMatcher.match(observablesAST, result);
     if (!matchReport)

@@ -275,11 +275,11 @@ namespace {
             observableStream >> axisName;
             ValidateMsg(observableStream, CORR_FUN_USAGE);
             if (axisName == "primary")
-                return std::make_unique<S110Correlation>(S110Correlation::Axis::PRIMARY_AXIS);
+                return std::make_unique<S110Correlation>(ShapeGeometry::Axis::PRIMARY);
             else if (axisName == "secondary")
-                return std::make_unique<S110Correlation>(S110Correlation::Axis::SECONDARY_AXIS);
+                return std::make_unique<S110Correlation>(ShapeGeometry::Axis::SECONDARY);
             else if (axisName == "auxiliary")
-                return std::make_unique<S110Correlation>(S110Correlation::Axis::AUXILIARY_AXIS);
+                return std::make_unique<S110Correlation>(ShapeGeometry::Axis::AUXILIARY);
             else
                 throw ValidationException(CORR_FUN_USAGE);
         } else {
