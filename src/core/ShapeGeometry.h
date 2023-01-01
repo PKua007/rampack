@@ -17,6 +17,18 @@
  */
 class ShapeGeometry {
 public:
+    /**
+     * @brief Molecular axis enumeration.
+     */
+    enum class Axis {
+        /** @brief Primary (long) molecular axis. */
+        PRIMARY,
+        /** @brief Secondary molecular axis. */
+        SECONDARY,
+        /** @brief Auxiliary (third) molecular axis. */
+        AUXILIARY
+    };
+
     using NamedPoints = std::vector<std::pair<std::string, Vector<3>>>;
 
 private:

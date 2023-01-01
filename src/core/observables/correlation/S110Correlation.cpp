@@ -8,11 +8,11 @@
 double S110Correlation::calculate(const Shape &shape1, const Shape &shape2, const ShapeTraits &shapeTraits) const {
     const auto &geometry = shapeTraits.getGeometry();
     switch (this->axis) {
-        case Axis::PRIMARY_AXIS:
+        case ShapeGeometry::Axis::PRIMARY:
             return geometry.getPrimaryAxis(shape1) * geometry.getPrimaryAxis(shape2);
-        case Axis::SECONDARY_AXIS:
+        case ShapeGeometry::Axis::SECONDARY:
             return geometry.getSecondaryAxis(shape1) * geometry.getSecondaryAxis(shape2);
-        case Axis::AUXILIARY_AXIS:
+        case ShapeGeometry::Axis::AUXILIARY:
             return geometry.getAuxiliaryAxis(shape1) * geometry.getAuxiliaryAxis(shape2);
         default:
             throw std::runtime_error("");

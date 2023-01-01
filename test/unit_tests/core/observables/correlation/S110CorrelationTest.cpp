@@ -17,17 +17,17 @@ TEST_CASE("S110Correlation") {
     Shape s1, s2({}, Matrix<3, 3>::rotation(0, 0, M_PI/4));
 
     SECTION("primary axis") {
-        S110Correlation s110Correlation(S110Correlation::Axis::PRIMARY_AXIS);
+        S110Correlation s110Correlation(ShapeGeometry::Axis::PRIMARY);
         CHECK(s110Correlation.calculate(s1, s2, traits) == Approx(M_SQRT1_2));
     }
 
     SECTION("secondary axis") {
-        S110Correlation s110Correlation(S110Correlation::Axis::SECONDARY_AXIS);
+        S110Correlation s110Correlation(ShapeGeometry::Axis::SECONDARY);
         CHECK(s110Correlation.calculate(s1, s2, traits) == Approx(1));
     }
 
     SECTION("auxiliary axis") {
-        S110Correlation s110Correlation(S110Correlation::Axis::AUXILIARY_AXIS);
+        S110Correlation s110Correlation(ShapeGeometry::Axis::AUXILIARY);
         CHECK(s110Correlation.calculate(s1, s2, traits) == Approx(M_SQRT1_2));
     }
 }

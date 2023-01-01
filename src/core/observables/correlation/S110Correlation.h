@@ -14,27 +14,14 @@
  * is either primary or secondary axis of \f$ \alpha^\mathrm{th} \f$ molecule.
  */
 class S110Correlation : public CorrelationFunction {
-public:
-    /**
-     * @brief Molecular axis to be used in the computation of S110.
-     */
-    enum class Axis {
-        /** @brief Primary (long) molecular axis. */
-        PRIMARY_AXIS,
-        /** @brief Secondary molecular axis. */
-        SECONDARY_AXIS,
-        /** @brief Auxiliary (third) molecular axis. */
-        AUXILIARY_AXIS
-    };
-
 private:
-    Axis axis;
+    ShapeGeometry::Axis axis;
 
 public:
     /**
      * @brief Construct the class for a given @a axis axis type.
      */
-    explicit S110Correlation(Axis axis) : axis{axis} { }
+    explicit S110Correlation(ShapeGeometry::Axis axis) : axis{axis} { }
 
     [[nodiscard]] double calculate(const Shape &shape1, const Shape &shape2,
                                    const ShapeTraits &shapeTraits) const override;
