@@ -43,7 +43,7 @@ void DensityHistogram::clear() {
     this->firstOrigin = std::nullopt;
 }
 
-DensityHistogram::DensityHistogram(const std::array<std::size_t, 3> &numBins, std::unique_ptr<GoldstoneTracker> tracker,
+DensityHistogram::DensityHistogram(const std::array<std::size_t, 3> &numBins, std::shared_ptr<GoldstoneTracker> tracker,
                                    std::size_t numThreads)
         : numBins{normalizeNumBins(numBins)}, tracker{std::move(tracker)},
           histogramBuilder({0, 0, 0}, {1, 1, 1}, this->numBins, numThreads),

@@ -22,7 +22,7 @@
 class DensityHistogram : public BulkObservable {
 private:
     std::array<std::size_t, 3> numBins{};
-    std::unique_ptr<GoldstoneTracker> tracker;
+    std::shared_ptr<GoldstoneTracker> tracker;
     HistogramBuilder3D histogramBuilder;
     std::optional<Vector<3>> firstOrigin;
     [[maybe_unused]] std::size_t numThreads{};  // maybe_unused for builds without OpenMP support
@@ -39,7 +39,7 @@ public:
      * @param numThreads number of threads used to generate the histogram. If 0, all available threads will be used
      */
     explicit DensityHistogram(const std::array<std::size_t, 3> &numBins,
-                              std::unique_ptr<GoldstoneTracker> tracker = nullptr, std::size_t numThreads = 1);
+                              std::shared_ptr<GoldstoneTracker> tracker = nullptr, std::size_t numThreads = 1);
 
     void addSnapshot(const Packing &packing, double temperature, double pressure,
                      const ShapeTraits &shapeTraits) override;
