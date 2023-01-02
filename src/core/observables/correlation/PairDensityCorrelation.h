@@ -21,7 +21,7 @@
  */
 class PairDensityCorrelation : public BulkObservable, protected PairConsumer {
 private:
-    std::unique_ptr<PairEnumerator> pairEnumerator;
+    std::shared_ptr<PairEnumerator> pairEnumerator;
     HistogramBuilder<1> histogram;
 
 protected:
@@ -34,7 +34,7 @@ public:
      * @details It will gather data for distances from 0 to @a maxR using @a numBins beans and doing it in parallel
      * using @a numThreads, if @a pairEnumerator supports concurrency.
      */
-    explicit PairDensityCorrelation(std::unique_ptr<PairEnumerator> pairEnumerator, double maxR, std::size_t numBins,
+    explicit PairDensityCorrelation(std::shared_ptr<PairEnumerator> pairEnumerator, double maxR, std::size_t numBins,
                                     std::size_t numThreads = 1)
             : PairConsumer(numThreads), pairEnumerator{std::move(pairEnumerator)},
               histogram(0, maxR, numBins, numThreads)

@@ -4,7 +4,9 @@
 
 #include "ObservablesMatcher.h"
 #include "utils/OMPMacros.h"
+
 #include "core/ObservablesCollector.h"
+
 #include "core/observables/NumberDensity.h"
 #include "core/observables/BoxDimensions.h"
 #include "core/observables/PackingFraction.h"
@@ -17,7 +19,16 @@
 #include "core/observables/RotationMatrixDrift.h"
 #include "core/observables/Temperature.h"
 #include "core/observables/Pressure.h"
+
 #include "core/observables/trackers/FourierTracker.h"
+#include "core/observables/trackers/DummyTracker.h"
+
+#include "core/observables/correlation/PairDensityCorrelation.h"
+#include "core/observables/correlation/RadialEnumerator.h"
+#include "core/observables/correlation/LayerwiseRadialEnumerator.h"
+#include "core/observables/correlation/PairAveragedCorrelation.h"
+#include "core/observables/correlation/S110Correlation.h"
+#include "core/observables/DensityHistogram.h"
 
 
 using namespace pyon::matcher;
@@ -50,9 +61,23 @@ namespace {
     MatcherDataclass create_rotation_matrix_drift();
     MatcherDataclass create_temperature();
     MatcherDataclass create_pressure();
+
+    MatcherDataclass create_raw_fourier_tracker();
+    std::shared_ptr<FourierTracker> do_create_fourier_tracker(const DataclassData &fourierTracker);
     MatcherDataclass create_fourier_tracker();
+    MatcherDataclass create_fourier_tracker_observable();
 
     FunctionData create_axis_function(ShapeGeometry::Axis axis, std::size_t component);
+
+    MatcherAlternative create_bulk_observable_matcher(std::size_t maxThreads);
+
+    MatcherDataclass create_pair_density_correlation(std::size_t maxThreads);
+    MatcherDataclass create_pair_averaged_correlation(std::size_t maxThreads);
+    MatcherDataclass create_density_histogram(std::size_t maxThreads);
+
+    MatcherDataclass create_radial();
+    MatcherDataclass create_layerwise_radial();
+    MatcherAlternative create_tracker();
 
 
     auto positiveWavenumbers = MatcherArray{}
@@ -77,8 +102,21 @@ namespace {
         .describe("with at least one non-zero element")
         .mapToStdArray<int, 3>();
 
+    auto binning = create_radial() | create_layerwise_radial();
 
-    MatcherAlternative create_observable_matcher(std::size_t maxThreads) {
+    auto primaryAxis = MatcherString("primary").mapTo([](const std::string&) {
+        return ShapeGeometry::Axis::PRIMARY;
+    });
+    auto secondaryAxis = MatcherString("secondary").mapTo([](const std::string&) {
+        return ShapeGeometry::Axis::SECONDARY;
+    });
+    auto auxiliaryAxis = MatcherString("auxiliary").mapTo([](const std::string&) {
+        return ShapeGeometry::Axis::AUXILIARY;
+    });
+    auto shapeAxis = primaryAxis | secondaryAxis | auxiliaryAxis;
+
+
+    MatcherAlternative create_observable_matcher([[maybe_unused]] std::size_t maxThreads) {
         return create_number_density()
             | create_box_dimensions()
             | create_packing_fraction()
@@ -91,7 +129,7 @@ namespace {
             | create_rotation_matrix_drift()
             | create_temperature()
             | create_pressure()
-            | create_fourier_tracker();
+            | create_fourier_tracker_observable();
     }
 
     MatcherAlternative create_scoped_observable_matcher(std::size_t maxThreads) {
@@ -247,7 +285,7 @@ namespace {
     }
 
     // TODO: focal point
-    MatcherDataclass create_fourier_tracker() {
+    MatcherDataclass create_raw_fourier_tracker() {
         auto wavenumbers = positiveWavenumbers;
 
         auto constFunction = MatcherDataclass("const")
@@ -257,18 +295,6 @@ namespace {
                     [](const Shape&, const ShapeTraits&) { return 1; }
                 };
             });
-
-        using Axis = ShapeGeometry::Axis;
-        auto primaryAxis = MatcherString("primary").mapTo([](const std::string&) {
-            return Axis::PRIMARY;
-        });
-        auto secondaryAxis = MatcherString("secondary").mapTo([](const std::string&) {
-            return Axis::SECONDARY;
-        });
-        auto auxiliaryAxis = MatcherString("auxiliary").mapTo([](const std::string&) {
-            return Axis::AUXILIARY;
-        });
-        auto shapeAxis = primaryAxis | secondaryAxis | auxiliaryAxis;
 
         auto axisComp = MatcherString{}
             .anyOf({"x", "y", "z"})
@@ -289,12 +315,26 @@ namespace {
 
         return MatcherDataclass("fourier_tracker")
             .arguments({{"wavenumbers", wavenumbers},
-                        {"function", function}})
+                        {"function", function}});
+    }
+
+    std::shared_ptr<FourierTracker> do_create_fourier_tracker(const DataclassData &fourierTracker) {
+        auto wavenumbers = fourierTracker["wavenumbers"].as<std::array<std::size_t, 3>>();
+        auto function = fourierTracker["function"].as<FunctionData>();
+        return std::make_shared<FourierTracker>(wavenumbers, function.function, function.shortName);
+    }
+
+    MatcherDataclass create_fourier_tracker() {
+        return create_raw_fourier_tracker()
+            .mapTo([](const DataclassData &fourierTracker) -> std::shared_ptr<GoldstoneTracker> {
+                return do_create_fourier_tracker(fourierTracker);
+            });
+    }
+
+    MatcherDataclass create_fourier_tracker_observable() {
+        return create_raw_fourier_tracker()
             .mapTo([](const DataclassData &fourierTracker) -> ObservableData {
-                auto wavenumbers = fourierTracker["wavenumbers"].as<std::array<std::size_t, 3>>();
-                auto function = fourierTracker["function"].as<FunctionData>();
-                auto observable = std::make_shared<FourierTracker>(wavenumbers, function.function, function.shortName);
-                return {FULL_SCOPE, observable};
+                return {FULL_SCOPE, do_create_fourier_tracker(fourierTracker)};
             });
     }
 
@@ -332,6 +372,104 @@ namespace {
 
         return {shortName, function};
     }
+
+    MatcherAlternative create_bulk_observable_matcher(std::size_t maxThreads) {
+        return create_pair_density_correlation(maxThreads)
+            | create_pair_averaged_correlation(maxThreads)
+            | create_density_histogram(maxThreads);
+    }
+
+    MatcherDataclass create_pair_density_correlation(std::size_t maxThreads) {
+        return MatcherDataclass("pair_density_correlation")
+            .arguments({{"max_r", MatcherFloat{}.positive()},
+                        {"n_bins", MatcherInt{}.greaterEquals(2).mapTo<std::size_t>()},
+                        {"binning", binning}})
+            .mapTo([maxThreads](const DataclassData &pairDensityCorrelation) -> std::shared_ptr<BulkObservable> {
+                auto maxR = pairDensityCorrelation["max_r"].as<double>();
+                auto nBins = pairDensityCorrelation["n_bins"].as<std::size_t>();
+                auto binning = pairDensityCorrelation["binning"].as<std::shared_ptr<PairEnumerator>>();
+                return std::make_shared<PairDensityCorrelation>(binning, maxR, nBins, maxThreads);
+            });
+    }
+
+    MatcherDataclass create_pair_averaged_correlation(std::size_t maxThreads) {
+        auto function = MatcherDataclass("S110")
+            .arguments({{"axis", shapeAxis}})
+            .mapTo([](const DataclassData &s110) -> std::shared_ptr<CorrelationFunction> {
+                auto axis = s110["axis"].as<ShapeGeometry::Axis>();
+                return std::make_shared<S110Correlation>(axis);
+            });
+
+        return MatcherDataclass("pair_averaged_correlation")
+            .arguments({{"max_r", MatcherFloat{}.positive()},
+                        {"n_bins", MatcherInt{}.greaterEquals(2).mapTo<std::size_t>()},
+                        {"binning", binning},
+                        {"function", function}})
+            .mapTo([maxThreads](const DataclassData &pairAveragedCorrelation) -> std::shared_ptr<BulkObservable> {
+                auto maxR = pairAveragedCorrelation["max_r"].as<double>();
+                auto nBins = pairAveragedCorrelation["n_bins"].as<std::size_t>();
+                auto binning = pairAveragedCorrelation["binning"].as<std::shared_ptr<PairEnumerator>>();
+                auto function = pairAveragedCorrelation["function"].as<std::shared_ptr<CorrelationFunction>>();
+                return std::make_shared<PairAveragedCorrelation>(binning, function, maxR, nBins, maxThreads);
+            });
+    }
+
+    MatcherDataclass create_density_histogram(std::size_t maxThreads) {
+        auto nBinsInt = MatcherInt{}.greaterEquals(2).mapTo<std::size_t>();
+        auto nBinsNone = MatcherNone{}.mapTo([]() -> std::size_t { return 1; });
+        auto nBins = nBinsInt | nBinsNone;
+
+        auto tracker = create_tracker();
+
+        return MatcherDataclass("density_histogram")
+            .arguments({{"n_bins_x", nBins, "None"},
+                        {"n_bins_y", nBins, "None"},
+                        {"n_bins_z", nBins, "None"},
+                        {"tracker", tracker, "None"}})
+            .filter([](const DataclassData &densityHistoram) {
+                return densityHistoram["n_bins_x"].as<std::size_t>() != 1
+                    || densityHistoram["n_bins_y"].as<std::size_t>() != 1
+                    || densityHistoram["n_bins_z"].as<std::size_t>() != 1;
+            })
+            .describe("with at least 2 bins in at least one direction")
+            .mapTo([maxThreads](const DataclassData &densityHistogram) -> std::shared_ptr<BulkObservable> {
+                std::array<std::size_t, 3> nBins{
+                    densityHistogram["n_bins_x"].as<std::size_t>(),
+                    densityHistogram["n_bins_y"].as<std::size_t>(),
+                    densityHistogram["n_bins_z"].as<std::size_t>()
+                };
+                auto tracker = densityHistogram["tracker"].as<std::shared_ptr<GoldstoneTracker>>();
+                return std::make_shared<DensityHistogram>(nBins, tracker, maxThreads);
+            });
+    }
+
+    MatcherDataclass create_radial() {
+        return MatcherDataclass("radial")
+            .arguments({{"focal_point", MatcherString{}.nonEmpty(), R"("o")"}})
+            .mapTo([](const DataclassData &radial) -> std::shared_ptr<PairEnumerator> {
+                auto focalPoint = radial["focal_point"].as<std::string>();
+                return std::make_shared<RadialEnumerator>(focalPoint);
+            });
+    }
+
+    MatcherDataclass create_layerwise_radial() {
+        return MatcherDataclass("layerwise_radial")
+            .arguments({{"hkl", nonzeroWavenumbers},
+                        {"focal_point", MatcherString{}.nonEmpty(), R"("o")"}})
+            .mapTo([](const DataclassData &layerwiseRadial) -> std::shared_ptr<PairEnumerator> {
+                auto hkl = layerwiseRadial["hkl"].as<std::array<int, 3>>();
+                auto focalPoint = layerwiseRadial["focal_point"].as<std::string>();
+                return std::make_shared<LayerwiseRadialEnumerator>(hkl, focalPoint);
+            });
+    }
+
+    MatcherAlternative create_tracker() {
+        auto noneTracker = MatcherNone{}.mapTo([]() -> std::shared_ptr<GoldstoneTracker> {
+            return std::make_shared<DummyTracker>();
+        });
+
+        return noneTracker | create_fourier_tracker();
+    }
 }
 
 
@@ -348,5 +486,7 @@ MatcherArray ObservablesMatcher::createBulkObservablesMatcher(std::size_t maxThr
     if (maxThreads == 0)
         maxThreads = OMP_MAXTHREADS;
 
-    return MatcherArray{}.mapToStdVector<std::shared_ptr<BulkObservable>>();
+    return MatcherArray{}
+        .elementsMatch(create_bulk_observable_matcher(maxThreads))
+        .mapToStdVector<std::shared_ptr<BulkObservable>>();
 }

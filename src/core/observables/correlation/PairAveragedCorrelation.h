@@ -20,8 +20,8 @@
  */
 class PairAveragedCorrelation : public BulkObservable, public PairConsumer {
 private:
-    std::unique_ptr<PairEnumerator> pairEnumerator;
-    std::unique_ptr<CorrelationFunction> correlationFunction;
+    std::shared_ptr<PairEnumerator> pairEnumerator;
+    std::shared_ptr<CorrelationFunction> correlationFunction;
     HistogramBuilder<1> histogram;
 
 public:
@@ -30,8 +30,8 @@ public:
      * @details It will gather data for distances from 0 to @a maxR using @a numBins beans and doing it in parallel
      * using @a numThreads, if @a pairEnumerator supports concurrency.
      */
-    PairAveragedCorrelation(std::unique_ptr<PairEnumerator> pairEnumerator,
-                            std::unique_ptr<CorrelationFunction> correlationFunction, double maxR, std::size_t numBins,
+    PairAveragedCorrelation(std::shared_ptr<PairEnumerator> pairEnumerator,
+                            std::shared_ptr<CorrelationFunction> correlationFunction, double maxR, std::size_t numBins,
                             std::size_t numThreads = 1)
             : PairConsumer(numThreads), pairEnumerator{std::move(pairEnumerator)},
               correlationFunction{std::move(correlationFunction)}, histogram(0, maxR, numBins, numThreads)
