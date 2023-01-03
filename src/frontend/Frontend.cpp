@@ -1710,5 +1710,7 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles, co
         throw ValidationException(matchReport.getReason());
 
     using PackingFactory = ArrangementMatcher::PackingFactory;
-    return packingFactory.as<std::shared_ptr<PackingFactory>>()->createPacking();
+    return packingFactory.as<std::shared_ptr<PackingFactory>>()->createPacking(
+        std::move(bc), shapeTraits.getInteraction(), moveThreads, scalingThreads
+    );
 }
