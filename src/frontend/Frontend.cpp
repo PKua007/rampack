@@ -42,6 +42,7 @@
 #include "ShapeMatcher.h"
 #include "pyon/Parser.h"
 #include "ObservablesMatcher.h"
+#include "ArrangementMatcher.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -231,7 +232,7 @@ int Frontend::casino(int argc, char **argv) {
         optionalContinuationCycles = continuationCycles;
 
     PackingLoader packingLoader(this->logger, optionalStartFrom, optionalContinuationCycles, params.runsParameters);
-    auto packing = this->recreatePacking(packingLoader, params, *shapeTraits, scalingThreads);
+    auto packing = this->recreatePacking(packingLoader, params, *shapeTraits, scalingThreads, params.version);
 
     if (packingLoader.isAllFinished()) {
         this->logger.warn() << "No runs left to be performed. Exiting." << std::endl;
@@ -801,13 +802,10 @@ int Frontend::preview(int argc, char **argv) {
         die("At least one of: --wolfram, --ramsnap, --xyz options must be specified", this->logger);
 
     Parameters params = this->loadParameters(inputFilename);
-    auto bc = std::make_unique<PeriodicBoundaryConditions>();
     auto shapeTraits = this->createShapeTraits(params.shapeName, params.shapeAttributes, params.interaction,
                                                params.version);
-    auto packing = legacy::ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
-                                                              params.initialArrangement, std::move(bc),
-                                                              shapeTraits->getInteraction(), shapeTraits->getGeometry(),
-                                                              1, 1);
+    auto packing = this->arrangePacking(params.numOfParticles, params.initialDimensions, params.initialArrangement,
+                                        *shapeTraits, 1, 1, params.version);
     this->createWalls(*packing, params.walls);
 
     // Store ramsnap packing (if desired)
@@ -1055,13 +1053,10 @@ int Frontend::trajectory(int argc, char **argv) {
 
     // Prepare initial packing
     Parameters params = this->loadParameters(inputFilename);
-    auto bc = std::make_unique<PeriodicBoundaryConditions>();
     auto shapeTraits = this->createShapeTraits(params.shapeName, params.shapeAttributes, params.interaction,
                                                params.version);
-    auto packing = legacy::ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
-                                                              params.initialArrangement, std::move(bc),
-                                                              shapeTraits->getInteraction(), shapeTraits->getGeometry(),
-                                                              maxThreads, maxThreads);
+    auto packing = this->arrangePacking(params.numOfParticles, params.initialDimensions, params.initialArrangement,
+                                        *shapeTraits, maxThreads, maxThreads, params.version);
     this->createWalls(*packing, params.walls);
 
     // Find and validate run whose trajectory we want to process
@@ -1569,7 +1564,8 @@ std::map<std::string, std::string> Frontend::prepareAuxInfo(const Simulation &si
 }
 
 std::unique_ptr<Packing> Frontend::recreatePacking(PackingLoader &loader, const Parameters &params,
-                                                   const ShapeTraits &traits, std::size_t maxThreads)
+                                                   const ShapeTraits &traits, std::size_t maxThreads,
+                                                   const Version &paramsVersion)
 {
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     loader.loadPacking(std::move(bc), traits.getInteraction(), maxThreads, maxThreads);
@@ -1582,11 +1578,8 @@ std::unique_ptr<Packing> Frontend::recreatePacking(PackingLoader &loader, const 
         packing = loader.releasePacking();
     } else {
         // Same number of scaling and domain threads
-        bc = std::make_unique<PeriodicBoundaryConditions>();
-        packing = legacy::ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
-                                                             params.initialArrangement, std::move(bc),
-                                                             traits.getInteraction(),
-                                                             traits.getGeometry(), maxThreads, maxThreads);
+        packing = this->arrangePacking(params.numOfParticles, params.initialDimensions, params.initialArrangement,
+                                       traits, maxThreads, maxThreads, paramsVersion);
     }
 
     this->createWalls(*packing, params.walls);
@@ -1693,4 +1686,29 @@ Frontend::createObservablesCollector(std::optional<std::string> observablesStr,
     }
 
     return collector;
+}
+
+std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles, const std::string &initialDimensions,
+                                                  const std::string &initialArrangement, const ShapeTraits &shapeTraits,
+                                                  std::size_t moveThreads, std::size_t scalingThreads,
+                                                  const Version &paramsVersion) const
+{
+    auto bc = std::make_unique<PeriodicBoundaryConditions>();
+
+    if (paramsVersion < Version{0, 8, 0}) {
+        return legacy::ArrangementFactory::arrangePacking(numOfParticles, initialDimensions, initialArrangement,
+                                                          std::move(bc), shapeTraits.getInteraction(),
+                                                          shapeTraits.getGeometry(), moveThreads, scalingThreads);
+    }
+
+    using namespace pyon::matcher;
+    Any packingFactory;
+    auto shapeAST = pyon::Parser::parse(initialArrangement);
+    auto matcher = ArrangementMatcher::create();
+    auto matchReport = matcher.match(shapeAST, packingFactory);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    using PackingFactory = ArrangementMatcher::PackingFactory;
+    return packingFactory.as<std::shared_ptr<PackingFactory>>()->createPacking();
 }

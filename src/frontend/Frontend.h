@@ -34,7 +34,12 @@ private:
 
     Parameters loadParameters(const std::string &inputFilename);
     std::unique_ptr<Packing> recreatePacking(PackingLoader &loader, const Parameters &params,
-                                             const ShapeTraits &traits, std::size_t maxThreads);
+                                             const ShapeTraits &traits, std::size_t maxThreads,
+                                             const Version &paramsVersion);
+    std::unique_ptr<Packing> arrangePacking(std::size_t numOfParticles, const std::string &initialDimensions,
+                                            const std::string &initialArrangement, const ShapeTraits &shapeTraits,
+                                            std::size_t moveThreads, std::size_t scalingThreads,
+                                            const Version &paramsVersion) const;
     void overwriteMoveStepSizes(Simulation::Environment &env,
                                 const std::map<std::string, std::string> &packingAuxInfo) const;
     Simulation::Environment recreateEnvironment(const Parameters &params, const PackingLoader &loader,

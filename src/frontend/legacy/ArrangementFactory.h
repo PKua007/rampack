@@ -19,7 +19,7 @@
 namespace legacy {
     class ArrangementFactory {
     public:
-        static std::unique_ptr<Packing> arrangePacking(std::size_t distance, const std::string &boxString,
+        static std::unique_ptr<Packing> arrangePacking(std::size_t numOfParticles, const std::string &boxString,
                                                        const std::string &arrangementString,
                                                        std::unique_ptr<BoundaryConditions> bc,
                                                        const Interaction &interaction, const ShapeGeometry &geometry,
