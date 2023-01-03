@@ -221,41 +221,46 @@ namespace {
     }
 }
 
-std::unique_ptr<Packing> ArrangementFactory::arrangePacking(std::size_t numOfParticles, const std::string &boxString,
-                                                            const std::string &arrangementString,
-                                                            std::unique_ptr<BoundaryConditions> bc,
-                                                            const Interaction &interaction,
-                                                            const ShapeGeometry &geometry, std::size_t moveThreads,
-                                                            std::size_t scalingThreads)
-{
-    std::istringstream arrangementStream(arrangementString);
-    std::string type;
-    arrangementStream >> type;
-    ValidateMsg(arrangementStream, "Malformed arrangement. Usage: [type: orthorhombic, presimulated] "
-                                   "(type dependent parameters)");
-    if (type == "orthorhombic" || type == "lattice") {
-        auto boxDimensions = parse_box_dimensions(boxString);
-        auto shapes = arrange_orthorhombic_shapes(numOfParticles, boxDimensions, interaction, arrangementStream);
-        return std::make_unique<Packing>(boxDimensions, std::move(shapes), std::move(bc), interaction, moveThreads,
-                                         scalingThreads);
-    } else if (type == "presimulated") {
-        std::string filename;
-        arrangementStream >> filename;
-        ValidateMsg(arrangementStream, "Malformed presimulated arrangement. Usage: presimulated [RAMSNAP file]");
 
-        std::ifstream packingFile(filename);
-        ValidateOpenedDesc(packingFile, filename, "to load initial configuration");
+namespace legacy {
+    std::unique_ptr<Packing> ArrangementFactory::arrangePacking(std::size_t numOfParticles,
+                                                                const std::string &boxString,
+                                                                const std::string &arrangementString,
+                                                                std::unique_ptr<BoundaryConditions> bc,
+                                                                const Interaction &interaction,
+                                                                const ShapeGeometry &geometry, std::size_t moveThreads,
+                                                                std::size_t scalingThreads)
+    {
+        std::istringstream arrangementStream(arrangementString);
+        std::string type;
+        arrangementStream >> type;
+        ValidateMsg(arrangementStream, "Malformed arrangement. Usage: [type: orthorhombic, presimulated] "
+                                       "(type dependent parameters)");
+        if (type == "orthorhombic" || type == "lattice") {
+            auto boxDimensions = parse_box_dimensions(boxString);
+            auto shapes = arrange_orthorhombic_shapes(numOfParticles, boxDimensions, interaction, arrangementStream);
+            return std::make_unique<Packing>(boxDimensions, std::move(shapes), std::move(bc), interaction, moveThreads,
+                                             scalingThreads);
+        } else if (type == "presimulated") {
+            std::string filename;
+            arrangementStream >> filename;
+            ValidateMsg(arrangementStream, "Malformed presimulated arrangement. Usage: presimulated [RAMSNAP file]");
 
-        auto packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
-        packing->restore(packingFile, interaction);
-        return packing;
-    } else {
-        const auto &supportedTypes = LatticeBuilder::getSupportedCellTypes();
-        if (std::find(supportedTypes.begin(), supportedTypes.end(), type) != supportedTypes.end()) {
-            return LatticeBuilder::buildPacking(numOfParticles, boxString, arrangementString, std::move(bc),
-                                                interaction, geometry, moveThreads, scalingThreads);
+            std::ifstream packingFile(filename);
+            ValidateOpenedDesc(packingFile, filename, "to load initial configuration");
+
+            auto packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
+            packing->restore(packingFile, interaction);
+            return packing;
         } else {
-            throw ValidationException("Unknown arrangement type: " + type + ". Available: orthorhombic, presimulated");
+            const auto &supportedTypes = LatticeBuilder::getSupportedCellTypes();
+            if (std::find(supportedTypes.begin(), supportedTypes.end(), type) != supportedTypes.end()) {
+                return LatticeBuilder::buildPacking(numOfParticles, boxString, arrangementString, std::move(bc),
+                                                    interaction, geometry, moveThreads, scalingThreads);
+            } else {
+                throw ValidationException("Unknown arrangement type: " + type + ". Available: orthorhombic, "
+                                          + "presimulated");
+            }
         }
     }
 }
