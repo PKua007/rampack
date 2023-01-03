@@ -25,7 +25,7 @@
 #include "core/Packing.h"
 #include "utils/OMPMacros.h"
 #include "core/lattice/DistanceOptimizer.h"
-#include "ArrangementFactory.h"
+#include "frontend/legacy/ArrangementFactory.h"
 #include "TriclinicBoxScalerFactory.h"
 #include "core/shapes/CompoundShapeTraits.h"
 #include "MoveSamplerFactory.h"
@@ -804,9 +804,10 @@ int Frontend::preview(int argc, char **argv) {
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     auto shapeTraits = this->createShapeTraits(params.shapeName, params.shapeAttributes, params.interaction,
                                                params.version);
-    auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
-                                                      params.initialArrangement, std::move(bc),
-                                                      shapeTraits->getInteraction(), shapeTraits->getGeometry(), 1, 1);
+    auto packing = legacy::ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
+                                                              params.initialArrangement, std::move(bc),
+                                                              shapeTraits->getInteraction(), shapeTraits->getGeometry(),
+                                                              1, 1);
     this->createWalls(*packing, params.walls);
 
     // Store ramsnap packing (if desired)
@@ -1057,10 +1058,10 @@ int Frontend::trajectory(int argc, char **argv) {
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     auto shapeTraits = this->createShapeTraits(params.shapeName, params.shapeAttributes, params.interaction,
                                                params.version);
-    auto packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
-                                                      params.initialArrangement, std::move(bc),
-                                                      shapeTraits->getInteraction(), shapeTraits->getGeometry(),
-                                                      maxThreads, maxThreads);
+    auto packing = legacy::ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
+                                                              params.initialArrangement, std::move(bc),
+                                                              shapeTraits->getInteraction(), shapeTraits->getGeometry(),
+                                                              maxThreads, maxThreads);
     this->createWalls(*packing, params.walls);
 
     // Find and validate run whose trajectory we want to process
@@ -1582,9 +1583,10 @@ std::unique_ptr<Packing> Frontend::recreatePacking(PackingLoader &loader, const 
     } else {
         // Same number of scaling and domain threads
         bc = std::make_unique<PeriodicBoundaryConditions>();
-        packing = ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
-                                                     params.initialArrangement, std::move(bc), traits.getInteraction(),
-                                                     traits.getGeometry(), maxThreads, maxThreads);
+        packing = legacy::ArrangementFactory::arrangePacking(params.numOfParticles, params.initialDimensions,
+                                                             params.initialArrangement, std::move(bc),
+                                                             traits.getInteraction(),
+                                                             traits.getGeometry(), maxThreads, maxThreads);
     }
 
     this->createWalls(*packing, params.walls);

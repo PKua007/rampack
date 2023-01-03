@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <iterator>
 #include <variant>
-#include <ZipIterator.hpp>
+#include "ZipIterator.hpp"
 
 
 #include "utils/ParseUtils.h"
@@ -402,30 +402,33 @@ namespace {
     }
 }
 
-std::vector<std::string> LatticeBuilder::getSupportedCellTypes() {
-    return {"sc", "bcc", "fcc", "hcp", "hexagonal", "custom"};
-}
 
-std::unique_ptr<Packing> LatticeBuilder::buildPacking(std::size_t numParticles, const std::string &boxString,
-                                                      const std::string &arrangementString,
-                                                      std::unique_ptr<BoundaryConditions> bc,
-                                                      const Interaction &interaction, const ShapeGeometry &geometry,
-                                                      std::size_t moveThreads, std::size_t scalingThreads)
-{
-    auto requestedBox = parse_box(boxString);
-    auto latticeOperations = explode(arrangementString, '|');
-    ValidateMsg(!latticeOperations.empty(), "Initial arrangement cannot be empty");
-    std::string cellDefinition = latticeOperations.front();
-    latticeOperations.erase(latticeOperations.begin());
+namespace legacy {
+    std::vector<std::string> LatticeBuilder::getSupportedCellTypes() {
+        return {"sc", "bcc", "fcc", "hcp", "hexagonal", "custom"};
+    }
 
-    auto lattice = parse_lattice(numParticles, requestedBox, cellDefinition);
-    auto [transformers, populator] = parse_operations(lattice, latticeOperations, interaction, geometry);
+    std::unique_ptr<Packing> LatticeBuilder::buildPacking(std::size_t numParticles, const std::string &boxString,
+                                                          const std::string &arrangementString,
+                                                          std::unique_ptr<BoundaryConditions> bc,
+                                                          const Interaction &interaction, const ShapeGeometry &geometry,
+                                                          std::size_t moveThreads, std::size_t scalingThreads)
+    {
+        auto requestedBox = parse_box(boxString);
+        auto latticeOperations = explode(arrangementString, '|');
+        ValidateMsg(!latticeOperations.empty(), "Initial arrangement cannot be empty");
+        std::string cellDefinition = latticeOperations.front();
+        latticeOperations.erase(latticeOperations.begin());
 
-    for (const auto &transformer : transformers)
-        transformer->transform(lattice);
-    lattice.normalize();
-    auto shapes = populator->populateLattice(lattice, numParticles);
-    auto latticeBox = lattice.getLatticeBox();
+        auto lattice = parse_lattice(numParticles, requestedBox, cellDefinition);
+        auto [transformers, populator] = parse_operations(lattice, latticeOperations, interaction, geometry);
 
-    return std::make_unique<Packing>(latticeBox, shapes, std::move(bc), interaction, moveThreads, scalingThreads);
+        for (const auto &transformer: transformers)
+            transformer->transform(lattice);
+        lattice.normalize();
+        auto shapes = populator->populateLattice(lattice, numParticles);
+        auto latticeBox = lattice.getLatticeBox();
+
+        return std::make_unique<Packing>(latticeBox, shapes, std::move(bc), interaction, moveThreads, scalingThreads);
+    }
 }
