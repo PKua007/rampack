@@ -6,11 +6,12 @@
 #define RAMPACK_LATTICEMATCHER_H
 
 #include "pyon/Matcher.h"
+#include "core/ShapeTraits.h"
 
 
 class LatticeMatcher {
 public:
-    static pyon::matcher::MatcherDataclass create();
+    static pyon::matcher::MatcherAlternative create(const ShapeTraits &traits);
 };
 
 

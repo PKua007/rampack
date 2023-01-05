@@ -1704,7 +1704,7 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles, co
     using namespace pyon::matcher;
     Any packingFactory;
     auto shapeAST = pyon::Parser::parse(initialArrangement);
-    auto matcher = ArrangementMatcher::create();
+    auto matcher = ArrangementMatcher::create(shapeTraits);
     auto matchReport = matcher.match(shapeAST, packingFactory);
     if (!matchReport)
         throw ValidationException(matchReport.getReason());

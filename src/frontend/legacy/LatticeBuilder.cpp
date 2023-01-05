@@ -25,6 +25,7 @@
 #include "core/lattice/FlipRandomizingTransformer.h"
 #include "core/lattice/LayerRotationTransformer.h"
 #include "core/lattice/LayerWiseCellOptimizationTransformer.h"
+#include "frontend/LatticeDimensionsOptimizer.h"
 
 
 #define BOX_DIMENSIONS_USAGE "Malformed box dimensions. Usage alternatives: \n" \
@@ -191,36 +192,6 @@ namespace {
         return std::make_pair(parse_lattice_dim(fieldMap.at("ncell")), cell.getBox());
     }
 
-    std::array<std::size_t, 3> calculate_best_lattice_dim(std::size_t numParticles, const TriclinicBox &requestedBox,
-                                                          const UnitCell &cell)
-    {
-        std::size_t numAllCells;
-        if (numParticles % cell.size() == 0)
-            numAllCells = numParticles / cell.size();
-        else
-            numAllCells = numParticles / cell.size() + 1;
-
-        auto heights = requestedBox.getHeights();
-        double pseudoVolume = std::accumulate(heights.begin(), heights.end(), 1., std::multiplies<>{});
-        double targetCellSize = std::cbrt(pseudoVolume / static_cast<double>(numAllCells));
-
-        // Find the best integer number of cells
-        std::array<std::size_t, 3> latticeDim{};
-        auto dimCalculator = [targetCellSize](double height) {
-            double bestNumCells = height/targetCellSize;
-            return static_cast<std::size_t>(std::round(bestNumCells));
-        };
-        std::transform(heights.begin(), heights.end(), latticeDim.begin(), dimCalculator);
-
-        // Increase number of cells along the longest side if there are too few cells to fit all particles
-        while (std::accumulate(latticeDim.begin(), latticeDim.end(), 1ul, std::multiplies<>{}) < numAllCells) {
-            auto maxDim = std::max_element(latticeDim.begin(), latticeDim.end());
-            (*maxDim)++;
-        }
-
-        return latticeDim;
-    }
-
     auto calculate_automatic_lattice_spec(std::size_t numParticles, const TriclinicBox &requestedBox,
                                           const UnitCell &cell, const std::map<std::string, std::string> &fieldMap)
     {
@@ -231,7 +202,7 @@ namespace {
             ValidateMsg(fieldMap.find("default") != fieldMap.end(),
                         "If 'ncell' field not present, 'default' should be specified");
             ValidateMsg(fieldMap.at("default").empty(), "Unexpected token: " + fieldMap.at("default"));
-            latticeDim = calculate_best_lattice_dim(numParticles, requestedBox, cell);
+            latticeDim = LatticeDimensionsOptimizer::optimize(numParticles, cell.size(), requestedBox);
         } else {
             // User specified explicitly number of cells - cell dimensions are calculated based on box dimensions
             ValidateMsg(fieldMap.find("default") == fieldMap.end(),

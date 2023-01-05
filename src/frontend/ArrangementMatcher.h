@@ -7,6 +7,7 @@
 
 #include "pyon/Matcher.h"
 #include "core/Packing.h"
+#include "core/ShapeTraits.h"
 
 
 class ArrangementMatcher {
@@ -19,7 +20,7 @@ public:
                                                        std::size_t scalingThreads) = 0;
     };
 
-    static pyon::matcher::MatcherAlternative create();
+    static pyon::matcher::MatcherAlternative create(const ShapeTraits &traits);
 };
 
 
