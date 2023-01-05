@@ -262,17 +262,17 @@ namespace {
 
     MatcherDataclass create_smooth_wedge_matcher() {
         return MatcherDataclass("smooth_wedge")
-            .arguments({{"length", MatcherFloat{}.positive()},
+            .arguments({{"l", MatcherFloat{}.positive()},
                         {"bottom_r", MatcherFloat{}.positive()},
                         {"top_r", MatcherFloat{}.positive()},
                         {"subdivisions", MatcherInt{}.positive().mapTo<std::size_t>(), "1"}})
             .filter([](const DataclassData &wedge){
                 double rDiff = std::abs(wedge["bottom_r"].as<double>() - wedge["top_r"].as<double>());
-                return wedge["length"].as<double>() >= rDiff;
+                return wedge["l"].as<double>() >= rDiff;
             })
-            .describe("length >= |bottom_r - top_r|")
+            .describe("l >= |bottom_r - top_r|")
             .mapTo([](const DataclassData &wedge) -> std::shared_ptr<ShapeTraits> {
-                auto length = wedge["length"].as<double>();
+                auto length = wedge["l"].as<double>();
                 auto bottomR = wedge["bottom_r"].as<double>();
                 auto topR = wedge["top_r"].as<double>();
                 auto subdivisions = wedge["subdivisions"].as<std::size_t>();

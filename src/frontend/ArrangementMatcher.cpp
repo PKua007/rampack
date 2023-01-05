@@ -43,6 +43,6 @@ namespace {
 }
 
 
-MatcherAlternative ArrangementMatcher::create() {
-    return create_presimulated() | LatticeMatcher::create();
+MatcherAlternative ArrangementMatcher::create(const ShapeTraits &traits) {
+    return create_presimulated() | LatticeMatcher::create(traits);
 }
