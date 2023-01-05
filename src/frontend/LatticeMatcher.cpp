@@ -115,6 +115,7 @@ namespace {
     MatcherDataclass create_fcc();
     MatcherDataclass create_hcp();
     MatcherDataclass create_hexagonal();
+    MatcherDataclass create_custom();
 
     MatcherAlternative create_cell_dim();
     MatcherArray create_transformations(const ShapeTraits &traits);
@@ -253,7 +254,7 @@ namespace {
     }
 
     MatcherAlternative create_cell() {
-        return create_sc() | create_bcc() | create_fcc() | create_hcp() | create_hexagonal();
+        return create_sc() | create_bcc() | create_fcc() | create_hcp() | create_hexagonal() | create_custom();
     }
 
     MatcherDataclass create_sc() {
@@ -292,6 +293,37 @@ namespace {
             .mapTo([](const DataclassData &hexagonal) -> CellCreator {
                 auto axis = hexagonal["axis"].as<LatticeTraits::Axis>();
                 return [axis](auto &&arg) { return UnitCellFactory::createHexagonalCell(arg, axis); };
+            });
+    }
+
+    MatcherDataclass create_custom() {
+        auto pos = MatcherArray(MatcherFloat{}.mapTo<double>(), 3).mapToVector<3>();
+        auto rot = MatcherArray(MatcherFloat{}.mapTo<double>(), 3)
+            .mapTo([](const ArrayData &array) -> Matrix<3, 3> {
+                auto angles = array.asStdArray<double, 3>();
+                double factor = M_PI/180;
+                return Matrix<3, 3>::rotation(factor*angles[0], factor*angles[1], factor*angles[2]);
+            });
+
+        auto shape = MatcherDataclass("shape")
+            .arguments({{"pos", pos},
+                        {"rot", rot, "[0, 0, 0]"}})
+            .mapTo([](const DataclassData &shape) -> Shape {
+                auto pos = shape["pos"].as<Vector<3>>();
+                auto rot = shape["rot"].as<Matrix<3, 3>>();
+                return {pos, rot};
+            });
+
+        auto shapes = MatcherArray{}
+            .elementsMatch(shape)
+            .nonEmpty()
+            .mapToStdVector<Shape>();
+
+        return MatcherDataclass("custom")
+            .arguments({{"shapes", shapes}})
+            .mapTo([](const DataclassData &custom) -> CellCreator {
+                auto shapes = custom["shapes"].as<std::vector<Shape>>();
+                return [shapes](auto &&args) { return UnitCell(TriclinicBox(args), shapes); };
             });
     }
 
