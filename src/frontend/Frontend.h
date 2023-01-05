@@ -34,8 +34,7 @@ private:
 
     Parameters loadParameters(const std::string &inputFilename);
     std::unique_ptr<Packing> recreatePacking(PackingLoader &loader, const Parameters &params,
-                                             const ShapeTraits &traits, std::size_t maxThreads,
-                                             const Version &paramsVersion);
+                                             const ShapeTraits &traits, std::size_t maxThreads);
     std::unique_ptr<Packing> arrangePacking(std::size_t numOfParticles, const std::string &initialDimensions,
                                             const std::string &initialArrangement, const ShapeTraits &shapeTraits,
                                             std::size_t moveThreads, std::size_t scalingThreads,
@@ -100,17 +99,22 @@ private:
     static std::string formatMoveKey(const std::string &groupName, const std::string &moveName);
     static bool isStepSizeKey(const std::string &key);
     static Simulation::Environment parseSimulationEnvironment(const InheritableParameters &params,
-                                                              const ShapeTraits &traits);
+                                                              const ShapeTraits &traits, const Version &paramsVersion);
     static void combineEnvironment(Simulation::Environment &env, const Parameters::RunParameters &runParams,
-                                   const ShapeTraits &traits);
+                                   const ShapeTraits &traits, const Version &paramsVersion);
 
     [[nodiscard]] std::shared_ptr<ShapeTraits> createShapeTraits(const std::string &shapeName,
                                                                  const std::string &shapeAttributes,
-                                                                 const std::string &interaction, Version version) const;
+                                                                 const std::string &interaction,
+                                                                 const Version &paramsVersion) const;
 
     [[nodiscard]] std::shared_ptr<ObservablesCollector>
     createObservablesCollector(std::optional<std::string> observablesStr, std::optional<std::string> bulkObservablesStr,
-                               std::size_t maxThreads, Version version) const;
+                               std::size_t maxThreads, const Version &paramsVersion) const;
+
+    static std::vector<std::shared_ptr<MoveSampler>> createMoveSamplers(const std::string &moveTypes,
+                                                                        const ShapeTraits &traits,
+                                                                        const Version &paramsVersion);
 
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }

@@ -11,10 +11,12 @@
 #include "core/ShapeTraits.h"
 
 
-class MoveSamplerFactory {
-public:
-    static std::unique_ptr<MoveSampler> create(const std::string &moveSamplerString, const ShapeTraits &traits);
-};
+namespace legacy {
+    class MoveSamplerFactory {
+    public:
+        static std::unique_ptr<MoveSampler> create(const std::string &moveSamplerString, const ShapeTraits &traits);
+    };
+}
 
 
 #endif //RAMPACK_MOVESAMPLERFACTORY_H
