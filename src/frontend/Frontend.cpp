@@ -28,7 +28,7 @@
 #include "frontend/legacy/ArrangementFactory.h"
 #include "TriclinicBoxScalerFactory.h"
 #include "core/shapes/CompoundShapeTraits.h"
-#include "MoveSamplerFactory.h"
+#include "frontend/legacy/MoveSamplerFactory.h"
 #include "core/io/RamtrjRecorder.h"
 #include "core/io/RamtrjPlayer.h"
 #include "PackingLoader.h"
@@ -232,7 +232,7 @@ int Frontend::casino(int argc, char **argv) {
         optionalContinuationCycles = continuationCycles;
 
     PackingLoader packingLoader(this->logger, optionalStartFrom, optionalContinuationCycles, params.runsParameters);
-    auto packing = this->recreatePacking(packingLoader, params, *shapeTraits, scalingThreads, params.version);
+    auto packing = this->recreatePacking(packingLoader, params, *shapeTraits, scalingThreads);
 
     if (packingLoader.isAllFinished()) {
         this->logger.warn() << "No runs left to be performed. Exiting." << std::endl;
@@ -252,7 +252,7 @@ int Frontend::casino(int argc, char **argv) {
         const auto &runParamsI = params.runsParameters[i];
         // Environment for starting run is already prepared
         if (i != startRunIndex)
-            Frontend::combineEnvironment(env, runParamsI, *shapeTraits);
+            Frontend::combineEnvironment(env, runParamsI, *shapeTraits, params.version);
 
         if (std::holds_alternative<Parameters::IntegrationParameters>(runParamsI)) {
             const auto &runParams = std::get<Parameters::IntegrationParameters>(runParamsI);
@@ -280,10 +280,10 @@ int Frontend::casino(int argc, char **argv) {
 }
 
 void Frontend::combineEnvironment(Simulation::Environment &env, const Parameters::RunParameters &runParams,
-                                  const ShapeTraits &traits)
+                                  const ShapeTraits &traits, const Version &paramsVersion)
 {
-    auto environmentCreator = [&traits](const auto &runParams) {
-        return parseSimulationEnvironment(runParams, traits);
+    auto environmentCreator = [&traits, &paramsVersion](const auto &runParams) {
+        return parseSimulationEnvironment(runParams, traits, paramsVersion);
     };
     auto runEnv = std::visit(environmentCreator, runParams);
     env.combine(runEnv);
@@ -1473,7 +1473,7 @@ void Frontend::attachSnapshotOut(ObservablesCollector &collector, const std::str
 }
 
 Simulation::Environment Frontend::parseSimulationEnvironment(const InheritableParameters &params,
-                                                             const ShapeTraits &traits)
+                                                             const ShapeTraits &traits, const Version &paramsVersion)
 {
     Simulation::Environment env;
 
@@ -1487,14 +1487,8 @@ Simulation::Environment Frontend::parseSimulationEnvironment(const InheritablePa
         }
     }
 
-    if (!params.moveTypes.empty()) {
-        auto moveSamplerStrings = explode(params.moveTypes, ',');
-        std::vector<std::shared_ptr<MoveSampler>> moveSamplers;
-        moveSamplers.reserve(moveSamplerStrings.size());
-        for (const auto &moveSamplerString: moveSamplerStrings)
-            moveSamplers.push_back(MoveSamplerFactory::create(moveSamplerString, traits));
-        env.setMoveSamplers(std::move(moveSamplers));
-    }
+    if (!params.moveTypes.empty())
+        env.setMoveSamplers(Frontend::createMoveSamplers(params.moveTypes, traits, paramsVersion));
 
     if (!params.temperature.empty())
         env.setTemperature(ParameterUpdaterFactory::create(params.temperature));
@@ -1509,7 +1503,7 @@ Simulation::Environment Frontend::recreateEnvironment(const Parameters &params, 
                                                       const ShapeTraits &traits) const
 {
     // Parse initial environment (from the global section)
-    auto env = Frontend::parseSimulationEnvironment(params, traits);
+    auto env = Frontend::parseSimulationEnvironment(params, traits, params.version);
 
     std::size_t startRunIndex = loader.getStartRunIndex();
     if (loader.isContinuation()) {
@@ -1518,17 +1512,17 @@ Simulation::Environment Frontend::recreateEnvironment(const Parameters &params, 
         // step sizes that were before
         Assert(loader.isRestored());
         for (std::size_t i{}; i <= startRunIndex; i++)
-            Frontend::combineEnvironment(env, params.runsParameters[i], traits);
+            Frontend::combineEnvironment(env, params.runsParameters[i], traits, params.version);
         this->overwriteMoveStepSizes(env, loader.getAuxInfo());
     } else {
         // If it is not a continuation, we replay environments of the runs BEFORE the starting point, then overwrite
         // step sizes (because this is where the last simulation ended) and AFTER it, we apply the new environment from
         // the starting run
         for (std::size_t i{}; i < startRunIndex; i++)
-            Frontend::combineEnvironment(env, params.runsParameters[i], traits);
+            Frontend::combineEnvironment(env, params.runsParameters[i], traits, params.version);
         if (loader.isRestored())
             this->overwriteMoveStepSizes(env, loader.getAuxInfo());
-        Frontend::combineEnvironment(env, params.runsParameters[startRunIndex], traits);
+        Frontend::combineEnvironment(env, params.runsParameters[startRunIndex], traits, params.version);
     }
 
     ValidateMsg(env.isComplete(), "Some of parameters: pressure, temperature, moveTypes, scalingType are missing");
@@ -1540,9 +1534,9 @@ Simulation::Environment Frontend::recreateRawEnvironment(const Parameters &param
                                                          const ShapeTraits &traits) const
 {
     Expects(startRunIndex < params.runsParameters.size());
-    auto env = Frontend::parseSimulationEnvironment(params, traits);
+    auto env = Frontend::parseSimulationEnvironment(params, traits, params.version);
     for (std::size_t i{}; i <= startRunIndex; i++)
-        Frontend::combineEnvironment(env, params.runsParameters[i], traits);
+        Frontend::combineEnvironment(env, params.runsParameters[i], traits, params.version);
     return env;
 }
 
@@ -1564,8 +1558,7 @@ std::map<std::string, std::string> Frontend::prepareAuxInfo(const Simulation &si
 }
 
 std::unique_ptr<Packing> Frontend::recreatePacking(PackingLoader &loader, const Parameters &params,
-                                                   const ShapeTraits &traits, std::size_t maxThreads,
-                                                   const Version &paramsVersion)
+                                                   const ShapeTraits &traits, std::size_t maxThreads)
 {
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     loader.loadPacking(std::move(bc), traits.getInteraction(), maxThreads, maxThreads);
@@ -1579,7 +1572,7 @@ std::unique_ptr<Packing> Frontend::recreatePacking(PackingLoader &loader, const 
     } else {
         // Same number of scaling and domain threads
         packing = this->arrangePacking(params.numOfParticles, params.initialDimensions, params.initialArrangement,
-                                       traits, maxThreads, maxThreads, paramsVersion);
+                                       traits, maxThreads, maxThreads, params.version);
     }
 
     this->createWalls(*packing, params.walls);
@@ -1630,10 +1623,11 @@ Frontend::parseFilenameAndParams(const std::string &str, const std::vector<std::
 
 std::shared_ptr<ShapeTraits> Frontend::createShapeTraits(const std::string &shapeName,
                                                          const std::string &shapeAttributes,
-                                                         const std::string &interaction, Version version) const
+                                                         const std::string &interaction,
+                                                         const Version &paramsVersion) const
 {
-    if (version < INPUT_REVAMP_VERSION)
-        return legacy::ShapeFactory::shapeTraitsFor(shapeName, shapeAttributes, interaction, version);
+    if (paramsVersion < INPUT_REVAMP_VERSION)
+        return legacy::ShapeFactory::shapeTraitsFor(shapeName, shapeAttributes, interaction, paramsVersion);
 
     using namespace pyon::matcher;
     Any shapeTraits;
@@ -1648,9 +1642,9 @@ std::shared_ptr<ShapeTraits> Frontend::createShapeTraits(const std::string &shap
 std::shared_ptr<ObservablesCollector>
 Frontend::createObservablesCollector(std::optional<std::string> observablesStr,
                                      std::optional<std::string> bulkObservablesStr, std::size_t maxThreads,
-                                     Version version) const
+                                     const Version &paramsVersion) const
 {
-    if (version < Version{0, 8, 0}) {
+    if (paramsVersion < Version{0, 8, 0}) {
         return legacy::ObservablesCollectorFactory::create(
             explode(observablesStr.value_or(""), ','), explode(bulkObservablesStr.value_or(""), ','), maxThreads
         );
@@ -1713,4 +1707,20 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles, co
     return packingFactory.as<std::shared_ptr<PackingFactory>>()->createPacking(
         std::move(bc), shapeTraits.getInteraction(), moveThreads, scalingThreads
     );
+}
+
+std::vector<std::shared_ptr<MoveSampler>> Frontend::createMoveSamplers(const std::string &moveTypes,
+                                                                       const ShapeTraits &traits,
+                                                                       const Version &paramsVersion)
+{
+    if (paramsVersion < Version{0, 8, 0}) {
+        auto moveSamplerStrings = explode(moveTypes, ',');
+        std::vector<std::shared_ptr<MoveSampler>> moveSamplers;
+        moveSamplers.reserve(moveSamplerStrings.size());
+        for (const auto &moveSamplerString: moveSamplerStrings)
+            moveSamplers.push_back(legacy::MoveSamplerFactory::create(moveSamplerString, traits));
+        return moveSamplers;
+    }
+
+    return {};
 }
