@@ -14,6 +14,8 @@
 #include "core/volume_scalers/LogScalingFactorSampler.h"
 #include "core/volume_scalers/TriclinicAdapter.h"
 #include "core/volume_scalers/TriclinicDeltaScaler.h"
+#include "frontend/ScalingDirectionParser.h"
+
 
 #define SCALING_USAGE "Malformed scaling. Available types: delta V, (independent) linear, (independent) log, " \
                       "(independent) delta triclinic"
@@ -25,75 +27,6 @@
                                 "4. y[xz] | (xy)z | [x]yz | etc. (where (...) - scale together, [...] - do not scale)"
 
 namespace {
-    AnisotropicVolumeScaler::ScalingDirection char_to_scaling_direction(char c) {
-        switch (c) {
-            case 'x':
-                return AnisotropicVolumeScaler::X;
-            case 'y':
-                return AnisotropicVolumeScaler::Y;
-            case 'z':
-                return AnisotropicVolumeScaler::Z;
-            default:
-                throw AssertionException({c});
-        }
-    }
-
-    void register_scaling_direction(char direction, std::array<bool, 3> &isDirectionUsed) {
-        if (direction < 'x' || direction > 'z')
-            throw ValidationException(SCALING_USAGE);
-        std::size_t directionIdx = direction - 'x';
-        if (isDirectionUsed[directionIdx])
-            throw ValidationException("Duplicated occurrence of " + std::string{direction} + " direction");
-        isDirectionUsed[directionIdx] = true;
-    }
-
-    std::string parse_brackets(char opening, char closing, const std::string &str, std::size_t &idx) {
-        std::size_t closingIdx = str.find(closing, idx);
-        if (closingIdx == std::string::npos)
-            throw ValidationException("Unmatched '" + std::string{opening} + "' in scaling direction");
-        std::string content = str.substr(idx + 1, closingIdx - idx - 1);
-        idx = closingIdx;
-        return content;
-    }
-
-    AnisotropicVolumeScaler::ScalingDirection parse_scaling_directions(const std::string &scalingDirectionStr) {
-        AnisotropicVolumeScaler::ScalingDirection scalingDirection;
-        std::array<bool, 3> isDirectionUsed{};
-        for (std::size_t i{}; i < scalingDirectionStr.length(); i++) {
-            char c = scalingDirectionStr[i];
-            switch (c) {
-                case 'x':
-                case 'y':
-                case 'z':
-                    register_scaling_direction(c, isDirectionUsed);
-                    scalingDirection |= char_to_scaling_direction(c);
-                    break;
-
-                case '(': {
-                    AnisotropicVolumeScaler::ScalingDirection groupedScalingDirection;
-                    for (char direction : parse_brackets('(', ')', scalingDirectionStr, i)) {
-                        register_scaling_direction(direction, isDirectionUsed);
-                        groupedScalingDirection &= char_to_scaling_direction(direction);
-                    }
-                    scalingDirection |= groupedScalingDirection;
-                    break;
-                }
-
-                case '[':
-                    for (char direction : parse_brackets('[', ']', scalingDirectionStr, i))
-                        register_scaling_direction(direction, isDirectionUsed);
-                    break;
-
-                default:
-                    throw ValidationException(SCALING_USAGE);
-            }
-        }
-
-        ValidateMsg(std::find(isDirectionUsed.begin(), isDirectionUsed.end(), false) == isDirectionUsed.end(),
-                    "The behaviour of one or more scaling directions is unspecified");
-        return scalingDirection;
-    }
-
     std::unique_ptr<VolumeScaler> create_volume_scaler(const std::string &scalingType) {
         if (scalingType == "delta V")
             return std::make_unique<DeltaVolumeScaler>();
@@ -136,7 +69,7 @@ namespace {
         else if (scalingDirectionStr == "anisotropic xyz")
             return std::make_unique<AnisotropicVolumeScaler>(std::move(factorSampler), X | Y | Z, independent);
 
-        AnisotropicVolumeScaler::ScalingDirection scalingDirection = parse_scaling_directions(scalingDirectionStr);
+        AnisotropicVolumeScaler::ScalingDirection scalingDirection = ScalingDirectionParser::parse(scalingDirectionStr);
         return std::make_unique<AnisotropicVolumeScaler>(std::move(factorSampler), scalingDirection, independent);
     }
 }
