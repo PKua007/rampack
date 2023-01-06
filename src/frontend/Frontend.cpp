@@ -26,7 +26,7 @@
 #include "utils/OMPMacros.h"
 #include "core/lattice/DistanceOptimizer.h"
 #include "frontend/legacy/ArrangementFactory.h"
-#include "TriclinicBoxScalerFactory.h"
+#include "frontend/legacy/TriclinicBoxScalerFactory.h"
 #include "core/shapes/CompoundShapeTraits.h"
 #include "frontend/legacy/MoveSamplerFactory.h"
 #include "core/io/RamtrjRecorder.h"
@@ -44,6 +44,7 @@
 #include "ObservablesMatcher.h"
 #include "ArrangementMatcher.h"
 #include "MoveSamplerMatcher.h"
+#include "BoxScalerMatcher.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -1479,7 +1480,7 @@ Simulation::Environment Frontend::parseSimulationEnvironment(const InheritablePa
     Simulation::Environment env;
 
     if (!params.scalingType.empty()) {
-        auto boxScaler = TriclinicBoxScalerFactory::create(params.scalingType, params.volumeStepSize);
+        auto boxScaler = Frontend::createBoxScaler(params.scalingType, params.volumeStepSize, paramsVersion);
         if (boxScaler == nullptr) {
             env.disableBoxScaling();
         } else {
@@ -1743,4 +1744,23 @@ std::vector<std::shared_ptr<MoveSampler>> Frontend::createMoveSamplers(const std
         throw ValidationException(matchReport.getReason());
 
     return samplers.as<std::vector<std::shared_ptr<MoveSampler>>>();
+}
+
+std::shared_ptr<TriclinicBoxScaler> Frontend::createBoxScaler(const std::string &scalerStr, double volumeStepSize,
+                                                              const Version &paramsVersion)
+{
+    if (paramsVersion < Version{0, 8, 0})
+        return legacy::TriclinicBoxScalerFactory::create(scalerStr, volumeStepSize);
+
+    using namespace pyon;
+    using namespace pyon::matcher;
+
+    auto scalerMatcher = BoxScalerMatcher::create();
+    auto scalerAST = Parser::parse(scalerStr);
+    Any scaler;
+    auto matchReport = scalerMatcher.match(scalerAST, scaler);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    return scaler.as<std::shared_ptr<TriclinicBoxScaler>>();
 }
