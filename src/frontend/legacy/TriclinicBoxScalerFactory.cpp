@@ -141,19 +141,22 @@ namespace {
     }
 }
 
-std::unique_ptr<TriclinicBoxScaler>
-TriclinicBoxScalerFactory::create(const std::string &scalingType, double initialStepSize) {
-    if (scalingType == "disabled")
-        return nullptr;
 
-    std::string scalingTypeStripped = scalingType;
-    std::string independentString = "independent ";
-    bool scaleTogether = !startsWith(scalingType, independentString);
-    if (!scaleTogether)
-        scalingTypeStripped = scalingType.substr(independentString.length());
+namespace legacy {
+    std::unique_ptr<TriclinicBoxScaler>
+    TriclinicBoxScalerFactory::create(const std::string &scalingType, double initialStepSize) {
+        if (scalingType == "disabled")
+            return nullptr;
 
-    if (scalingTypeStripped == "delta triclinic")
-        return std::make_unique<TriclinicDeltaScaler>(initialStepSize, scaleTogether);
-    else
-        return std::make_unique<TriclinicAdapter>(create_volume_scaler(scalingType), initialStepSize);
+        std::string scalingTypeStripped = scalingType;
+        std::string independentString = "independent ";
+        bool scaleTogether = !startsWith(scalingType, independentString);
+        if (!scaleTogether)
+            scalingTypeStripped = scalingType.substr(independentString.length());
+
+        if (scalingTypeStripped == "delta triclinic")
+            return std::make_unique<TriclinicDeltaScaler>(initialStepSize, scaleTogether);
+        else
+            return std::make_unique<TriclinicAdapter>(create_volume_scaler(scalingType), initialStepSize);
+    }
 }
