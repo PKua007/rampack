@@ -43,6 +43,7 @@
 #include "pyon/Parser.h"
 #include "ObservablesMatcher.h"
 #include "ArrangementMatcher.h"
+#include "MoveSamplerMatcher.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -1629,9 +1630,10 @@ std::shared_ptr<ShapeTraits> Frontend::createShapeTraits(const std::string &shap
     if (paramsVersion < INPUT_REVAMP_VERSION)
         return legacy::ShapeFactory::shapeTraitsFor(shapeName, shapeAttributes, interaction, paramsVersion);
 
+    using namespace pyon;
     using namespace pyon::matcher;
     Any shapeTraits;
-    auto shapeAST = pyon::Parser::parse(shapeName);
+    auto shapeAST = Parser::parse(shapeName);
     auto matchReport = ShapeMatcher::shape.match(shapeAST, shapeTraits);
     if (!matchReport)
         throw ValidationException(matchReport.getReason());
@@ -1650,6 +1652,7 @@ Frontend::createObservablesCollector(std::optional<std::string> observablesStr,
         );
     }
 
+    using namespace pyon;
     using namespace pyon::matcher;
     Any result;
 
@@ -1657,7 +1660,7 @@ Frontend::createObservablesCollector(std::optional<std::string> observablesStr,
 
     if (observablesStr.has_value()) {
         auto observablesMatcher = ObservablesMatcher::createObservablesMatcher(maxThreads);
-        auto observablesAST = pyon::Parser::parse(*observablesStr);
+        auto observablesAST = Parser::parse(*observablesStr);
         auto matchReport = observablesMatcher.match(observablesAST, result);
         if (!matchReport)
             throw ValidationException(matchReport.getReason());
@@ -1669,7 +1672,7 @@ Frontend::createObservablesCollector(std::optional<std::string> observablesStr,
 
     if (bulkObservablesStr.has_value()) {
         auto bulkObservablesMatcher = ObservablesMatcher::createBulkObservablesMatcher(maxThreads);
-        auto observablesAST = pyon::Parser::parse(*bulkObservablesStr);
+        auto observablesAST = Parser::parse(*bulkObservablesStr);
         auto matchReport = bulkObservablesMatcher.match(observablesAST, result);
         if (!matchReport)
             throw ValidationException(matchReport.getReason());
@@ -1695,9 +1698,11 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles, co
                                                           shapeTraits.getGeometry(), moveThreads, scalingThreads);
     }
 
+    using namespace pyon;
     using namespace pyon::matcher;
+
     Any packingFactory;
-    auto shapeAST = pyon::Parser::parse(initialArrangement);
+    auto shapeAST = Parser::parse(initialArrangement);
     auto matcher = ArrangementMatcher::create(shapeTraits);
     auto matchReport = matcher.match(shapeAST, packingFactory);
     if (!matchReport)
@@ -1722,5 +1727,20 @@ std::vector<std::shared_ptr<MoveSampler>> Frontend::createMoveSamplers(const std
         return moveSamplers;
     }
 
-    return {};
+    using namespace pyon;
+    using namespace pyon::matcher;
+
+    auto sampler = MoveSamplerMatcher::create(traits);
+    auto samplerArray = pyon::matcher::MatcherArray{}
+        .elementsMatch(sampler)
+        .nonEmpty()
+        .mapToStdVector<std::shared_ptr<MoveSampler>>();
+
+    Any samplers;
+    auto samplersAST = Parser::parse(moveTypes);
+    auto matchReport = samplerArray.match(samplersAST, samplers);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    return samplers.as<std::vector<std::shared_ptr<MoveSampler>>>();
 }
