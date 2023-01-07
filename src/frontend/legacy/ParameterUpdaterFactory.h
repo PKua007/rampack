@@ -10,10 +10,12 @@
 #include "core/DynamicParameter.h"
 
 
-class ParameterUpdaterFactory {
-public:
-    static std::unique_ptr<DynamicParameter> create(std::string updaterString);
-};
+namespace legacy {
+    class ParameterUpdaterFactory {
+    public:
+        static std::unique_ptr<DynamicParameter> create(std::string updaterString);
+    };
+}
 
 
 #endif //RAMPACK_PARAMETERUPDATERFACTORY_H

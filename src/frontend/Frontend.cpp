@@ -32,7 +32,7 @@
 #include "core/io/RamtrjRecorder.h"
 #include "core/io/RamtrjPlayer.h"
 #include "PackingLoader.h"
-#include "ParameterUpdaterFactory.h"
+#include "frontend/legacy/ParameterUpdaterFactory.h"
 #include "core/io/XYZRecorder.h"
 #include "core/io/WolframWriter.h"
 #include "core/io/XYZWriter.h"
@@ -1493,10 +1493,10 @@ Simulation::Environment Frontend::parseSimulationEnvironment(const InheritablePa
         env.setMoveSamplers(Frontend::createMoveSamplers(params.moveTypes, traits, paramsVersion));
 
     if (!params.temperature.empty())
-        env.setTemperature(ParameterUpdaterFactory::create(params.temperature));
+        env.setTemperature(Frontend::createDynamicParameter(params.temperature, paramsVersion));
 
     if (!params.pressure.empty())
-        env.setPressure(ParameterUpdaterFactory::create(params.pressure));
+        env.setPressure(Frontend::createDynamicParameter(params.pressure, paramsVersion));
 
     return env;
 }
@@ -1763,4 +1763,23 @@ std::shared_ptr<TriclinicBoxScaler> Frontend::createBoxScaler(const std::string 
         throw ValidationException(matchReport.getReason());
 
     return scaler.as<std::shared_ptr<TriclinicBoxScaler>>();
+}
+
+std::shared_ptr<DynamicParameter> Frontend::createDynamicParameter(const std::string &parameterStr,
+                                                                   const Version &paramsVersion)
+{
+    if (paramsVersion < Version{0, 8, 0})
+        return legacy::ParameterUpdaterFactory::create(parameterStr);
+
+    using namespace pyon;
+    using namespace pyon::matcher;
+
+    auto parameterMatcher = BoxScalerMatcher::create();
+    auto parameterAST = Parser::parse(parameterStr);
+    Any parameter;
+    auto matchReport = parameterMatcher.match(parameterAST, parameter);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    return parameter.as<std::shared_ptr<DynamicParameter>>();
 }

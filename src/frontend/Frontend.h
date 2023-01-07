@@ -119,6 +119,10 @@ private:
     static std::shared_ptr<TriclinicBoxScaler> createBoxScaler(const std::string &scalerStr, double volumeStepSize,
                                                                const Version &paramsVersion);
 
+
+    static std::shared_ptr<DynamicParameter> createDynamicParameter(const std::string &parameterStr,
+                                                                    const Version &paramsVersion);
+
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }
     ~Frontend() { this->logger.removeOutput(this->auxOutStream); }
