@@ -1170,3 +1170,55 @@ bool Packing::isBoxUpscaled(const TriclinicBox &oldBox, const TriclinicBox &newB
     return true;
 }
 
+std::size_t Packing::renormalizeOrientations(const Interaction &interaction, bool allowOverlaps) {
+    if (allowOverlaps) {
+        auto newShapes = std::vector<Shape>(this->begin(), this->end());
+        #pragma omp parallel for shared(newShapes) default(none) num_threads(this->scalingThreads)
+        for (auto &shape : newShapes) {
+            auto rot = shape.getOrientation();
+            Packing::fixRotationMatrix(rot);
+            shape.setOrientation(rot);
+        }
+        this->reset(std::move(newShapes), this->box, interaction);
+        return 0;
+    }
+
+    auto centres = interaction.getInteractionCentres();
+    std::size_t rejectionCounter{};
+    #pragma omp parallel for shared(centres, interaction) default(none) num_threads(this->moveThreads) \
+            reduction(+:rejectionCounter)
+    for (std::size_t particleIdx = 0; particleIdx < this->size(); particleIdx++) {
+        auto threadId = OMP_THREAD_ID;
+        auto &shape = this->shapes[particleIdx];
+        std::size_t tempParticleIdx = this->size() + threadId;
+        this->lastAlteredParticleIdx[threadId] = particleIdx;
+
+        auto &tempShape = this->shapes[tempParticleIdx];
+        tempShape.setPosition(shape.getPosition());
+        auto rot = shape.getOrientation();
+        Packing::fixRotationMatrix(rot);
+        tempShape.setOrientation(rot);
+
+        if (this->numInteractionCentres > 0) {
+            std::size_t tempOrigin = (this->size() + threadId) * this->numInteractionCentres;
+            for (std::size_t centreI{}; centreI < centres.size(); centreI++)
+                this->interactionCentres[tempOrigin + centreI] = rot * centres[centreI];
+            this->recalculateAbsoluteInteractionCentres(tempParticleIdx);
+        }
+
+        if (this->calculateMoveOverlapEnergy(particleIdx, tempParticleIdx, interaction) > 0)
+            rejectionCounter++;
+        else
+            this->acceptRotation();
+    }
+
+    return rejectionCounter;
+}
+
+void Packing::fixRotationMatrix(Matrix<3, 3> &rotation) {
+    // Iterative algorithm from https://math.stackexchange.com/questions/3292034/normalizing-a-rotation-matrix
+    // Do 3 iterations, however usually 1 is enough
+    for (std::size_t i{}; i < 3; i++)
+        rotation = 1.5 * rotation - 0.5 * rotation * rotation.transpose() * rotation;
+}
+

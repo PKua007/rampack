@@ -70,6 +70,7 @@ private:
 
     static bool areShapesWithinBox(const std::vector<Shape> &shapes, const TriclinicBox &box);
     static bool isBoxUpscaled(const TriclinicBox &oldBox, const TriclinicBox &newBox);
+    static void fixRotationMatrix(Matrix<3, 3> &rotation);
 
     void rebuildNeighbourGrid();
 
@@ -168,6 +169,8 @@ public:
     { }
 
     void reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, const Interaction &newInteraction);
+
+    std::size_t renormalizeOrientations(const Interaction &interaction, bool allowOverlaps);
 
     /**
      * @brief Return the number of shapes in the packing.

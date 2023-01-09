@@ -254,7 +254,6 @@ private:
     [[nodiscard]] std::vector<std::size_t> calculateMoveTypeAccumulations(std::size_t numParticles) const;
     void fixRotationMatrices(const Interaction &interaction, Logger &logger);
     static double getRotationMatrixDeviation(const Matrix<3, 3> &rotation);
-    static void fixRotationMatrix(Matrix<3, 3> &rotation);
 
     [[nodiscard]] MoveStatistics getScalingStatistics() const;
 

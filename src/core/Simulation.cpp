@@ -720,46 +720,24 @@ std::vector<Simulation::MoveStatistics> Simulation::getMovesStatistics() const {
 }
 
 void Simulation::fixRotationMatrices(const Interaction &interaction, Logger &logger) {
-    double maxDeviation = 0;
-    std::size_t numFixes = 0;
-
-    std::vector<Shape> shapes(std::cbegin(*this->packing), std::cend(*this->packing));
-    TriclinicBox box = this->packing->getBox();
-
-    for (auto &shape : shapes) {
-        auto rotation = shape.getOrientation();
-        double deviation = Simulation::getRotationMatrixDeviation(rotation);
-        if (deviation > maxDeviation)
-            maxDeviation = deviation;
-
-        if (deviation > std::pow(1e-14, 2)) {
-            Simulation::fixRotationMatrix(rotation);
-            shape.setOrientation(rotation);
-            numFixes++;
+    if (this->areOverlapsCounted) {
+        this->packing->renormalizeOrientations(interaction, true);
+    } else {
+        std::size_t rejected = this->packing->renormalizeOrientations(interaction, false);
+        if (rejected > 0) {
+            logger.warn() << "After orientation renormalization " << rejected << " molecules reported overlaps; ";
+            logger << "those were skipped this time" << std::endl;
         }
     }
 
-    if (numFixes > 0)
-        this->packing->reset(shapes, box, interaction);
-
-    if (!this->areOverlapsCounted && this->packing->countTotalOverlaps(interaction) > 0) {
-        logger.error() << "During orientation normalization some overlaps were introduced. Interrupting.";
-        logger << std::endl;
-        sigint_received = true;
+    double maxDeviation{};
+    for (const auto &shape: std::as_const(*this->packing)) {
+        double deviation = Simulation::getRotationMatrixDeviation(shape.getOrientation());
+        if (deviation > maxDeviation)
+            maxDeviation = deviation;
     }
 
-    logger.verbose() << "Orientation normalization was performed. Fixed molecules: " << numFixes << "/";
-    logger << this->packing->size() << "; highest deviation: " << maxDeviation << std::endl;
-}
-
-void Simulation::fixRotationMatrix(Matrix<3, 3> &rotation) {
-    // Iterative algorithm from https://math.stackexchange.com/questions/3292034/normalizing-a-rotation-matrix
-    // At most 3 iterations, however usually 1 is enough
-    for (std::size_t i{}; i < 3; i++) {
-        rotation = 1.5 * rotation - 0.5 * rotation * rotation.transpose() * rotation;
-        if (Simulation::getRotationMatrixDeviation(rotation) < std::pow(1e-15, 2))
-            break;
-    }
+    logger.verbose() << "Orientation normalization was performed. Current highest deviation: " << maxDeviation << std::endl;
 }
 
 double Simulation::getRotationMatrixDeviation(const Matrix<3, 3> &rotation) {
