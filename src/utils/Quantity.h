@@ -56,7 +56,6 @@ public:
     /**
      * @brief Creates the quantity as a mean of samples, with estimated error of the mean.
      * @param samples A vector of doubles to minimizeForDirection the quantity from
-     * @return the quantity from samples
      */
     void calculateFromSamples(const std::vector<double> &samples);
 

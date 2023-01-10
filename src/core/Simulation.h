@@ -326,16 +326,12 @@ public:
      * (production) phase - "new" version with Simulation::Environment.
      * @param env Simulation::Environment, which will be combined the current simulation environment (from the
      * constructor or the previous run)
-     * @param thermalisationCycles the number of cycles in thermalization phase
-     * @param averagingCycles the number of cycles in averaging (production) phase
-     * @param averagingEvery how often to take observables for averaging
-     * @param snapshotEvery how often to take observable snapshots
+     * @param params parameters of the integration
      * @param shapeTraits shape traits describing the simulated molecules
      * @param observablesCollector_ the observables collector with observable capturing configuration
      * @param simulationRecorders a list of SimulationRecorders to record the simulation (with a snapshot every
      * @a snapshotEvery). It may be empty
      * @param logger Logger object to display simulation data
-     * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
      */
     void integrate(Environment env, const IntegrationParameters &params, const ShapeTraits &shapeTraits,
                    std::unique_ptr<ObservablesCollector> observablesCollector_,
@@ -359,13 +355,12 @@ public:
     * overlaps in the system - "new" version with Simulation::Environment.
     * @param env Simulation::Environment, which will be combined the current simulation environment (from the
     * constructor or the previous run)
-    * @param snapshotEvery how often to take observable snapshots
+    * @param params parameters of the overlap relaxation
     * @param shapeTraits shape traits describing the simulated molecules
     * @param observablesCollector_ the observables collector with observable capturing configuration
     * @param simulationRecorders a list of SimulationRecorders to record the simulation (with a snapshot every
      * @a snapshotEvery). It may be empty
     * @param logger Logger object to display simulation data
-    * @param cycleOffset the initial cycle of the simulation (if for example the previous run was disrupted)
     */
     void relaxOverlaps(Environment env, const OverlapRelaxationParameters &params, const ShapeTraits &shapeTraits,
                        std::unique_ptr<ObservablesCollector> observablesCollector_,
