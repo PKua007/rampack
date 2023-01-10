@@ -1174,7 +1174,8 @@ std::size_t Packing::renormalizeOrientations(const Interaction &interaction, boo
     if (allowOverlaps) {
         auto newShapes = std::vector<Shape>(this->begin(), this->end());
         #pragma omp parallel for shared(newShapes) default(none) num_threads(this->scalingThreads)
-        for (auto &shape : newShapes) {
+        for (std::size_t i = 0; i < this->size(); i++) {
+            auto &shape = this->shapes[i];
             auto rot = shape.getOrientation();
             Packing::fixRotationMatrix(rot);
             shape.setOrientation(rot);
