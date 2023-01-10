@@ -97,7 +97,7 @@ public:
 };
 
 
-constexpr Version CURRENT_VERSION{0, 7, 1};
+constexpr Version CURRENT_VERSION{0, 7, 2};
 
 
 #endif //RAMPACK_VERSION_H
