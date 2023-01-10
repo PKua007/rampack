@@ -1183,28 +1183,18 @@ std::size_t Packing::renormalizeOrientations(const Interaction &interaction, boo
         return 0;
     }
 
+    // For a good measure, reset NG sanitizer - it may have not been reset after last operation
+    this->resetNGRaceConditionSanitizer();
+
     auto centres = interaction.getInteractionCentres();
     std::size_t rejectionCounter{};
-    #pragma omp parallel for shared(centres, interaction) default(none) num_threads(this->moveThreads) \
-            reduction(+:rejectionCounter)
+    // We can't parallelize this loop because of the race condition on neighbour grid cells
     for (std::size_t particleIdx = 0; particleIdx < this->size(); particleIdx++) {
+        // threadId should be 0 (master), but fetch explicitly if somehow this function is run from a different thread
         auto threadId = OMP_THREAD_ID;
-        auto &shape = this->shapes[particleIdx];
         std::size_t tempParticleIdx = this->size() + threadId;
-        this->lastAlteredParticleIdx[threadId] = particleIdx;
 
-        auto &tempShape = this->shapes[tempParticleIdx];
-        tempShape.setPosition(shape.getPosition());
-        auto rot = shape.getOrientation();
-        Packing::fixRotationMatrix(rot);
-        tempShape.setOrientation(rot);
-
-        if (this->numInteractionCentres > 0) {
-            std::size_t tempOrigin = (this->size() + threadId) * this->numInteractionCentres;
-            for (std::size_t centreI{}; centreI < centres.size(); centreI++)
-                this->interactionCentres[tempOrigin + centreI] = rot * centres[centreI];
-            this->recalculateAbsoluteInteractionCentres(tempParticleIdx);
-        }
+        this->tryOrientationFix(particleIdx, centres);
 
         if (this->calculateMoveOverlapEnergy(particleIdx, tempParticleIdx, interaction) > 0)
             rejectionCounter++;
@@ -1220,5 +1210,26 @@ void Packing::fixRotationMatrix(Matrix<3, 3> &rotation) {
     // Do 3 iterations, however usually 1 is enough
     for (std::size_t i{}; i < 3; i++)
         rotation = 1.5 * rotation - 0.5 * rotation * rotation.transpose() * rotation;
+}
+
+void Packing::tryOrientationFix(std::size_t particleIdx, const std::vector<Vector<3>> &centres) {
+    // threadId should be 0 (master), but fetch explicitly if somehow this function is run from a different thread
+    auto threadId = OMP_THREAD_ID;
+    auto &shape = this->shapes[particleIdx];
+    std::size_t tempParticleIdx = this->size() + threadId;
+    this->lastAlteredParticleIdx[threadId] = particleIdx;
+
+    auto &tempShape = this->shapes[tempParticleIdx];
+    tempShape.setPosition(shape.getPosition());
+    auto rot = shape.getOrientation();
+    Packing::fixRotationMatrix(rot);
+    tempShape.setOrientation(rot);
+
+    if (this->numInteractionCentres > 0) {
+        std::size_t tempOrigin = (this->size() + threadId) * this->numInteractionCentres;
+        for (std::size_t centreI{}; centreI < centres.size(); centreI++)
+            this->interactionCentres[tempOrigin + centreI] = rot * centres[centreI];
+        this->recalculateAbsoluteInteractionCentres(tempParticleIdx);
+    }
 }
 

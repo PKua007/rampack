@@ -87,6 +87,7 @@ private:
     void rotateTempInteractionCentres(const Matrix<3, 3> &rotation);
     void acceptTempInteractionCentres();
 
+    void tryOrientationFix(std::size_t particleIdx, const std::vector<Vector<3>> &centres);
 
     // In all the methods below, tempParticleIdx means where the position is stored - may be equal to
     // originalParticleIdx or be the last index (temp shape). originalParticleIdx is the actual id of the particle, but
@@ -170,6 +171,13 @@ public:
 
     void reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, const Interaction &newInteraction);
 
+    /**
+     * @brief Performs renormalization of rotation matrices.
+     * @details If @a allowOverlaps is @a true, renormalization will be performed on all particles regardless if it
+     * introduces overlaps or not. Otherwise, for each particle renormalization is performed like a Monte Carlo move
+     * - it is rejected if overlaps are introduces.
+     * @returns Number of particles, which were not normalized.
+     */
     std::size_t renormalizeOrientations(const Interaction &interaction, bool allowOverlaps);
 
     /**
