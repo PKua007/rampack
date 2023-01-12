@@ -51,11 +51,11 @@ private:
     double volume{};
 
     mutable std::optional<double> rangeRadius;
-    mutable std::unique_ptr<ShapePrinter> wolframPrinter;
-    mutable std::unique_ptr<ShapePrinter> objPrinter;
+    mutable std::shared_ptr<ShapePrinter> wolframPrinter;
+    mutable std::shared_ptr<ShapePrinter> objPrinter;
 
     template<typename Printer>
-    std::unique_ptr<Printer> createPrinter() const {
+    std::shared_ptr<Printer> createPrinter() const {
         auto centers = this->getInteractionCentres();
         if (centers.empty())
             centers.push_back({0, 0, 0});
@@ -72,7 +72,7 @@ private:
             geometryPointers.push_back(&geometries.back());
         }
 
-        return std::make_unique<Printer>(geometryPointers, centers, MESH_SUBDIVISIONS);
+        return std::make_shared<Printer>(geometryPointers, centers, MESH_SUBDIVISIONS);
     }
 
 public:
@@ -106,15 +106,16 @@ public:
      *     <li> `obj` - Wavefront OBJ triangle mesh
      * </ol>
      */
-    [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override {
+    [[nodiscard]] std::shared_ptr<const ShapePrinter>
+    getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override {
         if (format == "wolfram") {
             if (this->wolframPrinter == nullptr)
                 this->wolframPrinter = this->template createPrinter<XCWolframShapePrinter>();
-            return *this->wolframPrinter;
+            return this->wolframPrinter;
         } else if (format == "obj") {
             if (this->objPrinter == nullptr)
                 this->objPrinter = this->template createPrinter<XCObjShapePrinter>();
-            return *this->objPrinter;
+            return this->objPrinter;
         } else {
             throw NoSuchShapePrinterException("XenoCollideTraits: unknown printer format: " + format);
         }

@@ -10,7 +10,7 @@
 
 
 SpherocylinderTraits::SpherocylinderTraits(double length, double radius)
-        : length{length}, radius{radius}, wolframPrinter(*this)
+        : length{length}, radius{radius}, wolframPrinter{std::make_shared<WolframPrinter>(*this)}
 {
     Expects(length >= 0);
     Expects(radius > 0);
@@ -73,11 +73,12 @@ bool SpherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matrix<3,
     return false;
 }
 
-const ShapePrinter &SpherocylinderTraits::getPrinter(const std::string &format) const {
+std::shared_ptr<const ShapePrinter>
+SpherocylinderTraits::getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const {
     if (format == "wolfram")
         return this->wolframPrinter;
     else if (format == "obj")
-        return *this->objPrinter;
+        return this->objPrinter;
     else
         throw NoSuchShapePrinterException("SphereTraits: unknown printer format: " + format);
 }

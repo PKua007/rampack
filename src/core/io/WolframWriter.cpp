@@ -11,13 +11,13 @@ void WolframWriter::write(std::ostream &out, const Packing &packing, const Shape
 {
     out << std::fixed;
 
-    const auto &shapePrinter = traits.getPrinter("wolfram");
+    auto shapePrinter = traits.getPrinter("wolfram", this->params);
     switch (this->style) {
         case WolframStyle::STANDARD:
-            WolframWriter::storeStandard(out, packing, shapePrinter);
+            WolframWriter::storeStandard(out, packing, *shapePrinter);
             break;
         case WolframStyle::AFFINE_TRANSFORM:
-            WolframWriter::storeAffineTransform(out, packing, shapePrinter);
+            WolframWriter::storeAffineTransform(out, packing, *shapePrinter);
             break;
     }
 }

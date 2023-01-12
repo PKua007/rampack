@@ -43,12 +43,12 @@ private:
         [[nodiscard]] std::string print(const Shape &shape) const override;
     };
 
-    static std::unique_ptr<ShapePrinter> createObjPrinter(double radius);
+    static std::shared_ptr<ShapePrinter> createObjPrinter(double radius);
 
     double radius{};
     std::unique_ptr<Interaction> interaction{};
-    WolframPrinter wolframPrinter;
-    std::unique_ptr<ShapePrinter> objPrinter;
+    std::shared_ptr<WolframPrinter> wolframPrinter;
+    std::shared_ptr<ShapePrinter> objPrinter;
 
 public:
     /**
@@ -71,7 +71,8 @@ public:
      *     <li> `obj` - Wavefront OBJ triangle mesh
      * </ol>
      */
-    [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override;
+    [[nodiscard]] std::shared_ptr<const ShapePrinter>
+    getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;
 
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
     [[nodiscard]] double getVolume() const override;

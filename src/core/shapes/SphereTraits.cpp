@@ -12,15 +12,15 @@
 
 
 SphereTraits::SphereTraits(double radius)
-        : radius{radius}, interaction{std::make_unique<HardInteraction>(radius)}, wolframPrinter(radius),
-          objPrinter{SphereTraits::createObjPrinter(radius)}
+        : radius{radius}, interaction{std::make_unique<HardInteraction>(radius)},
+          wolframPrinter{std::make_shared<WolframPrinter>(radius)}, objPrinter{SphereTraits::createObjPrinter(radius)}
 {
     Expects(radius > 0);
     this->registerNamedPoint("cm", {0, 0, 0});
 }
 
 SphereTraits::SphereTraits(double radius, std::unique_ptr<CentralInteraction> centralInteraction)
-        : radius{radius}, wolframPrinter(radius), objPrinter{SphereTraits::createObjPrinter(radius)}
+        : radius{radius}, wolframPrinter{std::make_shared<WolframPrinter>(radius)}, objPrinter{SphereTraits::createObjPrinter(radius)}
 {
     Expects(radius > 0);
     centralInteraction->installOnSphere();
@@ -32,16 +32,17 @@ double SphereTraits::getVolume() const {
     return 4./3 * M_PI * std::pow(this->radius, 3);
 }
 
-const ShapePrinter &SphereTraits::getPrinter(const std::string &format) const {
+std::shared_ptr<const ShapePrinter> SphereTraits::getPrinter(const std::string &format,
+                                                             const std::map<std::string, std::string> &params) const {
     if (format == "wolfram")
         return this->wolframPrinter;
     else if (format == "obj")
-        return *this->objPrinter;
+        return this->objPrinter;
     else
         throw NoSuchShapePrinterException("SphereTraits: unknown printer format: " + format);
 }
 
-std::unique_ptr<ShapePrinter> SphereTraits::createObjPrinter(double radius) {
+std::shared_ptr<ShapePrinter> SphereTraits::createObjPrinter(double radius) {
     return std::make_unique<XCObjShapePrinter>(XCSphere{radius}, 4);
 }
 

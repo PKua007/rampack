@@ -36,6 +36,7 @@ public:
 
 private:
     WolframStyle style{};
+    std::map<std::string, std::string> params{};
 
     static void storeStandard(std::ostream &out, const Packing &packing, const ShapePrinter &shapePrinter);
     static void storeAffineTransform(std::ostream &out, const Packing &packing, const ShapePrinter &shapePrinter);
@@ -45,7 +46,8 @@ public:
      * @brief Creates the class.
      * @param style style of the output
      */
-    explicit WolframWriter(WolframStyle style = WolframStyle::STANDARD) : style{style} { }
+    explicit WolframWriter(WolframStyle style = WolframStyle::STANDARD, std::map<std::string, std::string> params = {})
+        : style{style}, params{std::move(params)} { }
 
     [[nodiscard]] WolframStyle getStyle() const { return style; }
     void setStyle(WolframStyle style_) { this->style = style_; }

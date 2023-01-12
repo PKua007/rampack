@@ -26,8 +26,8 @@ private:
 
     double length{};    // distance between two spherical caps centres
     double radius{};    // radius of spherical caps
-    WolframPrinter wolframPrinter;
-    std::unique_ptr<ShapePrinter> objPrinter;
+    std::shared_ptr<WolframPrinter> wolframPrinter;
+    std::shared_ptr<ShapePrinter> objPrinter;
 
     static std::unique_ptr<ShapePrinter> createObjPrinter(double length, double radius);
 
@@ -58,7 +58,8 @@ public:
      *     <li> `obj` - Wavefront OBJ triangle mesh
      * </ol>
      */
-    [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override;
+    [[nodiscard]] std::shared_ptr<const ShapePrinter>
+    getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;
 
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
     [[nodiscard]] double getVolume() const override;

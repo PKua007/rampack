@@ -15,8 +15,9 @@ class MockShapeTraits : public ShapeTraits, public Interaction, public ShapeGeom
 public:
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; };
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; };
-    MAKE_CONST_MOCK1(getPrinter, const ShapePrinter &(const std::string &), override);
-
+    MAKE_CONST_MOCK2(getPrinter, std::shared_ptr<const ShapePrinter>(const std::string &,
+                                                                     const std::map<std::string, std::string> &),
+                     override);
     MAKE_CONST_MOCK0(hasHardPart, bool(), override);
     MAKE_CONST_MOCK0(hasSoftPart, bool(), override);
     MAKE_CONST_MOCK0(hasWallPart, bool(), override);

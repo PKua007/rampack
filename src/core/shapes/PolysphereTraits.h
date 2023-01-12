@@ -134,12 +134,12 @@ private:
         [[nodiscard]] std::string print(const Shape &shape) const override;
     };
 
-    [[nodiscard]] std::unique_ptr<ShapePrinter> createObjPrinter() const;
+    [[nodiscard]] std::shared_ptr<ShapePrinter> createObjPrinter() const;
 
     PolysphereGeometry geometry;
     std::unique_ptr<Interaction> interaction{};
-    WolframPrinter wolframPrinter;
-    std::unique_ptr<ShapePrinter> objPrinter;
+    std::shared_ptr<WolframPrinter> wolframPrinter;
+    std::shared_ptr<ShapePrinter> objPrinter;
 
 public:
     /**
@@ -165,7 +165,8 @@ public:
      *     <li> `obj` - Wavefront OBJ triangle mesh
      * </ol>
      */
-    [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override;
+    [[nodiscard]] std::shared_ptr<const ShapePrinter>
+    getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;
 
     [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->geometry.getSphereData(); }
 };

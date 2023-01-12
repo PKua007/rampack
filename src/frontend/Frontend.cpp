@@ -1394,17 +1394,17 @@ int Frontend::shapePreview(int argc, char **argv) {
     if (parsedOptions.count("wolfram-preview")) {
         std::ofstream wolframFile(wolframFilename);
         ValidateOpenedDesc(wolframFile, wolframFilename, " to store Wolfram preview of the shape");
-        const auto &printer = traits->getPrinter("wolfram");
-        wolframFile << "Graphics3D[" << printer.print({}) << "]";
+        auto printer = traits->getPrinter("wolfram", {});
+        wolframFile << "Graphics3D[" << printer->print({}) << "]";
     }
 
     // OBJ model preview
     if (parsedOptions.count("obj-preview")) {
         try {
-            const auto &printer = traits->getPrinter("obj");
+            auto printer = traits->getPrinter("obj", {});
             std::ofstream objFile(objFilename);
             ValidateOpenedDesc(objFile, wolframFilename, " to store Wavefront OBJ model of the shape");
-            objFile << printer.print({});
+            objFile << printer->print({});
         } catch (const NoSuchShapePrinterException &) {
             die("Shape " + shapeName + " does not support Wavefront OBJ format");
         }

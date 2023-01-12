@@ -5,6 +5,9 @@
 #ifndef RAMPACK_SHAPETRAITS_H
 #define RAMPACK_SHAPETRAITS_H
 
+#include <memory>
+#include <map>
+
 #include "Shape.h"
 #include "Interaction.h"
 #include "ShapePrinter.h"
@@ -32,7 +35,8 @@ public:
      * @brief Returns the ShapePrinter object responsible for shape printing in a given @a format.
      * @throws NoSuchShapePrinterException when @a format doesn't specify existing ShapePrinter type
      */
-    [[nodiscard]] virtual const ShapePrinter &getPrinter(const std::string &format) const = 0;
+    [[nodiscard]] virtual std::shared_ptr<const ShapePrinter>
+    getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const = 0;
 };
 
 #endif //RAMPACK_SHAPETRAITS_H

@@ -136,11 +136,11 @@ private:
 
     static std::shared_ptr<AbstractXCGeometry> buildXCSpherocylinder(const SpherocylinderData &scData);
 
-    [[nodiscard]] std::unique_ptr<ShapePrinter> createObjPrinter() const;
+    [[nodiscard]] std::shared_ptr<ShapePrinter> createObjPrinter() const;
 
     PolyspherocylinderGeometry geometry;
-    WolframPrinter wolframPrinter;
-    std::unique_ptr<ShapePrinter> objPrinter;
+    std::shared_ptr<WolframPrinter> wolframPrinter;
+    std::shared_ptr<ShapePrinter> objPrinter;
 
 public:
     /**
@@ -173,7 +173,8 @@ public:
      *     <li> `obj` - Wavefront OBJ triangle mesh
      * </ol>
      */
-    [[nodiscard]] const ShapePrinter &getPrinter(const std::string &format) const override;
+    [[nodiscard]] std::shared_ptr<const ShapePrinter>
+    getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;
 
     [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const {
         return this->geometry.getSpherocylinderData();

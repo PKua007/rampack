@@ -156,22 +156,23 @@ bool PolyspherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matri
     return false;
 }
 
-const ShapePrinter &PolyspherocylinderTraits::getPrinter(const std::string &format) const {
+std::shared_ptr<const ShapePrinter> PolyspherocylinderTraits::getPrinter(const std::string &format,
+                                                                         const std::map<std::string, std::string> &params) const {
     if (format == "wolfram")
         return this->wolframPrinter;
     else if (format == "obj")
-        return *this->objPrinter;
+        return this->objPrinter;
     else
         throw NoSuchShapePrinterException("PolyspherocylinderTraits: unknown printer format: " + format);
 }
 
 PolyspherocylinderTraits::PolyspherocylinderTraits(PolyspherocylinderTraits::PolyspherocylinderGeometry geometry)
-        : geometry{std::move(geometry)}, wolframPrinter(*this)
+        : geometry{std::move(geometry)}, wolframPrinter{std::make_shared<WolframPrinter>(*this)}
 {
     this->objPrinter = this->createObjPrinter();
 }
 
-std::unique_ptr<ShapePrinter> PolyspherocylinderTraits::createObjPrinter() const {
+std::shared_ptr<ShapePrinter> PolyspherocylinderTraits::createObjPrinter() const {
     const auto &spherocylinderData = this->getSpherocylinderData();
 
     std::vector<std::shared_ptr<AbstractXCGeometry>> xcSpherocylinders;
@@ -185,7 +186,7 @@ std::unique_ptr<ShapePrinter> PolyspherocylinderTraits::createObjPrinter() const
 
     auto interactionCentres = this->getInteractionCentres();
 
-    return std::make_unique<XCObjShapePrinter>(geometries, interactionCentres, 3);
+    return std::make_shared<XCObjShapePrinter>(geometries, interactionCentres, 3);
 }
 
 std::shared_ptr<AbstractXCGeometry> PolyspherocylinderTraits::buildXCSpherocylinder(const SpherocylinderData &scData) {

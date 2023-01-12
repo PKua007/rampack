@@ -150,8 +150,8 @@ TEST_CASE("Spherocylinder: toWolfram") {
     SpherocylinderTraits traits(3, 2);
     Shape shape({2, 4, 6}, Matrix<3, 3>::rotation(0, M_PI/2, 0));    // spherocylinder parallel to x axis
 
-    const auto &printer = traits.getPrinter("wolfram");
-    CHECK(printer.print(shape) == "CapsuleShape[{{0.500000, 4.000000, 6.000000},"
+    auto printer = traits.getPrinter("wolfram", {});
+    CHECK(printer->print(shape) == "CapsuleShape[{{0.500000, 4.000000, 6.000000},"
                                   "{3.500000, 4.000000, 6.000000}},2.000000]");
 }
 
