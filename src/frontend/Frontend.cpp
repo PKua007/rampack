@@ -37,6 +37,7 @@
 #include "core/io/WolframWriter.h"
 #include "core/io/XYZWriter.h"
 #include "core/io/TruncatedPlayer.h"
+#include "utils/ParseUtils.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -464,12 +465,13 @@ void Frontend::storeSnapshots(const ObservablesCollector &observablesCollector, 
 void Frontend::storeWolframVisualization(const Packing &packing, const ShapeTraits &traits,
                                          const std::string &wolframAttr) const
 {
-    std::istringstream wolframAttrStream(wolframAttr);
-    std::string filename;
-    std::string styleStr;
-    wolframAttrStream >> filename >> styleStr;
-    if (!wolframAttrStream)
-        styleStr = "standard";
+    auto [filename, params] = this->parseFilenameAndParams(wolframAttr, {"style", "mesh_divisions"});
+
+    std::string styleStr = "standard";
+    if (params.find("style") != params.end()) {
+        styleStr = params["style"];
+        params.erase("style");
+    }
 
     WolframWriter::WolframStyle wolframStyle{};
     if (styleStr == "standard")
@@ -477,11 +479,11 @@ void Frontend::storeWolframVisualization(const Packing &packing, const ShapeTrai
     else if (styleStr == "affineTransform")
         wolframStyle = WolframWriter::WolframStyle::AFFINE_TRANSFORM;
     else
-        throw ValidationException("Unknown Packing::toWolfram style: " + styleStr);
+        throw ValidationException("Unknown wolfram style: \"" + styleStr + "\"");
 
     std::ofstream out(filename);
     ValidateOpenedDesc(out, filename, "to store Wolfram packing");
-    WolframWriter writer(wolframStyle);
+    WolframWriter writer(wolframStyle, params);
     writer.write(out, packing, traits, {});
     this->logger.info() << "Wolfram packing stored to " + filename << " using '" << styleStr << "' style" << std::endl;
 }
@@ -1318,8 +1320,8 @@ int Frontend::shapePreview(int argc, char **argv) {
     std::string shapeName;
     std::string shapeAttr;
     std::string interactionName;
-    std::string wolframFilename;
-    std::string objFilename;
+    std::string wolframSpec;
+    std::string objSpec;
     std::string paramsVersion;
 
     options.add_options()
@@ -1340,9 +1342,9 @@ int Frontend::shapePreview(int argc, char **argv) {
          cxxopts::value<std::string>(paramsVersion)->default_value(CURRENT_VERSION.str()))
         ("l,log-info", "prints information about the shape")
         ("w,wolfram-preview", "stores Wolfram preview of the shape in a file given as an argument",
-         cxxopts::value<std::string>(wolframFilename))
+         cxxopts::value<std::string>(wolframSpec))
         ("o,obj-preview", "stores Wavefront OBJ model of the shape in a file given as an argument",
-         cxxopts::value<std::string>(objFilename));
+         cxxopts::value<std::string>(objSpec));
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
@@ -1392,18 +1394,20 @@ int Frontend::shapePreview(int argc, char **argv) {
 
     // Wolfram preview
     if (parsedOptions.count("wolfram-preview")) {
-        std::ofstream wolframFile(wolframFilename);
-        ValidateOpenedDesc(wolframFile, wolframFilename, " to store Wolfram preview of the shape");
-        auto printer = traits->getPrinter("wolfram", {});
+        auto [filename, params] = this->parseFilenameAndParams(wolframSpec, {"mesh_divisions"});
+        std::ofstream wolframFile(filename);
+        ValidateOpenedDesc(wolframFile, filename, " to store Wolfram preview of the shape");
+        auto printer = traits->getPrinter("wolfram", params);
         wolframFile << "Graphics3D[" << printer->print({}) << "]";
     }
 
     // OBJ model preview
     if (parsedOptions.count("obj-preview")) {
         try {
-            auto printer = traits->getPrinter("obj", {});
-            std::ofstream objFile(objFilename);
-            ValidateOpenedDesc(objFile, wolframFilename, " to store Wavefront OBJ model of the shape");
+            auto [filename, params] = this->parseFilenameAndParams(objSpec, {"mesh_divisions"});
+            std::ofstream objFile(filename);
+            ValidateOpenedDesc(objFile, filename, " to store Wavefront OBJ model of the shape");
+            auto printer = traits->getPrinter("obj", params);
             objFile << printer->print({});
         } catch (const NoSuchShapePrinterException &) {
             die("Shape " + shapeName + " does not support Wavefront OBJ format");
@@ -1629,4 +1633,13 @@ void Frontend::verifyDynamicParameter(const DynamicParameter &dynamicParameter, 
             exit(EXIT_FAILURE);
         }
     }
+}
+
+std::pair<std::string, std::map<std::string, std::string>>
+Frontend::parseFilenameAndParams(const std::string &str, const std::vector<std::string>& fields) const {
+    std::istringstream in(str);
+    std::string filename;
+    in >> filename;
+    auto params = ParseUtils::parseFields(fields, ParseUtils::tokenize<std::string>(in));
+    return {filename, params};
 }

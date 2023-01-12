@@ -71,6 +71,9 @@ private:
     void printPerformanceInfo(const Simulation &simulation);
     void printAverageValues(const ObservablesCollector &collector);
 
+    [[nodiscard]] std::pair<std::string, std::map<std::string, std::string>>
+    parseFilenameAndParams(const std::string &str, const std::vector<std::string>& fields) const;
+
     void storeAverageValues(const std::string &filename, const ObservablesCollector &collector, double temperature,
                             double pressure) const;
     [[nodiscard]] std::map<std::string, std::string> prepareAuxInfo(const Simulation &simulation) const;
