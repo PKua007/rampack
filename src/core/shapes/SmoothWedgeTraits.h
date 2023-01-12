@@ -72,6 +72,10 @@ private:
     }
 
 public:
+    /** @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::XCPrinter
+     * @a subdivision parameter) */
+    static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 4;
+
     /**
      * @brief Creates a wedge with parameters @a R, @a r and @a l (see CollideGeometry::CollideGeometry).
      * @details If @a subdivision is at least two, the wedge is divided into that many parts (with equal circumscribed
@@ -93,7 +97,7 @@ public:
      * @details The following formats are supported:
      * <ol>
      *     <li> `wolfram` - Wolfram Mathematica shape
-     *     <li> `obj` - Wavefront OBJ triangle mesh
+     *     <li> `obj` - Wavefront OBJ triangle mesh (it accepts @a mesh_divisions parameter, default: 4)
      * </ol>
      */
     [[nodiscard]] std::shared_ptr<const ShapePrinter>

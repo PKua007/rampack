@@ -74,8 +74,8 @@ private:
     }
 
 public:
-    /** @brief The number of sphere subdivisions when printing the shape (see XCPrinter::XCPrintes @a subdivision
-     * parameter) */
+    /** @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::XCPrinter
+     * @a subdivision parameter) */
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
 
     /**
@@ -100,8 +100,8 @@ public:
      * @brief Returns ShapePrinter for a given @a format.
      * @details The following formats are supported:
      * <ol>
-     *     <li> `wolfram` - Wolfram Mathematica shape
-     *     <li> `obj` - Wavefront OBJ triangle mesh
+     *     <li> `wolfram` - Wolfram Mathematica shape (it accepts @a mesh_divisions parameter, default: 3)
+     *     <li> `obj` - Wavefront OBJ triangle mesh (it accepts @a mesh_divisions parameter, default: 3)
      * </ol>
      */
     [[nodiscard]] std::shared_ptr<const ShapePrinter>

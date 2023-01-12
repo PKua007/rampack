@@ -50,6 +50,8 @@ private:
     std::shared_ptr<WolframPrinter> wolframPrinter;
 
 public:
+    /** @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::XCPrinter
+     * @a subdivision parameter) */
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 4;
 
     /**
@@ -69,7 +71,7 @@ public:
      * @details The following formats are supported:
      * <ol>
      *     <li> `wolfram` - Wolfram Mathematica shape
-     *     <li> `obj` - Wavefront OBJ triangle mesh
+     *     <li> `obj` - Wavefront OBJ triangle mesh (it accepts @a mesh_divisions parameter, default: 4)
      * </ol>
      */
     [[nodiscard]] std::shared_ptr<const ShapePrinter>

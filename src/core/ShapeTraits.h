@@ -33,6 +33,8 @@ public:
 
     /**
      * @brief Returns the ShapePrinter object responsible for shape printing in a given @a format.
+     * @param format format of the printer ("wolfram", "obj", etc.)
+     * @param params format- and shape-specific parameters (for example "mesh_subdivisions")
      * @throws NoSuchShapePrinterException when @a format doesn't specify existing ShapePrinter type
      */
     [[nodiscard]] virtual std::shared_ptr<const ShapePrinter>
