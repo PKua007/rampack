@@ -1647,7 +1647,7 @@ Frontend::createObservablesCollector(std::optional<std::string> observablesStr,
                                      std::optional<std::string> bulkObservablesStr, std::size_t maxThreads,
                                      const Version &paramsVersion) const
 {
-    if (paramsVersion < Version{0, 8, 0}) {
+    if (paramsVersion < INPUT_REVAMP_VERSION) {
         return legacy::ObservablesCollectorFactory::create(
             explode(observablesStr.value_or(""), ','), explode(bulkObservablesStr.value_or(""), ','), maxThreads
         );
@@ -1693,7 +1693,7 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles, co
 {
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
 
-    if (paramsVersion < Version{0, 8, 0}) {
+    if (paramsVersion < INPUT_REVAMP_VERSION) {
         return legacy::ArrangementFactory::arrangePacking(numOfParticles, initialDimensions, initialArrangement,
                                                           std::move(bc), shapeTraits.getInteraction(),
                                                           shapeTraits.getGeometry(), moveThreads, scalingThreads);
@@ -1719,7 +1719,7 @@ std::vector<std::shared_ptr<MoveSampler>> Frontend::createMoveSamplers(const std
                                                                        const ShapeTraits &traits,
                                                                        const Version &paramsVersion)
 {
-    if (paramsVersion < Version{0, 8, 0}) {
+    if (paramsVersion < INPUT_REVAMP_VERSION) {
         auto moveSamplerStrings = explode(moveTypes, ',');
         std::vector<std::shared_ptr<MoveSampler>> moveSamplers;
         moveSamplers.reserve(moveSamplerStrings.size());
@@ -1749,7 +1749,7 @@ std::vector<std::shared_ptr<MoveSampler>> Frontend::createMoveSamplers(const std
 std::shared_ptr<TriclinicBoxScaler> Frontend::createBoxScaler(const std::string &scalerStr, double volumeStepSize,
                                                               const Version &paramsVersion)
 {
-    if (paramsVersion < Version{0, 8, 0})
+    if (paramsVersion < INPUT_REVAMP_VERSION)
         return legacy::TriclinicBoxScalerFactory::create(scalerStr, volumeStepSize);
 
     using namespace pyon;
@@ -1768,7 +1768,7 @@ std::shared_ptr<TriclinicBoxScaler> Frontend::createBoxScaler(const std::string 
 std::shared_ptr<DynamicParameter> Frontend::createDynamicParameter(const std::string &parameterStr,
                                                                    const Version &paramsVersion)
 {
-    if (paramsVersion < Version{0, 8, 0})
+    if (paramsVersion < INPUT_REVAMP_VERSION)
         return legacy::ParameterUpdaterFactory::create(parameterStr);
 
     using namespace pyon;
