@@ -27,15 +27,16 @@ private:
     double length{};    // distance between two spherical caps centres
     double radius{};    // radius of spherical caps
     std::shared_ptr<WolframPrinter> wolframPrinter;
-    std::shared_ptr<ShapePrinter> objPrinter;
 
-    static std::unique_ptr<ShapePrinter> createObjPrinter(double length, double radius);
+    static std::unique_ptr<ShapePrinter> createObjPrinter(double length, double radius, std::size_t subdivisions);
 
     [[nodiscard]] Vector<3> getCapCentre(short beginOrEnd, const Shape &shape) const;
 
     friend WolframPrinter;
 
 public:
+    static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 4;
+
     /**
      * @brief Creates a spherocylinder spanned on x axis with a unit distance between cap centers and a unit radius.
      */

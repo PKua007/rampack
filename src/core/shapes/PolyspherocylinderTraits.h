@@ -136,13 +136,14 @@ private:
 
     static std::shared_ptr<AbstractXCGeometry> buildXCSpherocylinder(const SpherocylinderData &scData);
 
-    [[nodiscard]] std::shared_ptr<ShapePrinter> createObjPrinter() const;
+    [[nodiscard]] std::shared_ptr<ShapePrinter> createObjPrinter(std::size_t subdivisions) const;
 
     PolyspherocylinderGeometry geometry;
     std::shared_ptr<WolframPrinter> wolframPrinter;
-    std::shared_ptr<ShapePrinter> objPrinter;
 
 public:
+    static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
+
     /**
      * @brief Creates the molecule from a given set of spherocylinders.
      * @param geometry PolyspherocylinderGeometry describing the shape

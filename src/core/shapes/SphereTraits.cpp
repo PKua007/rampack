@@ -13,14 +13,14 @@
 
 SphereTraits::SphereTraits(double radius)
         : radius{radius}, interaction{std::make_unique<HardInteraction>(radius)},
-          wolframPrinter{std::make_shared<WolframPrinter>(radius)}, objPrinter{SphereTraits::createObjPrinter(radius)}
+          wolframPrinter{std::make_shared<WolframPrinter>(radius)}
 {
     Expects(radius > 0);
     this->registerNamedPoint("cm", {0, 0, 0});
 }
 
 SphereTraits::SphereTraits(double radius, std::unique_ptr<CentralInteraction> centralInteraction)
-        : radius{radius}, wolframPrinter{std::make_shared<WolframPrinter>(radius)}, objPrinter{SphereTraits::createObjPrinter(radius)}
+        : radius{radius}, wolframPrinter{std::make_shared<WolframPrinter>(radius)}
 {
     Expects(radius > 0);
     centralInteraction->installOnSphere();
@@ -33,17 +33,24 @@ double SphereTraits::getVolume() const {
 }
 
 std::shared_ptr<const ShapePrinter> SphereTraits::getPrinter(const std::string &format,
-                                                             const std::map<std::string, std::string> &params) const {
+                                                             const std::map<std::string, std::string> &params) const
+{
+    std::size_t meshSubdivisions = DEFAULT_MESH_SUBDIVISIONS;
+    if (params.find("mesh_divisions") != params.end()) {
+        meshSubdivisions = std::stoul(params.at("mesh_divisions"));
+        Expects(meshSubdivisions >= 1);
+    }
+
     if (format == "wolfram")
         return this->wolframPrinter;
     else if (format == "obj")
-        return this->objPrinter;
+        return createObjPrinter(this->radius, meshSubdivisions);
     else
         throw NoSuchShapePrinterException("SphereTraits: unknown printer format: " + format);
 }
 
-std::shared_ptr<ShapePrinter> SphereTraits::createObjPrinter(double radius) {
-    return std::make_unique<XCObjShapePrinter>(XCSphere{radius}, 4);
+std::shared_ptr<ShapePrinter> SphereTraits::createObjPrinter(double radius, std::size_t subdivisions) {
+    return std::make_unique<XCObjShapePrinter>(XCSphere{radius}, subdivisions);
 }
 
 bool SphereTraits::HardInteraction::overlapBetween(const Vector<3> &pos1,

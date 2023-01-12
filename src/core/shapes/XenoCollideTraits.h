@@ -51,11 +51,9 @@ private:
     double volume{};
 
     mutable std::optional<double> rangeRadius;
-    mutable std::shared_ptr<ShapePrinter> wolframPrinter;
-    mutable std::shared_ptr<ShapePrinter> objPrinter;
 
     template<typename Printer>
-    std::shared_ptr<Printer> createPrinter() const {
+    std::shared_ptr<Printer> createPrinter(std::size_t meshSubdivisions) const {
         auto centers = this->getInteractionCentres();
         if (centers.empty())
             centers.push_back({0, 0, 0});
@@ -72,13 +70,13 @@ private:
             geometryPointers.push_back(&geometries.back());
         }
 
-        return std::make_shared<Printer>(geometryPointers, centers, MESH_SUBDIVISIONS);
+        return std::make_shared<Printer>(geometryPointers, centers, meshSubdivisions);
     }
 
 public:
     /** @brief The number of sphere subdivisions when printing the shape (see XCPrinter::XCPrintes @a subdivision
      * parameter) */
-    static constexpr std::size_t MESH_SUBDIVISIONS = 3;
+    static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
 
     /**
      * @brief Programmes the shape with given parameters.
@@ -108,17 +106,18 @@ public:
      */
     [[nodiscard]] std::shared_ptr<const ShapePrinter>
     getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override {
-        if (format == "wolfram") {
-            if (this->wolframPrinter == nullptr)
-                this->wolframPrinter = this->template createPrinter<XCWolframShapePrinter>();
-            return this->wolframPrinter;
-        } else if (format == "obj") {
-            if (this->objPrinter == nullptr)
-                this->objPrinter = this->template createPrinter<XCObjShapePrinter>();
-            return this->objPrinter;
-        } else {
-            throw NoSuchShapePrinterException("XenoCollideTraits: unknown printer format: " + format);
+        std::size_t meshSubdivisions = DEFAULT_MESH_SUBDIVISIONS;
+        if (params.find("mesh_divisions") != params.end()) {
+            meshSubdivisions = std::stoul(params.at("mesh_divisions"));
+            Expects(meshSubdivisions >= 1);
         }
+
+        if (format == "wolfram")
+            return this->template createPrinter<XCWolframShapePrinter>(meshSubdivisions);
+        else if (format == "obj")
+            return this->template createPrinter<XCObjShapePrinter>(meshSubdivisions);
+        else
+            throw NoSuchShapePrinterException("XenoCollideTraits: unknown printer format: " + format);
     }
 
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const final {

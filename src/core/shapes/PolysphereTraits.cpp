@@ -39,27 +39,31 @@ PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry
                    [](const SphereData &data) { return data.position; });
     centralInteraction->installOnCentres(centres);
     this->interaction = std::move(centralInteraction);
-    this->objPrinter = this->createObjPrinter();
 }
 
 PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry)
     : geometry{std::move(geometry)}, wolframPrinter{std::make_shared<WolframPrinter>(*this)}
 {
     this->interaction = std::make_unique<HardInteraction>(this->getSphereData());
-    this->objPrinter = this->createObjPrinter();
 }
 
-std::shared_ptr<const ShapePrinter> PolysphereTraits::getPrinter(const std::string &format,
-                                                                 const std::map<std::string, std::string> &params) const {
+std::shared_ptr<const ShapePrinter>
+PolysphereTraits::getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const {
+    std::size_t meshSubdivisions = DEFAULT_MESH_SUBDIVISIONS;
+    if (params.find("mesh_divisions") != params.end()) {
+        meshSubdivisions = std::stoul(params.at("mesh_divisions"));
+        Expects(meshSubdivisions >= 1);
+    }
+
     if (format == "wolfram")
         return this->wolframPrinter;
     else if (format == "obj")
-        return this->objPrinter;
+        return this->createObjPrinter(meshSubdivisions);
     else
         throw NoSuchShapePrinterException("PolysphereTraits: unknown printer format: " + format);
 }
 
-std::shared_ptr<ShapePrinter> PolysphereTraits::createObjPrinter() const {
+std::shared_ptr<ShapePrinter> PolysphereTraits::createObjPrinter(std::size_t subdivisions) const {
     const auto &sphereData = this->getSphereData();
 
     std::vector<XCSphere> xcSpheres;
@@ -73,7 +77,7 @@ std::shared_ptr<ShapePrinter> PolysphereTraits::createObjPrinter() const {
 
     auto interactionCentres = this->interaction->getInteractionCentres();
 
-    return std::make_shared<XCObjShapePrinter>(geometries, interactionCentres, 3);
+    return std::make_shared<XCObjShapePrinter>(geometries, interactionCentres, subdivisions);
 }
 
 PolysphereTraits::SphereData::SphereData(const Vector<3> &position, double radius)

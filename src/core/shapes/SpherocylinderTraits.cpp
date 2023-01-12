@@ -18,7 +18,6 @@ SpherocylinderTraits::SpherocylinderTraits(double length, double radius)
     this->registerNamedPoint("cm", {0, 0, 0});
     this->registerNamedPoint("beg", this->getCapCentre(-1, {}));
     this->registerNamedPoint("end", this->getCapCentre(1, {}));
-    this->objPrinter = SpherocylinderTraits::createObjPrinter(length, radius);
 
 }
 
@@ -75,15 +74,23 @@ bool SpherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matrix<3,
 
 std::shared_ptr<const ShapePrinter>
 SpherocylinderTraits::getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const {
+    std::size_t meshSubdivisions = DEFAULT_MESH_SUBDIVISIONS;
+    if (params.find("mesh_divisions") != params.end()) {
+        meshSubdivisions = std::stoul(params.at("mesh_divisions"));
+        Expects(meshSubdivisions >= 1);
+    }
+
     if (format == "wolfram")
         return this->wolframPrinter;
     else if (format == "obj")
-        return this->objPrinter;
+        return createObjPrinter(this->length, this->radius, meshSubdivisions);
     else
         throw NoSuchShapePrinterException("SphereTraits: unknown printer format: " + format);
 }
 
-std::unique_ptr<ShapePrinter> SpherocylinderTraits::createObjPrinter(double length, double radius) {
+std::unique_ptr<ShapePrinter> SpherocylinderTraits::createObjPrinter(double length, double radius,
+                                                                     std::size_t subdivisions)
+{
     XCBodyBuilder builder;
     builder.sphere(radius);
     builder.move(0, 0, -length/2);
@@ -91,7 +98,7 @@ std::unique_ptr<ShapePrinter> SpherocylinderTraits::createObjPrinter(double leng
     builder.move(0, 0, length/2);
     builder.wrap();
 
-    return std::make_unique<XCObjShapePrinter>(*builder.releaseCollideGeometry(), 4);
+    return std::make_unique<XCObjShapePrinter>(*builder.releaseCollideGeometry(), subdivisions);
 }
 
 std::string SpherocylinderTraits::WolframPrinter::print(const Shape &shape) const {

@@ -43,14 +43,15 @@ private:
         [[nodiscard]] std::string print(const Shape &shape) const override;
     };
 
-    static std::shared_ptr<ShapePrinter> createObjPrinter(double radius);
+    static std::shared_ptr<ShapePrinter> createObjPrinter(double radius, std::size_t subdivisions);
 
     double radius{};
     std::unique_ptr<Interaction> interaction{};
     std::shared_ptr<WolframPrinter> wolframPrinter;
-    std::shared_ptr<ShapePrinter> objPrinter;
 
 public:
+    static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 4;
+
     /**
      * @brief Creates a hard sphere.
      */

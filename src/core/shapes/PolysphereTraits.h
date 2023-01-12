@@ -134,14 +134,15 @@ private:
         [[nodiscard]] std::string print(const Shape &shape) const override;
     };
 
-    [[nodiscard]] std::shared_ptr<ShapePrinter> createObjPrinter() const;
+    [[nodiscard]] std::shared_ptr<ShapePrinter> createObjPrinter(std::size_t subdivisions) const;
 
     PolysphereGeometry geometry;
     std::unique_ptr<Interaction> interaction{};
     std::shared_ptr<WolframPrinter> wolframPrinter;
-    std::shared_ptr<ShapePrinter> objPrinter;
 
 public:
+    static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
+
     /**
      * @brief Construct the polymer from the specified @a sphereData.
      * @param geometry PolysphereGeometry describing the molecule.
