@@ -64,6 +64,13 @@ private:
 
     [[nodiscard]] std::vector<double> calculateRelativeSpherePositions(std::size_t subdivisions) const;
 
+    template<typename Printer>
+    std::shared_ptr<Printer> createPrinter(std::size_t meshSubdivisions) const {
+        CollideGeometry geometry(this->R, this->r, this->l);
+        PolymorphicXCAdapter<CollideGeometry> geometryAdapter(geometry);
+        return std::make_shared<Printer>(geometryAdapter, meshSubdivisions);
+    }
+
 public:
     /**
      * @brief Creates a wedge with parameters @a R, @a r and @a l (see CollideGeometry::CollideGeometry).
@@ -81,6 +88,16 @@ public:
 
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return this->interactionCentres; }
 
+    /**
+     * @brief Returns ShapePrinter for a given @a format.
+     * @details The following formats are supported:
+     * <ol>
+     *     <li> `wolfram` - Wolfram Mathematica shape
+     *     <li> `obj` - Wavefront OBJ triangle mesh
+     * </ol>
+     */
+    [[nodiscard]] std::shared_ptr<const ShapePrinter>
+    getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;
 };
 
 

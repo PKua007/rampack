@@ -78,6 +78,24 @@ std::vector<double> SmoothWedgeTraits::calculateRelativeSpherePositions(std::siz
     return alphas;
 }
 
+std::shared_ptr<const ShapePrinter>
+SmoothWedgeTraits::getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const {
+    // We override the function from XenoCollideTraits not to redundantly print subdivisions
+
+    std::size_t meshSubdivisions = XenoCollideTraits::DEFAULT_MESH_SUBDIVISIONS;
+    if (params.find("mesh_divisions") != params.end()) {
+        meshSubdivisions = std::stoul(params.at("mesh_divisions"));
+        Expects(meshSubdivisions >= 1);
+    }
+
+    if (format == "wolfram")
+        return this->createPrinter<XCWolframShapePrinter>(meshSubdivisions);
+    else if (format == "obj")
+        return this->createPrinter<XCObjShapePrinter>(meshSubdivisions);
+    else
+        throw NoSuchShapePrinterException("XenoCollideTraits: unknown printer format: " + format);
+}
+
 SmoothWedgeTraits::CollideGeometry::CollideGeometry(double R, double r, double l)
         : R{R}, r{r}, l{l}, Rminusr{R - r}, Rpos{(-l + R - r)/2}, rpos{(l + R - r)/2},
           circumsphereRadius{(l + R + r)/2}, insphereRadius{0.5*(R + r + Rminusr*Rminusr/l)}
