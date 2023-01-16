@@ -34,7 +34,7 @@ public:
     /**
      * @brief Parameter list as a vectors of pair of numbers representing initial cycle number and dynamic parameters.
      */
-    using ParameterList = std::vector<std::pair<std::size_t, std::unique_ptr<DynamicParameter>>>;
+    using ParameterList = std::vector<std::pair<std::size_t, std::shared_ptr<DynamicParameter>>>;
 
 private:
      ParameterList updaters;

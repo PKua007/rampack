@@ -45,6 +45,7 @@
 #include "ArrangementMatcher.h"
 #include "MoveSamplerMatcher.h"
 #include "BoxScalerMatcher.h"
+#include "DynamicParameterMatcher.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -1774,7 +1775,7 @@ std::shared_ptr<DynamicParameter> Frontend::createDynamicParameter(const std::st
     using namespace pyon;
     using namespace pyon::matcher;
 
-    auto parameterMatcher = BoxScalerMatcher::create();
+    auto parameterMatcher = DynamicParameterMatcher::create();
     auto parameterAST = Parser::parse(parameterStr);
     Any parameter;
     auto matchReport = parameterMatcher.match(parameterAST, parameter);

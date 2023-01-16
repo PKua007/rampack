@@ -17,7 +17,7 @@ PiecewiseDynamicParameter::PiecewiseDynamicParameter(PiecewiseDynamicParameter::
     }));
 
     for (auto &updater : updaters) {
-        auto shiftedUpdater = std::make_unique<ShiftedDynamicParameter>(updater.first, std::move(updater.second));
+        auto shiftedUpdater = std::make_shared<ShiftedDynamicParameter>(updater.first, std::move(updater.second));
         this->updaters.emplace_back(updater.first, std::move(shiftedUpdater));
     }
 }
