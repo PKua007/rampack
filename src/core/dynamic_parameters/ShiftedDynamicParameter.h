@@ -23,10 +23,10 @@ class ShiftedDynamicParameter : public DynamicParameter {
 private:
     bool isShiftNegative{};
     std::size_t cycleShift{};
-    std::unique_ptr<DynamicParameter> underlyingParameter;
+    std::shared_ptr<DynamicParameter> underlyingParameter;
 
 public:
-    explicit ShiftedDynamicParameter(long cycleShift, std::unique_ptr<DynamicParameter> underlyingParameter);
+    explicit ShiftedDynamicParameter(long cycleShift, std::shared_ptr<DynamicParameter> underlyingParameter);
 
     [[nodiscard]] double getValueForCycle(std::size_t currentCycle, std::size_t totalCycles) const override;
 };

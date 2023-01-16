@@ -72,7 +72,7 @@ namespace {
     MatcherDataclass create_anisotropic(const std::string &className,
                                         const FactorSamplerFactory &factorSamplerFactory)
     {
-        return MatcherDataclass("linear")
+        return MatcherDataclass(className)
             .arguments({{"spec", scalingDirection},
                         {"step", MatcherFloat{}.positive()},
                         {"independent", MatcherBoolean{}, "False"}})

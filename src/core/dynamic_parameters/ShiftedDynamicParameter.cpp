@@ -8,7 +8,7 @@
 #include "utils/Assertions.h"
 
 
-ShiftedDynamicParameter::ShiftedDynamicParameter(long cycleShift, std::unique_ptr<DynamicParameter> underlyingParameter)
+ShiftedDynamicParameter::ShiftedDynamicParameter(long cycleShift, std::shared_ptr<DynamicParameter> underlyingParameter)
         : underlyingParameter{std::move(underlyingParameter)}
 {
     if (cycleShift > 0) {
@@ -35,6 +35,6 @@ double ShiftedDynamicParameter::getValueForCycle(std::size_t currentCycle, std::
         Expects(currentCycle >= this->cycleShift);
         Expects(totalCycles >= this->cycleShift);
         return this->underlyingParameter->getValueForCycle(currentCycle - this->cycleShift,
-                                                         totalCycles - this->cycleShift);
+                                                           totalCycles - this->cycleShift);
     }
 }
