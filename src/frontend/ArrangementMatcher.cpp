@@ -7,13 +7,14 @@
 
 #include "ArrangementMatcher.h"
 #include "LatticeMatcher.h"
+#include "PackingFactory.h"
 #include "utils/Assertions.h"
 
 using namespace pyon::matcher;
 
 
 namespace {
-    class PresimulatedPackingFactory : public ArrangementMatcher::PackingFactory {
+    class PresimulatedPackingFactory : public PackingFactory {
     private:
         std::string filename;
 
@@ -35,7 +36,7 @@ namespace {
     MatcherDataclass create_presimulated() {
         return MatcherDataclass("presimulated")
             .arguments({{"file", MatcherString{}.nonEmpty()}})
-            .mapTo([](const DataclassData &presimulated) -> std::shared_ptr<ArrangementMatcher::PackingFactory> {
+            .mapTo([](const DataclassData &presimulated) -> std::shared_ptr<PackingFactory> {
                 auto filename = presimulated["file"].as<std::string>();
                 return std::make_shared<PresimulatedPackingFactory>(filename);
             });

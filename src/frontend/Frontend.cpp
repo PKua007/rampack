@@ -32,6 +32,7 @@
 #include "core/io/RamtrjRecorder.h"
 #include "core/io/RamtrjPlayer.h"
 #include "PackingLoader.h"
+#include "PackingFactory.h"
 #include "frontend/legacy/ParameterUpdaterFactory.h"
 #include "core/io/XYZRecorder.h"
 #include "core/io/WolframWriter.h"
@@ -46,6 +47,7 @@
 #include "MoveSamplerMatcher.h"
 #include "BoxScalerMatcher.h"
 #include "DynamicParameterMatcher.h"
+#include "RampackParameters.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -1710,7 +1712,6 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles, co
     if (!matchReport)
         throw ValidationException(matchReport.getReason());
 
-    using PackingFactory = ArrangementMatcher::PackingFactory;
     return packingFactory.as<std::shared_ptr<PackingFactory>>()->createPacking(
         std::move(bc), shapeTraits.getInteraction(), moveThreads, scalingThreads
     );
