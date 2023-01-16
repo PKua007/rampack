@@ -8,6 +8,7 @@
 
 #include "LatticeMatcher.h"
 #include "ArrangementMatcher.h"
+#include "PackingFactory.h"
 #include "core/lattice/UnitCell.h"
 #include "core/lattice/UnitCellFactory.h"
 #include "core/lattice/Lattice.h"
@@ -49,7 +50,7 @@ namespace {
         std::size_t numShapes{};
     };
 
-    class LatticePackingFactory : public ArrangementMatcher::PackingFactory {
+    class LatticePackingFactory : public PackingFactory {
     private:
         Lattice lattice;
         std::vector<std::shared_ptr<LatticeTransformer>> transformers;
@@ -174,7 +175,7 @@ namespace {
         return MatcherDataclass("lattice")
             .arguments({{"cell", create_cell()}})
             .variadicKeywordArguments(kwargs)
-            .mapTo([](const DataclassData &lattice) -> std::shared_ptr<ArrangementMatcher::PackingFactory> {
+            .mapTo([](const DataclassData &lattice) -> std::shared_ptr<PackingFactory> {
                 auto cellCreator = lattice["cell"].as<CellCreator>();
                 const auto &kwargs = lattice.getVariadicKeywordArguments();
                 auto cellDim = kwargs["cell_dim"].as<CellDimensions>();
@@ -200,7 +201,7 @@ namespace {
         return MatcherDataclass("lattice")
             .arguments({{"cell", create_cell()}})
             .variadicKeywordArguments(kwargs)
-            .mapTo([](const DataclassData &lattice) -> std::shared_ptr<ArrangementMatcher::PackingFactory> {
+            .mapTo([](const DataclassData &lattice) -> std::shared_ptr<PackingFactory> {
                 auto cellCreator = lattice["cell"].as<CellCreator>();
                 const auto &kwargs = lattice.getVariadicKeywordArguments();
                 auto boxDim = kwargs["box_dim"].as<CellDimensions>();
@@ -234,7 +235,7 @@ namespace {
         return MatcherDataclass("lattice")
             .arguments({{"cell", create_cell()}})
             .variadicKeywordArguments(kwargs)
-            .mapTo([](const DataclassData &lattice) -> std::shared_ptr<ArrangementMatcher::PackingFactory> {
+            .mapTo([](const DataclassData &lattice) -> std::shared_ptr<PackingFactory> {
                 auto cellCreator = lattice["cell"].as<CellCreator>();
                 const auto &kwargs = lattice.getVariadicKeywordArguments();
                 auto nCells = kwargs["n_cells"].as<std::array<std::size_t, 3>>();
