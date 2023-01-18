@@ -18,10 +18,11 @@
 #include "core/SnapshotWriter.h"
 #include "core/SimulationRecorder.h"
 #include "core/ObservablesCollector.h"
+#include "FileSnapshotWriter.h"
 
 
 struct BaseParameters {
-private:
+    Version version;
     std::shared_ptr<PackingFactory> packingFactory;
     Simulation::Environment baseEnvironment;
     std::size_t seed{};
@@ -38,18 +39,11 @@ public:
 
     [[nodiscard]] virtual std::unique_ptr<SimulationRecorder> create(std::size_t numMolecules,
                                                                      std::size_t snapshotEvery,
-                                                                     bool isContinuation) const = 0;
-};
-
-class SnapshotWriterFactory {
-public:
-    virtual ~SnapshotWriterFactory() = default;
-
-    [[nodiscard]] virtual std::unique_ptr<SnapshotWriter> create() const = 0;
+                                                                     bool isContinuation, Logger &logger) const = 0;
 };
 
 struct IntegrationRun {
-    std::string name;
+    std::string runName;
     Simulation::Environment environment;
     std::optional<std::size_t> thermalizationCycles{};
     std::optional<std::size_t> averagingCycles{};
@@ -57,7 +51,7 @@ struct IntegrationRun {
     std::size_t averagingEvery{};
     std::size_t inlineInfoEvery{};
     std::size_t orientationFixEvery{};
-    std::vector<std::shared_ptr<SnapshotWriterFactory>> lastSnapshotWriters;
+    std::vector<FileSnapshotWriter> lastSnapshotWriters;
     std::vector<std::shared_ptr<SimulationRecorderFactory>> simulationRecorders;
     std::shared_ptr<ObservablesCollector> observablesCollector;
     std::optional<std::string> averagesOut;
@@ -66,12 +60,13 @@ struct IntegrationRun {
 };
 
 struct OverlapRelaxationRun  {
+    std::string runName;
     Simulation::Environment environment;
     std::size_t snapshotEvery{};
     std::size_t inlineInfoEvery{};
     std::size_t orientationFixEvery{};
     std::shared_ptr<ShapeTraits> helperShapeTraits;
-    std::vector<std::shared_ptr<SnapshotWriterFactory>> lastSnapshotWriters;
+    std::vector<FileSnapshotWriter> lastSnapshotWriters;
     std::vector<std::shared_ptr<SimulationRecorderFactory>> simulationRecorders;
     std::shared_ptr<ObservablesCollector> observablesCollector;
     std::optional<std::string> observablesOut;
@@ -80,7 +75,6 @@ struct OverlapRelaxationRun  {
 using Run = std::variant<IntegrationRun, OverlapRelaxationRun>;
 
 struct RampackParameters {
-    Version version;
     BaseParameters baseParameters;
     std::vector<Run> runs;
 };
