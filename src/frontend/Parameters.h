@@ -72,6 +72,7 @@ public:
         std::size_t averagingEvery = 100;
         std::size_t snapshotEvery = 100;
         std::size_t inlineInfoEvery = 100;
+        std::size_t orientationFixEvery = 10000;
         std::string observables = "[]";
         std::string bulkObservables = "[]";
         std::string packingFilename{};
@@ -100,6 +101,7 @@ public:
         std::string runName{};
         std::size_t snapshotEvery = 100;
         std::size_t inlineInfoEvery = 100;
+        std::size_t orientationFixEvery = 10000;
         std::string observables = "[]";
         std::string bulkObservables = "[]";
         std::string helperInteraction{};
