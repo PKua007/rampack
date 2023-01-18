@@ -52,6 +52,7 @@ struct IntegrationRun {
     std::size_t inlineInfoEvery{};
     std::size_t orientationFixEvery{};
     std::vector<FileSnapshotWriter> lastSnapshotWriters;
+    std::optional<std::string> ramsnapOut;
     std::vector<std::shared_ptr<SimulationRecorderFactory>> simulationRecorders;
     std::shared_ptr<ObservablesCollector> observablesCollector;
     std::optional<std::string> averagesOut;
@@ -67,6 +68,7 @@ struct OverlapRelaxationRun  {
     std::size_t orientationFixEvery{};
     std::shared_ptr<ShapeTraits> helperShapeTraits;
     std::vector<FileSnapshotWriter> lastSnapshotWriters;
+    std::optional<std::string> ramsnapOut;
     std::vector<std::shared_ptr<SimulationRecorderFactory>> simulationRecorders;
     std::shared_ptr<ObservablesCollector> observablesCollector;
     std::optional<std::string> observablesOut;

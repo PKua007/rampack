@@ -282,6 +282,10 @@ namespace {
         run.inlineInfoEvery = integrationParams.inlineInfoEvery;
         run.orientationFixEvery = integrationParams.orientationFixEvery;
         run.lastSnapshotWriters = parse_last_snapshot_writers(integrationParams);
+
+        if (!integrationParams.packingFilename.empty())
+            run.ramsnapOut = integrationParams.packingFilename;
+
         run.simulationRecorders = parse_simulation_recorders(integrationParams);
 
         run.observablesCollector = legacy::ObservablesCollectorFactory::create(
@@ -299,6 +303,7 @@ namespace {
         return run;
     }
 
+    // TODO: helper interaction
     OverlapRelaxationRun
     parse_overlap_relaxation_run(const Parameters::OverlapRelaxationParameters &overlapRelaxationParams,
                                  const BaseParameters &baseParams)
@@ -311,6 +316,10 @@ namespace {
         run.inlineInfoEvery = overlapRelaxationParams.inlineInfoEvery;
         run.orientationFixEvery = overlapRelaxationParams.orientationFixEvery;
         run.lastSnapshotWriters = parse_last_snapshot_writers(overlapRelaxationParams);
+
+        if (!overlapRelaxationParams.packingFilename.empty())
+            run.ramsnapOut = overlapRelaxationParams.packingFilename;
+
         run.simulationRecorders = parse_simulation_recorders(overlapRelaxationParams);
 
         run.observablesCollector = legacy::ObservablesCollectorFactory::create(

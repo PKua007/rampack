@@ -22,6 +22,7 @@
 #include "PackingLoader.h"
 #include "core/io/XYZRecorder.h"
 #include "utils/Version.h"
+#include "RampackParameters.h"
 
 
 /**
@@ -33,7 +34,7 @@ private:
     std::ofstream auxOutStream;
 
     Parameters loadParameters(const std::string &inputFilename);
-    std::unique_ptr<Packing> recreatePacking(PackingLoader &loader, const Parameters &params,
+    std::unique_ptr<Packing> recreatePacking(PackingLoader &loader, const BaseParameters &params,
                                              const ShapeTraits &traits, std::size_t maxThreads);
     std::unique_ptr<Packing> arrangePacking(std::size_t numOfParticles, const std::string &initialDimensions,
                                             const std::string &initialArrangement, const ShapeTraits &shapeTraits,
@@ -43,6 +44,7 @@ private:
                                 const std::map<std::string, std::string> &packingAuxInfo) const;
     Simulation::Environment recreateEnvironment(const Parameters &params, const PackingLoader &loader,
                                                 const ShapeTraits &traits) const;
+    Simulation::Environment recreateEnvironment(const RampackParameters &params, const PackingLoader &loader) const;
     Simulation::Environment recreateRawEnvironment(const Parameters &params, std::size_t startRunIndex,
                                                    const ShapeTraits &traits) const;
 
@@ -56,21 +58,19 @@ private:
                                                        std::size_t cycleStep, bool isContinuation) const;
     std::unique_ptr<XYZRecorder> loadXYZRecorder(const std::string &filename, bool isContinuation) const;
     std::unique_ptr<RamtrjPlayer> loadRamtrjPlayer(std::string &trajectoryFilename, size_t numMolecules, bool autoFix_);
+    void createWalls(Packing &packing, const std::array<bool, 3> &walls);
     void createWalls(Packing &packing, const std::string &walls);
     void attachSnapshotOut(ObservablesCollector &collector, const std::string& filename, bool isContinuation) const;
 
     void verifyDynamicParameter(const DynamicParameter &dynamicParameter, const std::string &parameterName,
-                                const Parameters::IntegrationParameters &params, std::size_t cycleOffset) const;
+                                const IntegrationRun &run, std::size_t cycleOffset) const;
 
-    void performIntegration(Simulation &simulation, Simulation::Environment &env,
-                            const Parameters::IntegrationParameters &runParams, const ShapeTraits &shapeTraits,
-                            size_t cycleOffset, bool isContinuation, const Version &paramsVersion);
+    void performIntegration(Simulation &simulation, Simulation::Environment &env, const IntegrationRun &run,
+                            const ShapeTraits &shapeTraits, std::size_t cycleOffset, bool isContinuation);
 
-    void performOverlapRelaxation(Simulation &simulation, Simulation::Environment &envfco,
-                                  const std::string &shapeName, const std::string &shapeAttr,
-                                  const Parameters::OverlapRelaxationParameters &runParams,
-                                  std::shared_ptr<ShapeTraits> shapeTraits, size_t cycleOffset, bool isContinuation,
-                                  const Version &paramsVersion);
+    void performOverlapRelaxation(Simulation &simulation, Simulation::Environment &env, const OverlapRelaxationRun &run,
+                                  std::shared_ptr<ShapeTraits> shapeTraits, std::size_t cycleOffset,
+                                  bool isContinuation);
 
     void printPerformanceInfo(const Simulation &simulation);
     void printAverageValues(const ObservablesCollector &collector);
@@ -102,6 +102,7 @@ private:
                                                               const ShapeTraits &traits, const Version &paramsVersion);
     static void combineEnvironment(Simulation::Environment &env, const Parameters::RunParameters &runParams,
                                    const ShapeTraits &traits, const Version &paramsVersion);
+    static void combineEnvironment(Simulation::Environment &env, const Run &run);
 
     [[nodiscard]] std::shared_ptr<ShapeTraits> createShapeTraits(const std::string &shapeName,
                                                                  const std::string &shapeAttributes,
