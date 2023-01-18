@@ -29,7 +29,7 @@ void PackingLoader::loadPacking(std::unique_ptr<BoundaryConditions> bc, const In
     // A run, whose resulting packing will be the starting point
     auto &startingPackingRun = this->runsParameters[startingPackingRunIndex];
 
-    auto packingFilenameGetter = [](auto &&run) { return run.packingFilename; };
+    auto packingFilenameGetter = [](auto &&run) { return run.runName; };
     std::string startingPackingFilename = std::visit(packingFilenameGetter, startingPackingRun);
     std::ifstream packingFile(startingPackingFilename);
     ValidateOpenedDesc(packingFile, startingPackingFilename, "to load initial packing");
@@ -42,23 +42,23 @@ void PackingLoader::loadPacking(std::unique_ptr<BoundaryConditions> bc, const In
         this->isContinuation_ = true;
 
         // Value of continuation cycles is only used in integration mode. For overlaps rejection it is redundant
-        if (std::holds_alternative<Parameters::IntegrationParameters>(startingPackingRun)) {
+        if (std::holds_alternative<IntegrationRun>(startingPackingRun)) {
             // Because we continue this already finished run
-            auto &startingRun = std::get<Parameters::IntegrationParameters>(startingPackingRun);
+            auto &startingRun = std::get<IntegrationRun>(startingPackingRun);
 
             if (this->continuationCycles == 0)
-                this->continuationCycles = startingRun.thermalisationCycles;
+                this->continuationCycles = startingRun.thermalizationCycles.value_or(0);
 
             if (this->continuationCycles <= this->cycleOffset) {
-                startingRun.thermalisationCycles = 0;
+                startingRun.thermalizationCycles = std::nullopt;
                 this->logger.info() << "Thermalisation of the finished run '" << startingRun.runName;
                 this->logger << "' will be skipped, since " << *this->continuationCycles << " or more cycles were ";
                 this->logger << "already performed." << std::endl;
             } else {
-                startingRun.thermalisationCycles = *this->continuationCycles - this->cycleOffset;
+                startingRun.thermalizationCycles = *this->continuationCycles - this->cycleOffset;
                 this->logger.info() << "Thermalisation from the finished run '" << startingRun.runName;
                 this->logger << "' will be continued up to " << *this->continuationCycles << " cycles (";
-                this->logger << startingRun.thermalisationCycles << " to go)" << std::endl;
+                this->logger << *startingRun.thermalizationCycles << " to go)" << std::endl;
             }
         }
     }
@@ -143,7 +143,7 @@ void PackingLoader::autoFindStartRunIndex() {
 
 void PackingLoader::warnIfOverlapRelaxation() const {
     auto isOverlapReduction = [](const auto &params) {
-        return std::holds_alternative<Parameters::OverlapRelaxationParameters>(params);
+        return std::holds_alternative<OverlapRelaxationRun>(params);
     };
     if (std::find_if(runsParameters.begin(), runsParameters.end(), isOverlapReduction) != runsParameters.end()) {
         this->logger.warn() << "Starting run auto-detect: some runs are overlap relaxation; auto-detection may fail";
@@ -152,12 +152,11 @@ void PackingLoader::warnIfOverlapRelaxation() const {
 }
 
 bool PackingLoader::allRunsHaveDatOutput() const {
-    auto getDatOutput = [](const auto &params) {
-        auto packingFilenameGetter = [](auto &&run) { return run.packingFilename; };
-        return std::visit(packingFilenameGetter, params);
+    auto hasDatOutput = [](const auto &params) {
+        auto ramsnapOutGetter = [](auto &&run) { return run.ramsnapOut; };
+        return std::visit(ramsnapOutGetter, params).has_value();
     };
-    auto hasDatOutput = [getDatOutput](const auto &params) { return !getDatOutput(params).empty(); };
-    return std::all_of(runsParameters.begin(), runsParameters.end(), hasDatOutput);
+    return std::all_of(this->runsParameters.begin(), this->runsParameters.end(), hasDatOutput);
 }
 
 void PackingLoader::logRunsStatus(const std::vector<PerformedRunData> &runDatas) const {
@@ -188,14 +187,15 @@ std::vector<PackingLoader::PerformedRunData> PackingLoader::gatherRunData() cons
         auto runNameGetter = [](auto &&run) { return run.runName; };
         runData.runName = std::visit(runNameGetter, runParams);
 
-        if (std::holds_alternative<Parameters::IntegrationParameters>(runParams)) {
-            const auto &integrationParams = std::get<Parameters::IntegrationParameters>(runParams);
-            runData.expectedCycles = integrationParams.thermalisationCycles + integrationParams.averagingCycles;
+        if (std::holds_alternative<IntegrationRun>(runParams)) {
+            const auto &integrationRun = std::get<IntegrationRun>(runParams);
+            runData.expectedCycles = integrationRun.thermalizationCycles.value_or(0)
+                                     + integrationRun.averagingCycles.value_or(0);
         } else {
             runData.expectedCycles = 0;
         }
 
-        auto packingFilenameGetter = [](auto &&run) { return run.packingFilename; };
+        auto packingFilenameGetter = [](auto &&run) { return *run.ramsnapOut; };
         auto packingFilename = std::visit(packingFilenameGetter, runParams);
         std::ifstream datInput(packingFilename);
         if (datInput) {
@@ -217,8 +217,7 @@ std::vector<PackingLoader::PerformedRunData> PackingLoader::gatherRunData() cons
     return runDatas;
 }
 
-std::size_t PackingLoader::findStartRunIndex(const std::string &runName,
-                                             const std::vector<Parameters::RunParameters> &runsParameters)
+std::size_t PackingLoader::findStartRunIndex(const std::string &runName, const std::vector<Run> &runsParameters)
 {
     if (runName == ".first")
         return 0;

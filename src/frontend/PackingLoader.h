@@ -10,7 +10,7 @@
 #include <utility>
 
 #include "core/Packing.h"
-#include "Parameters.h"
+#include "RampackParameters.h"
 
 
 class PackingLoader {
@@ -30,7 +30,7 @@ private:
     Logger &logger;
     std::optional<std::string> startFrom;
     std::optional<std::size_t> continuationCycles;
-    std::vector<Parameters::RunParameters> &runsParameters;
+    std::vector<Run> &runsParameters;
 
     std::size_t startRunIndex{};
     std::size_t cycleOffset{};
@@ -48,11 +48,12 @@ private:
     void warnIfOverlapRelaxation() const;
 
 public:
-    static std::size_t findStartRunIndex(const std::string &runName,
-                                         const std::vector<Parameters::RunParameters> &runsParameters);
+    static std::size_t findStartRunIndex(const std::string &runName, const std::vector<Run> &runsParameters);
 
+    // TODO: runsParameters should not be modified. Instead, there should be getter for new number of thermalization
+    // cycles
     PackingLoader(Logger &logger, std::optional<std::string> startFrom, std::optional<std::size_t> continuationCycles,
-                  std::vector<Parameters::RunParameters> &runsParameters)
+                  std::vector<Run> &runsParameters)
             : logger{logger}, startFrom{std::move(startFrom)}, continuationCycles{continuationCycles},
               runsParameters{runsParameters}
     { }

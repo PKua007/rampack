@@ -48,6 +48,7 @@
 #include "BoxScalerMatcher.h"
 #include "DynamicParameterMatcher.h"
 #include "RampackParameters.h"
+#include "legacy/IniParametersFactory.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -177,52 +178,36 @@ int Frontend::casino(int argc, char **argv) {
     this->logger << "General simulation parameters" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    Parameters params = this->loadParameters(inputFilename);
-    params.print(this->logger);
+    Parameters paramsss = this->loadParameters(inputFilename);
+    paramsss.print(this->logger);
 
+    RampackParameters rampackParams = IniParametersFactory::create(paramsss);
+
+    const auto &baseParams = rampackParams.baseParameters;
+    const auto &shapeTraits = baseParams.shapeTraits;
     this->logger << "--------------------------------------------------------------------" << std::endl;
-
-    auto shapeTraits = this->createShapeTraits(params.shapeName, params.shapeAttributes, params.interaction,
-                                               params.version);
-
     this->logger << "Interaction centre range : " << shapeTraits->getInteraction().getRangeRadius() << std::endl;
     this->logger << "Total interaction range  : " << shapeTraits->getInteraction().getTotalRangeRadius() << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    // Parse number of scaling threads
-    std::size_t scalingThreads{};
-    if (params.scalingThreads == "max")
-        scalingThreads = OMP_MAXTHREADS;
-    else
-        scalingThreads = std::stoul(params.scalingThreads);
-    Validate(scalingThreads > 0);
-    Validate(scalingThreads <= static_cast<std::size_t>(OMP_MAXTHREADS));
-
-    // Parse domain divisions
-    std::array<std::size_t, 3> domainDivisions{};
-    std::istringstream domainDivisionsStream(params.domainDivisions);
-    domainDivisionsStream >> domainDivisions[0] >> domainDivisions[1] >> domainDivisions[2];
-    ValidateMsg(domainDivisionsStream, "Malformed domain divisions, usage: x divisions, y div., z div.");
-
-    std::size_t numDomains = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies<>{});
-    Validate(numDomains > 0);
-    Validate(numDomains <= static_cast<std::size_t>(OMP_MAXTHREADS));
+    std::size_t numDomains = std::accumulate(baseParams.domainDivisions.begin(), baseParams.domainDivisions.end(), 1ul,
+                                             std::multiplies<>{});
 
     // We use the same number of threads for scaling and particle moves, otherwise OpenMP leaks memory
     // Too many domain threads are ok, some will just be jobless. But we cannot use less scaling threads than
     // domain threads
     // See https://stackoverflow.com/questions/67267035/...
     // ...increasing-memory-consumption-for-2-alternating-openmp-parallel-regions-with-dif
-    Validate(numDomains <= scalingThreads);
+    Validate(numDomains <= baseParams.scalingThreads);
 
     // Info about threads
     this->logger << OMP_MAXTHREADS << " OpenMP threads are available" << std::endl;
-    this->logger << "Using " << scalingThreads << " threads for scaling moves" << std::endl;
+    this->logger << "Using " << baseParams.scalingThreads << " threads for scaling moves" << std::endl;
     if (numDomains == 1) {
         this->logger << "Using 1 thread without domain decomposition for particle moves" << std::endl;
     } else {
-        this->logger << "Using " << domainDivisions[0] << " x " << domainDivisions[1] << " x ";
-        this->logger << domainDivisions[2] << " = " << numDomains << " domains for particle moves" << std::endl;
+        this->logger << "Using " << baseParams.domainDivisions[0] << " x " << baseParams.domainDivisions[1] << " x ";
+        this->logger << baseParams.domainDivisions[2] << " = " << numDomains << " domains for particle moves" << std::endl;
     }
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
@@ -236,8 +221,9 @@ int Frontend::casino(int argc, char **argv) {
     if (parsedOptions.count("continue"))
         optionalContinuationCycles = continuationCycles;
 
-    PackingLoader packingLoader(this->logger, optionalStartFrom, optionalContinuationCycles, params.runsParameters);
-    auto packing = this->recreatePacking(packingLoader, params, *shapeTraits, scalingThreads);
+    PackingLoader packingLoader(this->logger, optionalStartFrom, optionalContinuationCycles, rampackParams.runs);
+    auto packing = this->recreatePacking(packingLoader, rampackParams.baseParameters, *shapeTraits,
+                                         baseParams.scalingThreads);
 
     if (packingLoader.isAllFinished()) {
         this->logger.warn() << "No runs left to be performed. Exiting." << std::endl;
@@ -248,28 +234,27 @@ int Frontend::casino(int argc, char **argv) {
     std::size_t cycleOffset = packingLoader.getCycleOffset();
     bool isContinuation = packingLoader.isContinuation();
 
-    auto env = this->recreateEnvironment(params, packingLoader, *shapeTraits);
+    auto env = this->recreateEnvironment(rampackParams, packingLoader);
 
     // Perform simulations starting from initial run
-    Simulation simulation(std::move(packing), params.seed, domainDivisions, params.saveOnSignal);
+    Simulation simulation(std::move(packing), baseParams.seed, baseParams.domainDivisions, baseParams.saveOnSignal);
 
-    for (std::size_t i = startRunIndex; i < params.runsParameters.size(); i++) {
-        const auto &runParamsI = params.runsParameters[i];
+    for (std::size_t i = startRunIndex; i < rampackParams.runs.size(); i++) {
+        const auto &run = rampackParams.runs[i];
         // Environment for starting run is already prepared
         if (i != startRunIndex)
-            Frontend::combineEnvironment(env, runParamsI, *shapeTraits, params.version);
+            Frontend::combineEnvironment(env, run);
 
-        if (std::holds_alternative<Parameters::IntegrationParameters>(runParamsI)) {
-            const auto &runParams = std::get<Parameters::IntegrationParameters>(runParamsI);
-            this->verifyDynamicParameter(env.getTemperature(), "temperature", runParams, cycleOffset);
+        if (std::holds_alternative<IntegrationRun>(run)) {
+            const auto &integrationRun = std::get<IntegrationRun>(run);
+            this->verifyDynamicParameter(env.getTemperature(), "temperature", integrationRun, cycleOffset);
             if (env.isBoxScalingEnabled())
-                this->verifyDynamicParameter(env.getPressure(), "pressure", runParams, cycleOffset);
-            this->performIntegration(simulation, env, runParams, *shapeTraits, cycleOffset, isContinuation,
-                                     params.version);
-        } else if (std::holds_alternative<Parameters::OverlapRelaxationParameters>(runParamsI)) {
-            const auto &runParams = std::get<Parameters::OverlapRelaxationParameters>(runParamsI);
-            this->performOverlapRelaxation(simulation, env, params.shapeName, params.shapeAttributes, runParams, shapeTraits,
-                                           cycleOffset, isContinuation, params.version);
+                this->verifyDynamicParameter(env.getPressure(), "pressure", integrationRun, cycleOffset);
+            this->performIntegration(simulation, env, integrationRun, *shapeTraits, cycleOffset, isContinuation);
+        } else if (std::holds_alternative<OverlapRelaxationRun>(run)) {
+            const auto &overlapRelaxationRun = std::get<OverlapRelaxationRun>(run);
+            this->performOverlapRelaxation(simulation, env, overlapRelaxationRun, shapeTraits, cycleOffset,
+                                           isContinuation);
         } else {
             throw AssertionException("Unimplemented run type");
         }
@@ -294,36 +279,45 @@ void Frontend::combineEnvironment(Simulation::Environment &env, const Parameters
     env.combine(runEnv);
 }
 
-void Frontend::performIntegration(Simulation &simulation, Simulation::Environment &env,
-                                  const Parameters::IntegrationParameters &runParams, const ShapeTraits &shapeTraits,
-                                  std::size_t cycleOffset, bool isContinuation, const Version &paramsVersion)
+void Frontend::combineEnvironment(Simulation::Environment &env, const Run &run)
 {
-    this->logger.setAdditionalText(runParams.runName);
+    auto environmentGetter = [](const auto &run) {
+        return run.environment;
+    };
+    auto runEnv = std::visit(environmentGetter, run);
+    env.combine(runEnv);
+}
+
+void Frontend::performIntegration(Simulation &simulation, Simulation::Environment &env, const IntegrationRun &run,
+                                  const ShapeTraits &shapeTraits, std::size_t cycleOffset, bool isContinuation)
+{
+    this->logger.setAdditionalText(run.runName);
     this->logger.info() << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
-    this->logger << "Starting integration '" << runParams.runName << "'" << std::endl;
+    this->logger << "Starting integration '" << run.runName << "'" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
-    runParams.print(this->logger);
+    // TODO: parameters info
+    //run.print(this->logger);
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
     std::vector<std::unique_ptr<SimulationRecorder>> recorders;
-    if (!runParams.recordingFilename.empty()) {
-        recorders.push_back(this->loadRamtrjRecorder(runParams.recordingFilename, simulation.getPacking().size(),
-                                                     runParams.snapshotEvery, isContinuation));
+    for (const auto &factory : run.simulationRecorders) {
+        auto recorder = factory->create(simulation.getPacking().size(), run.snapshotEvery, isContinuation,
+                                        this->logger);
+        recorders.push_back(std::move(recorder));
     }
-    if (!runParams.xyzRecordingFilename.empty())
-        recorders.push_back(this->loadXYZRecorder(runParams.xyzRecordingFilename, isContinuation));
 
-    auto collector = this->createObservablesCollector(runParams.observables, runParams.bulkObservables,
-                                                      simulation.getPacking().getScalingThreads(), paramsVersion);
-    this->attachSnapshotOut(*collector, runParams.observableSnapshotFilename, isContinuation);
+    auto collector = run.observablesCollector;
+    if (run.observablesOut.has_value())
+        this->attachSnapshotOut(*collector, *run.observablesOut, isContinuation);
 
     Simulation::IntegrationParameters integrationParams;
-    integrationParams.thermalisationCycles = runParams.thermalisationCycles;
-    integrationParams.averagingCycles = runParams.averagingCycles;
-    integrationParams.averagingEvery = runParams.averagingEvery;
-    integrationParams.snapshotEvery = runParams.snapshotEvery;
-    integrationParams.inlineInfoEvery = runParams.inlineInfoEvery;
+    integrationParams.thermalisationCycles = run.thermalizationCycles.value_or(0);
+    integrationParams.averagingCycles = run.averagingCycles.value_or(0);
+    integrationParams.averagingEvery = run.averagingEvery;
+    integrationParams.snapshotEvery = run.snapshotEvery;
+    integrationParams.inlineInfoEvery = run.inlineInfoEvery;
+    integrationParams.rotationMatrixFixEvery = run.orientationFixEvery;
     integrationParams.cycleOffset = cycleOffset;
 
     simulation.integrate(env, integrationParams, shapeTraits, std::move(collector), std::move(recorders), this->logger);
@@ -339,27 +333,21 @@ void Frontend::performIntegration(Simulation &simulation, Simulation::Environmen
 
     this->printPerformanceInfo(simulation);
 
-    if (!runParams.packingFilename.empty())
-        this->storeRamsnap(simulation, runParams.packingFilename);
+    for (const auto &writer : run.lastSnapshotWriters)
+        writer.storeSnapshot(simulation, shapeTraits, this->logger);
 
-    if (!runParams.xyzPackingFilename.empty())
-        this->storeXYZ(simulation, shapeTraits, runParams.xyzPackingFilename);
-
-    if (!runParams.wolframFilename.empty())
-        this->storeWolframVisualization(simulation.getPacking(), shapeTraits, runParams.wolframFilename);
-
-    if (!runParams.outputFilename.empty()) {
+    if (run.averagesOut.has_value()) {
         if (integrationParams.averagingCycles != 0 && !simulation.wasInterrupted()) {
-            this->storeAverageValues(runParams.outputFilename, observablesCollector, simulation.getCurrentTemperature(),
+            this->storeAverageValues(*run.averagesOut, observablesCollector, simulation.getCurrentTemperature(),
                                      simulation.getCurrentPressure());
         } else {
             this->logger.warn() << "Storing averages skipped due to incomplete averaging phase." << std::endl;
         }
     }
 
-    if (!runParams.bulkObservableFilenamePattern.empty()) {
+    if (run.bulkObservablesOutPattern.has_value()) {
         if (integrationParams.averagingCycles != 0 && !simulation.wasInterrupted())
-            this->storeBulkObservables(observablesCollector, runParams.bulkObservableFilenamePattern);
+            this->storeBulkObservables(observablesCollector, *run.bulkObservablesOutPattern);
         else
             this->logger.warn() << "Storing bulk observables skipped due to incomplete averaging phase." << std::endl;
     }
@@ -405,39 +393,36 @@ std::unique_ptr<XYZRecorder> Frontend::loadXYZRecorder(const std::string &filena
 }
 
 void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Environment &env,
-                                        const std::string &shapeName, const std::string &shapeAttr,
-                                        const Parameters::OverlapRelaxationParameters &runParams,
-                                        std::shared_ptr<ShapeTraits> shapeTraits, size_t cycleOffset,
-                                        bool isContinuation, const Version &paramsVersion)
+                                        const OverlapRelaxationRun &run, std::shared_ptr<ShapeTraits> shapeTraits,
+                                        std::size_t cycleOffset, bool isContinuation)
 {
-    this->logger.setAdditionalText(runParams.runName);
+    this->logger.setAdditionalText(run.runName);
     this->logger.info() << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
-    this->logger << "Starting overlap relaxation '" << runParams.runName << "'" << std::endl;
+    this->logger << "Starting overlap relaxation '" << run.runName << "'" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
-    runParams.print(this->logger);
+    // TODO: parameters info
+    //run.print(this->logger);
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
     std::vector<std::unique_ptr<SimulationRecorder>> recorders;
-    if (!runParams.recordingFilename.empty()) {
-        recorders.push_back(this->loadRamtrjRecorder(runParams.recordingFilename, simulation.getPacking().size(),
-                                                     runParams.snapshotEvery, isContinuation));
-    }
-    if (!runParams.xyzRecordingFilename.empty())
-        recorders.push_back(this->loadXYZRecorder(runParams.xyzRecordingFilename, isContinuation));
-
-    if (!runParams.helperInteraction.empty()) {
-        auto helperShape = this->createShapeTraits(shapeName, shapeAttr, runParams.helperInteraction, paramsVersion);
-        shapeTraits = std::make_shared<CompoundShapeTraits>(shapeTraits, helperShape);
+    for (const auto &factory : run.simulationRecorders) {
+        auto recorder = factory->create(simulation.getPacking().size(), run.snapshotEvery, isContinuation,
+                                        this->logger);
+        recorders.push_back(std::move(recorder));
     }
 
-    auto collector = this->createObservablesCollector(runParams.observables, runParams.bulkObservables,
-                                                      simulation.getPacking().getScalingThreads(), paramsVersion);
-    this->attachSnapshotOut(*collector, runParams.observableSnapshotFilename, isContinuation);
+    if (run.helperShapeTraits != nullptr)
+        shapeTraits = std::make_shared<CompoundShapeTraits>(shapeTraits, run.helperShapeTraits);
+
+    auto collector = run.observablesCollector;
+    if (run.observablesOut.has_value())
+        this->attachSnapshotOut(*collector, *run.observablesOut, isContinuation);
 
     Simulation::OverlapRelaxationParameters relaxParams;
-    relaxParams.snapshotEvery = runParams.snapshotEvery;
-    relaxParams.inlineInfoEvery = runParams.inlineInfoEvery;
+    relaxParams.snapshotEvery = run.snapshotEvery;
+    relaxParams.inlineInfoEvery = run.inlineInfoEvery;
+    relaxParams.rotationMatrixFixEvery = run.orientationFixEvery;
     relaxParams.cycleOffset = cycleOffset;
 
     simulation.relaxOverlaps(env, relaxParams, *shapeTraits, std::move(collector), std::move(recorders), this->logger);
@@ -446,12 +431,8 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
     this->logger << "--------------------------------------------------------------------" << std::endl;
     this->printPerformanceInfo(simulation);
 
-    if (!runParams.packingFilename.empty())
-        this->storeRamsnap(simulation, runParams.packingFilename);
-    if (!runParams.xyzPackingFilename.empty())
-        this->storeXYZ(simulation, *shapeTraits, runParams.xyzPackingFilename);
-    if (!runParams.wolframFilename.empty())
-        this->storeWolframVisualization(simulation.getPacking(), *shapeTraits, runParams.wolframFilename);
+    for (const auto &writer : run.lastSnapshotWriters)
+        writer.storeSnapshot(simulation, *shapeTraits, this->logger);
 }
 
 void Frontend::storeSnapshots(const ObservablesCollector &observablesCollector, bool isContinuation,
@@ -1065,7 +1046,11 @@ int Frontend::trajectory(int argc, char **argv) {
     this->createWalls(*packing, params.walls);
 
     // Find and validate run whose trajectory we want to process
-    std::size_t startRunIndex = PackingLoader::findStartRunIndex(runName, params.runsParameters);
+
+    // TODO: temporary workaround
+    RampackParameters rampackParams = IniParametersFactory::create(params);
+
+    std::size_t startRunIndex = PackingLoader::findStartRunIndex(runName, rampackParams.runs);
     const auto &startRun = params.runsParameters[startRunIndex];
     std::string trajectoryFilename = std::visit([](const auto &run) { return run.recordingFilename; }, startRun);
     std::string foundRunName = std::visit([](const auto &run) { return run.runName; }, startRun);
@@ -1297,6 +1282,11 @@ void Frontend::createWalls(Packing &packing, const std::string &walls) {
     }
 }
 
+void Frontend::createWalls(Packing &packing, const std::array<bool, 3> &walls) {
+    for (std::size_t i{}; i < 3; i++)
+        packing.toggleWall(i, walls[i]);
+}
+
 void Frontend::storeBulkObservables(const ObservablesCollector &observablesCollector,
                                     std::string bulkObservableFilenamePattern) const
 {
@@ -1463,9 +1453,6 @@ void Frontend::printInteractionInfo(const Interaction &interaction) {
 void Frontend::attachSnapshotOut(ObservablesCollector &collector, const std::string &filename,
                                  bool isContinuation) const
 {
-    if (filename.empty())
-        return;
-
     std::unique_ptr<std::ofstream> out;
     if (isContinuation)
         out = std::make_unique<std::ofstream>(filename, std::ios_base::app);
@@ -1535,6 +1522,37 @@ Simulation::Environment Frontend::recreateEnvironment(const Parameters &params, 
     return env;
 }
 
+Simulation::Environment Frontend::recreateEnvironment(const RampackParameters &params,
+                                                      const PackingLoader &loader) const
+{
+    // Parse initial environment (from the global section)
+    auto env = params.baseParameters.baseEnvironment;
+
+    std::size_t startRunIndex = loader.getStartRunIndex();
+    if (loader.isContinuation()) {
+        // If it is continuation, we need to replay and combine all previous environments from all previous runs
+        // together with a continued run, and overwrite move step sizes at the end - this way we start with the same
+        // step sizes that were before
+        Assert(loader.isRestored());
+        for (std::size_t i{}; i <= startRunIndex; i++)
+            Frontend::combineEnvironment(env, params.runs[i]);
+        this->overwriteMoveStepSizes(env, loader.getAuxInfo());
+    } else {
+        // If it is not a continuation, we replay environments of the runs BEFORE the starting point, then overwrite
+        // step sizes (because this is where the last simulation ended) and AFTER it, we apply the new environment from
+        // the starting run
+        for (std::size_t i{}; i < startRunIndex; i++)
+            Frontend::combineEnvironment(env, params.runs[i]);
+        if (loader.isRestored())
+            this->overwriteMoveStepSizes(env, loader.getAuxInfo());
+        Frontend::combineEnvironment(env, params.runs[startRunIndex]);
+    }
+
+    ValidateMsg(env.isComplete(), "Some of parameters: pressure, temperature, moveTypes, scalingType are missing");
+
+    return env;
+}
+
 Simulation::Environment Frontend::recreateRawEnvironment(const Parameters &params, std::size_t startRunIndex,
                                                          const ShapeTraits &traits) const
 {
@@ -1562,7 +1580,7 @@ std::map<std::string, std::string> Frontend::prepareAuxInfo(const Simulation &si
     return auxInfo;
 }
 
-std::unique_ptr<Packing> Frontend::recreatePacking(PackingLoader &loader, const Parameters &params,
+std::unique_ptr<Packing> Frontend::recreatePacking(PackingLoader &loader, const BaseParameters &params,
                                                    const ShapeTraits &traits, std::size_t maxThreads)
 {
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
@@ -1576,8 +1594,8 @@ std::unique_ptr<Packing> Frontend::recreatePacking(PackingLoader &loader, const 
         packing = loader.releasePacking();
     } else {
         // Same number of scaling and domain threads
-        packing = this->arrangePacking(params.numOfParticles, params.initialDimensions, params.initialArrangement,
-                                       traits, maxThreads, maxThreads, params.version);
+        auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+        packing = params.packingFactory->createPacking(std::move(pbc), traits.getInteraction(), maxThreads, maxThreads);
     }
 
     this->createWalls(*packing, params.walls);
@@ -1586,13 +1604,13 @@ std::unique_ptr<Packing> Frontend::recreatePacking(PackingLoader &loader, const 
 }
 
 void Frontend::verifyDynamicParameter(const DynamicParameter &dynamicParameter, const std::string &parameterName,
-                                      const Parameters::IntegrationParameters &params, std::size_t cycleOffset) const
+                                      const IntegrationRun &run, std::size_t cycleOffset) const
 {
-    if (params.averagingCycles == 0)
+    if (run.averagingCycles == 0)
         return;
 
-    std::size_t firstAveragingCycle = params.thermalisationCycles + cycleOffset;
-    std::size_t totalCycles = firstAveragingCycle + params.averagingCycles;
+    std::size_t firstAveragingCycle = run.thermalizationCycles.value_or(0) + cycleOffset;
+    std::size_t totalCycles = firstAveragingCycle + run.averagingCycles.value_or(0);
     double constantValue = dynamicParameter.getValueForCycle(firstAveragingCycle, totalCycles);
     for (std::size_t averagingCycle = firstAveragingCycle + 1; averagingCycle < totalCycles; averagingCycle++) {
         double cycleValue = dynamicParameter.getValueForCycle(averagingCycle, totalCycles);
