@@ -29,7 +29,7 @@ void PackingLoader::loadPacking(std::unique_ptr<BoundaryConditions> bc, const In
     // A run, whose resulting packing will be the starting point
     auto &startingPackingRun = this->runsParameters[startingPackingRunIndex];
 
-    auto packingFilenameGetter = [](auto &&run) { return run.runName; };
+    auto packingFilenameGetter = [](auto &&run) { return *run.ramsnapOut; };
     std::string startingPackingFilename = std::visit(packingFilenameGetter, startingPackingRun);
     std::ifstream packingFile(startingPackingFilename);
     ValidateOpenedDesc(packingFile, startingPackingFilename, "to load initial packing");
