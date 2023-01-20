@@ -5,7 +5,9 @@
 #include "FlipRandomizingTransformer.h"
 #include "core/FreeBoundaryConditions.h"
 
-void FlipRandomizingTransformer::transform(Lattice &lattice) const {
+void FlipRandomizingTransformer::transform(Lattice &lattice, const ShapeTraits &shapeTraits) const {
+    const auto &geometry = shapeTraits.getGeometry();
+
     bool wasNormalized = lattice.isNormalized();
 
     const auto &dim = lattice.getDimensions();
@@ -16,9 +18,9 @@ void FlipRandomizingTransformer::transform(Lattice &lattice) const {
                 for (auto &shape : lattice.modifySpecificCellMolecules(i, j, k)) {
                     std::uniform_int_distribution flipOrNot(0, 1);
                     if (flipOrNot(this->rng) == 1) {
-                        Vector<3> axis = this->geometry.getSecondaryAxis(shape);
+                        Vector<3> axis = geometry.getSecondaryAxis(shape);
                         Matrix<3, 3> rotation = Matrix<3, 3>::rotation(axis.normalized(), M_PI);
-                        Vector<3> geometricOrigin = this->geometry.getGeometricOrigin(shape);
+                        Vector<3> geometricOrigin = geometry.getGeometricOrigin(shape);
                         Vector<3> translation = -rotation * geometricOrigin + geometricOrigin;
                         shape.rotate(rotation);
                         shape.translate(lattice.getCellBox().absoluteToRelative(translation), fbc);

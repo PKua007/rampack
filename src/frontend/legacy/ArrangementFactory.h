@@ -11,8 +11,7 @@
 #include <memory>
 
 #include "core/BoundaryConditions.h"
-#include "core/Interaction.h"
-#include "core/ShapeGeometry.h"
+#include "core/ShapeTraits.h"
 #include "core/Packing.h"
 
 
@@ -22,8 +21,8 @@ namespace legacy {
         static std::unique_ptr<Packing> arrangePacking(std::size_t numOfParticles, const std::string &boxString,
                                                        const std::string &arrangementString,
                                                        std::unique_ptr<BoundaryConditions> bc,
-                                                       const Interaction &interaction, const ShapeGeometry &geometry,
-                                                       std::size_t moveThreads, std::size_t scalingThreads);
+                                                       const ShapeTraits &shapeTraits, std::size_t moveThreads,
+                                                       std::size_t scalingThreads);
     };
 }
 

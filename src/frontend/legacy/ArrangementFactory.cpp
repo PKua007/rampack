@@ -227,10 +227,11 @@ namespace legacy {
                                                                 const std::string &boxString,
                                                                 const std::string &arrangementString,
                                                                 std::unique_ptr<BoundaryConditions> bc,
-                                                                const Interaction &interaction,
-                                                                const ShapeGeometry &geometry, std::size_t moveThreads,
+                                                                const ShapeTraits &shapeTraits, std::size_t moveThreads,
                                                                 std::size_t scalingThreads)
     {
+        const auto &interaction = shapeTraits.getInteraction();
+
         std::istringstream arrangementStream(arrangementString);
         std::string type;
         arrangementStream >> type;
@@ -256,7 +257,7 @@ namespace legacy {
             const auto &supportedTypes = LatticeBuilder::getSupportedCellTypes();
             if (std::find(supportedTypes.begin(), supportedTypes.end(), type) != supportedTypes.end()) {
                 return LatticeBuilder::buildPacking(numOfParticles, boxString, arrangementString, std::move(bc),
-                                                    interaction, geometry, moveThreads, scalingThreads);
+                                                    shapeTraits, moveThreads, scalingThreads);
             } else {
                 throw ValidationException("Unknown arrangement type: " + type + ". Available: orthorhombic, "
                                           + "presimulated");

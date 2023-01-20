@@ -19,8 +19,7 @@ namespace legacy {
         static std::unique_ptr<Packing> buildPacking(std::size_t numParticles, const std::string &boxString,
                                                      const std::string &arrangementString,
                                                      std::unique_ptr<BoundaryConditions> bc,
-                                                     const Interaction &interaction,
-                                                     const ShapeGeometry &geometry, std::size_t moveThreads,
+                                                     const ShapeTraits &shapeTraits, std::size_t moveThreads,
                                                      std::size_t scalingThreads);
     };
 }

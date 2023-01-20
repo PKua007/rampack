@@ -6,6 +6,7 @@
 #define RAMPACK_LATTICETRANSFORMER_H
 
 #include "Lattice.h"
+#include "core/ShapeTraits.h"
 
 
 /**
@@ -18,7 +19,7 @@ public:
     /**
      * @brief Transforms a given @a lattice in a manner defined by implementing class.
      */
-    virtual void transform(Lattice &lattice) const = 0;
+    virtual void transform(Lattice &lattice, const ShapeTraits &shapeTraits) const = 0;
 };
 
 

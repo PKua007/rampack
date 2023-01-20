@@ -21,14 +21,14 @@ namespace {
     public:
         explicit PresimulatedPackingFactory(std::string filename) : filename{std::move(filename)} { }
 
-        std::unique_ptr<Packing> createPacking(std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction,
+        std::unique_ptr<Packing> createPacking(std::unique_ptr<BoundaryConditions> bc, const ShapeTraits &shapeTraits,
                                                std::size_t moveThreads, std::size_t scalingThreads) override
         {
             std::ifstream packingFile(this->filename);
             ValidateOpenedDesc(packingFile, this->filename, "to load initial configuration");
 
             auto packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
-            packing->restore(packingFile, interaction);
+            packing->restore(packingFile, shapeTraits.getInteraction());
             return packing;
         }
     };
@@ -44,6 +44,6 @@ namespace {
 }
 
 
-MatcherAlternative ArrangementMatcher::create(const ShapeTraits &traits) {
-    return create_presimulated() | LatticeMatcher::create(traits);
+MatcherAlternative ArrangementMatcher::create() {
+    return create_presimulated() | LatticeMatcher::create();
 }

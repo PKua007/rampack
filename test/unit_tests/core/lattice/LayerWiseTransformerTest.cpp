@@ -5,6 +5,7 @@
 #include <catch2/catch.hpp>
 
 #include "mocks/MockLayerWiseTransformer.h"
+#include "mocks/MockShapeTraits.h"
 
 #include "core/lattice/LayerWiseTransformer.h"
 
@@ -15,8 +16,9 @@ TEST_CASE("LayerWiseTransformer: 1 layer in cell, 1 requested") {
     ALLOW_CALL(transformer, getRequestedNumOfLayers()).RETURN(1);
     REQUIRE_CALL(transformer, transformShape(Shape({0.5, 0.5, 0.5}), 0ul)).RETURN(Shape({0.5, 0.5, 0}));
     REQUIRE_CALL(transformer, transformShape(Shape({0, 0.5, 0.5}), 0ul)).RETURN(Shape({0, 0.5, 0}));
+    MockShapeTraits shapeTraits;
 
-    transformer.transform(lattice);
+    transformer.transform(lattice, shapeTraits);
 
     auto expectedMolecules = std::vector<Shape>{Shape({0.5, 0.5, 0}), Shape({0, 0.5, 0})};
     CHECK_THAT(lattice.getSpecificCell(0, 0, 0).getMolecules(), Catch::UnorderedEquals(expectedMolecules));
@@ -33,8 +35,9 @@ TEST_CASE("LayerWiseTransformer: 1 layer in cell, 2 requested") {
     REQUIRE_CALL(transformer, transformShape(Shape({0.5, 0.5, 0.25}), 0ul)).RETURN(Shape({0.5, 0, 0.25}));
     REQUIRE_CALL(transformer, transformShape(Shape({0, 0.5, 0.75}), 1ul)).RETURN(Shape({0, 0, 0.75}));
     REQUIRE_CALL(transformer, transformShape(Shape({0.5, 0.5, 0.75}), 1ul)).RETURN(Shape({0.5, 0, 0.75}));
+    MockShapeTraits shapeTraits;
 
-    transformer.transform(lattice);
+    transformer.transform(lattice, shapeTraits);
 
     auto expectedMolecules = std::vector<Shape>{Shape({0, 0, 0.25}), Shape({0.5, 0, 0.25}),
                                                 Shape({0, 0, 0.75}), Shape({0.5, 0, 0.75})};
@@ -55,8 +58,9 @@ TEST_CASE("LayerWiseTransformer: 2 layers in cell, 2 requested") {
     REQUIRE_CALL(transformer, transformShape(Shape({0.5, 0.5, 0.25}), 0ul)).RETURN(Shape({0.5, 0, 0.25}));
     REQUIRE_CALL(transformer, transformShape(Shape({0, 0.5, 0.75}), 1ul)).RETURN(Shape({0, 0, 0.75}));
     REQUIRE_CALL(transformer, transformShape(Shape({0.5, 0.5, 0.75}), 1ul)).RETURN(Shape({0.5, 0, 0.75}));
+    MockShapeTraits shapeTraits;
 
-    transformer.transform(lattice);
+    transformer.transform(lattice, shapeTraits);
 
     auto expectedMolecules = std::vector<Shape>{Shape({0, 0, 0.25}), Shape({0.5, 0, 0.25}),
                                                 Shape({0, 0, 0.75}), Shape({0.5, 0, 0.75})};
@@ -77,8 +81,9 @@ TEST_CASE("LayerWiseTransformer: 3 layers in cell, 2 requested") {
     REQUIRE_CALL(transformer, transformShape(Shape({0, 0.5, 0.625}), 1ul)).RETURN(Shape({0, 0, 0.625}));
     REQUIRE_CALL(transformer, transformShape(Shape({0, 0.5, 0.75}), 0ul)).RETURN(Shape({0, 0, 0.75}));
     REQUIRE_CALL(transformer, transformShape(Shape({0, 0.5, 0.875}), 1ul)).RETURN(Shape({0, 0, 0.875}));
+    MockShapeTraits shapeTraits;
 
-    transformer.transform(lattice);
+    transformer.transform(lattice, shapeTraits);
 
     auto expectedMolecules = std::vector<Shape>{Shape({0, 0, 0.125}), Shape({0, 0, 0.25}),
                                                 Shape({0, 0, 0.375}), Shape({0, 0, 0.625}),

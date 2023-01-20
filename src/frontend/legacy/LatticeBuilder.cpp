@@ -286,22 +286,21 @@ namespace {
     }
 
     std::unique_ptr<LatticeTransformer> parse_transformer(const std::string &operationType,
-                                                          std::istringstream &operationStream,
-                                                          const Interaction &interaction, const ShapeGeometry &geometry)
+                                                          std::istringstream &operationStream)
     {
         if (operationType == "optimizeCell") {
             double spacing{};
             std::string axisOrder;
             operationStream >> spacing >> axisOrder;
             ValidateMsg(operationStream, "Malformed transformation. Usage: optimizeCell [spacing] [axis order]");
-            return std::make_unique<CellOptimizationTransformer>(interaction, axisOrder, spacing);
+            return std::make_unique<CellOptimizationTransformer>(axisOrder, spacing);
         } else if (operationType == "optimizeLayers") {
             double spacing{};
             std::string axisStr;
             operationStream >> spacing >> axisStr;
             LatticeTraits::Axis axis = parse_axis(axisStr);
             ValidateMsg(operationStream, "Malformed transformation. Usage: optimizeLayers [spacing] [axis]");
-            return std::make_unique<LayerWiseCellOptimizationTransformer>(interaction, axis, spacing);
+            return std::make_unique<LayerWiseCellOptimizationTransformer>(axis, spacing);
         } else if (operationType == "columnar") {
             std::string axisStr;
             unsigned long seed{};
@@ -313,7 +312,7 @@ namespace {
             unsigned long seed{};
             operationStream >> seed;
             ValidateMsg(operationStream, "Malformed transformation. Usage: randomizeFlip [rng seed]");
-            return std::make_unique<FlipRandomizingTransformer>(geometry, seed);
+            return std::make_unique<FlipRandomizingTransformer>(seed);
         } else if (operationType == "layerRotate") {
             std::string layerAxisStr;
             std::string rotAxisStr;
@@ -341,9 +340,7 @@ namespace {
         }
     }
 
-    auto parse_operations(const Lattice &lattice, const std::vector<std::string> &latticeOperations,
-                          const Interaction &interaction, const ShapeGeometry &geometry)
-    {
+    auto parse_operations(const Lattice &lattice, const std::vector<std::string> &latticeOperations) {
         std::vector<std::unique_ptr<LatticeTransformer>> transformers;
         std::unique_ptr<LatticePopulator> populator;
 
@@ -357,7 +354,7 @@ namespace {
                 populator = parse_populator(operationStream, lattice.getDimensions());
             } else {
                 ValidateMsg(populator == nullptr, "Cannot apply further transformations after populating the lattice");
-                auto trans = parse_transformer(operationType, operationStream, interaction, geometry);
+                auto trans = parse_transformer(operationType, operationStream);
                 transformers.push_back(std::move(trans));
             }
         }
@@ -382,8 +379,8 @@ namespace legacy {
     std::unique_ptr<Packing> LatticeBuilder::buildPacking(std::size_t numParticles, const std::string &boxString,
                                                           const std::string &arrangementString,
                                                           std::unique_ptr<BoundaryConditions> bc,
-                                                          const Interaction &interaction, const ShapeGeometry &geometry,
-                                                          std::size_t moveThreads, std::size_t scalingThreads)
+                                                          const ShapeTraits &shapeTraits, std::size_t moveThreads,
+                                                          std::size_t scalingThreads)
     {
         auto requestedBox = parse_box(boxString);
         auto latticeOperations = explode(arrangementString, '|');
@@ -392,14 +389,16 @@ namespace legacy {
         latticeOperations.erase(latticeOperations.begin());
 
         auto lattice = parse_lattice(numParticles, requestedBox, cellDefinition);
-        auto [transformers, populator] = parse_operations(lattice, latticeOperations, interaction, geometry);
+        auto [transformers, populator] = parse_operations(lattice, latticeOperations);
 
         for (const auto &transformer: transformers)
-            transformer->transform(lattice);
+            transformer->transform(lattice, shapeTraits);
         lattice.normalize();
         auto shapes = populator->populateLattice(lattice, numParticles);
         auto latticeBox = lattice.getLatticeBox();
 
-        return std::make_unique<Packing>(latticeBox, shapes, std::move(bc), interaction, moveThreads, scalingThreads);
+        return std::make_unique<Packing>(
+            latticeBox, shapes, std::move(bc), shapeTraits.getInteraction(), moveThreads, scalingThreads
+        );
     }
 }

@@ -7,9 +7,10 @@
 
 #include "ColumnarTransformer.h"
 #include "LatticeTraits.h"
+#include "core/ShapeTraits.h"
 
 
-void ColumnarTransformer::transform(Lattice &lattice) const {
+void ColumnarTransformer::transform(Lattice &lattice, [[maybe_unused]] const ShapeTraits &shapeTraits) const {
     Expects(lattice.isRegular());
     Expects(lattice.isNormalized());
 

@@ -11,6 +11,7 @@
 
 #include "LatticeTransformer.h"
 #include "LatticeTraits.h"
+#include "core/ShapeTraits.h"
 
 
 /**
@@ -41,7 +42,7 @@ public:
      * column. Coordinate normalization is performed if needed.
      * @param lattice lattice to be "columnarized". It has to be regular and normalized (see Lattice::normalize()).
      */
-    void transform(Lattice &lattice) const override;
+    void transform(Lattice &lattice, const ShapeTraits &shapeTraits) const override;
 };
 
 

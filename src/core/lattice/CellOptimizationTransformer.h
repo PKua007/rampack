@@ -15,28 +15,25 @@
  */
 class CellOptimizationTransformer : public LatticeTransformer {
 private:
-    const Interaction &interaction;
     const std::string axisOrderString;
     std::array<double, 3> spacings{};
 
 public:
     /**
      * @brief Creates the object with given parameters.
-     * @param interaction interaction providing overlap criterion
      * @param axisOrderString the order in which the axis of the cell should be optimized
      * (see DistanceOptimizer::shrinkPacking)
      * @param spacing the distance between cell faces to be introduced
      */
-    CellOptimizationTransformer(const Interaction &interaction, const std::string &axisOrderString, double spacing)
-            : CellOptimizationTransformer(interaction, axisOrderString, {spacing, spacing, spacing})
+    CellOptimizationTransformer(const std::string &axisOrderString, double spacing)
+            : CellOptimizationTransformer(axisOrderString, {spacing, spacing, spacing})
     { }
 
     /**
-     * @brief Same as CellOptimizationTransformer(const Interaction&, const std::string&, double), but each cell axis
+     * @brief Same as CellOptimizationTransformer(const std::string&, double), but each cell axis
      * has a separate spacing given by the corresponding elements of @a spacings.
      */
-    CellOptimizationTransformer(const Interaction &interaction, const std::string &axisOrderString,
-                                const std::array<double, 3> &spacings);
+    CellOptimizationTransformer(const std::string &axisOrderString, const std::array<double, 3> &spacings);
 
     /**
      * @brief Performs cell size optimization for a given @a lattice.
@@ -46,7 +43,7 @@ public:
      * @param lattice lattice to optimized. It can be either regular or irregular, but is has to be normalized (see
      * Lattice::normalize())
      */
-    void transform(Lattice &lattice) const override;
+    void transform(Lattice &lattice, const ShapeTraits &shapeTraits) const override;
 };
 
 

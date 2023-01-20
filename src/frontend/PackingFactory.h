@@ -8,13 +8,14 @@
 #include <memory>
 
 #include "core/Packing.h"
+#include "core/ShapeTraits.h"
 
 
 class PackingFactory {
 public:
     virtual ~PackingFactory() = default;
     virtual std::unique_ptr<Packing> createPacking(std::unique_ptr<BoundaryConditions> bc,
-                                                   const Interaction &interaction, std::size_t moveThreads,
+                                                   const ShapeTraits &shapeTraits, std::size_t moveThreads,
                                                    std::size_t scalingThreads) = 0;
 };
 

@@ -41,9 +41,9 @@ TEST_CASE("LayerWiseCellOptimizationTransformer: 3 layers") {
     TriclinicBox initialBox(30);
     Lattice lattice(UnitCell(initialBox, initialShapes), {2, 2, 2});
     double spacing = 2;
-    LayerWiseCellOptimizationTransformer transformer(traits.getInteraction(), LatticeTraits::Axis::Z, spacing);
+    LayerWiseCellOptimizationTransformer transformer(LatticeTraits::Axis::Z, spacing);
 
-    transformer.transform(lattice);
+    transformer.transform(lattice, traits);
 
     CHECK(lattice.isRegular());
     CHECK(lattice.isNormalized());
@@ -81,9 +81,9 @@ TEST_CASE("LayerWiseCellOptimizationTransformer: 1 layer") {
     TriclinicBox initialBox(std::array<double, 3>{5, 5, 3});
     Lattice lattice(UnitCell(initialBox, {Shape({0.5, 0.5, 0.5})}), {2, 2, 2});
     double spacing = 0.5;
-    LayerWiseCellOptimizationTransformer transformer(traits.getInteraction(), LatticeTraits::Axis::Z, spacing);
+    LayerWiseCellOptimizationTransformer transformer(LatticeTraits::Axis::Z, spacing);
 
-    transformer.transform(lattice);
+    transformer.transform(lattice, traits);
 
     CHECK(lattice.isRegular());
     CHECK(lattice.isNormalized());

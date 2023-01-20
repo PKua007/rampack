@@ -16,9 +16,9 @@ TEST_CASE("CellOptimizationTransformer: orthorhombic lattice") {
     Lattice lattice(unitCell, {4, 4, 4});
     auto shapes = lattice.generateMolecules();
     SphereTraits sphereTraits(0.5);
-    CellOptimizationTransformer cellOptimizationTransformer(sphereTraits.getInteraction(), "xyz", {0.1, 0.2, 0.3});
+    CellOptimizationTransformer cellOptimizationTransformer("xyz", {0.1, 0.2, 0.3});
 
-    cellOptimizationTransformer.transform(lattice);
+    cellOptimizationTransformer.transform(lattice, sphereTraits);
 
     CHECK(lattice.isRegular());
     Matrix<3, 3> expectedMatrix{1.1, 0, 0, 0, 1.2, 0, 0, 0, 1.3};
@@ -34,9 +34,9 @@ TEST_CASE("CellOptimizationTransformer: hexagonal lattice") {
     Lattice lattice(unitCell, {4, 4, 4});
     auto shapes = lattice.generateMolecules();
     SphereTraits sphereTraits(0.5);
-    CellOptimizationTransformer cellOptimizationTransformer(sphereTraits.getInteraction(), "xyz", {0.1, 0.2, 0.3});
+    CellOptimizationTransformer cellOptimizationTransformer("xyz", {0.1, 0.2, 0.3});
 
-    cellOptimizationTransformer.transform(lattice);
+    cellOptimizationTransformer.transform(lattice, sphereTraits);
 
     CHECK(lattice.isRegular());
     Matrix<3, 3> expectedMatrix{(height + 0.1)/height, 0.5*(height + 0.2)/height,   0,

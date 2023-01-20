@@ -35,23 +35,19 @@ namespace {
         std::size_t numOfParticles{};
         std::string boxString{};
         std::string arrangementString{};
-        std::shared_ptr<ShapeTraits> shapeTraits{};
 
     public:
-        LegacyPackingFactory(size_t numOfParticles, std::string boxString, std::string arrangementString,
-                             const std::shared_ptr<ShapeTraits> &shapeTraits)
+        LegacyPackingFactory(size_t numOfParticles, std::string boxString, std::string arrangementString)
                 : numOfParticles{numOfParticles}, boxString{std::move(boxString)},
-                  arrangementString{std::move(arrangementString)}, shapeTraits{shapeTraits}
+                  arrangementString{std::move(arrangementString)}
         { }
 
-        std::unique_ptr<Packing> createPacking(std::unique_ptr<BoundaryConditions> bc,
-                                               [[maybe_unused]] const Interaction &interaction,
+        std::unique_ptr<Packing> createPacking(std::unique_ptr<BoundaryConditions> bc, const ShapeTraits &shapeTraits,
                                                std::size_t moveThreads, std::size_t scalingThreads) override
         {
             return legacy::ArrangementFactory::arrangePacking(this->numOfParticles, this->boxString,
                                                               this->arrangementString, std::move(bc),
-                                                              this->shapeTraits->getInteraction(),
-                                                              shapeTraits->getGeometry(), moveThreads, scalingThreads);
+                                                              shapeTraits, moveThreads, scalingThreads);
         }
     };
 
@@ -199,7 +195,7 @@ namespace {
         baseParams.shapeTraits = legacy::ShapeFactory::shapeTraitsFor(params.shapeName, params.shapeAttributes,
                                                                       params.interaction, params.version);
         baseParams.packingFactory = std::make_shared<LegacyPackingFactory>(
-            params.numOfParticles, params.initialDimensions, params.initialArrangement, baseParams.shapeTraits
+            params.numOfParticles, params.initialDimensions, params.initialArrangement
         );
         baseParams.seed = params.seed;
         baseParams.baseEnvironment = parse_simulation_environment(params, *baseParams.shapeTraits);
