@@ -64,15 +64,15 @@ namespace {
                   populator{std::move(populatorData.populator)}, numShapes{populatorData.numShapes}
         { }
 
-        std::unique_ptr<Packing> createPacking(std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction,
+        std::unique_ptr<Packing> createPacking(std::unique_ptr<BoundaryConditions> bc, const ShapeTraits &shapeTraits,
                                                std::size_t moveThreads, std::size_t scalingThreads) override
         {
             for (const auto &transformer : this->transformers)
-                transformer->transform(this->lattice);
+                transformer->transform(this->lattice, shapeTraits);
 
             auto shapes = this->populator->populateLattice(this->lattice, this->numShapes);
             return std::make_unique<Packing>(this->lattice.getLatticeBox(), std::move(shapes), std::move(bc),
-                                             interaction, moveThreads, scalingThreads);
+                                             shapeTraits.getInteraction(), moveThreads, scalingThreads);
         }
     };
 
@@ -106,9 +106,9 @@ namespace {
     };
 
 
-    MatcherDataclass create_manual_lattice(const ShapeTraits &traits);
-    MatcherDataclass create_automatic_lattice(const ShapeTraits &traits);
-    MatcherDataclass create_automatic_cell_dim_lattice(const ShapeTraits &traits);
+    MatcherDataclass create_manual_lattice();
+    MatcherDataclass create_automatic_lattice();
+    MatcherDataclass create_automatic_cell_dim_lattice();
 
     MatcherAlternative create_cell();
     MatcherDataclass create_sc();
@@ -119,15 +119,15 @@ namespace {
     MatcherDataclass create_custom();
 
     MatcherAlternative create_cell_dim();
-    MatcherArray create_transformations(const ShapeTraits &traits);
+    MatcherArray create_transformations();
     MatcherAlternative create_fill_partially();
     MatcherDataclass create_serial();
     MatcherDataclass create_random();
 
-    MatcherDataclass create_optimize_cell(const ShapeTraits &traits);
-    MatcherDataclass create_optimize_layers(const ShapeTraits &traits);
+    MatcherDataclass create_optimize_cell();
+    MatcherDataclass create_optimize_layers();
     MatcherDataclass create_columnar();
-    MatcherDataclass create_randomize_flip(const ShapeTraits &traits);
+    MatcherDataclass create_randomize_flip();
     MatcherDataclass create_layer_rotate();
 
     std::vector<std::shared_ptr<LatticeTransformer>> do_create_transformations(const DictionaryData &kwargs);
@@ -163,11 +163,11 @@ namespace {
         .length(3);
 
 
-    MatcherDataclass create_manual_lattice(const ShapeTraits &traits) {
+    MatcherDataclass create_manual_lattice() {
         auto kwargs = MatcherDictionary{}
             .valueAtKeyMatches("cell_dim", create_cell_dim())
             .valueAtKeyMatches("n_cells", nCells)
-            .valueAtKeyMatches("transformations", create_transformations(traits))
+            .valueAtKeyMatches("transformations", create_transformations())
             .valueAtKeyMatches("fill_partially", create_fill_partially())
             .hasOnlyKeys({"cell_dim", "n_cells", "transformations", "fill_partially"})
             .hasKeys({"cell_dim", "n_cells"});
@@ -190,11 +190,11 @@ namespace {
             });
     }
 
-    MatcherDataclass create_automatic_lattice(const ShapeTraits &traits) {
+    MatcherDataclass create_automatic_lattice() {
         auto kwargs = MatcherDictionary{}
             .valueAtKeyMatches("box_dim", create_cell_dim())
             .valueAtKeyMatches("n_shapes", MatcherInt{}.positive().mapTo<std::size_t>())
-            .valueAtKeyMatches("transformations", create_transformations(traits))
+            .valueAtKeyMatches("transformations", create_transformations())
             .hasOnlyKeys({"box_dim", "n_shapes", "transformations"})
             .hasKeys({"box_dim", "n_shapes"});
 
@@ -223,11 +223,11 @@ namespace {
             });
     }
 
-    MatcherDataclass create_automatic_cell_dim_lattice(const ShapeTraits &traits) {
+    MatcherDataclass create_automatic_cell_dim_lattice() {
         auto kwargs = MatcherDictionary{}
             .valueAtKeyMatches("n_cells", nCells)
             .valueAtKeyMatches("box_dim", create_cell_dim())
-            .valueAtKeyMatches("transformations", create_transformations(traits))
+            .valueAtKeyMatches("transformations", create_transformations())
             .valueAtKeyMatches("fill_partially", create_fill_partially())
             .hasOnlyKeys({"n_cells", "box_dim", "transformations", "fill_partially"})
             .hasKeys({"n_cells", "box_dim"});
@@ -353,11 +353,11 @@ namespace {
         return cellDimFloat | cellDimArray | cellDimBox;
     }
 
-    MatcherArray create_transformations(const ShapeTraits &traits) {
-        auto transformation = create_optimize_cell(traits)
-            | create_optimize_layers(traits)
+    MatcherArray create_transformations() {
+        auto transformation = create_optimize_cell()
+            | create_optimize_layers()
             | create_columnar()
-            | create_randomize_flip(traits)
+            | create_randomize_flip()
             | create_layer_rotate();
 
         return MatcherArray{}
@@ -396,25 +396,25 @@ namespace {
             });
     }
 
-    MatcherDataclass create_optimize_cell(const ShapeTraits &traits) {
+    MatcherDataclass create_optimize_cell() {
         return MatcherDataclass("optimize_cell")
             .arguments({{"spacing", MatcherFloat{}.positive()},
                         {"axis_order", axisOrder, R"("xyz")"}})
-            .mapTo([&traits](const DataclassData &optimizeCell) -> std::shared_ptr<LatticeTransformer> {
+            .mapTo([](const DataclassData &optimizeCell) -> std::shared_ptr<LatticeTransformer> {
                 auto spacing = optimizeCell["spacing"].as<double>();
                 auto axisOrder = optimizeCell["axis_order"].as<std::string>();
-                return std::make_shared<CellOptimizationTransformer>(traits.getInteraction(), axisOrder, spacing);
+                return std::make_shared<CellOptimizationTransformer>(axisOrder, spacing);
             });
     }
 
-    MatcherDataclass create_optimize_layers(const ShapeTraits &traits) {
+    MatcherDataclass create_optimize_layers() {
         return MatcherDataclass("optimize_layers")
             .arguments({{"spacing", MatcherFloat{}.positive()},
                         {"axis", axis}})
-            .mapTo([&traits](const DataclassData &optimizeLayers) -> std::shared_ptr<LatticeTransformer> {
+            .mapTo([](const DataclassData &optimizeLayers) -> std::shared_ptr<LatticeTransformer> {
                 auto spacing = optimizeLayers["spacing"].as<double>();
                 auto axis = optimizeLayers["axis"].as<LatticeTraits::Axis>();
-                return std::make_shared<LayerWiseCellOptimizationTransformer>(traits.getInteraction(), axis, spacing);
+                return std::make_shared<LayerWiseCellOptimizationTransformer>(axis, spacing);
             });
     }
 
@@ -429,12 +429,12 @@ namespace {
             });
     }
 
-    MatcherDataclass create_randomize_flip(const ShapeTraits &traits) {
+    MatcherDataclass create_randomize_flip() {
         return MatcherDataclass("randomize_flip")
             .arguments({{"seed", MatcherInt{}.mapTo<unsigned long>()}})
-            .mapTo([&traits](const DataclassData &randomizeFlip) -> std::shared_ptr<LatticeTransformer> {
+            .mapTo([](const DataclassData &randomizeFlip) -> std::shared_ptr<LatticeTransformer> {
                 auto seed = randomizeFlip["seed"].as<unsigned long>();
-                return std::make_shared<FlipRandomizingTransformer>(traits.getGeometry(), seed);
+                return std::make_shared<FlipRandomizingTransformer>(seed);
             });
     }
 
@@ -469,6 +469,6 @@ namespace {
 }
 
 
-MatcherAlternative LatticeMatcher::create(const ShapeTraits &traits) {
-    return create_manual_lattice(traits) | create_automatic_lattice(traits) | create_automatic_cell_dim_lattice(traits);
+MatcherAlternative LatticeMatcher::create() {
+    return create_manual_lattice() | create_automatic_lattice() | create_automatic_cell_dim_lattice();
 }

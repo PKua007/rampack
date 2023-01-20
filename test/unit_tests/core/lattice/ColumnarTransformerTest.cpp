@@ -4,6 +4,8 @@
 
 #include <catch2/catch.hpp>
 
+#include "mocks/MockShapeTraits.h"
+
 #include "core/lattice/ColumnarTransformer.h"
 
 
@@ -11,8 +13,9 @@ TEST_CASE("ColumnarTransformer") {
     Lattice lattice(UnitCell(TriclinicBox(1), {Shape({0, 0.5, 0.25}), Shape({0, 0.5, 0.75}), Shape({0.5, 0.5, 0.25})}),
                     {2, 2, 2});
     ColumnarTransformer transformer(LatticeTraits::Axis::Z, 123456);
+    MockShapeTraits traits;
 
-    transformer.transform(lattice);
+    transformer.transform(lattice, traits);
 
     CHECK_FALSE(lattice.isRegular());
     const auto &cell000 = lattice.getSpecificCell(0, 0, 0);

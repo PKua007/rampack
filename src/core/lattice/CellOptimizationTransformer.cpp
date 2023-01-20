@@ -2,7 +2,6 @@
 // Created by pkua on 20.05.22.
 //
 
-#include <algorithm>
 #include <numeric>
 
 #include "CellOptimizationTransformer.h"
@@ -13,14 +12,17 @@
 #include "LatticeTraits.h"
 
 
-void CellOptimizationTransformer::transform(Lattice &lattice) const {
+void CellOptimizationTransformer::transform(Lattice &lattice, const ShapeTraits &shapeTraits) const {
+    const auto &interaction = shapeTraits.getInteraction();
+
+    Expects(interaction.hasHardPart());
     Expects(lattice.isNormalized());
 
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    Packing testPacking(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), this->interaction);
+    Packing testPacking(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), interaction);
 
     auto oldBox = testPacking.getBox();
-    DistanceOptimizer::shrinkPacking(testPacking, this->interaction, this->axisOrderString);
+    DistanceOptimizer::shrinkPacking(testPacking, interaction, this->axisOrderString);
     auto newBox = testPacking.getBox();
 
     const auto &newHeights = newBox.getHeights();
@@ -38,13 +40,10 @@ void CellOptimizationTransformer::transform(Lattice &lattice) const {
     lattice.modifyCellBox().transform(cellTransform);
 }
 
-CellOptimizationTransformer::CellOptimizationTransformer(const Interaction &interaction,
-                                                         const std::string &axisOrderString,
+CellOptimizationTransformer::CellOptimizationTransformer(const std::string &axisOrderString,
                                                          const std::array<double, 3> &spacings)
-        : interaction{interaction}, axisOrderString{axisOrderString}, spacings{spacings}
+        : axisOrderString{axisOrderString}, spacings{spacings}
 {
     // Validate axis order string - it will throw if incorrect
     static_cast<void>(LatticeTraits::parseAxisOrder(axisOrderString));
-
-    Expects(interaction.hasHardPart());
 }

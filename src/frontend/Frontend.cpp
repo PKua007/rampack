@@ -1595,7 +1595,7 @@ std::unique_ptr<Packing> Frontend::recreatePacking(PackingLoader &loader, const 
     } else {
         // Same number of scaling and domain threads
         auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-        packing = params.packingFactory->createPacking(std::move(pbc), traits.getInteraction(), maxThreads, maxThreads);
+        packing = params.packingFactory->createPacking(std::move(pbc), traits, maxThreads, maxThreads);
     }
 
     this->createWalls(*packing, params.walls);
@@ -1716,8 +1716,7 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles, co
 
     if (paramsVersion < INPUT_REVAMP_VERSION) {
         return legacy::ArrangementFactory::arrangePacking(numOfParticles, initialDimensions, initialArrangement,
-                                                          std::move(bc), shapeTraits.getInteraction(),
-                                                          shapeTraits.getGeometry(), moveThreads, scalingThreads);
+                                                          std::move(bc), shapeTraits, moveThreads, scalingThreads);
     }
 
     using namespace pyon;
@@ -1725,13 +1724,13 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles, co
 
     Any packingFactory;
     auto shapeAST = Parser::parse(initialArrangement);
-    auto matcher = ArrangementMatcher::create(shapeTraits);
+    auto matcher = ArrangementMatcher::create();
     auto matchReport = matcher.match(shapeAST, packingFactory);
     if (!matchReport)
         throw ValidationException(matchReport.getReason());
 
     return packingFactory.as<std::shared_ptr<PackingFactory>>()->createPacking(
-        std::move(bc), shapeTraits.getInteraction(), moveThreads, scalingThreads
+        std::move(bc), shapeTraits, moveThreads, scalingThreads
     );
 }
 

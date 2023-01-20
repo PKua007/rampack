@@ -8,7 +8,7 @@
 #include "utils/Assertions.h"
 
 
-void LayerWiseTransformer::transform(Lattice &lattice) const {
+void LayerWiseTransformer::transform(Lattice &lattice, [[maybe_unused]] const ShapeTraits &shapeTraits) const {
     Expects(lattice.isRegular());
     Expects(lattice.isNormalized());
 

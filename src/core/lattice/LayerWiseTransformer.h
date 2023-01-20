@@ -7,6 +7,7 @@
 
 #include "LatticeTransformer.h"
 #include "LatticeTraits.h"
+#include "core/ShapeTraits.h"
 
 
 /**
@@ -17,7 +18,6 @@
  */
 class LayerWiseTransformer : public LatticeTransformer {
 private:
-
     LatticeTraits::Axis axis;
 
     static std::size_t LCM(std::size_t n1, std::size_t n2);
@@ -56,7 +56,7 @@ public:
      * @param lattice lattice to be transformed. Is has to be both regular and normalized. The resulting lattice remains
      * regular, but may no longer be normalized if transformShape() places the shape outside of a unit cell
      */
-    void transform(Lattice &lattice) const final;
+    void transform(Lattice &lattice, const ShapeTraits &shapeTraits) const final;
 };
 
 

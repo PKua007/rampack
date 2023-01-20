@@ -19,16 +19,14 @@
  */
 class FlipRandomizingTransformer : public LatticeTransformer {
 private:
-    const ShapeGeometry &geometry;
     mutable std::default_random_engine rng;
 
 public:
     /**
      * @brief Construct the object.
-     * @param geometry shape geometry to fetch geometric data needed to do the flips
      * @param seed seed of the RNG to sample flips
      */
-    FlipRandomizingTransformer(const ShapeGeometry &geometry, unsigned long seed) : geometry{geometry}, rng(seed) { }
+    explicit FlipRandomizingTransformer(unsigned long seed) : rng(seed) { }
 
     /**
      * @brief Performs flips.
@@ -37,7 +35,7 @@ public:
      * transformations, it will be renormalized afterwards (as rotation around the geometric origin may require applying
      * a translation, some particles may end up outside their cells).
      */
-    void transform(Lattice &lattice) const override;
+    void transform(Lattice &lattice, const ShapeTraits &shapeTraits) const override;
 };
 
 

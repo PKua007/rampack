@@ -7,7 +7,7 @@
 #include "matchers/MatrixApproxMatcher.h"
 #include "matchers/VectorApproxMatcher.h"
 
-#include "mocks/MockShapeGeometry.h"
+#include "mocks/MockShapeTraits.h"
 
 #include "core/lattice/FlipRandomizingTransformer.h"
 
@@ -16,12 +16,12 @@ TEST_CASE("FlipRandomizingTransformer") {
     using trompeloeil::_;
 
     Lattice lattice(UnitCell(TriclinicBox(4), {Shape({0.5, 0.5, 0.5})}), {4, 4, 4});
-    MockShapeGeometry geometry;
-    ALLOW_CALL(geometry, getSecondaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{0, 0, 1});
-    ALLOW_CALL(geometry, getGeometricOrigin(_)).RETURN(_1.getOrientation() * Vector<3>{0.1, 0.1, 0.1});
-    FlipRandomizingTransformer flipRandomizingTransformer(geometry, 1234);
+    MockShapeTraits traits;
+    ALLOW_CALL(traits, getSecondaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{0, 0, 1});
+    ALLOW_CALL(traits, getGeometricOrigin(_)).RETURN(_1.getOrientation() * Vector<3>{0.1, 0.1, 0.1});
+    FlipRandomizingTransformer flipRandomizingTransformer(1234);
 
-    flipRandomizingTransformer.transform(lattice);
+    flipRandomizingTransformer.transform(lattice, traits);
 
     const auto &dim = lattice.getDimensions();
     for (std::size_t i{}; i < dim[0]; i++) {

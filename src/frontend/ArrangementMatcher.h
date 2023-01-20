@@ -7,12 +7,11 @@
 
 #include "pyon/Matcher.h"
 #include "core/Packing.h"
-#include "core/ShapeTraits.h"
 
 
 class ArrangementMatcher {
 public:
-    static pyon::matcher::MatcherAlternative create(const ShapeTraits &traits);
+    static pyon::matcher::MatcherAlternative create();
 };
 
 

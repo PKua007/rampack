@@ -5,6 +5,7 @@
 #include <catch2/catch.hpp>
 
 #include "matchers/MatrixApproxMatcher.h"
+#include "mocks/MockShapeTraits.h"
 
 #include "core/lattice/LayerRotationTransformer.h"
 
@@ -13,8 +14,9 @@ TEST_CASE("LayerRotationTransformer: alternating") {
     Lattice lattice(UnitCell(TriclinicBox(1), {Shape({0, 0.5, 0.25}), Shape({0.5, 0.5, 0.25}), Shape({0, 0.5, 0.75})}),
                     {2, 2, 2});
     LayerRotationTransformer layerRotationTransformer(LatticeTraits::Axis::Z, LatticeTraits::Axis::X, M_PI/2, true);
+    MockShapeTraits shapeTraits;
 
-    layerRotationTransformer.transform(lattice);
+    layerRotationTransformer.transform(lattice, shapeTraits);
 
     const auto &molecules = lattice.getSpecificCell(0, 0, 0).getMolecules();
     CHECK(molecules[0].getPosition() == Vector<3>{0, 0.5, 0.25});
@@ -29,8 +31,9 @@ TEST_CASE("LayerRotationTransformer: non-alternating") {
     Lattice lattice(UnitCell(TriclinicBox(1), {Shape({0, 0.5, 0.25}), Shape({0.5, 0.5, 0.25}), Shape({0, 0.5, 0.75})}),
                     {2, 2, 2});
     LayerRotationTransformer layerRotationTransformer(LatticeTraits::Axis::Z, LatticeTraits::Axis::X, M_PI/2, false);
+    MockShapeTraits shapeTraits;
 
-    layerRotationTransformer.transform(lattice);
+    layerRotationTransformer.transform(lattice, shapeTraits);
 
     const auto &molecules = lattice.getSpecificCell(0, 0, 0).getMolecules();
     CHECK(molecules[0].getPosition() == Vector<3>{0, 0.5, 0.25});
