@@ -42,11 +42,9 @@ private:
                                             const Version &paramsVersion) const;
     void overwriteMoveStepSizes(Simulation::Environment &env,
                                 const std::map<std::string, std::string> &packingAuxInfo) const;
-    Simulation::Environment recreateEnvironment(const Parameters &params, const PackingLoader &loader,
-                                                const ShapeTraits &traits) const;
+    Simulation::Environment recreateEnvironment(const Parameters &params, const PackingLoader &loader) const;
     Simulation::Environment recreateEnvironment(const RampackParameters &params, const PackingLoader &loader) const;
-    Simulation::Environment recreateRawEnvironment(const Parameters &params, std::size_t startRunIndex,
-                                                   const ShapeTraits &traits) const;
+    Simulation::Environment recreateRawEnvironment(const Parameters &params, std::size_t startRunIndex) const;
 
     void setVerbosityLevel(std::optional<std::string> verbosity, std::optional<std::string> auxOutput,
                            std::optional<std::string> auxVerbosity);
@@ -99,9 +97,9 @@ private:
     static std::string formatMoveKey(const std::string &groupName, const std::string &moveName);
     static bool isStepSizeKey(const std::string &key);
     static Simulation::Environment parseSimulationEnvironment(const InheritableParameters &params,
-                                                              const ShapeTraits &traits, const Version &paramsVersion);
+                                                               const Version &paramsVersion);
     static void combineEnvironment(Simulation::Environment &env, const Parameters::RunParameters &runParams,
-                                   const ShapeTraits &traits, const Version &paramsVersion);
+                                   const Version &paramsVersion);
     static void combineEnvironment(Simulation::Environment &env, const Run &run);
 
     [[nodiscard]] std::shared_ptr<ShapeTraits> createShapeTraits(const std::string &shapeName,
@@ -114,7 +112,6 @@ private:
                                std::size_t maxThreads, const Version &paramsVersion) const;
 
     static std::vector<std::shared_ptr<MoveSampler>> createMoveSamplers(const std::string &moveTypes,
-                                                                        const ShapeTraits &traits,
                                                                         const Version &paramsVersion);
 
     static std::shared_ptr<TriclinicBoxScaler> createBoxScaler(const std::string &scalerStr, double volumeStepSize,

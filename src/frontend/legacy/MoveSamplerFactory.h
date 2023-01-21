@@ -14,7 +14,7 @@
 namespace legacy {
     class MoveSamplerFactory {
     public:
-        static std::unique_ptr<MoveSampler> create(const std::string &moveSamplerString, const ShapeTraits &traits);
+        static std::unique_ptr<MoveSampler> create(const std::string &moveSamplerString);
     };
 }
 
