@@ -5,7 +5,10 @@
 #ifndef RAMPACK_ROTOTRANSLATIONSAMPLER_H
 #define RAMPACK_ROTOTRANSLATIONSAMPLER_H
 
+#include <optional>
+
 #include "core/MoveSampler.h"
+
 
 /**
  * @brief MoveSampler performing translational and rotation move at the same time.
@@ -16,17 +19,17 @@
 class RototranslationSampler : public MoveSampler {
 private:
     double translationStepSize{};
-    double rotationStepSize{};
+    std::optional<double> rotationStepSize{};
     double maxTranslationStepSize{};
 
-public:
-    RototranslationSampler(double translationStepSize, double rotationStepSize, double maxTranslationStepSize = 0);
+    void calculateRotationStepSizeIfNeeded(const Interaction &interaction);
 
-    /**
-     * @brief Creates the sampler, where translation step size is given explicitly and rotation step size is calculated
-     * using heuristically found formula.
+public:
+   /**
+     * @brief Creates the sampler. If @a std::nullopt is passed to @a rotationStepSize, it is calculated using
+     * heuristically found formula.
      */
-    RototranslationSampler(const Interaction &interaction, double translationStepSize,
+    RototranslationSampler(double translationStepSize, std::optional<double> rotationStepSize,
                            double maxTranslationStepSize = 0);
 
     [[nodiscard]] std::string getName() const override { return "rototranslation"; }

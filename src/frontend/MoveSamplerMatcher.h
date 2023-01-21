@@ -11,7 +11,7 @@
 
 class MoveSamplerMatcher {
 public:
-    static pyon::matcher::MatcherAlternative create(const ShapeTraits &traits);
+    static pyon::matcher::MatcherAlternative create();
 };
 
 

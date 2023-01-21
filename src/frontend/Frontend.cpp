@@ -270,10 +270,10 @@ int Frontend::casino(int argc, char **argv) {
 }
 
 void Frontend::combineEnvironment(Simulation::Environment &env, const Parameters::RunParameters &runParams,
-                                  const ShapeTraits &traits, const Version &paramsVersion)
+                                  const Version &paramsVersion)
 {
-    auto environmentCreator = [&traits, &paramsVersion](const auto &runParams) {
-        return parseSimulationEnvironment(runParams, traits, paramsVersion);
+    auto environmentCreator = [&paramsVersion](const auto &runParams) {
+        return parseSimulationEnvironment(runParams, paramsVersion);
     };
     auto runEnv = std::visit(environmentCreator, runParams);
     env.combine(runEnv);
@@ -1066,7 +1066,7 @@ int Frontend::trajectory(int argc, char **argv) {
         die("RAMTRJ trajectory was not recorded for the run '" + foundRunName + "'", this->logger);
 
     // Recreate environment
-    auto environment = this->recreateRawEnvironment(params, startRunIndex, *shapeTraits);
+    auto environment = this->recreateRawEnvironment(params, startRunIndex);
 
     // Autofix trajectory if desired
     bool autoFix = parsedOptions.count("auto-fix");
@@ -1465,7 +1465,7 @@ void Frontend::attachSnapshotOut(ObservablesCollector &collector, const std::str
 }
 
 Simulation::Environment Frontend::parseSimulationEnvironment(const InheritableParameters &params,
-                                                             const ShapeTraits &traits, const Version &paramsVersion)
+                                                             const Version &paramsVersion)
 {
     Simulation::Environment env;
 
@@ -1480,7 +1480,7 @@ Simulation::Environment Frontend::parseSimulationEnvironment(const InheritablePa
     }
 
     if (!params.moveTypes.empty())
-        env.setMoveSamplers(Frontend::createMoveSamplers(params.moveTypes, traits, paramsVersion));
+        env.setMoveSamplers(Frontend::createMoveSamplers(params.moveTypes, paramsVersion));
 
     if (!params.temperature.empty())
         env.setTemperature(Frontend::createDynamicParameter(params.temperature, paramsVersion));
@@ -1491,11 +1491,9 @@ Simulation::Environment Frontend::parseSimulationEnvironment(const InheritablePa
     return env;
 }
 
-Simulation::Environment Frontend::recreateEnvironment(const Parameters &params, const PackingLoader &loader,
-                                                      const ShapeTraits &traits) const
-{
+Simulation::Environment Frontend::recreateEnvironment(const Parameters &params, const PackingLoader &loader) const {
     // Parse initial environment (from the global section)
-    auto env = Frontend::parseSimulationEnvironment(params, traits, params.version);
+    auto env = Frontend::parseSimulationEnvironment(params, params.version);
 
     std::size_t startRunIndex = loader.getStartRunIndex();
     if (loader.isContinuation()) {
@@ -1504,17 +1502,17 @@ Simulation::Environment Frontend::recreateEnvironment(const Parameters &params, 
         // step sizes that were before
         Assert(loader.isRestored());
         for (std::size_t i{}; i <= startRunIndex; i++)
-            Frontend::combineEnvironment(env, params.runsParameters[i], traits, params.version);
+            Frontend::combineEnvironment(env, params.runsParameters[i], params.version);
         this->overwriteMoveStepSizes(env, loader.getAuxInfo());
     } else {
         // If it is not a continuation, we replay environments of the runs BEFORE the starting point, then overwrite
         // step sizes (because this is where the last simulation ended) and AFTER it, we apply the new environment from
         // the starting run
         for (std::size_t i{}; i < startRunIndex; i++)
-            Frontend::combineEnvironment(env, params.runsParameters[i], traits, params.version);
+            Frontend::combineEnvironment(env, params.runsParameters[i], params.version);
         if (loader.isRestored())
             this->overwriteMoveStepSizes(env, loader.getAuxInfo());
-        Frontend::combineEnvironment(env, params.runsParameters[startRunIndex], traits, params.version);
+        Frontend::combineEnvironment(env, params.runsParameters[startRunIndex], params.version);
     }
 
     ValidateMsg(env.isComplete(), "Some of parameters: pressure, temperature, moveTypes, scalingType are missing");
@@ -1553,13 +1551,11 @@ Simulation::Environment Frontend::recreateEnvironment(const RampackParameters &p
     return env;
 }
 
-Simulation::Environment Frontend::recreateRawEnvironment(const Parameters &params, std::size_t startRunIndex,
-                                                         const ShapeTraits &traits) const
-{
+Simulation::Environment Frontend::recreateRawEnvironment(const Parameters &params, std::size_t startRunIndex) const {
     Expects(startRunIndex < params.runsParameters.size());
-    auto env = Frontend::parseSimulationEnvironment(params, traits, params.version);
+    auto env = Frontend::parseSimulationEnvironment(params, params.version);
     for (std::size_t i{}; i <= startRunIndex; i++)
-        Frontend::combineEnvironment(env, params.runsParameters[i], traits, params.version);
+        Frontend::combineEnvironment(env, params.runsParameters[i], params.version);
     return env;
 }
 
@@ -1735,7 +1731,6 @@ std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles, co
 }
 
 std::vector<std::shared_ptr<MoveSampler>> Frontend::createMoveSamplers(const std::string &moveTypes,
-                                                                       const ShapeTraits &traits,
                                                                        const Version &paramsVersion)
 {
     if (paramsVersion < INPUT_REVAMP_VERSION) {
@@ -1743,14 +1738,14 @@ std::vector<std::shared_ptr<MoveSampler>> Frontend::createMoveSamplers(const std
         std::vector<std::shared_ptr<MoveSampler>> moveSamplers;
         moveSamplers.reserve(moveSamplerStrings.size());
         for (const auto &moveSamplerString: moveSamplerStrings)
-            moveSamplers.push_back(legacy::MoveSamplerFactory::create(moveSamplerString, traits));
+            moveSamplers.push_back(legacy::MoveSamplerFactory::create(moveSamplerString));
         return moveSamplers;
     }
 
     using namespace pyon;
     using namespace pyon::matcher;
 
-    auto sampler = MoveSamplerMatcher::create(traits);
+    auto sampler = MoveSamplerMatcher::create();
     auto samplerArray = pyon::matcher::MatcherArray{}
         .elementsMatch(sampler)
         .nonEmpty()

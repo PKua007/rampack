@@ -14,8 +14,7 @@
 
 
 namespace legacy {
-    std::unique_ptr<MoveSampler> MoveSamplerFactory::create(const std::string &moveSamplerString,
-                                                            const ShapeTraits &traits) {
+    std::unique_ptr<MoveSampler> MoveSamplerFactory::create(const std::string &moveSamplerString) {
         std::istringstream moveSamplerStream(moveSamplerString);
         std::string moveName;
         moveSamplerStream >> moveName;
@@ -27,7 +26,7 @@ namespace legacy {
             ValidateMsg(moveSamplerStream, "Malformed move sampler");
             Validate(translationStep > 0);
             if (!ParseUtils::isAnythingLeft(moveSamplerStream))
-                return std::make_unique<RototranslationSampler>(traits.getInteraction(), translationStep);
+                return std::make_unique<RototranslationSampler>(translationStep, std::nullopt);
 
             double rotationStep{};
             moveSamplerStream >> rotationStep;

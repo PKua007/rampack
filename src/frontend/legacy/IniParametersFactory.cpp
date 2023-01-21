@@ -107,18 +107,17 @@ namespace {
     };
 
 
-    std::vector<std::shared_ptr<MoveSampler>> create_move_samplers(const std::string &moveTypes,
-                                                                   const ShapeTraits &traits)
+    std::vector<std::shared_ptr<MoveSampler>> create_move_samplers(const std::string &moveTypes)
     {
         auto moveSamplerStrings = explode(moveTypes, ',');
         std::vector<std::shared_ptr<MoveSampler>> moveSamplers;
         moveSamplers.reserve(moveSamplerStrings.size());
         for (const auto &moveSamplerString: moveSamplerStrings)
-            moveSamplers.push_back(legacy::MoveSamplerFactory::create(moveSamplerString, traits));
+            moveSamplers.push_back(legacy::MoveSamplerFactory::create(moveSamplerString));
         return moveSamplers;
     }
 
-    Simulation::Environment parse_simulation_environment(const InheritableParameters &params, const ShapeTraits &traits)
+    Simulation::Environment parse_simulation_environment(const InheritableParameters &params)
     {
         Simulation::Environment env;
 
@@ -133,7 +132,7 @@ namespace {
         }
 
         if (!params.moveTypes.empty())
-            env.setMoveSamplers(create_move_samplers(params.moveTypes, traits));
+            env.setMoveSamplers(create_move_samplers(params.moveTypes));
 
         if (!params.temperature.empty())
             env.setTemperature(legacy::ParameterUpdaterFactory::create(params.temperature));
@@ -198,7 +197,7 @@ namespace {
             params.numOfParticles, params.initialDimensions, params.initialArrangement
         );
         baseParams.seed = params.seed;
-        baseParams.baseEnvironment = parse_simulation_environment(params, *baseParams.shapeTraits);
+        baseParams.baseEnvironment = parse_simulation_environment(params);
         baseParams.walls = parse_walls(params.walls);
         baseParams.scalingThreads = parse_scaling_threads(params.scalingThreads);
         baseParams.domainDivisions = parse_domain_divisions(params.domainDivisions);
@@ -270,7 +269,7 @@ namespace {
     {
         IntegrationRun run;
         run.runName = integrationParams.runName;
-        run.environment = parse_simulation_environment(integrationParams, *baseParams.shapeTraits);
+        run.environment = parse_simulation_environment(integrationParams);
         run.thermalizationCycles = integrationParams.thermalisationCycles;
         run.averagingCycles = integrationParams.averagingCycles;
         run.snapshotEvery = integrationParams.snapshotEvery;
@@ -307,7 +306,7 @@ namespace {
         OverlapRelaxationRun run;
 
         run.runName = overlapRelaxationParams.runName;
-        run.environment = parse_simulation_environment(overlapRelaxationParams, *baseParams.shapeTraits);
+        run.environment = parse_simulation_environment(overlapRelaxationParams);
         run.snapshotEvery = overlapRelaxationParams.snapshotEvery;
         run.inlineInfoEvery = overlapRelaxationParams.inlineInfoEvery;
         run.orientationFixEvery = overlapRelaxationParams.orientationFixEvery;

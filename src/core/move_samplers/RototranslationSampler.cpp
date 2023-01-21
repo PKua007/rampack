@@ -6,7 +6,7 @@
 #include "utils/Assertions.h"
 
 
-RototranslationSampler::RototranslationSampler(double translationStepSize, double rotationStepSize,
+RototranslationSampler::RototranslationSampler(double translationStepSize, std::optional<double> rotationStepSize,
                                                double maxTranslationStepSize)
         : translationStepSize{translationStepSize}, rotationStepSize{rotationStepSize},
           maxTranslationStepSize{maxTranslationStepSize}
@@ -15,11 +15,12 @@ RototranslationSampler::RototranslationSampler(double translationStepSize, doubl
     if (maxTranslationStepSize > 0)
         Expects(translationStepSize <= maxTranslationStepSize);
     Expects(translationStepSize > 0);
-    Expects(rotationStepSize > 0);
+    if (rotationStepSize.has_value())
+        Expects(rotationStepSize > 0);
 }
 
 MoveSampler::MoveData RototranslationSampler::sampleMove([[maybe_unused]] const Packing &packing,
-                                                         [[maybe_unused]] const ShapeTraits &shapeTraits,
+                                                         const ShapeTraits &shapeTraits,
                                                          const std::vector<std::size_t> &particleIdxs, std::mt19937 &mt)
 {
     using URD = std::uniform_real_distribution<double>;
@@ -30,7 +31,8 @@ MoveSampler::MoveData RototranslationSampler::sampleMove([[maybe_unused]] const 
     URD translationDistribution(-this->translationStepSize, this->translationStepSize);
     moveData.translation = {translationDistribution(mt), translationDistribution(mt), translationDistribution(mt)};
 
-    double rotationStepSize_ = std::min(this->rotationStepSize, M_PI);
+    this->calculateRotationStepSizeIfNeeded(shapeTraits.getInteraction());
+    double rotationStepSize_ = std::min(*this->rotationStepSize, M_PI);
     URD rotationAngleDistribution(-rotationStepSize_, rotationStepSize_);
     URD plusMinusOneDistribution(-1, 1);
     Vector<3> axis;
@@ -52,19 +54,19 @@ bool RototranslationSampler::increaseStepSize() {
     if (this->maxTranslationStepSize > 0 && this->translationStepSize > this->maxTranslationStepSize)
         this->translationStepSize = this->maxTranslationStepSize;
 
-    this->rotationStepSize *= this->translationStepSize/oldTranslationStepSize;
+    *this->rotationStepSize *= this->translationStepSize/oldTranslationStepSize;
 
     return this->translationStepSize != oldTranslationStepSize;
 }
 
 bool RototranslationSampler::decreaseStepSize() {
     this->translationStepSize /= 1.1;
-    this->rotationStepSize /= 1.1;
+    *this->rotationStepSize /= 1.1;
     return true;
 }
 
 std::vector<std::pair<std::string, double>> RototranslationSampler::getStepSizes() const {
-    return {{"translation", this->translationStepSize}, {"rotation", this->rotationStepSize}};
+    return {{"translation", this->translationStepSize}, {"rotation", *this->rotationStepSize}};
 }
 
 void RototranslationSampler::setStepSize(const std::string &stepName, double stepSize) {
@@ -77,15 +79,10 @@ void RototranslationSampler::setStepSize(const std::string &stepName, double ste
         throw PreconditionException("Unknown step name: " + stepName);
 }
 
-RototranslationSampler::RototranslationSampler(const Interaction &interaction, double translationStepSize,
-                                               double maxTranslationStepSize)
-        : translationStepSize{translationStepSize},
-          maxTranslationStepSize{maxTranslationStepSize}
-{
-    Expects(maxTranslationStepSize >= 0);
-    if (maxTranslationStepSize > 0)
-        Expects(translationStepSize <= maxTranslationStepSize);
-    Expects(translationStepSize > 0);
+void RototranslationSampler::calculateRotationStepSizeIfNeeded(const Interaction &interaction) {
+    if (this->rotationStepSize.has_value())
+        return;
+
     Expects(interaction.getTotalRangeRadius() > 0);
     Expects(interaction.getTotalRangeRadius() < std::numeric_limits<double>::infinity());
 
@@ -97,7 +94,8 @@ RototranslationSampler::RototranslationSampler(const Interaction &interaction, d
     // translational and rotational moves were separate and both step sizes were optimized individually. We then
     // fit the best quadratic function to rotationStepSize(translationStepSize/totalRangeRadius) dependence.
 
-    double ratio = translationStepSize / interaction.getTotalRangeRadius();
+    double ratio = this->translationStepSize / interaction.getTotalRangeRadius();
     this->rotationStepSize = 0.133183 - 1.18634*ratio + 264.37*ratio*ratio;
     Assert(this->rotationStepSize > 0);
 }
+

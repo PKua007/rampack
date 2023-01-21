@@ -13,13 +13,13 @@ using namespace pyon::matcher;
 
 
 namespace {
-    MatcherDataclass create_rototranslation(const ShapeTraits &traits);
+    MatcherDataclass create_rototranslation();
     MatcherDataclass create_translation();
     MatcherDataclass create_rotation();
     MatcherDataclass create_flip();
 
 
-    MatcherDataclass create_rototranslation(const ShapeTraits &traits) {
+    MatcherDataclass create_rototranslation() {
         auto rotStepFloat = MatcherFloat{}.positive().mapTo([](double step) -> std::optional<double> { return step; });
         auto rotStepAuto = MatcherString("auto")
             .mapTo([](const std::string&) -> std::optional<double> { return std::nullopt; });
@@ -41,15 +41,11 @@ namespace {
                 return transStep <= maxTransStep;
             })
             .describe("if max_trans_step is specified, it has to be >= trans_step")
-            .mapTo([&traits](const DataclassData &rototranslation) -> std::shared_ptr<MoveSampler> {
+            .mapTo([](const DataclassData &rototranslation) -> std::shared_ptr<MoveSampler> {
                 auto transStep = rototranslation["trans_step"].as<double>();
                 auto rotStep = rototranslation["rot_step"].as<std::optional<double>>();
                 auto maxTransStep = rototranslation["max_trans_step"].as<double>();
-
-                if (rotStep.has_value())
-                    return std::make_shared<RototranslationSampler>(transStep, *rotStep, maxTransStep);
-                else
-                    return std::make_shared<RototranslationSampler>(traits.getInteraction(), transStep, maxTransStep);
+                return std::make_shared<RototranslationSampler>(transStep, rotStep, maxTransStep);
             });
     }
 
@@ -96,6 +92,6 @@ namespace {
 }
 
 
-MatcherAlternative MoveSamplerMatcher::create(const ShapeTraits &traits) {
-    return create_rototranslation(traits) | create_translation() | create_rotation() | create_flip();
+MatcherAlternative MoveSamplerMatcher::create() {
+    return create_rototranslation() | create_translation() | create_rotation() | create_flip();
 }
