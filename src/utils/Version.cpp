@@ -32,7 +32,12 @@ std::size_t Version::parseToken(std::string token) {
     trim(token);
     Expects(!token.empty());
     std::size_t idx;
-    std::size_t n = std::stoul(token, &idx);
+    std::size_t n;
+    try {
+        n = std::stoul(token, &idx);
+    } catch (const std::invalid_argument &) {
+        throw PreconditionException("Malformed version token");
+    }
     Expects(idx == token.length());
     return n;
 }

@@ -55,19 +55,19 @@ namespace {
         auto maxTransStep = maxTransStepFloat | maxTransStepNone;
 
         return MatcherDataclass("translation")
-            .arguments({{"trans_step", MatcherFloat{}.positive()},
-                        {"max_trans_step", maxTransStep, "None"}})
+            .arguments({{"step", MatcherFloat{}.positive()},
+                        {"max_step", maxTransStep, "None"}})
             .filter([](const DataclassData &rototranslation) {
-                auto transStep = rototranslation["trans_step"].as<double>();
-                auto maxTransStep = rototranslation["max_trans_step"].as<double>();
+                auto transStep = rototranslation["step"].as<double>();
+                auto maxTransStep = rototranslation["max_step"].as<double>();
                 if (maxTransStep == 0)
                     return true;
                 return transStep <= maxTransStep;
             })
             .describe("if max_trans_step is specified, it has to be >= trans_step")
             .mapTo([](const DataclassData &translation) -> std::shared_ptr<MoveSampler> {
-                auto transStep = translation["trans_step"].as<double>();
-                auto maxTransStep = translation["max_trans_step"].as<double>();
+                auto transStep = translation["step"].as<double>();
+                auto maxTransStep = translation["max_step"].as<double>();
                 return std::make_shared<TranslationSampler>(transStep, maxTransStep);
             });
     }
