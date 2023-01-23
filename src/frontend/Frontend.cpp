@@ -1800,11 +1800,31 @@ RampackParameters Frontend::dispatchParams(const std::string &filename) {
     std::ifstream file(filename);
     ValidateOpenedDesc(file, filename, "to load the simulation script");
 
+    std::string firstLine;
+    std::getline(file, firstLine);
+    trim(firstLine);
+    file.seekg(0, std::ios::beg);
+
+    if (startsWith(firstLine, "rampack")) {
+        this->logger.info() << "Parameters format in '" << filename << "' recognized as: PYON" << std::endl;
+        return this->parsePyon(file);
+    } else {
+        this->logger.info() << "Parameters format in '" << filename << "' recognized as: INI" << std::endl;
+        return this->parseIni(file);
+    }
+}
+
+RampackParameters Frontend::parseIni(std::istream &in) {
+    Parameters params(in);
+    return IniParametersFactory::create(params);
+}
+
+RampackParameters Frontend::parsePyon(std::istream &in) {
     using namespace pyon;
     using namespace pyon::matcher;
 
     auto rampackMatcher = RampackMatcher::create();
-    auto paramsAST = Parser::parse(file);
+    auto paramsAST = Parser::parse(in);
     Any params;
     auto matchReport = rampackMatcher.match(paramsAST, params);
     if (!matchReport)
