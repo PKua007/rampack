@@ -32,6 +32,8 @@ public:
 
     void generateSnapshot(const Packing &packing, const ShapeTraits &traits, std::size_t cycles, Logger &logger) const;
     void storeSnapshot(const Simulation &simulation, const ShapeTraits &traits, Logger &logger) const;
+    [[nodiscard]] const SnapshotWriter &getWriter() const { return *this->writer; }
+    [[nodiscard]] const std::string &getFilename() const { return this->filename; }
 };
 
 #endif //RAMPACK_FILESNAPSHOTWRITER_H

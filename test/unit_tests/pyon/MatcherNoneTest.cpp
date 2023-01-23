@@ -35,4 +35,10 @@ TEST_CASE("Matcher: None") {
         CHECK(matcher.match(Parser::parse("None"), result));
         CHECK(result.as<int>() == 45);
     }
+
+    SECTION("default construction map") {
+        auto matcher = MatcherNone{}.mapTo<std::optional<int>>();
+        CHECK(matcher.match(Parser::parse("None"), result));
+        CHECK(result.as<std::optional<int>>() == std::nullopt);
+    }
 }

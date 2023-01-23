@@ -19,6 +19,7 @@
 #include "core/SimulationRecorder.h"
 #include "core/ObservablesCollector.h"
 #include "FileSnapshotWriter.h"
+#include "SimulationRecorderFactory.h"
 
 
 struct BaseParameters {
@@ -31,15 +32,6 @@ struct BaseParameters {
     std::size_t scalingThreads{};
     std::array<std::size_t, 3> domainDivisions{};
     bool saveOnSignal{};
-};
-
-class SimulationRecorderFactory {
-public:
-    virtual ~SimulationRecorderFactory() = default;
-
-    [[nodiscard]] virtual std::unique_ptr<SimulationRecorder> create(std::size_t numMolecules,
-                                                                     std::size_t snapshotEvery,
-                                                                     bool isContinuation, Logger &logger) const = 0;
 };
 
 struct IntegrationRun {

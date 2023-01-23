@@ -23,6 +23,11 @@ namespace pyon::matcher {
         [[nodiscard]] std::string outline(std::size_t indent) const override;
 
         MatcherNone &mapTo(const std::function<Any()> &mapping_);
+
+        template <typename T>
+        MatcherNone &mapTo() {
+            return this->mapTo([]() -> T { return {}; });
+        }
     };
 }
 
