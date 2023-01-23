@@ -51,6 +51,7 @@
 #include "legacy/IniParametersFactory.h"
 #include "matchers/RampackMatcher.h"
 #include "matchers/FileSnapshotWriterMatcher.h"
+#include "matchers/FileShapePrinterMatcher.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -899,17 +900,15 @@ int Frontend::trajectory(int argc, char **argv) {
 
     // Prepare initial packing
     Parameters params = this->loadParameters(inputFilename);
-    auto shapeTraits = this->createShapeTraits(params.shapeName, params.shapeAttributes, params.interaction,
-                                               params.version);
-    auto packing = this->arrangePacking(params.numOfParticles, params.initialDimensions, params.initialArrangement,
-                                        *shapeTraits, maxThreads, maxThreads, params.version);
-    this->createWalls(*packing, params.walls);
+    RampackParameters rampackParams = IniParametersFactory::create(params);
+    const auto &baseParams = rampackParams.baseParameters;
+    auto shapeTraits = baseParams.shapeTraits;
+    auto packingFactory = baseParams.packingFactory;
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    auto packing = packingFactory->createPacking(std::move(pbc), *shapeTraits, maxThreads, maxThreads);
+    this->createWalls(*packing, baseParams.walls);
 
     // Find and validate run whose trajectory we want to process
-
-    // TODO: temporary workaround
-    RampackParameters rampackParams = IniParametersFactory::create(params);
-
     std::size_t startRunIndex = PackingLoader::findStartRunIndex(runName, rampackParams.runs);
     const auto &startRun = params.runsParameters[startRunIndex];
     std::string trajectoryFilename = std::visit([](const auto &run) { return run.recordingFilename; }, startRun);
@@ -1170,24 +1169,20 @@ int Frontend::shapePreview(int argc, char **argv) {
 
     std::string inputFilename;
     std::string shape;
-    std::string wolframSpec;
-    std::string objSpec;
-    std::string paramsVersion;
+    std::vector<std::string> outputs;
 
+    // TODO: documentation for --output
     options.add_options()
         ("h,help", "prints help for this mode")
-        ("i,input", "an INI file with parameters of the shape; it can be used instead of manually "
+        ("i,input", "an INI/PYON file with parameters of the shape; it can be used instead of manually "
                     "specifying shape parameters using -S",
          cxxopts::value<std::string>(inputFilename))
         ("S,shape", "manually specified shape (instead of reading from input file using -i); ",
          cxxopts::value<std::string>(shape))
-        ("V,params-version", "manually specified version of RAMPACK input for parameters format",
-         cxxopts::value<std::string>(paramsVersion)->default_value(CURRENT_VERSION.str()))
         ("l,log-info", "prints information about the shape")
-        ("w,wolfram-preview", "stores Wolfram preview of the shape in a file given as an argument",
-         cxxopts::value<std::string>(wolframSpec))
-        ("o,obj-preview", "stores Wavefront OBJ model of the shape in a file given as an argument",
-         cxxopts::value<std::string>(objSpec));
+        ("o,output", "stores preview of the shape in a format given as an argument: wolfram, obj; multiple formats may "
+                     "be passed using multiple -o options or separated by a pipe '|' in a single one",
+         cxxopts::value<std::vector<std::string>>(outputs));
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
@@ -1197,31 +1192,24 @@ int Frontend::shapePreview(int argc, char **argv) {
     }
 
     // Create shape traits
+    std::shared_ptr<ShapeTraits> traits;
     if (parsedOptions.count("input")) {
-        Parameters parameters = this->loadParameters(inputFilename);
-        shape = parameters.shapeName;
-        paramsVersion = parameters.version.str();
-    } else if (!parsedOptions.count("shape")) {
-        die("You must specify INI file with shape parameters using -i or do it manually using -S", this->logger);
+        if (parsedOptions.count("shape"))
+            die("Options -i (--input), -S (--shape) cannot be specified together", this->logger);
+
+        RampackParameters params = this->dispatchParams(inputFilename);
+        traits = params.baseParameters.shapeTraits;
+    } else {
+        if (!parsedOptions.count("shape")) {
+            die("You must specify INI file with shape parameters using -i (--input) or do it manually using -S "
+                "(--shape)", this->logger);
+        }
+
+        traits = this->createShapeTraits(shape);
     }
 
-    if (paramsVersion < INPUT_REVAMP_VERSION)
-        die("shape-preview mode supports only versions " + INPUT_REVAMP_VERSION.str() + "+; " + paramsVersion
-            + " was given", this->logger);
-
-    if (paramsVersion > CURRENT_VERSION) {
-        die("Version of parameters (" + paramsVersion + ") is higher than RAMPACK version (" + CURRENT_VERSION.str()
-            + ")", this->logger);
-    }
-
-    auto traits = this->createShapeTraits(shape, "", "", paramsVersion);
-
-    if (!parsedOptions.count("log-info") && !parsedOptions.count("wolfram-preview")
-        && !parsedOptions.count("obj-preview"))
-    {
-        die("At least one of options: -l (--log-info), -w (--wolfram-preview), -o (--obj-preview) must be specified",
-            this->logger);
-    }
+    if (!parsedOptions.count("log-info") && outputs.empty())
+        die("At least one of options: -l (--log-info), -o (--output) must be specified", this->logger);
 
     // Log info
     if (parsedOptions.count("log-info")) {
@@ -1232,26 +1220,10 @@ int Frontend::shapePreview(int argc, char **argv) {
         this->printGeometryInfo(traits->getGeometry());
     }
 
-    // Wolfram preview
-    if (parsedOptions.count("wolfram-preview")) {
-        auto [filename, params] = this->parseFilenameAndParams(wolframSpec, {"mesh_divisions"});
-        std::ofstream wolframFile(filename);
-        ValidateOpenedDesc(wolframFile, filename, " to store Wolfram preview of the shape");
-        auto printer = traits->getPrinter("wolfram", params);
-        wolframFile << "Graphics3D[" << printer->print({}) << "]";
-    }
-
-    // OBJ model preview
-    if (parsedOptions.count("obj-preview")) {
-        try {
-            auto [filename, params] = this->parseFilenameAndParams(objSpec, {"mesh_divisions"});
-            std::ofstream objFile(filename);
-            ValidateOpenedDesc(objFile, filename, " to store Wavefront OBJ model of the shape");
-            auto printer = traits->getPrinter("obj", params);
-            objFile << printer->print({});
-        } catch (const NoSuchShapePrinterException &) {
-            die("Shape " + shape + " does not support Wavefront OBJ format");
-        }
+    // Preview
+    for (const auto &output : outputs) {
+        auto printer = Frontend::createShapePrinter(output, *traits);
+        printer.store(Shape{}, this->logger);
     }
 
     return EXIT_SUCCESS;
@@ -1500,14 +1472,7 @@ Frontend::parseFilenameAndParams(const std::string &str, const std::vector<std::
     return {filename, params};
 }
 
-std::shared_ptr<ShapeTraits> Frontend::createShapeTraits(const std::string &shapeName,
-                                                         const std::string &shapeAttributes,
-                                                         const std::string &interaction,
-                                                         const Version &paramsVersion) const
-{
-    if (paramsVersion < INPUT_REVAMP_VERSION)
-        return legacy::ShapeFactory::shapeTraitsFor(shapeName, shapeAttributes, interaction, paramsVersion);
-
+std::shared_ptr<ShapeTraits> Frontend::createShapeTraits(const std::string &shapeName) const {
     using namespace pyon;
     using namespace pyon::matcher;
     Any shapeTraits;
@@ -1695,7 +1660,8 @@ RampackParameters Frontend::parsePyon(std::istream &in) {
     return params.as<RampackParameters>();
 }
 
-FileSnapshotWriter Frontend::createFileSnapshotWriter(const std::string &expression) {using namespace pyon;
+FileSnapshotWriter Frontend::createFileSnapshotWriter(const std::string &expression) {
+    using namespace pyon;
     using namespace pyon::matcher;
 
     auto writerMatcher = FileSnapshotWriterMatcher::create();
@@ -1706,4 +1672,18 @@ FileSnapshotWriter Frontend::createFileSnapshotWriter(const std::string &express
         throw ValidationException(matchReport.getReason());
 
     return writer.as<FileSnapshotWriter>();
+}
+
+FileShapePrinter Frontend::createShapePrinter(const std::string &expression, const ShapeTraits &traits) {
+    using namespace pyon;
+    using namespace pyon::matcher;
+
+    auto printerMatcher = FileShapePrinterMatcher::create(traits);
+    auto printerAST = Parser::parse(expression);
+    Any printer;
+    auto matchReport = printerMatcher.match(printerAST, printer);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    return printer.as<FileShapePrinter>();
 }
