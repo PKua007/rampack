@@ -23,6 +23,7 @@
 #include "core/io/XYZRecorder.h"
 #include "utils/Version.h"
 #include "RampackParameters.h"
+#include "FileShapePrinter.h"
 
 
 /**
@@ -102,10 +103,7 @@ private:
                                    const Version &paramsVersion);
     static void combineEnvironment(Simulation::Environment &env, const Run &run);
 
-    [[nodiscard]] std::shared_ptr<ShapeTraits> createShapeTraits(const std::string &shapeName,
-                                                                 const std::string &shapeAttributes,
-                                                                 const std::string &interaction,
-                                                                 const Version &paramsVersion) const;
+    [[nodiscard]] std::shared_ptr<ShapeTraits> createShapeTraits(const std::string &shapeName) const;
 
     [[nodiscard]] std::shared_ptr<ObservablesCollector>
     createObservablesCollector(std::optional<std::string> observablesStr, std::optional<std::string> bulkObservablesStr,
@@ -122,6 +120,7 @@ private:
                                                                     const Version &paramsVersion);
 
     static FileSnapshotWriter createFileSnapshotWriter(const std::string &expression);
+    static FileShapePrinter createShapePrinter(const std::string &expression, const ShapeTraits &traits);
 
     RampackParameters dispatchParams(const std::string &filename);
     RampackParameters parseIni(std::istream &in);
