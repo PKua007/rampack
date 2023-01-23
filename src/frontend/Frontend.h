@@ -122,6 +122,8 @@ private:
                                                                     const Version &paramsVersion);
 
     RampackParameters dispatchParams(const std::string &filename);
+    RampackParameters parseIni(std::istream &in);
+    RampackParameters parsePyon(std::istream &in);
 
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }
