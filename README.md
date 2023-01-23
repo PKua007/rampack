@@ -24,7 +24,6 @@ coming in the future. The operation mode can be selected using the first command
 Operation modes are:
 * `casino` - Monte Carlo simulation facility
 * `preview` - preview of the initial configuration
-* `optimize-distance` - the optimization of lattice cell dimensions
 * `shape-preview` - information and preview for a shape
 * `trajectory` - operations on recorded simulation trajectories
 
@@ -79,14 +78,6 @@ in the past and the internal packing representation `*.dat` file has been stored
 The `preview` mode enables one to create the initial configuration from a given input file specified by `-i` option
 and export it to internal and/or Wolfram Mathematica format. It may prove itself useful if one wants to eg. tweak the
 lattice parameters using a visual inspection. The options are described in `./rampack preview --help`.
-
-### optimize-distance
-
-The `optimize-distance` mode is used to find the minimal distances in one or more directions between two particles. It
-may help to choose the lattice spacing. Using appropriate options (see `./rampack optimize-distance --help`) one can
-produce a clean output making it easier to incorporate into an automated workflow. Please note that long particles may
-interact not only with the nearest neighbors, meaning that the values calculated by this mode may be too low. More
-intelligent optimization, similar to the one done by `initialArrangement` input parameter will be added in the future.
 
 ### shape-preview
 
