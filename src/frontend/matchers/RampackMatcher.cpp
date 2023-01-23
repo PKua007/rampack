@@ -37,6 +37,8 @@ namespace {
     create_observable_collector(const std::vector<ObservableData> &observables,
                                 const std::vector<std::shared_ptr<BulkObservable>> &bulkObservables);
 
+    MatcherArray create_observables_matcher();
+    MatcherArray create_bulk_observables_matcher();
     MatcherDataclass create_integration();
     MatcherDataclass create_overlap_relaxation();
     MatcherAlternative create_run();
@@ -128,6 +130,18 @@ namespace {
         return collector;
     }
 
+    MatcherArray create_observables_matcher() {
+        return MatcherArray{}
+            .elementsMatch(ObservablesMatcher::createObservablesMatcher())
+            .mapToStdVector<ObservableData>();
+    }
+
+    MatcherArray create_bulk_observables_matcher() {
+        return MatcherArray{}
+            .elementsMatch(ObservablesMatcher::createBulkObservablesMatcher())
+            .mapToStdVector<std::shared_ptr<BulkObservable>>();
+    }
+
     MatcherDataclass create_integration() {
         // TODO: optional snapshot_every
         // TODO: multi-threaded ObservableCollector
@@ -146,9 +160,9 @@ namespace {
                         {"output_last_snapshot", create_output_last_snapshot(), "[]"},
                         {"record_trajectory", create_record_trajectory(), "[]"},
                         {"averages_out", out_, "None"},
-                        {"observables", ObservablesMatcher::createObservablesMatcher(), "[]"},
+                        {"observables", create_observables_matcher(), "[]"},
                         {"observables_out", out_, "None"},
-                        {"bulk_observables", ObservablesMatcher::createBulkObservablesMatcher(), "[]"},
+                        {"bulk_observables", create_bulk_observables_matcher(), "[]"},
                         {"bulk_observables_out_pattern", out_, "None"}})
             .filter([](const DataclassData &integration) {
                 auto thermalizationCycles = integration["thermalization_cycles"].as<std::optional<std::size_t>>();
@@ -232,7 +246,7 @@ namespace {
                         {"helper_shape", helperShape, "None"},
                         {"output_last_snapshot", create_output_last_snapshot(), "[]"},
                         {"record_trajectory", create_record_trajectory(), "[]"},
-                        {"observables", ObservablesMatcher::createObservablesMatcher(), "[]"},
+                        {"observables", create_observables_matcher(), "[]"},
                         {"observables_out", out_, "None"}})
             .mapTo([](const DataclassData &overlaps) -> Run {
                 OverlapRelaxationRun run;

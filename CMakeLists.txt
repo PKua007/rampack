@@ -88,5 +88,8 @@ add_subdirectory(extern/trompeloeil EXCLUDE_FROM_ALL)
 add_subdirectory(extern/cxxopts EXCLUDE_FROM_ALL)
 add_subdirectory(extern/eigen EXCLUDE_FROM_ALL)
 
+# Set CXXOPTS_VECTOR_DELIMITER globally to avoid potential errors when used in more than one translation unit
+set_property(TARGET cxxopts APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS CXXOPTS_VECTOR_DELIMITER='|')
+
 add_subdirectory(src)
 add_subdirectory(test)

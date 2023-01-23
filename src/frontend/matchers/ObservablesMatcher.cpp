@@ -473,20 +473,16 @@ namespace {
 }
 
 
-MatcherArray ObservablesMatcher::createObservablesMatcher(std::size_t maxThreads) {
+MatcherAlternative ObservablesMatcher::createObservablesMatcher(std::size_t maxThreads) {
     if (maxThreads == 0)
         maxThreads = OMP_MAXTHREADS;
 
-    return MatcherArray{}
-        .elementsMatch(create_scoped_observable_matcher(maxThreads))
-        .mapToStdVector<ObservableData>();
+    return create_scoped_observable_matcher(maxThreads);
 }
 
-MatcherArray ObservablesMatcher::createBulkObservablesMatcher(std::size_t maxThreads) {
+MatcherAlternative ObservablesMatcher::createBulkObservablesMatcher(std::size_t maxThreads) {
     if (maxThreads == 0)
         maxThreads = OMP_MAXTHREADS;
 
-    return MatcherArray{}
-        .elementsMatch(create_bulk_observable_matcher(maxThreads))
-        .mapToStdVector<std::shared_ptr<BulkObservable>>();
+    return create_bulk_observable_matcher(maxThreads);
 }
