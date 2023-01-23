@@ -3,7 +3,7 @@
 //
 
 #include "SimulationRecorderFactoryMatcher.h"
-#include "SimulationRecorderFactory.h"
+#include "frontend/SimulationRecorderFactory.h"
 
 using namespace pyon::matcher;
 

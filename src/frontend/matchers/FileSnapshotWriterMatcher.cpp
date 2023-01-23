@@ -3,7 +3,7 @@
 //
 
 #include "FileSnapshotWriterMatcher.h"
-#include "FileSnapshotWriter.h"
+#include "frontend/FileSnapshotWriter.h"
 #include "core/io/RamsnapWriter.h"
 #include "core/io/WolframWriter.h"
 #include "core/io/XYZWriter.h"

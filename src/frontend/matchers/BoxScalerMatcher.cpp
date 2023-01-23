@@ -15,7 +15,7 @@
 #include "core/volume_scalers/LogScalingFactorSampler.h"
 #include "core/volume_scalers/TriclinicDeltaScaler.h"
 
-#include "ScalingDirectionParser.h"
+#include "frontend/ScalingDirectionParser.h"
 
 
 using namespace pyon::matcher;

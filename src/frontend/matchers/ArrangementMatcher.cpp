@@ -7,7 +7,7 @@
 
 #include "ArrangementMatcher.h"
 #include "LatticeMatcher.h"
-#include "PackingFactory.h"
+#include "frontend/PackingFactory.h"
 #include "utils/Assertions.h"
 
 using namespace pyon::matcher;
