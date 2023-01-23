@@ -121,6 +121,8 @@ private:
     static std::shared_ptr<DynamicParameter> createDynamicParameter(const std::string &parameterStr,
                                                                     const Version &paramsVersion);
 
+    RampackParameters dispatchParams(const std::string &filename);
+
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }
     ~Frontend() { this->logger.removeOutput(this->auxOutStream); }

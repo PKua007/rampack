@@ -49,6 +49,7 @@
 #include "DynamicParameterMatcher.h"
 #include "RampackParameters.h"
 #include "legacy/IniParametersFactory.h"
+#include "RampackMatcher.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -178,10 +179,7 @@ int Frontend::casino(int argc, char **argv) {
     this->logger << "General simulation parameters" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    Parameters paramsss = this->loadParameters(inputFilename);
-    paramsss.print(this->logger);
-
-    RampackParameters rampackParams = IniParametersFactory::create(paramsss);
+    RampackParameters rampackParams = this->dispatchParams(inputFilename);
 
     const auto &baseParams = rampackParams.baseParameters;
     const auto &shapeTraits = baseParams.shapeTraits;
@@ -1796,4 +1794,21 @@ std::shared_ptr<DynamicParameter> Frontend::createDynamicParameter(const std::st
         throw ValidationException(matchReport.getReason());
 
     return parameter.as<std::shared_ptr<DynamicParameter>>();
+}
+
+RampackParameters Frontend::dispatchParams(const std::string &filename) {
+    std::ifstream file(filename);
+    ValidateOpenedDesc(file, filename, "to load the simulation script");
+
+    using namespace pyon;
+    using namespace pyon::matcher;
+
+    auto rampackMatcher = RampackMatcher::create();
+    auto paramsAST = Parser::parse(file);
+    Any params;
+    auto matchReport = rampackMatcher.match(paramsAST, params);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    return params.as<RampackParameters>();
 }
