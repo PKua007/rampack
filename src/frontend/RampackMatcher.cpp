@@ -63,6 +63,16 @@ namespace {
         .mapTo<std::optional<std::size_t>>();
     auto cycles = cyclesInt | cyclesNone;
 
+    auto nullableEvery = MatcherInt{}.mapTo<std::size_t>();
+
+    auto notNullEvery = MatcherInt(nullableEvery).positive();
+
+    auto outString = MatcherString{}
+            .nonEmpty()
+            .mapTo([](const std::string &out) -> std::optional<std::string> { return out; });
+    auto outNone = MatcherNone{}.mapTo<std::optional<std::string>>();
+    auto out_ = outString | outNone;
+
 
     MatcherString create_version() {
         return MatcherString{}
@@ -119,17 +129,6 @@ namespace {
     }
 
     MatcherDataclass create_integration() {
-        auto nullableEvery = MatcherInt{}
-            .mapTo<std::size_t>();
-        auto notNullEvery = nullableEvery;
-        notNullEvery.positive();
-
-        auto outString = MatcherString{}
-            .nonEmpty()
-            .mapTo([](const std::string &out) -> std::optional<std::string> { return out; });
-        auto outNone = MatcherNone{}.mapTo<std::optional<std::string>>();
-        auto out_ = outString | outNone;
-
         // TODO: optional snapshot_every
         // TODO: multi-threaded ObservableCollector
         return MatcherDataclass("integration")
@@ -216,7 +215,46 @@ namespace {
     }
 
     MatcherDataclass create_overlap_relaxation() {
-        return MatcherDataclass("overlap_relaxation");
+        auto shapeNone = MatcherNone{}.mapTo<std::shared_ptr<ShapeTraits>>();
+        auto helperShape = ShapeMatcher::shape | shapeNone;
+
+        // TODO: optional snapshot_every
+        // TODO: multi-threaded ObservableCollector
+        return MatcherDataclass("overlap_relaxation")
+            .arguments({{"run_name", runName},
+                        {"snapshot_every", notNullEvery},
+                        {"temperature", dynamicParameter, "None"},
+                        {"pressure", dynamicParameter, "None"},
+                        {"move_types", create_move_types(), "None"},
+                        {"box_move_type", create_box_scaler(), "None"},
+                        {"inline_info_every", notNullEvery, "100"},
+                        {"orientation_fix_every", notNullEvery, "10000"},
+                        {"helper_shape", helperShape, "None"},
+                        {"output_last_snapshot", create_output_last_snapshot(), "[]"},
+                        {"record_trajectory", create_record_trajectory(), "[]"},
+                        {"observables", ObservablesMatcher::createObservablesMatcher(), "[]"},
+                        {"observables_out", out_, "None"}})
+            .mapTo([](const DataclassData &overlaps) -> Run {
+                OverlapRelaxationRun run;
+
+                run.runName = overlaps["run_name"].as<std::string>();
+                run.environment = create_environment(overlaps);
+                run.snapshotEvery = overlaps["snapshot_every"].as<std::size_t>();
+                run.inlineInfoEvery = overlaps["inline_info_every"].as<std::size_t>();
+                run.orientationFixEvery = overlaps["orientation_fix_every"].as<std::size_t>();
+                run.helperShapeTraits = overlaps["helper_shape"].as<std::shared_ptr<ShapeTraits>>();
+                run.lastSnapshotWriters = overlaps["output_last_snapshot"].as<std::vector<FileSnapshotWriter>>();
+                run.ramsnapOut = fetch_ramsnap_out(run.lastSnapshotWriters);
+                run.simulationRecorders
+                    = overlaps["record_trajectory"].as<std::vector<std::shared_ptr<SimulationRecorderFactory>>>();
+
+                auto observables = overlaps["observables"].as<std::vector<ObservableData>>();
+                run.observablesCollector = create_observable_collector(observables, {});
+
+                run.observablesOut = overlaps["observables_out"].as<std::optional<std::string>>();
+
+                return run;
+            });
     }
 
     MatcherAlternative create_run() {
