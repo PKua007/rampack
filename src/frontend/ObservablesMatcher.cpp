@@ -155,12 +155,12 @@ namespace {
                         || scoped["inline"].as<std::size_t>() != 0;
             })
             .describe("with at least one scope active")
-            .mapTo([](const DataclassData &scoped) {
+            .mapTo([](const DataclassData &scoped) -> ObservableData {
                 std::size_t scope = scoped["snapshot"].as<std::size_t>()
                         | scoped["averaging"].as<std::size_t>()
                         | scoped["inline"].as<std::size_t>();
                 auto observable = scoped["obs"].as<ObservableData>().observable;
-                return std::make_pair(scope, observable);
+                return {scope, observable};
             });
 
         return observable | scoped;

@@ -27,7 +27,11 @@ namespace {
     }
 
     MatcherDataclass create_wolfram() {
-        auto style = MatcherDataclass("standard") | MatcherDataclass("affine_transform");
+        auto standard = MatcherDataclass("standard")
+            .mapTo([](const DataclassData &) { return WolframWriter::WolframStyle::STANDARD; });
+        auto affineTransform = MatcherDataclass("affine_transform")
+            .mapTo([](const DataclassData &) { return WolframWriter::WolframStyle::AFFINE_TRANSFORM; });
+        auto style = standard | affineTransform;
 
         return MatcherDataclass("wolfram")
             .arguments({{"filename", filename},

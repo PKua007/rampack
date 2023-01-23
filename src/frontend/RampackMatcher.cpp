@@ -167,7 +167,7 @@ namespace {
             .describe("if averaging_cycles is specified, averaging_every > 0 should also be specified")
             .filter([](const DataclassData &integration) {
                 auto averagingCycles = integration["averaging_cycles"].as<std::optional<std::size_t>>();
-                auto averagesOut = integration["averagesOut"].as<std::optional<std::size_t>>();
+                auto averagesOut = integration["averages_out"].as<std::optional<std::string>>();
                 auto bulkObservables
                     = integration["bulk_observables"].as<std::vector<std::shared_ptr<BulkObservable>>>();
                 if (averagingCycles.has_value())
@@ -184,7 +184,7 @@ namespace {
                 return bulkObservablesOutPattern.has_value();
             })
             .describe("if bulk_observables are specified, bulk_observables_out_pattern should also be")
-            .mapTo([](const DataclassData &integration) {
+            .mapTo([](const DataclassData &integration) -> Run {
                 IntegrationRun run;
 
                 run.runName = integration["run_name"].as<std::string>();
@@ -281,7 +281,7 @@ namespace {
         if (temperature != nullptr)
             env.setTemperature(temperature);
         if (pressure != nullptr)
-            env.setTemperature(pressure);
+            env.setPressure(pressure);
         if (!moveSamplers.empty())
             env.setMoveSamplers(std::move(moveSamplers));
 
@@ -340,13 +340,13 @@ pyon::matcher::MatcherDataclass RampackMatcher::create() {
             };
             std::vector<std::string> runNames;
             runNames.reserve(runs.size());
-            std::transform(runs.begin(), runs.end(), runNames.begin(), runNameVisitor);
+            std::transform(runs.begin(), runs.end(), std::back_inserter(runNames), runNameVisitor);
             std::sort(runNames.begin(), runNames.end());
             return std::unique(runNames.begin(), runNames.end()) == runNames.end();
         })
         .describe("with unique run names")
         .filter([](const DataclassData &rampack) {
-            auto env = rampack["environment"].as<Simulation::Environment>();
+            auto env = create_environment(rampack);
             auto firstRun = rampack["runs"].as<std::vector<Run>>().front();
             auto envGetter = [](auto &&run) { return run.environment; };
             auto firstRunEnv = std::visit(envGetter, firstRun);
