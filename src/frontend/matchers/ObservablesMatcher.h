@@ -18,8 +18,8 @@ public:
         std::shared_ptr<Observable> observable;
     };
 
-    static pyon::matcher::MatcherArray createObservablesMatcher(std::size_t maxThreads = 1);
-    static pyon::matcher::MatcherArray createBulkObservablesMatcher(std::size_t maxThreads = 1);
+    static pyon::matcher::MatcherAlternative createObservablesMatcher(std::size_t maxThreads = 1);
+    static pyon::matcher::MatcherAlternative createBulkObservablesMatcher(std::size_t maxThreads = 1);
 };
 
 

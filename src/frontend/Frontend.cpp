@@ -18,38 +18,39 @@
 #include "utils/Fold.h"
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
-#include "frontend/legacy/ShapeFactory.h"
-#include "frontend/legacy/ObservablesCollectorFactory.h"
+#include "legacy/ShapeFactory.h"
+#include "legacy/ObservablesCollectorFactory.h"
 #include "core/Simulation.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/Packing.h"
 #include "utils/OMPMacros.h"
 #include "core/lattice/DistanceOptimizer.h"
-#include "frontend/legacy/ArrangementFactory.h"
-#include "frontend/legacy/TriclinicBoxScalerFactory.h"
+#include "legacy/ArrangementFactory.h"
+#include "legacy/TriclinicBoxScalerFactory.h"
 #include "core/shapes/CompoundShapeTraits.h"
-#include "frontend/legacy/MoveSamplerFactory.h"
+#include "legacy/MoveSamplerFactory.h"
 #include "core/io/RamtrjRecorder.h"
 #include "core/io/RamtrjPlayer.h"
 #include "PackingLoader.h"
 #include "PackingFactory.h"
-#include "frontend/legacy/ParameterUpdaterFactory.h"
+#include "legacy/ParameterUpdaterFactory.h"
 #include "core/io/XYZRecorder.h"
 #include "core/io/WolframWriter.h"
 #include "core/io/XYZWriter.h"
 #include "core/io/TruncatedPlayer.h"
 #include "utils/ParseUtils.h"
 #include "legacy/ShapeFactory.h"
-#include "frontend/matchers/ShapeMatcher.h"
+#include "matchers/ShapeMatcher.h"
 #include "pyon/Parser.h"
-#include "frontend/matchers/ObservablesMatcher.h"
-#include "frontend/matchers/ArrangementMatcher.h"
-#include "frontend/matchers/MoveSamplerMatcher.h"
-#include "frontend/matchers/BoxScalerMatcher.h"
-#include "frontend/matchers/DynamicParameterMatcher.h"
+#include "matchers/ObservablesMatcher.h"
+#include "matchers/ArrangementMatcher.h"
+#include "matchers/MoveSamplerMatcher.h"
+#include "matchers/BoxScalerMatcher.h"
+#include "matchers/DynamicParameterMatcher.h"
 #include "RampackParameters.h"
 #include "legacy/IniParametersFactory.h"
-#include "frontend/matchers/RampackMatcher.h"
+#include "matchers/RampackMatcher.h"
+#include "matchers/FileSnapshotWriterMatcher.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -118,7 +119,7 @@ int Frontend::casino(int argc, char **argv) {
 
     options.add_options()
             ("h,help", "prints help for this mode")
-            ("i,input", "an INI file with parameters. See sample_inputs folder for full parameters documentation",
+            ("i,input", "an INI/PYON file with parameters. See sample_inputs folder for full parameters documentation",
              cxxopts::value<std::string>(inputFilename))
             ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
                             "error, warn, info, verbose, debug. Defaults to: info if --log-file not specified, "
@@ -625,19 +626,16 @@ int Frontend::preview(int argc, char **argv) {
     cxxopts::Options options(argv[0], "Initial arrangement preview.");
 
     std::string inputFilename;
-    std::string ramsnapFilename;
-    std::string xyzFilename;
-    std::string wolframFilename;
+    std::vector<std::string> outputs;
 
+    // TODO: refer to the documentation for -o format
     options.add_options()
         ("h,help", "prints help for this mode")
-        ("i,input", "an INI file with parameters. See sample_inputs folder for full parameters documentation",
+        ("i,input", "an INI/PYON file with parameters. See sample_inputs folder for full parameters documentation",
          cxxopts::value<std::string>(inputFilename))
-        ("w,wolfram", "if specified, Mathematica notebook with the packing will be generated",
-         cxxopts::value<std::string>(wolframFilename))
-        ("s,ramsnap", "if specified, RAMSNAP file with packing will be generated",
-         cxxopts::value<std::string>(ramsnapFilename))
-        ("x,xyz", "if specified, XYZ file with packing will be generated", cxxopts::value<std::string>(xyzFilename));
+        ("o,output", "output of the preview. Supported PYON classes: ramsnap, wolfram, xyz. More than one format can "
+                     "be chosen by specifying this option multiple times",
+         cxxopts::value<std::vector<std::string>>(outputs));
 
     auto parsedOptions = options.parse(argc, argv);
     if (parsedOptions.count("help")) {
@@ -652,27 +650,21 @@ int Frontend::preview(int argc, char **argv) {
         die("Unexpected positional arguments. See " + cmd + " --help", this->logger);
     if (!parsedOptions.count("input"))
         die("Input file must be specified with option -i [input file name]", this->logger);
-    if (!parsedOptions.count("wolfram") && !parsedOptions.count("ramsnap") && !parsedOptions.count("xyz"))
-        die("At least one of: --wolfram, --ramsnap, --xyz options must be specified", this->logger);
+    if (outputs.empty())
+        die("Option -o (--output) must be specified at least once", this->logger);
 
-    Parameters params = this->loadParameters(inputFilename);
-    auto shapeTraits = this->createShapeTraits(params.shapeName, params.shapeAttributes, params.interaction,
-                                               params.version);
-    auto packing = this->arrangePacking(params.numOfParticles, params.initialDimensions, params.initialArrangement,
-                                        *shapeTraits, 1, 1, params.version);
-    this->createWalls(*packing, params.walls);
+    RampackParameters params = this->dispatchParams(inputFilename);
+    const auto &baseParams = params.baseParameters;
+    auto shapeTraits = baseParams.shapeTraits;
+    auto packingFactory = baseParams.packingFactory;
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    auto packing = packingFactory->createPacking(std::move(pbc), *shapeTraits, 1, 1);
+    this->createWalls(*packing, baseParams.walls);
 
-    // Store ramsnap packing (if desired)
-    if (parsedOptions.count("ramsnap"))
-        this->generateRamsnapFile(*packing, ramsnapFilename);
-
-    // Store xyz packing (if desired)
-    if (parsedOptions.count("xyz"))
-        this->generateXYZFile(*packing, *shapeTraits, xyzFilename);
-
-    // Store Mathematica packing (if desired)
-    if (parsedOptions.count("wolfram"))
-        this->storeWolframVisualization(*packing, *shapeTraits, wolframFilename);
+    for (const auto &output : outputs) {
+        auto writer = Frontend::createFileSnapshotWriter(output);
+        writer.generateSnapshot(*packing, *shapeTraits, 0, this->logger);
+    }
 
     return EXIT_SUCCESS;
 }
@@ -1701,4 +1693,17 @@ RampackParameters Frontend::parsePyon(std::istream &in) {
         throw ValidationException(matchReport.getReason());
 
     return params.as<RampackParameters>();
+}
+
+FileSnapshotWriter Frontend::createFileSnapshotWriter(const std::string &expression) {using namespace pyon;
+    using namespace pyon::matcher;
+
+    auto writerMatcher = FileSnapshotWriterMatcher::create();
+    auto writerAST = Parser::parse(expression);
+    Any writer;
+    auto matchReport = writerMatcher.match(writerAST, writer);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    return writer.as<FileSnapshotWriter>();
 }

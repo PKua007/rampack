@@ -121,9 +121,12 @@ private:
     static std::shared_ptr<DynamicParameter> createDynamicParameter(const std::string &parameterStr,
                                                                     const Version &paramsVersion);
 
+    static FileSnapshotWriter createFileSnapshotWriter(const std::string &expression);
+
     RampackParameters dispatchParams(const std::string &filename);
     RampackParameters parseIni(std::istream &in);
     RampackParameters parsePyon(std::istream &in);
+
 
 public:
     explicit Frontend(Logger &logger) : logger{logger} { }
