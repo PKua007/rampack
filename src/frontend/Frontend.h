@@ -130,7 +130,6 @@ public:
     ~Frontend() { this->logger.removeOutput(this->auxOutStream); }
 
     int casino(int argc, char **argv);
-    int optimize_distance(int argc, char **argv);
     int preview(int argc, char **argv);
     int trajectory(int argc, char **argv);
     int shapePreview(int argc, char **argv);

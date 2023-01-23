@@ -31,8 +31,6 @@ namespace {
             return frontend.printGeneralHelp(cmd);
         else if (mode == "casino")
             return frontend.casino(argc, argv);
-        else if (mode == "optimize-distance")
-            return frontend.optimize_distance(argc, argv);
         else if (mode == "preview")
             return frontend.preview(argc, argv);
         else if (mode == "shape-preview")
