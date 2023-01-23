@@ -40,16 +40,16 @@
 #include "core/io/TruncatedPlayer.h"
 #include "utils/ParseUtils.h"
 #include "legacy/ShapeFactory.h"
-#include "ShapeMatcher.h"
+#include "frontend/matchers/ShapeMatcher.h"
 #include "pyon/Parser.h"
-#include "ObservablesMatcher.h"
-#include "ArrangementMatcher.h"
-#include "MoveSamplerMatcher.h"
-#include "BoxScalerMatcher.h"
-#include "DynamicParameterMatcher.h"
+#include "frontend/matchers/ObservablesMatcher.h"
+#include "frontend/matchers/ArrangementMatcher.h"
+#include "frontend/matchers/MoveSamplerMatcher.h"
+#include "frontend/matchers/BoxScalerMatcher.h"
+#include "frontend/matchers/DynamicParameterMatcher.h"
 #include "RampackParameters.h"
 #include "legacy/IniParametersFactory.h"
-#include "RampackMatcher.h"
+#include "frontend/matchers/RampackMatcher.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
