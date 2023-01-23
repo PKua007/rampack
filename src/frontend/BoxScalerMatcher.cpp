@@ -30,7 +30,6 @@ namespace {
     MatcherDataclass create_linear();
     MatcherDataclass create_log();
     MatcherDataclass create_delta_triclinic();
-    MatcherNone create_none();
 
 
     const auto &X = AnisotropicVolumeScaler::X;
@@ -106,13 +105,9 @@ namespace {
                 return std::make_shared<TriclinicDeltaScaler>(step, !independent);
             });
     }
-
-    MatcherNone create_none() {
-        return MatcherNone{}.mapTo([]() -> std::shared_ptr<TriclinicBoxScaler> { return nullptr; });
-    }
 }
 
 
 MatcherAlternative BoxScalerMatcher::create() {
-    return create_delta_v() | create_linear() | create_log() | create_delta_triclinic() | create_none();
+    return create_delta_v() | create_linear() | create_log() | create_delta_triclinic();
 }

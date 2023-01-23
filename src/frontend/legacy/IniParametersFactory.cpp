@@ -23,6 +23,7 @@
 #include "core/io/XYZRecorder.h"
 
 #include "frontend/FileSnapshotWriter.h"
+#include "frontend/SimulationRecorderFactory.h"
 
 #include "utils/OMPMacros.h"
 #include "utils/Utils.h"
@@ -48,61 +49,6 @@ namespace {
             return legacy::ArrangementFactory::arrangePacking(this->numOfParticles, this->boxString,
                                                               this->arrangementString, std::move(bc),
                                                               shapeTraits, moveThreads, scalingThreads);
-        }
-    };
-
-    class RamtrjRecorderFactory : public SimulationRecorderFactory {
-    private:
-        std::string filename;
-
-    public:
-        explicit RamtrjRecorderFactory(std::string filename) : filename{std::move(filename)}
-        { }
-
-        [[nodiscard]] std::unique_ptr<SimulationRecorder> create(std::size_t numMolecules, std::size_t snapshotEvery,
-                                                                 bool isContinuation, Logger &logger) const override
-        {
-            std::unique_ptr<std::fstream> inout;
-
-            if (isContinuation) {
-                inout = std::make_unique<std::fstream>(
-                    this->filename, std::ios_base::in | std::ios_base::out | std::ios_base::binary
-                );
-            } else {
-                inout = std::make_unique<std::fstream>(
-                    this->filename,
-                    std::ios_base::in | std::ios_base::out | std::ios_base::binary | std::ios_base::trunc
-                );
-            }
-
-            ValidateOpenedDesc(*inout, this->filename, "to store RAMTRJ trajectory");
-            logger.info() << "RAMTRJ trajectory is stored on the fly to '" << this->filename << "'" << std::endl;
-            return std::make_unique<RamtrjRecorder>(std::move(inout), numMolecules, snapshotEvery, isContinuation);
-        }
-    };
-
-    class XYZRecorderFactory : public SimulationRecorderFactory {
-    private:
-        std::string filename;
-
-    public:
-        explicit XYZRecorderFactory(std::string filename) : filename{std::move(filename)}
-        { }
-
-        [[nodiscard]] std::unique_ptr<SimulationRecorder> create([[maybe_unused]] std::size_t numMolecules,
-                                                                 [[maybe_unused]] std::size_t snapshotEvery,
-                                                                 bool isContinuation, Logger &logger) const override
-        {
-            std::unique_ptr<std::fstream> inout;
-
-            if (isContinuation)
-                inout = std::make_unique<std::fstream>(this->filename, std::ios_base::app);
-            else
-                inout = std::make_unique<std::fstream>(this->filename, std::ios_base::out);
-
-            ValidateOpenedDesc(*inout, this->filename, "to store XYZ trajectory");
-            logger.info() << "XYZ trajectory is stored on the fly to '" << this->filename << "'" << std::endl;
-            return std::make_unique<XYZRecorder>(std::move(inout));
         }
     };
 
