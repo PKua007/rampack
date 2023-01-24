@@ -9,22 +9,18 @@
 #include <memory>
 #include <fstream>
 
-#include "core/ObservablesCollector.h"
-#include "utils/Logger.h"
-#include "Parameters.h"
+#include "PackingLoader.h"
+#include "RampackParameters.h"
+#include "FileShapePrinter.h"
+
 #include "core/Shape.h"
 #include "core/BoundaryConditions.h"
 #include "core/Interaction.h"
-#include "core/lattice/OrthorhombicArrangingModel.h"
 #include "core/Simulation.h"
-#include "core/io/RamtrjRecorder.h"
 #include "core/io/RamtrjPlayer.h"
-#include "PackingLoader.h"
-#include "core/io/XYZRecorder.h"
+
 #include "utils/Version.h"
-#include "RampackParameters.h"
-#include "FileShapePrinter.h"
-#include "matchers/ObservablesMatcher.h"
+#include "utils/Logger.h"
 
 
 /**
