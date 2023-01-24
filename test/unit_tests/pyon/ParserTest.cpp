@@ -369,3 +369,24 @@ TEST_CASE("Parser: whitespaces") {
 
     CHECK_NOTHROW(Parser::parse(input));
 }
+
+TEST_CASE("Parser: comments") {
+    SECTION("standalone") {
+        auto input = R"([
+            "element1",
+            # comment
+            "element2"
+        ])";
+        CHECK(Parser::parse(input)->as<NodeArray>()->size() == 2);
+    }
+
+    SECTION("inline") {
+        auto input = R"(["element1", "element2"] # comment )";
+        CHECK(Parser::parse(input)->as<NodeArray>()->size() == 2);
+    }
+
+    SECTION("'#' in string") {
+        auto input = R"("# this is not comment")";
+        CHECK(Parser::parse(input)->as<NodeString>()->getValue() == "# this is not comment");
+    }
+}

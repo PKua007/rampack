@@ -305,9 +305,26 @@ namespace pyon {
         return this->in[this->idx++];
     }
 
-    void Parser::ws() {
-        while (std::isspace(this->peek()))
+    void Parser::eatComment() {
+        while (this->peek() != '\n' && this->peek() != EOF)
             this->eat();
+    }
+
+    void Parser::ws() {
+        int c;
+        while (true) {
+            c = this->peek();
+
+            if (std::isspace(c)) {
+                this->eat();
+                continue;
+            }
+
+            if (c == '#')
+                this->eatComment();
+
+            break;
+        }
     }
 
     void Parser::parseArgument(std::vector<std::shared_ptr<const ast::Node>> &positionalArguments,
