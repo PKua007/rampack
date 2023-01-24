@@ -24,6 +24,7 @@
 #include "utils/Version.h"
 #include "RampackParameters.h"
 #include "FileShapePrinter.h"
+#include "matchers/ObservablesMatcher.h"
 
 
 /**
@@ -45,7 +46,7 @@ private:
                                 const std::map<std::string, std::string> &packingAuxInfo) const;
     Simulation::Environment recreateEnvironment(const Parameters &params, const PackingLoader &loader) const;
     Simulation::Environment recreateEnvironment(const RampackParameters &params, const PackingLoader &loader) const;
-    Simulation::Environment recreateRawEnvironment(const Parameters &params, std::size_t startRunIndex) const;
+    Simulation::Environment recreateRawEnvironment(const RampackParameters &params, std::size_t startRunIndex) const;
 
     void setVerbosityLevel(std::optional<std::string> verbosity, std::optional<std::string> auxOutput,
                            std::optional<std::string> auxVerbosity);
@@ -105,9 +106,8 @@ private:
 
     [[nodiscard]] std::shared_ptr<ShapeTraits> createShapeTraits(const std::string &shapeName) const;
 
-    [[nodiscard]] std::shared_ptr<ObservablesCollector>
-    createObservablesCollector(std::optional<std::string> observablesStr, std::optional<std::string> bulkObservablesStr,
-                               std::size_t maxThreads, const Version &paramsVersion) const;
+    static ObservablesMatcher::ObservableData createObservable(const std::string &expression, std::size_t maxThreads);
+    static std::shared_ptr<BulkObservable> createBulkObservable(const std::string &expression, std::size_t maxThreads);
 
     static std::vector<std::shared_ptr<MoveSampler>> createMoveSamplers(const std::string &moveTypes,
                                                                         const Version &paramsVersion);
@@ -121,6 +121,7 @@ private:
 
     static FileSnapshotWriter createFileSnapshotWriter(const std::string &expression);
     static FileShapePrinter createShapePrinter(const std::string &expression, const ShapeTraits &traits);
+    static std::shared_ptr<SimulationRecorderFactory> createSimulationRecorderFactory(const std::string &expression);
 
     RampackParameters dispatchParams(const std::string &filename);
     RampackParameters parseIni(std::istream &in);

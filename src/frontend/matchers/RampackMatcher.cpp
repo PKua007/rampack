@@ -33,6 +33,9 @@ namespace {
     MatcherArray create_record_trajectory();
     std::optional<std::string> fetch_ramsnap_out(const std::vector<FileSnapshotWriter> &snapshotWriters);
 
+    std::optional<std::string>
+    fetch_ramtrj_out(const std::vector<std::shared_ptr<SimulationRecorderFactory>> &recorderFactories);
+
     std::shared_ptr<ObservablesCollector>
     create_observable_collector(const std::vector<ObservableData> &observables,
                                 const std::vector<std::shared_ptr<BulkObservable>> &bulkObservables);
@@ -115,6 +118,15 @@ namespace {
             if (typeid(writer) == typeid(RamsnapWriter))
                 return fileWriter.getFilename();
         }
+        return std::nullopt;
+    }
+
+    std::optional<std::string>
+    fetch_ramtrj_out(const std::vector<std::shared_ptr<SimulationRecorderFactory>> &recorderFactories) {
+        for (const auto &factory : recorderFactories)
+            if (factory->createsRamtrj())
+                return factory->getFilename();
+
         return std::nullopt;
     }
 
@@ -212,6 +224,7 @@ namespace {
                 run.ramsnapOut = fetch_ramsnap_out(run.lastSnapshotWriters);
                 run.simulationRecorders
                     = integration["record_trajectory"].as<std::vector<std::shared_ptr<SimulationRecorderFactory>>>();
+                run.ramtrjOut = fetch_ramtrj_out(run.simulationRecorders);
 
                 auto observables = integration["observables"].as<std::vector<ObservableData>>();
                 auto bulkObservables
@@ -261,6 +274,7 @@ namespace {
                 run.ramsnapOut = fetch_ramsnap_out(run.lastSnapshotWriters);
                 run.simulationRecorders
                     = overlaps["record_trajectory"].as<std::vector<std::shared_ptr<SimulationRecorderFactory>>>();
+                run.ramtrjOut = fetch_ramtrj_out(run.simulationRecorders);
 
                 auto observables = overlaps["observables"].as<std::vector<ObservableData>>();
                 run.observablesCollector = create_observable_collector(observables, {});
