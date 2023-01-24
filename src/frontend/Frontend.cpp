@@ -38,6 +38,7 @@
 #include "matchers/FileSnapshotWriterMatcher.h"
 #include "matchers/FileShapePrinterMatcher.h"
 #include "matchers/SimulationRecorderFactoryMatcher.h"
+#include "matchers/ShapeMatcher.h"
 
 
 void Frontend::setVerbosityLevel(std::optional<std::string> verbosity, std::optional<std::string> auxOutput,
@@ -543,7 +544,7 @@ int Frontend::preview(int argc, char **argv) {
     this->createWalls(*packing, baseParams.walls);
 
     for (const auto &output : outputs) {
-        auto writer = Frontend::createFileSnapshotWriter(output);
+        auto writer = FileSnapshotWriterMatcher::match(output);
         writer.generateSnapshot(*packing, *shapeTraits, 0, this->logger);
     }
 
@@ -805,7 +806,7 @@ int Frontend::trajectory(int argc, char **argv) {
 
     // Stored trajectory in RAMTRJ/Wolfram format (if desired)
     for (const auto &trajectoryOutput : trajectoryOutputs) {
-        auto factory = Frontend::createSimulationRecorderFactory(trajectoryOutput);
+        auto factory = SimulationRecorderFactoryMatcher::match(trajectoryOutput);
         if (factory->getFilename() == trajectoryFilename)
             die("Input trajectory file name '" + trajectoryFilename + "' cannot be used as an output!", this->logger);
 
@@ -840,7 +841,7 @@ int Frontend::trajectory(int argc, char **argv) {
 
         ObservablesCollector collector;
         for (const std::string &observable : observables) {
-            auto observableData = Frontend::createObservable(observable, maxThreads);
+            auto observableData = ObservablesMatcher::matchObservable(observable, maxThreads);
             collector.addObservable(std::move(observableData.observable), observableData.scope);
         }
 
@@ -889,7 +890,7 @@ int Frontend::trajectory(int argc, char **argv) {
 
         ObservablesCollector collector;
         for (const std::string &bulkObservable : bulkObservables) {
-            auto theObservable = Frontend::createBulkObservable(bulkObservable, maxThreads);
+            auto theObservable = ObservablesMatcher::matchBulkObservable(bulkObservable, maxThreads);
             collector.addBulkObservable(theObservable);
         }
 
@@ -929,7 +930,7 @@ int Frontend::trajectory(int argc, char **argv) {
         this->logger.info() << "cycles: " << player->getCurrentSnapshotCycles() << std::endl;
 
         for (const auto &snapshotOutput: snapshotOutputs) {
-            auto writer = Frontend::createFileSnapshotWriter(snapshotOutput);
+            auto writer = FileSnapshotWriterMatcher::match(snapshotOutput);
             if (writer.getFilename() == trajectoryFilename) {
                 die("Input trajectory file name '" + trajectoryFilename + "' cannot be used as an output!",
                     this->logger);
@@ -1040,7 +1041,7 @@ int Frontend::shapePreview(int argc, char **argv) {
                 "(--shape)", this->logger);
         }
 
-        traits = this->createShapeTraits(shape);
+        traits = ShapeMatcher::match(shape);
     }
 
     if (!parsedOptions.count("log-info") && outputs.empty())
@@ -1057,7 +1058,7 @@ int Frontend::shapePreview(int argc, char **argv) {
 
     // Preview
     for (const auto &output : outputs) {
-        auto printer = Frontend::createShapePrinter(output, *traits);
+        auto printer = FileShapePrinterMatcher::match(output, *traits);
         printer.store(Shape{}, this->logger);
     }
 
@@ -1227,46 +1228,6 @@ void Frontend::verifyDynamicParameter(const DynamicParameter &dynamicParameter, 
     }
 }
 
-std::shared_ptr<ShapeTraits> Frontend::createShapeTraits(const std::string &shapeName) const {
-    using namespace pyon;
-    using namespace pyon::matcher;
-    Any shapeTraits;
-    auto shapeAST = Parser::parse(shapeName);
-    auto matchReport = ShapeMatcher::shape.match(shapeAST, shapeTraits);
-    if (!matchReport)
-        throw ValidationException(matchReport.getReason());
-
-    return shapeTraits.as<std::shared_ptr<ShapeTraits>>();
-}
-
-ObservablesMatcher::ObservableData Frontend::createObservable(const std::string &expression, std::size_t maxThreads) {
-    using namespace pyon;
-    using namespace pyon::matcher;
-
-    auto observableMatcher = ObservablesMatcher::createObservablesMatcher(maxThreads);
-    auto observableAST = Parser::parse(expression);
-    Any observable;
-    auto matchReport = observableMatcher.match(observableAST, observable);
-    if (!matchReport)
-        throw ValidationException(matchReport.getReason());
-
-    return observable.as<ObservablesMatcher::ObservableData>();
-}
-
-std::shared_ptr<BulkObservable> Frontend::createBulkObservable(const std::string &expression, std::size_t maxThreads) {
-    using namespace pyon;
-    using namespace pyon::matcher;
-
-    auto bulkObservableMatcher = ObservablesMatcher::createBulkObservablesMatcher(maxThreads);
-    auto bulkObservableAST = Parser::parse(expression);
-    Any bulkObservable;
-    auto matchReport = bulkObservableMatcher.match(bulkObservableAST, bulkObservable);
-    if (!matchReport)
-        throw ValidationException(matchReport.getReason());
-
-    return bulkObservable.as<std::shared_ptr<BulkObservable>>();
-}
-
 RampackParameters Frontend::dispatchParams(const std::string &filename) {
     std::ifstream file(filename);
     ValidateOpenedDesc(file, filename, "to load the simulation script");
@@ -1278,70 +1239,12 @@ RampackParameters Frontend::dispatchParams(const std::string &filename) {
 
     if (startsWith(firstLine, "rampack")) {
         this->logger.info() << "Parameters format in '" << filename << "' recognized as: PYON" << std::endl;
-        return this->parsePyon(file);
+        std::ostringstream fileContent;
+        fileContent << file.rdbuf();
+        return RampackMatcher::match(fileContent.str());
     } else {
         this->logger.info() << "Parameters format in '" << filename << "' recognized as: INI" << std::endl;
-        return this->parseIni(file);
+        Parameters params(file);
+        return IniParametersFactory::create(params);
     }
-}
-
-RampackParameters Frontend::parseIni(std::istream &in) {
-    Parameters params(in);
-    return IniParametersFactory::create(params);
-}
-
-RampackParameters Frontend::parsePyon(std::istream &in) {
-    using namespace pyon;
-    using namespace pyon::matcher;
-
-    auto rampackMatcher = RampackMatcher::create();
-    auto paramsAST = Parser::parse(in);
-    Any params;
-    auto matchReport = rampackMatcher.match(paramsAST, params);
-    if (!matchReport)
-        throw ValidationException(matchReport.getReason());
-
-    return params.as<RampackParameters>();
-}
-
-FileSnapshotWriter Frontend::createFileSnapshotWriter(const std::string &expression) {
-    using namespace pyon;
-    using namespace pyon::matcher;
-
-    auto writerMatcher = FileSnapshotWriterMatcher::create();
-    auto writerAST = Parser::parse(expression);
-    Any writer;
-    auto matchReport = writerMatcher.match(writerAST, writer);
-    if (!matchReport)
-        throw ValidationException(matchReport.getReason());
-
-    return writer.as<FileSnapshotWriter>();
-}
-
-FileShapePrinter Frontend::createShapePrinter(const std::string &expression, const ShapeTraits &traits) {
-    using namespace pyon;
-    using namespace pyon::matcher;
-
-    auto printerMatcher = FileShapePrinterMatcher::create(traits);
-    auto printerAST = Parser::parse(expression);
-    Any printer;
-    auto matchReport = printerMatcher.match(printerAST, printer);
-    if (!matchReport)
-        throw ValidationException(matchReport.getReason());
-
-    return printer.as<FileShapePrinter>();
-}
-
-std::shared_ptr<SimulationRecorderFactory> Frontend::createSimulationRecorderFactory(const std::string &expression) {
-    using namespace pyon;
-    using namespace pyon::matcher;
-
-    auto factoryMatcher = SimulationRecorderFactoryMatcher::create();
-    auto factoryAST = Parser::parse(expression);
-    Any factory;
-    auto matchReport = factoryMatcher.match(factoryAST, factory);
-    if (!matchReport)
-        throw ValidationException(matchReport.getReason());
-
-    return factory.as<std::shared_ptr<SimulationRecorderFactory>>();
 }

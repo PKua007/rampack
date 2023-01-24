@@ -486,3 +486,29 @@ MatcherAlternative ObservablesMatcher::createBulkObservablesMatcher(std::size_t 
 
     return create_bulk_observable_matcher(maxThreads);
 }
+
+std::shared_ptr<BulkObservable> ObservablesMatcher::matchBulkObservable(const std::string &expression,
+                                                                        std::size_t maxThreads)
+{
+    auto bulkObservableMatcher = ObservablesMatcher::createBulkObservablesMatcher(maxThreads);
+    auto bulkObservableAST = pyon::Parser::parse(expression);
+    Any bulkObservable;
+    auto matchReport = bulkObservableMatcher.match(bulkObservableAST, bulkObservable);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    return bulkObservable.as<std::shared_ptr<BulkObservable>>();
+}
+
+ObservablesMatcher::ObservableData ObservablesMatcher::matchObservable(const std::string &expression,
+                                                                       std::size_t maxThreads)
+{
+    auto observableMatcher = ObservablesMatcher::createObservablesMatcher(maxThreads);
+    auto observableAST = pyon::Parser::parse(expression);
+    Any observable;
+    auto matchReport = observableMatcher.match(observableAST, observable);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    return observable.as<ObservablesMatcher::ObservableData>();
+}

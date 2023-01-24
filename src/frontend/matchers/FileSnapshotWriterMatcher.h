@@ -6,11 +6,13 @@
 #define RAMPACK_FILESNAPSHOTWRITERMATCHER_H
 
 #include "pyon/Matcher.h"
+#include "frontend/FileSnapshotWriter.h"
 
 
 class FileSnapshotWriterMatcher {
 public:
     static pyon::matcher::MatcherAlternative create();
+    static FileSnapshotWriter match(const std::string &expression);
 };
 
 

@@ -35,3 +35,15 @@ namespace {
 pyon::matcher::MatcherAlternative SimulationRecorderFactoryMatcher::create() {
     return create_ramtrj() | create_xyz();
 }
+
+std::shared_ptr<SimulationRecorderFactory>
+SimulationRecorderFactoryMatcher::match(const std::string &expression) {
+    auto factoryMatcher = SimulationRecorderFactoryMatcher::create();
+    auto factoryAST = pyon::Parser::parse(expression);
+    Any factory;
+    auto matchReport = factoryMatcher.match(factoryAST, factory);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    return factory.as<std::shared_ptr<SimulationRecorderFactory>>();
+}

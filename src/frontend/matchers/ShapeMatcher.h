@@ -5,12 +5,17 @@
 #ifndef RAMPACK_SHAPEMATCHER_H
 #define RAMPACK_SHAPEMATCHER_H
 
+#include <memory>
+
 #include "pyon/Matcher.h"
+#include "core/ShapeTraits.h"
 
 
 class ShapeMatcher {
+
 public:
     static const pyon::matcher::MatcherAlternative shape;
+    static std::shared_ptr<ShapeTraits> match(const std::string &expression);
 };
 
 

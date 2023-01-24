@@ -63,3 +63,14 @@ namespace {
 pyon::matcher::MatcherAlternative FileSnapshotWriterMatcher::create() {
     return create_ramsnap() | create_wolfram() | create_xyz();
 }
+
+FileSnapshotWriter FileSnapshotWriterMatcher::match(const std::string &expression) {
+    auto writerMatcher = FileSnapshotWriterMatcher::create();
+    auto writerAST = pyon::Parser::parse(expression);
+    Any writer;
+    auto matchReport = writerMatcher.match(writerAST, writer);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    return writer.as<FileSnapshotWriter>();
+}

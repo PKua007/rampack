@@ -7,11 +7,13 @@
 
 #include "pyon/Matcher.h"
 #include "core/ShapeTraits.h"
+#include "frontend/FileShapePrinter.h"
 
 
 class FileShapePrinterMatcher {
 public:
     static pyon::matcher::MatcherAlternative create(const ShapeTraits &traits);
+    static FileShapePrinter match(const std::string &expression, const ShapeTraits &traits);
 };
 
 

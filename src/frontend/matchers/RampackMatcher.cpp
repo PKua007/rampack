@@ -427,3 +427,14 @@ pyon::matcher::MatcherDataclass RampackMatcher::create() {
             return params;
         });
 }
+
+RampackParameters RampackMatcher::match(const std::string &expression) {
+    auto rampackMatcher = RampackMatcher::create();
+    auto paramsAST = pyon::Parser::parse(expression);
+    Any params;
+    auto matchReport = rampackMatcher.match(paramsAST, params);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    return params.as<RampackParameters>();
+}
