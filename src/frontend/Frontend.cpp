@@ -94,7 +94,9 @@ int Frontend::casino(int argc, char **argv) {
     std::string auxOutput;
     std::string auxVerbosity;
 
-    options.add_options()
+    options
+        .set_width(120)
+        .add_options()
             ("h,help", "prints help for this mode")
             ("i,input", "an INI/PYON file with parameters. See sample_inputs folder for full parameters documentation",
              cxxopts::value<std::string>(inputFilename))
@@ -504,13 +506,16 @@ int Frontend::preview(int argc, char **argv) {
     std::string inputFilename;
     std::vector<std::string> outputs;
 
-    // TODO: refer to the documentation for -o format
-    options.add_options()
+    options
+        .set_width(120)
+        .add_options()
         ("h,help", "prints help for this mode")
         ("i,input", "an INI/PYON file with parameters. See sample_inputs folder for full parameters documentation",
          cxxopts::value<std::string>(inputFilename))
-        ("o,output", "output of the preview. Supported PYON classes: ramsnap, wolfram, xyz. More than one format can "
-                     "be chosen by specifying this option multiple times",
+        ("o,output", "output of the preview. Supported PYON classes: ramsnap, wolfram, xyz (see the input file "
+                     "documentation). More than one format can be chosen by specifying this option multiple times, or "
+                     "in a single one using pipe '|'. It is advisable to put the argument in '...' to escape shell "
+                     "special characters '()\"\"|'",
          cxxopts::value<std::vector<std::string>>(outputs));
 
     auto parsedOptions = options.parse(argc, argv);
@@ -643,8 +648,9 @@ int Frontend::trajectory(int argc, char **argv) {
     std::vector<std::string> trajectoryOutputs;
     std::size_t truncatedCycles;
 
-    // TODO: -s and -r documentation
-    options.add_options()
+    options
+        .set_width(120)
+        .add_options()
         ("h,help", "prints help for this mode")
         ("i,input", "an INI file with parameters that was used to generate the trajectories. See sample_inputs "
                     "folder for full parameters documentation",
@@ -663,7 +669,8 @@ int Frontend::trajectory(int argc, char **argv) {
          cxxopts::value<std::string>(obsOutputFilename))
         ("O,observable", "replays the simulation and calculates specified observables (format as in the input file). "
                          "Observables can be passed using multiple options (-o obs1 -o obs2) or pipe-separated in a "
-                         "single one (-o 'obs1|obs2')",
+                         "single one (-o 'obs1|obs2'). It is advisable to put the argument in '...' to escape shell "
+                         "special characters '()\"\"|'",
          cxxopts::value<std::vector<std::string>>(observables))
         ("b,output-bulk-obs", "calculate bulk observables and output them to the file with a name given by the "
                               "specified pattern. In the pattern, every occurrence of {} is replaced with observable "
@@ -672,7 +679,8 @@ int Frontend::trajectory(int argc, char **argv) {
          cxxopts::value<std::string>(bulkObsOutputFilename))
         ("B,bulk-observable", "replays the simulation and calculates specified bulk observables (format as in the "
                               "input file). Observables can be passed using multiple options (-o obs1 -o obs2) "
-                              "or pipe-separated in a single one (-o 'obs1|obs2')",
+                              "or pipe-separated in a single one (-o 'obs1|obs2'). It is advisable to put the argument "
+                              "in '...' to escape shell special characters '()\"\"|'",
          cxxopts::value<std::vector<std::string>>(bulkObservables))
         ("a,averaging-start", "specifies when the averaging starts. It is used for bulk observables",
          cxxopts::value<std::size_t>(averagingStart))
@@ -995,17 +1003,20 @@ int Frontend::shapePreview(int argc, char **argv) {
     std::string shape;
     std::vector<std::string> outputs;
 
-    // TODO: documentation for --output
-    options.add_options()
+    options
+        .set_width(120)
+        .add_options()
         ("h,help", "prints help for this mode")
         ("i,input", "an INI/PYON file with parameters of the shape; it can be used instead of manually "
                     "specifying shape parameters using -S",
          cxxopts::value<std::string>(inputFilename))
-        ("S,shape", "manually specified shape (instead of reading from input file using -i); ",
+        ("S,shape", "manually specified shape (instead of reading from input file using -i). It is advisable to "
+                    "put the argument in '...' to escape shell special characters '()\"\"|'",
          cxxopts::value<std::string>(shape))
         ("l,log-info", "prints information about the shape")
         ("o,output", "stores preview of the shape in a format given as an argument: wolfram, obj; multiple formats may "
-                     "be passed using multiple -o options or separated by a pipe '|' in a single one",
+                     "be passed using multiple -o options or separated by a pipe '|' in a single one. It is advisable "
+                     "to put the argument in '...' to escape shell special characters '()\"\"|'",
          cxxopts::value<std::vector<std::string>>(outputs));
 
     auto parsedOptions = options.parse(argc, argv);
