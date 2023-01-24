@@ -9,6 +9,7 @@
 
 #include "pyon/Matcher.h"
 #include "core/Observable.h"
+#include "core/BulkObservable.h"
 
 
 class ObservablesMatcher {
@@ -20,6 +21,10 @@ public:
 
     static pyon::matcher::MatcherAlternative createObservablesMatcher(std::size_t maxThreads = 1);
     static pyon::matcher::MatcherAlternative createBulkObservablesMatcher(std::size_t maxThreads = 1);
+    static ObservablesMatcher::ObservableData matchObservable(const std::string &expression,
+                                                              std::size_t maxThreads = 1);
+    static std::shared_ptr<BulkObservable> matchBulkObservable(const std::string &expression,
+                                                               std::size_t maxThreads = 1);
 };
 
 

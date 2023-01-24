@@ -42,3 +42,14 @@ namespace {
 pyon::matcher::MatcherAlternative FileShapePrinterMatcher::create(const ShapeTraits &traits) {
     return create_wolfram(traits) | create_obj(traits);
 }
+
+FileShapePrinter FileShapePrinterMatcher::match(const std::string &expression, const ShapeTraits &traits) {
+    auto printerMatcher = FileShapePrinterMatcher::create(traits);
+    auto printerAST = pyon::Parser::parse(expression);
+    Any printer;
+    auto matchReport = printerMatcher.match(printerAST, printer);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    return printer.as<FileShapePrinter>();
+}

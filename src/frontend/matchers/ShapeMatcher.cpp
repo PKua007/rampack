@@ -484,3 +484,14 @@ pyon::matcher::MatcherAlternative const ShapeMatcher::shape =
     | create_polysphere_matcher()
     | create_polyspherocylinder_matcher()
     | create_generic_convex_matcher();
+
+
+std::shared_ptr<ShapeTraits> ShapeMatcher::match(const std::string &expression) {
+    Any shapeTraits;
+    auto shapeAST = pyon::Parser::parse(expression);
+    auto matchReport = shape.match(shapeAST, shapeTraits);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    return shapeTraits.as<std::shared_ptr<ShapeTraits>>();
+}
