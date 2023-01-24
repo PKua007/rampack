@@ -97,7 +97,6 @@ Parameters::Parameters(std::istream &input) {
 }
 
 void Parameters::validate() const {
-    Validate(this->version > Version(0));
     if (this->version < Version{0, 8, 0})
         Validate(this->numOfParticles > 0);
     Validate(!this->scalingThreads.empty());
