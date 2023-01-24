@@ -1,0 +1,39 @@
+rampack(
+    version = "0.9",
+    arrangement = lattice(cell=sc, box_dim=7, n_shapes=512),
+    temperature = 1,
+    pressure = 20,
+    move_types = [translation(step=0.1)],
+    seed = 1234,
+    shape = sphere(r=0.5),
+    box_move_threads = 4,
+    domain_divisions = [2, 2, 1],
+    handle_signals = True,
+    runs = [
+        overlap_relaxation(
+            run_name = "too_dense_cubic",
+            box_move_type = delta_v(step=0.5),
+            snapshot_every = 100,
+            inline_info_every = 1000,
+            output_last_snapshot = [ramsnap("packing_ov_relax.ramsnap"), xyz("packing_ov_relax.xyz"), wolfram("packing_ov_relax.nb")],
+            record_trajectory = [ramtrj("recording_ov_relax.ramtrj"), xyz("recording_ov_relax.xyz")],
+            observables = [number_density, scoped(packing_fraction, inline=True), compressibility_factor],
+            observables_out = "observable_ov_relax.txt",
+            helper_shape = sphere(r=0.5, interaction=square_inverse_core(epsilon=2, sigma=1))
+        ),
+        integration(
+            run_name = "solid",
+            box_move_type = delta_triclinic(step=0.001),
+            thermalization_cycles = 100000,
+            averaging_cycles = 900000,
+            averaging_every = 10000,
+            snapshot_every = 100,
+            inline_info_every = 1000,
+            output_last_snapshot = [ramsnap("packing_solid.ramsnap"), xyz("packing_solid.xyz"), wolfram("packing_solid.nb")],
+            record_trajectory = [ramtrj("recording_solid.ramtrj"), xyz("recording_solid.xyz")],
+            averages_out = "out.txt",
+            observables = [number_density, scoped(packing_fraction, inline=True), compressibility_factor],
+            observables_out = "observable_solid.txt"
+        )
+    ]
+)

@@ -1,0 +1,63 @@
+rampack(
+    version = "0.9",
+    arrangement = lattice(cell=sc, box_dim=100, n_shapes=1000),
+    temperature = 1,
+    move_types = [translation(step=10)],
+    box_move_type = delta_v(step=1000),
+    seed = 1234,
+    shape = sphere(r=0.5),
+    box_move_threads = 4,
+    domain_divisions = [2, 2, 1],
+    handle_signals = True,
+    runs = [
+        integration(
+            run_name = "gas",
+            pressure = 0.1,
+            thermalization_cycles = 10000,
+            averaging_cycles = 20000,
+            averaging_every = 200,
+            snapshot_every = 100,
+            inline_info_every = 1000,
+            output_last_snapshot = [ramsnap("packing_gas.ramsnap"), xyz("packing_gas.xyz"), wolfram("packing_gas.nb")],
+            record_trajectory = [ramtrj("recording_gas.ramtrj"), xyz("recording_gas.xyz")],
+            averages_out = "out.txt",
+            observables = [number_density, scoped(packing_fraction, inline=True), compressibility_factor],
+            observables_out = "observable_gas.txt",
+            bulk_observables = [pair_density_correlation(max_r=5, n_bins=100, binning=radial)],
+            bulk_observables_out_pattern = "{}_gas.txt"
+        ),
+        integration(
+            run_name = "liquid",
+            pressure = 11.5,
+            thermalization_cycles = 250000,
+            averaging_cycles = 200000,
+            averaging_every = 2000,
+            snapshot_every = 100,
+            inline_info_every = 1000,
+            output_last_snapshot = [ramsnap("packing_liquid.ramsnap"), xyz("packing_liquid.xyz"), wolfram("packing_liquid.nb")],
+            record_trajectory = [ramtrj("recording_liquid.ramtrj"), xyz("recording_liquid.xyz")],
+            averages_out = "out.txt",
+            observables = [number_density, scoped(packing_fraction, inline=True), compressibility_factor],
+            observables_out = "observable_liquid.txt",
+            bulk_observables = [pair_density_correlation(max_r=5, n_bins=100, binning=radial)],
+            bulk_observables_out_pattern = "{}_liquid.txt"
+        ),
+        integration(
+            run_name = "solid",
+            pressure = 20,
+            box_move_type = delta_triclinic(step=0.001),
+            thermalization_cycles = 1000000,
+            averaging_cycles = 2000000,
+            averaging_every = 20000,
+            snapshot_every = 100,
+            inline_info_every = 1000,
+            output_last_snapshot = [ramsnap("packing_solid.ramsnap"), xyz("packing_solid.xyz"), wolfram("packing_solid.nb")],
+            record_trajectory = [ramtrj("recording_solid.ramtrj"), xyz("recording_solid.xyz")],
+            averages_out = "out.txt",
+            observables = [number_density, scoped(packing_fraction, inline=True), compressibility_factor],
+            observables_out = "observable_solid.txt",
+            bulk_observables = [pair_density_correlation(max_r=5, n_bins=100, binning=radial)],
+            bulk_observables_out_pattern = "{}_solid.txt"
+        )
+    ]
+)
