@@ -35,31 +35,23 @@ private:
     Logger &logger;
     std::ofstream auxOutStream;
 
-    Parameters loadParameters(const std::string &inputFilename);
     std::unique_ptr<Packing> recreatePacking(PackingLoader &loader, const BaseParameters &params,
                                              const ShapeTraits &traits, std::size_t maxThreads);
-    std::unique_ptr<Packing> arrangePacking(std::size_t numOfParticles, const std::string &initialDimensions,
-                                            const std::string &initialArrangement, const ShapeTraits &shapeTraits,
-                                            std::size_t moveThreads, std::size_t scalingThreads,
-                                            const Version &paramsVersion) const;
+
     void overwriteMoveStepSizes(Simulation::Environment &env,
                                 const std::map<std::string, std::string> &packingAuxInfo) const;
-    Simulation::Environment recreateEnvironment(const Parameters &params, const PackingLoader &loader) const;
+
     Simulation::Environment recreateEnvironment(const RampackParameters &params, const PackingLoader &loader) const;
     Simulation::Environment recreateRawEnvironment(const RampackParameters &params, std::size_t startRunIndex) const;
 
     void setVerbosityLevel(std::optional<std::string> verbosity, std::optional<std::string> auxOutput,
                            std::optional<std::string> auxVerbosity);
-    void generateRamsnapFile(const Packing &packing, const std::string &ramsnapFilename, std::size_t cycles = 0);
-    void generateXYZFile(const Packing &packing, const ShapeTraits &traits, const std::string &ramsnapFilename,
-                         std::size_t cycles = 0);
+
     Logger::LogType parseVerbosityLevel(const std::string &verbosityLevelName) const;
-    std::unique_ptr<RamtrjRecorder> loadRamtrjRecorder(const std::string &filename, std::size_t numMolecules,
-                                                       std::size_t cycleStep, bool isContinuation) const;
-    std::unique_ptr<XYZRecorder> loadXYZRecorder(const std::string &filename, bool isContinuation) const;
+
     std::unique_ptr<RamtrjPlayer> loadRamtrjPlayer(std::string &trajectoryFilename, size_t numMolecules, bool autoFix_);
     void createWalls(Packing &packing, const std::array<bool, 3> &walls);
-    void createWalls(Packing &packing, const std::string &walls);
+
     void attachSnapshotOut(ObservablesCollector &collector, const std::string& filename, bool isContinuation) const;
 
     void verifyDynamicParameter(const DynamicParameter &dynamicParameter, const std::string &parameterName,
@@ -75,16 +67,9 @@ private:
     void printPerformanceInfo(const Simulation &simulation);
     void printAverageValues(const ObservablesCollector &collector);
 
-    [[nodiscard]] std::pair<std::string, std::map<std::string, std::string>>
-    parseFilenameAndParams(const std::string &str, const std::vector<std::string>& fields) const;
-
     void storeAverageValues(const std::string &filename, const ObservablesCollector &collector, double temperature,
                             double pressure) const;
-    [[nodiscard]] std::map<std::string, std::string> prepareAuxInfo(const Simulation &simulation) const;
-    void storeRamsnap(const Simulation &simulation, const std::string &packingFilename);
-    void storeXYZ(const Simulation &simulation, const ShapeTraits &traits, const std::string &packingFilename);
-    void storeWolframVisualization(const Packing &packing, const ShapeTraits &traits,
-                                   const std::string &wolframAttr) const;
+
     void storeSnapshots(const ObservablesCollector &observablesCollector, bool isContinuation,
                         const std::string &observableSnapshotFilename) const;
     void storeBulkObservables(const ObservablesCollector &observablesCollector,
@@ -95,13 +80,9 @@ private:
     void printInteractionInfo(const Interaction &interaction);
     void printGeometryInfo(const ShapeGeometry &geometry);
 
-    static std::string doubleToString(double d);
     static std::string formatMoveKey(const std::string &groupName, const std::string &moveName);
     static bool isStepSizeKey(const std::string &key);
-    static Simulation::Environment parseSimulationEnvironment(const InheritableParameters &params,
-                                                               const Version &paramsVersion);
-    static void combineEnvironment(Simulation::Environment &env, const Parameters::RunParameters &runParams,
-                                   const Version &paramsVersion);
+
     static void combineEnvironment(Simulation::Environment &env, const Run &run);
 
     [[nodiscard]] std::shared_ptr<ShapeTraits> createShapeTraits(const std::string &shapeName) const;
@@ -109,15 +90,6 @@ private:
     static ObservablesMatcher::ObservableData createObservable(const std::string &expression, std::size_t maxThreads);
     static std::shared_ptr<BulkObservable> createBulkObservable(const std::string &expression, std::size_t maxThreads);
 
-    static std::vector<std::shared_ptr<MoveSampler>> createMoveSamplers(const std::string &moveTypes,
-                                                                        const Version &paramsVersion);
-
-    static std::shared_ptr<TriclinicBoxScaler> createBoxScaler(const std::string &scalerStr, double volumeStepSize,
-                                                               const Version &paramsVersion);
-
-
-    static std::shared_ptr<DynamicParameter> createDynamicParameter(const std::string &parameterStr,
-                                                                    const Version &paramsVersion);
 
     static FileSnapshotWriter createFileSnapshotWriter(const std::string &expression);
     static FileShapePrinter createShapePrinter(const std::string &expression, const ShapeTraits &traits);
