@@ -5,7 +5,7 @@
 #ifndef RAMPACK_INIPARAMETERSFACTORY_H
 #define RAMPACK_INIPARAMETERSFACTORY_H
 
-#include "frontend/Parameters.h"
+#include "Parameters.h"
 #include "frontend/RampackParameters.h"
 
 

@@ -13,32 +13,29 @@
 #include <cxxopts.hpp>
 
 #include "Frontend.h"
-#include "Parameters.h"
-#include "utils/Fold.h"
-#include "utils/Utils.h"
-#include "utils/Assertions.h"
-#include "legacy/ObservablesCollectorFactory.h"
+#include "PackingLoader.h"
+#include "RampackParameters.h"
+
 #include "core/Simulation.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/Packing.h"
-#include "utils/OMPMacros.h"
-#include "core/shapes/CompoundShapeTraits.h"
-#include "core/io/RamtrjPlayer.h"
-#include "PackingLoader.h"
-#include "legacy/ParameterUpdaterFactory.h"
-#include "core/io/XYZRecorder.h"
 #include "core/io/TruncatedPlayer.h"
-#include "utils/ParseUtils.h"
+#include "core/shapes/CompoundShapeTraits.h"
+
 #include "matchers/ShapeMatcher.h"
-#include "pyon/Parser.h"
 #include "matchers/ObservablesMatcher.h"
-#include "RampackParameters.h"
-#include "legacy/IniParametersFactory.h"
 #include "matchers/RampackMatcher.h"
 #include "matchers/FileSnapshotWriterMatcher.h"
 #include "matchers/FileShapePrinterMatcher.h"
 #include "matchers/SimulationRecorderFactoryMatcher.h"
-#include "matchers/ShapeMatcher.h"
+
+#include "legacy/IniParametersFactory.h"
+
+#include "utils/Fold.h"
+#include "utils/Utils.h"
+#include "utils/Assertions.h"
+#include "utils/OMPMacros.h"
+#include "utils/ParseUtils.h"
 
 
 void Frontend::setVerbosityLevel(std::optional<std::string> verbosity, std::optional<std::string> auxOutput,
