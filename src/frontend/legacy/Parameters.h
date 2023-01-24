@@ -118,7 +118,7 @@ public:
     using RunParameters = std::variant<IntegrationParameters, OverlapRelaxationParameters>;
 
     /* All of these are described in input.ini */
-    Version version;
+    Version version = {0, 1, 0};
     std::string initialDimensions{};
     std::string initialArrangement{};
     std::size_t numOfParticles{};
