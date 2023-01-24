@@ -151,16 +151,17 @@ int Frontend::casino(int argc, char **argv) {
     if (!parsedOptions.count("input"))
         die("Input file must be specified with option -i [input file name]", this->logger);
 
-    // Load parameters (both from file and inline)
+    // Load parameters
     this->logger.info();
     this->logger << "--------------------------------------------------------------------" << std::endl;
-    this->logger << "General simulation parameters" << std::endl;
+    this->logger << "Random And Maximal PACKing PACKage v" << CURRENT_VERSION << std::endl;
+    this->logger << "(C) 2023 Piotr Kubala and Collaborators" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
     RampackParameters rampackParams = this->dispatchParams(inputFilename);
-
     const auto &baseParams = rampackParams.baseParameters;
     const auto &shapeTraits = baseParams.shapeTraits;
+
     this->logger << "--------------------------------------------------------------------" << std::endl;
     this->logger << "Interaction centre range : " << shapeTraits->getInteraction().getRangeRadius() << std::endl;
     this->logger << "Total interaction range  : " << shapeTraits->getInteraction().getTotalRangeRadius() << std::endl;
@@ -262,9 +263,6 @@ void Frontend::performIntegration(Simulation &simulation, Simulation::Environmen
     this->logger << "--------------------------------------------------------------------" << std::endl;
     this->logger << "Starting integration '" << run.runName << "'" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
-    // TODO: parameters info
-    //run.print(this->logger);
-    this->logger << "--------------------------------------------------------------------" << std::endl;
 
     std::vector<std::unique_ptr<SimulationRecorder>> recorders;
     for (const auto &factory : run.simulationRecorders) {
@@ -327,9 +325,6 @@ void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Envi
     this->logger.info() << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
     this->logger << "Starting overlap relaxation '" << run.runName << "'" << std::endl;
-    this->logger << "--------------------------------------------------------------------" << std::endl;
-    // TODO: parameters info
-    //run.print(this->logger);
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
     std::vector<std::unique_ptr<SimulationRecorder>> recorders;
