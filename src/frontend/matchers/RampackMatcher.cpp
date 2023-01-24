@@ -155,7 +155,7 @@ namespace {
     }
 
     MatcherDataclass create_integration() {
-        // TODO: optional snapshot_every
+        // TODO: optional snapshot_every (when no observables are stored)
         // TODO: multi-threaded ObservableCollector
         return MatcherDataclass("integration")
             .arguments({{"run_name", runName},
@@ -245,7 +245,7 @@ namespace {
         auto shapeNone = MatcherNone{}.mapTo<std::shared_ptr<ShapeTraits>>();
         auto helperShape = ShapeMatcher::shape | shapeNone;
 
-        // TODO: optional snapshot_every
+        // TODO: optional snapshot_every (when no observables are stored)
         // TODO: multi-threaded ObservableCollector
         return MatcherDataclass("overlap_relaxation")
             .arguments({{"run_name", runName},

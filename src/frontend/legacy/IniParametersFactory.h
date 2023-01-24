@@ -9,7 +9,6 @@
 #include "frontend/RampackParameters.h"
 
 
-// TODO: who does the validation?
 class IniParametersFactory {
 public:
     static RampackParameters create(const Parameters &params);
