@@ -52,6 +52,7 @@
 #include "matchers/RampackMatcher.h"
 #include "matchers/FileSnapshotWriterMatcher.h"
 #include "matchers/FileShapePrinterMatcher.h"
+#include "matchers/SimulationRecorderFactoryMatcher.h"
 
 
 Parameters Frontend::loadParameters(const std::string &inputFilename) {
@@ -784,21 +785,19 @@ int Frontend::trajectory(int argc, char **argv) {
     std::string inputFilename;
     std::string runName;
     std::string obsOutputFilename;
-    std::string observables;
+    std::vector<std::string> observables;
     std::string bulkObsOutputFilename;
-    std::string bulkObservables;
+    std::vector<std::string> bulkObservables;
     std::size_t averagingStart{};
     std::size_t maxThreads{};
-    std::string ramsnapFilename;
-    std::string xyzFilename;
-    std::string wolframFilename;
+    std::vector<std::string> snapshotOutputs;
     std::string verbosity;
     std::string auxOutput;
     std::string auxVerbosity;
-    std::string storeFilename;
-    std::string xyzTrajectoryFilename;
+    std::vector<std::string> trajectoryOutputs;
     std::size_t truncatedCycles;
 
+    // TODO: -s and -r documentation
     options.add_options()
         ("h,help", "prints help for this mode")
         ("i,input", "an INI file with parameters that was used to generate the trajectories. See sample_inputs "
@@ -807,36 +806,37 @@ int Frontend::trajectory(int argc, char **argv) {
         ("r,run-name", "name of the run, for which the trajectory was generated. Special values '.first' "
                        "and '.last' (for the first and the last run in the configuration file) are also accepted",
          cxxopts::value<std::string>(runName)->default_value(".last"))
-        ("f,auto-fix", "tries to auto-fix the trajectory if it is broken")
+        ("f,auto-fix", "tries to auto-fix the trajectory if it is broken; fixed trajectory can be stored back to "
+                       "RAMTRJ using -t 'ramtrj(\"filename\")'")
         ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
                         "error, warn, info, verbose, debug. Defaults to: info if --log-file not specified, "
                         "otherwise to: warn",
          cxxopts::value<std::string>(verbosity))
-        ("o,obs-output", "output file with the results of --observables",
+        ("o,output-obs", "calculate observables and output them to a given file. Observables can be specified using "
+                         "-O (--observable)",
          cxxopts::value<std::string>(obsOutputFilename))
-        ("O,observables", "replays the simulation and calculates specified observables (format as in the input file). "
-                          "Observables can be passed using multiple short options (-o obs1 -o obs2) or comma-separated "
-                          "in a long option (--observables=obs1,obs2)",
-         cxxopts::value<std::string>(observables))
-        ("b,bulk-obs-output", "output file pattern with the results of --bulk-observables. Every occurrence of {} is "
-                              "replaced with observable signature name. If not specified, '_{}.txt' is appended at the "
-                              "end",
+        ("O,observable", "replays the simulation and calculates specified observables (format as in the input file). "
+                         "Observables can be passed using multiple options (-o obs1 -o obs2) or pipe-separated in a "
+                         "single one (-o 'obs1|obs2')",
+         cxxopts::value<std::vector<std::string>>(observables))
+        ("b,output-bulk-obs", "calculate bulk observables and output them to the file with a name given by the "
+                              "specified pattern. In the pattern, every occurrence of {} is replaced with observable "
+                              "signature name. If not specified, '_{}.txt' is appended at the end. Bulk observables "
+                              "are specified using -B (--bulk-observable)",
          cxxopts::value<std::string>(bulkObsOutputFilename))
-        ("B,bulk-observables", "replays the simulation and calculates specified bulk observables (format as in the "
-                               "input file). Observables can be passed using multiple short options (-o obs1 -o obs2) "
-                               "or comma-separated in a long option (--observables=obs1,obs2)",
-         cxxopts::value<std::string>(bulkObservables))
+        ("B,bulk-observable", "replays the simulation and calculates specified bulk observables (format as in the "
+                              "input file). Observables can be passed using multiple options (-o obs1 -o obs2) "
+                              "or pipe-separated in a single one (-o 'obs1|obs2')",
+         cxxopts::value<std::vector<std::string>>(bulkObservables))
         ("a,averaging-start", "specifies when the averaging starts. It is used for bulk observables",
          cxxopts::value<std::size_t>(averagingStart))
         ("T,max-threads", "specifies maximal number of OpenMP threads that may be used to calculate observables. If 0 "
                           "is passed, all available threads are used",
          cxxopts::value<std::size_t>(maxThreads)->default_value("1"))
-        ("S,generate-ramsnap", "reads the last snapshot and recreates RAMSNAP file from it",
-         cxxopts::value<std::string>(ramsnapFilename))
-        ("X,generate-xyz", "reads the last snapshot and recreates XYZ file from it",
-         cxxopts::value<std::string>(xyzFilename))
-        ("w,generate-wolfram", "reads the last snapshot and recreates Wolfram Mathematica file from it",
-         cxxopts::value<std::string>(wolframFilename))
+        ("s,output-snapshot", "reads the last snapshot and recreates outputs it in a given format: ramsnap, wolfram, "
+                              "xyz. More than one output can be stored when multiple -s options are specified or in a "
+                              "single one using pipe '|'",
+         cxxopts::value<std::vector<std::string>>(snapshotOutputs))
         ("I,log-info", "print basic information about the recorded trajectory on a standard output")
         ("l,log-file", "if specified, messages will be logged both on the standard output and to this file. "
                        "Verbosity defaults then to: warn for standard output and to: info for log file, unless "
@@ -845,13 +845,12 @@ int Frontend::trajectory(int argc, char **argv) {
         ("log-file-verbosity", "how verbose the output to the log file should be. Allowed values, with increasing "
                                "verbosity: error, warn, info, verbose, debug. Defaults to: info",
          cxxopts::value<std::string>(auxVerbosity))
-        ("s,store-ramtrj-trajectory", "store the RAMTRJ trajectory; it is most useful for broken trajectories fixed "
-                                      "using --auto-fix or truncated using --truncate",
-         cxxopts::value<std::string>(storeFilename))
-        ("x,store-xyz-trajectory", "generates (extended) XYZ trajectory and stores it in a given file",
-         cxxopts::value<std::string>(xyzTrajectoryFilename))
-        ("t,truncate", "truncates loaded trajectory to a given number of total cycles (trajectory file remains "
-                       "unchanged)",
+        ("t,output-trajectory", "store the trajectory in a given format: ramtrj, xyz. More than one output can be "
+                                "stored when multiple -t options are specified or in a single one using pipe '|'",
+         cxxopts::value<std::vector<std::string>>(trajectoryOutputs))
+        ("x,truncate", "truncates loaded trajectory to a given number of total cycles (trajectory file remains "
+                       "unchanged); truncated trajectory can be stored to other RAMTRJ file using "
+                       "-t 'ramtrj(\"filename\")'",
          cxxopts::value<std::size_t>(truncatedCycles));
 
     auto parsedOptions = options.parse(argc, argv);
@@ -878,20 +877,16 @@ int Frontend::trajectory(int argc, char **argv) {
         die("Unexpected positional arguments. See " + cmd + " --help", this->logger);
     if (!parsedOptions.count("input"))
         die("Input file must be specified with option -i [input file name]", this->logger);
-    if (!parsedOptions.count("observables") && !parsedOptions.count("bulk-observables")
-        && !parsedOptions.count("log-info") && !parsedOptions.count("generate-ramsnap")
-        && !parsedOptions.count("generate-xyz") && !parsedOptions.count("generate-wolfram")
-        && !parsedOptions.count("store-ramtrj-trajectory") && !parsedOptions.count("store-xyz-trajectory"))
+    if (!parsedOptions.count("log-info") && !parsedOptions.count("output-obs")
+        && !parsedOptions.count("output-bulk-obs") && !parsedOptions.count("output-snapshot")
+        && !parsedOptions.count("output-trajectory"))
     {
         die("At least one of:\n"
-            " -O (--observables)\n"
-            " -B (--bulk-observables)\n"
             " -I (--log-info)\n"
-            " -S (--generate-ramsnap)\n"
-            " -X (--generate-xyz)\n"
-            " -w (--generate-wolfram)\n"
-            " -s (--store-ramtrj-trajectory)\n"
-            " -x (--store-xyz-trajectory)\n"
+            " -o (--output-obs)\n"
+            " -b (--output-bulk-obs)\n"
+            " -s (--output-snapshot)\n"
+            " -t (--output-trajectory)\n"
             "options must be specified", this->logger);
     }
 
@@ -899,8 +894,7 @@ int Frontend::trajectory(int argc, char **argv) {
         die("'.auto' run is not supported in the trajectory mode", this->logger);
 
     // Prepare initial packing
-    Parameters params = this->loadParameters(inputFilename);
-    RampackParameters rampackParams = IniParametersFactory::create(params);
+    RampackParameters rampackParams = this->dispatchParams(inputFilename);
     const auto &baseParams = rampackParams.baseParameters;
     auto shapeTraits = baseParams.shapeTraits;
     auto packingFactory = baseParams.packingFactory;
@@ -910,9 +904,14 @@ int Frontend::trajectory(int argc, char **argv) {
 
     // Find and validate run whose trajectory we want to process
     std::size_t startRunIndex = PackingLoader::findStartRunIndex(runName, rampackParams.runs);
-    const auto &startRun = params.runsParameters[startRunIndex];
-    std::string trajectoryFilename = std::visit([](const auto &run) { return run.recordingFilename; }, startRun);
+    const auto &startRun = rampackParams.runs[startRunIndex];
+
+    auto ramtrjOut = std::visit([](auto &&run) { return run.ramtrjOut; }, startRun);
     std::string foundRunName = std::visit([](const auto &run) { return run.runName; }, startRun);
+
+    if (!ramtrjOut.has_value())
+        die("RAMTRJ trajectory was not recorded for the run '" + foundRunName + "'", this->logger);
+    std::string trajectoryFilename = *ramtrjOut;
 
     if (foundRunName == runName) {
         this->logger.info() << "Trajectory of the run '" << foundRunName << "' will be processed" << std::endl;
@@ -921,11 +920,8 @@ int Frontend::trajectory(int argc, char **argv) {
         this->logger << std::endl;
     }
 
-    if (trajectoryFilename.empty())
-        die("RAMTRJ trajectory was not recorded for the run '" + foundRunName + "'", this->logger);
-
     // Recreate environment
-    auto environment = this->recreateRawEnvironment(params, startRunIndex);
+    auto environment = this->recreateRawEnvironment(rampackParams, startRunIndex);
 
     // Autofix trajectory if desired
     bool autoFix = parsedOptions.count("auto-fix");
@@ -953,16 +949,17 @@ int Frontend::trajectory(int argc, char **argv) {
         player = std::move(truncatedPlayer);
     }
 
-    // Stored trajectory (if desired)
-    if (parsedOptions.count("store-ramtrj-trajectory")) {
-        if (storeFilename == trajectoryFilename)
-            die("Input and output trajectory file names are identical!", this->logger);
+    // Stored trajectory in RAMTRJ/Wolfram format (if desired)
+    for (const auto &trajectoryOutput : trajectoryOutputs) {
+        auto factory = Frontend::createSimulationRecorderFactory(trajectoryOutput);
+        if (factory->getFilename() == trajectoryFilename)
+            die("Input trajectory file name '" + trajectoryFilename + "' cannot be used as an output!", this->logger);
 
         bool isContinuation = false;
-        auto recorder = this->loadRamtrjRecorder(storeFilename, player->getNumMolecules(), player->getCycleStep(),
-                                                 isContinuation);
+        auto recorder = factory->create(player->getNumMolecules(),
+                                        player->getCycleStep(), isContinuation, this->logger);
 
-        this->logger.info() << "Storing fixed trajectory started..." << std::endl;
+        this->logger.info() << "Storing trajectory started..." << std::endl;
 
         using namespace std::chrono;
         auto start = high_resolution_clock::now();
@@ -981,12 +978,19 @@ int Frontend::trajectory(int argc, char **argv) {
     }
 
     // Replay the simulation and calculate observables (if desired)
-    if (parsedOptions.count("observables")) {
-        if (!parsedOptions.count("obs-output"))
-            die("Output file for observables must be specified with option -o [output file name]", this->logger);
+    if (parsedOptions.count("output-obs")) {
+        if (observables.empty()) {
+            die("When using -o (--output-obs), at least one observable should be specified: -O (--observable)",
+                this->logger);
+        }
+
+        ObservablesCollector collector;
+        for (const std::string &observable : observables) {
+            auto observableData = Frontend::createObservable(observable, maxThreads);
+            collector.addObservable(std::move(observableData.observable), observableData.scope);
+        }
 
         this->logger.info() << "Starting simulation replay for observables..." << std::endl;
-        auto collector = this->createObservablesCollector(observables, std::nullopt, maxThreads, params.version);
 
         using namespace std::chrono;
         auto start = high_resolution_clock::now();
@@ -998,24 +1002,26 @@ int Frontend::trajectory(int argc, char **argv) {
             double pressure{};
             if (environment.isBoxScalingEnabled())
                 pressure = environment.getPressure().getValueForCycle(cycles, totalCycles);
-            collector->setThermodynamicParameters(temperature, pressure);
-            collector->addSnapshot(*packing, player->getCurrentSnapshotCycles(), *shapeTraits);
+            collector.setThermodynamicParameters(temperature, pressure);
+            collector.addSnapshot(*packing, player->getCurrentSnapshotCycles(), *shapeTraits);
             this->logger.info() << "Replayed cycle " << player->getCurrentSnapshotCycles() << "; ";
-            this->logger << collector->generateInlineObservablesString(*packing, *shapeTraits);
+            this->logger << collector.generateInlineObservablesString(*packing, *shapeTraits);
             this->logger << std::endl;
         }
         auto end = high_resolution_clock::now();
         double time = duration<double>(end - start).count();
 
         this->logger.info() << "Replay finished after " << time << " s." << std::endl;
-        this->storeSnapshots(*collector, false, obsOutputFilename);
+        this->storeSnapshots(collector, false, obsOutputFilename);
         this->logger.info() << std::endl;
     }
 
     // Replay the simulation and calculate bulk observables (if desired)
-    if (parsedOptions.count("bulk-observables")) {
-        if (!parsedOptions.count("bulk-obs-output"))
-            die("Output file for bulk observables must be specified with option -b [output file name]", this->logger);
+    if (parsedOptions.count("output-bulk-obs")) {
+        if (bulkObservables.empty()) {
+            die("When using -b (--output-bulk-obs), at least one observable should be specified: "
+                "-B (--bulk-observable)", this->logger);
+        }
         if (!parsedOptions.count("averaging-start"))
             die("The start of averaging must be specified with option -a [first cycle number]", this->logger);
         if (averagingStart >= player->getTotalCycles()) {
@@ -1027,8 +1033,13 @@ int Frontend::trajectory(int argc, char **argv) {
                 + "shapshot (" + std::to_string(player->getCycleStep()) + ")");
         }
 
+        ObservablesCollector collector;
+        for (const std::string &bulkObservable : bulkObservables) {
+            auto theObservable = Frontend::createBulkObservable(bulkObservable, maxThreads);
+            collector.addBulkObservable(theObservable);
+        }
+
         this->logger.info() << "Starting simulation replay for bulk observables..." << std::endl;
-        auto collector = this->createObservablesCollector(std::nullopt, bulkObservables, maxThreads, params.version);
 
         using namespace std::chrono;
         auto start = high_resolution_clock::now();
@@ -1042,56 +1053,36 @@ int Frontend::trajectory(int argc, char **argv) {
             startingCycle = (averagingStart / cycleStep + 1) * cycleStep;
 
         player->jumpToSnapshot(*packing, shapeTraits->getInteraction(), startingCycle);
-        collector->addAveragingValues(*packing, *shapeTraits);
+        collector.addAveragingValues(*packing, *shapeTraits);
         this->logger.info() << "Replayed cycle " << player->getCurrentSnapshotCycles() << "; " << std::endl;
         while (player->hasNext()) {
             player->nextSnapshot(*packing, shapeTraits->getInteraction());
-            collector->addAveragingValues(*packing, *shapeTraits);
+            collector.addAveragingValues(*packing, *shapeTraits);
             this->logger.info() << "Replayed cycle " << player->getCurrentSnapshotCycles() << "; " << std::endl;
         }
         auto end = high_resolution_clock::now();
         double time = duration<double>(end - start).count();
 
         this->logger.info() << "Replay finished after " << time << " s." << std::endl;
-        this->storeBulkObservables(*collector, bulkObsOutputFilename);
+        this->storeBulkObservables(collector, bulkObsOutputFilename);
         this->logger.info() << std::endl;
     }
 
     // Recreate RAMSNAP/XYZ/Wolfram file from the last snapshot (if desired)
-    if (parsedOptions.count("generate-ramsnap") || parsedOptions.count("generate-xyz")
-        || parsedOptions.count("generate-wolfram"))
-    {
+    if (!snapshotOutputs.empty()) {
         this->logger.info() << "Reading last snapshot... " << std::flush;
         player->lastSnapshot(*packing, shapeTraits->getInteraction());
         this->logger.info() << "cycles: " << player->getCurrentSnapshotCycles() << std::endl;
 
-        if (parsedOptions.count("generate-ramsnap"))
-            this->generateRamsnapFile(*packing, ramsnapFilename, player->getCurrentSnapshotCycles());
-        if (parsedOptions.count("generate-xyz"))
-            this->generateXYZFile(*packing, *shapeTraits, xyzFilename, player->getCurrentSnapshotCycles());
-        if (parsedOptions.count("generate-wolfram"))
-            this->storeWolframVisualization(*packing, *shapeTraits, wolframFilename);
-        this->logger.info() << std::endl;
-    }
+        for (const auto &snapshotOutput: snapshotOutputs) {
+            auto writer = Frontend::createFileSnapshotWriter(snapshotOutput);
+            if (writer.getFilename() == trajectoryFilename) {
+                die("Input trajectory file name '" + trajectoryFilename + "' cannot be used as an output!",
+                    this->logger);
+            }
 
-    // Store XYZ trajectory (if desired)
-    if (parsedOptions.count("store-xyz-trajectory")) {
-        auto xyzOut = std::make_unique<std::ofstream>(xyzTrajectoryFilename);
-        ValidateOpenedDesc(*xyzOut, xyzTrajectoryFilename, "to store XYZ trajectory");
-        XYZRecorder recorder(std::move(xyzOut));
-
-        this->logger.info() << "Starting simulation replay for XYZ trajectory export..." << std::endl;
-        using namespace std::chrono;
-        auto start = high_resolution_clock::now();
-        while (player->hasNext()) {
-            player->nextSnapshot(*packing, shapeTraits->getInteraction());
-            recorder.recordSnapshot(*packing, player->getCurrentSnapshotCycles());
-            this->logger.info() << "Replayed cycle " << player->getCurrentSnapshotCycles() << "; " << std::endl;
+            writer.generateSnapshot(*packing, *shapeTraits, player->getCurrentSnapshotCycles(), this->logger);
         }
-        auto end = high_resolution_clock::now();
-        double time = duration<double>(end - start).count();
-
-        this->logger.info() << "Replay finished after " << time << " s." << std::endl;
     }
 
     return EXIT_SUCCESS;
@@ -1383,11 +1374,13 @@ Simulation::Environment Frontend::recreateEnvironment(const RampackParameters &p
     return env;
 }
 
-Simulation::Environment Frontend::recreateRawEnvironment(const Parameters &params, std::size_t startRunIndex) const {
-    Expects(startRunIndex < params.runsParameters.size());
-    auto env = Frontend::parseSimulationEnvironment(params, params.version);
+Simulation::Environment Frontend::recreateRawEnvironment(const RampackParameters &params,
+                                                         std::size_t startRunIndex) const
+{
+    Expects(startRunIndex < params.runs.size());
+    auto env = params.baseParameters.baseEnvironment;
     for (std::size_t i{}; i <= startRunIndex; i++)
-        Frontend::combineEnvironment(env, params.runsParameters[i], params.version);
+        Frontend::combineEnvironment(env, params.runs[i]);
     return env;
 }
 
@@ -1484,48 +1477,32 @@ std::shared_ptr<ShapeTraits> Frontend::createShapeTraits(const std::string &shap
     return shapeTraits.as<std::shared_ptr<ShapeTraits>>();
 }
 
-std::shared_ptr<ObservablesCollector>
-Frontend::createObservablesCollector(std::optional<std::string> observablesStr,
-                                     std::optional<std::string> bulkObservablesStr, std::size_t maxThreads,
-                                     const Version &paramsVersion) const
-{
-    if (paramsVersion < INPUT_REVAMP_VERSION) {
-        return legacy::ObservablesCollectorFactory::create(
-            explode(observablesStr.value_or(""), ','), explode(bulkObservablesStr.value_or(""), ','), maxThreads
-        );
-    }
-
+ObservablesMatcher::ObservableData Frontend::createObservable(const std::string &expression, std::size_t maxThreads) {
     using namespace pyon;
     using namespace pyon::matcher;
-    Any result;
 
-    auto collector = std::make_shared<ObservablesCollector>();
+    auto observableMatcher = ObservablesMatcher::createObservablesMatcher(maxThreads);
+    auto observableAST = Parser::parse(expression);
+    Any observable;
+    auto matchReport = observableMatcher.match(observableAST, observable);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
 
-    if (observablesStr.has_value()) {
-        auto observablesMatcher = ObservablesMatcher::createObservablesMatcher(maxThreads);
-        auto observablesAST = Parser::parse(*observablesStr);
-        auto matchReport = observablesMatcher.match(observablesAST, result);
-        if (!matchReport)
-            throw ValidationException(matchReport.getReason());
+    return observable.as<ObservablesMatcher::ObservableData>();
+}
 
-        auto observables = result.as<std::vector<ObservablesMatcher::ObservableData>>();
-        for (const auto &observableData: observables)
-            collector->addObservable(observableData.observable, observableData.scope);
-    }
+std::shared_ptr<BulkObservable> Frontend::createBulkObservable(const std::string &expression, std::size_t maxThreads) {
+    using namespace pyon;
+    using namespace pyon::matcher;
 
-    if (bulkObservablesStr.has_value()) {
-        auto bulkObservablesMatcher = ObservablesMatcher::createBulkObservablesMatcher(maxThreads);
-        auto observablesAST = Parser::parse(*bulkObservablesStr);
-        auto matchReport = bulkObservablesMatcher.match(observablesAST, result);
-        if (!matchReport)
-            throw ValidationException(matchReport.getReason());
+    auto bulkObservableMatcher = ObservablesMatcher::createBulkObservablesMatcher(maxThreads);
+    auto bulkObservableAST = Parser::parse(expression);
+    Any bulkObservable;
+    auto matchReport = bulkObservableMatcher.match(bulkObservableAST, bulkObservable);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
 
-        auto bulkObservables = result.as<std::vector<std::shared_ptr<BulkObservable>>>();
-        for (const auto &bulkObservable: bulkObservables)
-            collector->addBulkObservable(bulkObservable);
-    }
-
-    return collector;
+    return bulkObservable.as<std::shared_ptr<BulkObservable>>();
 }
 
 std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles, const std::string &initialDimensions,
@@ -1686,4 +1663,18 @@ FileShapePrinter Frontend::createShapePrinter(const std::string &expression, con
         throw ValidationException(matchReport.getReason());
 
     return printer.as<FileShapePrinter>();
+}
+
+std::shared_ptr<SimulationRecorderFactory> Frontend::createSimulationRecorderFactory(const std::string &expression) {
+    using namespace pyon;
+    using namespace pyon::matcher;
+
+    auto factoryMatcher = SimulationRecorderFactoryMatcher::create();
+    auto factoryAST = Parser::parse(expression);
+    Any factory;
+    auto matchReport = factoryMatcher.match(factoryAST, factory);
+    if (!matchReport)
+        throw ValidationException(matchReport.getReason());
+
+    return factory.as<std::shared_ptr<SimulationRecorderFactory>>();
 }

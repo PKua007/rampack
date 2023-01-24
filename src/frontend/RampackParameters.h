@@ -46,6 +46,7 @@ struct IntegrationRun {
     std::vector<FileSnapshotWriter> lastSnapshotWriters;
     std::optional<std::string> ramsnapOut;
     std::vector<std::shared_ptr<SimulationRecorderFactory>> simulationRecorders;
+    std::optional<std::string> ramtrjOut;
     std::shared_ptr<ObservablesCollector> observablesCollector;
     std::optional<std::string> averagesOut;
     std::optional<std::string> observablesOut;
@@ -62,6 +63,7 @@ struct OverlapRelaxationRun  {
     std::vector<FileSnapshotWriter> lastSnapshotWriters;
     std::optional<std::string> ramsnapOut;
     std::vector<std::shared_ptr<SimulationRecorderFactory>> simulationRecorders;
+    std::optional<std::string> ramtrjOut;
     std::shared_ptr<ObservablesCollector> observablesCollector;
     std::optional<std::string> observablesOut;
 };

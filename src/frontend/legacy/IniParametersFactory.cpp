@@ -229,6 +229,9 @@ namespace {
 
         run.simulationRecorders = parse_simulation_recorders(integrationParams);
 
+        if (!integrationParams.recordingFilename.empty())
+            run.ramtrjOut = integrationParams.recordingFilename;
+
         run.observablesCollector = legacy::ObservablesCollectorFactory::create(
             explode(integrationParams.observables, ','), explode(integrationParams.bulkObservables, ','),
             baseParams.scalingThreads, baseParams.version
@@ -262,6 +265,9 @@ namespace {
             run.ramsnapOut = overlapRelaxationParams.packingFilename;
 
         run.simulationRecorders = parse_simulation_recorders(overlapRelaxationParams);
+
+        if (!overlapRelaxationParams.recordingFilename.empty())
+            run.ramtrjOut = overlapRelaxationParams.recordingFilename;
 
         run.observablesCollector = legacy::ObservablesCollectorFactory::create(
             explode(overlapRelaxationParams.observables, ','), explode(overlapRelaxationParams.bulkObservables, ','),
