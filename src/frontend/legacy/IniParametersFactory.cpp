@@ -247,10 +247,10 @@ namespace {
         return run;
     }
 
-    // TODO: helper interaction
     OverlapRelaxationRun
     parse_overlap_relaxation_run(const Parameters::OverlapRelaxationParameters &overlapRelaxationParams,
-                                 const BaseParameters &baseParams)
+                                 const BaseParameters &baseParams, const std::string &shapeName,
+                                 const std::string &shapeAttributes)
     {
         OverlapRelaxationRun run;
 
@@ -259,6 +259,9 @@ namespace {
         run.snapshotEvery = overlapRelaxationParams.snapshotEvery;
         run.inlineInfoEvery = overlapRelaxationParams.inlineInfoEvery;
         run.orientationFixEvery = overlapRelaxationParams.orientationFixEvery;
+        run.helperShapeTraits = legacy::ShapeFactory::shapeTraitsFor(shapeName, shapeAttributes,
+                                                                     overlapRelaxationParams.helperInteraction,
+                                                                     baseParams.version);
         run.lastSnapshotWriters = parse_last_snapshot_writers(overlapRelaxationParams);
 
         if (!overlapRelaxationParams.packingFilename.empty())
@@ -280,13 +283,15 @@ namespace {
         return run;
     }
 
-    Run parse_run(const Parameters::RunParameters &runParams, const BaseParameters &baseParams) {
+    Run parse_run(const Parameters::RunParameters &runParams, const BaseParameters &baseParams,
+                  const std::string &shapeName, const std::string &shapeAttributes)
+    {
         if (std::holds_alternative<Parameters::IntegrationParameters>(runParams)) {
             const auto &integrationParams = std::get<Parameters::IntegrationParameters>(runParams);
             return parse_integration_run(integrationParams, baseParams);
         } else if (std::holds_alternative<Parameters::OverlapRelaxationParameters>(runParams)) {
             const auto &overlapRelaxationParams = std::get<Parameters::OverlapRelaxationParameters>(runParams);
-            return parse_overlap_relaxation_run(overlapRelaxationParams, baseParams);
+            return parse_overlap_relaxation_run(overlapRelaxationParams, baseParams, shapeName, shapeAttributes);
         } else {
             throw AssertionException("Unknown run type");
         }
@@ -295,8 +300,10 @@ namespace {
     std::vector<Run> parse_runs(const Parameters &params, const BaseParameters &baseParams) {
         std::vector<Run> runs;
         runs.reserve(params.runsParameters.size());
-        std::transform(params.runsParameters.begin(), params.runsParameters.end(), std::back_inserter(runs),
-                       [&baseParams](const auto &runParams) { return parse_run(runParams, baseParams); });
+        auto runParser = [&baseParams, &params](const auto &runParams) {
+            return parse_run(runParams, baseParams, params.shapeName, params.shapeAttributes);
+        };
+        std::transform(params.runsParameters.begin(), params.runsParameters.end(), std::back_inserter(runs), runParser);
         return runs;
     }
 }

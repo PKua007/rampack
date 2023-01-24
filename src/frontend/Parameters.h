@@ -73,8 +73,8 @@ public:
         std::size_t snapshotEvery = 100;
         std::size_t inlineInfoEvery = 100;
         std::size_t orientationFixEvery = 10000;
-        std::string observables = "[]";
-        std::string bulkObservables = "[]";
+        std::string observables;
+        std::string bulkObservables;
         std::string packingFilename{};
         std::string xyzPackingFilename{};
         std::string wolframFilename{};
@@ -102,8 +102,8 @@ public:
         std::size_t snapshotEvery = 100;
         std::size_t inlineInfoEvery = 100;
         std::size_t orientationFixEvery = 10000;
-        std::string observables = "[]";
-        std::string bulkObservables = "[]";
+        std::string observables;
+        std::string bulkObservables;
         std::string helperInteraction{};
         std::string packingFilename{};
         std::string xyzPackingFilename{};
