@@ -3,7 +3,6 @@
 //
 
 #include <cstdlib>
-#include <fstream>
 #include <limits>
 #include <iterator>
 #include <algorithm>
@@ -18,35 +17,21 @@
 #include "utils/Fold.h"
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
-#include "legacy/ShapeFactory.h"
 #include "legacy/ObservablesCollectorFactory.h"
 #include "core/Simulation.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/Packing.h"
 #include "utils/OMPMacros.h"
-#include "core/lattice/DistanceOptimizer.h"
-#include "legacy/ArrangementFactory.h"
-#include "legacy/TriclinicBoxScalerFactory.h"
 #include "core/shapes/CompoundShapeTraits.h"
-#include "legacy/MoveSamplerFactory.h"
-#include "core/io/RamtrjRecorder.h"
 #include "core/io/RamtrjPlayer.h"
 #include "PackingLoader.h"
-#include "PackingFactory.h"
 #include "legacy/ParameterUpdaterFactory.h"
 #include "core/io/XYZRecorder.h"
-#include "core/io/WolframWriter.h"
-#include "core/io/XYZWriter.h"
 #include "core/io/TruncatedPlayer.h"
 #include "utils/ParseUtils.h"
-#include "legacy/ShapeFactory.h"
 #include "matchers/ShapeMatcher.h"
 #include "pyon/Parser.h"
 #include "matchers/ObservablesMatcher.h"
-#include "matchers/ArrangementMatcher.h"
-#include "matchers/MoveSamplerMatcher.h"
-#include "matchers/BoxScalerMatcher.h"
-#include "matchers/DynamicParameterMatcher.h"
 #include "RampackParameters.h"
 #include "legacy/IniParametersFactory.h"
 #include "matchers/RampackMatcher.h"
@@ -54,16 +39,6 @@
 #include "matchers/FileShapePrinterMatcher.h"
 #include "matchers/SimulationRecorderFactoryMatcher.h"
 
-
-Parameters Frontend::loadParameters(const std::string &inputFilename) {
-    std::ifstream paramsFile(inputFilename);
-    ValidateOpenedDesc(paramsFile, inputFilename, "to load input parameters");
-    Parameters params(paramsFile);
-    ValidateMsg(params.version <= CURRENT_VERSION,
-                "'" + inputFilename + "' version (" + params.version.str() + ") is higher than RAMPACK version ("
-                + CURRENT_VERSION.str() + ")");
-    return params;
-}
 
 void Frontend::setVerbosityLevel(std::optional<std::string> verbosity, std::optional<std::string> auxOutput,
                                  std::optional<std::string> auxVerbosity)
@@ -270,16 +245,6 @@ int Frontend::casino(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-void Frontend::combineEnvironment(Simulation::Environment &env, const Parameters::RunParameters &runParams,
-                                  const Version &paramsVersion)
-{
-    auto environmentCreator = [&paramsVersion](const auto &runParams) {
-        return parseSimulationEnvironment(runParams, paramsVersion);
-    };
-    auto runEnv = std::visit(environmentCreator, runParams);
-    env.combine(runEnv);
-}
-
 void Frontend::combineEnvironment(Simulation::Environment &env, const Run &run)
 {
     auto environmentGetter = [](const auto &run) {
@@ -354,45 +319,6 @@ void Frontend::performIntegration(Simulation &simulation, Simulation::Environmen
     }
 }
 
-std::unique_ptr<RamtrjRecorder> Frontend::loadRamtrjRecorder(const std::string &filename, std::size_t numMolecules,
-                                                             std::size_t cycleStep, bool isContinuation) const
-{
-    std::unique_ptr<std::fstream> inout;
-
-    if (isContinuation) {
-        inout = std::make_unique<std::fstream>(
-            filename, std::ios_base::in | std::ios_base::out | std::ios_base::binary
-        );
-    } else {
-        inout = std::make_unique<std::fstream>(
-            filename, std::ios_base::in | std::ios_base::out | std::ios_base::binary | std::ios_base::trunc
-        );
-    }
-
-    ValidateOpenedDesc(*inout, filename, "to store RAMTRJ trajectory");
-    this->logger.info() << "RAMTRJ trajectory is stored on the fly to '" << filename << "'" << std::endl;
-    return std::make_unique<RamtrjRecorder>(std::move(inout), numMolecules, cycleStep, isContinuation);
-}
-
-std::unique_ptr<XYZRecorder> Frontend::loadXYZRecorder(const std::string &filename, bool isContinuation) const
-{
-    std::unique_ptr<std::fstream> inout;
-
-    if (isContinuation) {
-        inout = std::make_unique<std::fstream>(
-            filename, std::ios_base::app | std::ios_base::binary
-        );
-    } else {
-        inout = std::make_unique<std::fstream>(
-            filename, std::ios_base::out | std::ios_base::binary
-        );
-    }
-
-    ValidateOpenedDesc(*inout, filename, "to store XYZ trajectory");
-    this->logger.info() << "XYZ trajectory is stored on the fly to '" << filename << "'" << std::endl;
-    return std::make_unique<XYZRecorder>(std::move(inout));
-}
-
 void Frontend::performOverlapRelaxation(Simulation &simulation, Simulation::Environment &env,
                                         const OverlapRelaxationRun &run, std::shared_ptr<ShapeTraits> shapeTraits,
                                         std::size_t cycleOffset, bool isContinuation)
@@ -450,53 +376,6 @@ void Frontend::storeSnapshots(const ObservablesCollector &observablesCollector, 
     }
 
     this->logger.info() << "Observable snapshots stored to " + observableSnapshotFilename << std::endl;
-}
-
-void Frontend::storeWolframVisualization(const Packing &packing, const ShapeTraits &traits,
-                                         const std::string &wolframAttr) const
-{
-    auto [filename, params] = this->parseFilenameAndParams(wolframAttr, {"style", "mesh_divisions"});
-
-    std::string styleStr = "standard";
-    if (params.find("style") != params.end()) {
-        styleStr = params["style"];
-        params.erase("style");
-    }
-
-    WolframWriter::WolframStyle wolframStyle{};
-    if (styleStr == "standard")
-        wolframStyle = WolframWriter::WolframStyle::STANDARD;
-    else if (styleStr == "affineTransform")
-        wolframStyle = WolframWriter::WolframStyle::AFFINE_TRANSFORM;
-    else
-        throw ValidationException("Unknown wolfram style: \"" + styleStr + "\"");
-
-    std::ofstream out(filename);
-    ValidateOpenedDesc(out, filename, "to store Wolfram packing");
-    WolframWriter writer(wolframStyle, params);
-    writer.write(out, packing, traits, {});
-    this->logger.info() << "Wolfram packing stored to " + filename << " using '" << styleStr << "' style" << std::endl;
-}
-
-void Frontend::storeRamsnap(const Simulation &simulation, const std::string &packingFilename) {
-    auto auxInfo = this->prepareAuxInfo(simulation);
-    std::ofstream out(packingFilename);
-    ValidateOpenedDesc(out, packingFilename, "to store RAMSNAP packing data");
-    simulation.getPacking().store(out, auxInfo);
-
-    this->logger.info() << "RAMSNAP packing stored to " + packingFilename << std::endl;
-}
-
-void Frontend::storeXYZ(const Simulation &simulation, const ShapeTraits &traits, const std::string &packingFilename) {
-    std::ofstream out(packingFilename);
-    ValidateOpenedDesc(out, packingFilename, "to store XYZ packing data");
-
-    auto auxInfo = this->prepareAuxInfo(simulation);
-    const auto &packing = simulation.getPacking();
-    XYZWriter writer;
-    writer.write(out, packing, traits, auxInfo);
-
-    this->logger.info() << "XYZ packing stored to " + packingFilename << std::endl;
 }
 
 void Frontend::printPerformanceInfo(const Simulation &simulation) {
@@ -669,34 +548,6 @@ int Frontend::preview(int argc, char **argv) {
     }
 
     return EXIT_SUCCESS;
-}
-
-void Frontend::generateRamsnapFile(const Packing &packing, const std::string &ramsnapFilename, std::size_t cycles) {
-    std::map<std::string, std::string> auxInfo;
-    auxInfo["cycles"] = std::to_string(cycles);
-    std::ofstream out(ramsnapFilename);
-    ValidateOpenedDesc(out, ramsnapFilename, "to store RAMSNAP packing data");
-    packing.store(out, auxInfo);
-    this->logger.info() << "RAMSNAP packing stored to " + ramsnapFilename << std::endl;
-}
-
-void Frontend::generateXYZFile(const Packing &packing, const ShapeTraits &traits, const std::string &ramsnapFilename,
-                               std::size_t cycles)
-{
-    std::map<std::string, std::string> auxInfo;
-    auxInfo["cycles"] = std::to_string(cycles);
-    std::ofstream out(ramsnapFilename);
-    ValidateOpenedDesc(out, ramsnapFilename, "to store XYZ packing data");
-    XYZWriter writer;
-    writer.write(out, packing, traits, auxInfo);
-    this->logger.info() << "XYZ packing stored to " + ramsnapFilename << std::endl;
-}
-
-std::string Frontend::doubleToString(double d) {
-    std::ostringstream ostr;
-    ostr.precision(std::numeric_limits<double>::max_digits10);
-    ostr << d;
-    return ostr.str();
 }
 
 void Frontend::printMoveStatistics(const Simulation &simulation) const {
@@ -1119,19 +970,6 @@ std::unique_ptr<RamtrjPlayer> Frontend::loadRamtrjPlayer(std::string &trajectory
     }
 }
 
-void Frontend::createWalls(Packing &packing, const std::string &walls) {
-    for (char c : walls) {
-        if (std::isspace(c))
-            continue;
-        switch (std::tolower(c)) {
-            case 'x':   packing.toggleWall(0, true);    break;
-            case 'y':   packing.toggleWall(1, true);    break;
-            case 'z':   packing.toggleWall(2, true);    break;
-            default:    throw ValidationException("unknown wall axis: " + std::string{c});
-        }
-    }
-}
-
 void Frontend::createWalls(Packing &packing, const std::array<bool, 3> &walls) {
     for (std::size_t i{}; i < 3; i++)
         packing.toggleWall(i, walls[i]);
@@ -1287,62 +1125,6 @@ void Frontend::attachSnapshotOut(ObservablesCollector &collector, const std::str
     collector.attachOnTheFlyOutput(std::move(out));
 }
 
-Simulation::Environment Frontend::parseSimulationEnvironment(const InheritableParameters &params,
-                                                             const Version &paramsVersion)
-{
-    Simulation::Environment env;
-
-    if (!params.scalingType.empty()) {
-        auto boxScaler = Frontend::createBoxScaler(params.scalingType, params.volumeStepSize, paramsVersion);
-        if (boxScaler == nullptr) {
-            env.disableBoxScaling();
-        } else {
-            Validate(params.volumeStepSize > 0);
-            env.setBoxScaler(std::move(boxScaler));
-        }
-    }
-
-    if (!params.moveTypes.empty())
-        env.setMoveSamplers(Frontend::createMoveSamplers(params.moveTypes, paramsVersion));
-
-    if (!params.temperature.empty())
-        env.setTemperature(Frontend::createDynamicParameter(params.temperature, paramsVersion));
-
-    if (!params.pressure.empty())
-        env.setPressure(Frontend::createDynamicParameter(params.pressure, paramsVersion));
-
-    return env;
-}
-
-Simulation::Environment Frontend::recreateEnvironment(const Parameters &params, const PackingLoader &loader) const {
-    // Parse initial environment (from the global section)
-    auto env = Frontend::parseSimulationEnvironment(params, params.version);
-
-    std::size_t startRunIndex = loader.getStartRunIndex();
-    if (loader.isContinuation()) {
-        // If it is continuation, we need to replay and combine all previous environments from all previous runs
-        // together with a continued run, and overwrite move step sizes at the end - this way we start with the same
-        // step sizes that were before
-        Assert(loader.isRestored());
-        for (std::size_t i{}; i <= startRunIndex; i++)
-            Frontend::combineEnvironment(env, params.runsParameters[i], params.version);
-        this->overwriteMoveStepSizes(env, loader.getAuxInfo());
-    } else {
-        // If it is not a continuation, we replay environments of the runs BEFORE the starting point, then overwrite
-        // step sizes (because this is where the last simulation ended) and AFTER it, we apply the new environment from
-        // the starting run
-        for (std::size_t i{}; i < startRunIndex; i++)
-            Frontend::combineEnvironment(env, params.runsParameters[i], params.version);
-        if (loader.isRestored())
-            this->overwriteMoveStepSizes(env, loader.getAuxInfo());
-        Frontend::combineEnvironment(env, params.runsParameters[startRunIndex], params.version);
-    }
-
-    ValidateMsg(env.isComplete(), "Some of parameters: pressure, temperature, moveTypes, scalingType are missing");
-
-    return env;
-}
-
 Simulation::Environment Frontend::recreateEnvironment(const RampackParameters &params,
                                                       const PackingLoader &loader) const
 {
@@ -1382,23 +1164,6 @@ Simulation::Environment Frontend::recreateRawEnvironment(const RampackParameters
     for (std::size_t i{}; i <= startRunIndex; i++)
         Frontend::combineEnvironment(env, params.runs[i]);
     return env;
-}
-
-std::map<std::string, std::string> Frontend::prepareAuxInfo(const Simulation &simulation) const {
-    std::map<std::string, std::string> auxInfo;
-
-    auxInfo["cycles"] = std::to_string(simulation.getTotalCycles());
-
-    const auto &movesStatistics = simulation.getMovesStatistics();
-    for (const auto &moveStatistics : movesStatistics) {
-        auto groupName = moveStatistics.groupName;
-        for (const auto &stepSizeData : moveStatistics.stepSizeDatas) {
-            std::string moveKey = Frontend::formatMoveKey(groupName, stepSizeData.moveName);
-            auxInfo[moveKey] = doubleToString(stepSizeData.stepSize);
-        }
-    }
-
-    return auxInfo;
 }
 
 std::unique_ptr<Packing> Frontend::recreatePacking(PackingLoader &loader, const BaseParameters &params,
@@ -1456,15 +1221,6 @@ void Frontend::verifyDynamicParameter(const DynamicParameter &dynamicParameter, 
     }
 }
 
-std::pair<std::string, std::map<std::string, std::string>>
-Frontend::parseFilenameAndParams(const std::string &str, const std::vector<std::string>& fields) const {
-    std::istringstream in(str);
-    std::string filename;
-    in >> filename;
-    auto params = ParseUtils::parseFields(fields, ParseUtils::tokenize<std::string>(in));
-    return {filename, params};
-}
-
 std::shared_ptr<ShapeTraits> Frontend::createShapeTraits(const std::string &shapeName) const {
     using namespace pyon;
     using namespace pyon::matcher;
@@ -1503,101 +1259,6 @@ std::shared_ptr<BulkObservable> Frontend::createBulkObservable(const std::string
         throw ValidationException(matchReport.getReason());
 
     return bulkObservable.as<std::shared_ptr<BulkObservable>>();
-}
-
-std::unique_ptr<Packing> Frontend::arrangePacking(std::size_t numOfParticles, const std::string &initialDimensions,
-                                                  const std::string &initialArrangement, const ShapeTraits &shapeTraits,
-                                                  std::size_t moveThreads, std::size_t scalingThreads,
-                                                  const Version &paramsVersion) const
-{
-    auto bc = std::make_unique<PeriodicBoundaryConditions>();
-
-    if (paramsVersion < INPUT_REVAMP_VERSION) {
-        return legacy::ArrangementFactory::arrangePacking(numOfParticles, initialDimensions, initialArrangement,
-                                                          std::move(bc), shapeTraits, moveThreads, scalingThreads);
-    }
-
-    using namespace pyon;
-    using namespace pyon::matcher;
-
-    Any packingFactory;
-    auto shapeAST = Parser::parse(initialArrangement);
-    auto matcher = ArrangementMatcher::create();
-    auto matchReport = matcher.match(shapeAST, packingFactory);
-    if (!matchReport)
-        throw ValidationException(matchReport.getReason());
-
-    return packingFactory.as<std::shared_ptr<PackingFactory>>()->createPacking(
-        std::move(bc), shapeTraits, moveThreads, scalingThreads
-    );
-}
-
-std::vector<std::shared_ptr<MoveSampler>> Frontend::createMoveSamplers(const std::string &moveTypes,
-                                                                       const Version &paramsVersion)
-{
-    if (paramsVersion < INPUT_REVAMP_VERSION) {
-        auto moveSamplerStrings = explode(moveTypes, ',');
-        std::vector<std::shared_ptr<MoveSampler>> moveSamplers;
-        moveSamplers.reserve(moveSamplerStrings.size());
-        for (const auto &moveSamplerString: moveSamplerStrings)
-            moveSamplers.push_back(legacy::MoveSamplerFactory::create(moveSamplerString));
-        return moveSamplers;
-    }
-
-    using namespace pyon;
-    using namespace pyon::matcher;
-
-    auto sampler = MoveSamplerMatcher::create();
-    auto samplerArray = pyon::matcher::MatcherArray{}
-        .elementsMatch(sampler)
-        .nonEmpty()
-        .mapToStdVector<std::shared_ptr<MoveSampler>>();
-
-    Any samplers;
-    auto samplersAST = Parser::parse(moveTypes);
-    auto matchReport = samplerArray.match(samplersAST, samplers);
-    if (!matchReport)
-        throw ValidationException(matchReport.getReason());
-
-    return samplers.as<std::vector<std::shared_ptr<MoveSampler>>>();
-}
-
-std::shared_ptr<TriclinicBoxScaler> Frontend::createBoxScaler(const std::string &scalerStr, double volumeStepSize,
-                                                              const Version &paramsVersion)
-{
-    if (paramsVersion < INPUT_REVAMP_VERSION)
-        return legacy::TriclinicBoxScalerFactory::create(scalerStr, volumeStepSize);
-
-    using namespace pyon;
-    using namespace pyon::matcher;
-
-    auto scalerMatcher = BoxScalerMatcher::create();
-    auto scalerAST = Parser::parse(scalerStr);
-    Any scaler;
-    auto matchReport = scalerMatcher.match(scalerAST, scaler);
-    if (!matchReport)
-        throw ValidationException(matchReport.getReason());
-
-    return scaler.as<std::shared_ptr<TriclinicBoxScaler>>();
-}
-
-std::shared_ptr<DynamicParameter> Frontend::createDynamicParameter(const std::string &parameterStr,
-                                                                   const Version &paramsVersion)
-{
-    if (paramsVersion < INPUT_REVAMP_VERSION)
-        return legacy::ParameterUpdaterFactory::create(parameterStr);
-
-    using namespace pyon;
-    using namespace pyon::matcher;
-
-    auto parameterMatcher = DynamicParameterMatcher::create();
-    auto parameterAST = Parser::parse(parameterStr);
-    Any parameter;
-    auto matchReport = parameterMatcher.match(parameterAST, parameter);
-    if (!matchReport)
-        throw ValidationException(matchReport.getReason());
-
-    return parameter.as<std::shared_ptr<DynamicParameter>>();
 }
 
 RampackParameters Frontend::dispatchParams(const std::string &filename) {
