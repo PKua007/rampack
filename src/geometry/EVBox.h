@@ -19,13 +19,11 @@ private:
 
     Vector<3> position{}; // (left, down, front) position
     double length{};
-    size_t samples{0};
-    size_t intersections{0};
-
+    std::size_t samples{};
+    std::size_t intersections{};
 
 public:
-
-    EVBox(const Vector<3> v, double l);
+    EVBox(const Vector<3> &v, double l);
 
     void divide(std::vector<EVBox *> &newBoxes) const;
     void sampleCorners(const Shape& originShape, Shape testShape, const Interaction &interaction);
@@ -33,8 +31,8 @@ public:
     const Vector<3>& getPosition() const;
 
     double volume() const;
-    size_t getIntersections() const;
-    size_t getSamples() const;
+    std::size_t getIntersections() const;
+    std::size_t getSamples() const;
     double getCoverage() const;
 };
 

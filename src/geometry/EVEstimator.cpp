@@ -6,18 +6,17 @@
 #include "EVEstimator.h"
 #include "EVBox.h"
 
-EVEstimator::EVEstimator(ShapeTraits &traits): traits{traits},
-                                               interaction{traits.getInteraction()},
-                                               translationDistribution{std::uniform_real_distribution<double>(-traits.getInteraction().getTotalRangeRadius(), traits.getInteraction().getTotalRangeRadius())},
-                                               u01Distribution{std::uniform_real_distribution<double>(0.0, 1.0)},
-                                               origin({0,0,0}, Matrix<3, 3>::identity()),
-                                               testShape({0,0,0}, Matrix<3, 3>::identity()) {
-    this->intersectionCounter = 0;
-    this->sampleCounter = 0;
-//    this->volume = 8*std::pow(this->range, 3.0);
+EVEstimator::EVEstimator(const ShapeTraits &traits)
+        : traits{traits},
+          interaction{traits.getInteraction()},
+          translationDistribution(-traits.getInteraction().getTotalRangeRadius(),
+                                  traits.getInteraction().getTotalRangeRadius()),
+          u01Distribution(0.0, 1.0)
+{
+
 }
 
-void EVEstimator::clear(){
+void EVEstimator::clear() {
     this->intersectionCounter = 0;
     this->sampleCounter = 0;
 }
@@ -58,7 +57,7 @@ void EVEstimator::calculateMC(Matrix<3, 3, double> *orientation, double expected
     double range = traits.getInteraction().getTotalRangeRadius();
     EVBox box(Vector<3>({-range, -range, -range}), 2 * range);
 
-    size_t todoSamples = 1e3;
+    std::size_t todoSamples = 1e3;
     do {
         box.sampleMC(orientation, this->origin, this->testShape, this->interaction, todoSamples);
         this->intersectionCounter = box.getIntersections();
@@ -67,7 +66,7 @@ void EVEstimator::calculateMC(Matrix<3, 3, double> *orientation, double expected
         // error = v*sigma/sqrt(n)
         double p = (static_cast<double>(this->intersectionCounter))/(static_cast<double>(this->sampleCounter));
         double variance = p*(1-p);
-        size_t expectedSamples = static_cast<size_t>(std::pow(box.volume() / expectedError, 2.0) * variance);
+        std::size_t expectedSamples = static_cast<size_t>(std::pow(box.volume() / expectedError, 2.0) * variance);
         if (expectedSamples < this->sampleCounter)
             todoSamples = 1e3;
         else
