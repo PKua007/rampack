@@ -6,7 +6,11 @@
 #include <string>
 #include <iostream>
 
-#include "frontend/Frontend.h"
+#include "frontend/modes/HelpMode.h"
+#include "frontend/modes/CasinoMode.h"
+#include "frontend/modes/PreviewMode.h"
+#include "frontend/modes/ShapePreviewMode.h"
+#include "frontend/modes/TrajectoryMode.h"
 #include "utils/Logger.h"
 #include "utils/Utils.h"
 
@@ -26,17 +30,16 @@ namespace {
     }
 
     int handle_commands(const std::string &cmd, const std::string &mode, int argc, char **argv) {
-        Frontend frontend(logger);
         if (mode == "-h" || mode == "--help")
-            return frontend.printGeneralHelp(cmd);
+            return HelpMode(logger).main(argc, argv);
         else if (mode == "casino")
-            return frontend.casino(argc, argv);
+            return CasinoMode(logger).main(argc, argv);
         else if (mode == "preview")
-            return frontend.preview(argc, argv);
+            return PreviewMode(logger).main(argc, argv);
         else if (mode == "shape-preview")
-            return frontend.shapePreview(argc, argv);
+            return ShapePreviewMode(logger).main(argc, argv);
         else if (mode == "trajectory")
-            return frontend.trajectory(argc, argv);
+            return TrajectoryMode(logger).main(argc, argv);
         logger.error() << "Unknown mode " << mode << ". See " << cmd << " --help" << std::endl;
         return EXIT_FAILURE;
     }
