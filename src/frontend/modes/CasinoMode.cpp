@@ -92,7 +92,7 @@ int CasinoMode::main(int argc, char **argv) {
     this->logger << "(C) 2023 Piotr Kubala and Collaborators" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    RampackParameters rampackParams = this->dispatchParams(inputFilename);
+    RampackParameters rampackParams = this->io.dispatchParams(inputFilename);
     const auto &baseParams = rampackParams.baseParameters;
     const auto &shapeTraits = baseParams.shapeTraits;
 
@@ -236,7 +236,7 @@ void CasinoMode::performIntegration(Simulation &simulation, Simulation::Environm
 
     if (run.bulkObservablesOutPattern.has_value()) {
         if (integrationParams.averagingCycles != 0 && !simulation.wasInterrupted())
-            this->storeBulkObservables(observablesCollector, *run.bulkObservablesOutPattern);
+            this->io.storeBulkObservables(observablesCollector, *run.bulkObservablesOutPattern);
         else
             this->logger.warn() << "Storing bulk observables skipped due to incomplete averaging phase." << std::endl;
     }

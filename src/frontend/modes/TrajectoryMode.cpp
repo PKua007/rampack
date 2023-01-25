@@ -138,7 +138,7 @@ int TrajectoryMode::main(int argc, char **argv) {
         die("'.auto' run is not supported in the trajectory mode", this->logger);
 
     // Prepare initial packing
-    RampackParameters rampackParams = this->dispatchParams(inputFilename);
+    RampackParameters rampackParams = this->io.dispatchParams(inputFilename);
     const auto &baseParams = rampackParams.baseParameters;
     auto shapeTraits = baseParams.shapeTraits;
     auto packingFactory = baseParams.packingFactory;
@@ -169,7 +169,7 @@ int TrajectoryMode::main(int argc, char **argv) {
 
     // Autofix trajectory if desired
     bool autoFix = parsedOptions.count("auto-fix");
-    std::unique_ptr<SimulationPlayer> player = this->loadRamtrjPlayer(trajectoryFilename, packing->size(), autoFix);
+    std::unique_ptr<SimulationPlayer> player = this->io.loadRamtrjPlayer(trajectoryFilename, packing->size(), autoFix);
     if (player == nullptr)
         return EXIT_FAILURE;
 
@@ -256,7 +256,7 @@ int TrajectoryMode::main(int argc, char **argv) {
         double time = duration<double>(end - start).count();
 
         this->logger.info() << "Replay finished after " << time << " s." << std::endl;
-        this->storeSnapshots(collector, false, obsOutputFilename);
+        this->io.storeSnapshots(collector, false, obsOutputFilename);
         this->logger.info() << std::endl;
     }
 
@@ -308,7 +308,7 @@ int TrajectoryMode::main(int argc, char **argv) {
         double time = duration<double>(end - start).count();
 
         this->logger.info() << "Replay finished after " << time << " s." << std::endl;
-        this->storeBulkObservables(collector, bulkObsOutputFilename);
+        this->io.storeBulkObservables(collector, bulkObsOutputFilename);
         this->logger.info() << std::endl;
     }
 

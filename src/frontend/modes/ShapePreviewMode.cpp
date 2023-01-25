@@ -51,7 +51,7 @@ int ShapePreviewMode::main(int argc, char **argv) {
         if (parsedOptions.count("shape"))
             die("Options -i (--input), -S (--shape) cannot be specified together", this->logger);
 
-        RampackParameters params = this->dispatchParams(inputFilename);
+        RampackParameters params = this->io.dispatchParams(inputFilename);
         traits = params.baseParameters.shapeTraits;
     } else {
         if (!parsedOptions.count("shape")) {

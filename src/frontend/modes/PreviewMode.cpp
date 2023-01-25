@@ -45,7 +45,7 @@ int PreviewMode::main(int argc, char **argv) {
     if (outputs.empty())
         die("Option -o (--output) must be specified at least once", this->logger);
 
-    RampackParameters params = this->dispatchParams(inputFilename);
+    RampackParameters params = this->io.dispatchParams(inputFilename);
     const auto &baseParams = params.baseParameters;
     auto shapeTraits = baseParams.shapeTraits;
     auto packingFactory = baseParams.packingFactory;
