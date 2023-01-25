@@ -144,7 +144,7 @@ int TrajectoryMode::main(int argc, char **argv) {
     auto packingFactory = baseParams.packingFactory;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     auto packing = packingFactory->createPacking(std::move(pbc), *shapeTraits, maxThreads, maxThreads);
-    this->createWalls(*packing, baseParams.walls);
+    packing->toggleWalls(baseParams.walls);
 
     // Find and validate run whose trajectory we want to process
     std::size_t startRunIndex = PackingLoader::findStartRunIndex(runName, rampackParams.runs);
@@ -338,6 +338,6 @@ Simulation::Environment TrajectoryMode::recreateRawEnvironment(const RampackPara
     Expects(startRunIndex < params.runs.size());
     auto env = params.baseParameters.baseEnvironment;
     for (std::size_t i{}; i <= startRunIndex; i++)
-        ModeBase::combineEnvironment(env, params.runs[i]);
+        combine_environment(env, params.runs[i]);
     return env;
 }

@@ -19,12 +19,12 @@ public:
 
     RampackParameters dispatchParams(const std::string &filename);
     std::unique_ptr<RamtrjPlayer> loadRamtrjPlayer(std::string &trajectoryFilename, size_t numMolecules, bool autoFix_);
-
     void storeSnapshots(const ObservablesCollector &observablesCollector, bool isContinuation,
                         const std::string &observableSnapshotFilename) const;
-
     void storeBulkObservables(const ObservablesCollector &observablesCollector,
                               std::string bulkObservableFilenamePattern) const;
+    void storeAverageValues(const std::string &filename, const ObservablesCollector &collector, double temperature,
+                            double pressure) const;
 };
 
 

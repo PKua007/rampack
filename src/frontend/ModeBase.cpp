@@ -2,21 +2,13 @@
 // Created by Piotr Kubala on 12/12/2020.
 //
 
-#include <cstdlib>
-#include <limits>
-#include <iterator>
 #include <filesystem>
 #include <set>
 
 #include <cxxopts.hpp>
 
 #include "ModeBase.h"
-#include "RampackParameters.h"
-#include "core/Simulation.h"
 #include "core/Packing.h"
-#include "matchers/RampackMatcher.h"
-#include "legacy/IniParametersFactory.h"
-#include "utils/Fold.h"
 #include "utils/Utils.h"
 #include "utils/Assertions.h"
 
@@ -62,18 +54,4 @@ Logger::LogType ModeBase::parseVerbosityLevel(const std::string &verbosityLevelN
         die("Unknown verbosity level: " + verbosityLevelName, this->logger);
 
     return Logger::ERROR;
-}
-
-void ModeBase::combineEnvironment(Simulation::Environment &env, const Run &run)
-{
-    auto environmentGetter = [](const auto &run) {
-        return run.environment;
-    };
-    auto runEnv = std::visit(environmentGetter, run);
-    env.combine(runEnv);
-}
-
-void ModeBase::createWalls(Packing &packing, const std::array<bool, 3> &walls) {
-    for (std::size_t i{}; i < 3; i++)
-        packing.toggleWall(i, walls[i]);
 }

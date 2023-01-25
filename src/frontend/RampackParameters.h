@@ -76,4 +76,13 @@ struct RampackParameters {
 };
 
 
+inline void combine_environment(Simulation::Environment &env, const Run &run) {
+    auto environmentGetter = [](const auto &run) {
+        return run.environment;
+    };
+    auto runEnv = std::visit(environmentGetter, run);
+    env.combine(runEnv);
+}
+
+
 #endif //RAMPACK_RAMPACKPARAMETERS_H

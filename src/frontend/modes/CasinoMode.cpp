@@ -5,7 +5,6 @@
 #include <iomanip>
 #include <fstream>
 #include <set>
-#include <filesystem>
 
 #include <cxxopts.hpp>
 
@@ -154,7 +153,7 @@ int CasinoMode::main(int argc, char **argv) {
         const auto &run = rampackParams.runs[i];
         // Environment for starting run is already prepared
         if (i != startRunIndex)
-            ModeBase::combineEnvironment(env, run);
+            combine_environment(env, run);
 
         if (std::holds_alternative<IntegrationRun>(run)) {
             const auto &integrationRun = std::get<IntegrationRun>(run);
@@ -227,8 +226,8 @@ void CasinoMode::performIntegration(Simulation &simulation, Simulation::Environm
 
     if (run.averagesOut.has_value()) {
         if (integrationParams.averagingCycles != 0 && !simulation.wasInterrupted()) {
-            this->storeAverageValues(*run.averagesOut, observablesCollector, simulation.getCurrentTemperature(),
-                                     simulation.getCurrentPressure());
+            this->io.storeAverageValues(*run.averagesOut, observablesCollector, simulation.getCurrentTemperature(),
+                                        simulation.getCurrentPressure());
         } else {
             this->logger.warn() << "Storing averages skipped due to incomplete averaging phase." << std::endl;
         }
@@ -295,25 +294,23 @@ Simulation::Environment CasinoMode::recreateEnvironment(const RampackParameters 
         // step sizes that were before
         Assert(loader.isRestored());
         for (std::size_t i{}; i <= startRunIndex; i++)
-            ModeBase::combineEnvironment(env, params.runs[i]);
+            combine_environment(env, params.runs[i]);
         this->overwriteMoveStepSizes(env, loader.getAuxInfo());
     } else {
         // If it is not a continuation, we replay environments of the runs BEFORE the starting point, then overwrite
         // step sizes (because this is where the last simulation ended) and AFTER it, we apply the new environment from
         // the starting run
         for (std::size_t i{}; i < startRunIndex; i++)
-            ModeBase::combineEnvironment(env, params.runs[i]);
+            combine_environment(env, params.runs[i]);
         if (loader.isRestored())
             this->overwriteMoveStepSizes(env, loader.getAuxInfo());
-        ModeBase::combineEnvironment(env, params.runs[startRunIndex]);
+        combine_environment(env, params.runs[startRunIndex]);
     }
 
     ValidateMsg(env.isComplete(), "Some of parameters: pressure, temperature, moveTypes, scalingType are missing");
 
     return env;
 }
-
-
 
 std::unique_ptr<Packing> CasinoMode::recreatePacking(PackingLoader &loader, const BaseParameters &params,
                                                      const ShapeTraits &traits, std::size_t maxThreads)
@@ -333,7 +330,7 @@ std::unique_ptr<Packing> CasinoMode::recreatePacking(PackingLoader &loader, cons
         packing = params.packingFactory->createPacking(std::move(pbc), traits, maxThreads, maxThreads);
     }
 
-    ModeBase::createWalls(*packing, params.walls);
+    packing->toggleWalls(params.walls);
 
     return packing;
 }
@@ -438,35 +435,6 @@ void CasinoMode::printAverageValues(const ObservablesCollector &collector) {
     }
 
     this->logger << "--------------------------------------------------------------------" << std::endl;
-}
-
-void CasinoMode::storeAverageValues(const std::string &filename, const ObservablesCollector &collector, double temperature,
-                                    double pressure) const
-{
-    auto flatValues = collector.getFlattenedAverageValues();
-
-    std::ofstream out;
-    if (!std::filesystem::exists(filename)) {
-        out.open(filename);
-        ValidateOpenedDesc(out, filename, "to store average values");
-        out << "temperature pressure ";
-        for (const auto &value : flatValues)
-            out << value.name << " d" << value.name << " ";
-        out << std::endl;
-    } else {
-        out.open(filename, std::ios_base::app);
-        ValidateOpenedDesc(out, filename, "to store average values");
-    }
-
-    out.precision(std::numeric_limits<double>::max_digits10);
-    out << temperature << " " << pressure << " ";
-    for (auto &value : flatValues) {
-        value.quantity.separator = Quantity::SPACE;
-        out << value.quantity << " ";
-    }
-    out << std::endl;
-
-    this->logger.info() << "Average values stored to " + filename << std::endl;
 }
 
 void CasinoMode::overwriteMoveStepSizes(Simulation::Environment &env,

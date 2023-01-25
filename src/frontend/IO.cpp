@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <regex>
+#include <filesystem>
 
 #include "IO.h"
 #include "utils/Utils.h"
@@ -95,4 +96,33 @@ RampackParameters IO::dispatchParams(const std::string &filename) {
         Parameters params(file);
         return IniParametersFactory::create(params);
     }
+}
+
+void IO::storeAverageValues(const std::string &filename, const ObservablesCollector &collector, double temperature,
+                            double pressure) const
+{
+    auto flatValues = collector.getFlattenedAverageValues();
+
+    std::ofstream out;
+    if (!std::filesystem::exists(filename)) {
+        out.open(filename);
+        ValidateOpenedDesc(out, filename, "to store average values");
+        out << "temperature pressure ";
+        for (const auto &value : flatValues)
+            out << value.name << " d" << value.name << " ";
+        out << std::endl;
+    } else {
+        out.open(filename, std::ios_base::app);
+        ValidateOpenedDesc(out, filename, "to store average values");
+    }
+
+    out.precision(std::numeric_limits<double>::max_digits10);
+    out << temperature << " " << pressure << " ";
+    for (auto &value : flatValues) {
+        value.quantity.separator = Quantity::SPACE;
+        out << value.quantity << " ";
+    }
+    out << std::endl;
+
+    this->logger.info() << "Average values stored to " + filename << std::endl;
 }

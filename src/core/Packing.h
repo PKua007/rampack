@@ -244,11 +244,16 @@ public:
     void toggleOverlapCounting(bool countOverlaps, const Interaction &interaction);
 
     /**
-     * @brief Toggles true or false (@a trueOfFalse) hard walls intersected by axis @a wallAxis
+     * @brief Toggles @a true or @a false (@a trueOfFalse) hard walls intersected by axis @a wallAxis
      * @param wallAxis
      * @param trueOrFalse
      */
     void toggleWall(std::size_t wallAxis, bool trueOrFalse);
+
+    /**
+     * @brief Specifies if the wall is toggled @a true or @a false for all axes at once
+     */
+    void toggleWalls(std::array<bool, 3> axisWalls);
 
     [[nodiscard]] double getVolume() const;
 

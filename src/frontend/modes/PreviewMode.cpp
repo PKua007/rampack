@@ -51,7 +51,7 @@ int PreviewMode::main(int argc, char **argv) {
     auto packingFactory = baseParams.packingFactory;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     auto packing = packingFactory->createPacking(std::move(pbc), *shapeTraits, 1, 1);
-    ModeBase::createWalls(*packing, baseParams.walls);
+    packing->toggleWalls(baseParams.walls);
 
     for (const auto &output : outputs) {
         auto writer = FileSnapshotWriterMatcher::match(output);
