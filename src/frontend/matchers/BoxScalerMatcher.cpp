@@ -40,7 +40,7 @@ namespace {
     auto anisotropicX = MatcherString("anisotropic x").mapTo([](const std::string&) { return X | (Y & Z); });
     auto anisotropicY = MatcherString("anisotropic y").mapTo([](const std::string&) { return Y | (Z & X); });
     auto anisotropicZ = MatcherString("anisotropic z").mapTo([](const std::string&) { return Z | (X & Y); });
-    auto anisotropicXYZ = MatcherString("anisortopic xyz").mapTo([](const std::string&) { return X | Y | Z; });
+    auto anisotropicXYZ = MatcherString("anisotropic xyz").mapTo([](const std::string&) { return X | Y | Z; });
     auto predefinedDirection = isotropic | anisotropicX | anisotropicY | anisotropicZ | anisotropicXYZ;
 
     // TODO: MatchException
