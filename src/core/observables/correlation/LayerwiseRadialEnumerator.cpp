@@ -9,7 +9,7 @@
 #include <numeric>
 
 #include "LayerwiseRadialEnumerator.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 Vector<3> LayerwiseRadialEnumerator::calculateK(const Packing &packing) const {

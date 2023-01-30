@@ -6,7 +6,7 @@
 #include <functional>
 
 #include "AnisotropicVolumeScaler.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 const AnisotropicVolumeScaler::ScalingDirection AnisotropicVolumeScaler::X({{true, false, false}});

@@ -4,7 +4,7 @@
 
 #include "DistanceOptimizer.h"
 
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "LatticeTraits.h"
 #include "core/FreeBoundaryConditions.h"
 

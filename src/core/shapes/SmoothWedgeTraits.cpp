@@ -3,7 +3,7 @@
 //
 
 #include "SmoothWedgeTraits.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "geometry/xenocollide/XCBodyBuilder.h"
 
 

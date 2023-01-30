@@ -9,7 +9,7 @@
 #include <string>
 #include <stdexcept>
 
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "UnitCell.h"
 
 

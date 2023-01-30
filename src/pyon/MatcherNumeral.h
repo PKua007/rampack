@@ -10,7 +10,7 @@
 
 #include "MatcherBase.h"
 #include "NodeLiteral.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 namespace pyon::matcher {

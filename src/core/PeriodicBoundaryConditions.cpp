@@ -6,7 +6,7 @@
 #include <algorithm>
 
 #include "PeriodicBoundaryConditions.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 Vector<3> PeriodicBoundaryConditions::getCorrection(const Vector<3> &position) const {
     Vector<3> positionRel = this->box.absoluteToRelative(position);

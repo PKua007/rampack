@@ -8,7 +8,7 @@
 #include <cmath>
 #include "ZipIterator.hpp"
 
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "utils/OMPMacros.h"
 #include "HistogramBuilder.h"
 

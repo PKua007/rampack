@@ -5,7 +5,7 @@
 #include <sstream>
 
 #include "ParameterUpdaterFactory.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "utils/Utils.h"
 #include "core/dynamic_parameters/ConstantDynamicParameter.h"
 #include "core/dynamic_parameters/LinearDynamicParameter.h"

@@ -28,7 +28,7 @@ not be misrepresented as being the original software.
 
 #include "XCBodyBuilder.h"
 #include "utils/Utils.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "XCPrimitives.h"
 #include "XCOperations.h"
 

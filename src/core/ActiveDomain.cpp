@@ -4,7 +4,7 @@
 
 #include "ActiveDomain.h"
 
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 bool ActiveDomain::isInside(const Vector<3> &position) const {
     Vector<3> positionRel = this->box.absoluteToRelative(position);

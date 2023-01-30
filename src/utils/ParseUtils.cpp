@@ -5,7 +5,7 @@
 #include <algorithm>
 
 #include "ParseUtils.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 std::map<std::string, std::string> ParseUtils::parseFields(const std::vector<std::string> &fields,

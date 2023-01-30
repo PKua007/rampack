@@ -6,7 +6,7 @@
 #include <numeric>
 
 #include "Lattice.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 Lattice::Lattice(const UnitCell &unitCell, const std::array<std::size_t, 3> &dimensions)

@@ -4,7 +4,7 @@
 
 #include <vector>
 #include "ShapeGeometry.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 Vector<3> ShapeGeometry::getNamedPointForShape(const std::string &pointName, const Shape &shape) const {

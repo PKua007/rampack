@@ -3,7 +3,7 @@
 //
 
 #include "SpherocylinderTraits.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "geometry/SegmentDistanceCalculator.h"
 #include "geometry/xenocollide/XCBodyBuilder.h"
 #include "XCObjShapePrinter.h"

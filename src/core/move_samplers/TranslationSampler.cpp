@@ -4,7 +4,7 @@
 
 #include "TranslationSampler.h"
 
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 TranslationSampler::TranslationSampler(double translationStepSize, double maxTranslationStepSize)

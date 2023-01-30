@@ -3,7 +3,7 @@
 //
 
 #include "UnitCell.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 UnitCell::UnitCell(std::shared_ptr<TriclinicBox> cellShape, std::vector<Shape> molecules)

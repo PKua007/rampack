@@ -3,7 +3,7 @@
 //
 
 #include "Fold.h"
-#include "Assertions.h"
+#include "Exceptions.h"
 
 Fold::operator std::string() const {
     Expects(width_ > 1);

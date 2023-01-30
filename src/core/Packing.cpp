@@ -11,7 +11,7 @@
 #include <functional>
 
 #include "Packing.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "utils/Utils.h"
 #include "utils/ParseUtils.h"
 #include "core/io/RamsnapReader.h"

@@ -3,7 +3,7 @@
 //
 
 #include "KMerTraits.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "geometry/VolumeCalculator.h"
 
 

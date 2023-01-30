@@ -3,7 +3,7 @@
 //
 
 #include "TruncatedPlayer.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 TruncatedPlayer::TruncatedPlayer(std::unique_ptr<SimulationPlayer> player, std::size_t totalCycles)

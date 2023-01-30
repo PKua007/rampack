@@ -7,7 +7,7 @@
 #include "TriclinicBoxScalerFactory.h"
 #include "core/VolumeScaler.h"
 #include "utils/Utils.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "core/volume_scalers/DeltaVolumeScaler.h"
 #include "core/volume_scalers/AnisotropicVolumeScaler.h"
 #include "core/volume_scalers/LinearScalingFactorSampler.h"
