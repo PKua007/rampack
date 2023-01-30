@@ -15,8 +15,7 @@ namespace pyon::matcher {
         if (node->getType() != ast::Node::NONE) {
             std::ostringstream out;
             out << "Matching None failed:" << std::endl;
-            out << "✖ Got incorrect node type: " << node->getNodeName() << std::endl;
-            out << "✓ Expected format: None";
+            out << "✖ Got incorrect node type: " << node->getNodeName();
             return out.str();
         }
 

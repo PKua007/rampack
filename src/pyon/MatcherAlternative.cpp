@@ -3,7 +3,7 @@
 //
 
 #include <iomanip>
-#include <set>
+#include <map>
 
 #include "MatcherAlternative.h"
 
@@ -13,7 +13,9 @@ namespace pyon::matcher {
         std::ostringstream out;
         out << "Matching Alternative failed:" << std::endl;
         out << "✖ " << reason << std::endl;
-        out << "✓ Expected format: " << this->outline(2).substr(2);
+        out << "✓ Available alternatives:";
+        auto synopses = this->collectSynopses();
+        this->presentAlternatives(out, synopses, 2);
         return out.str();
     }
 
@@ -103,14 +105,8 @@ namespace pyon::matcher {
 
         out << spaces << "Alternative:";
         std::size_t numberWidth = std::to_string(this->alternatives.size()).length();
-        for (std::size_t i{}; i < this->alternatives.size(); i++) {
-            const MatcherBase &alternative = *this->alternatives[i];
-            std::string alternativeOutline = alternative.outline(indent + numberWidth + 2);
-            alternativeOutline = alternativeOutline.substr(indent + numberWidth + 2);
-            std::string number = std::to_string(i + 1) + ".";
-            out << std::endl << spaces << std::setw(static_cast<int>(numberWidth + 2)) << std::left << number;
-            out << alternativeOutline;
-        }
+        auto outlines = this->collectOutlines(indent + numberWidth + 2);
+        this->presentAlternatives(out, outlines, indent);
 
         return out.str();
     }
@@ -123,15 +119,48 @@ namespace pyon::matcher {
 
     std::vector<std::string> MatcherAlternative::collectSynopses() const {
         std::vector<std::string> synopses;
-        std::set<std::string> seenSynopses;
+        std::map<std::string, std::size_t> seenSynopses;
         for (const auto &matcher : this->alternatives) {
             auto synopsis = matcher->synopsis();
-            if (seenSynopses.find(synopsis) == seenSynopses.end()) {
+            auto seenSynopsisIt = seenSynopses.find(synopsis);
+            if (seenSynopsisIt == seenSynopses.end()) {
                 synopses.push_back(synopsis);
-                seenSynopses.insert(synopsis);
+                seenSynopses[synopsis] = 1;
+            } else {
+                seenSynopsisIt->second++;
             }
         }
 
+        for (auto &synopsis : synopses) {
+            std::size_t count = seenSynopses[synopsis];
+            if (count > 1)
+                synopsis += " (" + std::to_string(count) + " variants)";
+        }
+
         return synopses;
+    }
+
+    std::vector<std::string> MatcherAlternative::collectOutlines(std::size_t indent) const {
+        std::vector<std::string> outlines;
+        outlines.reserve(this->alternatives.size());
+        auto outlineGetter = [indent](const std::shared_ptr<MatcherBase> &matcher) {
+            return matcher->outline(indent).substr(indent);
+        };
+        std::transform(this->alternatives.begin(), this->alternatives.end(), std::back_inserter(outlines),
+                       outlineGetter);
+        return outlines;
+    }
+
+    void MatcherAlternative::presentAlternatives(std::ostringstream &out, const std::vector<std::string> &alternatives_,
+                                                 std::size_t indent) const
+    {
+        std::string spaces(indent, ' ');
+        std::size_t numberWidth = std::to_string(alternatives_.size()).length();
+        for (std::size_t i{}; i < alternatives_.size(); i++) {
+            const auto &outline = alternatives_[i];
+            std::string number = std::to_string(i + 1) + ".";
+            out << std::endl << spaces << std::setw(static_cast<int>(numberWidth + 2)) << std::left << number;
+            out << outline;
+        }
     }
 } // matcher

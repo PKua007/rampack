@@ -37,8 +37,7 @@ namespace pyon::matcher {
             [[nodiscard]] std::string generateUnmatchedReport(const std::string &reason) const {
                 std::ostringstream out;
                 out << "Matching " << this->getName() << " failed:" << std::endl;
-                out << "✖ " << reason << std::endl;
-                out << "✓ Expected format: " << this->outline(2).substr(2);
+                out << "✖ " << reason;
                 return out.str();
             }
 

@@ -76,7 +76,7 @@ TEST_CASE("Matcher: Alternative") {
 
         SECTION("non-empty") {
             auto matcher = MatcherDataclass("class1") | MatcherInt{} | MatcherDataclass("class1") | MatcherString{};
-            REQUIRE(matcher.synopsis() == R"(class "class1" | Integer | String)");
+            REQUIRE(matcher.synopsis() == R"(class "class1" (2 variants) | Integer | String)");
         }
     }
 
@@ -111,15 +111,19 @@ TEST_CASE("Matcher: Alternative") {
 
     SECTION("error reporting") {
         SECTION("unmatched node") {
-            auto matcher = MatcherInt{}.positive().less(5) | MatcherString{};
+            auto matcher = MatcherInt{}.positive().less(5)
+                | MatcherString{}
+                | MatcherArray{}.elementsMatch(MatcherInt{})
+                | MatcherArray{}.elementsMatch(MatcherString{})
+                | MatcherString{};
             CHECK_THAT(matcher.match(Parser::parse("True"), result),
                        UnmatchedWithReason(R"(Matching Alternative failed:
 ✖ Got incorrect node type: Boolean
-✓ Expected format: Alternative:
-  1. Integer:
-     - > 0
-     - < 5
-  2. String)"));
+✓ Available alternatives:
+  1. Integer
+  2. String (2 variants)
+  3. Array[Integer]
+  4. Array[String])"));
         }
 
         SECTION("matched node error") {
@@ -128,10 +132,7 @@ TEST_CASE("Matcher: Alternative") {
                 CHECK_THAT(matcher.match(Parser::parse("6"), result),
                            UnmatchedWithReason(R"(Matching Alternative failed:
 ✖ Matching Integer failed:
-  ✖ Condition not satisfied: < 5
-  ✓ Expected format: Integer:
-    - > 0
-    - < 5)"));
+  ✖ Condition not satisfied: < 5)"));
             }
 
             SECTION("2 variants") {
@@ -141,10 +142,8 @@ TEST_CASE("Matcher: Alternative") {
 R"(Matching Alternative failed: all 2 variants of Integer failed to match:
 ✖ (variant 1) Matching Integer failed:
   ✖ Condition not satisfied: > 0
-  ✓ Expected format: Integer, > 0
 ✖ (variant 2) Matching Integer failed:
-  ✖ Condition not satisfied: < 0
-  ✓ Expected format: Integer, < 0)"));
+  ✖ Condition not satisfied: < 0)"));
             }
         }
 
@@ -153,10 +152,9 @@ R"(Matching Alternative failed: all 2 variants of Integer failed to match:
             CHECK_THAT(matcher.match(Parser::parse("class2"), result),
                        UnmatchedWithReason(R"(Matching Alternative failed:
 ✖ Got unknown class: "class2"
-✓ Expected format: Alternative:
+✓ Available alternatives:
   1. None
-  2. class class:
-     - arguments: empty)"));
+  2. class "class")"));
         }
 
         SECTION("unmatched class with 2 variants") {
@@ -167,13 +165,13 @@ R"(Matching Alternative failed: all 2 variants of class "class" failed to match:
 ✖ (variant 1) Matching class "class" failed:
   ✖ Expected 0 positional arguments, but 1 was given
   ✓ Arguments specification:
-    - arguments: empty
+    - standard arguments: empty
 ✖ (variant 2) Matching class "class" failed:
   ✖ Missing 1 required positional argument: "arg2"
   ✓ Arguments specification:
-    - arguments:
-      - arg1: any expression
-      - arg2: any expression)"));
+    - standard arguments:
+      - arg1
+      - arg2)"));
         }
     }
 }

@@ -41,7 +41,14 @@ namespace pyon::matcher {
         std::ostringstream out;
         out << "Matching Array failed:" << std::endl;
         out << "✖ " << reason << std::endl;
-        out << "✓ Expected format: " << this->outline(2).substr(2);
+        out << "✓ Expected format: " << this->synopsis();
+        return out.str();
+    }
+
+    std::string MatcherArray::generateUnmetConditionReport(const std::string &condition) const {
+        std::ostringstream out;
+        out << "Matching Array failed:" << std::endl;
+        out << "✖ Condition not satisfied: " << condition;
         return out.str();
     }
 
@@ -83,7 +90,7 @@ namespace pyon::matcher {
 
         for (const auto &filter: this->filters)
             if (!filter.predicate(arrayData))
-                return this->generateArrayUnmatchedReport("Condition not satisfied: " + filter.description);
+                return this->generateUnmetConditionReport(filter.description);
 
         result = this->mapping(arrayData);
         return true;

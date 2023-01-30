@@ -162,23 +162,25 @@ namespace pyon::matcher {
     std::string MatcherDataclass::outline(std::size_t indent) const {
         std::ostringstream out;
         std::string spaces(indent, ' ');
-        out << spaces << this->name << " class:";
+        out << spaces << "class \"" << this->name << "\":";
 
-        this->outlineArgumentsSpecification(out, indent);
+        this->outlineArgumentsSpecification(out, indent, true);
         this->outlineFilters(out, indent);
 
         return out.str();
     }
 
-    void MatcherDataclass::outlineArgumentsSpecification(std::ostringstream &out, std::size_t indent) const {
-        this->outlineStandardArguments(out, indent);
-        this->outlineVariadicArguments(out, indent);
-        this->outlineKeywordVariadicArguments(out, indent);
+    void MatcherDataclass::outlineArgumentsSpecification(std::ostringstream &out, std::size_t indent,
+                                                         bool verbose) const
+    {
+        this->outlineStandardArguments(out, indent, verbose);
+        this->outlineVariadicArguments(out, indent, verbose);
+        this->outlineKeywordVariadicArguments(out, indent, verbose);
     }
 
-    void MatcherDataclass::outlineStandardArguments(std::ostringstream &out, std::size_t indent) const {
+    void MatcherDataclass::outlineStandardArguments(std::ostringstream &out, std::size_t indent, bool verbose) const {
         std::string spaces(indent, ' ');
-        out << std::endl << spaces << "- arguments:";
+        out << std::endl << spaces << "- standard arguments:";
 
         if (this->argumentsSpecification.empty()) {
             out << " empty";
@@ -186,41 +188,51 @@ namespace pyon::matcher {
         }
 
         for (const auto &argument: this->argumentsSpecification)
-            this->outlineArgument(argument, out, indent);
+            this->outlineArgument(argument, out, indent, verbose);
     }
 
     void MatcherDataclass::outlineArgument(const StandardArgumentSpecification &argument, std::ostringstream &out,
-                                           std::size_t indent) const
+                                           std::size_t indent, bool verbose) const
     {
         std::string spaces(indent, ' ');
         out << std::endl << spaces << "  - " << argument.getName();
         if (argument.hasDefaultValue())
-            out << " (=" << argument.getDefaultValueString() << "): ";
-        else
-            out << ": ";
+            out << " (=" << argument.getDefaultValueString() << ")";
 
+        if (!verbose)
+            return;
+
+        out << ": ";
         if (!argument.hasMatcher())
             out << "any expression";
         else
             out << argument.getMatcher()->outline(indent + 4).substr(indent + 4);
     }
 
-    void MatcherDataclass::outlineVariadicArguments(std::ostringstream &out, std::size_t indent) const {
+    void MatcherDataclass::outlineVariadicArguments(std::ostringstream &out, std::size_t indent, bool verbose) const {
         if (!this->hasVariadicArguments)
             return;
 
         std::string spaces(indent, ' ');
         out << std::endl << spaces << "- *args: ";
-        out << this->variadicArgumentsMatcher.outline(indent + 2).substr(indent + 2);;
+        if (verbose)
+            out << this->variadicArgumentsMatcher.outline(indent + 2).substr(indent + 2);
+        else
+            out << this->variadicArgumentsMatcher.synopsis();
     }
 
-    void MatcherDataclass::outlineKeywordVariadicArguments(std::ostringstream &out, std::size_t indent) const {
+    void MatcherDataclass::outlineKeywordVariadicArguments(std::ostringstream &out, std::size_t indent,
+                                                           bool verbose) const
+    {
         if (!this->hasKeywordVariadicArguments)
             return;
 
         std::string spaces(indent, ' ');
         out << std::endl << spaces << "- **kwargs: ";
-        out << this->variadicKeywordArgumentsMatcher.outline(indent + 2).substr(indent + 2);
+        if (verbose)
+            out << this->variadicKeywordArgumentsMatcher.outline(indent + 2).substr(indent + 2);
+        else
+            out << this->variadicKeywordArgumentsMatcher.synopsis();
     }
 
     void MatcherDataclass::outlineFilters(std::ostringstream &out, std::size_t indent) const {
@@ -369,8 +381,7 @@ namespace pyon::matcher {
     std::string MatcherDataclass::generateDataclassUnmatchedReport(const std::string &reason) const {
         std::ostringstream out;
         out << "Matching class \"" << this->name << "\" failed:" << std::endl;
-        out << "✖ " << reason << std::endl;
-        out << "✓ Expected format: " << this->outline(2).substr(2);
+        out << "✖ " << reason;
         return out.str();
     }
 
@@ -379,7 +390,7 @@ namespace pyon::matcher {
         out << "Matching class \"" << this->name << "\" failed:" << std::endl;
         out << "✖ " << reason << std::endl;
         out << "✓ Arguments specification:";
-        this->outlineArgumentsSpecification(out, 2);
+        this->outlineArgumentsSpecification(out, 2, false);
         return out.str();
     }
 

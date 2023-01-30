@@ -163,7 +163,7 @@ TEST_CASE("Matcher: Array") {
             CHECK_THAT(MatcherArray{}.match(Parser::parse("True"), result),
                        UnmatchedWithReason(R"(Matching Array failed:
 ✖ Got incorrect node type: Boolean
-✓ Expected format: Array)"));
+✓ Expected format: Array[any expression])"));
         }
 
         SECTION("value unmatched") {
@@ -171,10 +171,7 @@ TEST_CASE("Matcher: Array") {
             CHECK_THAT(matcher.match(Parser::parse("[3, 6]"), result),
                        UnmatchedWithReason(R"(Matching Array failed: Matching index 1 failed:
 ✖ Matching Integer failed:
-  ✖ Condition not satisfied: < 5
-  ✓ Expected format: Integer:
-    - > 0
-    - < 5)"));
+  ✖ Condition not satisfied: < 5)"));
         }
 
         SECTION("filter unmatched") {
@@ -183,10 +180,7 @@ TEST_CASE("Matcher: Array") {
                 .sizeAtMost(4);
             CHECK_THAT(matcher.match(Parser::parse("[1, 2, 3, 4, 5]"), result),
                        UnmatchedWithReason(R"(Matching Array failed:
-✖ Condition not satisfied: with size <= 4
-✓ Expected format: Array:
-  - with size >= 2
-  - with size <= 4)"));
+✖ Condition not satisfied: with size <= 4)"));
         }
     }
 

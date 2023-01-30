@@ -10,8 +10,7 @@
 std::string pyon::matcher::MatcherBoolean::generateUnmatchedReport(const std::string &reason) const {
     std::ostringstream out;
     out << "Matching Boolean failed:" << std::endl;
-    out << "✖ " << reason << std::endl;
-    out << "✓ Expected format: " << this->outline(0);
+    out << "✖ " << reason;
     return out.str();
 }
 
@@ -20,9 +19,14 @@ pyon::matcher::MatchReport pyon::matcher::MatcherBoolean::match(std::shared_ptr<
         return this->generateUnmatchedReport("Got incorrect node type: " + node->getNodeName());
 
     bool b = node->as<ast::NodeBoolean>()->getValue();
-    if (this->filterValue.has_value())
-        if (*this->filterValue != b)
-            return this->generateUnmatchedReport(b ? "Boolean is True" : "Boolean is False");
+    if (this->filterValue.has_value()) {
+        if (*this->filterValue != b) {
+            if (b)
+                return this->generateUnmatchedReport("Boolean is False, while it should be True");
+            else
+                return this->generateUnmatchedReport("Boolean is True, while it should be False");
+        }
+    }
 
     result = this->mapping(b);
     return true;

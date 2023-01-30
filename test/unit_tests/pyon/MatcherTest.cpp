@@ -64,8 +64,8 @@ TEST_CASE("Matcher: combined") {
     REQUIRE(concatenator.match(Parser::parse(R"(concatenator(1, 1.2, "abc", [2, "e"]))"), result));
     CHECK(result.as<std::string>() == "1 1.200000 abc [2, e]");
 
-    CHECK(concatenator.outline(0) == R"(concatenator class:
-- arguments: empty
+    CHECK(concatenator.outline(0) == R"(class "concatenator":
+- standard arguments: empty
 - *args: Array:
   - with elements: Alternative:
     1. Integer

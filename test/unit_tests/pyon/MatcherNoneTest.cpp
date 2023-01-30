@@ -22,8 +22,7 @@ TEST_CASE("Matcher: None") {
 
         CHECK_THAT(matcher.match(Parser::parse("45"), result),
                    UnmatchedWithReason(R"(Matching None failed:
-✖ Got incorrect node type: Integer
-✓ Expected format: None)"));
+✖ Got incorrect node type: Integer)"));
 
         CHECK(matcher.match(Parser::parse("None"), result));
         CHECK(result.isEmpty());

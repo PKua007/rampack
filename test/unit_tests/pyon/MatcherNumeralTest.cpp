@@ -20,8 +20,7 @@ TEST_CASE("Matcher: Int") {
     SECTION("default") {
         CHECK_THAT(MatcherInt{}.match(Parser::parse("True"), result),
                    UnmatchedWithReason(R"(Matching Integer failed:
-✖ Got incorrect node type: Boolean
-✓ Expected format: Integer)"));
+✖ Got incorrect node type: Boolean)"));
 
         CHECK(MatcherInt{}.match(Parser::parse("7"), result));
         CHECK(result.as<long>() == 7);
@@ -38,8 +37,7 @@ TEST_CASE("Matcher: Int") {
 
             CHECK_THAT(matcher.match(Parser::parse("0"), result),
                        UnmatchedWithReason(R"(Matching Integer failed:
-✖ Condition not satisfied: > 0
-✓ Expected format: Integer, > 0)"));
+✖ Condition not satisfied: > 0)"));
 
             CHECK(matcher.match(Parser::parse("7"), result));
             CHECK(matcher.outline(4) == "    Integer, > 0");
@@ -144,10 +142,7 @@ TEST_CASE("Matcher: Int") {
 
             CHECK_THAT(matcher.match(Parser::parse("7"), result),
                        UnmatchedWithReason(R"(Matching Integer failed:
-✖ Condition not satisfied: even
-✓ Expected format: Integer:
-  - > 5
-  - even)"));
+✖ Condition not satisfied: even)"));
 
             CHECK(matcher.match(Parser::parse("8"), result));
 
@@ -176,8 +171,7 @@ TEST_CASE("Matcher: Float") {
 
     CHECK_THAT(MatcherFloat{}.match(Parser::parse("True"), result),
                UnmatchedWithReason(R"(Matching Float failed:
-✖ Got incorrect node type: Boolean
-✓ Expected format: Float)"));
+✖ Got incorrect node type: Boolean)"));
 
     REQUIRE(MatcherFloat{}.match(Parser::parse("7.5"), result));
     CHECK(result.as<double>() == 7.5);
