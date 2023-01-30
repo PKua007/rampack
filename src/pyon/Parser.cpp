@@ -320,8 +320,10 @@ namespace pyon {
                 continue;
             }
 
-            if (c == '#')
+            if (c == '#') {
                 this->eatComment();
+                continue;
+            }
 
             break;
         }
