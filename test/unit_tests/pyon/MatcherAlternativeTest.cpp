@@ -68,6 +68,18 @@ TEST_CASE("Matcher: Alternative") {
         REQUIRE(matcher1234.match(Parser::parse("class4"), result));
     }
 
+    SECTION("synopsis") {
+        SECTION("empty") {
+            MatcherAlternative matcher;
+            REQUIRE(matcher.synopsis() == "(empty Alternative)");
+        }
+
+        SECTION("non-empty") {
+            auto matcher = MatcherDataclass("class1") | MatcherInt{} | MatcherDataclass("class1") | MatcherString{};
+            REQUIRE(matcher.synopsis() == R"(class "class1" | Integer | String)");
+        }
+    }
+
     SECTION("outline") {
         SECTION("layout") {
             auto matcher = MatcherInt{}.positive().lessEquals(5) | MatcherFloat{}.positive() | MatcherString{};

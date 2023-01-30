@@ -30,6 +30,10 @@ TEST_CASE("Matcher: None") {
         CHECK(matcher.outline(4) == "    None");
     }
 
+    SECTION("synopsis") {
+        CHECK(MatcherNone{}.synopsis() == "None");
+    }
+
     SECTION("custom map") {
         auto matcher = MatcherNone{}.mapTo([]() -> int { return 45; } );
         CHECK(matcher.match(Parser::parse("None"), result));

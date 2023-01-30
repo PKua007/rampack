@@ -21,6 +21,7 @@ namespace pyon::matcher {
         MatchReport match(std::shared_ptr<const ast::Node> node, Any &result) const override;
         [[nodiscard]] bool matchNodeType(ast::Node::Type type) const override { return type == ast::Node::NONE; }
         [[nodiscard]] std::string outline(std::size_t indent) const override;
+        [[nodiscard]] std::string synopsis() const override { return "None"; }
 
         MatcherNone &mapTo(const std::function<Any()> &mapping_);
 

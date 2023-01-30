@@ -28,6 +28,10 @@ TEST_CASE("Matcher: Int") {
         CHECK(MatcherInt{}.outline(4) == "    Integer");
     }
 
+    SECTION("synopsis") {
+        CHECK(MatcherInt{}.synopsis() == "Integer");
+    }
+
     SECTION("filters") {
         SECTION("positive") {
             auto matcher = MatcherInt{}.positive();
@@ -180,4 +184,6 @@ TEST_CASE("Matcher: Float") {
 
     REQUIRE(MatcherFloat{}.match(Parser::parse("7"), result));
     CHECK(result.as<double>() == 7);
+
+    CHECK(MatcherFloat{}.synopsis() == "Float");
 }

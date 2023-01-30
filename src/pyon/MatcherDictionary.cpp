@@ -314,4 +314,13 @@ namespace pyon::matcher {
         this->describe("with size in range [" + std::to_string(low) + ", " + std::to_string(high) + "]");
         return *this;
     }
+
+    std::string MatcherDictionary::synopsis() const {
+        if (this->defaultMatcher == nullptr && this->keyMatchers.empty())
+            return "Dictionary[String -> any expression]";
+        else if (this->defaultMatcher != nullptr && this->keyMatchers.empty())
+            return "Dictionary[String -> " + this->defaultMatcher->synopsis() + "]";
+        else
+            return "Dictionary[String -> various]";
+    }
 } // matcher

@@ -112,6 +112,7 @@ namespace pyon::matcher {
         MatchReport match(std::shared_ptr<const ast::Node> node, Any &result) const override;
         [[nodiscard]] bool matchNodeType(ast::Node::Type type) const override { return type == ast::Node::ARRAY; }
         [[nodiscard]] std::string outline(std::size_t indent) const override;
+        [[nodiscard]] std::string synopsis() const override;
 
         template<typename T, std::size_t SIZE>
         MatcherArray &mapToStdArray() {

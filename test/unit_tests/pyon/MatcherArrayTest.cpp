@@ -36,6 +36,13 @@ TEST_CASE("Matcher: Array") {
         CHECK(array[1].as<std::size_t>() == 2);
     }
 
+    SECTION("synopsis") {
+        CHECK(MatcherArray{}.synopsis() == "Array[any expression]");
+
+        auto arrayArrayFloat = MatcherArray{}.elementsMatch(MatcherArray{}.elementsMatch(MatcherFloat{}));
+        CHECK(arrayArrayFloat.synopsis() == "Array[Array[Float]]");
+    }
+
     SECTION("outline layout") {
         CHECK(MatcherArray{}.outline(4) == "    Array");
         CHECK(MatcherArray{}.elementsMatch(MatcherInt{}).outline(4) == "    Array, with elements: Integer");

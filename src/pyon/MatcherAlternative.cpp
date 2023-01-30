@@ -3,6 +3,7 @@
 //
 
 #include <iomanip>
+#include <set>
 
 #include "MatcherAlternative.h"
 
@@ -112,5 +113,25 @@ namespace pyon::matcher {
         }
 
         return out.str();
+    }
+
+    std::string MatcherAlternative::synopsis() const {
+        if (this->alternatives.empty())
+            return "(empty Alternative)";
+        return implode(this->collectSynopses(), " | ");
+    }
+
+    std::vector<std::string> MatcherAlternative::collectSynopses() const {
+        std::vector<std::string> synopses;
+        std::set<std::string> seenSynopses;
+        for (const auto &matcher : this->alternatives) {
+            auto synopsis = matcher->synopsis();
+            if (seenSynopses.find(synopsis) == seenSynopses.end()) {
+                synopses.push_back(synopsis);
+                seenSynopses.insert(synopsis);
+            }
+        }
+
+        return synopses;
     }
 } // matcher
