@@ -80,8 +80,8 @@ namespace {
             double epsilon, sigma;
             interactionAttrStream >> epsilon >> sigma;
             ValidateMsg(interactionAttrStream, "Malformed Lennard Jones attributes. Usage: lj [epsilon] [sigma]");
-            Validate(epsilon > 0);
-            Validate(sigma > 0);
+            ValidateMsg(epsilon > 0, "epsilon parameters should be positive");
+            ValidateMsg(sigma > 0, "sigma parameter should be positive");
             return std::make_shared<ConcreteTraits>(
                 std::forward<Args>(args)..., std::make_unique<LennardJonesInteraction>(epsilon, sigma)
             );
@@ -90,8 +90,8 @@ namespace {
             interactionAttrStream >> epsilon >> sigma;
             ValidateMsg(interactionAttrStream, "Malformed repulsive Lennard Jones attributes. Usage: lj_repulsive "
                                                "[epsilon] [sigma]");
-            Validate(epsilon > 0);
-            Validate(sigma > 0);
+            ValidateMsg(epsilon > 0, "epsilon parameters should be positive");
+            ValidateMsg(sigma > 0, "sigma parameter should be positive");
             return std::make_shared<ConcreteTraits>(
                     std::forward<Args>(args)..., std::make_unique<RepulsiveLennardJonesInteraction>(epsilon, sigma)
             );
@@ -100,15 +100,15 @@ namespace {
             interactionAttrStream >> epsilon >> sigma;
             ValidateMsg(interactionAttrStream, "Malformed square inverse core attributes. Usage: square_inverse_core "
                                                "[epsilon] [sigma]");
-            Validate(epsilon != 0);
-            Validate(sigma > 0);
+            ValidateMsg(epsilon != 0, "epsilon parameters should be non-zero");
+            ValidateMsg(sigma > 0, "sigma parameter should be positive");
             return std::make_shared<ConcreteTraits>(
                     std::forward<Args>(args)..., std::make_unique<SquareInverseCoreInteraction>(epsilon, sigma)
             );
         } else {
-            throw ValidationException(shapeName + " supports interactions: hard, lj (Lennard Jones), repulsive_lj "
-                                                  "(Lennard Jones cut at the minimum), square_inverse_core "
-                                                  "(dipole-like short-range interaction)");
+            throw InputError(shapeName + " supports interactions: hard, lj (Lennard Jones), repulsive_lj "
+                             "(Lennard Jones cut at the minimum), square_inverse_core (dipole-like short-range "
+                             "interaction)");
         }
     }
 
@@ -163,7 +163,7 @@ namespace {
         Vector<3> secondaryAxis = parse_axis(fieldsMap.at("secondaryAxis"));
         Vector<3> geometricOrigin = parse_vector(fieldsMap.at("geometricOrigin"));
         double volume = std::stod(fieldsMap.at("volume"));
-        Validate(volume > 0);
+        ValidateMsg(volume > 0, "Volume should be positive");
         ShapeGeometry::NamedPoints namedPoints;
         if (fieldsMap.find("namedPoints") != fieldsMap.end())
             namedPoints = parse_named_points(fieldsMap.at("namedPoints"));
@@ -269,10 +269,11 @@ namespace {
         ValidateMsg(shapeAttrStream, "Malformed PolysphereWedge attributes; expected: "
                                      "[number of spheres] [bottom sphere radius] [top sphere radius] "
                                      "[spheres penetration]");
-        Validate(sphereNum >= 2);
-        Validate(bottomSphereRadius > 0);
-        Validate(topSphereRadius > 0);
-        Validate(spherePenetration < 2 * std::min(bottomSphereRadius, topSphereRadius));
+        ValidateMsg(sphereNum >= 2, "Number of spheres should be >= 2");
+        ValidateMsg(bottomSphereRadius > 0, "Bottom sphere radius should be positive");
+        ValidateMsg(topSphereRadius > 0, "Top sphere radius should be positive");
+        ValidateMsg(spherePenetration < 2 * std::min(bottomSphereRadius, topSphereRadius),
+                    "Spheres penetration should be < 2 * min(bottom sphere radius, top sphere radius)");
 
         return parse_polysphere_traits<PolysphereWedgeTraits>(
             shapeName, interactionName, interactionAttrStream,
@@ -291,10 +292,11 @@ namespace {
         ValidateMsg(shapeAttrStream, "Malformed PolysphereWedge attributes; expected: "
                                      "[number of spheres] [small sphere radius] [large sphere radius] "
                                      "[spheres penetration]");
-        Validate(sphereNum >= 2);
-        Validate(smallSphereRadius > 0);
-        Validate(largeSphereRadius > 0);
-        Validate(spherePenetration < 2*std::min(smallSphereRadius, largeSphereRadius));
+        ValidateMsg(sphereNum >= 2, "Number of spheres should be >= 2");
+        ValidateMsg(smallSphereRadius > 0, "Small sphere radius should be positive");
+        ValidateMsg(largeSphereRadius > 0, "Large sphere radius should be positive");
+        ValidateMsg(spherePenetration < 2*std::min(smallSphereRadius, largeSphereRadius),
+                    "Spheres penetration should be < 2 * min(small sphere radius, large sphere radius)");
 
         return parse_polysphere_traits<legacy::PolysphereWedgeTraits>(
             shapeName, interactionName, interactionAttrStream,
@@ -320,7 +322,7 @@ namespace legacy {
             double r;
             shapeAttrStream >> r;
             ValidateMsg(shapeAttrStream, "Malformed Sphere attributes; expected: [radius]");
-            Validate(r > 0);
+            ValidateMsg(r > 0, "Radius should be positive");
             return parse_polysphere_traits<SphereTraits>(shapeName, interactionName, interactionAttrStream, r);
         } else if (shapeName == "PolysphereBanana") {
             double arcRadius, arcAngle, sphereRadius;
@@ -328,10 +330,10 @@ namespace legacy {
             shapeAttrStream >> arcRadius >> arcAngle >> sphereNum >> sphereRadius;
             ValidateMsg(shapeAttrStream, "Malformed PolysphereBanana attributes; expected: "
                                          "[arc radius] [arc angle] [number of spheres] [sphere radius]");
-            Validate(arcRadius > 0);
-            Validate(arcAngle > 0);
-            Validate(sphereNum > 0);
-            Validate(sphereRadius > 0);
+            ValidateMsg(arcRadius > 0, "Arc radius should be positive");
+            ValidateMsg(arcAngle > 0, "Arc angle should be positive");
+            ValidateMsg(sphereNum > 0, "Number of spheres should be positive");
+            ValidateMsg(sphereRadius > 0, "Sphere radius should be positive");
 
             if (version >= CONSISTENT_SHAPES_VERSION) {
                 return parse_polysphere_traits<PolysphereBananaTraits>(shapeName, interactionName,
@@ -349,15 +351,16 @@ namespace legacy {
             shapeAttrStream >> arcRadius >> arcAngle >> segmentNum >> radius;
             ValidateMsg(shapeAttrStream, "Malformed PolysphereBanana attributes; expected: "
                                          "[arc radius] [arc angle] [number of segments] [radius] (subdivisions = 1)");
-            Validate(arcRadius > 0);
-            Validate(arcAngle > 0);
-            Validate(segmentNum > 0);
-            Validate(radius > 0);
+            ValidateMsg(arcRadius > 0, "Arc radius should be positive");
+            ValidateMsg(arcAngle > 0, "Arc angle should be positive");
+            ValidateMsg(segmentNum > 0, "Number of segments should be positive");
+            ValidateMsg(radius > 0, "Radius should be positive");
 
             shapeAttrStream >> subdivisions;
             if (!shapeAttrStream)
                 subdivisions = 1;
-            else Validate(subdivisions > 0);
+            else
+                ValidateMsg(subdivisions > 0, "Number of subdivisions should be positive");
 
             ValidateMsg(interactionName == "hard" || interactionName.empty(),
                         "SpherocylinderBanana supports only hard interactions");
@@ -370,9 +373,9 @@ namespace legacy {
             shapeAttrStream >> sphereNum >> sphereRadius >> distance;
             ValidateMsg(shapeAttrStream, "Malformed KMer attributes; expected: "
                                          "[number of spheres] [sphere radius] [distance between spheres]");
-            Validate(sphereNum >= 2);
-            Validate(sphereRadius > 0);
-            Validate(distance > 0);
+            ValidateMsg(sphereNum >= 2, "Number of sphere should be >= 2");
+            ValidateMsg(sphereRadius > 0, "Sphere radius should be positive");
+            ValidateMsg(distance > 0, "Sphere distance should be positive");
 
             return parse_polysphere_traits<KMerTraits>(shapeName, interactionName, interactionAttrStream, sphereNum,
                                                        sphereRadius, distance);
@@ -384,11 +387,13 @@ namespace legacy {
             ValidateMsg(shapeAttrStream, "Malformed PolysphereLollipop attributes; expected: "
                                          "[number of spheres] [small sphere radius] [large sphere radius] "
                                          "[small spheres penetration] [large sphere penetration]");
-            Validate(sphereNum >= 2);
-            Validate(smallSphereRadius > 0);
-            Validate(largeSphereRadius > 0);
-            Validate(smallSpherePenetration < 2 * smallSphereRadius);
-            Validate(largeSpherePenetration < 2 * std::min(smallSphereRadius, largeSphereRadius));
+            ValidateMsg(sphereNum >= 2, "Number of sphere should be >= 2");
+            ValidateMsg(smallSphereRadius > 0, "Small sphere radius should be positive");
+            ValidateMsg(largeSphereRadius > 0, "Large sphere radius hsould be positive");
+            ValidateMsg(smallSpherePenetration < 2 * smallSphereRadius,
+                        "Small sphere penetration should be < 2 * small sphere radius");
+            ValidateMsg(largeSpherePenetration < 2 * std::min(smallSphereRadius, largeSphereRadius),
+                        "Large sphere penetration should be < 2 * min(small sphere radius, large sphere radius)");
 
             if (version >= CONSISTENT_SHAPES_VERSION) {
                 return parse_polysphere_traits<PolysphereLollipopTraits>(
@@ -411,8 +416,8 @@ namespace legacy {
             double r, length;
             shapeAttrStream >> length >> r;
             ValidateMsg(shapeAttrStream, "Malformed Spherocylinder attributes; expected: [length] [radius]");
-            Validate(r > 0);
-            Validate(length >= 0);
+            ValidateMsg(r > 0, "Radius should be positive");
+            ValidateMsg(length >= 0, "Length should be non-negative");
             ValidateMsg(interactionName == "hard" || interactionName.empty(),
                         "Spherocylinder supports only hard interactions");
             return std::make_shared<SpherocylinderTraits>(length, r);
@@ -426,9 +431,9 @@ namespace legacy {
             if (!shapeAttrStream)
                 subdivisions = 1;
 
-            Validate(r > 0);
-            Validate(R > 0);
-            Validate(length >= std::abs(R - r));
+            ValidateMsg(r > 0, "Bottom radius should be positive");
+            ValidateMsg(R > 0, "Top radius should be positive");
+            ValidateMsg(length >= std::abs(R - r), "Length should be not smaller than radii difference");
             ValidateMsg(interactionName == "hard" || interactionName.empty(),
                         "SmoothWedge supports only hard interactions");
             return std::make_shared<SmoothWedgeTraits>(R, r, length, subdivisions);
@@ -445,7 +450,7 @@ namespace legacy {
                         "Polyspherocylinder supports only hard interactions");
             return parse_polyspherocylinder(shapeAttrStream);
         } else {
-            throw ValidationException("Unknown particle name: " + shapeName);
+            throw InputError("Unknown particle name: " + shapeName);
         }
     }
 }

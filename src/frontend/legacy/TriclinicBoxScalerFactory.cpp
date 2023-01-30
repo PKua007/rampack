@@ -47,7 +47,7 @@ namespace {
         else if (scalerName == "log")
             factorSampler = std::make_unique<LogScalingFactorSampler>();
         else
-            throw ValidationException(SCALING_USAGE);
+            throw InputError(SCALING_USAGE);
 
         std::string scalingDirectionStr;
         scalingTypeStream >> std::ws;

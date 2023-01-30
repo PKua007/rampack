@@ -110,7 +110,7 @@ void PackingLoader::autoFindStartRunIndex() {
 
     auto corruptedRun = std::find_if(runDatas.begin(), runDatas.end(), isRunCorrupted);
     if (corruptedRun != runDatas.end())
-        throw ValidationException("Starting run auto-detect: one or more runs are corrupted. Aborting.");
+        throw InputError("Starting run auto-detect: one or more runs are corrupted. Aborting.");
 
     auto firstUnfinished = std::find_if_not(runDatas.begin(), runDatas.end(), isRunFinished);
     if (firstUnfinished == runDatas.end()) {
@@ -125,9 +125,9 @@ void PackingLoader::autoFindStartRunIndex() {
 
     auto unexpectedPerformed = std::find_if(std::next(firstUnfinished), runDatas.end(), isRunPerformed);
     if (unexpectedPerformed != runDatas.end()) {
-        throw ValidationException("Starting run auto-detect: detected already performed run: '"
-                                  + unexpectedPerformed->runName + "' after unfinished run: '"
-                                  + firstUnfinished->runName + "'. Aborting.");
+        throw InputError("Starting run auto-detect: detected already performed run: '"
+                         + unexpectedPerformed->runName + "' after unfinished run: '"
+                         + firstUnfinished->runName + "'. Aborting.");
     }
 
     this->logger.info() << "Starting run auto-detect: detected '" <<  firstUnfinished->runName;
@@ -202,7 +202,7 @@ std::vector<PackingLoader::PerformedRunData> PackingLoader::gatherRunData() cons
             runData.wasPerformed = true;
             try {
                 auto auxInfo_ = RamsnapReader::restoreAuxInfo(datInput);
-                Validate(auxInfo_.find("cycles") != auxInfo_.end());
+                ValidateMsg(auxInfo_.find("cycles") != auxInfo_.end(), "No 'cycles' key in RAMSNAP metadata");
                 runData.doneCycles = std::stoul(auxInfo_.at("cycles"));
             } catch (std::logic_error &) {
                 runData.isCorrupted = true;

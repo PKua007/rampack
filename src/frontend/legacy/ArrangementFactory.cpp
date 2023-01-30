@@ -36,7 +36,8 @@ namespace {
             dimensionsStream >> dimensions[0] >> dimensions[1] >> dimensions[2];
             ValidateMsg(dimensionsStream, "Invalid packing dimensions format. "
                                           "Expected: {auto|[dim x] [dim y] [dim z]}");
-            Validate(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }));
+            ValidateMsg(std::all_of(dimensions.begin(), dimensions.end(), [](double d) { return d > 0; }),
+                        "Some dimensions are not positive");
             return dimensions;
         }
     }
@@ -50,7 +51,7 @@ namespace {
         else if (axisStr == "z")
             tiltAxis = OrthorhombicArrangingModel::Axis::Z;
         else
-            throw ValidationException("Only x, y, z tilt axes are allowed");
+            throw InputError("Only x, y, z tilt axes are allowed");
         return tiltAxis;
     }
 
@@ -144,9 +145,9 @@ namespace {
         arrangementStream >> spacingStr >> spacing >> axisOrderString;
         arrangementStream >> particlesInLine[0] >> particlesInLine[1] >> particlesInLine[2];
         ValidateMsg(arrangementStream && spacingStr == "spacing", ORTHORHOMBIC_USAGE);
-        Validate(spacing > 0);
-        Validate(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
-                 >= numOfParticles);
+        ValidateMsg(spacing > 0, "Spacing is not > 0");
+        ValidateMsg(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
+                    >= numOfParticles, "Lattice is not big enough for a given number of particles");
 
         std::array<double, 3> distances = find_minimal_distances(numOfParticles, interaction, particlesInLine,
                                                                  axisOrderString, model);
@@ -182,7 +183,8 @@ namespace {
             ValidateMsg(arrangementStream, ORTHORHOMBIC_USAGE);
             for (std::size_t i{}; i < 3; i++)
                 cellDimensions[i] = std::stod(firstThreeTokens[i]);
-            Validate(std::all_of(cellDimensions.begin(), cellDimensions.end(), [](double d) { return d > 0; }));
+            ValidateMsg(std::all_of(cellDimensions.begin(), cellDimensions.end(), [](double d) { return d > 0; }),
+                        "Some cell dimensions are not positive");
 
             if (boxDimensions == std::array<double, 3>{0, 0, 0}) {
                 std::transform(cellDimensions.begin(), cellDimensions.end(), particlesInLine.begin(),
@@ -190,8 +192,8 @@ namespace {
             }
         }
 
-        Validate(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
-                 >= numOfParticles);
+        ValidateMsg(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
+                    >= numOfParticles, "Lattice is not big enough for a given number of particles");
 
         return model.arrange(numOfParticles, particlesInLine, cellDimensions, boxDimensions);
     }
@@ -207,7 +209,7 @@ namespace {
         if (clinicity != OrthorhombicArrangingModel::Clinicity::IMPLICIT &&
             polarization == OrthorhombicArrangingModel::Polarization::IMPLICIT)
         {
-            throw ValidationException("Polarization must be specified explicitly for non-implicit clinicity!");
+            throw InputError("Polarization must be specified explicitly for non-implicit clinicity!");
         }
 
         OrthorhombicArrangingModel model(polarization, polarAxis, clinicity, tiltAxis, tiltAngle);
@@ -259,8 +261,7 @@ namespace legacy {
                 return LatticeBuilder::buildPacking(numOfParticles, boxString, arrangementString, std::move(bc),
                                                     shapeTraits, moveThreads, scalingThreads);
             } else {
-                throw ValidationException("Unknown arrangement type: " + type + ". Available: orthorhombic, "
-                                          + "presimulated");
+                throw InputError("Unknown arrangement type: " + type + ". Available: orthorhombic, presimulated");
             }
         }
     }

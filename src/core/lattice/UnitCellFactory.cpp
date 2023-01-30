@@ -83,7 +83,7 @@ UnitCell UnitCellFactory::createHcpCell(double ballDiameter, LatticeTraits::Axis
         case LatticeTraits::Axis::Z:
             return UnitCellFactory::createHcpCell({a, b, c}, axis);
     }
-    throw AssertionException("");
+    AssertThrow("");
 }
 
 UnitCell UnitCellFactory::createHexagonalCell(const TriclinicBox &box, LatticeTraits::Axis axis) {
@@ -95,7 +95,7 @@ UnitCell UnitCellFactory::createHexagonalCell(const TriclinicBox &box, LatticeTr
         case LatticeTraits::Axis::Z:
             return UnitCell(box, {Shape({0.25, 0.25, 0.5}), Shape({0.75, 0.75, 0.5})});
     }
-    throw AssertionException("");
+    AssertThrow("");
 }
 
 UnitCell UnitCellFactory::createHexagonalCell(const std::array<double, 3> &cuboidalCellSize, LatticeTraits::Axis axis) {
@@ -114,5 +114,5 @@ UnitCell UnitCellFactory::createHexagonalCell(double ballDiameter, LatticeTraits
         case LatticeTraits::Axis::Z:
             return UnitCellFactory::createHexagonalCell({a, b, c}, axis);
     }
-    throw AssertionException("");
+    AssertThrow("");
 }

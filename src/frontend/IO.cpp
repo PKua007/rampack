@@ -42,7 +42,7 @@ std::unique_ptr<RamtrjPlayer> IO::loadRamtrjPlayer(std::string &trajectoryFilena
             autoFix.dumpInfo(this->logger);
             this->logger.info() << std::endl;
             return simulationPlayer;
-        } catch (const ValidationException &exception) {
+        } catch (const InputError &exception) {
             autoFix.dumpInfo(this->logger);
             return nullptr;
         }
@@ -50,12 +50,13 @@ std::unique_ptr<RamtrjPlayer> IO::loadRamtrjPlayer(std::string &trajectoryFilena
         std::unique_ptr<RamtrjPlayer> player;
         try {
             player = std::make_unique<RamtrjPlayer>(std::move(trajectoryStream));
-        } catch (const ValidationException &exception) {
+        } catch (const InputError &exception) {
             this->logger.error() << "Reading the trajectory failed: " << exception.what() << std::endl;
             this->logger << "You may try to fix it by adding the --auto-fix option." << std::endl;
             return nullptr;
         }
-        Validate(player->getNumMolecules() == numMolecules);
+        ValidateMsg(player->getNumMolecules() == numMolecules,
+                    "Number of molecules in input file and in the loaded trajectory are different");
         return player;
     }
 }

@@ -24,27 +24,28 @@ namespace legacy {
             double translationStep{};
             moveSamplerStream >> translationStep;
             ValidateMsg(moveSamplerStream, "Malformed move sampler");
-            Validate(translationStep > 0);
+            ValidateMsg(translationStep > 0, "Translation step shoul be positive");
             if (!ParseUtils::isAnythingLeft(moveSamplerStream))
                 return std::make_unique<RototranslationSampler>(translationStep, std::nullopt);
 
             double rotationStep{};
             moveSamplerStream >> rotationStep;
-            Validate(rotationStep > 0);
+            ValidateMsg(rotationStep > 0, "Rotation step should be positive");
             if (!ParseUtils::isAnythingLeft(moveSamplerStream))
                 return std::make_unique<RototranslationSampler>(translationStep, rotationStep);
 
             double maxTranslationStep{};
             moveSamplerStream >> maxTranslationStep;
             ValidateMsg(moveSamplerStream, "Malformed move sampler");
-            Validate(maxTranslationStep > 0);
-            Validate(maxTranslationStep >= translationStep);
+            ValidateMsg(maxTranslationStep > 0, "Max translation step should be positive");
+            ValidateMsg(maxTranslationStep >= translationStep,
+                        "Max translation step should be not smaller than translation step");
             return std::make_unique<RototranslationSampler>(translationStep, rotationStep, maxTranslationStep);
         } else if (moveName == "translation") {
             double translationStep{};
             moveSamplerStream >> translationStep;
             ValidateMsg(moveSamplerStream, "Malformed move sampler");
-            Validate(translationStep > 0);
+            ValidateMsg(translationStep > 0, "Translation step should be positive");
 
             moveSamplerStream >> std::ws;
             if (moveSamplerStream.eof())
@@ -53,14 +54,15 @@ namespace legacy {
             double maxTranslationStep{};
             moveSamplerStream >> maxTranslationStep;
             ValidateMsg(moveSamplerStream, "Malformed move sampler");
-            Validate(maxTranslationStep > 0);
-            Validate(maxTranslationStep >= translationStep);
+            ValidateMsg(maxTranslationStep > 0, "Max translation step should be positive");
+            ValidateMsg(maxTranslationStep >= translationStep,
+                        "Max translation step should be not smaller than translation step");
             return std::make_unique<TranslationSampler>(translationStep, maxTranslationStep);
         } else if (moveName == "rotation") {
             double rotationStep{};
             moveSamplerStream >> rotationStep;
             ValidateMsg(moveSamplerStream, "Malformed move sampler");
-            Validate(rotationStep > 0);
+            ValidateMsg(rotationStep > 0, "Rotation step should be positive");
             return std::make_unique<RotationSampler>(rotationStep);
         } else if (moveName == "flip") {
             std::size_t flipEvery{};
@@ -71,12 +73,12 @@ namespace legacy {
             } else {
                 moveSamplerStream >> flipEvery;
                 ValidateMsg(moveSamplerStream, "Malformed move sampler");
-                Validate(flipEvery > 0);
+                ValidateMsg(flipEvery > 0, "Flip every parameter should be positive");
             }
 
             return std::make_unique<FlipSampler>(flipEvery);
         } else {
-            throw ValidationException("Unknown move sampler: " + moveName);
+            throw InputError("Unknown move sampler: " + moveName);
         }
     }
 }

@@ -36,7 +36,7 @@ std::size_t Version::parseToken(std::string token) {
     try {
         n = std::stoul(token, &idx);
     } catch (const std::invalid_argument &) {
-        throw PreconditionException("Malformed version token");
+        ExpectsThrow("Malformed version token");
     }
     Expects(idx == token.length());
     return n;

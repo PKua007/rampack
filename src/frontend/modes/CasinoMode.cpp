@@ -108,7 +108,9 @@ int CasinoMode::main(int argc, char **argv) {
     // domain threads
     // See https://stackoverflow.com/questions/67267035/...
     // ...increasing-memory-consumption-for-2-alternating-openmp-parallel-regions-with-dif
-    Validate(numDomains <= baseParams.scalingThreads);
+    ValidateMsg(numDomains <= baseParams.scalingThreads,
+                "Number of domains (" + std::to_string(numDomains) + ") should not be larger than the number of "
+                "scaling threads (" + std::to_string(baseParams.scalingThreads) + ")");
 
     // Info about threads
     this->logger << OMP_MAXTHREADS << " OpenMP threads are available" << std::endl;
@@ -166,7 +168,7 @@ int CasinoMode::main(int argc, char **argv) {
             this->performOverlapRelaxation(simulation, env, overlapRelaxationRun, shapeTraits, cycleOffset,
                                            isContinuation);
         } else {
-            throw AssertionException("Unimplemented run type");
+            AssertThrow("Unimplemented run type");
         }
 
         isContinuation = false;
@@ -467,7 +469,7 @@ void CasinoMode::overwriteMoveStepSizes(Simulation::Environment &env,
             this->logger << "input file value " << env.getBoxScaler().getStepSize() << std::endl;
         } else {
             double volumeStepSize = std::stod(packingAuxInfo.at(scalingKey));
-            Validate(volumeStepSize > 0);
+            ValidateMsg(volumeStepSize > 0, "Volume step size in RAMSNAP metadata is not positive");
             env.getBoxScaler().setStepSize(volumeStepSize);
             notUsedStepSizes.erase(scalingKey);
         }

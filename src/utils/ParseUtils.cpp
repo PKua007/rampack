@@ -16,12 +16,12 @@ std::map<std::string, std::string> ParseUtils::parseFields(const std::vector<std
     for (const auto &token : tokens) {
         if (std::find(fields.begin(), fields.end(), token) != fields.end()) {
             if (fieldMap.find(token) != fieldMap.end())
-                throw ValidationException("Redefined field: " + token);
+                throw InputError("Redefined field: " + token);
             currField = fieldMap.insert({token, ""}).first;
         } else {
             if (currField == fieldMap.end()) {
                 if (std::find(fields.begin(), fields.end(), "") == fields.end())
-                    throw ValidationException("Empty field name is not supported in this context");
+                    throw InputError("Empty field name is not supported in this context");
                 currField = fieldMap.insert({"", ""}).first;
             }
 

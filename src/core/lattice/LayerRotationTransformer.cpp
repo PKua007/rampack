@@ -30,7 +30,7 @@ Shape LayerRotationTransformer::transformShape(const Shape &shape, std::size_t l
             angles[this->rotationAxisIdx] = -this->rotationAngle;
             break;
         default:
-            throw AssertionException("layerIdx = " + std::to_string(layerIdx));
+            AssertThrow("layerIdx = " + std::to_string(layerIdx));
     }
 
     auto newShape = shape;

@@ -72,7 +72,7 @@ namespace {
             if (boxScaler == nullptr) {
                 env.disableBoxScaling();
             } else {
-                Validate(params.volumeStepSize > 0);
+                ValidateMsg(params.volumeStepSize > 0, "'volumeStepSize' should be positive when scaling is enabled");
                 env.setBoxScaler(std::move(boxScaler));
             }
         }
@@ -99,8 +99,10 @@ namespace {
         ValidateMsg(domainDivisionsStream, "Malformed domain divisions, usage: [x divisions] [y ...] [z ...].");
 
         std::size_t numDomains = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies<>{});
-        Validate(numDomains > 0);
-        Validate(numDomains <= static_cast<std::size_t>(OMP_MAXTHREADS));
+        ValidateMsg(numDomains > 0, "Number of domains should be positive");
+        ValidateMsg(numDomains <= static_cast<std::size_t>(OMP_MAXTHREADS),
+                    "Number of domains cannot be larger than number of available threads ("
+                    + std::to_string(OMP_MAXTHREADS) + ")");
 
         return domainDivisions;
     }
@@ -113,8 +115,10 @@ namespace {
             scalingThreads = OMP_MAXTHREADS;
         else
             scalingThreads = std::stoul(scalingThreadsStr);
-        Validate(scalingThreads > 0);
-        Validate(scalingThreads <= static_cast<std::size_t>(OMP_MAXTHREADS));
+        ValidateMsg(scalingThreads > 0, "Number of scaling threads should be positive");
+        ValidateMsg(scalingThreads <= static_cast<std::size_t>(OMP_MAXTHREADS),
+                    "Number of scaling threads cannot be larger than number of available threads ("
+                    + std::to_string(OMP_MAXTHREADS) + ")");
         return scalingThreads;
     }
 
@@ -127,7 +131,7 @@ namespace {
                 case 'x':   isWall[0] = true;    break;
                 case 'y':   isWall[1] = true;    break;
                 case 'z':   isWall[2] = true;    break;
-                default:    throw ValidationException("unknown wall axis: " + std::string{c});
+                default:    throw InputError("unknown wall axis: " + std::string{c});
             }
         }
         return isWall;
@@ -177,7 +181,7 @@ namespace {
         else if (styleStr == "affineTransform")
             wolframStyle = WolframWriter::WolframStyle::AFFINE_TRANSFORM;
         else
-            throw ValidationException("Unknown wolfram style: \"" + styleStr + "\"");
+            throw InputError("Unknown wolfram style: \"" + styleStr + "\"");
 
         return {filename, "Wolfram", std::make_shared<WolframWriter>(wolframStyle, params)};
     }
@@ -293,7 +297,7 @@ namespace {
             const auto &overlapRelaxationParams = std::get<Parameters::OverlapRelaxationParameters>(runParams);
             return parse_overlap_relaxation_run(overlapRelaxationParams, baseParams, shapeName, shapeAttributes);
         } else {
-            throw AssertionException("Unknown run type");
+            AssertThrow("Unknown run type");
         }
     }
 

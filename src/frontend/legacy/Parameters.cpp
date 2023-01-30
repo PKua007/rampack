@@ -98,9 +98,9 @@ Parameters::Parameters(std::istream &input) {
 
 void Parameters::validate() const {
     if (this->version < Version{0, 8, 0})
-        Validate(this->numOfParticles > 0);
-    Validate(!this->scalingThreads.empty());
-    Validate(!this->domainDivisions.empty());
+        ValidateMsg(this->numOfParticles > 0, "'numOfParticles' should be positive");
+    ValidateMsg(!this->scalingThreads.empty(), "'scalingThread' should be non-empty");
+    ValidateMsg(!this->domainDivisions.empty(), "'domainDivisions' should be non-empty");
     this->validateInheritableParameters();
 }
 
@@ -174,11 +174,12 @@ Parameters::IntegrationParameters::IntegrationParameters(const std::string &runN
 }
 
 void Parameters::IntegrationParameters::validate() const {
-    Validate(this->thermalisationCycles > 0 || this->averagingCycles > 0);
-    Validate(this->averagingEvery > 0);
-    Validate(this->snapshotEvery > 0);
-    Validate(this->inlineInfoEvery > 0);
-    Validate(this->orientationFixEvery > 0);
+    ValidateMsg(this->thermalisationCycles > 0 || this->averagingCycles > 0,
+                "At least one of: 'thermalisationCycles', 'averagingCycles' should be positive");
+    ValidateMsg(this->averagingEvery > 0, "'averagingEvery' should be positive");
+    ValidateMsg(this->snapshotEvery > 0, "'snapshotEvery' should be positive");
+    ValidateMsg(this->inlineInfoEvery > 0, "'inlineInfoEvery' should be positive");
+    ValidateMsg(this->orientationFixEvery > 0, "'orientationFixEvery' should be positive");
     this->validateInheritableParameters();
 }
 
@@ -237,9 +238,9 @@ Parameters::OverlapRelaxationParameters::OverlapRelaxationParameters(const std::
 }
 
 void Parameters::OverlapRelaxationParameters::validate() const {
-    Validate(this->snapshotEvery > 0);
-    Validate(this->inlineInfoEvery > 0);
-    Validate(this->orientationFixEvery > 0);
+    ValidateMsg(this->snapshotEvery > 0, "'snapshotEvery' should be positive");
+    ValidateMsg(this->inlineInfoEvery > 0, "'inlineInfoEvery' should be positive");
+    ValidateMsg(this->orientationFixEvery > 0, "'orientationFixEvery' should be positive");
     this->validateInheritableParameters();
 }
 

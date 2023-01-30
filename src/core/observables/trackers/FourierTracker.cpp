@@ -45,7 +45,7 @@ Vector<3> FourierTracker::calculateRelativeOriginPos(const FourierTracker::Fouri
         case 3:
             return this->calculateRelativeOriginPos3D(coefficients);
         default:
-            throw AssertionException("FourierTracker: zeros = " + std::to_string(this->nonzeroWavenumberIdxs.size()));
+            AssertThrow("FourierTracker: zeros = " + std::to_string(this->nonzeroWavenumberIdxs.size()));
     }
 }
 

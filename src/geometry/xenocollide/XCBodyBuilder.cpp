@@ -35,10 +35,10 @@ not be misrepresented as being the original software.
 
 std::shared_ptr<AbstractXCGeometry> XCBodyBuilder::releaseCollideGeometry() {
     if (this->shapeStack.empty()) {
-        throw ValidationException("XCBodyBuilder: shape stack is empty");
+        throw InputError("XCBodyBuilder: shape stack is empty");
     } else if (this->shapeStack.size() > 1) {
-        throw ValidationException("XCBodyBuilder: shape stack contains more than 1 shape; did you forget to use "
-                                  "sum, diff or wrap?");
+        throw InputError("XCBodyBuilder: shape stack contains more than 1 shape; did you forget to use sum, diff or "
+                         "wrap?");
     }
 
     auto geom = this->shapeStack.back().geometry;
@@ -47,7 +47,7 @@ std::shared_ptr<AbstractXCGeometry> XCBodyBuilder::releaseCollideGeometry() {
 }
 
 void XCBodyBuilder::cuboid(double sideX, double sideY, double sideZ) {
-    Validate(sideX > 0 && sideY > 0 && sideZ > 0);
+    ValidateMsg(sideX > 0 && sideY > 0 && sideZ > 0, "All cuboid side lengths should be positive");
     auto geom = std::make_shared<XCCuboid>(Vector<3>{sideX / 2, sideY / 2, sideZ / 2});
     this->shapeStack.emplace_back(geom);
 }
@@ -71,26 +71,27 @@ void XCBodyBuilder::diff() {
 }
 
 void XCBodyBuilder::disk(double radius) {
-    Validate(radius > 0);
+    ValidateMsg(radius > 0, "Disk radius should be positive");
     auto geom = std::make_shared<XCDisk>(radius);
     this->shapeStack.emplace_back(geom);
 }
 
 void XCBodyBuilder::ellipse(double semiAxisX, double semiAxisY) {
-    Validate(semiAxisX > 0 && semiAxisY > 0);
+    ValidateMsg(semiAxisX > 0 && semiAxisY > 0, "Ellipse semiaxes' lengths should be positive");
     auto geom = std::make_shared<XCEllipse>(semiAxisX, semiAxisY);
     this->shapeStack.emplace_back(geom);
 }
 
 void XCBodyBuilder::ellipsoid(double semiAxisX, double semiAxisY, double semiAxisZ) {
-    Validate(semiAxisX > 0 && semiAxisY > 0 && semiAxisZ > 0);
+    ValidateMsg(semiAxisX > 0 && semiAxisY > 0 && semiAxisZ > 0, "Ellipsoid semiaxes' lengths should be positive");
     auto geom = std::make_shared<XCEllipsoid>(Vector<3>{semiAxisX, semiAxisY, semiAxisZ});
     this->shapeStack.emplace_back(geom);
 }
 
 void XCBodyBuilder::dup(std::size_t numShapes) {
-    Validate(numShapes > 0);
-    Validate(numShapes <= this->shapeStack.size());
+    ValidateMsg(numShapes > 0, "Number of shapes to duplicate should be positive");
+    ValidateMsg(numShapes <= this->shapeStack.size(),
+                "Number of shapes to duplicate is greater than total number of shapes");
 
     auto it = this->shapeStack.end();
     std::advance(it, -static_cast<decltype(it)::difference_type>(numShapes));
@@ -101,8 +102,8 @@ void XCBodyBuilder::dup(std::size_t numShapes) {
 }
 
 void XCBodyBuilder::football(double length, double radius) {
-    Validate(length > 0 && radius > 0);
-    Validate(length >= 2*radius);
+    ValidateMsg(length > 0 && radius > 0, "Length and radius of a football should be positive");
+    ValidateMsg(length >= 2*radius, "Length of football should not be not smaller than its diameter");
     auto geom = std::make_shared<XCFootball>(length / 2, radius);
     this->shapeStack.emplace_back(geom);
 }
@@ -123,7 +124,7 @@ void XCBodyBuilder::pop() {
 }
 
 void XCBodyBuilder::rectangle(double sideX, double sideY) {
-    Validate(sideX > 0 && sideY > 0);
+    ValidateMsg(sideX > 0 && sideY > 0, "Rectangle side lengths should be positive");
     auto geom = std::make_shared<XCRectangle>(sideX / 2, sideY / 2);
     this->shapeStack.emplace_back(geom);
 }
@@ -135,20 +136,20 @@ void XCBodyBuilder::rot(double x, double y, double z) {
 }
 
 void XCBodyBuilder::saucer(double radius, double thickness) {
-    Validate(radius > 0 && thickness > 0);
-    Validate(thickness <= 2*radius);
+    ValidateMsg(radius > 0 && thickness > 0, "Saucer radius and thickness should be positive");
+    ValidateMsg(thickness <= 2*radius, "Saucer thickness cannot be larger than its diameter");
     auto geom = std::make_shared<XCSaucer>(radius, thickness / 2);
     this->shapeStack.emplace_back(geom);
 }
 
 void XCBodyBuilder::segment(double length) {
-    Validate(length > 0);
+    ValidateMsg(length > 0, "Segment length should be positive");
     auto geom = std::make_shared<XCSegment>(length / 2);
     this->shapeStack.emplace_back(geom);
 }
 
 void XCBodyBuilder::sphere(double radius) {
-    Validate(radius > 0);
+    ValidateMsg(radius > 0, "Sphere radius should be positive");
     auto geom = std::make_shared<XCSphere>(radius);
     this->shapeStack.emplace_back(geom);
 }
@@ -271,6 +272,6 @@ void XCBodyBuilder::processCommand(std::string cmd) {
     } else if (commandName == "wrap") {
         this->wrap();
     } else {
-        throw ValidationException("Unknown XCBodyBuilder command: " + commandName);
+        throw InputError("Unknown XCBodyBuilder command: " + commandName);
     }
 }
