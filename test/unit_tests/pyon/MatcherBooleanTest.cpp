@@ -60,6 +60,10 @@ TEST_CASE("Matcher: Boolean") {
         }
     }
 
+    SECTION("synopsis") {
+        CHECK(MatcherBoolean{}.synopsis() == "Boolean");
+    }
+
     SECTION("map to") {
         auto matcher = MatcherBoolean{}.mapTo<std::size_t>();
         CHECK(matcher.match(Parser::parse("True"), result));

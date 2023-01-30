@@ -28,6 +28,10 @@ TEST_CASE("Matcher: String") {
         CHECK(MatcherString{}.outline(4) == "    String");
     }
 
+    SECTION("synopsis") {
+        CHECK(MatcherString{}.synopsis() == "String");
+    }
+
     SECTION("filters") {
         SECTION("equals") {
             auto matcher1 = MatcherString{}.equals("abc");

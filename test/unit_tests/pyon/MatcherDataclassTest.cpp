@@ -283,6 +283,10 @@ TEST_CASE("Matcher: Dataclass") {
         }
     }
 
+    SECTION("synopsis") {
+        CHECK(MatcherDataclass("xyz").synopsis() == R"(class "xyz")");
+    }
+
     SECTION("outline") {
         SECTION("empty") {
             CHECK(MatcherDataclass("clazz").outline(4) == "    clazz class:\n    - arguments: empty");

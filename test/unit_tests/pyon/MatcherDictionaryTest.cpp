@@ -56,6 +56,13 @@ TEST_CASE("Matcher: Dictionary") {
         CHECK(dict["longkey"].as<bool>() == true);
     }
 
+    SECTION("synopsis") {
+        CHECK(MatcherDictionary{}.synopsis() == "Dictionary[String -> any expression]");
+        CHECK(MatcherDictionary{}.valuesMatch(MatcherFloat{}).synopsis() == "Dictionary[String -> Float]");
+        CHECK(MatcherDictionary{}.valueAtKeyMatches("key", MatcherNone{}).synopsis()
+              == "Dictionary[String -> various]");
+    }
+
     SECTION("outline layout") {
         CHECK(MatcherDictionary{}.outline(4) == "    Dictionary");
         CHECK(MatcherDictionary{}.valuesMatch(MatcherInt{}).outline(4) == "    Dictionary, with values: Integer");

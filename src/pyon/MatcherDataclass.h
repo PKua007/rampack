@@ -189,6 +189,9 @@ namespace pyon::matcher {
         validateMissingArguments(const std::shared_ptr<const ast::NodeArray> &nodePositional,
                                  const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const;
 
+        [[nodiscard]] MatchReport
+        validateUnknownKeywordArguments(const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const;
+
     public:
         explicit MatcherDataclass(std::string className);
         MatcherDataclass(std::string className, std::vector<StandardArgumentSpecification> argumentsSpecification);
@@ -203,13 +206,11 @@ namespace pyon::matcher {
         MatchReport match(std::shared_ptr<const ast::Node> node, Any &result) const override;
         [[nodiscard]] bool matchNodeType(ast::Node::Type type) const override { return type == ast::Node::DATACLASS; }
         [[nodiscard]] std::string outline(std::size_t indent) const override;
+        [[nodiscard]] std::string synopsis() const override { return "class \"" + this->name + "\""; }
 
         MatcherDataclass &mapTo(const std::function<Any(const DataclassData&)> &mapping_);
         MatcherDataclass &filter(const std::function<bool(const DataclassData&)> &filter);
         MatcherDataclass &describe(const std::string &description);
-
-        MatchReport
-        validateUnknownKeywordArguments(const std::shared_ptr<const ast::NodeDictionary> &nodeKeyword) const;
     };
 } // matcher
 

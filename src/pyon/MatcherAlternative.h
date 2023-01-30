@@ -23,6 +23,7 @@ namespace pyon::matcher {
         [[nodiscard]] std::string nameNode(const std::shared_ptr<const ast::Node> &node) const;
         [[nodiscard]] std::vector<std::shared_ptr<MatcherBase>>
         collectVariants(const std::shared_ptr<const ast::Node> &node) const;
+        [[nodiscard]] std::vector<std::string> collectSynopses() const;
 
 
     public:
@@ -33,6 +34,7 @@ namespace pyon::matcher {
         MatchReport match(std::shared_ptr<const ast::Node> node, Any &result) const override;
         [[nodiscard]] bool matchNodeType(ast::Node::Type type) const override;
         [[nodiscard]] std::string outline(std::size_t indent) const override;
+        [[nodiscard]] std::string synopsis() const override;
 
         template<typename ConcreteMatcher>
         MatcherAlternative &operator|=(const ConcreteMatcher &matcher) {

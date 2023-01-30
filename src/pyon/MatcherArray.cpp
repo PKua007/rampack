@@ -185,4 +185,11 @@ namespace pyon::matcher {
         this->describe("non-empty");
         return *this;
     }
+
+    std::string MatcherArray::synopsis() const {
+        if (this->elementMatcher == nullptr)
+            return "Array[any expression]";
+        else
+            return "Array[" + this->elementMatcher->synopsis() + "]";
+    }
 } // matcher

@@ -24,7 +24,7 @@ namespace pyon::matcher {
         std::vector<Filter> filters;
         std::function<Any(const std::string&)> mapping = [](const std::string &str) { return str; };
 
-        std::string generateUnmatchedReport(const std::string &reason) const;
+        [[nodiscard]] std::string generateUnmatchedReport(const std::string &reason) const;
 
     public:
         MatcherString() = default;
@@ -37,6 +37,7 @@ namespace pyon::matcher {
         MatchReport match(std::shared_ptr<const ast::Node> node, Any &result) const override;
         [[nodiscard]] bool matchNodeType(ast::Node::Type type) const override { return type == ast::Node::STRING; }
         [[nodiscard]] std::string outline(std::size_t indent) const override;
+        [[nodiscard]] std::string synopsis() const override { return "String"; }
 
         template<typename T>
         MatcherString &mapTo() {

@@ -89,6 +89,10 @@ namespace pyon::matcher {
                 return out.str();
             }
 
+            [[nodiscard]] std::string synopsis() const override {
+                return this->getName();
+            }
+
             template<typename T>
             ConcreteNumeral &mapTo() {
                 this->mapping = [](NumeralT i) { return static_cast<T>(i); };
@@ -235,7 +239,7 @@ namespace pyon::matcher {
     public:
         using MatcherNumeral::MatcherNumeral;
 
-        bool matchNodeType(ast::Node::Type type) const override {
+        [[nodiscard]] bool matchNodeType(ast::Node::Type type) const override {
             return type == ast::Node::INT || type == ast::Node::FLOAT;
         }
     };
