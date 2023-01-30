@@ -17,7 +17,7 @@ Vector<3> ShapeGeometry::getNamedPoint(const std::string &pointName) const {
 
     auto point = this->namedPoints.find(pointName);
     if (point == this->namedPoints.end())
-        throw PreconditionException("ShapeGeometry::getNamedPoint : unknown point name '" + pointName + "'");
+        ExpectsThrow("ShapeGeometry::getNamedPoint : unknown point name '" + pointName + "'");
     return point->second;
 }
 

@@ -98,7 +98,7 @@ namespace {
                 else if (type == "averaging")
                     observableType |= ObservablesCollector::AVERAGING;
                 else
-                    throw AssertionException("observable type: " + type);
+                    AssertThrow("observable type: " + type);
             }
             observableStream >> observableName;
             ValidateMsg(observableStream, "Malformed observable: " + observable);
@@ -116,14 +116,14 @@ namespace {
             case 0: case 1: case 3: case 4:
                 break;
             default:
-                throw ValidationException(SMECTIC_ORDER_USAGE);
+                throw InputError(SMECTIC_ORDER_USAGE);
         }
 
         std::map<std::string, std::string> fieldMap;
 
         if (tokens.size() == 1 || tokens.size() == 4) {
             if (tokens.back() != "dumpTauVector")
-                throw ValidationException(SMECTIC_ORDER_USAGE);
+                throw InputError(SMECTIC_ORDER_USAGE);
             fieldMap["dumpTauVector"] = "";
         }
 
@@ -192,7 +192,7 @@ namespace {
             try {
                 return std::stoi(wavenumberString);
             } catch (std::logic_error &e) {
-                throw ValidationException("Malformed Miller indices; format: nx.ny.nz");
+                throw InputError("Malformed Miller indices; format: nx.ny.nz");
             }
         };
         std::transform(millerIndicesExploded.begin(), millerIndicesExploded.end(), millerIndices.begin(),
@@ -261,7 +261,7 @@ namespace {
 
             return std::make_unique<LayerwiseRadialEnumerator>(millerIndices, focalPoint);
         } else {
-            throw ValidationException("Unknown binning specification: " + enumeratorName);
+            throw InputError("Unknown binning specification: " + enumeratorName);
         }
     }
 
@@ -281,9 +281,9 @@ namespace {
             else if (axisName == "auxiliary")
                 return std::make_unique<S110Correlation>(ShapeGeometry::Axis::AUXILIARY);
             else
-                throw ValidationException(CORR_FUN_USAGE);
+                throw InputError(CORR_FUN_USAGE);
         } else {
-            throw ValidationException("Unknown correlation function: " + name);
+            throw InputError("Unknown correlation function: " + name);
         }
     }
 
@@ -329,7 +329,7 @@ namespace {
             }
             functionShortName += coord;
         } else {
-            throw ValidationException(FOURIER_TRACKER_USAGE);
+            throw InputError(FOURIER_TRACKER_USAGE);
         }
 
         return std::make_unique<FourierTracker>(wavenumbers, function, functionShortName);
@@ -339,7 +339,7 @@ namespace {
         if (trackerName == "fourierTracker") {
             return parse_fourier_tracker(trackerStream);
         } else {
-            throw ValidationException("Unknown Goldstone tracker: " + trackerName);
+            throw InputError("Unknown Goldstone tracker: " + trackerName);
         }
     }
 
@@ -380,9 +380,9 @@ namespace {
 
         try {
             return parse_tracker(observableName, observableStream);
-        } catch (const ValidationException &) { }
+        } catch (const InputError &) { }
 
-        throw ValidationException("Unknown observable: " + observableName);
+        throw InputError("Unknown observable: " + observableName);
     }
 
     std::unique_ptr<DensityHistogram> parse_density_histogram(std::istream &observableStream,
@@ -433,8 +433,8 @@ namespace {
                 std::size_t numBins{};
                 observableStream >> maxDistance >> numBins;
                 ValidateMsg(observableStream, PAIR_DENSITY_CORRELATION_USAGE);
-                Validate(maxDistance > 0);
-                Validate(numBins >= 2);
+                ValidateMsg(maxDistance > 0, "Max distance should be positive");
+                ValidateMsg(numBins >= 2, "Number of bins should be >= 2");
 
                 auto pairEnumerator = parse_pair_enumerator(observableStream, version);
                 auto rhoCorr = std::make_unique<PairDensityCorrelation>(
@@ -446,8 +446,8 @@ namespace {
                 std::size_t numBins{};
                 observableStream >> maxDistance >> numBins;
                 ValidateMsg(observableStream, PAIR_AVERAGED_CORRELATION_USAGE);
-                Validate(maxDistance > 0);
-                Validate(numBins >= 2);
+                ValidateMsg(maxDistance > 0, "Max distance should be positive");
+                ValidateMsg(numBins >= 2, "Number of bins should be >= 2");
 
                 auto correlationFunction = parse_correlation_function(observableStream);
                 auto pairEnumerator = parse_pair_enumerator(observableStream, version);
@@ -458,7 +458,7 @@ namespace {
             } else if (observableName == "densityHistogram") {
                 collector.addBulkObservable(parse_density_histogram(observableStream, maxThreads));
             } else {
-                throw ValidationException("Unknown observable: " + observableName);
+                throw InputError("Unknown observable: " + observableName);
             }
         }
     }

@@ -82,6 +82,6 @@ TriclinicBox RamsnapReader::restoreBox(std::istream &in) {
     }
 
     TriclinicBox box(dimensions);
-    Validate(box.getVolume() != 0);
+    ValidateMsg(box.getVolume() != 0, "Broken RAMSNAP file: zero box volume");
     return box;
 }

@@ -17,7 +17,7 @@ AnisotropicVolumeScaler::ScalingDirection ScalingDirectionParser::charToScalingD
         case 'z':
             return AnisotropicVolumeScaler::Z;
         default:
-            throw AssertionException({c});
+            AssertThrow(std::string{c});
     }
 }
 

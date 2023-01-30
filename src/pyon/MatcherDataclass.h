@@ -111,12 +111,12 @@ namespace pyon::matcher {
 
                 Any result;
                 if (!this->matcher->match(node, result)) {
-                    throw PreconditionException("Default value '" + defaultValue + "' does not match the matcher: "
-                                                + this->matcher->outline(0));
+                    ExpectsThrow("Default value '" + defaultValue + "' does not match the matcher: "
+                                 + this->matcher->outline(0));
                 }
                 this->defaultValue = result;
             } catch (const ParseException &e) {
-                throw PreconditionException(std::string("Default value parsing failed: \n") + e.what());
+                ExpectsThrow(std::string("Default value parsing failed: \n") + e.what());
             }
         }
 

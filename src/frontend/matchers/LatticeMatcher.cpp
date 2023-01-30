@@ -153,7 +153,7 @@ namespace {
                 case 'x':   return LatticeTraits::Axis::X;
                 case 'y':   return LatticeTraits::Axis::Y;
                 case 'z':   return LatticeTraits::Axis::Z;
-                default:    throw AssertionException(axis);
+                default:    AssertThrow(axis);
             }
         });
 

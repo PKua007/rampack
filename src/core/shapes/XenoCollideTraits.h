@@ -16,7 +16,7 @@
 #include "XCWolframShapePrinter.h"
 #include "XCObjShapePrinter.h"
 #include "geometry/Polyhedron.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "OptionalAxis.h"
 
 

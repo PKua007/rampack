@@ -351,7 +351,7 @@ namespace pyon::matcher {
                 standardArgumentsVec.emplace_back(argumentSpecification.getName(),
                                                   *argumentSpecification.getDefaultValue());
             } else {
-                throw AssertionException("Missing argument should've been caught earlier");
+                AssertThrow("Missing argument should've been caught earlier");
             }
         }
 

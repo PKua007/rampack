@@ -25,7 +25,7 @@ RamtrjPlayer::RamtrjPlayer(std::unique_ptr<std::istream> in, RamtrjPlayer::AutoF
     this->in->seekg(0);
     try {
         this->header = RamtrjIO::readHeader(*this->in);
-    } catch (const ValidationException &ex) {
+    } catch (const InputError &ex) {
         autoFix.reportError(ex.what());
         std::rethrow_exception(std::current_exception());
     }
@@ -154,14 +154,14 @@ void RamtrjPlayer::AutoFix::tryFixing(RamtrjIO::Header &header_, std::size_t sna
         Assert(header_.versionMajor == 1 && header_.versionMinor == 0);
         this->reportError("The header does not contain information about the number of particles or cycle step - it was"
                           " not always stored in RAMTRJ v1.0.");
-        throw ValidationException(this->errorMessage);
+        throw InputError(this->errorMessage);
     } else if (header_.numParticles != this->expectedNumMolecules) {
         this->fixingSuccessful = false;
         std::ostringstream error;
         error << "Expected number of molecules (" << this->expectedNumMolecules << ") != number of molecules ";
         error << "in the input (" << header_.numParticles << ")";
         this->reportError(error.str());
-        throw ValidationException(this->errorMessage);
+        throw InputError(this->errorMessage);
     }
 
     this->fixingNeeded = true;

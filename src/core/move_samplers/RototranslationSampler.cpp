@@ -76,7 +76,7 @@ void RototranslationSampler::setStepSize(const std::string &stepName, double ste
     else if (stepName == "rotation")
         this->rotationStepSize = stepSize;
     else
-        throw PreconditionException("Unknown step name: " + stepName);
+        ExpectsThrow("Unknown step name: " + stepName);
 }
 
 void RototranslationSampler::calculateRotationStepSizeIfNeeded(const Interaction &interaction) {

@@ -74,10 +74,9 @@ namespace legacy {
                                                        "be equal 0");
                 try {
                     list.emplace_back(cycle, ParameterUpdaterFactory::create(underlyingParam));
-                } catch (ValidationException &validationException) {
-                    throw ValidationException(
-                            "Malformed parameter '" + underlyingParam + "' within piecewise parameter: "
-                            + validationException.what());
+                } catch (InputError &inputError) {
+                    throw InputError("Malformed parameter '" + underlyingParam + "' within piecewise parameter: "
+                                     + inputError.what());
                 }
             }
 
@@ -85,7 +84,7 @@ namespace legacy {
                                        "[cycle 1] [dynamic parameter 1] , ...");
             return std::make_unique<PiecewiseDynamicParameter>(std::move(list));
         } else {
-            throw ValidationException("Unknown or malformed dynamic parameter: " + paramType);
+            throw InputError("Unknown or malformed dynamic parameter: " + paramType);
         }
     }
 }

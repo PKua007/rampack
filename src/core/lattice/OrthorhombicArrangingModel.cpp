@@ -89,5 +89,5 @@ std::size_t OrthorhombicArrangingModel::getAxisNumber(OrthorhombicArrangingModel
         case Axis::Y: return 1;
         case Axis::Z: return 2;
     }
-    throw AssertionException{""};
+    AssertThrow("");
 }

@@ -9,64 +9,126 @@
 #include <string>
 #include <cstring>
 
+
+#define EXCEPTIONS_BLOCK(expr) do { expr } while(false)
+
 // Cpp Core Guidelines-style assertions for design by contract
 // https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#i6-prefer-expects-for-expressing-preconditions
 
-
-#define ASSERTIONS_S(x) #x
-#define ASSERTIONS_S_(x) ASSERTIONS_S(x)
-#define __WHERE__ __FILE__ ":" ASSERTIONS_S_(__LINE__)
-
 // Preconditions check (argument validation)
-#define Expects(cond) if (!(cond)) throw PreconditionException(__WHERE__ ": Precondition (" #cond ") failed")
-#define ExpectsMsg(cond, msg) if (!(cond)) throw PreconditionException(std::string(__WHERE__ ": ") + msg)
+#define Expects(cond) EXCEPTIONS_BLOCK(                                                                             \
+    if (!(cond))                                                                                                    \
+        throw PreconditionException(__FILE__, __func__, __LINE__, #cond, "Precondition failed");                    \
+)
+
+#define ExpectsMsg(cond, msg) EXCEPTIONS_BLOCK(                                                                     \
+    if (!(cond))                                                                                                    \
+        throw PreconditionException(__FILE__, __func__, __LINE__, #cond, msg);                                      \
+)
+
+#define ExpectsThrow(msg)   throw PreconditionException(__FILE__, __func__, __LINE__, "Manual throw", msg)
+
 
 // Postconditions check (results assertion)
-#define Ensures(cond) if (!(cond)) throw PostconditionException(__WHERE__ ": Postcondition (" #cond ") failed")
-#define EnsuresMsg(cond, msg) if (!(cond)) throw PostconditionException(std::string(__WHERE__ ": ") + msg)
+#define Ensures(cond) EXCEPTIONS_BLOCK(                                                                             \
+    if (!(cond))                                                                                                    \
+        throw PostconditionException(__FILE__, __func__, __LINE__, #cond, "Postcondition failed");                  \
+)
 
-// Runtime assertion. Why duplicate assert from cassert? Because we don't want to disable is in release mode and
-// be more C++ and throw exception
-#define Assert(cond) if (!(cond)) throw AssertionException(__WHERE__ ": Assertion (" #cond ") failed")
-#define AssertMsg(cond, msg) if (!(cond)) throw AssertionException(std::string(__WHERE__ ": ") + msg)
+#define EnsuresMsg(cond, msg) EXCEPTIONS_BLOCK(                                                                     \
+    if (!(cond))                                                                                                    \
+        throw PostconditionException(__FILE__, __func__, __LINE__, #cond, msg);                                     \
+)
 
-// Additional macros for validating things like input from file - wrong input shouldn't be considered as assertion
-// fail, because it is not the programmer's fault ;)
-#define Validate(cond) if (!(cond)) throw ValidationException(__WHERE__ ": Validation (" #cond ") failed")
-#define ValidateMsg(cond, msg) if (!(cond)) throw ValidationException(std::string(__WHERE__ ": ") + msg)
-#define ValidateOpened(stream, filename) \
-    if (!(stream)) \
-        throw ValidationException(std::string(__WHERE__) + ": could not open '" + (filename) + "': " + strerror(errno))
-#define ValidateOpenedDesc(stream, filename, desc) \
-    if (!(stream)) \
-        throw ValidationException(std::string(__WHERE__) + ": could not open '" + (filename) + "' " + (desc) + ": " \
-                                  + strerror(errno)) \
-/**
- * @brief An exception thrown by Validate and ValidateMsg macros.
- */
-struct ValidationException : public std::logic_error {
-    explicit ValidationException(const std::string &msg) : std::logic_error{msg} { }
+#define EnsuresThrow(msg)   throw PostconditionException(__FILE__, __func__, __LINE__, "Manual throw", msg)
+
+
+// Runtime assertion
+#define Assert(cond) EXCEPTIONS_BLOCK(                                                                              \
+    if (!(cond))                                                                                                    \
+        throw AssertionException(__FILE__, __func__, __LINE__, #cond, "Assertion failed");                          \
+)
+
+#define AssertMsg(cond, msg) EXCEPTIONS_BLOCK(                                                                      \
+    if (!(cond))                                                                                                    \
+        throw AssertionException(__FILE__, __func__, __LINE__, #cond, msg);                                         \
+)
+
+#define AssertThrow(msg)   throw AssertionException(__FILE__, __func__, __LINE__, "Manual throw", msg)
+
+
+// Additional macros for validating user input throwing InputError
+#define ValidateMsg(cond, msg) EXCEPTIONS_BLOCK(                                                                    \
+    if (!(cond))                                                                                                    \
+        throw InputError(msg);                                                                                      \
+)
+
+#define ValidateOpenedDesc(stream, filename, desc) EXCEPTIONS_BLOCK(                                                \
+    if (!(stream))                                                                                                  \
+        throw InputError("Could not open '" + (filename) + "' " + (desc) + ": " + strerror(errno));                 \
+)
+
+
+struct RampackException : public std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
+
+struct InputError : public RampackException {
+    using RampackException::RampackException;
+};
+
+struct InternalError : public RampackException {
+    using RampackException::RampackException;
+};
+
+struct ContractException : public InternalError {
+private:
+    std::string file;
+    std::string function;
+    std::size_t line{};
+    std::string condition;
+    std::string message;
+
+    static std::string makeWhat(const std::string &file_, const std::string &function_, std::size_t line_,
+                                const std::string &condition_, const std::string &message_);
+
+public:
+    ContractException(std::string file, std::string function, std::size_t line, std::string condition,
+                      std::string message)
+            : InternalError(ContractException::makeWhat(file, function, line, condition, message)),
+              file{std::move(file)}, function{std::move(function)}, line{line}, condition{std::move(condition)},
+              message{std::move(message)}
+    { }
 };
 
 /**
  * @brief An exception thrown by Validate and ValidateMsg macros.
  */
-struct PreconditionException : public std::logic_error {
-    explicit PreconditionException(const std::string &msg) : std::logic_error{msg} { }
+struct PreconditionException : public ContractException {
+    explicit PreconditionException(std::string file, std::string function, std::size_t line, std::string condition,
+                                   std::string message)
+            : ContractException(std::move(file), std::move(function), line, std::move(condition), std::move(message))
+    { }
 };
 
 /**
  * @brief An exception thrown by Validate and ValidateMsg macros.
  */
-struct PostconditionException : public std::logic_error {
-    explicit PostconditionException(const std::string &msg) : std::logic_error{msg} { }
+struct PostconditionException : public ContractException {
+    explicit PostconditionException(std::string file, std::string function, std::size_t line, std::string condition,
+                                    std::string message)
+            : ContractException(std::move(file), std::move(function), line, std::move(condition), std::move(message))
+    { }
 };
 
 /**
  * @brief An exception thrown by Validate and ValidateMsg macros.
  */
-struct AssertionException : public std::logic_error {
-    explicit AssertionException(const std::string &msg) : std::logic_error{msg} { }
+struct AssertionException : public ContractException {
+    explicit AssertionException(std::string file, std::string function, std::size_t line, std::string condition,
+                                std::string message)
+            : ContractException(std::move(file), std::move(function), line, std::move(condition), std::move(message))
+    { }
 };
 
 #endif //RAMPACK_EXCEPTIONS_H
