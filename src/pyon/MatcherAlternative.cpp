@@ -22,13 +22,10 @@ namespace pyon::matcher {
     std::string MatcherAlternative::generateVariantUnmatchedReport(const std::vector<std::string> &reasons,
                                                                    const std::shared_ptr<const ast::Node> &node) const
     {
-        std::ostringstream out;
-        if (reasons.size() == 1) {
-            out << "Matching Alternative failed:" << std::endl;
-            out << "✖ " << replaceAll(reasons.back(), "\n", "\n  ");
-            return out.str();
-        }
+        if (reasons.size() == 1)
+            return reasons.front();
 
+        std::ostringstream out;
         out << "Matching Alternative failed: all " << reasons.size() << " variants of " << this->nameNode(node);
         out << " failed to match:";
 

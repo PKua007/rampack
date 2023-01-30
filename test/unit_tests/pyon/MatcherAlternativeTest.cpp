@@ -130,9 +130,8 @@ TEST_CASE("Matcher: Alternative") {
             SECTION("1 variant") {
                 auto matcher = MatcherInt{}.positive().less(5) | MatcherString{};
                 CHECK_THAT(matcher.match(Parser::parse("6"), result),
-                           UnmatchedWithReason(R"(Matching Alternative failed:
-✖ Matching Integer failed:
-  ✖ Condition not satisfied: < 5)"));
+                           UnmatchedWithReason(R"(Matching Integer failed:
+✖ Condition not satisfied: < 5)"));
             }
 
             SECTION("2 variants") {
