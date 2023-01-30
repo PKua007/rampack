@@ -97,14 +97,14 @@ public:
 };
 
 
-constexpr Version CURRENT_VERSION{0, 9, 0};
+constexpr Version CURRENT_VERSION{0, 9, 1};
 
 // Auxiliary versions user in the code
 
 /** Version when input file format was rewritten */
 constexpr Version INPUT_REVAMP_VERSION{0, 9, 0};
 
-/** Version when shape centers and orientation were made consistent*/
+/** Version when shape centers and orientation were made consistent */
 constexpr Version CONSISTENT_SHAPES_VERSION{0, 2, 0};
 
 

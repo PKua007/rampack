@@ -1,5 +1,5 @@
 rampack(
-    version = "0.9",
+    version = "0.9.1",
     arrangement = lattice(cell=sc, box_dim=7, n_shapes=512),
     temperature = 1,
     pressure = 20,
