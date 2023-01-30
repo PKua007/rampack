@@ -389,4 +389,12 @@ TEST_CASE("Parser: comments") {
         auto input = R"("# this is not comment")";
         CHECK(Parser::parse(input)->as<NodeString>()->getValue() == "# this is not comment");
     }
+
+    SECTION("multiline comment with whitespace") {
+        auto input = R"(
+            # line1
+            # line2
+            1234)";
+        CHECK(Parser::parse(input)->as<NodeInt>()->getValue() == 1234);
+    }
 }
