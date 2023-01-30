@@ -73,6 +73,7 @@ namespace pyon::matcher {
         [[nodiscard]] std::string doPrintOutline(const std::vector<std::string> &bulletPoints, std::size_t linesAtLeast,
                                                  std::size_t indent) const;
         [[nodiscard]] std::string generateDictionaryUnmatchedReport(const std::string &reason) const;
+        [[nodiscard]] std::string generateUnmetConditionReport(const std::string &condition) const;
         [[nodiscard]] std::string generateKeyUnmatchedReport(const std::string &key, const std::string &reason) const;
         [[nodiscard]] MatchReport matchKeys(const ast::NodeDictionary &nodeDict, DictionaryData &dictData) const;
         [[nodiscard]] MatchReport matchKey(const std::string &key, const std::shared_ptr<const ast::Node> &value,

@@ -158,12 +158,12 @@ namespace pyon::matcher {
                                     const StandardArgumentSpecification &argumentSpecification,
                                     const std::shared_ptr<const ast::Node> &argumentNode) const;
 
-        void outlineArgumentsSpecification(std::ostringstream &out, std::size_t indent) const;
-        void outlineStandardArguments(std::ostringstream &out, std::size_t indent) const;
+        void outlineArgumentsSpecification(std::ostringstream &out, std::size_t indent, bool verbose) const;
+        void outlineStandardArguments(std::ostringstream &out, std::size_t indent, bool verbose) const;
         void outlineArgument(const StandardArgumentSpecification &argument, std::ostringstream &out,
-                             std::size_t indent) const;
-        void outlineVariadicArguments(std::ostringstream &out, std::size_t indent) const;
-        void outlineKeywordVariadicArguments(std::ostringstream &out, std::size_t indent) const;
+                             std::size_t indent, bool verbose) const;
+        void outlineVariadicArguments(std::ostringstream &out, std::size_t indent, bool verbose) const;
+        void outlineKeywordVariadicArguments(std::ostringstream &out, std::size_t indent, bool verbose) const;
         void outlineFilters(std::ostringstream &out, std::size_t indent) const;
 
         [[nodiscard]] std::string generateDataclassUnmatchedReport(const std::string &reason) const;

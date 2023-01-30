@@ -94,6 +94,7 @@ namespace pyon::matcher {
         std::shared_ptr<MatcherBase> elementMatcher;
 
         [[nodiscard]] std::string generateArrayUnmatchedReport(const std::string &reason) const;
+        [[nodiscard]] std::string generateUnmetConditionReport(const std::string &condition) const;
         [[nodiscard]] std::string generateIndexUnmatchedReport(std::size_t index, const std::string &reason) const;
 
     public:

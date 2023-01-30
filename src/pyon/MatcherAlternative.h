@@ -24,7 +24,9 @@ namespace pyon::matcher {
         [[nodiscard]] std::vector<std::shared_ptr<MatcherBase>>
         collectVariants(const std::shared_ptr<const ast::Node> &node) const;
         [[nodiscard]] std::vector<std::string> collectSynopses() const;
-
+        [[nodiscard]] std::vector<std::string> collectOutlines(std::size_t indent) const;
+        void presentAlternatives(std::ostringstream &out, const std::vector<std::string> &alternatives_,
+                                 std::size_t indent) const;
 
     public:
         MatcherAlternative() = default;
@@ -55,7 +57,6 @@ namespace pyon::matcher {
             }
             return *this;
         }
-
     };
 } // matcher
 

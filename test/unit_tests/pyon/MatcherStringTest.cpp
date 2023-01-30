@@ -20,8 +20,7 @@ TEST_CASE("Matcher: String") {
     SECTION("default") {
         CHECK_THAT(MatcherString{}.match(Parser::parse("True"), result),
                    UnmatchedWithReason(R"(Matching String failed:
-✖ Got incorrect node type: Boolean
-✓ Expected format: String)"));
+✖ Got incorrect node type: Boolean)"));
 
         CHECK(MatcherString{}.match(Parser::parse(R"("abc")"), result));
         CHECK(result.as<std::string>() == "abc");
@@ -40,8 +39,7 @@ TEST_CASE("Matcher: String") {
 
             CHECK_THAT(matcher.match(Parser::parse(R"("def")"), result),
                        UnmatchedWithReason(R"(Matching String failed:
-✖ Condition not satisfied: = "abc"
-✓ Expected format: String, = "abc")"));
+✖ Condition not satisfied: = "abc")"));
 
             CHECK(matcher.match(Parser::parse(R"("abc")"), result));
             CHECK(matcher.outline(4) == R"(    String, = "abc")");
@@ -180,12 +178,7 @@ TEST_CASE("Matcher: String") {
 
             CHECK_THAT(matcher.match(Parser::parse(R"("xxz")"), result),
                        UnmatchedWithReason(R"(Matching String failed:
-✖ Condition not satisfied: with unique characters
-✓ Expected format: String:
-  - with length = 3
-  - lowercase
-  - with unique characters
-  - with only characters: "xyz")"));
+✖ Condition not satisfied: with unique characters)"));
 
             CHECK(matcher.match(Parser::parse(R"("xzy")"), result));
 

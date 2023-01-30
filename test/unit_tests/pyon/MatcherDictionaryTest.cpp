@@ -103,7 +103,7 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK_THAT(MatcherDictionary{}.match(Parser::parse("True"), result),
                        UnmatchedWithReason(R"(Matching Dictionary failed:
 ✖ Got incorrect node type: Boolean
-✓ Expected format: Dictionary)"));
+✓ Expected format: Dictionary[String -> any expression])"));
         }
 
         SECTION("default value unmatched") {
@@ -114,18 +114,12 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK_THAT(matcher.match(Parser::parse(R"({"key1": "123"})"), result),
                        UnmatchedWithReason(R"(Matching Dictionary failed: Matching key "key1" failed:
 ✖ Matching String failed:
-  ✖ Condition not satisfied: with only letters
-  ✓ Expected format: String:
-    - with only letters
-    - non-empty)"));
+  ✖ Condition not satisfied: with only letters)"));
 
             CHECK_THAT(matcher.match(Parser::parse(R"({"key2": -1})"), result),
                        UnmatchedWithReason(R"(Matching Dictionary failed: Matching key "key2" failed:
 ✖ Matching Integer failed:
-  ✖ Condition not satisfied: > 0
-  ✓ Expected format: Integer:
-    - > 0
-    - < 5)"));
+  ✖ Condition not satisfied: > 0)"));
         }
 
         SECTION("filter unmatched") {
@@ -134,10 +128,7 @@ TEST_CASE("Matcher: Dictionary") {
                 .sizeAtMost(2);
             CHECK_THAT(matcher.match(Parser::parse(R"({"key1": 1, "key2": 2, "key3": 3})"), result),
                        UnmatchedWithReason(R"(Matching Dictionary failed:
-✖ Condition not satisfied: with size <= 2
-✓ Expected format: Dictionary:
-  - with size >= 1
-  - with size <= 2)"));
+✖ Condition not satisfied: with size <= 2)"));
         }
     }
 
