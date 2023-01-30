@@ -5,7 +5,7 @@
 #include <algorithm>
 
 #include "LayerWiseTransformer.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 void LayerWiseTransformer::transform(Lattice &lattice, [[maybe_unused]] const ShapeTraits &shapeTraits) const {

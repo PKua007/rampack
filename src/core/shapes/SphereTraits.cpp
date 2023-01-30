@@ -6,7 +6,7 @@
 #include <sstream>
 
 #include "SphereTraits.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "XCObjShapePrinter.h"
 #include "geometry/xenocollide/XCPrimitives.h"
 

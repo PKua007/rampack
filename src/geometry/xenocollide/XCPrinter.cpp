@@ -8,7 +8,7 @@
 #include <QuickHull.hpp>
 
 #include "XCPrinter.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 Polyhedron XCPrinter::buildPolyhedron0(const AbstractXCGeometry &geometry, std::size_t subdivisions) {

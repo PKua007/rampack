@@ -3,7 +3,7 @@
 //
 
 #include "FlipSampler.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 FlipSampler::FlipSampler(size_t flipEvery) : flipEvery{flipEvery} {

@@ -2,8 +2,8 @@
 // Created by Piotr Kubala on 12/12/2020.
 //
 
-#ifndef RAMPACK_ASSERTIONS_H
-#define RAMPACK_ASSERTIONS_H
+#ifndef RAMPACK_EXCEPTIONS_H
+#define RAMPACK_EXCEPTIONS_H
 
 #include <stdexcept>
 #include <string>
@@ -69,4 +69,4 @@ struct AssertionException : public std::logic_error {
     explicit AssertionException(const std::string &msg) : std::logic_error{msg} { }
 };
 
-#endif //RAMPACK_ASSERTIONS_H
+#endif //RAMPACK_EXCEPTIONS_H

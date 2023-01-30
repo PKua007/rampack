@@ -6,7 +6,7 @@
 #include <cmath>
 
 #include "EulerAngles.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 // Based on: http://eecs.qmul.ac.uk/~gslabaugh/publications/euler.pdf
 std::pair<std::array<double, 3>, std::array<double, 3>> EulerAngles::forMatrix(const Matrix<3, 3> &matrix) {

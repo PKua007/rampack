@@ -8,7 +8,7 @@
 #include "ArrangementFactory.h"
 #include "core/lattice/OrthorhombicArrangingModel.h"
 #include "core/lattice/DistanceOptimizer.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "LatticeBuilder.h"
 #include "utils/ParseUtils.h"

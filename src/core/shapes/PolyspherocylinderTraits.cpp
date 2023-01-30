@@ -7,7 +7,7 @@
 #include <iterator>
 
 #include "PolyspherocylinderTraits.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "geometry/SegmentDistanceCalculator.h"
 #include "XCObjShapePrinter.h"
 #include "geometry/xenocollide/XCBodyBuilder.h"

@@ -3,7 +3,7 @@
 //
 
 #include "RototranslationSampler.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 RototranslationSampler::RototranslationSampler(double translationStepSize, std::optional<double> rotationStepSize,

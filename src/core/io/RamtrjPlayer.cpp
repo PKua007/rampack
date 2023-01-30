@@ -5,7 +5,7 @@
 #include <sstream>
 
 #include "RamtrjPlayer.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 RamtrjPlayer::RamtrjPlayer(std::unique_ptr<std::istream> in) : in{std::move(in)} {

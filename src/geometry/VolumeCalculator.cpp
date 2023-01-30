@@ -5,7 +5,7 @@
 #include <cmath>
 
 #include "VolumeCalculator.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 double VolumeCalculator::sphericalCap(double radius, double capHeight) {

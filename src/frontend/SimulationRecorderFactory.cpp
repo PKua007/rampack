@@ -5,7 +5,7 @@
 #include <fstream>
 
 #include "SimulationRecorderFactory.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "core/io/RamtrjRecorder.h"
 #include "core/io/XYZRecorder.h"
 

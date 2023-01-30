@@ -3,7 +3,7 @@
 //
 
 #include "RotationSampler.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 RotationSampler::RotationSampler(double rotationStepSize) : rotationStepSize{rotationStepSize} {

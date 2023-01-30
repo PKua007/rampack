@@ -3,7 +3,7 @@
 //
 
 #include "LennardJonesInteraction.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 double LennardJonesInteraction::calculateEnergyForDistance2(double distance2) const {
     double x2 = this->sigma * this->sigma / distance2;

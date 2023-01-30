@@ -8,7 +8,7 @@
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/Packing.h"
 #include "DistanceOptimizer.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "LatticeTraits.h"
 
 

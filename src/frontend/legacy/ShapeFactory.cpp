@@ -6,7 +6,7 @@
 
 #include "ShapeFactory.h"
 
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "utils/ParseUtils.h"
 #include "utils/Utils.h"
 

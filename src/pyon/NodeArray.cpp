@@ -5,7 +5,7 @@
 #include <sstream>
 
 #include "NodeArray.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 namespace pyon::ast {

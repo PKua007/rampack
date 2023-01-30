@@ -3,7 +3,7 @@
 //
 
 #include "RepulsiveLennardJonesInteraction.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 double RepulsiveLennardJonesInteraction::calculateEnergyForDistance2(double distance2) const {
     if (distance2 >= this->sigmaTimesTwoToOneSixth * this->sigmaTimesTwoToOneSixth)

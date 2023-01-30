@@ -3,7 +3,7 @@
 //
 
 #include "CompoundInteraction.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 CompoundInteraction::CompoundInteraction(const Interaction &interaction1, const Interaction &interaction2)

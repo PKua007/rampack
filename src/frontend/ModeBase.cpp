@@ -10,7 +10,7 @@
 #include "ModeBase.h"
 #include "core/Packing.h"
 #include "utils/Utils.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 void ModeBase::setVerbosityLevel(std::optional<std::string> verbosity, std::optional<std::string> auxOutput,

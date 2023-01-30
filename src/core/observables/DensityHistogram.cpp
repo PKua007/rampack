@@ -5,7 +5,7 @@
 #include <algorithm>
 
 #include "DensityHistogram.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "trackers/DummyTracker.h"
 
 

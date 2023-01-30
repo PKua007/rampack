@@ -6,7 +6,7 @@
 #include <numeric>
 
 #include "DomainDecomposition.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 DomainDecomposition::DomainDecomposition(const Packing &packing, const Interaction &interaction,

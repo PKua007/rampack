@@ -4,7 +4,7 @@
 
 #include "PolyspherocylinderBananaTraits.h"
 
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 void PolyspherocylinderBananaTraits::basicValidation(double arcRadius, double arcAngle, std::size_t segmentsNum,

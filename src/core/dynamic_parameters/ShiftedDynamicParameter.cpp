@@ -5,7 +5,7 @@
 #include <limits>
 
 #include "ShiftedDynamicParameter.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 ShiftedDynamicParameter::ShiftedDynamicParameter(long cycleShift, std::shared_ptr<DynamicParameter> underlyingParameter)

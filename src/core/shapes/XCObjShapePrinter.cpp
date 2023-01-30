@@ -8,7 +8,7 @@
 
 #include "XCObjShapePrinter.h"
 #include "geometry/xenocollide/XCPrinter.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 std::string XCObjShapePrinter::print(const Shape &shape) const {

@@ -5,7 +5,7 @@
 #include <algorithm>
 
 #include "ScalingDirectionParser.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 AnisotropicVolumeScaler::ScalingDirection ScalingDirectionParser::charToScalingDirection(char c) {

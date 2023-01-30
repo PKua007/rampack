@@ -9,7 +9,7 @@
 #include <vector>
 #include <iosfwd>
 
-#include "Assertions.h"
+#include "Exceptions.h"
 
 /**
  * @brief A simple class representing physical quantity with error.

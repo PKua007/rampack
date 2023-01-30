@@ -6,7 +6,7 @@
 #include <algorithm>
 
 #include "OrthorhombicArrangingModel.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 std::vector<Shape> OrthorhombicArrangingModel::arrange(std::size_t numOfParticles,
                                                        const std::array<double, 3> &dimensions) const

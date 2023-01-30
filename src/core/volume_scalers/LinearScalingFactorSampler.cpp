@@ -3,7 +3,7 @@
 //
 
 #include "LinearScalingFactorSampler.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 std::array<double, 3> LinearScalingFactorSampler::sampleFactors(std::array<bool, 3> shouldSample,

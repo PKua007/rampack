@@ -5,7 +5,7 @@
 #include <sstream>
 
 #include "MoveSamplerFactory.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "core/move_samplers/RototranslationSampler.h"
 #include "core/move_samplers/TranslationSampler.h"
 #include "core/move_samplers/RotationSampler.h"

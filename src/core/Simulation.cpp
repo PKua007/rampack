@@ -11,7 +11,7 @@
 
 #include "Simulation.h"
 #include "DomainDecomposition.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "move_samplers/RototranslationSampler.h"
 #include "dynamic_parameters/ConstantDynamicParameter.h"
 

@@ -6,7 +6,7 @@
 #define RAMPACK_PACKINGFRACTION_H
 
 #include "core/Observable.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 /**
  * @brief Packing fraction interval observable (total volume of shapes divided by a box volume).

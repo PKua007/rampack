@@ -9,7 +9,7 @@
 #include <utility>
 
 #include "geometry/xenocollide/XCPrinter.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 std::string XCWolframShapePrinter::print(const Shape &shape) const {

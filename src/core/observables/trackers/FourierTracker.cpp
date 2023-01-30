@@ -21,7 +21,7 @@
 #pragma GCC diagnostic pop
 
 #include "FourierTracker.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "core/PeriodicBoundaryConditions.h"
 
 

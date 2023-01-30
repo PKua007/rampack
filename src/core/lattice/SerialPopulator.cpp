@@ -3,7 +3,7 @@
 //
 
 #include "SerialPopulator.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 std::vector<Shape> SerialPopulator::populateLattice(const Lattice &lattice, std::size_t numOfShapes) const {

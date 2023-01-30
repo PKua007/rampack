@@ -3,7 +3,7 @@
 //
 
 #include "SquareInverseCoreInteraction.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 SquareInverseCoreInteraction::SquareInverseCoreInteraction(double epsilon, double sigma) : epsilon{epsilon}, sigma{sigma} {
     Expects(epsilon != 0);

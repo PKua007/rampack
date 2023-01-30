@@ -5,7 +5,7 @@
 #include <algorithm>
 
 #include "PiecewiseDynamicParameter.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "ShiftedDynamicParameter.h"
 
 

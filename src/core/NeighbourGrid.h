@@ -20,7 +20,7 @@
 
 #include "TriclinicBox.h"
 #include "geometry/Vector.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 /**
  * @brief An acceleration structure for a constant-time lookup of neighbours for a fixed number of particles.

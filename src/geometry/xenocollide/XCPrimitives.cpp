@@ -23,7 +23,7 @@ not be misrepresented as being the original software.
  */
 
 #include "XCPrimitives.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 #include "XCUtils.h"
 
 

@@ -3,7 +3,7 @@
 //
 
 #include "TriclinicBoxScaler.h"
-#include "utils/Assertions.h"
+#include "utils/Exceptions.h"
 
 
 TriclinicBoxScaler::TriclinicBoxScaler(double stepSize) : stepSize{stepSize} {
