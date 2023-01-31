@@ -51,7 +51,5 @@ Logger::LogType ModeBase::parseVerbosityLevel(const std::string &verbosityLevelN
     else if (verbosityLevelName == "debug")
         return Logger::DEBUG;
     else
-        die("Unknown verbosity level: " + verbosityLevelName, this->logger);
-
-    return Logger::ERROR;
+        throw ValidationException("Unknown verbosity level: " + verbosityLevelName);
 }
