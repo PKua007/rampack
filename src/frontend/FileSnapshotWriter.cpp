@@ -13,7 +13,7 @@ void FileSnapshotWriter::doStore(const Packing &packing, const ShapeTraits &trai
     std::ofstream out(this->filename);
     ValidateOpenedDesc(out, this->filename, "to store " + this->writerFormat + " snapshot data");
     this->writer->write(out, packing, traits, auxInfo);
-    logger.info() << this->writerFormat << " snapshot data stored to " << this->filename << std::endl;
+    logger.info() << this->writerFormat << " snapshot data stored to '" << this->filename << "'" << std::endl;
 }
 
 void FileSnapshotWriter::generateSnapshot(const Packing &packing, const ShapeTraits &traits, std::size_t cycles,

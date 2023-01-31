@@ -26,7 +26,7 @@ void IO::storeSnapshots(const ObservablesCollector &observablesCollector, bool i
         observablesCollector.printSnapshots(out, true);
     }
 
-    this->logger.info() << "Observable snapshots stored to " + observableSnapshotFilename << std::endl;
+    this->logger.info() << "Observable snapshots stored to '" + observableSnapshotFilename << "'" << std::endl;
 }
 
 std::unique_ptr<RamtrjPlayer> IO::loadRamtrjPlayer(std::string &trajectoryFilename, std::size_t numMolecules,
@@ -74,7 +74,7 @@ void IO::storeBulkObservables(const ObservablesCollector &observablesCollector,
         std::ofstream out(filename);
         ValidateOpenedDesc(out, filename, "to store bulk observable");
         bulkObservable.print(out);
-        this->logger.info() << "Bulk observable " << observableName << " stored to " << filename << std::endl;
+        this->logger.info() << "Bulk observable " << observableName << " stored to '" << filename << "'" << std::endl;
     });
 }
 
@@ -125,5 +125,5 @@ void IO::storeAverageValues(const std::string &filename, const ObservablesCollec
     }
     out << std::endl;
 
-    this->logger.info() << "Average values stored to " + filename << std::endl;
+    this->logger.info() << "Average values stored to '" << filename << "'" << std::endl;
 }
