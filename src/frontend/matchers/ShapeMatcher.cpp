@@ -491,7 +491,7 @@ std::shared_ptr<ShapeTraits> ShapeMatcher::match(const std::string &expression) 
     auto shapeAST = pyon::Parser::parse(expression);
     auto matchReport = shape.match(shapeAST, shapeTraits);
     if (!matchReport)
-        throw InputError(matchReport.getReason());
+        throw ValidationException(matchReport.getReason());
 
     return shapeTraits.as<std::shared_ptr<ShapeTraits>>();
 }

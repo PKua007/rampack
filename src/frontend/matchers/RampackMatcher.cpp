@@ -434,7 +434,7 @@ RampackParameters RampackMatcher::match(const std::string &expression) {
     Any params;
     auto matchReport = rampackMatcher.match(paramsAST, params);
     if (!matchReport)
-        throw InputError(matchReport.getReason());
+        throw ValidationException(matchReport.getReason());
 
     return params.as<RampackParameters>();
 }

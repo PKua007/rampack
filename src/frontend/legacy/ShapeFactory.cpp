@@ -106,7 +106,7 @@ namespace {
                     std::forward<Args>(args)..., std::make_unique<SquareInverseCoreInteraction>(epsilon, sigma)
             );
         } else {
-            throw InputError(shapeName + " supports interactions: hard, lj (Lennard Jones), repulsive_lj "
+            throw ValidationException(shapeName + " supports interactions: hard, lj (Lennard Jones), repulsive_lj "
                              "(Lennard Jones cut at the minimum), square_inverse_core (dipole-like short-range "
                              "interaction)");
         }
@@ -450,7 +450,7 @@ namespace legacy {
                         "Polyspherocylinder supports only hard interactions");
             return parse_polyspherocylinder(shapeAttrStream);
         } else {
-            throw InputError("Unknown particle name: " + shapeName);
+            throw ValidationException("Unknown particle name: " + shapeName);
         }
     }
 }

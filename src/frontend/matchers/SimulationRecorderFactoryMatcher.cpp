@@ -43,7 +43,7 @@ SimulationRecorderFactoryMatcher::match(const std::string &expression) {
     Any factory;
     auto matchReport = factoryMatcher.match(factoryAST, factory);
     if (!matchReport)
-        throw InputError(matchReport.getReason());
+        throw ValidationException(matchReport.getReason());
 
     return factory.as<std::shared_ptr<SimulationRecorderFactory>>();
 }

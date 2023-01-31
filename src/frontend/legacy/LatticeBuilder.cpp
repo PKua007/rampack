@@ -64,7 +64,7 @@ namespace {
                                                  tokens[1], tokens[4], tokens[7],
                                                  tokens[2], tokens[5], tokens[8]});
             default:
-                throw InputError(BOX_DIMENSIONS_USAGE);
+                throw ValidationException(BOX_DIMENSIONS_USAGE);
         }
     }
 
@@ -86,7 +86,7 @@ namespace {
                                                  tokens[1], tokens[4], tokens[7],
                                                  tokens[2], tokens[5], tokens[8]});
             default:
-                throw InputError(CELL_DIMENSIONS_USAGE);
+                throw ValidationException(CELL_DIMENSIONS_USAGE);
         }
     }
 
@@ -108,7 +108,7 @@ namespace {
         else if (axis == "z")
             return LatticeTraits::Axis::Z;
         else
-            throw InputError("Incorrect axis: " + axis);
+            throw ValidationException("Incorrect axis: " + axis);
     }
 
     std::vector<Shape> parse_shapes(const std::string &shapesString) {
@@ -130,7 +130,7 @@ namespace {
                                         Matrix<3, 3>::rotation(toRad*tokens[3], toRad*tokens[4], toRad*tokens[5]));
                     break;
                 default:
-                    throw InputError("Malformed shape. Usage: [pos. x] [y] [z] ([angle x deg] [y] [z])");
+                    throw ValidationException("Malformed shape. Usage: [pos. x] [y] [z] ([angle x deg] [y] [z])");
             }
         }
         return shapes;
@@ -172,13 +172,13 @@ namespace {
                               parse_cell_dim(value_or_default(fieldMap, "dim", "1")));
         } else if (cellType == "custom") {
             if (fieldMap.find("shapes") == fieldMap.end())
-                throw InputError("Shapes have to be specified for the custom unit cell");
+                throw ValidationException("Shapes have to be specified for the custom unit cell");
             auto shapes = parse_shapes(fieldMap.at("shapes"));
             auto box = std::visit([](const auto &&arg) { return TriclinicBox(arg); },
                                   parse_cell_dim(value_or_default(fieldMap, "dim", "1")));
             return UnitCell(box, shapes);
         } else {
-            throw InputError("Unknown cell type: " + cellType);
+            throw ValidationException("Unknown cell type: " + cellType);
         }
     }
 
@@ -277,10 +277,10 @@ namespace {
             try {
                 return std::make_unique<SerialPopulator>(axisOrder);
             } catch (const LatticeTraits::AxisOrderParseException &) {
-                throw InputError("Malformed serial populator axis order. Usage: populate serial [axis order]");
+                throw ValidationException("Malformed serial populator axis order. Usage: populate serial [axis order]");
             }
         } else {
-            throw InputError("Unknown populator type: " + populatorType + ". Use: serial, random");
+            throw ValidationException("Unknown populator type: " + populatorType + ". Use: serial, random");
         }
     }
 
@@ -334,8 +334,8 @@ namespace {
 
             return std::make_unique<LayerRotationTransformer>(layerAxis, rotAxis, angle/180*M_PI, isAlternating);
         } else {
-            throw InputError("Unknown transformation type: " + operationType + ". Supported: "
-                             + "optimizeCell, optimizeLayers, columnar, randomizeFlip, layerRotate");
+            throw ValidationException("Unknown transformation type: " + operationType + ". Supported: "
+                                      + "optimizeCell, optimizeLayers, columnar, randomizeFlip, layerRotate");
         }
     }
 

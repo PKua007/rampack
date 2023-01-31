@@ -35,10 +35,10 @@ not be misrepresented as being the original software.
 
 std::shared_ptr<AbstractXCGeometry> XCBodyBuilder::releaseCollideGeometry() {
     if (this->shapeStack.empty()) {
-        throw InputError("XCBodyBuilder: shape stack is empty");
+        throw ValidationException("XCBodyBuilder: shape stack is empty");
     } else if (this->shapeStack.size() > 1) {
-        throw InputError("XCBodyBuilder: shape stack contains more than 1 shape; did you forget to use sum, diff or "
-                         "wrap?");
+        throw ValidationException("XCBodyBuilder: shape stack contains more than 1 shape; did you forget to use sum, "
+                                  "diff or wrap?");
     }
 
     auto geom = this->shapeStack.back().geometry;
@@ -272,6 +272,6 @@ void XCBodyBuilder::processCommand(std::string cmd) {
     } else if (commandName == "wrap") {
         this->wrap();
     } else {
-        throw InputError("Unknown XCBodyBuilder command: " + commandName);
+        throw ValidationException("Unknown XCBodyBuilder command: " + commandName);
     }
 }

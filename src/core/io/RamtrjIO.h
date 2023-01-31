@@ -9,7 +9,13 @@
 
 #include "core/TriclinicBox.h"
 #include "core/Shape.h"
+#include "utils/Exceptions.h"
 
+
+class RamtrjException : public ValidationException {
+public:
+    using ValidationException::ValidationException;
+};
 
 /**
  * @brief Base class for storing and restoring simulation trajectories (in a propertiary RAMTRJ format)

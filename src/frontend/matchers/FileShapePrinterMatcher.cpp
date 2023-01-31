@@ -49,7 +49,7 @@ FileShapePrinter FileShapePrinterMatcher::match(const std::string &expression, c
     Any printer;
     auto matchReport = printerMatcher.match(printerAST, printer);
     if (!matchReport)
-        throw InputError(matchReport.getReason());
+        throw ValidationException(matchReport.getReason());
 
     return printer.as<FileShapePrinter>();
 }

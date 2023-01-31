@@ -116,14 +116,14 @@ namespace {
             case 0: case 1: case 3: case 4:
                 break;
             default:
-                throw InputError(SMECTIC_ORDER_USAGE);
+                throw ValidationException(SMECTIC_ORDER_USAGE);
         }
 
         std::map<std::string, std::string> fieldMap;
 
         if (tokens.size() == 1 || tokens.size() == 4) {
             if (tokens.back() != "dumpTauVector")
-                throw InputError(SMECTIC_ORDER_USAGE);
+                throw ValidationException(SMECTIC_ORDER_USAGE);
             fieldMap["dumpTauVector"] = "";
         }
 
@@ -192,7 +192,7 @@ namespace {
             try {
                 return std::stoi(wavenumberString);
             } catch (std::logic_error &e) {
-                throw InputError("Malformed Miller indices; format: nx.ny.nz");
+                throw ValidationException("Malformed Miller indices; format: nx.ny.nz");
             }
         };
         std::transform(millerIndicesExploded.begin(), millerIndicesExploded.end(), millerIndices.begin(),
@@ -261,7 +261,7 @@ namespace {
 
             return std::make_unique<LayerwiseRadialEnumerator>(millerIndices, focalPoint);
         } else {
-            throw InputError("Unknown binning specification: " + enumeratorName);
+            throw ValidationException("Unknown binning specification: " + enumeratorName);
         }
     }
 
@@ -281,9 +281,9 @@ namespace {
             else if (axisName == "auxiliary")
                 return std::make_unique<S110Correlation>(ShapeGeometry::Axis::AUXILIARY);
             else
-                throw InputError(CORR_FUN_USAGE);
+                throw ValidationException(CORR_FUN_USAGE);
         } else {
-            throw InputError("Unknown correlation function: " + name);
+            throw ValidationException("Unknown correlation function: " + name);
         }
     }
 
@@ -329,7 +329,7 @@ namespace {
             }
             functionShortName += coord;
         } else {
-            throw InputError(FOURIER_TRACKER_USAGE);
+            throw ValidationException(FOURIER_TRACKER_USAGE);
         }
 
         return std::make_unique<FourierTracker>(wavenumbers, function, functionShortName);
@@ -339,7 +339,7 @@ namespace {
         if (trackerName == "fourierTracker") {
             return parse_fourier_tracker(trackerStream);
         } else {
-            throw InputError("Unknown Goldstone tracker: " + trackerName);
+            throw ValidationException("Unknown Goldstone tracker: " + trackerName);
         }
     }
 
@@ -380,9 +380,9 @@ namespace {
 
         try {
             return parse_tracker(observableName, observableStream);
-        } catch (const InputError &) { }
+        } catch (const ValidationException &) { }
 
-        throw InputError("Unknown observable: " + observableName);
+        throw ValidationException("Unknown observable: " + observableName);
     }
 
     std::unique_ptr<DensityHistogram> parse_density_histogram(std::istream &observableStream,
@@ -458,7 +458,7 @@ namespace {
             } else if (observableName == "densityHistogram") {
                 collector.addBulkObservable(parse_density_histogram(observableStream, maxThreads));
             } else {
-                throw InputError("Unknown observable: " + observableName);
+                throw ValidationException("Unknown observable: " + observableName);
             }
         }
     }
