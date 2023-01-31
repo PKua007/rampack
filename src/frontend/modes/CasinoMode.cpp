@@ -223,23 +223,42 @@ void CasinoMode::performIntegration(Simulation &simulation, Simulation::Environm
 
     this->printPerformanceInfo(simulation);
 
+    std::vector<std::function<void()>> jobs;
+
     for (const auto &writer : run.lastSnapshotWriters)
-        writer.storeSnapshot(simulation, shapeTraits, this->logger);
+        jobs.emplace_back([&]() { writer.storeSnapshot(simulation, shapeTraits, this->logger); });
 
-    if (run.averagesOut.has_value()) {
-        if (integrationParams.averagingCycles != 0 && !simulation.wasInterrupted()) {
-            this->io.storeAverageValues(*run.averagesOut, observablesCollector, simulation.getCurrentTemperature(),
-                                        simulation.getCurrentPressure());
-        } else {
+    jobs.emplace_back([&]() {
+        if (!run.averagesOut.has_value())
+            return;
+
+        if (integrationParams.averagingCycles == 0 || simulation.wasInterrupted()) {
             this->logger.warn() << "Storing averages skipped due to incomplete averaging phase." << std::endl;
+            return;
         }
-    }
 
-    if (run.bulkObservablesOutPattern.has_value()) {
-        if (integrationParams.averagingCycles != 0 && !simulation.wasInterrupted())
-            this->io.storeBulkObservables(observablesCollector, *run.bulkObservablesOutPattern);
-        else
+        this->io.storeAverageValues(*run.averagesOut, observablesCollector, simulation.getCurrentTemperature(),
+                                    simulation.getCurrentPressure());
+    });
+
+    jobs.emplace_back([&]() {
+        if (!run.bulkObservablesOutPattern.has_value())
+            return;
+
+        if (integrationParams.averagingCycles == 0 || simulation.wasInterrupted()) {
             this->logger.warn() << "Storing bulk observables skipped due to incomplete averaging phase." << std::endl;
+            return;
+        }
+
+        this->io.storeBulkObservables(observablesCollector, *run.bulkObservablesOutPattern);
+    });
+
+    for (const auto &job : jobs) {
+        try {
+            job();
+        } catch (const FileException &ex) {
+            this->logger.error() << ex.what() << std::endl;
+        }
     }
 }
 
@@ -279,8 +298,13 @@ void CasinoMode::performOverlapRelaxation(Simulation &simulation, Simulation::En
     this->logger << "--------------------------------------------------------------------" << std::endl;
     this->printPerformanceInfo(simulation);
 
-    for (const auto &writer : run.lastSnapshotWriters)
-        writer.storeSnapshot(simulation, *shapeTraits, this->logger);
+    for (const auto &writer : run.lastSnapshotWriters) {
+        try {
+            writer.storeSnapshot(simulation, *shapeTraits, this->logger);
+        } catch (const FileException &ex) {
+            this->logger.error() << ex.what() << std::endl;
+        }
+    }
 }
 
 Simulation::Environment CasinoMode::recreateEnvironment(const RampackParameters &params,
