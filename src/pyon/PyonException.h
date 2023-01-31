@@ -5,13 +5,13 @@
 #ifndef RAMPACK_PYONEXCEPTION_H
 #define RAMPACK_PYONEXCEPTION_H
 
-#include <stdexcept>
+#include "utils/Exceptions.h"
 
 
 namespace pyon {
-    class PyonException : public std::runtime_error {
+    class PyonException : public ValidationException {
     public:
-        using std::runtime_error::runtime_error;
+        using ValidationException::ValidationException;
     };
 
     namespace ast {

@@ -110,7 +110,7 @@ void PackingLoader::autoFindStartRunIndex() {
 
     auto corruptedRun = std::find_if(runDatas.begin(), runDatas.end(), isRunCorrupted);
     if (corruptedRun != runDatas.end())
-        throw InputError("Starting run auto-detect: one or more runs are corrupted. Aborting.");
+        throw ValidationException("Starting run auto-detect: one or more runs are corrupted. Aborting.");
 
     auto firstUnfinished = std::find_if_not(runDatas.begin(), runDatas.end(), isRunFinished);
     if (firstUnfinished == runDatas.end()) {
@@ -125,9 +125,9 @@ void PackingLoader::autoFindStartRunIndex() {
 
     auto unexpectedPerformed = std::find_if(std::next(firstUnfinished), runDatas.end(), isRunPerformed);
     if (unexpectedPerformed != runDatas.end()) {
-        throw InputError("Starting run auto-detect: detected already performed run: '"
-                         + unexpectedPerformed->runName + "' after unfinished run: '"
-                         + firstUnfinished->runName + "'. Aborting.");
+        throw ValidationException("Starting run auto-detect: detected already performed run: '"
+                                  + unexpectedPerformed->runName + "' after unfinished run: '"
+                                  + firstUnfinished->runName + "'. Aborting.");
     }
 
     this->logger.info() << "Starting run auto-detect: detected '" <<  firstUnfinished->runName;

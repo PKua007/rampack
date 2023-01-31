@@ -70,7 +70,7 @@ FileSnapshotWriter FileSnapshotWriterMatcher::match(const std::string &expressio
     Any writer;
     auto matchReport = writerMatcher.match(writerAST, writer);
     if (!matchReport)
-        throw InputError(matchReport.getReason());
+        throw ValidationException(matchReport.getReason());
 
     return writer.as<FileSnapshotWriter>();
 }

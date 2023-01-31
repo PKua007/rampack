@@ -18,13 +18,33 @@
 namespace {
     Logger logger(std::cout);
 
+    void print_exception(const std::exception &ex) {
+        std::istringstream exStream(ex.what());
+        std::string line;
+        while (std::getline(exStream, line))
+            logger << line << std::endl;
+    }
+
     void logger_terminate_handler() {
-        logger.error() << "Terminate called after throwing an instance of ";
         try {
             std::rethrow_exception(std::current_exception());
+        } catch (const RuntimeException &ex) {
+            std::string prettyName = demangle(typeid(ex).name());
+            logger.error() << "----" << std::endl;
+            logger << "Execution was halted due to runtime exception of type " << prettyName;
+            logger << " with message:" << std::endl;
+            logger.error() << "----" << std::endl;
+            print_exception(ex);
         } catch (const std::exception &ex) {
-            logger << demangle(typeid(ex).name()) << std::endl;
-            logger << "what(): " << ex.what() << std::endl;
+            std::string prettyName = demangle(typeid(ex).name());
+            logger.error() << "----" << std::endl;
+            logger << "Execution was halted due to internal error of type " << prettyName;
+            logger << " with message:" << std::endl;
+            logger.error() << "----" << std::endl;
+            print_exception(ex);
+            logger.error() << "----" << std::endl;
+            logger << "Please report it using the following link:" << std::endl;
+            logger << "//https://github.com/PKua007/rampack/issues/new" << std::endl;
         }
         std::abort();
     }

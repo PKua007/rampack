@@ -51,7 +51,7 @@ namespace {
         else if (axisStr == "z")
             tiltAxis = OrthorhombicArrangingModel::Axis::Z;
         else
-            throw InputError("Only x, y, z tilt axes are allowed");
+            throw ValidationException("Only x, y, z tilt axes are allowed");
         return tiltAxis;
     }
 
@@ -209,7 +209,7 @@ namespace {
         if (clinicity != OrthorhombicArrangingModel::Clinicity::IMPLICIT &&
             polarization == OrthorhombicArrangingModel::Polarization::IMPLICIT)
         {
-            throw InputError("Polarization must be specified explicitly for non-implicit clinicity!");
+            throw ValidationException("Polarization must be specified explicitly for non-implicit clinicity!");
         }
 
         OrthorhombicArrangingModel model(polarization, polarAxis, clinicity, tiltAxis, tiltAngle);
@@ -261,7 +261,7 @@ namespace legacy {
                 return LatticeBuilder::buildPacking(numOfParticles, boxString, arrangementString, std::move(bc),
                                                     shapeTraits, moveThreads, scalingThreads);
             } else {
-                throw InputError("Unknown arrangement type: " + type + ". Available: orthorhombic, presimulated");
+                throw ValidationException("Unknown arrangement type: " + type + ". Available: orthorhombic, presimulated");
             }
         }
     }

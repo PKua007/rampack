@@ -78,7 +78,7 @@ namespace legacy {
 
             return std::make_unique<FlipSampler>(flipEvery);
         } else {
-            throw InputError("Unknown move sampler: " + moveName);
+            throw ValidationException("Unknown move sampler: " + moveName);
         }
     }
 }

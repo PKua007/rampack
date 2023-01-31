@@ -6,6 +6,13 @@
 #define RAMPACK_RAMSNAPREADER_H
 
 #include "core/SnapshotReader.h"
+#include "utils/Exceptions.h"
+
+
+class RamsnapException : public ValidationException {
+public:
+    using ValidationException::ValidationException;
+};
 
 
 /**

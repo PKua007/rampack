@@ -57,15 +57,15 @@
 #define AssertThrow(msg)   throw AssertionException(__FILE__, __func__, __LINE__, "Manual throw", msg)
 
 
-// Additional macros for validating user input throwing InputError
+// Additional macros for validating user input throwing ValidationException
 #define ValidateMsg(cond, msg) EXCEPTIONS_BLOCK(                                                                    \
     if (!(cond))                                                                                                    \
-        throw InputError(msg);                                                                                      \
+        throw ValidationException(msg);                                                                             \
 )
 
 #define ValidateOpenedDesc(stream, filename, desc) EXCEPTIONS_BLOCK(                                                \
     if (!(stream))                                                                                                  \
-        throw InputError("Could not open '" + (filename) + "' " + (desc) + ": " + strerror(errno));                 \
+        throw FileException("Could not open '" + (filename) + "' " + (desc) + ": " + strerror(errno));              \
 )
 
 
@@ -73,8 +73,16 @@ struct RampackException : public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
-struct InputError : public RampackException {
+struct RuntimeException : public RampackException {
     using RampackException::RampackException;
+};
+
+struct ValidationException : public RuntimeException {
+    using RuntimeException::RuntimeException;
+};
+
+struct FileException : public RuntimeException {
+    using RuntimeException::RuntimeException;
 };
 
 struct InternalError : public RampackException {

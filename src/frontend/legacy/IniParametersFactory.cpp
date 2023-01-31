@@ -131,7 +131,7 @@ namespace {
                 case 'x':   isWall[0] = true;    break;
                 case 'y':   isWall[1] = true;    break;
                 case 'z':   isWall[2] = true;    break;
-                default:    throw InputError("unknown wall axis: " + std::string{c});
+                default:    throw ValidationException("unknown wall axis: " + std::string{c});
             }
         }
         return isWall;
@@ -181,7 +181,7 @@ namespace {
         else if (styleStr == "affineTransform")
             wolframStyle = WolframWriter::WolframStyle::AFFINE_TRANSFORM;
         else
-            throw InputError("Unknown wolfram style: \"" + styleStr + "\"");
+            throw ValidationException("Unknown wolfram style: \"" + styleStr + "\"");
 
         return {filename, "Wolfram", std::make_shared<WolframWriter>(wolframStyle, params)};
     }
