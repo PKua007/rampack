@@ -40,7 +40,9 @@ void ModeBase::setVerbosityLevel(std::optional<std::string> verbosity, std::opti
 }
 
 Logger::LogType ModeBase::parseVerbosityLevel(const std::string &verbosityLevelName) const {
-    if (verbosityLevelName == "error")
+    if (verbosityLevelName == "fatal")
+        return Logger::FATAL;
+    else if (verbosityLevelName == "error")
         return Logger::ERROR;
     else if (verbosityLevelName == "warn")
         return Logger::WARN;

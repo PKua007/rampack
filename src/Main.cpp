@@ -30,19 +30,19 @@ namespace {
             std::rethrow_exception(std::current_exception());
         } catch (const RuntimeException &ex) {
             std::string prettyName = demangle(typeid(ex).name());
-            logger.error() << "----" << std::endl;
+            logger.fatal() << "----" << std::endl;
             logger << "Execution was halted due to runtime exception of type " << prettyName;
             logger << " with message:" << std::endl;
-            logger.error() << "----" << std::endl;
+            logger << "----" << std::endl;
             print_exception(ex);
         } catch (const std::exception &ex) {
             std::string prettyName = demangle(typeid(ex).name());
-            logger.error() << "----" << std::endl;
+            logger.fatal() << "----" << std::endl;
             logger << "Execution was halted due to internal error of type " << prettyName;
             logger << " with message:" << std::endl;
-            logger.error() << "----" << std::endl;
+            logger << "----" << std::endl;
             print_exception(ex);
-            logger.error() << "----" << std::endl;
+            logger << "----" << std::endl;
             logger << "Please report it using the following link:" << std::endl;
             logger << "//https://github.com/PKua007/rampack/issues/new" << std::endl;
         }

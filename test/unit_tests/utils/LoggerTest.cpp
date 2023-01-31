@@ -23,13 +23,15 @@ TEST_CASE("Logger: types") {
     LoggerUnderTest logger(out);
     logger.setVerbosityLevel(Logger::DEBUG);
 
+    logger.fatal() << "fatal" << std::endl;
     logger.error() << "error" << std::endl;
     logger.warn() << "warn" << std::endl;
     logger.info() << "info" << std::endl;
     logger.verbose() << "verbose" << std::endl;
     logger.debug() << "debug" << std::endl;
 
-    REQUIRE(out.str() == "[  ERROR] [date] error\n"
+    REQUIRE(out.str() == "[  FATAL] [date] fatal\n"
+                         "[  ERROR] [date] error\n"
                          "[   WARN] [date] warn\n"
                          "[   INFO] [date] info\n"
                          "[VERBOSE] [date] verbose\n"

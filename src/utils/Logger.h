@@ -21,6 +21,7 @@
 class Logger {
 public:
     enum LogType {
+        FATAL,
         ERROR,
         WARN,
         INFO,
@@ -64,6 +65,8 @@ private:
                 return "   WARN";
             case ERROR:
                 return "  ERROR";
+            case FATAL:
+                return "  FATAL";
             case VERBOSE:
                 return "VERBOSE";
             case DEBUG:
@@ -154,6 +157,7 @@ public:
     Logger &info() { return this->changeLogType(INFO); }
     Logger &warn() { return this->changeLogType(WARN); }
     Logger &error() { return this->changeLogType(ERROR); }
+    Logger &fatal() { return this->changeLogType(FATAL); }
     Logger &verbose() { return this->changeLogType(VERBOSE); }
     Logger &debug() { return this->changeLogType(DEBUG); }
 
