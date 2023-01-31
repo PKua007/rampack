@@ -96,8 +96,8 @@ int TrajectoryMode::main(int argc, char **argv) {
                            "unchanged); truncated trajectory can be stored to other RAMTRJ file using "
                            "-t 'ramtrj(\"filename\")'",
              cxxopts::value<std::size_t>(truncatedCycles));
-
-    auto parsedOptions = options.parse(argc, argv);
+    
+    auto parsedOptions = ModeBase::parseOptions(options, argc, argv);
     if (parsedOptions.count("help")) {
         std::ostream &rawOut = this->logger;
         rawOut << options.help() << std::endl;

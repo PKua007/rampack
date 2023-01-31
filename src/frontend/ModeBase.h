@@ -9,6 +9,8 @@
 #include <memory>
 #include <fstream>
 
+#include <cxxopts.hpp>
+
 #include "IO.h"
 #include "RampackParameters.h"
 #include "core/BoundaryConditions.h"
@@ -27,6 +29,7 @@ protected:
     void setVerbosityLevel(std::optional<std::string> verbosity, std::optional<std::string> auxOutput,
                            std::optional<std::string> auxVerbosity);
     Logger::LogType parseVerbosityLevel(const std::string &verbosityLevelName) const;
+    cxxopts::ParseResult parseOptions(cxxopts::Options &options, int argc, char **argv) const;
 
 public:
     explicit ModeBase(Logger &logger) : logger{logger}, io(logger) { }
