@@ -59,7 +59,7 @@ int CasinoMode::main(int argc, char **argv) {
                                    "verbosity: error, warn, info, verbose, debug. Defaults to: info",
              cxxopts::value<std::string>(auxVerbosity));
 
-    auto parsedOptions = options.parse(argc, argv);
+    auto parsedOptions = ModeBase::parseOptions(options, argc, argv);
     if (parsedOptions.count("help")) {
         std::ostream &rawOut = this->logger;
         rawOut << options.help() << std::endl;

@@ -53,3 +53,13 @@ Logger::LogType ModeBase::parseVerbosityLevel(const std::string &verbosityLevelN
     else
         throw ValidationException("Unknown verbosity level: " + verbosityLevelName);
 }
+
+cxxopts::ParseResult ModeBase::parseOptions(cxxopts::Options &options, int argc, char **argv) const {
+    cxxopts::ParseResult parsedOptions;
+    try {
+        parsedOptions = options.parse(argc, argv);
+    } catch (const cxxopts::OptionParseException &ex) {
+        throw ValidationException(std::string("An error occurred while parsing command line options:\n") + ex.what());
+    }
+    return parsedOptions;
+}

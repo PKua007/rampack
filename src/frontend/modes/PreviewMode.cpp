@@ -29,7 +29,7 @@ int PreviewMode::main(int argc, char **argv) {
                          "special characters '()\"\"|'",
              cxxopts::value<std::vector<std::string>>(outputs));
 
-    auto parsedOptions = options.parse(argc, argv);
+    auto parsedOptions = ModeBase::parseOptions(options, argc, argv);
     if (parsedOptions.count("help")) {
         std::ostream &rawOut = this->logger;
         rawOut << options.help() << std::endl;
