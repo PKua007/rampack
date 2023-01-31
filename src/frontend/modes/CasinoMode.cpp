@@ -80,9 +80,9 @@ int CasinoMode::main(int argc, char **argv) {
     // Validate parsed options
     std::string cmd(argv[0]);
     if (!parsedOptions.unmatched().empty())
-        die("Unexpected positional arguments. See " + cmd + " --help", this->logger);
+        throw ValidationException("Unexpected positional arguments. See " + cmd + " --help");
     if (!parsedOptions.count("input"))
-        die("Input file must be specified with option -i [input file name]", this->logger);
+        throw ValidationException("Input file must be specified with option -i [input file name]");
 
     // Load parameters
     this->logger.info();
@@ -354,17 +354,18 @@ void CasinoMode::verifyDynamicParameter(const DynamicParameter &dynamicParameter
             int minimalPrecision = static_cast<int>(-std::log10(std::abs(relativeDiff)));
             const int margin = 3;
             int precision = minimalPrecision + margin;
-            this->logger << std::setprecision(precision);
+            std::ostringstream msg;
+            msg << std::setprecision(precision);
 
-            this->logger.error() << "Dynamic parameter '" << parameterName << "' is not constant in the averaging ";
-            this->logger << "phase (for cycle >= " << firstAveragingCycle << ")." << std::endl;
-            this->logger << "Namely, for cycles from " << firstAveragingCycle << " to " << (averagingCycle - 1) << " ";
-            this->logger << "it is equal " << constantValue << ", but at cycle " << averagingCycle << " it changes to ";
-            this->logger << cycleValue << std::endl;
-            this->logger << std::setprecision(std::numeric_limits<double>::max_digits10);
-            this->logger << "Use piecewise parameter and set it to constant value " << constantValue << " starting ";
-            this->logger << "from cycle " << firstAveragingCycle << " or disable averaging phase." << std::endl;
-            exit(EXIT_FAILURE);
+            msg << "Dynamic parameter '" << parameterName << "' is not constant in the averaging ";
+            msg << "phase (for cycle >= " << firstAveragingCycle << ")." << std::endl;
+            msg << "Namely, for cycles from " << firstAveragingCycle << " to " << (averagingCycle - 1) << " ";
+            msg << "it is equal " << constantValue << ", but at cycle " << averagingCycle << " it changes to ";
+            msg << cycleValue << std::endl;
+            msg << std::setprecision(std::numeric_limits<double>::max_digits10);
+            msg << "Use piecewise parameter and set it to constant value " << constantValue << " starting ";
+            msg << "from cycle " << firstAveragingCycle << " or disable averaging phase." << std::endl;
+            throw ValidationException(msg.str());
         }
     }
 }

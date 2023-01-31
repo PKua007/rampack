@@ -49,21 +49,21 @@ int ShapePreviewMode::main(int argc, char **argv) {
     std::shared_ptr<ShapeTraits> traits;
     if (parsedOptions.count("input")) {
         if (parsedOptions.count("shape"))
-            die("Options -i (--input), -S (--shape) cannot be specified together", this->logger);
+            throw ValidationException("Options -i (--input), -S (--shape) cannot be specified together");
 
         RampackParameters params = this->io.dispatchParams(inputFilename);
         traits = params.baseParameters.shapeTraits;
     } else {
         if (!parsedOptions.count("shape")) {
-            die("You must specify INI file with shape parameters using -i (--input) or do it manually using -S "
-                "(--shape)", this->logger);
+            throw ValidationException("You must specify INI file with shape parameters using -i (--input) or do it "
+                                      "manually using -S (--shape)");
         }
 
         traits = ShapeMatcher::match(shape);
     }
 
     if (!parsedOptions.count("log-info") && outputs.empty())
-        die("At least one of options: -l (--log-info), -o (--output) must be specified", this->logger);
+        throw ValidationException("At least one of options: -l (--log-info), -o (--output) must be specified");
 
     // Log info
     if (parsedOptions.count("log-info")) {

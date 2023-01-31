@@ -118,24 +118,24 @@ int TrajectoryMode::main(int argc, char **argv) {
     // Validate parsed options
     std::string cmd(argv[0]);
     if (!parsedOptions.unmatched().empty())
-        die("Unexpected positional arguments. See " + cmd + " --help", this->logger);
+        throw ValidationException("Unexpected positional arguments. See " + cmd + " --help");
     if (!parsedOptions.count("input"))
-        die("Input file must be specified with option -i [input file name]", this->logger);
+        throw ValidationException("Input file must be specified with option -i [input file name]");
     if (!parsedOptions.count("log-info") && !parsedOptions.count("output-obs")
         && !parsedOptions.count("output-bulk-obs") && !parsedOptions.count("output-snapshot")
         && !parsedOptions.count("output-trajectory"))
     {
-        die("At least one of:\n"
-            " -I (--log-info)\n"
-            " -o (--output-obs)\n"
-            " -b (--output-bulk-obs)\n"
-            " -s (--output-snapshot)\n"
-            " -t (--output-trajectory)\n"
-            "options must be specified", this->logger);
+        throw ValidationException("At least one of:\n"
+                                  " -I (--log-info)\n"
+                                  " -o (--output-obs)\n"
+                                  " -b (--output-bulk-obs)\n"
+                                  " -s (--output-snapshot)\n"
+                                  " -t (--output-trajectory)\n"
+                                  "options must be specified");
     }
 
     if (runName == ".auto")
-        die("'.auto' run is not supported in the trajectory mode", this->logger);
+        throw ValidationException("'.auto' run is not supported in the trajectory mode");
 
     // Prepare initial packing
     RampackParameters rampackParams = this->io.dispatchParams(inputFilename);
@@ -154,7 +154,7 @@ int TrajectoryMode::main(int argc, char **argv) {
     std::string foundRunName = std::visit([](const auto &run) { return run.runName; }, startRun);
 
     if (!ramtrjOut.has_value())
-        die("RAMTRJ trajectory was not recorded for the run '" + foundRunName + "'", this->logger);
+        throw ValidationException("RAMTRJ trajectory was not recorded for the run '" + foundRunName + "'");
     std::string trajectoryFilename = *ramtrjOut;
 
     if (foundRunName == runName) {
@@ -196,8 +196,10 @@ int TrajectoryMode::main(int argc, char **argv) {
     // Stored trajectory in RAMTRJ/Wolfram format (if desired)
     for (const auto &trajectoryOutput : trajectoryOutputs) {
         auto factory = SimulationRecorderFactoryMatcher::match(trajectoryOutput);
-        if (factory->getFilename() == trajectoryFilename)
-            die("Input trajectory file name '" + trajectoryFilename + "' cannot be used as an output!", this->logger);
+        if (factory->getFilename() == trajectoryFilename) {
+            throw ValidationException("Input trajectory file name '" + trajectoryFilename
+                                      + "' cannot be used as an output!");
+        }
 
         bool isContinuation = false;
         auto recorder = factory->create(player->getNumMolecules(),
@@ -224,8 +226,8 @@ int TrajectoryMode::main(int argc, char **argv) {
     // Replay the simulation and calculate observables (if desired)
     if (parsedOptions.count("output-obs")) {
         if (observables.empty()) {
-            die("When using -o (--output-obs), at least one observable should be specified: -O (--observable)",
-                this->logger);
+            throw ValidationException("When using -o (--output-obs), at least one observable should be specified: "
+                                      "-O (--observable)");
         }
 
         ObservablesCollector collector;
@@ -263,18 +265,19 @@ int TrajectoryMode::main(int argc, char **argv) {
     // Replay the simulation and calculate bulk observables (if desired)
     if (parsedOptions.count("output-bulk-obs")) {
         if (bulkObservables.empty()) {
-            die("When using -b (--output-bulk-obs), at least one observable should be specified: "
-                "-B (--bulk-observable)", this->logger);
+            throw ValidationException("When using -b (--output-bulk-obs), at least one observable should be specified: "
+                                      "-B (--bulk-observable)");
         }
         if (!parsedOptions.count("averaging-start"))
-            die("The start of averaging must be specified with option -a [first cycle number]", this->logger);
+            throw ValidationException("The start of averaging must be specified with option -a [first cycle number]");
         if (averagingStart >= player->getTotalCycles()) {
-            die("Starting cycle (" + std::to_string(averagingStart) + ") is larger than a total number of recorded "
+            throw ValidationException("Starting cycle (" + std::to_string(averagingStart) + ") is larger than a total number of recorded "
                 + "cycles (" + std::to_string(player->getTotalCycles()) + ")");
         }
         if (averagingStart < player->getCycleStep()) {
-            die("Starting cycle (" + std::to_string(averagingStart) + ") is less than cycle number of first recorded "
-                + "shapshot (" + std::to_string(player->getCycleStep()) + ")");
+            throw ValidationException("Starting cycle (" + std::to_string(averagingStart) + ") is less than cycle "
+                                      "number of first recorded shapshot (" + std::to_string(player->getCycleStep())
+                                      + ")");
         }
 
         ObservablesCollector collector;
@@ -321,8 +324,8 @@ int TrajectoryMode::main(int argc, char **argv) {
         for (const auto &snapshotOutput: snapshotOutputs) {
             auto writer = FileSnapshotWriterMatcher::match(snapshotOutput);
             if (writer.getFilename() == trajectoryFilename) {
-                die("Input trajectory file name '" + trajectoryFilename + "' cannot be used as an output!",
-                    this->logger);
+                throw ValidationException("Input trajectory file name '" + trajectoryFilename
+                                          + "' cannot be used as an output!");
             }
 
             writer.generateSnapshot(*packing, *shapeTraits, player->getCurrentSnapshotCycles(), this->logger);

@@ -39,11 +39,11 @@ int PreviewMode::main(int argc, char **argv) {
     // Validate parsed options
     std::string cmd(argv[0]);
     if (!parsedOptions.unmatched().empty())
-        die("Unexpected positional arguments. See " + cmd + " --help", this->logger);
+        throw ValidationException("Unexpected positional arguments. See " + cmd + " --help");
     if (!parsedOptions.count("input"))
-        die("Input file must be specified with option -i [input file name]", this->logger);
+        throw ValidationException("Input file must be specified with option -i [input file name]");
     if (outputs.empty())
-        die("Option -o (--output) must be specified at least once", this->logger);
+        throw ValidationException("Option -o (--output) must be specified at least once");
 
     RampackParameters params = this->io.dispatchParams(inputFilename);
     const auto &baseParams = params.baseParameters;
