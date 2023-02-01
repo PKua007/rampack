@@ -291,6 +291,34 @@ TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
     CHECK(density.error == density2.error);
 }
 
+TEST_CASE("Simulation: domain number auto-reduction", "[medium]") {
+    OMP_SET_NUM_THREADS(4);
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    double V = 250;
+    double linearSize = std::cbrt(V);
+    std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
+    auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
+    SphereTraits sphereTraits(0.5);
+    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc),
+                                             sphereTraits.getInteraction(), 4, 4);
+    auto volumeScaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>(), 1);
+    Simulation simulation(std::move(packing), 1, 0.1, 1234, std::move(volumeScaler), {4, 1, 1});
+    auto collector = std::make_unique<ObservablesCollector>();
+    collector->addObservable(std::make_unique<NumberDensity>(), ObservablesCollector::AVERAGING);
+    std::ostringstream loggerStream;
+    Logger logger(loggerStream);
+
+    simulation.integrate(1, 1, 10000, 15000, 1000, 1000, sphereTraits, std::move(collector), {}, logger);
+
+    Quantity density = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
+
+    double expected = 0.398574;
+    INFO("Carnahan-Starling density: " << expected);
+    INFO("Monte Carlo density: " << density);
+    CHECK(density.value == Approx(expected).margin(density.error * 3)); // 3 sigma tolerance
+    CHECK(density.error / density.value < 0.03); // up to 3%
+}
+
 TEST_CASE("Simulation: overlap reduction for hard sphere liquid", "[medium]") {
     auto domainDivisions = GENERATE(std::array<std::size_t, 3>{1, 1, 1}, std::array<std::size_t, 3>{2, 2, 1});
     std::size_t numDomains = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies<>{});

@@ -14,7 +14,6 @@
 
 #include "utils/Version.h"
 #include "PackingFactory.h"
-#include "core/Simulation.h"
 #include "core/SnapshotWriter.h"
 #include "core/SimulationRecorder.h"
 #include "core/ObservablesCollector.h"
