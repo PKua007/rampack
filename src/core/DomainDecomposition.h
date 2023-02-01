@@ -13,19 +13,27 @@
 #include "TriclinicBox.h"
 
 
+/**
+ * @brief Expression describing situation when the domain minus the ghost layer cannot house even a single full
+ * neighbour grid cell.
+ */
 struct TooNarrowDomainException : public ValidationException {
 private:
     std::size_t coord{};
-    double wholeDomainWidth{};
-    double ghostLayerWidth{};
-    double ngCellSize{};
 
     static std::string makeWhat(std::size_t coord, double wholeDomainWidth, double ghostLayerWidth, double ngCellSize);
 
 public:
+    /**
+     * @brief Constructs the exception
+     * @param coord axis on which the problem occurred
+     * @param wholeDomainWidth width of the whole domain
+     * @param ghostLayerWidth width of the ghost layer
+     * @param ngCellSize height of the neighbour grid cell
+     */
     TooNarrowDomainException(std::size_t coord, double wholeDomainWidth, double ghostLayerWidth, double ngCellSize)
         : ValidationException(TooNarrowDomainException::makeWhat(coord, wholeDomainWidth, ghostLayerWidth, ngCellSize)),
-          coord{coord}, wholeDomainWidth{wholeDomainWidth}, ghostLayerWidth{ghostLayerWidth}, ngCellSize{ngCellSize}
+          coord{coord}
     { }
 
     [[nodiscard]] std::size_t getCoord() const { return this->coord; }
@@ -65,6 +73,9 @@ public:
      * direction
      * @param origin the middle of the first domain - due to periodic boundary conditions the domains can be placed
      * arbitrarily. However, to avoid race condition, they are aligned with the neighbour grid.
+     * @throws TooNarrowDomainException when resulting domain size will not be able to accommodate a whole single NG
+     * cell
+     * @throws PreconditionException in all other cases, when the arguments that were past yield malformed domains
      */
     DomainDecomposition(const Packing &packing, const Interaction &interaction,
                         const std::array<std::size_t, 3> &domainDivisions,
