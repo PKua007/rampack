@@ -28,6 +28,7 @@
 #include "MoveSampler.h"
 #include "SimulationRecorder.h"
 #include "DynamicParameter.h"
+#include "DomainDecomposition.h"
 
 
 /**
@@ -240,6 +241,7 @@ private:
 
     void updateThermodynamicParameters();
     void performCycle(Logger &logger, const ShapeTraits &shapeTraits);
+    void performMoves(const ShapeTraits &shapeTraits, Logger &logger);
     void performMovesWithDomainDivision(const ShapeTraits &shapeTraits);
     void performMovesWithoutDomainDivision(const ShapeTraits &shapeTraits);
     bool tryMove(const ShapeTraits &shapeTraits, const std::vector<std::size_t> &particleIndices,

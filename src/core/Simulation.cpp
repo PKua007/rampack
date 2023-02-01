@@ -320,10 +320,7 @@ void Simulation::performCycle(Logger &logger, const ShapeTraits &shapeTraits) {
 
     using namespace std::chrono;
     auto start = high_resolution_clock::now();
-    if (this->numDomains == 1)
-        this->performMovesWithoutDomainDivision(shapeTraits);
-    else
-        this->performMovesWithDomainDivision(shapeTraits);
+    this->performMoves(shapeTraits, logger);
     auto end = high_resolution_clock::now();
     this->moveMicroseconds += duration<double, std::micro>(end - start).count();
 
@@ -356,6 +353,30 @@ void Simulation::performCycle(Logger &logger, const ShapeTraits &shapeTraits) {
 
     this->performedCycles++;
     this->totalCycles++;
+}
+
+void Simulation::performMoves(const ShapeTraits &shapeTraits, Logger &logger) {
+    auto previousDomainDivision = this->domainDivisions;
+
+    while (true) {
+        try {
+            if (this->numDomains == 1)
+                performMovesWithoutDomainDivision(shapeTraits);
+            else
+                performMovesWithDomainDivision(shapeTraits);
+            break;
+        } catch (const TooNarrowDomainException &ex) {
+            this->domainDivisions[ex.getCoord()]--;
+            this->numDomains = std::accumulate(this->domainDivisions.begin(), this->domainDivisions.end(), 1,
+                                               std::multiplies<>{});
+        }
+    }
+
+    if (this->domainDivisions != previousDomainDivision) {
+        logger.warn() << "Domains are too narrow; reducing their number to [";
+        logger << this->domainDivisions[0] << ", " << this->domainDivisions[1] << ", " << this->domainDivisions[2];
+        logger << "]" << std::endl;
+    }
 }
 
 void Simulation::performMovesWithoutDomainDivision(const ShapeTraits &shapeTraits) {

@@ -12,6 +12,26 @@
 #include "ActiveDomain.h"
 #include "TriclinicBox.h"
 
+
+struct TooNarrowDomainException : public ValidationException {
+private:
+    std::size_t coord{};
+    double wholeDomainWidth{};
+    double ghostLayerWidth{};
+    double ngCellSize{};
+
+    static std::string makeWhat(std::size_t coord, double wholeDomainWidth, double ghostLayerWidth, double ngCellSize);
+
+public:
+    TooNarrowDomainException(std::size_t coord, double wholeDomainWidth, double ghostLayerWidth, double ngCellSize)
+        : ValidationException(TooNarrowDomainException::makeWhat(coord, wholeDomainWidth, ghostLayerWidth, ngCellSize)),
+          coord{coord}, wholeDomainWidth{wholeDomainWidth}, ghostLayerWidth{ghostLayerWidth}, ngCellSize{ngCellSize}
+    { }
+
+    [[nodiscard]] std::size_t getCoord() const { return this->coord; }
+};
+
+
 /**
  * @brief The class decomposes the packing space into ActiveDomain -s separated by ghost layers.
  * @details The ghost layers are aligned with neighbour grid cells and are wide enough so that the particles from

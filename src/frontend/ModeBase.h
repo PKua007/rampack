@@ -12,9 +12,6 @@
 #include <cxxopts.hpp>
 
 #include "IO.h"
-#include "RampackParameters.h"
-#include "core/BoundaryConditions.h"
-#include "core/Simulation.h"
 #include "utils/Logger.h"
 
 

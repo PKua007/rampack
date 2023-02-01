@@ -2,12 +2,23 @@
 // Created by Piotr Kubala on 13/03/2021.
 //
 
-#include <algorithm>
 #include <numeric>
+#include <sstream>
 
 #include "DomainDecomposition.h"
 #include "utils/Exceptions.h"
 
+
+std::string TooNarrowDomainException::makeWhat(std::size_t coord, double wholeDomainWidth, double ghostLayerWidth,
+                                               double ngCellSize)
+{
+    std::ostringstream out;
+    out << "Domain on axis " << coord << " is too narrow:" << std::endl;
+    out << "domain width      : " << wholeDomainWidth << std::endl;
+    out << "ghost layer width : " << ghostLayerWidth << std::endl;
+    out << "NG cell size      : " << ngCellSize;
+    return out.str();
+}
 
 DomainDecomposition::DomainDecomposition(const Packing &packing, const Interaction &interaction,
                                          const std::array<std::size_t, 3> &domainDivisions,
@@ -44,7 +55,10 @@ void DomainDecomposition::prepareDomains(const std::array<std::size_t, 3> &neigh
 
         // Active region has to be at least as large as NG cell, otherwise not particles will be perturbed
         double ngCellSizeRel = 1. / neighbourGridDivisions[coord];
-        Expects(wholeDomainWidthRel - ghostLayerWidthRel > ngCellSizeRel);
+        if (wholeDomainWidthRel - ghostLayerWidthRel <= ngCellSizeRel) {
+            throw TooNarrowDomainException(coord, wholeDomainWidthRel * boxHeights[coord],
+                                           ghostLayerWidthRel * boxHeights[coord], ngCellSize);
+        }
 
         this->regionBounds[coord].resize(this->domainDivisions[coord]);
         double previousGhostEnd = -std::numeric_limits<double>::infinity();
