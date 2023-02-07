@@ -9,6 +9,15 @@ _rampack_debug() {
 	echo "COMP_WORDS: '$COMP_WORDS'" >>debug.txt
 }
 
+_rampack_parse_help() {
+	${rampack_cmd} $1 --help                        \
+		| sed -r 's/^  (..)..(.*)/\1\n\2/'      \
+		| grep '^-'                             \
+		| sed -r 's/^(--[a-zA-Z-]*) arg.*/\1=/' \
+		| grep -o '^[a-zA-Z=-]*'                \
+		| sort
+}
+
 _rampack_verbosity() {
 	COMPREPLY=($(compgen -W 'fatal error warn info verbose debug' -- ${cur}))
 }
@@ -84,7 +93,8 @@ _rampack_casino() {
 	esac
 
 	if [[ "$cur" == -* ]] || [[ "$cur" == "" ]]; then
-		COMPREPLY=($(compgen -W '$( _parse_help "${rampack_cmd} casino" --help )' -- ${cur}))
+		COMPREPLY=($(compgen -W '$( _rampack_parse_help casino )' -- ${cur}))
+		[[ $COMPREPLY == *= ]] && compopt -o nospace
 	fi
 }
 
@@ -108,7 +118,8 @@ _rampack_preview() {
 	esac
 
 	if [[ "$cur" == -* ]] || [[ "$cur" == "" ]]; then
-		COMPREPLY=($(compgen -W '$( _parse_help "${rampack_cmd} preview" --help )' -- ${cur}))
+		COMPREPLY=($(compgen -W '$( _rampack_parse_help preview )' -- ${cur}))
+		[[ $COMPREPLY == *= ]] && compopt -o nospace
 	fi
 }
 
@@ -137,7 +148,8 @@ _rampack_shape_preview() {
 	esac
 
 	if [[ "$cur" == -* ]] || [[ "$cur" == "" ]]; then
-		COMPREPLY=($(compgen -W '$( _parse_help "${rampack_cmd} shape-preview" --help )' -- ${cur}))
+		COMPREPLY=($(compgen -W '$( _rampack_parse_help shape-preview )' -- ${cur}))
+		[[ $COMPREPLY == *= ]] && compopt -o nospace
 	fi
 }
 
@@ -215,7 +227,8 @@ _rampack_trajectory() {
 	esac
 
 	if [[ "$cur" == -* ]] || [[ "$cur" == "" ]]; then
-		COMPREPLY=($(compgen -W '$( _parse_help "${rampack_cmd} trajectory" --help )' -- ${cur}))
+		COMPREPLY=($(compgen -W '$( _rampack_parse_help trajectory )' -- ${cur}))
+		[[ $COMPREPLY == *= ]] && compopt -o nospace
 	fi
 }
 
