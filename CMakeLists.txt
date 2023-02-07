@@ -93,3 +93,19 @@ set_property(TARGET cxxopts APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS CXXOPT
 
 add_subdirectory(src)
 add_subdirectory(test)
+
+install(TARGETS rampack DESTINATION "bin")
+
+find_program(ZHS_FOUND "zsh")
+if(ZHS_FOUND)
+    install(FILES "${PROJECT_SOURCE_DIR}/script/rampack_completion.zsh"
+            DESTINATION "share/zsh/site-functions"
+            RENAME "_rampack")
+endif()
+
+find_program(BASH_FOUND "bash")
+if(BASH_FOUND)
+    install(FILES "${PROJECT_SOURCE_DIR}/script/rampack_completion.bash"
+            DESTINATION "share/bash-completion/completions"
+            RENAME "rampack")
+endif()

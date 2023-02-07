@@ -37,7 +37,8 @@ function _rampack_run_names {
 				input_file="${words[i]:8}"
 			fi
 
-			local -a input_run_names=($(rampack preview -i "$input_file" -r -V warn))
+			local -a input_run_names
+			input_run_names=($(rampack preview -i "$input_file" -r -V warn))
 			[[ $? == 0 ]] && run_names+=("${input_run_names[@]}")
 		fi
 	done
@@ -123,5 +124,3 @@ function _rampack {
 			;;
 	esac
 }
-
-compdef _rampack rampack
