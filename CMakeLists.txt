@@ -94,8 +94,10 @@ set_property(TARGET cxxopts APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS CXXOPT
 add_subdirectory(src)
 add_subdirectory(test)
 
+# Install rampack bin
 install(TARGETS rampack DESTINATION "bin")
 
+# Install zsh autocompletion
 find_program(ZHS_FOUND "zsh")
 if(ZHS_FOUND)
     install(FILES "${PROJECT_SOURCE_DIR}/script/rampack_completion.zsh"
@@ -103,6 +105,7 @@ if(ZHS_FOUND)
             RENAME "_rampack")
 endif()
 
+# Install bash autocompletion
 find_program(BASH_FOUND "bash")
 if(BASH_FOUND)
     install(FILES "${PROJECT_SOURCE_DIR}/script/rampack_completion.bash"
