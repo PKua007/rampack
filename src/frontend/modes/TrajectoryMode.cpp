@@ -51,7 +51,7 @@ int TrajectoryMode::main(int argc, char **argv) {
             ("f,auto-fix", "tries to auto-fix the trajectory if it is broken; fixed trajectory can be stored back to "
                            "RAMTRJ using -t 'ramtrj(\"filename\")'")
             ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
-                            "error, warn, info, verbose, debug. Defaults to: info if --log-file not specified, "
+                            "fatal, error, warn, info, verbose, debug. Defaults to: info if --log-file not specified, "
                             "otherwise to: warn",
              cxxopts::value<std::string>(verbosity))
             ("o,output-obs", "calculate observables and output them to a given file. Observables can be specified using "

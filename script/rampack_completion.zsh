@@ -19,11 +19,28 @@ _rampack_bulk_observable=(pair_density_correlation pair_averaged_correlation den
 _rampack_trajectory_output=(ramtrj xyz)
 
 function _rampack_run_names {
-	local -a run_names=(.first .last)
+	local -a run_names=(".first" ".last")
 
 	if [[ "$1" == "--with-auto" ]]; then
-		run_names+=(.auto)
+		run_names+=(".auto")
 	fi
+
+	for ((i = 1; i <= $#words; i++))
+	do
+		if [[ "${words[i]}" == -i* || "${words[i]}" == --input || "${words[i]}" == --input=* ]]; then
+			local input_file
+			if [[ "${words[i]}" == "-i" || "${words[i]}" == "--input" ]]; then
+				input_file="${words[i+1]}"
+			elif [[ "${words[i]}" == -i* ]]; then
+				input_file="${words[i]:2}"
+			else
+				input_file="${words[i]:8}"
+			fi
+
+			local -a input_run_names=($(rampack preview -i "$input_file" -r -V warn))
+			[[ $? == 0 ]] && run_names+=("${input_run_names[@]}")
+		fi
+	done
 
 	_describe "run names" run_names
 }
@@ -59,22 +76,22 @@ function _rampack_shape_preview {
 function _rampack_trajectory {
 	_arguments \
 		'(- *)'{-h,--help}'[print help]' \
-		'(-i --input)'{-i,--input}'[input file]: :_files' \
-		'(-r --run-name)'{-r,--run-name}'[name of the run to analyze trajectory]: :_rampack_run_names' \
+		'(-i --input)'{-i,--input=}'[input file]: :_files' \
+		'(-r --run-name)'{-r,--run-name=}'[name of the run to analyze trajectory]: :_rampack_run_names' \
 		'(-f --auto-fix)'{-f,--auto-fix}'[if specified, trajectory fix will be attempted]' \
-		'(-V --verbosity)'{-V,--verbosity}'[logging verbosity]: :'"(${_rampack_verbosity[*]})" \
-		'(-o --output-obs)'{-o,--output-obs}'[observables output file name]: :_files' \
-		'*'{-O,--observable}'[observable(s) to calculate]: :'"(${_rampack_observable[*]})" \
-		'(-b --output-bulk-obs)'{-b,--output-bulk-obs}'[bulk observables output file name pattern]: :_files' \
-		'*'{-B,--bulk-observable}'[bulk observable(s) to calculate]: :'"(${_rampack_bulk_observable[*]})" \
-		'(-a --averaging-start)'{-a,--averaging-start}'[cycle number to start averaging]: : ' \
-		'(-T --max-threads)'{-T,--max-threads}'[number of threads to use (0 - use max) (default: 1)]: : ' \
-		'*'{-s,--output-snapshot}'[last snapshot output spec]: :'"(${_rampack_snapshot_output[*]})" \
+		'(-V --verbosity)'{-V,--verbosity=}'[logging verbosity]: :'"(${_rampack_verbosity[*]})" \
+		'(-o --output-obs)'{-o,--output-obs=}'[observables output file name]: :_files' \
+		'*'{-O,--observable=}'[observable(s) to calculate]: :'"(${_rampack_observable[*]})" \
+		'(-b --output-bulk-obs)'{-b,--output-bulk-obs=}'[bulk observables output file name pattern]: :_files' \
+		'*'{-B,--bulk-observable=}'[bulk observable(s) to calculate]: :'"(${_rampack_bulk_observable[*]})" \
+		'(-a --averaging-start)'{-a,--averaging-start=}'[cycle number to start averaging]: : ' \
+		'(-T --max-threads)'{-T,--max-threads=}'[number of threads to use (0 - use max) (default: 1)]: : ' \
+		'*'{-s,--output-snapshot=}'[last snapshot output spec]: :'"(${_rampack_snapshot_output[*]})" \
 		'(-I --log-info)'{-I,--log-info}'[print trajectory info]' \
-		'(-l --log-file)'{-l,--log-file}'[log additionally to a given file]: :_files' \
-		'--log-file-verbosity[log file verbosity]: :'"(${_rampack_verbosity[*]})" \
-		'*'{-t,--output-trajectory}'[trajectory output spec]: :'"(${_rampack_trajectory_output[*]})" \
-		'(-x --truncate)'{-x,--truncate}'[truncate trajectory on a given cycle number]: : '
+		'(-l --log-file)'{-l,--log-file=}'[log additionally to a given file]: :_files' \
+		'--log-file-verbosity=[log file verbosity]: :'"(${_rampack_verbosity[*]})" \
+		'*'{-t,--output-trajectory=}'[trajectory output spec]: :'"(${_rampack_trajectory_output[*]})" \
+		'(-x --truncate)'{-x,--truncate=}'[truncate trajectory on a given cycle number]: : '
 }
 
 function _rampack {
