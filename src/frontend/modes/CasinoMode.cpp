@@ -32,7 +32,7 @@ int CasinoMode::main(int argc, char **argv) {
             ("i,input", "an INI/PYON file with parameters. See sample_inputs folder for full parameters documentation",
              cxxopts::value<std::string>(inputFilename))
             ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
-                            "error, warn, info, verbose, debug. Defaults to: info if --log-file not specified, "
+                            "fatal error, warn, info, verbose, debug. Defaults to: info if --log-file not specified, "
                             "otherwise to: warn",
              cxxopts::value<std::string>(verbosity))
             ("s,start-from", "when specified, the simulation will be started from the run with the name given. If not "

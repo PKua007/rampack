@@ -58,6 +58,34 @@ _rampack_trajectory_out() {
 	compopt -o nospace
 }
 
+_rampack_run_name() {
+	local run_names=(".first" ".last")
+
+	if [[ "$1" == "--with-auto" ]]; then
+		run_names+=(".auto")
+	fi
+
+	for ((i = 0; i <= "${#words[@]}"; i++))
+	do
+		if [[ "${words[i]}" == -i* || "${words[i]}" == --input || "${words[i]}" == --input=* ]]; then
+			local input_file
+			if [[ "${words[i]}" == "-i" || "${words[i]}" == "--input" ]]; then
+				input_file="${words[i+1]}"
+			elif [[ "${words[i]}" == -i* ]]; then
+				input_file="${words[i]:2}"
+			else
+				input_file="${words[i]:8}"
+			fi
+
+			local input_run_names
+			input_run_names=($(${rampack_cmd} preview -i "$input_file" -r -V warn))
+			[[ $? == 0 ]] && run_names+=("${input_run_names[@]}")
+		fi
+	done
+
+	COMPREPLY=($(compgen -W "${run_names[*]}" -- ${cur}))
+}
+
 _rampack_casino() {
 	_split_longopt
 
@@ -76,7 +104,7 @@ _rampack_casino() {
 			return
 			;;
 		-s | --start-from)
-			COMPREPLY=($(compgen -W '.first .last .auto' -- ${cur}))
+			_rampack_run_name --with-auto
 			return
 			;;
 		-c | --continue)
@@ -167,7 +195,7 @@ _rampack_trajectory() {
 			return
 			;;
 		-r | --run-name)
-			COMPREPLY=($(compgen -W '.first .last' -- ${cur}))
+			_rampack_run_name
 			return
 			;;
 		-f | --auto-fix)
