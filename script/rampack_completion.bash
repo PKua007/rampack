@@ -1,14 +1,5 @@
 # Bash completion script
 
-_rampack_debug() {
-	echo "prev: '$prev'" >debug.txt
-	echo "cur: '$cur'" >>debug.txt
-	echo "words: '${words[@]}'" >>debug.txt
-	echo "cword: '$cword'" >>debug.txt
-	echo "COMP_WORDBREAKS: '$COMP_WORDBREAKS'" >>debug.txt
-	echo "COMP_WORDS: '$COMP_WORDS'" >>debug.txt
-}
-
 _rampack_parse_help() {
 	${rampack_cmd} $1 --help                        \
 		| sed -r 's/^  (..)..(.*)/\1\n\2/'      \
@@ -265,8 +256,6 @@ _rampack() {
 	_get_comp_words_by_ref -n "=" cur prev words cword
 
 	local rampack_cmd="$1"
-
-	#_rampack_debug
 
 	if [ ${#words[@]} -ge 3 ]; then
 		cmd=${words[1]}
