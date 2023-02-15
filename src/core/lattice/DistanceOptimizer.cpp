@@ -7,6 +7,7 @@
 #include "utils/Exceptions.h"
 #include "LatticeTraits.h"
 #include "core/FreeBoundaryConditions.h"
+#include "LatticeTransformer.h"
 
 double DistanceOptimizer::minimizeForDirection(Shape shape1, Shape shape2, Vector<3> direction,
                                                const Interaction &interaction)
@@ -55,7 +56,8 @@ std::array<double, 3> DistanceOptimizer::minimizeForAxes(const Shape &shape1, co
 void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &interaction,
                                       const std::string &axisOrderString)
 {
-    Expects(interaction.hasHardPart());
+    TransformerValidateMsg(interaction.hasHardPart(),
+                           "Interaction must have a hard component to perform distance optimization");
 
     const double range = interaction.getTotalRangeRadius();
     const auto &initialHeights = packing.getBox().getHeights();
@@ -63,8 +65,13 @@ void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &inter
 
     // Verify initial dimensions whether they are large enough
     // range (plus epsilon), since we don't want self intersections through PBC
-    Expects(std::all_of(initialHeights.begin(), initialHeights.end(), [range](double d) { return d > FACTOR_EPSILON*range; }));
-    Expects(!packing.countTotalOverlaps(interaction));
+    TransformerValidateMsg(std::all_of(initialHeights.begin(), initialHeights.end(),
+                                       [range](double d) { return d > FACTOR_EPSILON*range; }),
+                           "Initial dimensions are not large enough to perform distance optimization; particles may "
+                           "self-overlap through PBC reflections");
+
+    TransformerValidateMsg(!packing.countTotalOverlaps(interaction),
+                           "Overlaps are present at the start of distance optimization");
 
     std::vector<Shape> relShapes(std::begin(packing), std::end(packing));
     const auto &originalBox = packing.getBox();
@@ -85,8 +92,10 @@ void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &inter
         auto begShapes = DistanceOptimizer::generateAbsoluteShapes(relShapes, begBox);
 
         packing.reset(begShapes, TriclinicBox(begBox), interaction);
-        ExpectsMsg(packing.countTotalOverlaps(interaction),
-                   "Maximally shrunk packing (avoiding self overlaps) is not overlapping - the lattice is too small");
+
+        TransformerValidateMsg(packing.countTotalOverlaps(interaction),
+                               "Maximally shrunk packing (avoiding self overlaps) is not overlapping - cell number on "
+                               "axis " + std::string{static_cast<char>('x' + axisNum)} + " is too small");
 
         do {
             double factorMid = (begFactor + endFactor) / 2;

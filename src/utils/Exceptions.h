@@ -101,6 +101,12 @@ private:
                                 const std::string &condition_, const std::string &message_);
 
 public:
+    [[nodiscard]] const std::string &getFile() const { return this->file; }
+    [[nodiscard]] const std::string &getFunction() const { return this->function; }
+    [[nodiscard]] std::size_t getLine() const { return this->line; }
+    [[nodiscard]] const std::string &getCondition() const { return this->condition; }
+    [[nodiscard]] const std::string &getMessage() const { return this->message; }
+
     ContractException(std::string file, std::string function, std::size_t line, std::string condition,
                       std::string message)
             : InternalError(ContractException::makeWhat(file, function, line, condition, message)),

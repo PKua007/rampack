@@ -7,6 +7,21 @@
 
 #include "Lattice.h"
 #include "core/ShapeTraits.h"
+#include "utils/Exceptions.h"
+
+
+#define TransformerValidateMsg(cond, msg) EXCEPTIONS_BLOCK(                                                         \
+    if (!(cond))                                                                                                    \
+        throw TransformerException(msg);                                                                            \
+)
+
+/**
+ * @brief Exception thrown when performing lattice transformations.
+ */
+class TransformerException : public ValidationException {
+public:
+    using ValidationException::ValidationException;
+};
 
 
 /**
