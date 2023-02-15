@@ -11,7 +11,9 @@
 #include "core/Shape.h"
 #include "utils/Exceptions.h"
 
-
+/**
+ * @brief Exception thrown when reading/writing RAMTRJ data.
+ */
 class RamtrjException : public ValidationException {
 public:
     using ValidationException::ValidationException;

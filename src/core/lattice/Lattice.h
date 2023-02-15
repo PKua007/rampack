@@ -102,7 +102,7 @@ public:
     [[nodiscard]] bool isRegular() const { return this->isRegular_; }
 
     /**
-     * @brief Returns @a true, if all molecules in the latrice have normalized relative cell coordinates (in the range
+     * @brief Returns @a true, if all molecules in the lattice have normalized relative cell coordinates (in the range
      * [0, 1)).
      */
     [[nodiscard]] bool isNormalized() const;

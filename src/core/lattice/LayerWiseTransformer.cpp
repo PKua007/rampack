@@ -9,8 +9,10 @@
 
 
 void LayerWiseTransformer::transform(Lattice &lattice, [[maybe_unused]] const ShapeTraits &shapeTraits) const {
-    Expects(lattice.isRegular());
-    Expects(lattice.isNormalized());
+    TransformerValidateMsg(lattice.isRegular(), "Lattice must be regular for layerwise transforming operations");
+    TransformerValidateMsg(lattice.isNormalized(),
+                           "Relative coordinates in unit cell must be in range [0, 1) to perform layerwise "
+                           "transforimng operation");
 
     auto cell = lattice.getSpecificCell(0, 0, 0);
     auto layerAssociation = LatticeTraits::getLayerAssociation(cell, this->axis);
@@ -44,8 +46,9 @@ void LayerWiseTransformer::recalculateUnitCell(UnitCell &cell, LatticeTraits::La
     std::size_t axisIdx = LatticeTraits::axisToIndex(this->axis);
 
     // Modify dimensions
-    ExpectsMsg(latticeDim[axisIdx] % cellFactor == 0,
-               "Lattice dimensions incompatible with the requested number of layers");
+    TransformerValidateMsg(latticeDim[axisIdx] % cellFactor == 0,
+                           "Lattice dimensions should incorporate the number of layers which is an integer multiple of "
+                           + std::to_string(cellFactor) + " to perform layerwise transforming operation");
     latticeDim[axisIdx] /= cellFactor;
 
     // Modify layerAssociation - as many unit cells are joined, we have to replicate layers "cellFactor" times

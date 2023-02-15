@@ -18,16 +18,20 @@ LayerWiseCellOptimizationTransformer::LayerWiseCellOptimizationTransformer(Latti
 void LayerWiseCellOptimizationTransformer::transform(Lattice &lattice, const ShapeTraits &shapeTraits) const {
     const auto &interaction = shapeTraits.getInteraction();
 
-    Expects(interaction.hasHardPart());
-    Expects(lattice.isRegular());
-    Expects(lattice.isNormalized());
+    TransformerValidateMsg(interaction.hasHardPart(),
+                           "Interaction must have hard component to perform layerwise optimization");
+    TransformerValidateMsg(lattice.isRegular(), "Lattice must be regular to perform layerwise optimization");
+    TransformerValidateMsg(lattice.isNormalized(),
+                           "Relative coordinates in unit cell must be in range [0, 1) to perform layerwise "
+                           "optimization");
 
     auto layerAssociation = LatticeTraits::getLayerAssociation(lattice.getUnitCell(), this->layerAxis);
-    Expects(!layerAssociation.empty());
+    TransformerValidateMsg(!layerAssociation.empty(), "Lattice is empty; cannot perform layerwise optimization");
 
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     Packing testPacking(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), interaction);
-    Expects(!testPacking.countTotalOverlaps(interaction));
+    TransformerValidateMsg(!testPacking.countTotalOverlaps(interaction),
+                           "Overlaps are present at the beginning of layerwise optimization");
 
     this->optimizeLayers(lattice, layerAssociation, testPacking, interaction);
     this->optimizeCell(lattice, testPacking, interaction);
@@ -121,9 +125,10 @@ void LayerWiseCellOptimizationTransformer::optimizeCell(Lattice &lattice, Packin
     constexpr double FACTOR_EPSILON = 1 + 1e-12;
     // Verify initial dimensions whether they are large enough
     // range (plus epsilon), since we don't want self intersections through PBC
-    ExpectsMsg(std::all_of(boxHeights.begin(), boxHeights.end(),
-                           [range](double d) { return d > FACTOR_EPSILON * range; }),
-               "Maximally shrunk cell (without self-overlaps) is too large. Use more lattice cells.");
+    TransformerValidateMsg(std::all_of(boxHeights.begin(), boxHeights.end(),
+                                       [range](double d) { return d > FACTOR_EPSILON * range; }),
+                           "Layerwise optimization: maximally shrunk cell (without PBC image self-overlaps) is too "
+                           "large. Use more lattice cells.");
 
     // Bisectively move "upper" face of the cell until the shapes are tangent. Absolute shape coordinates should not
     // change in the process, so they relative ones are rescaled appropriately
@@ -132,8 +137,10 @@ void LayerWiseCellOptimizationTransformer::optimizeCell(Lattice &lattice, Packin
     double begFactor = range * FACTOR_EPSILON / boxHeights[axisIdx];  // Smallest scaling without self-overlap
     double endFactor = 1;
     auto [begBox, begShapes] = this->rescaleCell(initialCellBox, initialShapes, begFactor);
-    ExpectsMsg(this->areShapesOverlapping(begBox, begShapes, lattice.getDimensions(), testPacking, interaction),
-               "Maximally shrunk cell (without self-overlaps) is not overlapping. Use more lattice cells.");
+    TransformerValidateMsg(this->areShapesOverlapping(begBox, begShapes, lattice.getDimensions(), testPacking,
+                                                      interaction),
+                           "Layerwise optimization: maximally shrunk cell (without PBC image self-overlaps) is not "
+                           "overlapping. Use more lattice cells.");
 
     constexpr double EPSILON = 1e-12;
     do {
@@ -160,7 +167,9 @@ LayerWiseCellOptimizationTransformer::introduceSpacing(Lattice &lattice,
     std::size_t axisIdx = LatticeTraits::axisToIndex(this->layerAxis);
     double cellFactor = (cellHeights[axisIdx] + static_cast<double>(layerAssociation.size())*this->spacing)
                         / cellHeights[axisIdx];
-    Expects(cellFactor > 0);
+    TransformerValidateMsg(cellFactor > 0,
+                           "Layerwise optimization: negative spacing is of too large magnitude; it would yield "
+                           "negative cell dimensions");
 
     auto cellSides = cellBox.getSides();
     cellSides[axisIdx] *= cellFactor;

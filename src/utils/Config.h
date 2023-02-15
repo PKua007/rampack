@@ -12,26 +12,32 @@
 #include <vector>
 #include <algorithm>
 
+#include "Exceptions.h"
+
+
+/**
+ * @brief Base class for Config exceptions.
+ */
+class ConfigException : public ValidationException {
+public:
+    using ValidationException::ValidationException;
+};
 
 /**
  * @brief An exception thrown if there was a problem parsing config in Config.
  */
-class ConfigParseException : public std::runtime_error
-{
+class ConfigParseException : public ConfigException {
 public:
-    explicit ConfigParseException(const std::string & _what) : std::runtime_error(_what)
-    {}
+    using ConfigException::ConfigException;
 };
 
 
 /**
  * @brief An exception thrown if there was an access to nonexistent field in Config.
  */
-class ConfigNoFieldException : public std::runtime_error
-{
+class ConfigNoFieldException : public ConfigException {
 public:
-    explicit ConfigNoFieldException(const std::string & _what) : std::runtime_error(_what)
-    {}
+    using ConfigException::ConfigException;
 };
 
 
