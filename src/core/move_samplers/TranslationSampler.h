@@ -18,6 +18,9 @@ class TranslationSampler : public MoveSampler {
 private:
     double translationStepSize{};
     double maxTranslationStepSize{};
+    bool isMaxTranslationStepSizeImplicit{};
+
+    void adjustMaxTranslationStepSize(const Packing &packing);
 
 public:
     /**

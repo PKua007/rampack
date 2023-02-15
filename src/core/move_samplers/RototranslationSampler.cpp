@@ -9,7 +9,7 @@
 RototranslationSampler::RototranslationSampler(double translationStepSize, std::optional<double> rotationStepSize,
                                                double maxTranslationStepSize)
         : translationStepSize{translationStepSize}, rotationStepSize{rotationStepSize},
-          maxTranslationStepSize{maxTranslationStepSize}
+          maxTranslationStepSize{maxTranslationStepSize}, isMaxTranslationStepSizeImplicit{maxTranslationStepSize == 0}
 {
     Expects(maxTranslationStepSize >= 0);
     if (maxTranslationStepSize > 0)
@@ -28,7 +28,9 @@ MoveSampler::MoveData RototranslationSampler::sampleMove([[maybe_unused]] const 
     MoveData moveData;
     moveData.moveType = MoveType::ROTOTRANSLATION;
 
-    URD translationDistribution(-this->translationStepSize, this->translationStepSize);
+    this->adjustMaxTranslationStepSize(packing);
+    double actualTranslationStepSize = std::min(this->maxTranslationStepSize, this->translationStepSize);
+    URD translationDistribution(-actualTranslationStepSize, actualTranslationStepSize);
     moveData.translation = {translationDistribution(mt), translationDistribution(mt), translationDistribution(mt)};
 
     this->calculateRotationStepSizeIfNeeded(shapeTraits.getInteraction());
@@ -50,13 +52,9 @@ MoveSampler::MoveData RototranslationSampler::sampleMove([[maybe_unused]] const 
 
 bool RototranslationSampler::increaseStepSize() {
     double oldTranslationStepSize = this->translationStepSize;
-    this->translationStepSize *= 1.1;
-    if (this->maxTranslationStepSize > 0 && this->translationStepSize > this->maxTranslationStepSize)
-        this->translationStepSize = this->maxTranslationStepSize;
-
+    bool wasIncreased = this->increaseTranslationStepSize();
     *this->rotationStepSize *= this->translationStepSize/oldTranslationStepSize;
-
-    return this->translationStepSize != oldTranslationStepSize;
+    return wasIncreased;
 }
 
 bool RototranslationSampler::decreaseStepSize() {
@@ -97,5 +95,22 @@ void RototranslationSampler::calculateRotationStepSizeIfNeeded(const Interaction
     double ratio = this->translationStepSize / interaction.getTotalRangeRadius();
     this->rotationStepSize = 0.133183 - 1.18634*ratio + 264.37*ratio*ratio;
     Assert(this->rotationStepSize > 0);
+}
+
+void RototranslationSampler::adjustMaxTranslationStepSize(const Packing &packing) {
+    if (!this->isMaxTranslationStepSizeImplicit)
+        return;
+
+    auto heights = packing.getBox().getHeights();
+    double minHeight = *std::min_element(heights.begin(), heights.end());
+    this->maxTranslationStepSize = minHeight / 2;
+}
+
+bool RototranslationSampler::increaseTranslationStepSize() {
+    if (this->maxTranslationStepSize > 0 && this->translationStepSize >= this->maxTranslationStepSize)
+        return false;
+
+    this->translationStepSize *= 1.1;
+    return true;
 }
 

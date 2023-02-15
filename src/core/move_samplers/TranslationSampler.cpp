@@ -8,7 +8,8 @@
 
 
 TranslationSampler::TranslationSampler(double translationStepSize, double maxTranslationStepSize)
-        : translationStepSize{translationStepSize}, maxTranslationStepSize{maxTranslationStepSize}
+        : translationStepSize{translationStepSize}, maxTranslationStepSize{maxTranslationStepSize},
+          isMaxTranslationStepSizeImplicit{maxTranslationStepSize == 0}
 {
     Expects(maxTranslationStepSize >= 0);
     if (maxTranslationStepSize > 0)
@@ -25,7 +26,9 @@ MoveSampler::MoveData TranslationSampler::sampleMove([[maybe_unused]] const Pack
     MoveData moveData;
     moveData.moveType = MoveType::TRANSLATION;
 
-    URD translationDistribution(-this->translationStepSize, this->translationStepSize);
+    this->adjustMaxTranslationStepSize(packing);
+    double actualTranslationStepSize = std::min(this->maxTranslationStepSize, this->translationStepSize);
+    URD translationDistribution(-actualTranslationStepSize, actualTranslationStepSize);
     moveData.translation = {translationDistribution(mt), translationDistribution(mt), translationDistribution(mt)};
 
     std::uniform_int_distribution<std::size_t> particleDistribution(0, particleIdxs.size() - 1);
@@ -34,13 +37,21 @@ MoveSampler::MoveData TranslationSampler::sampleMove([[maybe_unused]] const Pack
     return moveData;
 }
 
-bool TranslationSampler::increaseStepSize() {
-    double oldTranslationStepSize = this->translationStepSize;
-    this->translationStepSize *= 1.1;
-    if (this->maxTranslationStepSize > 0 && this->translationStepSize > this->maxTranslationStepSize)
-        this->translationStepSize = this->maxTranslationStepSize;
+void TranslationSampler::adjustMaxTranslationStepSize(const Packing &packing) {
+    if (!this->isMaxTranslationStepSizeImplicit)
+        return;
 
-    return this->translationStepSize != oldTranslationStepSize;
+    auto heights = packing.getBox().getHeights();
+    double minHeight = *std::min_element(heights.begin(), heights.end());
+    this->maxTranslationStepSize = minHeight / 2;
+}
+
+bool TranslationSampler::increaseStepSize() {
+    if (this->maxTranslationStepSize > 0 && this->translationStepSize >= this->maxTranslationStepSize)
+        return false;
+
+    this->translationStepSize *= 1.1;
+    return true;
 }
 
 bool TranslationSampler::decreaseStepSize() {
