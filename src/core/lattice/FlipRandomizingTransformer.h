@@ -34,6 +34,7 @@ public:
      * lattice is always irregular. Lattice does not have to be normalized. If it was normalized prior to flip
      * transformations, it will be renormalized afterwards (as rotation around the geometric origin may require applying
      * a translation, some particles may end up outside their cells).
+     * @param shapeTraits ShapeTraits of the shape residing in the lattice.
      */
     void transform(Lattice &lattice, const ShapeTraits &shapeTraits) const override;
 };

@@ -82,6 +82,7 @@ public:
          * @param primaryAxis the primary axis of the molecule
          * @param secondaryAxis the secondary axis of the polymer (should be orthogonal to the primary one)
          * @param geometricOrigin geometric origin of the molecule which can be different that the mass centre
+         * @param volume volume of the shape
          * @param customNamedPoints custom named points in addition to default ones (see
          * PolyspherocylinderGeometry::getNamedPoint)
          */

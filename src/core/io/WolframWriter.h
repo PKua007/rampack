@@ -45,6 +45,7 @@ public:
     /**
      * @brief Creates the class.
      * @param style style of the output
+     * @param params auxiliary parameters passed to Wolfram ShapePrinter
      */
     explicit WolframWriter(WolframStyle style = WolframStyle::STANDARD, std::map<std::string, std::string> params = {})
         : style{style}, params{std::move(params)} { }

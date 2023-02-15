@@ -55,6 +55,7 @@ public:
      * described.
      * @param lattice lattice to be transformed. Is has to be both regular and normalized. The resulting lattice remains
      * regular, but may no longer be normalized if transformShape() places the shape outside of a unit cell
+     * @param shapeTraits ShapeTraits of the shape residing in the lattice.
      */
     void transform(Lattice &lattice, const ShapeTraits &shapeTraits) const final;
 };
