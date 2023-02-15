@@ -322,17 +322,13 @@ namespace {
         auto moveThreadsMax = MatcherString("max")
             .mapTo([](const std::string&) -> std::size_t { return OMP_MAXTHREADS; });
         auto moveThreadsInt = MatcherInt{}
-            .inRange(1, OMP_MAXTHREADS)
+            .positive()
             .mapTo<std::size_t>();
         return moveThreadsMax | moveThreadsInt;
     }
 
     MatcherArray create_domain_divisions() {
         return MatcherArray(MatcherInt{}.positive().mapTo<std::size_t>(), 3)
-            .filter([](const ArrayData &array) {
-                auto stdArray = array.asStdArray<std::size_t, 3>();
-                return std::accumulate(stdArray.begin(), stdArray.end(), 1, std::multiplies<>{}) <= OMP_MAXTHREADS;
-            })
             .mapToStdArray<std::size_t, 3>();
     }
 

@@ -100,9 +100,6 @@ namespace {
 
         std::size_t numDomains = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies<>{});
         ValidateMsg(numDomains > 0, "Number of domains should be positive");
-        ValidateMsg(numDomains <= static_cast<std::size_t>(OMP_MAXTHREADS),
-                    "Number of domains cannot be larger than number of available threads ("
-                    + std::to_string(OMP_MAXTHREADS) + ")");
 
         return domainDivisions;
     }
@@ -116,9 +113,6 @@ namespace {
         else
             scalingThreads = std::stoul(scalingThreadsStr);
         ValidateMsg(scalingThreads > 0, "Number of scaling threads should be positive");
-        ValidateMsg(scalingThreads <= static_cast<std::size_t>(OMP_MAXTHREADS),
-                    "Number of scaling threads cannot be larger than number of available threads ("
-                    + std::to_string(OMP_MAXTHREADS) + ")");
         return scalingThreads;
     }
 
