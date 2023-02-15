@@ -42,6 +42,7 @@ public:
      * cell faces is increased by @a spacing (in the direction ortohgonal to the face).
      * @param lattice lattice to optimized. It can be either regular or irregular, but is has to be normalized (see
      * Lattice::normalize())
+     * @param shapeTraits ShapeTraits of the shape residing in the lattice.
      */
     void transform(Lattice &lattice, const ShapeTraits &shapeTraits) const override;
 };

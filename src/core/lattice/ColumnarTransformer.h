@@ -41,6 +41,7 @@ public:
      * from the constructor. This third relative coordinate is then translated by a random amount moving the whole
      * column. Coordinate normalization is performed if needed.
      * @param lattice lattice to be "columnarized". It has to be regular and normalized (see Lattice::normalize()).
+     * @param shapeTraits ShapeTraits of the shape residing in the lattice.
      */
     void transform(Lattice &lattice, const ShapeTraits &shapeTraits) const override;
 };
