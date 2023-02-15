@@ -21,8 +21,11 @@ private:
     double translationStepSize{};
     std::optional<double> rotationStepSize{};
     double maxTranslationStepSize{};
+    bool isMaxTranslationStepSizeImplicit{};
 
     void calculateRotationStepSizeIfNeeded(const Interaction &interaction);
+    void adjustMaxTranslationStepSize(const Packing &packing);
+    bool increaseTranslationStepSize();
 
 public:
    /**
