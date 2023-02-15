@@ -102,7 +102,8 @@ function _rampack {
 		"preview\:preview\ of\ the\ initial\ configuration"
 		"shape-preview\:preview\ of\ the\ shape"
 		"trajectory\:visualization\ and\ analysis\ of\ recorded\ trajectories"
-		{-h,--help}"\:general\ help"
+		{-h,--help,help}"\:general\ help"
+		{-v,--version,version}"\:shows\ current\ version"
 	)
 
 	_arguments \

@@ -278,7 +278,7 @@ _rampack() {
 		return
 	fi
 
-	COMPREPLY=($(compgen -W "casino preview shape-preview trajectory -h --help" -- "$cur"))
+	COMPREPLY=($(compgen -W "casino preview shape-preview trajectory -h --help help -v --version version" -- "$cur"))
 }
 
 
