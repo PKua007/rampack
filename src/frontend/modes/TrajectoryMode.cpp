@@ -58,8 +58,8 @@ int TrajectoryMode::main(int argc, char **argv) {
                              "-O (--observable)",
              cxxopts::value<std::string>(obsOutputFilename))
             ("O,observable", "replays the simulation and calculates specified observables (format as in the input file). "
-                             "Observables can be passed using multiple options (-o obs1 -o obs2) or pipe-separated in a "
-                             "single one (-o 'obs1|obs2'). It is advisable to put the argument in '...' to escape shell "
+                             "Observables can be passed using multiple options (-O obs1 -O obs2) or pipe-separated in a "
+                             "single one (-O 'obs1|obs2'). It is advisable to put the argument in '...' to escape shell "
                              "special characters '()\"\"|'",
              cxxopts::value<std::vector<std::string>>(observables))
             ("b,output-bulk-obs", "calculate bulk observables and output them to the file with a name given by the "
@@ -68,8 +68,8 @@ int TrajectoryMode::main(int argc, char **argv) {
                                   "are specified using -B (--bulk-observable)",
              cxxopts::value<std::string>(bulkObsOutputFilename))
             ("B,bulk-observable", "replays the simulation and calculates specified bulk observables (format as in the "
-                                  "input file). Observables can be passed using multiple options (-o obs1 -o obs2) "
-                                  "or pipe-separated in a single one (-o 'obs1|obs2'). It is advisable to put the argument "
+                                  "input file). Observables can be passed using multiple options (-B obs1 -B obs2) "
+                                  "or pipe-separated in a single one (-B 'obs1|obs2'). It is advisable to put the argument "
                                   "in '...' to escape shell special characters '()\"\"|'",
              cxxopts::value<std::vector<std::string>>(bulkObservables))
             ("a,averaging-start", "specifies when the averaging starts. It is used for bulk observables",

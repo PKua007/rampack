@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "frontend/modes/HelpMode.h"
+#include "frontend/modes/VersionMode.h"
 #include "frontend/modes/CasinoMode.h"
 #include "frontend/modes/PreviewMode.h"
 #include "frontend/modes/ShapePreviewMode.h"
@@ -50,8 +51,10 @@ namespace {
     }
 
     int handle_commands(const std::string &cmd, const std::string &mode, int argc, char **argv) {
-        if (mode == "-h" || mode == "--help")
-            return HelpMode(logger).main(argc, argv);
+        if (mode == "-h" || mode == "--help" || mode == "help")
+            return HelpMode(logger, cmd).main(argc, argv);
+        else if (mode == "-v" || mode == "--version" || mode == "version")
+            return VersionMode(logger).main(argc, argv);
         else if (mode == "casino")
             return CasinoMode(logger).main(argc, argv);
         else if (mode == "preview")

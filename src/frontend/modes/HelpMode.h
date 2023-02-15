@@ -10,8 +10,11 @@
 
 
 class HelpMode : public ModeBase {
+private:
+    std::string cmd;    // Original cmd (not argv[0], which is now cmd + mode combined)
+
 public:
-    explicit HelpMode(Logger &logger) : ModeBase(logger) { }
+    explicit HelpMode(Logger &logger, std::string cmd) : ModeBase(logger), cmd{std::move(cmd)} { }
 
     int main(int argc, char **argv);
 };
