@@ -1,4 +1,6 @@
 .idea/
 .DS_Store
 cmake-build-*/
-doc/
+build/
+poc/
+doxygen-doc/
