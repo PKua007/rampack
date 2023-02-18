@@ -17,9 +17,10 @@ library (later also with Python bindings) in a near future.
 
 ## Quickstart
 
-Each release of RAMPACK contains both a compiled binary and a source code. It is recommended to compile it from source
-to fully utilize native CPU optimizations. The project uses CMake build system. To prepare build infrastructure for the
-`Release` build in the `build` folder, go to the project's root folder and execute
+Each release of RAMPACK contains both a compiled binary and a source code. The compiled binary is ready to be used out
+of the box. However, it is recommended to compile it from source to fully utilize native CPU optimizations. The project
+uses CMake build system. To prepare build infrastructure for the `Release` build in the `build` folder, go to the
+project's root folder and execute
 
 ```shell
 mkdir build
@@ -71,15 +72,10 @@ A general built-in help is available under `rampack --help`. Mode-specific guide
 `rampack [mode] --help`. `rampack --version` shows a current version. In-detail descriptions of all modes can be found
 in [Operation modes](doc/operation-modes.md).
 
+## Tutorial and full reference
 
-```shell
-cd [build folder]/test
-ctest --extra-verbose
-```
-
-## Full reference
-
-Full documentation and tutorials can be found in [Reference](doc/reference.md).
+Full documentation can be found in [Reference](doc/reference.md). A summary of the most important aspects can be found
+in the [Tutorial](doc/tutorial.md).
 
 ## Contribution
 
