@@ -17,33 +17,14 @@ library (later also with Python bindings) in a near future.
 
 ## Quickstart
 
-Each release of RAMPACK contains both a compiled binary and a source code. The compiled binary is ready to be used out
-of the box. However, it is recommended to compile it from source to fully utilize native CPU optimizations. The project
-uses CMake build system. To prepare build infrastructure for the `Release` build in the `build` folder, go to the
-project's root folder and execute
+Each release of RAMPACK contains both a compiled binary `rampack` and a source code. The compiled binary is ready to be
+used out of the box. However, it is recommended to compile it from source to fully utilize native CPU optimizations. See 
+[this](doc/tutorial.md#installation) for the details. If you choose the first option, you can add the folder containing
+the `rampack` binary to your `$PATH` to be able to skip the leading `./` when executing. `bash` and `zsh` autocompletion
+scripts are bundled. They  are installed automatically when compiled from source.
 
-```shell
-mkdir build
-cd build
-cmake ../
-```
-
-GCC/Clang with C++17 support is required (at least version 7 in both cases). Apple Silicon is also supported (without
-OpenMP). CMake should find an available compiler by itself. If it fails, or you want to manually specify which one to
-use, it can be done using `-DCMAKE_C_COMPILER=...`, `-DCMAKE_CXX_COMPILER=...` CMake options.
-
-Now, in the `build` folder, execute
-
-```shell
-cmake --build .
-sudo cmake --build . --target install
-```
-
-This will compile and install RAMPACK together with `bash` and `zsh` autocompletion in `/usr/local` subfolders. Install
-prefix can be appending  `-DCMAKE_INSTALL_PREFIX=/prefix/path` CMake option when executing the first CMake command to
-prepare the build.
-
-Installation can be validated using sample input files provides in `sample_inputs` folder. For example:
+We provided a few sample input files in the `sample_inputs` folder. They can be used to verify that the software is
+working correctly and are a good learning materials. For example,
 
 ```shell
 rampack casino -i integration.pyon
