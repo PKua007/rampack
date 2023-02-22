@@ -22,6 +22,7 @@
   * [Class `delta_v`](#class-deltav)
   * [Class `linear`](#class-linear-1)
   * [Class `log`](#class-log)
+  * [Class `delta_triclinic`](#class-deltatriclinic)
   * [Class `disabled`](#class-disabled)
 
 ## PYON format
@@ -252,6 +253,9 @@ Arguments:
   
   For an orthorhombic (cuboidal) box, it reduces to walls orthogonal to, respectively, x, y and z axis.
 
+  **IMPORTANT**: toggling the wall on **DOES NOT** automatically disable box scaling in this direction. It has to be
+  specified manually in `box_move_type` (see [class `linear`](#class-linear-1) nad [class `log`](#class-log)).
+
 * ***box_move_threads*** (*= 1*)
 
   If Integer, is specifies how many OpenMP threads should be used to perform box scaling moves. One can also pass a
@@ -471,11 +475,59 @@ There are the following particle move types:
 
 ### Class `translation`
 
+```python
+translation(
+    step,
+    max_step = None
+)
+```
+
+Monte Carlo move doing only translations. If current step size is equal *current_step*, random translation is
+constructed by sampling random coordinates of the translation vector from the uniform interval
+[-*current_step*, *current_step*] (each coordinate is independent). `step` controls the initial value of *current_step*,
+while `max_step` imposes an upper limit on it. If `None`, the upper limit is half of the smallest height of the
+simulation box.
+
 ### Class `rotation`
+
+```python
+rotation(
+    step
+)
+```
+
+Monte Carlo move doing only rotation. If current step size is equal *current_step*, random rotation is constructed by
+selecting a random rotation axis and performing the rotation around this axis with the rotation angle selected uniformly
+from the interval [-*current_step*, *current_step*]. `step` is the initial value of *current_step*.
 
 ### Class `rototranslation`
 
+```python
+rototranslation(
+    trans_step,
+    rot_step,
+    max_trans_step = None
+)
+```
+
+Monte Carlo move performing translation and rotation at the same time. Random perturbations are chosen in the same way
+as in [class `translation`](#class-translation) and [class `rotation`](#class-rotation), with
+`trans_step` and `max_trans_step` having the same meaning as `step` and `max_step` arguments of
+[class `translation`](#class-translation) and `rot_step` the same meaning as `step` argument of
+[class `rotation`](#class-rotation). It should be noted that the step sizes of translation and rotation components are
+adjusted at the same time and their ratio remains constant.
+
 ### Class `flip`
+
+```python
+flip(
+    every = 10
+)
+```
+
+Monte Carlo move performing the flip, which is a half rotation around particle's [secondary axis](shapes.md#geometry).
+`every` controls how often the flip is performed. For example, its default value `10` means that in a full single MC
+cycle for 10% of all particles flip move will be attempted (and accepted according to Metropolis criterion).
 
 ## Box move types
 
@@ -483,12 +535,102 @@ There are the following box move types:
 * [Class `delta_v`](#class-deltav)
 * [Class `linear`](#class-linear-1)
 * [Class `log`](#class-log)
+* [Class `delta_triclinic`](#class-deltatriclinic)
 * [Class `disabled`](#class-disabled)
+
+Box move types are able to relax the system to a varying degree. `delta_v` type relaxes only the system pressure
+(trace of the stress tensor) realizing the standard NpT ensemble. `linear` and `log` types may be anisotropic, which
+additionally relaxes the diagonal part of stress tensor, which is required for structures with macroscopic periods.
+`delta_triclinic` type relaxes the whole stress tensor, thus realizing the so called isobaric-isotension ensemble and is
+very useful when simulating crystalline structures.
 
 ### Class `delta_v`
 
+```python
+delta_v(
+    step
+)
+```
+
+Monte Carlo move performing isotropic box scaling. The scaling factor is calculated based on an absolute box volume
+change chosen at random. If current step size is equal *current_step*, volume change is sampled uniformly from the
+interval [-*current_step*, *current_step*].
+
 ### Class `linear`
+
+```python
+linear(
+    spec,
+    step,
+    independent = False
+)
+```
+
+General anisotropic scaler preserving angles between box walls, perturbing it in a linear manner. More precisely, it
+operates only on the heights of box vectors. If current step size is equal *current_step*, a random number *Delta_h* is
+sampled uniformly from [-*current_step*, *current_step*] interval and the length of the given box height is changed by
+*Delta_h*.
+
+Initial step size is given by `step`. `spec` is a String which specifies which box height are perturbed and if the
+perturbations are independent or not. Independent heights are perturbed using independent *Delta_h* random numbers,
+while dependent height using the same one. There are 5 predefined values of `spec`:
+
+* `spec = "isotropic"` - all heights are dependent and scaled at one (a cubic box remains cubic)
+* `spec = "anisotropic x"`, `"anisotropic y"`, `"anisotropic z"` - one direction is scaled independently of the two
+  other, dependent ones (tetrahedral box remains tetrahedral)
+* `spec = "anisotropic xyz"` - all directions are independent
+
+One can also manually specify the scaling directions. `spec` should then be a string containing all 3 axes: `"x"`,
+`"y"`, `"z"`. By default, all are independent. To make 2 axes dependent, they should be put into parentheses `"()"`. If
+the direction should not be scaled at all, it must be put into square brackets `"[]"`. For example:
+
+* `spec = "(zx)[y]"` - x and z direction are dependent, and y is not scaled at all
+* `spec = "xyz"` - `"anisotropic xyz"` equivalent
+* `spec = "(xyz)"` - `"isotropic"` equivalent
+
+The last argument, `intependent` specifies if independent scaling factors should be sampled in one move (`False`), or
+only one independent group at once (`True`). For example, for `spec = "x(yz)"`:
+
+* if `independent = True`, a single move is either scaling only x direction or scaling y and z at one (using a single
+  *Delta_h*)
+* if `independent = False`, a single move is scaling all directions at one, but x is scaled using one *Delta_h* random
+  number, while y and z using a different, independently sampled *Delta_h*
 
 ### Class `log`
 
+```python
+linear(
+    spec,
+    step,
+    intependent = False
+)
+```
+
+General anisotropic scaler preserving angles between box walls, perturbing it in a logarithmic manner. `spec` and
+`independent` arguments have identical meanings as [class `linear`](#class-linear), but the way of perturbing heights is
+different. Here, *Delta_h* is also sampled from [-*current_step*, *current_step*] interval, but instead of adding it
+to the height, it is multiplied by a factor exp(*Delta_h*).
+
+### Class `delta_triclinic`
+
+```python
+delta_triclinic(
+    step,
+    independent = False
+)
+```
+
+Box updater which perturbs both lengths and direction of box vectors. If current step size is equal *current_step*, each
+coordinate of a given box vector is perturbed by an independent random number uniformly sampled from
+[-*current_step*, *current_step*] interval. `step` specifies the initial value of *current_step*. If `independent` is
+`True`, only a single, randomly chosen box vector is perturbed in a single box move. Otherwise, all are perturbed at
+once, however using independent random numbers.
+
 ### Class `disabled`
+
+```python
+disabled( )
+```
+
+Disables box scaling. As a consequence, box remains constant, thus NVT simulation is performed. `pressure` becomes
+redundant and can be left out of the simulation environment
