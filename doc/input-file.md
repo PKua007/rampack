@@ -85,12 +85,17 @@ PYON has primitive values and data structures known from Python. Those are:
 * Objects
 
   ```python
-  foo(1, 3)
-  bar(a=True, b=False)
-  baz("abc", param=1)
+  # argument names: foo(arg1, arg2, arg3)
+  foo(1, 2, 3)         
+  foo(arg3=3, arg1=1, arg2=2)
+  foo(1, arg3=3, arg2=2)
   ```
   
-  When the object construction does not take any arguments, `()` may be omitted
+  Arguments' semantics is closely modelled on Python object constructors. Normal arguments are positional, which means
+  that they have to be passed in a specific order if the name is not specified explicitly. However, when one uses
+  the keyword syntax `key=value`, the order is arbitrary as long as all are specified. Positional and keyword styles may
+  be mixed - first few positional arguments may be given in a correct order without names, and remaining one in any
+  order using keyword style. When the object construction does not take any arguments, `()` may be omitted
 
   ```python
   foobar
@@ -169,7 +174,12 @@ rampack(
 )
 ```
 
+It is the main class enclosing all simulation details and all runs. It creates the initial box with particles and
+has its own *simulation environment* (see [Simulation pipeline](#simulation-pipeline)), which is later combined with
+first run's *simulation environment*.
+
 Arguments:
+
 * ***version***
 
   It specifies the minimal required version of RAMPACK the input file can run on. Supported formats:
@@ -358,9 +368,138 @@ integration(
 )
 ```
 
+Run type performing Monte Carlo sampling. It consists of the thermalization phase and the averaging phase. During both
+phases, various types of auxiliary data, such as simulation trajectory or observable values are gathered and processed.
+Many parameters of the Monte Carlo algorithm may be tweaked, including particle's shape, interaction type, presence of
+hard walls and types of particle of box perturbation moves.
+
 Arguments:
 
-...
+* ***run_name***
+
+  String with user-specified, unique name of the run.
+
+* ***thermalization_cycles***
+
+  Integer representing number of cycles that should be performed in the thermalization phase. If the thermalization
+  phase should be skipped, you should pass `None`.
+
+* ***averaging_cycles***
+
+  Integer representing number of cycles that should be performed in the averaging phase. If the averaging phase should
+  be skipped, you should pass `None`.
+
+* ***snapshot_every***
+
+  Integer representing how often snapshots should be taken (for `record_trajectory` and`observables`) in both simulation
+  phases. It should divide `thermalization_cycles` and `averaging_cycles` without reminder.
+
+* ***temperature*** (*= None*)
+
+  The temperature of the NpT/NVT simulation. It may be a constant Float or a [dynamic parameter](#dynamic-parameters).
+  It is a part of the *simulation environment* (see [Simulation pipeline](#simulation-pipeline)). If `None`, the value
+  from the previous run (or from [class `rampack`](#class-rampack) arguments) is reused.
+
+* ***pressure*** (*= None*)
+
+  The pressure of the NpT simulation. It may be a constant Float or a [dynamic parameter](#dynamic-parameters). It is a
+  part of the *simulation environment* (see [Simulation pipeline](#simulation-pipeline)). If `None`, the value from the
+  previous run (or from [class `rampack`](#class-rampack) arguments) is reused.
+
+* ***move_types*** (*= None*)
+
+  The array of Monte Carlo particle moves that should be performed during the simulation. Available move types are
+  described [below](#particle-move-types). It is a part of the *simulation environment* (see
+  [Simulation pipeline](#simulation-pipeline)). If `None`, the value from the  previous run (or from
+  [class `rampack`](#class-rampack) arguments) is reused.
+
+* ***box_move_type*** (*= None*)
+
+  The type of move applied to the simulation box. Available move types are described [below](#box-move-types). Notably,
+  using [class `disabled`](#class-disabled) turns off box updating, which means the simulation is of NVT type
+  (`pressure` is ignored and may be `None`). It is a part of the *simulation environment* (see
+  [Simulation pipeline](#simulation-pipeline)). If `None`, the value from the  previous run (or from
+  [class `rampack`](#class-rampack) arguments) is reused.
+
+* ***averaging_every*** (*= 0*)
+
+  How often average value should be taken (for `averages_out` and `bulk_observables`) in the averaging phase. It should
+  divide `averaging_cycles` without remainder.
+
+* ***inline_info_every*** (*= 100*)
+
+  How often inline info should be printed to the standard output. This includes current cycle number and values of
+  observables with an `inline` scope.
+
+* ***orientation_fix_every*** (*= 10000*)
+
+  How often rotation matrices should be renormalized. This is needed because they gather numerical errors after numerous
+  matrix multiplications during the simulation. Unless you have a good reason to change it, the default value of `10000`
+  should be left as it is.
+
+* ***output_last_snapshot*** (*= []*)
+
+  The array of formats in which the last snapshot should be stored after the simulation. For example
+
+  ```python
+  output_last_snapshot = [ramsnap("packing.ramsnap")]
+  ```
+  
+  will store RAMSNAP representation to the file `packing.ramsnap`.
+  See [Last snapshot writers](output-formats.md#last-snapshot-writers) for more information.
+
+* ***record_trajectory*** (*= []*)
+
+  The array of formats in which the trajectory should be stored during the simulation. For example
+
+  ```python
+  record_trajectory = [ramtrj("trajectory.ramtrj")]
+  ```
+  
+* will store RAMTRJ trajectorry to the file `trajectory.ramtrj`.
+  See [Trajectory writers](output-formats.md#trajectory-writers) for more information.
+
+* ***averages_out*** (*= None*)
+
+  The name of file to which observable averages should be stored. They are gathered in the averaging phase for
+  observables with `averaging` scope. If the file does not exist, it is created. Otherwise, new row with
+  averages is appended at the end. See [Observable averages](output-formats.md#observable-averages) for more
+  information.
+
+* ***observables*** (*= []*)
+
+  The array of observables which should be computed during the simulation. Observables have 3 scopes: `snapshot`,
+  `inline` and `averaging`. `snapshot` observable values are printed out to `observables_out` every `snapshot_every`
+  cycles, `inline` observables values are included in a simulation state line printed to the standard output, while
+  `averaging` observables are averaged in the averaging phase and printed to `averages_out`. By default, observable is
+  in all three scopes. To manually select the scope, one can use [class `scoped`](observables.md#class-scoped). For
+  example
+
+  ```python
+  observables = [packing_fraction, scoped(nematic_order, inline=True)]
+  ```
+  
+  means that [class `packing_fraction`](observables.md#class-packingfraction) is in all scopes, while
+  [class `nematic_order`](observables.md#class-nematicorder) only in the `inline` scope. See
+  [Observables](observables.md) for more information and a full list of available observables.
+
+* ***observables_out*** (*= None*)
+
+  Name of the file where observable snapshots will be stored every `snapshot_every` cycles.
+
+* ***bulk_observables*** (*= []*)
+
+  The array of bulk observables that will be computed in the averaging phase. Bulk observables are more complex than
+  normal observables, thus they are stored in separate files specified by `bulk_observables_out_pattern`. They are
+  gathered and averaged in the averaging phase every `averaging_every` cycles. See [Observables](observables.md) for
+  more information and a full list of available bulk observables.
+
+* ***bulk_observables_out_pattern*** (*= None*)
+
+  Name pattern for files to store bulk observables. If the pattern contains `{}`, it is replaced by the name of bulk
+  observable it is going to store. For example, for `bulk_observables_out_pattern = "{}_out.txt"`, bulk observable named
+  `rho` will be stored to a file named `rho_out.txt`. If `{}` is missing, `_{}.txt` is inserted at the end of the
+  pattern. Thus, if `bulk_observables_out_pattern = "out"`, `rho` bulk observable will be stored to `out_rho.txt`.
 
 ### Class `overlap_relaxation`
 
@@ -383,10 +522,69 @@ overlap_relaxation(
 )
 ```
 
+Run type where the overlaps of particles are slowly eliminated by rewarding Monte Carlo moves which decrease the number
+of overlaps and penalizing ones which introduce them. A large part of the specification overlaps (pun not intended) with
+[class `integration`](#class-integration), however, most notably, the averaging phase is missing (so do all types of
+output tied to it, such as observable averages and bulk observables).
+
 Arguments:
 
-...
+* ***run_name***
 
+  See [class `integration`](#class-integration).
+
+* ***snapshot_every***
+
+  See [class `integration`](#class-integration).
+
+* ***temperature*** (*= None*)
+
+  See [class `integration`](#class-integration).
+
+* ***pressure*** (*= None*)
+
+  See [class `integration`](#class-integration).
+
+* ***move_types*** (*= None*)
+
+  See [class `integration`](#class-integration).
+
+* ***box_move_type*** (*= None*)
+
+  See [class `integration`](#class-integration).
+
+* ***inline_info_every*** (*= 100*)
+
+  See [class `integration`](#class-integration).
+
+* ***orientation_fix_every*** (*= 10000*)
+
+  See [class `integration`](#class-integration).
+
+* ***helper_shape*** (*= None*)
+
+  Helper shape used to speed up overlap relaxation by introducing soft repulsion. Its interaction is imposed on top of
+  original shape's interaction (although the original shape and helper shape DO NOT cross-interact). Technically it can
+  be any shape, however, to achieve the goal, its interaction should be zero whenever the original shapes are not
+  overlapping and be of repulsive soft-core type, when they are overlapping. A good choice is a sphere inscribed in the
+  original shape with soft repulsion, such as [class `square_inverse_core`](shapes.md#class-squareinversecore)
+  or [class `repulsive_lj`](shapes.md#class-repulsive_lj).
+
+* ***output_last_snapshot*** (*= []*)
+
+  See [class `integration`](#class-integration).
+
+* ***record_trajectory*** (*= []*)
+
+  See [class `integration`](#class-integration).
+
+* ***observables*** (*= []*)
+
+  See [class `integration`](#class-integration).
+
+* ***observables_out*** (*= None*)
+
+  See [class `integration`](#class-integration).
 
 ## Dynamic parameters
 
@@ -571,30 +769,40 @@ operates only on the heights of box vectors. If current step size is equal *curr
 sampled uniformly from [-*current_step*, *current_step*] interval and the length of the given box height is changed by
 *Delta_h*.
 
-Initial step size is given by `step`. `spec` is a String which specifies which box height are perturbed and if the
-perturbations are independent or not. Independent heights are perturbed using independent *Delta_h* random numbers,
-while dependent height using the same one. There are 5 predefined values of `spec`:
+Arguments:
 
-* `spec = "isotropic"` - all heights are dependent and scaled at one (a cubic box remains cubic)
-* `spec = "anisotropic x"`, `"anisotropic y"`, `"anisotropic z"` - one direction is scaled independently of the two
-  other, dependent ones (tetrahedral box remains tetrahedral)
-* `spec = "anisotropic xyz"` - all directions are independent
+* ***spec***
+ 
+  A String which specifies which box height are perturbed and if the 
+  perturbations are independent or not. Independent heights are perturbed using independent *Delta_h* random numbers, 
+  while dependent height using the same one. There are 5 predefined values of `spec`:
 
-One can also manually specify the scaling directions. `spec` should then be a string containing all 3 axes: `"x"`,
-`"y"`, `"z"`. By default, all are independent. To make 2 axes dependent, they should be put into parentheses `"()"`. If
-the direction should not be scaled at all, it must be put into square brackets `"[]"`. For example:
+  * `spec = "isotropic"` - all heights are dependent and scaled at one (a cubic box remains cubic)
+  * `spec = "anisotropic x"`, `"anisotropic y"`, `"anisotropic z"` - one direction is scaled independently of the two
+    other, dependent ones (tetrahedral box remains tetrahedral)
+  * `spec = "anisotropic xyz"` - all directions are independent
 
-* `spec = "(zx)[y]"` - x and z direction are dependent, and y is not scaled at all
-* `spec = "xyz"` - `"anisotropic xyz"` equivalent
-* `spec = "(xyz)"` - `"isotropic"` equivalent
+  One can also manually specify the scaling directions. `spec` should then be a string containing all 3 axes: `"x"`,
+  `"y"`, `"z"`. By default, all are independent. To make 2 axes dependent, they should be put into parentheses `"()"`.
+  If the direction should not be scaled at all, it must be put into square brackets `"[]"`. For example:
 
-The last argument, `intependent` specifies if independent scaling factors should be sampled in one move (`False`), or
-only one independent group at once (`True`). For example, for `spec = "x(yz)"`:
+  * `spec = "(zx)[y]"` - x and z direction are dependent, and y is not scaled at all
+  * `spec = "xyz"` - `"anisotropic xyz"` equivalent
+  * `spec = "(xyz)"` - `"isotropic"` equivalent
 
-* if `independent = True`, a single move is either scaling only x direction or scaling y and z at one (using a single
-  *Delta_h*)
-* if `independent = False`, a single move is scaling all directions at one, but x is scaled using one *Delta_h* random
-  number, while y and z using a different, independently sampled *Delta_h*
+* ***step***
+
+  Initial value of *current_step*.
+
+* ***intependent*** (*= False*)
+  
+  Specifies if independent scaling factors should be sampled in one move (`False`), or only one independent group at
+  once (`True`). For example, for `spec = "x(yz)"`:
+
+  * if `independent = True`, a single move is either scaling only x direction or scaling y and z at one (using a single
+    *Delta_h*)
+  * if `independent = False`, a single move is scaling all directions at one, but x is scaled using one *Delta_h* random
+    number, while y and z using a different, independently sampled *Delta_h*
 
 ### Class `log`
 
