@@ -5,6 +5,7 @@
 * [PYON format](#pyon-format)
 * [Input file structure](#input-file-structure)
   * [Class `rampack`](#class-rampack)
+  * [Simulation environment](#simulation-environment)
   * [Simulation pipeline](#simulation-pipeline)
 * [Run types](#run-types)
   * [Class `integration`](#class-integration)
@@ -28,12 +29,13 @@
 ## PYON format
 
 RAMPACK uses a custom-designed file format called PYON (PYthon Object Notation, inspired by JSON), which, as the name
-suggests, uses Python syntax to represent the data. The main reason that lead us to design this novel format instead of
+suggests, uses Python syntax to represent the data. The main reason that lead us to design this custom format instead of
 using existing ones (INI, JSON, YAML, etc.) was the object-oriented nature of the software. PYON input files resembles
 creating an object tree with `rampack` object at the top and that closely resembles how the software works internally.
 
 PYON has primitive values and data structures known from Python. Those are:
-* Integers:
+
+* Integer:
 
   ```python
   1
@@ -42,7 +44,7 @@ PYON has primitive values and data structures known from Python. Those are:
   0b10110110
   ```
 
-* Floats:
+* Float:
 
   ```python
   1.3
@@ -70,19 +72,19 @@ PYON has primitive values and data structures known from Python. Those are:
   "escaped charecters: \" \\ \n \t"
   ```
   
-* Arrays:
+* Array:
 
   ```python
   [1, "abc", None]
   ```
 
-* Dictionaries (only string keys supported):
+* Dictionary (only string keys supported):
 
   ```python
   {"abc": 1, "def": 1.2, "ghi": [1, 2, 3]}
   ```
 
-* Objects
+* Object (class)
 
   ```python
   # argument names: foo(arg1, arg2, arg3)
@@ -92,10 +94,11 @@ PYON has primitive values and data structures known from Python. Those are:
   ```
   
   Arguments' semantics is closely modelled on Python object constructors. Normal arguments are positional, which means
-  that they have to be passed in a specific order if the name is not specified explicitly. However, when one uses
-  the keyword syntax `key=value`, the order is arbitrary as long as all are specified. Positional and keyword styles may
-  be mixed - first few positional arguments may be given in a correct order without names, and remaining one in any
-  order using keyword style. When the object construction does not take any arguments, `()` may be omitted
+  that they have to be passed in a specific order depending on the class if the name is not specified explicitly.
+  However, when one uses the keyword syntax `key=value`, the order is arbitrary as long as all are specified. Positional
+  and keyword styles may be mixed - first few positional arguments may be given in a fixed order without their names,
+  and the remaining ones in any order using keyword style. When the object construction does not take any arguments,
+  `()` may be  omitted
 
   ```python
   foobar
@@ -103,7 +106,7 @@ PYON has primitive values and data structures known from Python. Those are:
   ```
   
   Object constructors support default values, variadic arguments and keyword variadic arguments. Argument specification
-  depends on the concrete class and is documented in this reference.
+  depends on a concrete class and is documented in this reference.
 
 * Python `#`-style comments are supported:
 
@@ -128,7 +131,7 @@ PYON has primitive values and data structures known from Python. Those are:
 ## Input file structure
 
 The input file contains a single rampack object with all necessary data passed as its arguments. Here is an exemplary
-input file used in the [Tutorial](tutorial.md)
+input file used in the [Tutorial](tutorial.md).
 
 ```python
 rampack(
@@ -153,6 +156,8 @@ rampack(
     ]
 )
 ```
+
+The rest of this reference document describes all aspects of the input file class by class.
 
 ### Class `rampack`
 
@@ -191,15 +196,15 @@ Arguments:
   ```
   The rule of thumb is that it should be set to a current version (which is 1.0) when creating the file and left
   unchanged. It is introduced as a safeguard to ensure that the input files produce replicable results and remain valid,
-  even if breaking changes are introduced in an update, as well as to prevent running it in older versions (where some
-  required features may be lacking). As RAMPACK is [versioned semantically](https://semver.org), all future 1.x versions
-  should not introduce any breaking changes, and we plan to retain support of 1.x input files if 2.0 is released in the
-  future (actually, we still support 0.x input files, even in an old INI format).
+  even if breaking changes are introduced in an update, as well as to prevent running it in older versions of RAMPACK
+  (where some required features may be lacking). As RAMPACK is [versioned semantically](https://semver.org), all future
+  1.x versions should not introduce any breaking changes, and we plan to retain support of 1.x input files if 2.0 is
+  released in the future (actually, we still support 0.x input files, even in an old INI format).
 
 * ***arrangement***
   
   Initial arrangement - it specifies the shape of a simulation box and positions and orientations of particles inside
-  it. It accepts objects of types: `lattice` and `presimulated`. Detailed description is available in
+  it. It accepts objects of types: `lattice` and `presimulated`. A detailed description is available in
   [Initial arrangement](initial-arrangement.md).
 
 * ***shape***
@@ -209,7 +214,7 @@ Arguments:
 
 * ***seed***
 
-  The integer being the seed of RNG. Simulation using the same domain specification (see `domain_divisions`), the same
+  The integer being the seed of RNG. Simulations using the same domain specification (see `domain_divisions`), the same
   seeds and RAMPACK version should produce identical results.
 
 * ***runs***
@@ -221,39 +226,37 @@ Arguments:
   runs = [overlap_relaxation(...), integration(...)]
   ```
   
-  first performs some overlap relaxation run, and then and integration run. Both types of runs:
-  [integration](#class-integration), [overlap_relaxation](#class-overlaprelaxation) are described below.
+  first performs an overlap relaxation run, and then an integration run. Both types of runs:
+  [class `integration`](#class-integration), [class `overlap_relaxation`](#class-overlaprelaxation) are described below.
 
 * ***temperature*** (*= None*)
 
   The temperature of the NpT/NVT simulation. It may be a constant Float or a [dynamic parameter](#dynamic-parameters).
-  It is a part of the *simulation environment* (see [Simulation pipeline](#simulation-pipeline)). If `None`, it is left
-  unspecified (*incomplete simulation environment*).
+  It is a part of the [Simulation environment](#simulation-environment). If `None`, it is left unspecified (*incomplete
+  simulation environment*).
 
 * ***pressure*** (*= None*)
 
   The pressure of the NpT simulation. It may be a constant Float or a [dynamic parameter](#dynamic-parameters). It is a
-  part of the *simulation environment* (see [Simulation pipeline](#simulation-pipeline)). If `None`, it is left
-  unspecified (*incomplete simulation environment*).
+  part of the [Simulation environment](#simulation-environment). If `None`, it is left unspecified (*incomplete
+  simulation environment*). It is ignored in the NVT run - when `box_move_type` is [class `disabled`](#class-disabled).
 
 * ***move_types*** (*= None*)
 
-  The array of Monte Carlo particle moves that should be performed during the simulation. Available move types are
-  described [below](#particle-move-types). It is a part of the *simulation environment*
-  (see [Simulation pipeline](#simulation-pipeline)). If `None`, it is left unspecified
-  (*incomplete simulation environment*).
+  The Array of Monte Carlo particle moves that should be performed during the simulation. Available move types are
+  described [below](#particle-move-types). It is a part of the [Simulation environment](#simulation-environment). If
+  `None`, it is left unspecified (*incomplete simulation environment*).
 
 * ***box_move_type*** (*= None*)
 
   The type of move applied to the simulation box. Available move types are described [below](#box-move-types). Notably,
   using [class `disabled`](#class-disabled) turns off box updating, which means the simulation is of NVT type
-  (`pressure` is ignored and may be `None`). It is a part of the *simulation environment*
-  (see [Simulation pipeline](#simulation-pipeline)). If `None`, it is left unspecified
-  (*incomplete simulation environment*).
+  (`pressure` is ignored and may be `None`). It is a part of the [Simulation environment](#simulation-environment). If
+  `None`, it is left unspecified (*incomplete simulation environment*).
 
 * ***walls*** (*= [False, False, False]*)
 
-  An array of Booleans, which specifies which box walls should be hard (non-penetrable by hard particles). `True` means
+  An aArray of Booleans that specifies which box walls should be hard (non-penetrable by hard particles). `True` means
   that the wall is on, `False` otherwise. If the box vectors are denoted as *v1*, *v2* and *v3*, subsequent array
   indices correspond to box walls spanned by vectors:
 
@@ -274,22 +277,39 @@ Arguments:
 
 * ***domain_divisions*** (*= [1, 1, 1]*)
 
-  An array of integers specifysing how many domains in each direction should be used to parallelize particle moves.
+  An Array of integers specifysing how many domains in each direction should be used to parallelize particle moves.
   Total number of domains (thus, total number of OpenMP threads used) is a product of the elements. The box should be
-  partitioned in such a way, that the domain dimensions are as large as possible to reduce the size of the ghost layers
-  between the domains. For example, it is better to partition a cubic box into 2 x 2 x 2 domains instead of 1 x 1 x 8.
-  The minimal dimension of a domain in any direction should be at least 2 times the *total interaction range*, which
-  is displayed at the start of the simulation in the `casino` mode, or can be checked using
-  [`shape-preview` mode](operation-modes.md#shape-preview-mode).
+  partitioned in such a way, that the domain dimensions are as large as possible. That way, the size of the ghost layers
+  between the domains where the particles are frozen is reduced to minimum. For example, it is better to partition a
+  cubic box into 2 x 2 x 2 domains instead of 1 x 1 x 8. The minimal dimension of a domain in any direction should be at
+  least 2 times the *total interaction range*, which is displayed at the start of the simulation in the `casino` mode,
+  or can be checked using [`shape-preview` mode](operation-modes.md#shape-preview-mode). When a domain becomes too
+  narrow, RAMPACK automatically reduces the number of partitions.
 
 * ***handle_signals*** (*= True*)
   
   If `True`, `SIGINT` and `SIGTERM` will be captured and the simulation will be stopped, but all outputs will be
-  gracefully closes, final snapshots will be printed and performance info will be shown, as usual. It comes very handy
-  on computing cluster with a walltime, where you can usually send a signal to the job if it's about to be terminated.
-  You shouldn't really turn it off, unless you have a good reason for it (for example you are experimenting and don't
+  finalized and closed, final snapshots will be printed and performance info will be shown. It comes very handy on
+  computing cluster with a walltime, where you can usually send a signal to the job if it's about to be terminated. You
+  shouldn't really turn it off, unless you have a good reason for it (for example you are experimenting and don't
   want to overwrite the output files).
 
+
+### Simulation environment
+
+*Simulation environment* is composed of thermodynamic parameters and types of moves that are performed:
+
+* `temperature`
+* `pressure`
+* `move_types`
+* `box_move_type`
+
+Simulation environment is present in [class `rampack`](#class-rampack) and in all [Run types](#run-types). One can 
+specify any combination of those arguments (including none of them). When at least of them is `None`, the environment is
+called *incomplete*. Otherwise, it is *complete*. The only exception is when `box_move_type = disabled`. Then,
+simulation is of NVT type and parameter `pressure` is ignored (environment can be complet even if it is `None`). 
+Simulation environments can be combined. When it is done, all not-`None` components of a new environment overwrite the
+ones from the old environment, while for the `None` components the old ones are reused.
 
 ### Simulation pipeline
 
@@ -297,45 +317,47 @@ The `casino` mode parses the input file and performs a set simulations based on 
 are performed:
 
 1. Initial arrangement is created (simulation box together with particles). It is controlled by `arrangement` argument.
-   It can be creared procedurally or loaded from file (see below).
-2. Initial *simulation environment* is created. It is described by the arguments `temperature`, `pressure`, `move_types`
-   and `box_move_type`. One can specify any combination of those arguments (including none). Environment missing any of
-   them is called *incomplete*. The only exception is when `box_move_type = disabled`. Then, simulation is of NVT type
-   and parameter `pressure` is ignored, thus the environment may be complete even if `pressure = None`.
+2. Initial *simulation environment* is created (based on [class `rampack`](#class-rampack) arguments).
 3. The first run is performed (the first object in the array passed to `runs` argument). Run can be `integration` for a
-   standard Monte Carlo sampling or `overlap_relaxation` for a step-by-step elimination of overlaps:
-    * for `integration` run:
-        1. Run's simulation environment is prepared. It is defined using the same arguments as in the `rampack` class.
-           Their values override the ones appearing in the `rampack` class. It is important that the combined environment
-           is *complete*.
-        2. Run's thermalization phase is performed (its length is specified by `thermalization_cycles`). During
-           the thermalization phase, step sizes of all move types are tuned to reach 0.1-0.2 move acceptance ratio, which
-           was proven to be good for hard particles. If specified (`record_trajectory`), one or more trajectory formats
-           are saved to files on the fly. The same goes for observable snapshots (`observables`, `observables_out`).
-        3. Run's averaging phase is performed. Step size adjustment is turned off (to preserve full detailed balance).
-           Trajectory and observable snapshots continue to be recorded. On top of it, observables averages start being
-           gathered, if specified (`averages_out`) and bulk observables are collected (`bulk_observables`,
-           `bulk_observables_out_pattern`).
-        4. When the run is finished, observable averages, bulk observables and final snapshots (`output_last_snapshot`)
-           are stored.
-    * for `overlap_relaxation` run:
-        1. Simulation environment is prepared and combined in the same way as for `integration` run
-        2. The run is performed. There is no averaging phase (so neither observable averages nor bulk observables can be
-           collected). However, observable snapshots and trajectory recordings can be stored. During the run, moves
-           reducing number of overlaps are always accepted and ones introducing new overlaps are always rejected. Thus,
-           the number of overlaps declines over time.
-        3. The run is finished when all overlaps are eliminated. Final snapshots are stored.
-4. The next run from the array is performed:
-    1. The final state of the previous run becomes the initial state of this run.
-    2. Environment is prepared and combined with the environment from the previous run. Environment elements are reset
-       or not, depending on the context:
-        * if temperature/pressure is [dynamic](#dynamic-parameters) (depending on cycle number) it starts from the
-          beginning (from the  value for cycle 0), even if it was not overriden by `temperature`/`pressure` run argument.
-        * if `move_types`/`box_move_type` is not changes since the previous run, it remembers dynamically adjusted step
-          sizes from the previous run. If it is overriden, previous step sizes are lost (as they can be meaningless for
-          new move types)
-    3. The rest is the same as for the first run
-5. The previous step is repeated for all remaining runs
+   standard Monte Carlo sampling or `overlap_relaxation` for a step-by-step elimination of overlaps.
+
+   For `integration` run:
+   1. Run's simulation environment is prepared and combined with `rampack` environment. The combined environment
+      has to be *complete*.
+   2. Run's **thermalization phase** is performed (its length is specified by `thermalization_cycles`). During it,
+      the following operations are performed:
+      * step sizes of all move types are tuned to reach 0.1-0.2 move acceptance ratio, which was proven to be good
+        for hard particles
+      * if specified by `record_trajectory`, one or more trajectory formats are saved to files on the fly
+      * if specified by `observables` an `observables_out`, observable snapshots are stored on the fly
+   3. Run's **averaging phase** is performed:
+      * step size adjustment is turned off (to preserve full detailed balance)
+      * trajectory and observable snapshots continue to be recorded
+      * if specified by `averages_out`, observables averages are gathered
+      * if specified by `bulk_observables` and `bulk_observables_out_pattern`, bulk observables are collected
+   4. When the run is finished, observable averages, bulk observables and final snapshots (`output_last_snapshot`)
+      are stored. 
+   
+   For `overlap_relaxation` run:
+   1. Simulation environment is prepared and combined in the same way as for `integration` run.
+   2. The run is performed:
+      * moves reducing number of overlaps are always accepted and ones introducing new overlaps are always
+        rejected. Thus, the number of overlaps declines over time
+      * there is no averaging phase (so neither observable averages nor bulk observables can be
+        collected)
+      * observable snapshots and trajectory recordings can be stored
+   3. The run is finished when all overlaps are eliminated. Final snapshots are stored.
+4. The next run from the Array is performed:
+   1. The final state of the previous run becomes the initial state of this run.
+   2. Environment is prepared and combined with the environment from the previous run.
+   3. Environment elements are reset or not, depending on the context:
+      * if temperature/pressure is [dynamic](#dynamic-parameters) (depending on cycle number) it starts from the
+        beginning (from the value for cycle 0), even if it was not overriden by `temperature`/`pressure` run argument
+      * if `move_types`/`box_move_type` is not changed since the previous run, it remembers dynamically adjusted step
+        sizes from the previous run. If it is overriden, previous step sizes are lost (as they can be meaningless for
+        new move types)
+   4. The rest is the same as for the first run.
+5. The previous step is repeated for all remaining runs in the Array.
 
 ## Run types
 
@@ -371,7 +393,7 @@ integration(
 Run type performing Monte Carlo sampling. It consists of the thermalization phase and the averaging phase. During both
 phases, various types of auxiliary data, such as simulation trajectory or observable values are gathered and processed.
 Many parameters of the Monte Carlo algorithm may be tweaked, including particle's shape, interaction type, presence of
-hard walls and types of particle of box perturbation moves.
+hard walls and types of particle or box perturbation moves.
 
 Arguments:
 
@@ -392,23 +414,23 @@ Arguments:
 * ***snapshot_every***
 
   Integer representing how often snapshots should be taken (for `record_trajectory` and`observables`) in both simulation
-  phases. It should divide `thermalization_cycles` and `averaging_cycles` without reminder.
+  phases. It should divide `thermalization_cycles` and `averaging_cycles` without remainder.
 
 * ***temperature*** (*= None*)
 
   The temperature of the NpT/NVT simulation. It may be a constant Float or a [dynamic parameter](#dynamic-parameters).
-  It is a part of the *simulation environment* (see [Simulation pipeline](#simulation-pipeline)). If `None`, the value
-  from the previous run (or from [class `rampack`](#class-rampack) arguments) is reused.
+  It is a part of the [Simulation environment](#simulation-environment). If `None`, the value from the previous run (or
+  from [class `rampack`](#class-rampack) arguments) is reused.
 
 * ***pressure*** (*= None*)
 
   The pressure of the NpT simulation. It may be a constant Float or a [dynamic parameter](#dynamic-parameters). It is a
-  part of the *simulation environment* (see [Simulation pipeline](#simulation-pipeline)). If `None`, the value from the
-  previous run (or from [class `rampack`](#class-rampack) arguments) is reused.
+  part of the [Simulation environment](#simulation-environment). If `None`, the value from the previous run (or from
+  [class `rampack`](#class-rampack) arguments) is reused.
 
 * ***move_types*** (*= None*)
 
-  The array of Monte Carlo particle moves that should be performed during the simulation. Available move types are
+  The Array of Monte Carlo particle moves that should be performed during the simulation. Available move types are
   described [below](#particle-move-types). It is a part of the *simulation environment* (see
   [Simulation pipeline](#simulation-pipeline)). If `None`, the value from the  previous run (or from
   [class `rampack`](#class-rampack) arguments) is reused.
@@ -417,14 +439,14 @@ Arguments:
 
   The type of move applied to the simulation box. Available move types are described [below](#box-move-types). Notably,
   using [class `disabled`](#class-disabled) turns off box updating, which means the simulation is of NVT type
-  (`pressure` is ignored and may be `None`). It is a part of the *simulation environment* (see
-  [Simulation pipeline](#simulation-pipeline)). If `None`, the value from the  previous run (or from
-  [class `rampack`](#class-rampack) arguments) is reused.
+  (`pressure` is ignored and may be `None`). It is a part of the [Simulation environment](#simulation-environment). If
+  `None`, the value from the previous run (or from [class `rampack`](#class-rampack) arguments) is reused.
 
 * ***averaging_every*** (*= 0*)
 
   How often average value should be taken (for `averages_out` and `bulk_observables`) in the averaging phase. It should
-  divide `averaging_cycles` without remainder.
+  divide `averaging_cycles` without remainder. It can be equal 0 if the averaging phase is off
+  (`averaging_cycles = None`).
 
 * ***inline_info_every*** (*= 100*)
 
@@ -433,9 +455,9 @@ Arguments:
 
 * ***orientation_fix_every*** (*= 10000*)
 
-  How often rotation matrices should be renormalized. This is needed because they gather numerical errors after numerous
-  matrix multiplications during the simulation. Unless you have a good reason to change it, the default value of `10000`
-  should be left as it is.
+  How often rotation matrices should be renormalized. This is needed because they stockpile numerical errors after
+  numerous matrix multiplications during the simulation. Unless you have a good reason to change it, the default value
+  of `10000` should be left as it is.
 
 * ***output_last_snapshot*** (*= []*)
 
@@ -455,22 +477,22 @@ Arguments:
   ```python
   record_trajectory = [ramtrj("trajectory.ramtrj")]
   ```
-  
-* will store RAMTRJ trajectorry to the file `trajectory.ramtrj`.
-  See [Trajectory writers](output-formats.md#trajectory-writers) for more information.
+ 
+  will store RAMTRJ trajectory to the file `trajectory.ramtrj`. See
+  [Trajectory writers](output-formats.md#trajectory-writers) for more information.
 
 * ***averages_out*** (*= None*)
 
   The name of file to which observable averages should be stored. They are gathered in the averaging phase for
-  observables with `averaging` scope. If the file does not exist, it is created. Otherwise, new row with
+  observables with `averaging` scope. If the file does not exist, it is created. Otherwise, a new row with
   averages is appended at the end. See [Observable averages](output-formats.md#observable-averages) for more
   information.
 
 * ***observables*** (*= []*)
 
-  The array of observables which should be computed during the simulation. Observables have 3 scopes: `snapshot`,
+  The Array of observables which should be computed during the simulation. Observables have 3 scopes: `snapshot`,
   `inline` and `averaging`. `snapshot` observable values are printed out to `observables_out` every `snapshot_every`
-  cycles, `inline` observables values are included in a simulation state line printed to the standard output, while
+  cycles, `inline` observables' values are included in a simulation state line printed to the standard output, while
   `averaging` observables are averaged in the averaging phase and printed to `averages_out`. By default, observable is
   in all three scopes. To manually select the scope, one can use [class `scoped`](observables.md#class-scoped). For
   example
@@ -485,11 +507,12 @@ Arguments:
 
 * ***observables_out*** (*= None*)
 
-  Name of the file where observable snapshots will be stored every `snapshot_every` cycles.
+  String with a name of the file where values of `observables` in the `snapshot` scope snapshots will be stored every
+  `snapshot_every` cycles.
 
 * ***bulk_observables*** (*= []*)
 
-  The array of bulk observables that will be computed in the averaging phase. Bulk observables are more complex than
+  The Array of bulk observables that will be computed in the averaging phase. Bulk observables are more complex than
   normal observables, thus they are stored in separate files specified by `bulk_observables_out_pattern`. They are
   gathered and averaged in the averaging phase every `averaging_every` cycles. See [Observables](observables.md) for
   more information and a full list of available bulk observables.
@@ -648,20 +671,21 @@ piece(
 ```
 
 ***start*** is an Integer being the cycle number at which this piece begins and ***param*** is any static or dynamic
-parameter, that should be used starting from ***start***-th cycle. The cycle number which is seen by ***param*** is
-shifted so that it thinks that ***start***-th cycle is 0. The ***start*** of the first `piece` in `piecewise` object
-has to start from 0, and others' ***start***-s have to be in ascending order. To give an example:
+parameter (excluding `piecewise`), that should be used starting from ***start***-th cycle. The cycle number which is
+seen by ***param*** is shifted so that it thinks that ***start***-th cycle is 0. The ***start*** of the first `piece` in
+`piecewise` object has to be 0, and ***start*** arguments of the following ones have to be in ascending order. To give
+an example:
 
 ```python
 piecewise(
-    piece(0, 10),
+    piece(0, const(10)),  # could also be simply `piece(0, 10)`
     piece(1000, linear(slope=0.01, intercept=10)),
-    piece(2000)
+    piece(2000, const(20))
 )
 ```
 
-Here, for cycles 0-1000 the value is constant and equal 10, then between cycles 1000-2000 it grows linearly to 20 and
-then it once again stays constant.
+Here, for cycles 0-1000 the value is constant and equal 10, then between cycles 1000-2000 it grows linearly to 20, and
+then it once again is constant, this time indefinitely.
 
 ## Particle move types
 
@@ -680,8 +704,8 @@ translation(
 )
 ```
 
-Monte Carlo move doing only translations. If current step size is equal *current_step*, random translation is
-constructed by sampling random coordinates of the translation vector from the uniform interval
+Monte Carlo move performing only translations of particles. If current step size is equal *current_step*, random
+translation is constructed by sampling random coordinates of the translation vector from the uniform interval
 [-*current_step*, *current_step*] (each coordinate is independent). `step` controls the initial value of *current_step*,
 while `max_step` imposes an upper limit on it. If `None`, the upper limit is half of the smallest height of the
 simulation box.
@@ -694,9 +718,9 @@ rotation(
 )
 ```
 
-Monte Carlo move doing only rotation. If current step size is equal *current_step*, random rotation is constructed by
-selecting a random rotation axis and performing the rotation around this axis with the rotation angle selected uniformly
-from the interval [-*current_step*, *current_step*]. `step` is the initial value of *current_step*.
+Monte Carlo move performing only rotations of particles. If current step size is equal *current_step*, random rotation
+is constructed by selecting a random rotation axis and performing the rotation around this axis with the rotation angle
+selected uniformly from the interval [-*current_step*, *current_step*]. `step` is the initial value of *current_step*.
 
 ### Class `rototranslation`
 
@@ -725,7 +749,7 @@ flip(
 
 Monte Carlo move performing the flip, which is a half rotation around particle's [secondary axis](shapes.md#geometry).
 `every` controls how often the flip is performed. For example, its default value `10` means that in a full single MC
-cycle for 10% of all particles flip move will be attempted (and accepted according to Metropolis criterion).
+cycle for 10% of all particles flip move will be attempted (and accepted according to the Metropolis criterion).
 
 ## Box move types
 
@@ -766,16 +790,15 @@ linear(
 
 General anisotropic scaler preserving angles between box walls, perturbing it in a linear manner. More precisely, it
 operates only on the heights of box vectors. If current step size is equal *current_step*, a random number *Delta_h* is
-sampled uniformly from [-*current_step*, *current_step*] interval and the length of the given box height is changed by
-*Delta_h*.
+sampled uniformly from [-*current_step*, *current_step*] interval and the given box height is changed by *Delta_h*.
 
 Arguments:
 
 * ***spec***
  
-  A String which specifies which box height are perturbed and if the 
-  perturbations are independent or not. Independent heights are perturbed using independent *Delta_h* random numbers, 
-  while dependent height using the same one. There are 5 predefined values of `spec`:
+  A String which specifies which box heights are perturbed and if the perturbations are independent or not. Independent
+  heights are perturbed using independent *Delta_h* random numbers, while dependent heights using the same one. There
+  are 5 predefined values of `spec`:
 
   * `spec = "isotropic"` - all heights are dependent and scaled at one (a cubic box remains cubic)
   * `spec = "anisotropic x"`, `"anisotropic y"`, `"anisotropic z"` - one direction is scaled independently of the two
@@ -786,9 +809,10 @@ Arguments:
   `"y"`, `"z"`. By default, all are independent. To make 2 axes dependent, they should be put into parentheses `"()"`.
   If the direction should not be scaled at all, it must be put into square brackets `"[]"`. For example:
 
+  * `spec = "xyz"` - the same as `"anisotropic xyz"`
+  * `spec = "(xyz)"` - the same as `"isotropic"`
+  * `spec = "x(yz)"` - the same as `"anisotropic x"`
   * `spec = "(zx)[y]"` - x and z direction are dependent, and y is not scaled at all
-  * `spec = "xyz"` - `"anisotropic xyz"` equivalent
-  * `spec = "(xyz)"` - `"isotropic"` equivalent
 
 * ***step***
 
@@ -841,4 +865,4 @@ disabled( )
 ```
 
 Disables box scaling. As a consequence, box remains constant, thus NVT simulation is performed. `pressure` becomes
-redundant and can be left out of the simulation environment
+redundant and can be left out of the simulation environment.
