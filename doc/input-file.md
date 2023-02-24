@@ -1,5 +1,7 @@
 # Input file
 
+This reference page described the input file format and simulation pipeline.
+
 ## Contents
 
 * [PYON format](#pyon-format)
@@ -818,7 +820,7 @@ Arguments:
 
   Initial value of *current_step*.
 
-* ***intependent*** (*= False*)
+* ***independent*** (*= False*)
   
   Specifies if independent scaling factors should be sampled in one move (`False`), or only one independent group at
   once (`True`). For example, for `spec = "x(yz)"`:
@@ -834,7 +836,7 @@ Arguments:
 linear(
     spec,
     step,
-    intependent = False
+    independent = False
 )
 ```
 
