@@ -13,8 +13,8 @@
 void ColumnarTransformer::transform(Lattice &lattice, [[maybe_unused]] const ShapeTraits &shapeTraits) const {
     TransformerValidateMsg(lattice.isRegular(), "Columnar transformation can only be applied to a regular lattice");
     TransformerValidateMsg(lattice.isNormalized(),
-                           "Relative coordinates in unit cell must be in range [0, 1) to perform distance "
-                           "optimization");
+                           "Relative coordinates in unit cell must be in range [0, 1) to perform columnar "
+                           "transformation");
 
     const auto &unitCell = lattice.getUnitCell();
     auto columnAssociation = LatticeTraits::getColumnAssociation(unitCell, this->columnAxis);
