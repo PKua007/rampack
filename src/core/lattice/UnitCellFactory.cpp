@@ -14,7 +14,7 @@ UnitCell UnitCellFactory::createScCell(const std::array<double, 3> &linearSize) 
 }
 
 UnitCell UnitCellFactory::createScCell(double linearSize) {
-    return UnitCellFactory::createScCell({linearSize, linearSize, linearSize});
+    return UnitCellFactory::createScCell(TriclinicBox(linearSize));
 }
 
 UnitCell UnitCellFactory::createBccCell(const std::array<double, 3> &linearSize) {
@@ -25,8 +25,9 @@ UnitCell UnitCellFactory::createBccCell(const TriclinicBox &box) {
     return UnitCell(box, {Shape({0.25, 0.25, 0.25}), Shape({0.75, 0.75, 0.75})});
 }
 
-UnitCell UnitCellFactory::createBccCell(double linearSize) {
-    return UnitCellFactory::createBccCell({linearSize, linearSize, linearSize});
+UnitCell UnitCellFactory::createBccCell(double ballDiameter) {
+    double linearSize = 2 * ballDiameter / std::sqrt(3);
+    return UnitCellFactory::createBccCell(TriclinicBox(linearSize));
 }
 
 UnitCell UnitCellFactory::createFccCell(const TriclinicBox &box) {
@@ -38,7 +39,8 @@ UnitCell UnitCellFactory::createFccCell(const std::array<double, 3> &linearSize)
     return UnitCellFactory::createFccCell(TriclinicBox(linearSize));
 }
 
-UnitCell UnitCellFactory::createFccCell(double linearSize) {
+UnitCell UnitCellFactory::createFccCell(double ballDiameter) {
+    double linearSize = std::sqrt(2) * ballDiameter;
     return UnitCellFactory::createFccCell(TriclinicBox(linearSize));
 }
 

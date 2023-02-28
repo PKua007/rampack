@@ -93,18 +93,25 @@ signature. There are 3 available call signatures
    * ***cell_dim*** <a id="celldim"></a>
 
      Unit cell dimensions. It can be:
-     * Float, which specifies a side length of a cubic cell
+     * Float, which specifies a distance between the nearest neighbors.
        ```python
-       cell_dim = 10  # creates 10 x 10 x 10 cubic cell
+       #cell = sc
+       cell_dim = 1  # creates 1 x 1 x 1 simple cubic cell
+       
+       #cell = hcp(axis="z")
+       cell_dim = 1  # creates 1 x sqrt(3) x 2*sqrt(6)/3 hexagonal close packed cell
        ```
-     * Array of Floats, which specifies 3 side lenghts of an orthorhombic (cuboidal) cell
+       Please note that it does not necessarily create a cubic cell - the relative side dimensions depends on the cell
+       type.
+     * Array of Floats, which specifies 3 side lenghts of an orthorhombic (cuboidal) cell.
        ```python
-       cell_dim = [5, 10, 15]  # creates 5 x 10 x 15 cuboidal cell
+       cell_dim = [0.5, 1, 1.5]  # creates a 0.5 x 1 x 1.5 cuboidal cell
        ```
      * Array of Arrays of Floats, which gives explicit 3 unit cell vectors of a most general triclinic cell.
        ```python
        cell_dim = [[2, 0, 0], [0, 2, 0], [1, 0, 2]]   # creates a monoclinic cell leaning in x direction
        ```
+       
    * ***n_cells*** <a id="ncells"></a>
    
      Array of Integers specifying number of cells in each direction. For example
@@ -143,8 +150,19 @@ signature. There are 3 available call signatures
    
    * ***box_dim***
 
-     Dimensions of the simulation box. They are specified in the same way as [`cell_dim` argument](#celldim) of the
-     first call signature.
+     Dimensions of the simulation box. It can be:
+       * Float, which specifies a side length of a cubic box.
+         ```python
+         box_dim = 10  # creates a 10 x 10 x 10 box
+         ```
+       * Array of Floats, which specifies 3 side lenghts of an orthorhombic (cuboidal) cell.
+         ```python
+         box_dim = [5, 10, 15]  # creates a 5 x 10 x 15 orthorhombic (cuboidal) box
+         ```
+       * Array of Arrays of Floats, which gives explicit 3 unit cell vectors of a most general triclinic box.
+         ```python
+         box_dim = [[20, 0, 0], [0, 20, 0], [10, 0, 20]]   # creates a monoclinic box leaning in x direction
+         ```
 
    * ***n_shapes***
    

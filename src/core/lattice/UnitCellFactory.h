@@ -39,12 +39,12 @@ public:
     static UnitCell createBccCell(const std::array<double, 3> &linearSize);
 
     /**
-     * @brief Creates a body centered cubic cell with two particles, with a cube side length @a linearSize.
+     * @brief Creates a body centered cubic cell with two particles, with such a cube side length that the distance
+     * between the nearest neighbours is @a ballDiameter.
      * @details Particles are centered in the box (their cell vector coordinates are {0.25, 0.25, 0.25} and
      * {0.75, 0.75, 0.75}).
      */
-    static UnitCell createBccCell(double linearSize);
-
+    static UnitCell createBccCell(double ballDiameter);
 
     static UnitCell createFccCell(const TriclinicBox &box);
 
@@ -57,11 +57,12 @@ public:
     static UnitCell createFccCell(const std::array<double, 3> &linearSize);
 
     /**
-     * @brief Creates a face centered cubic cell with four particles, with a cube side length @a linearSize.
+     * @brief Creates a face centered cubic cell with four particles, with such a cube side length that the distance
+     * between the nearest neighbours is @a ballDiameter.
      * @details Particles are centered in the box (their cell vector coordinates are {0.25, 0.25, 0.25},
      * {0.25, 0.75, 0.75}, {0.75, 0.25, 0.75} and {0.75, 0.75, 0.25}).
      */
-    static UnitCell createFccCell(double linearSize);
+    static UnitCell createFccCell(double ballDiameter);
 
 
     static UnitCell createHcpCell(const TriclinicBox &box, LatticeTraits::Axis axis = LatticeTraits::Axis::Z);
