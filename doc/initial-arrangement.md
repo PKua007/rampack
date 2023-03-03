@@ -71,7 +71,8 @@ their orientations and relative positions in the cell. The shape of the cell is 
 automatically, depending on `lattice` arguments. `**kwargs` is a set of keyword arguments which depend on a given call
 signature. There are 3 available call signatures
 
-1. ```python
+1. call signature:
+   ```python
    lattice(
        cell,
        cell_dim,
@@ -129,7 +130,9 @@ signature. There are 3 available call signatures
      If specified, not all available particle slots in the lattice will be filled. The way they are filled is specified
      by a [lattice populator](#lattice-populators).
 
-2. ```python
+2. call signature:
+   
+   ```python
    lattice(
        cell,
        box_dim,
@@ -173,7 +176,9 @@ signature. There are 3 available call signatures
 
      An array of [lattice transformations](#lattice-transformers) which should be applied after creating the lattice.
    
-3. ```python
+3. call signature
+   
+   ```python
    lattice(
        cell,
        n_cells,
