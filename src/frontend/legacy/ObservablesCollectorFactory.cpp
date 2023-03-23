@@ -24,7 +24,7 @@
 #include "core/observables/correlation/LayerwiseRadialEnumerator.h"
 #include "core/observables/correlation/PairDensityCorrelation.h"
 #include "core/observables/correlation/PairAveragedCorrelation.h"
-#include "core/observables/correlation/S110Correlation.h"
+#include "core/observables/correlation_functions/S110Correlation.h"
 #include "core/observables/trackers/FourierTracker.h"
 
 #include "utils/Utils.h"

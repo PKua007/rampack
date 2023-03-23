@@ -6,7 +6,7 @@
 
 #include "mocks/MockShapeTraits.h"
 
-#include "core/observables/correlation/S110Correlation.h"
+#include "core/observables/correlation_functions/S110Correlation.h"
 
 
 TEST_CASE("S110Correlation") {

@@ -7,7 +7,7 @@
 
 #include <catch2/trompeloeil.hpp>
 
-#include "core/observables/correlation/CorrelationFunction.h"
+#include "core/observables/CorrelationFunction.h"
 
 
 class MockCorrelationFunction : public trompeloeil::mock_interface<CorrelationFunction> {
