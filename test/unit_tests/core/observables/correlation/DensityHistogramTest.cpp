@@ -11,6 +11,7 @@
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/shapes/SphereTraits.h"
 #include "core/observables/trackers/FourierTracker.h"
+#include "core/observables/shape_functions/ConstantShapeFunction.h"
 
 
 TEST_CASE("DensityHistogram") {
@@ -27,8 +28,8 @@ TEST_CASE("DensityHistogram") {
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     SphereTraits traits(0.5);
     Packing packing(box, std::move(shapes), std::move(pbc), traits.getInteraction());
-    auto densityFunction = [](const Shape &, const ShapeTraits &) -> double { return 1; };
-    auto tracker = std::make_unique<FourierTracker>(std::array<std::size_t, 3>{1, 0, 0}, densityFunction, "density");
+    auto densityFunction = std::make_shared<ConstantShapeFunction>();
+    auto tracker = std::make_unique<FourierTracker>(std::array<std::size_t, 3>{1, 0, 0}, densityFunction);
     DensityHistogram densityHistogram({10, 0, 10}, std::move(tracker));
 
     for (std::size_t i{}; i < 10; i++) {

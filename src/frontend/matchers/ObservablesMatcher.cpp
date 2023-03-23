@@ -27,8 +27,12 @@
 #include "core/observables/correlation/RadialEnumerator.h"
 #include "core/observables/correlation/LayerwiseRadialEnumerator.h"
 #include "core/observables/correlation/PairAveragedCorrelation.h"
-#include "core/observables/correlation_functions/S110Correlation.h"
 #include "core/observables/DensityHistogram.h"
+
+#include "core/observables/correlation_functions/S110Correlation.h"
+
+#include "core/observables/shape_functions/ConstantShapeFunction.h"
+#include "core/observables/shape_functions/ShapeAxisCoordinate.h"
 
 
 using namespace pyon::matcher;
@@ -36,11 +40,6 @@ using namespace pyon::matcher;
 namespace {
     using ObservableType = ObservablesCollector::ObservableType;
     using ObservableData = ObservablesMatcher::ObservableData;
-
-    struct FunctionData {
-        std::string shortName;
-        FourierTracker::Function function;
-    };
 
 
     constexpr auto FULL_SCOPE = ObservableType::SNAPSHOT_AVERAGING_INLINE;
@@ -66,8 +65,6 @@ namespace {
     std::shared_ptr<FourierTracker> do_create_fourier_tracker(const DataclassData &fourierTracker);
     MatcherDataclass create_fourier_tracker();
     MatcherDataclass create_fourier_tracker_observable();
-
-    FunctionData create_axis_function(ShapeGeometry::Axis axis, std::size_t component);
 
     MatcherAlternative create_bulk_observable_matcher(std::size_t maxThreads);
 
@@ -289,11 +286,8 @@ namespace {
         auto wavenumbers = positiveWavenumbers;
 
         auto constFunction = MatcherDataclass("const")
-            .mapTo([](const DataclassData&) -> FunctionData {
-                return {
-                    "const",
-                    [](const Shape&, const ShapeTraits&) { return 1; }
-                };
+            .mapTo([](const DataclassData&) -> std::shared_ptr<ShapeFunction> {
+                return std::make_shared<ConstantShapeFunction>();
             });
 
         auto axisComp = MatcherString{}
@@ -305,10 +299,10 @@ namespace {
         auto axisFunction = MatcherDataclass("axis")
             .arguments({{"which", shapeAxis},
                         {"comp",  axisComp}})
-            .mapTo([](const DataclassData &axis) -> FunctionData {
+            .mapTo([](const DataclassData &axis) -> std::shared_ptr<ShapeFunction> {
                 auto whichAxis = axis["which"].as<ShapeGeometry::Axis>();
                 auto axisComp = axis["comp"].as<std::size_t>();
-                return create_axis_function(whichAxis, axisComp);
+                return std::make_shared<ShapeAxisCoordinate>(whichAxis, axisComp);
             });
 
         auto function = constFunction | axisFunction;
@@ -320,8 +314,8 @@ namespace {
 
     std::shared_ptr<FourierTracker> do_create_fourier_tracker(const DataclassData &fourierTracker) {
         auto wavenumbers = fourierTracker["wavenumbers"].as<std::array<std::size_t, 3>>();
-        auto function = fourierTracker["function"].as<FunctionData>();
-        return std::make_shared<FourierTracker>(wavenumbers, function.function, function.shortName);
+        auto function = fourierTracker["function"].as<std::shared_ptr<ShapeFunction>>();
+        return std::make_shared<FourierTracker>(wavenumbers, function);
     }
 
     MatcherDataclass create_fourier_tracker() {
@@ -336,41 +330,6 @@ namespace {
             .mapTo([](const DataclassData &fourierTracker) -> ObservableData {
                 return {FULL_SCOPE, do_create_fourier_tracker(fourierTracker)};
             });
-    }
-
-    FunctionData create_axis_function(ShapeGeometry::Axis axis, std::size_t component) {
-        using Axis = ShapeGeometry::Axis;
-
-        FourierTracker::Function function;
-        std::string shortName;
-
-        switch (axis) {
-            case Axis::PRIMARY:
-                shortName = "pa_";
-                function = [component](const Shape &shape, const ShapeTraits &traits) {
-                    return traits.getGeometry().getPrimaryAxis(shape)[component];
-                };
-                break;
-
-            case Axis::SECONDARY:
-                shortName = "sa_";
-                function = [component](const Shape &shape, const ShapeTraits &traits) {
-                    return traits.getGeometry().getSecondaryAxis(shape)[component];
-                };
-                break;
-
-            case Axis::AUXILIARY:
-                shortName = "aa_";
-                function = [component](const Shape &shape, const ShapeTraits &traits) {
-                    return traits.getGeometry().getAuxiliaryAxis(shape)[component];
-                };
-                break;
-        }
-
-        auto compName = static_cast<char>('x' + component);
-        shortName += std::string{compName};
-
-        return {shortName, function};
     }
 
     MatcherAlternative create_bulk_observable_matcher(std::size_t maxThreads) {

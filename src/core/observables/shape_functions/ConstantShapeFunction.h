@@ -21,6 +21,8 @@ public:
     {
         return this->value;
     }
+
+    [[nodiscard]] std::string getName() const override { return "const"; }
 };
 
 
