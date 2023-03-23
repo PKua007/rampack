@@ -24,8 +24,10 @@
 #include "core/observables/correlation/LayerwiseRadialEnumerator.h"
 #include "core/observables/correlation/PairDensityCorrelation.h"
 #include "core/observables/correlation/PairAveragedCorrelation.h"
-#include "core/observables/correlation_functions/S110Correlation.h"
 #include "core/observables/trackers/FourierTracker.h"
+#include "core/observables/correlation_functions/S110Correlation.h"
+#include "core/observables/shape_functions/ConstantShapeFunction.h"
+#include "core/observables/shape_functions/ShapeAxisCoordinate.h"
 
 #include "utils/Utils.h"
 #include "utils/Exceptions.h"
@@ -296,11 +298,9 @@ namespace {
         ValidateMsg(std::any_of(wavenumbers.begin(), wavenumbers.end(), [](std::size_t n) { return n > 0; }),
                     "Fourier tracker: at least one of wavenubmers must be > 0");
 
-        FourierTracker::Function function;
-        std::string functionShortName;
+        std::shared_ptr<ShapeFunction> function;
         if (functionName == "const") {
-            function = [](const Shape &, const ShapeTraits &) -> double { return 1; };
-            functionShortName = "c";
+            function = std::make_unique<ConstantShapeFunction>();
         } else if (functionName == "primaryAxis"
                    || functionName == "secondaryAxis"
                    || functionName == "auxiliaryAxis")
@@ -311,28 +311,22 @@ namespace {
             ValidateMsg(coord >= 'x' && coord <= 'z', "FourierTracker: axis coordinate should be x, y or z");
             std::size_t coordIdx = coord - 'x';
 
+            using Axis = ShapeGeometry::Axis;
+            Axis axis;
             if (functionName == "primaryAxis") {
-                function = [coordIdx](const Shape &shape, const ShapeTraits &traits) {
-                    return traits.getGeometry().getPrimaryAxis(shape)[coordIdx];
-                };
-                functionShortName = "pa_";
+                axis = Axis::PRIMARY;
             } else if (functionName == "secondaryAxis") {
-                function = [coordIdx](const Shape &shape, const ShapeTraits &traits) {
-                    return traits.getGeometry().getSecondaryAxis(shape)[coordIdx];
-                };
-                functionShortName = "sa_";
+                axis = Axis::SECONDARY;
             } else {   // auxiliaryAxis
-                function = [coordIdx](const Shape &shape, const ShapeTraits &traits) {
-                    return traits.getGeometry().getAuxiliaryAxis(shape)[coordIdx];
-                };
-                functionShortName = "aa_";
+                axis = Axis::AUXILIARY;
             }
-            functionShortName += coord;
+
+            function = std::make_shared<ShapeAxisCoordinate>(axis, coordIdx);
         } else {
             throw ValidationException(FOURIER_TRACKER_USAGE);
         }
 
-        return std::make_unique<FourierTracker>(wavenumbers, function, functionShortName);
+        return std::make_unique<FourierTracker>(wavenumbers, function);
     }
 
     std::unique_ptr<GoldstoneTracker> parse_tracker(const std::string &trackerName, std::istream &trackerStream) {

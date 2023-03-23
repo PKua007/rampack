@@ -4,13 +4,43 @@
 
 #include <catch2/catch.hpp>
 #include <random>
+#include <utility>
 
 #include "matchers/VectorApproxMatcher.h"
+
+#include "mocks/MockShapeFunction.h"
 
 #include "core/observables/trackers/FourierTracker.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/shapes/SphereTraits.h"
+#include "core/observables/shape_functions/ConstantShapeFunction.h"
 
+
+using trompeloeil::_;
+
+namespace {
+    class CustomFunction : public ShapeFunction {
+    public:
+        using Function = std::function<double(const Shape&, const ShapeTraits&)>;
+
+    private:
+        Function function;
+        std::string name;
+
+    public:
+        CustomFunction(Function function, std::string name) : function{std::move(function)}, name{std::move(name)} { }
+
+        [[nodiscard]] double calculate(const Shape &shape, const ShapeTraits &traits) const override {
+            return this->function(shape, traits);
+        }
+
+        [[nodiscard]] std::string getName() const override { return this->name; }
+    };
+
+    std::shared_ptr<CustomFunction> make_function(CustomFunction::Function function, std::string name = "test") {
+        return std::make_shared<CustomFunction>(std::move(function), std::move(name));
+    }
+}
 
 TEST_CASE("FourierTracker") {
     double linearSize = 5;
@@ -30,12 +60,13 @@ TEST_CASE("FourierTracker") {
 
     SECTION("1D") {
         Vector<3> origin{0, 3.5, 0};
+
         auto function = [box, origin](const Shape &shape, const ShapeTraits &) {
             double y = box.absoluteToRelative(shape.getPosition())[1];
             double y0 = box.absoluteToRelative(origin)[1];
             return std::cos(2 * 2*M_PI*(y - y0));
         };
-        FourierTracker tracker({0, 2, 0}, function, "test");
+        FourierTracker tracker({0, 2, 0}, make_function(function));
 
         tracker.calculateOrigin(packing, traits);
         // original maximum is in {0, 3.5, 0}, but this one is closer to {0, 0, 0}
@@ -51,7 +82,7 @@ TEST_CASE("FourierTracker") {
             double z0 = box.absoluteToRelative(origin)[2];
             return std::cos(2 * 2*M_PI*(y - y0)) * std::cos(3 * 2*M_PI*(z - z0));
         };
-        FourierTracker tracker({0, 2, 3}, function, "test");
+        FourierTracker tracker({0, 2, 3}, make_function(function));
 
         tracker.calculateOrigin(packing, traits);
         // original maximum is in {0, 1, 0.5}, but this one is closer to {0, 0, 0}
@@ -69,7 +100,7 @@ TEST_CASE("FourierTracker") {
             double z0 = box.absoluteToRelative(origin)[2];
             return std::cos(1 * 2*M_PI*(x - x0)) * std::cos(2 * 2*M_PI*(y - y0)) * std::cos(3 * 2*M_PI*(z - z0));
         };
-        FourierTracker tracker({1, 2, 3}, function, "test");
+        FourierTracker tracker({1, 2, 3}, make_function(function));
 
         tracker.calculateOrigin(packing, traits);
         // original maximum is in {0.5, 1, 1.5}, but this one is closer to {0, 0, 0}
@@ -77,7 +108,7 @@ TEST_CASE("FourierTracker") {
     }
 
     SECTION("name") {
-        FourierTracker tracker({0, 2, 0}, [](const Shape &, const ShapeTraits &) { return 0.0; }, "test");
-        CHECK(tracker.getName() == "test_fourier_tracker");
+        FourierTracker tracker({0, 2, 0}, std::make_shared<ConstantShapeFunction>());
+        CHECK(tracker.getName() == "const_fourier_tracker");
     }
 }

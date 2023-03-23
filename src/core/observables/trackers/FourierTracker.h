@@ -11,14 +11,15 @@
 #include <set>
 
 #include "core/observables/GoldstoneTracker.h"
+#include "core/observables/ShapeFunction.h"
 
 
 /**
  * @brief GoldstoneTracker following the maxima of a linear combination of Fourier decomposition functions in 1D, 2D or
  * 3D, with specific, given wavenumbers.
- * @details <p> The class works with a specific function \f$ f(i) \f$ passed in the constructor, which returns some
- * value for i-th shape. Assume, that we choose to perform 2D tracking of \f$ x \f$ and \f$ y \f$ coordinates with
- * (integer) wavenumbers \f$ n_x, n_y \f$. It will then calculate the following sums:
+ * @details <p> The class works with a specific function \f$ f(i) \f$ (ShapeFunction) passed in the constructor, which
+ * returns some value for i-th shape. Assume, that we choose to perform 2D tracking of \f$ x \f$ and \f$ y \f$
+ * coordinates with (integer) wavenumbers \f$ n_x, n_y \f$. It will then calculate the following sums:
  * \f[
  * \begin{align}
  *     C_{cc} &= \sum_{i=1}^{N} f(i) \cos(n_x \cdot 2\pi \tilde{x}_i)\cos(n_y \cdot 2\pi \tilde{y}_i), \\
@@ -51,13 +52,6 @@
  * `(0, 0, 0)` for the first invocation (or after FourierTracker::reset was called).
  */
 class FourierTracker : public GoldstoneTracker {
-public:
-    /**
-     * @brief Function \f$ f(i) \f$ as described in the class description, taking Shape and ShapeTraits as arguments and
-     * returning a single @a double value.
-     */
-    using Function = std::function<double(const Shape &, const ShapeTraits &)>;
-
 private:
     using FourierFunction = std::function<double(double)>;
     using FourierFunctions = std::array<std::vector<FourierFunction>, 3>;
@@ -71,8 +65,7 @@ private:
     static constexpr double AMPLITUDE_EPSILON = 1e-8;
 
     std::array<std::size_t, 3> wavenumbers{};
-    Function function;
-    std::string functionName;
+    std::shared_ptr<ShapeFunction> function;
     FourierFunctions fourierFunctions{};
     std::vector<std::size_t> nonzeroWavenumberIdxs{};
     Vector<3> previousRelValue;
@@ -102,7 +95,7 @@ public:
      * @param function the function \f$ f(i) \f$, as described in the class description
      * @param functionName the name of function used in FourierTracker::getTrackingMethodName
      */
-    FourierTracker(const std::array<std::size_t, 3> &wavenumbers, Function function, std::string functionName);
+    FourierTracker(const std::array<std::size_t, 3> &wavenumbers, std::shared_ptr<ShapeFunction> function);
 
     /**
      * @brief Returns the method name, which is '`functionName`_tracker', with `functionName` as passed in the
