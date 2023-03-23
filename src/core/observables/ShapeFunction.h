@@ -13,8 +13,7 @@ class ShapeFunction {
 public:
     virtual ~ShapeFunction() = default;
 
-    [[nodiscard]] virtual double calculate(const Shape &shape1, const Shape &shape2,
-                                           const ShapeTraits &traits) const = 0;
+    [[nodiscard]] virtual double calculate(const Shape &shape, const ShapeTraits &traits) const = 0;
 };
 
 
