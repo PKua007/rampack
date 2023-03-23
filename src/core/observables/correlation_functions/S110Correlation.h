@@ -5,7 +5,7 @@
 #ifndef RAMPACK_S110CORRELATION_H
 #define RAMPACK_S110CORRELATION_H
 
-#include "CorrelationFunction.h"
+#include "core/observables/CorrelationFunction.h"
 
 
 /**

@@ -11,7 +11,7 @@
 #include "PairConsumer.h"
 #include "PairEnumerator.h"
 #include "core/observables/HistogramBuilder.h"
-#include "CorrelationFunction.h"
+#include "core/observables/CorrelationFunction.h"
 
 
 /**
