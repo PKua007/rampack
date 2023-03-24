@@ -75,6 +75,7 @@ namespace {
     MatcherDataclass create_radial();
     MatcherDataclass create_layerwise_radial();
     MatcherAlternative create_tracker();
+    MatcherAlternative create_shape_function();
 
 
     auto positiveWavenumbers = MatcherArray{}
@@ -219,15 +220,19 @@ namespace {
         auto allHkl = positiveWavenumbers;
         auto maxHkl = singleHkl | allHkl;
 
+        auto shape_function = create_shape_function();
+
         return MatcherDataclass("smectic_order")
             .arguments({{"max_hkl", maxHkl},
                         {"dump_tau_vector", MatcherBoolean{}, "False"},
-                        {"focal_point", MatcherString{}.nonEmpty(), R"("o")"}})
+                        {"focal_point", MatcherString{}.nonEmpty(), R"("o")"},
+                        {"function", shape_function, "const"}})
             .mapTo([](const DataclassData &smecticOrder) -> ObservableData {
                 auto maxHkl = smecticOrder["max_hkl"].as<std::array<std::size_t, 3>>();
                 auto dumpTauVector = smecticOrder["dump_tau_vector"].as<bool>();
                 auto focalPoint = smecticOrder["focal_point"].as<std::string>();
-                auto observable = std::make_shared<SmecticOrder>(maxHkl, dumpTauVector, focalPoint);
+                auto function = smecticOrder["function"].as<std::shared_ptr<ShapeFunction>>();
+                auto observable = std::make_shared<SmecticOrder>(maxHkl, dumpTauVector, focalPoint, function);
                 return {FULL_SCOPE, observable};
             });
     }
@@ -284,29 +289,7 @@ namespace {
     // TODO: focal point
     MatcherDataclass create_raw_fourier_tracker() {
         auto wavenumbers = positiveWavenumbers;
-
-        auto constFunction = MatcherDataclass("const")
-            .mapTo([](const DataclassData&) -> std::shared_ptr<ShapeFunction> {
-                return std::make_shared<ConstantShapeFunction>();
-            });
-
-        auto axisComp = MatcherString{}
-            .anyOf({"x", "y", "z"})
-            .mapTo([](const std::string &str) -> std::size_t {
-                return str.front() - 'x';
-            });
-
-        auto axisFunction = MatcherDataclass("axis")
-            .arguments({{"which", shapeAxis},
-                        {"comp",  axisComp}})
-            .mapTo([](const DataclassData &axis) -> std::shared_ptr<ShapeFunction> {
-                auto whichAxis = axis["which"].as<ShapeGeometry::Axis>();
-                auto axisComp = axis["comp"].as<std::size_t>();
-                return std::make_shared<ShapeAxisCoordinate>(whichAxis, axisComp);
-            });
-
-        auto function = constFunction | axisFunction;
-
+        auto function = create_shape_function();
         return MatcherDataclass("fourier_tracker")
             .arguments({{"wavenumbers", wavenumbers},
                         {"function", function}});
@@ -428,6 +411,30 @@ namespace {
         });
 
         return noneTracker | create_fourier_tracker();
+    }
+
+    MatcherAlternative create_shape_function() {
+        auto constFunction = MatcherDataclass("const")
+            .mapTo([](const DataclassData&) -> std::shared_ptr<ShapeFunction> {
+                return std::make_shared<ConstantShapeFunction>();
+            });
+
+        auto axisComp = MatcherString{}
+            .anyOf({"x", "y", "z"})
+            .mapTo([](const std::string &str) -> std::size_t {
+                return str.front() - 'x';
+            });
+
+        auto axisFunction = MatcherDataclass("axis")
+            .arguments({{"which", shapeAxis},
+                        {"comp",  axisComp}})
+            .mapTo([](const DataclassData &axis) -> std::shared_ptr<ShapeFunction> {
+                auto whichAxis = axis["which"].as<ShapeGeometry::Axis>();
+                auto axisComp = axis["comp"].as<std::size_t>();
+                return std::make_shared<ShapeAxisCoordinate>(whichAxis, axisComp);
+            });
+
+        return constFunction | axisFunction;
     }
 }
 
