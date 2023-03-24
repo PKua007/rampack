@@ -8,6 +8,9 @@
 #include <complex>
 
 #include "core/Observable.h"
+#include "core/observables/ShapeFunction.h"
+#include "core/observables/shape_functions/ConstantShapeFunction.h"
+
 
 /**
  * @brief Absolute value of (interval) smectic tau parameter.
@@ -22,9 +25,12 @@ private:
     std::array<int, 3> nTau{0, 0, 0};
     Vector<3> kTauVector{};
     std::array<int, 3> nTauRanges{};
+    std::shared_ptr<ShapeFunction> shapeFunction;
 
     static auto calculateTau(const std::array<int, 3> &nTau_, const Packing &packing,
-                             const std::vector<Vector<3>> &focalPoints);
+                             const std::vector<Vector<3>> &focalPoints, const std::vector<double> &functionValues);
+
+    [[nodiscard]] std::vector<double> calculateFunctionValues(const Packing &packing, const ShapeTraits &traits) const;
 
 public:
     /**
@@ -35,7 +41,8 @@ public:
      * calculate smectic order.
      */
     explicit SmecticOrder(const std::array<std::size_t, 3> &nTauRanges = {5, 5, 5}, bool dumpTauVector_ = false,
-                          std::string focalPoint = "o");
+                          std::string focalPoint = "o",
+                          std::shared_ptr<ShapeFunction> shapeFunction = std::make_shared<ConstantShapeFunction>());
 
     void calculate(const Packing &packing, double temperature, double pressure,
                    const ShapeTraits &shapeTraits) override;
