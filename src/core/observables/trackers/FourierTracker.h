@@ -93,7 +93,6 @@ public:
      * One or two wavenumbers can be zero, which means that the computation is restricted to, respectively, 2D or 1D.
      * For example, if `wavenumbers = {2, 0, 0}`, only the oscillations with period 1/2 in x direction will be measures.
      * @param function the function \f$ f(i) \f$, as described in the class description
-     * @param functionName the name of function used in FourierTracker::getTrackingMethodName
      */
     FourierTracker(const std::array<std::size_t, 3> &wavenumbers, std::shared_ptr<ShapeFunction> function);
 

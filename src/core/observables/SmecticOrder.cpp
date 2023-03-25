@@ -39,15 +39,15 @@ void SmecticOrder::calculate(const Packing &packing, [[maybe_unused]] double tem
     auto functionValues = this->calculateFunctionValues(packing, shapeTraits);
 
     this->tau = 0;
-    this->nTau = {0, 0, 0};
+    this->hkl = {0, 0, 0};
 
-    // Make sure that the first non-zero range coordinate i get iterated from 0, not from -nTauRanges[i]
+    // Make sure that the first non-zero range coordinate i get iterated from 0, not from -hklRange[i]
     // This way we make sure that equivalent k and -k vectors aren't calculated twice
-    for (int cx{}; cx <= this->nTauRanges[0]; cx++) {
-        int cyBeg = (cx == 0 ? 0 : -this->nTauRanges[1]);
-        for (int cy = cyBeg; cy <= this->nTauRanges[1]; cy++) {
-            int czBeg = ((cx == 0 && cy == 0) ? 0 : -this->nTauRanges[2]);
-            for (int cz = czBeg; cz <= this->nTauRanges[2]; cz++) {
+    for (int cx{}; cx <= this->hklRange[0]; cx++) {
+        int cyBeg = (cx == 0 ? 0 : -this->hklRange[1]);
+        for (int cy = cyBeg; cy <= this->hklRange[1]; cy++) {
+            int czBeg = ((cx == 0 && cy == 0) ? 0 : -this->hklRange[2]);
+            for (int cz = czBeg; cz <= this->hklRange[2]; cz++) {
                 std::array<int, 3> nTau_{cx, cy, cz};
                 if (nTau_ == std::array<int, 3>{0, 0, 0})
                     continue;
@@ -55,7 +55,7 @@ void SmecticOrder::calculate(const Packing &packing, [[maybe_unused]] double tem
                 auto [tau_, kTauVector_] = calculateTau(nTau_, packing, focalPoints, functionValues);
                 if (std::abs(tau_) > std::abs(this->tau)) {
                     this->tau = tau_;
-                    this->nTau = nTau_;
+                    this->hkl = nTau_;
                     this->kTauVector = kTauVector_;
                 }
             }
@@ -65,17 +65,17 @@ void SmecticOrder::calculate(const Packing &packing, [[maybe_unused]] double tem
 
 std::vector<std::string> SmecticOrder::getNominalValues() const {
     std::ostringstream ostr;
-    ostr << this->nTau[0] << "." << this->nTau[1] << "." << this->nTau[2];
+    ostr << this->hkl[0] << "." << this->hkl[1] << "." << this->hkl[2];
     return {ostr.str()};
 }
 
-SmecticOrder::SmecticOrder(const std::array<std::size_t, 3> &nTauRanges, bool dumpTauVector_, std::string focalPoint,
+SmecticOrder::SmecticOrder(const std::array<std::size_t, 3> &hklRange, bool dumpTauVector_, std::string focalPoint,
                            std::shared_ptr<ShapeFunction> shapeFunction)
         : dumpTauVector{dumpTauVector_}, focalPoint{std::move(focalPoint)}, shapeFunction{std::move(shapeFunction)}
 {
-    Expects(std::any_of(nTauRanges.begin(), nTauRanges.end(), [](int i) { return i != 0; }));
-    Expects(std::all_of(nTauRanges.begin(), nTauRanges.end(), [](int i) { return i >= 0; }));
-    std::copy(nTauRanges.begin(), nTauRanges.end(), this->nTauRanges.begin());
+    Expects(std::any_of(hklRange.begin(), hklRange.end(), [](int i) { return i != 0; }));
+    Expects(std::all_of(hklRange.begin(), hklRange.end(), [](int i) { return i >= 0; }));
+    std::copy(hklRange.begin(), hklRange.end(), this->hklRange.begin());
 }
 
 std::vector<std::string> SmecticOrder::getIntervalHeader() const {
