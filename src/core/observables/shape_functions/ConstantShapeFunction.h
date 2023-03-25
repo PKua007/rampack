@@ -8,13 +8,15 @@
 #include "core/observables/ShapeFunction.h"
 
 
+/**
+ * @brief A constant ShapeFunction.
+ */
 class ConstantShapeFunction : public ShapeFunction {
 private:
-    double value = 1;
+    double value{};
 
 public:
-    ConstantShapeFunction() = default;
-    explicit ConstantShapeFunction(double value) : value{value} { }
+    explicit ConstantShapeFunction(double value = 1) : value{value} { }
 
     [[nodiscard]] double calculate([[maybe_unused]] const Shape &shape,
                                    [[maybe_unused]] const ShapeTraits &traits) const override
