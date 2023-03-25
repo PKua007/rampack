@@ -79,10 +79,14 @@ SmecticOrder::SmecticOrder(const std::array<std::size_t, 3> &nTauRanges, bool du
 }
 
 std::vector<std::string> SmecticOrder::getIntervalHeader() const {
+    std::string functionName = this->shapeFunction->getName();
+    std::string tauName = (functionName == "const") ? "tau" : ("tau_" + functionName);
+    std::string kPrefix = tauName + "_k_";
+
     if (this->dumpTauVector)
-        return {"tau", "k_x", "k_y", "k_z"};
+        return {tauName, kPrefix + "x", kPrefix + "y", kPrefix + "z"};
     else
-        return {"tau"};
+        return {tauName};
 }
 
 std::vector<double> SmecticOrder::getIntervalValues() const {
@@ -98,4 +102,20 @@ std::vector<double> SmecticOrder::calculateFunctionValues(const Packing &packing
     for (const auto &shape : packing)
         values.push_back(this->shapeFunction->calculate(shape, traits));
     return values;
+}
+
+std::vector<std::string> SmecticOrder::getNominalHeader() const {
+    std::string functionName = this->shapeFunction->getName();
+    if (functionName == "const")
+        return {"tau_hkl"};
+    else
+        return {"tau_" + functionName + "_hkl"};
+}
+
+std::string SmecticOrder::getName() const {
+    std::string functionName = this->shapeFunction->getName();
+    if (functionName == "const")
+        return "smectic order";
+    else
+        return functionName + " smectic order";
 }

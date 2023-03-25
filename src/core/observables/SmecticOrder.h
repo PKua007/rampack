@@ -48,10 +48,10 @@ public:
                    const ShapeTraits &shapeTraits) override;
 
     [[nodiscard]] std::vector<std::string> getIntervalHeader() const override;
-    [[nodiscard]] std::vector<std::string> getNominalHeader() const override { return {"n_tau"}; }
+    [[nodiscard]] std::vector<std::string> getNominalHeader() const override;
     [[nodiscard]] std::vector<double> getIntervalValues() const override;
     [[nodiscard]] std::vector<std::string> getNominalValues() const override;
-    [[nodiscard]] std::string getName() const override { return "smectic order"; }
+    [[nodiscard]] std::string getName() const override;
 };
 
 
