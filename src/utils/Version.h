@@ -97,7 +97,7 @@ public:
 };
 
 
-constexpr Version CURRENT_VERSION{0, 9, 3};
+constexpr Version CURRENT_VERSION{0, 10, 0};
 
 // Auxiliary versions user in the code
 
