@@ -413,7 +413,7 @@ Arguments:
   Integer representing number of cycles that should be performed in the averaging phase. If the averaging phase should
   be skipped, you should pass `None`.
 
-* ***snapshot_every***
+* ***snapshot_every*** <a id="integration_snapshotevery"></a>
 
   Integer representing how often snapshots should be taken (for `record_trajectory` and`observables`) in both simulation
   phases. It should divide `thermalization_cycles` and `averaging_cycles` without remainder.
@@ -444,7 +444,7 @@ Arguments:
   (`pressure` is ignored and may be `None`). It is a part of the [Simulation environment](#simulation-environment). If
   `None`, the value from the previous run (or from [class `rampack`](#class-rampack) arguments) is reused.
 
-* ***averaging_every*** (*= 0*)
+* ***averaging_every*** (*= 0*) <a id="integration_averagingevery"></a>
 
   How often average value should be taken (for `averages_out` and `bulk_observables`) in the averaging phase. It should
   divide `averaging_cycles` without remainder. It can be equal 0 if the averaging phase is off
@@ -483,14 +483,14 @@ Arguments:
   will store RAMTRJ trajectory to the file `trajectory.ramtrj`. See
   [Trajectory writers](output-formats.md#trajectory-writers) for more information.
 
-* ***averages_out*** (*= None*)
+* ***averages_out*** (*= None*) <a id="integration_averagesout"></a>
 
   The name of file to which observable averages should be stored. They are gathered in the averaging phase for
   observables with `averaging` scope. If the file does not exist, it is created. Otherwise, a new row with
   averages is appended at the end. See [Observable averages](output-formats.md#observable-averages) for more
   information.
 
-* ***observables*** (*= []*)
+* ***observables*** (*= []*) <a id="integration_observables"></a>
 
   The Array of observables which should be computed during the simulation. Observables have 3 scopes: `snapshot`,
   `inline` and `averaging`. `snapshot` observable values are printed out to `observables_out` every `snapshot_every`
@@ -507,19 +507,19 @@ Arguments:
   [class `nematic_order`](observables.md#class-nematicorder) only in the `inline` scope. See
   [Observables](observables.md) for more information and a full list of available observables.
 
-* ***observables_out*** (*= None*)
+* ***observables_out*** (*= None*) <a id="integration_observablesout"></a>
 
   String with a name of the file where values of `observables` in the `snapshot` scope snapshots will be stored every
   `snapshot_every` cycles.
 
-* ***bulk_observables*** (*= []*)
+* ***bulk_observables*** (*= []*) <a id="integration_bulkobservables"></a>
 
   The Array of bulk observables that will be computed in the averaging phase. Bulk observables are more complex than
   normal observables, thus they are stored in separate files specified by `bulk_observables_out_pattern`. They are
   gathered and averaged in the averaging phase every `averaging_every` cycles. See [Observables](observables.md) for
   more information and a full list of available bulk observables.
 
-* ***bulk_observables_out_pattern*** (*= None*)
+* ***bulk_observables_out_pattern*** (*= None*) <a id="integration_bulkobservablesoutpattern"></a>
 
   Name pattern for files to store bulk observables. If the pattern contains `{}`, it is replaced by the name of bulk
   observable it is going to store. For example, for `bulk_observables_out_pattern = "{}_out.txt"`, bulk observable named
