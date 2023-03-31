@@ -31,7 +31,7 @@ RAMPACK support general triclinic boxes, which facilitates all standard symmetri
 box is described be three linearly independent vectors **v**<sub>1</sub>, **v**<sub>2</sub>, **v**<sub>3</sub> which
 span the simulation box. Each *absolute position* **r** within it can be expressed as
 
-**r** = *s*<sub>1</sub> · **v**<sub>1</sub> + *s*<sub>2</sub> · **v**<sub>2</sub> + *s*<sub>3</sub> · **v**<sub>3</sub>,
+**r** = *s*<sub>1</sub> &middot; **v**<sub>1</sub> + *s*<sub>2</sub> &middot; **v**<sub>2</sub> + *s*<sub>3</sub> &middot; **v**<sub>3</sub>,
 
 where *s<sub>i</sub>* are in the range [0, 1) and they form the *relative position* **s**. The box is filled with
 identical particles characterized by their positions and orientation. Periodic boundary conditions are used. Box's walls
