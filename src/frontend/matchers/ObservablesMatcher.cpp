@@ -476,7 +476,7 @@ namespace {
     }
 
     MatcherAlternative create_correlation_function() {
-        auto s110 = MatcherDataclass("S110")
+        auto s110 = MatcherDataclass("s110")
             .arguments({{"axis", shapeAxis}})
             .mapTo([](const DataclassData &s110) -> std::shared_ptr<CorrelationFunction> {
                 auto axis = s110["axis"].as<ShapeGeometry::Axis>();
