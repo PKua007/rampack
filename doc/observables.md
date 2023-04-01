@@ -50,7 +50,7 @@ They are described in corresponding sections of this documentation page.
 ## Normal observables
 
 **Normal observables** can be calculated for a single snapshot. They consist of a couple of numbers
-(**interval values**), which can be added/averaged/etc. and/or a couple of strings (**nominal value**), which cannot be
+(**interval values**), which can be added/averaged/etc. and/or a couple of strings (**nominal values**), which cannot be
 averaged. They can be computed in both thermalization and averaging phase. Normal observables have 3 scopes in which
 they can be computed and presented:
 
@@ -271,23 +271,234 @@ tokens are dropped from constituent values' names.
 
 ### Class `bond_order`
 
+```python
+bond_order(
+    hkl,
+    ranks,
+    layering_point = "o",
+    focal_point = "o"
+)
+```
+
+Bond order parameter, which quantifies local order of angles between nearest neighbours. It is defined on a 2D plane as
+
+*&psi;<sub>r</sub>* = 1/n &sum;<sub>*i*</sub> 1/*r* | &sum;<sub>*j*</sub> exp(*r &iota; &theta;<sub>ij</sub>*) |,
+
+where index *i* goes over all n particles lying on the plane, *r* is the rank of the order parameter,
+&sum;<sub>*j*</sub> sum goes over *j* = 1, ..., *r* nearest neighbours of the *i*<sup>th</sup> particle, &iota; is the
+imaginary unitand |...| is modulus. Finally, *&theta;<sub>ij</sub>* is the angle between the vector joining
+*i*<sup>th</sup> and *j*<sup>th</sup> particles and a constant arbitrary direction on the plane. 
+
+To make it applicable to a 3D system, the system is assumed to be a layered smectic (you can also project all particles
+on a single plane, see `hkl` argument description). All positions are projected onto nearest layers, *&psi;<sub>r</sub>*
+is calculated for each layer separately and then averaged over all layers. Number of layers and their wavevector are
+specified upfront by `hkl` Miller indices (see [class `smectic_order`](#class-smecticorder)), while their positions
+(phase) as well as association of particles to them are inferred automatically.
+
+* **Arguments**:
+  * ***hkl*** <br />
+    An Array of Integers specifying Miller indices of the wavevector of layers. For example, `hkl = [0, 0, 6]`
+    represents 6 layers stacked along the z axis. *Tip*: use `hkl = [0, 0, 1]` to project all particles on a single XY
+    plane.
+  * ***ranks*** <br />
+    An Integer or Array of Integers with one or more ranks *r* of the bond order parameter to be calculated. For
+    example, to quantify hexatic honeycomb order you want to use `ranks = 6`, while for a square lattice `ranks = 4`
+    will do the job (`ranks = [4, 6]` will calculate both).
+  * ***layering_point*** (*="o"*) <br />
+    [Named point](shapes.md#named-points) on the particle that will be used to associate particles to the nearest
+    layers.
+  * ***focal_point*** (*="o"*) <br />
+    [Named point](shapes.md#named-points) on the particle that will be used to compute *&theta;<sub>ij</sub>* angles.
+* **Primary name**: `Bond order`
+* **Interval values**:
+  * `psi_[r1]`, `psi_[r2]`, ... - bond order parameters for all `[r1]`, `[r2]`, ... ranks specified by `ranks` argument. 
+* **Nominal values**: None
+
+
 ### Class `rotation_matrix_drift`
+
+```python
+rotation_matrix_drift( )
+```
+
+A rather technical parameter, which measures how rotation matrices accumulate numerical errors during the simulation. It
+can be used for debugging purposes, especially when using non-standard particle moves. For a rotation matrix **R**, one
+defines
+
+**M** = **R**<sup>T</sup>**R** - **I**,
+
+which is mathematically equal 0 for a rotation matrix. Then, the Frobenius norm of **M** is computed:
+
+*F*<sup>2</sup> = &Vert;**M**&Vert;<sup>2</sup> = &sum;<sub>*i*,*j*</sub> *M<sub>ij</sub>*<sup>2</sup>
+
+For each snapshot, the observable reports minimal, maximal and average value of *F*<sup>2</sup>.
+
+* **Primary name**: `Rotation matrix drift`
+* **Interval values**:
+  * `F^2` - average value of *F*<sup>2</sup> over all particles in the snapshot
+  * `min(F^2)` - minimal value of *F*<sup>2</sup> in the snapshot
+  * `max(F^2)` - maximal value of *F*<sup>2</sup> in the snapshot
+* **Nominal values**: None
+
 
 ### Class `temperature`
 
+```python
+temperature( )
+```
+
+The current NpT/NVT temperature of the system. It is useful when the temperature is a
+[dynamic parameter](input-file.md#dynamic-parameters), and you want to monitor its instantaneous value.
+
+* **Primary name**: `Temperature`
+* **Interval values**:
+  * `T` - the current NpT/NVT temperature
+* **Nominal values**: None
+
+
 ### Class `pressure`
+
+```python
+pressure( )
+```
+
+The current NpT pressure of the system. It is useful when the temperature is a
+[dynamic parameter](input-file.md#dynamic-parameters), and you want to monitor its instantaneous value. Please note that
+it is not the effective pressure computer from a numerical virial - it is the one imposed in the NpT ensemble.
+[Virial pressure](http://www.sklogwiki.org/SklogWiki/index.php/Pressure#Virial_pressure) computation is not yet
+supported.
+
+* **Primary name**: `Pressure`
+* **Interval values**:
+  * `p` - the current NpT pressure
+* **Nominal values**: None
 
 
 ## Bulk observables
 
+Bulk observables, contrary to [normal observables](#normal-observables), consist of too many values to be meaningfully
+presented as a part of a single-line entry on the standard output or other form of the output. They are usually whole
+plots, maps, etc. Their data is gathered only in the averaging phase, averaged over many system snapshots and printed to
+a separate file (with name generated using
+[`bulk_observables_out_pattern`](input-file.md#integration_bulkobservablesoutpattern)), whose format is bulk observable
+specific.
+
+The following bulk observables are available:
+* [Class `pair_density_correlation`](#class-pairdensitycorrelation)
+* [Class `pair_averaged_correlation`](#class-pairaveragedcorrelation)
+* [Class `density_histogram`](#class-densityhistogram)
+
+Each observable has a **short name**, which is used in the output file name.
+
+
 ### Class `pair_density_correlation`
+
+```python
+pair_density_correlation(
+    max_r,
+    n_bins,
+    binning
+)
+```
+
+General one-dimensional pair density correlation function *&rho;*(*r*). For a given argument *r*, which is a distance
+between particles (whose meaning is defined by `binning` argument) it is equal to the number of particles in
+the system with a distance around *r* normalized by the number that would be found in a uniform system. For example,
+when `binning = radial`, it reduces to the standard
+[radial distribution function](https://en.wikipedia.org/wiki/Radial_distribution_function).
+
+* **Arguments**:
+  * ***max_r*** <br />
+    Maximal distance which is going to be probed. The observable range starts at 0 and ends at this number.
+  * ***n_bins*** <br />
+    Number of bins to use. The more of them, the higher is the resolution of the plot, but the smaller are the statistics
+    in the single bin.
+  * ***binning*** <br />
+    [Binning type](#binning-types) used. It defines what *distance* means. For example, for `binning = radial`, *distance*
+    is the Euclidean distance between the particles.
+* **Short name**: `rho_[binning name]`, where `[binning name]` depends on the [binning type](#binning-types) (`binning`
+  argument).
+* **Output**:
+  Rows with space-separated pairs (*r*, *&rho;*(*r*)).
+
 
 ### Class `pair_averaged_correlation`
 
+```python
+pair_averaged_correlation(
+    max_r,
+    n_bins,
+    binning,
+    function
+)
+```
+
+Correlations *S*(*r*) between particles as a function of a generalized distance *r* (defined by `binning` argument). It
+is defined as the average of correlation function specified by `function` parameter over all particles with a distance
+around *r*.
+
+* **Arguments**:
+  * ***max_r*** <br />
+    Maximal distance which is going to be probed. The observable range starts at 0 and ends at this number.
+  * ***n_bins*** <br />
+    Number of bins to use. The more of them, the higher is the resolution of the plot, but the smaller are the statistics
+    in the single bin.
+  * ***binning*** <br />
+    [Binning type](#binning-types) used. It defines what *distance* means. For example, for `binning = radial`, *distance*
+    is the Euclidean distance between the particles.
+  * ***function*** <br />
+    Two particle [correlation function](#correlation-functions) which is being averaged.
+* **Short name**: `[function name]_[binning name]`, where `[function name]` depends on the 
+  [correlation function](#correlation-functions) (`function` argument), while `[binning name]` depends on the
+  [binning type](#binning-types) (`binning` argument).
+* **Output**:
+  Rows with space-separated pairs (*r*, *S*(*r*)).
+
+
 ### Class `density_histogram`
+
+```python
+density_histogram(
+    n_bins_x = None,
+    n_bins_y = None,
+    n_bins_z = None,
+    tracker = None
+)
+```
+
+Density histogram, which can be 1D, 2D or 3D. It also supports tracking of the translational Goldstone mode to prevent
+softening of the histogram due to zero-energy bulk system movement. Relative positions are used for binning. Thus, the
+domain is always [0, 1)<sup>*d*</sup>, where *d* is the dimension. 
+
+* **Arguments**:
+  * ***n_bins_x*** (*= None*) <br />
+    ***n_bins_y*** (*= None*) <br />
+    ***n_bins_z*** (*= None*) <br />
+    Number of bins in each direction. If 1 or `None` is specified, the given direction is turned off completely. For
+    example, to prepare the density histogram of the system projected on YZ plane (with 100 x 100 bins), you should
+    specify `n_bins_x = 1` (or `n_bins_x = None`), `n_bins_y = 100` and `n_bins_z = 100`.
+  * ***tracker*** (*= None*) <br />
+    [Goldstone tracker](#trackers) used to cancel out system movement. If `None`, no compensation is applied.
+* **Short name**: `rho_xyz`
+* **Output**:
+  Rows with space-separated tuples (*b*<sub>x</sub>, *b*<sub>x</sub>, *b*<sub>x</sub>, *&rho;*(**b**)), where **b** is
+  relative middle of the bin. If the direction is turned off, the correspinding bin coordinate is equal 0.5.
 
 
 ## Trackers
+
+A special class of [normal observables](#normal-observables), with 6 specific interval values specifying how the system
+translates and rotates during its evolution. Those are:
+
+* `[tracker name]_x`, `[...]_y`, `[...]_z` - evolving position of the origin of the system,
+* `[tracker name]_ox`, `[...]_oy`, `[...]_oz` - evolving orientation of the system (as Euler angles).
+
+What is considered origin and the identity orientation, as well as how the movement is inferred is specific to a
+particular tracker type. Some trackers may track only one type of movement (translational or orientational).
+
+Currently, only one tracker type is supported:
+* [Class `fourier_tracker`](#class-fouriertracker)
+
 
 ### Class `fourier_tracker`
 

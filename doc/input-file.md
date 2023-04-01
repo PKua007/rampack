@@ -521,9 +521,9 @@ Arguments:
 
 * ***bulk_observables_out_pattern*** (*= None*) <a id="integration_bulkobservablesoutpattern"></a>
 
-  Name pattern for files to store bulk observables. If the pattern contains `{}`, it is replaced by the name of bulk
-  observable it is going to store. For example, for `bulk_observables_out_pattern = "{}_out.txt"`, bulk observable named
-  `rho` will be stored to a file named `rho_out.txt`. If `{}` is missing, `_{}.txt` is inserted at the end of the
+  Name pattern for files to store bulk observables. If the pattern contains `{}`, it is replaced by the *short name* of 
+  bulk observable it is going to store. For example, for `bulk_observables_out_pattern = "{}_out.txt"`, bulk observable
+  named `rho` will be stored to a file named `rho_out.txt`. If `{}` is missing, `_{}.txt` is inserted at the end of the
   pattern. Thus, if `bulk_observables_out_pattern = "out"`, `rho` bulk observable will be stored to `out_rho.txt`.
 
 ### Class `overlap_relaxation`
