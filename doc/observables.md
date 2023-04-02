@@ -466,9 +466,9 @@ density_histogram(
 )
 ```
 
-Density histogram, which can be 1D, 2D or 3D. It also supports tracking of the translational Goldstone mode to prevent
-softening of the histogram due to zero-energy bulk system movement. Relative positions are used for binning. Thus, the
-domain is always [0, 1)<sup>*d*</sup>, where *d* is the dimension. 
+Density histogram, which can be 1D, 2D or 3D. It also supports cancelling out the translational Goldstone mode to
+prevent softening of the histogram due to zero-energy bulk system movement. Relative positions are used for binning.
+Thus, the domain is always [0, 1)<sup>*d*</sup>, where *d* is the dimension. 
 
 * **Arguments**:
   * ***n_bins_x*** (*= None*) <br />
@@ -494,7 +494,11 @@ translates and rotates during its evolution. Those are:
 * `[tracker name]_ox`, `[...]_oy`, `[...]_oz` - evolving orientation of the system (as Euler angles).
 
 What is considered origin and the identity orientation, as well as how the movement is inferred is specific to a
-particular tracker type. Some trackers may track only one type of movement (translational or orientational).
+particular tracker type. Some trackers may track only one type of movement (translational or orientational). Each
+tracker has its **tracker name**, which is used for example in interval value's names.
+
+The trackers are mainly used in other types of observables, such as [class `density_histogram`](#class-densityhistogram)
+to cancel out zero-energy movement of the system during the course of the simulation.
 
 Currently, only one tracker type is supported:
 * [Class `fourier_tracker`](#class-fouriertracker)
@@ -502,10 +506,81 @@ Currently, only one tracker type is supported:
 
 ### Class `fourier_tracker`
 
+```python
+fourier_tracker(
+    wavenumbers,
+    function
+)
+```
+
+A 1D, 2D or 3D tracker, which tracks system movement based on first-order Fourier expansion of a
+[shape function](#shape-functions) *f*. More precisely, it tracks how modulations of the shape function move in space.
+Most generally, for 3 dimensions, first-order Fourier expansion of *f* is
+
+*F*(**s**) = &sum;<sub>trig<sub>1</sub>, trig<sub>2</sub>, trig<sub>3</sub></sub>
+*A*<sub>trig<sub>1</sub>,trig<sub>2</sub>,trig<sub>3</sub></sub>
+trig<sub>1</sub>(2 &pi; *n*<sub>1</sub>*s*<sub>1</sub>)
+trig<sub>2</sub>(2 &pi; *n*<sub>2</sub>*s*<sub>2</sub>)
+trig<sub>3</sub>(2 &pi; *n*<sub>3</sub>*s*<sub>3</sub>),
+
+where trig<sub>1,2,3</sub> is sin(...) or cos(...), **s** is a relative position in the box and *n<sub>1,2,3* are
+wavenumbers of shape function modulations. The evolving position of system origin is taken as the maximum of F(**s**).
+Please note, that *F*(**s**) is oscillatory and has more than one maximum. Thus, for subsequent snapshots the maximum
+closest to the previous one is chosen. The 8 coefficients for a shapshot are calculated using
+
+*A*<sub>trig<sub>1</sub>,trig<sub>2</sub>,trig<sub>3</sub></sub> =
+1/N &sum;<sub>*i*</sub> *f<sub>i</sub>*
+trig<sub>1</sub>(2 &pi; *n*<sub>1</sub>*s*<sub>*i*,1</sub>)
+trig<sub>2</sub>(2 &pi; *n*<sub>2</sub>*s*<sub>*i*,2</sub>)
+trig<sub>3</sub>(2 &pi; *n*<sub>3</sub>*s*<sub>*i*,3</sub>),
+
+where *f<sub>i</sub>* and **s**<sub>*i*</sub> are, respectively value of the shape function *f* and relative position of
+*i*<sup>th</sup> particle. For 2D and 1D (where some *n<sub>i</sub>* are 0), the number of coefficients decreases to,
+respectively 4 and 2.
+
+Please note, that *F*(**s**) is sensitive to density modulation - if *f* = const, it tracks a generalized type of
+[smectic order](#class-smecticorder). In fact, if only a single wavenumber is non-zero (1D), it reduces to the phase of
+smectic order parameter.
+
+Arguments:
+
+* ***wavenumbers***
+
+  An Array of Integers (for example `[1, 2, 0`]) representing wavenumbers *n<sub>i</sub>* of modulation. If all are
+  non-zero, the modulation is 3-dimensional, while setting 1 or 2 of them to 0 reduces dimensionality.
+
+* ***function***
+
+  [Shape function](#shape-functions), whose modulation we are testing. It can be [const](#class-const) - then we are
+  probing density modulation.
+
 
 ## Binning types
 
+Binning type dictates how various types of observables are calculated. Most importantly, it defines what *distance*
+between particles means. Binning type is chosen for example when using
+[class `pair_density_correlation`](#class-pairdensitycorrelation). There, it decides what type of correlation is
+probed - radial, transversal, cylindrical, etc. It can also restrict which pairs of particles should be selected at
+all - for example, [class `layerwise_radial`](#class-layerwiseradial) takes into account only particles from the same
+layers.
+
+There are the following types of binning:
+* [Class `radial`](#class-radial)
+* [Class `layerwise_radial`](#class-layerwiseradial)
+
+
 ### Class `radial`
+
+```python
+radial(
+    focal_point = "o"
+)
+```
+
+The standard, radial binning type. Here, the *distance* is a standard Euclidean distance and all pairs of particles are
+enumerated. `focal_point` is a [named point](shapes.md#named-points), with respect to which the distance should be
+calculated.
+
 
 ### Class `layerwise_radial`
 
