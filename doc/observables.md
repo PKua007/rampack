@@ -51,8 +51,8 @@ They are described in corresponding sections of this documentation page.
 
 **Normal observables** can be calculated for a single snapshot. They consist of a couple of numbers
 (**interval values**), which can be added/averaged/etc. and/or a couple of strings (**nominal values**), which cannot be
-averaged. They can be computed in both thermalization and averaging phase. Normal observables have 3 scopes in which
-they can be computed and presented:
+averaged. They can be computed in both the thermalization and the averaging phase. Normal observables have 3 scopes in
+which they can be computed and presented:
 
 1. **Inline scope** - they are computed and presented in simulation standard output together with cycle number and other
    information. Both interval and nominal values are printed.
@@ -139,7 +139,7 @@ packing_fraction( )
 
 * **Primary name**: `Packing fraction`
 * **Interval values**:
-  * `theta` - packing fraction N V<sub>mol</sub> / V, where N is number of particle and V is box volume and
+  * `theta` - packing fraction N V<sub>mol</sub> / V, where N is number of particle and V is the box volume and
     V<sub>mol</sub> is the volume of a particle
 * **Nominal values**: None
 
@@ -198,7 +198,7 @@ the symmetric **Q**-tensor with the largest magnitude. The **Q**-tensor is defin
 where index *i* runs over all N particles.
 
 * **Arguments**:
-  * ***dump_qtensor*** (*=False*) <br />
+  * ***dump_qtensor*** (*= False*) <br />
     If `True`, in addition to nematic order value, independent entries of the **Q**-tensor will be printed
 * **Primary name**: `Nematic order`
 * **Interval values**:
@@ -242,20 +242,21 @@ where **g**<sub>*i*</sub> are reciprocal box vectors:
 **g**<sub>2</sub> = 2&pi;/V (**v**<sub>3</sub> &#10799; **v**<sub>1</sub>), <br/>
 **g**<sub>3</sub> = 2&pi;/V (**v**<sub>1</sub> &#10799; **v**<sub>2</sub>).
 
-Here, **v**<sub>*i*</sub> are box vectors and V is box volume. Values of *h*, *k*, *l* are chosen automatically to
-maximize *&tau;* value from the range given by `max_hkl` argument.
+Here, **v**<sub>*i*</sub> are real-space box vectors and V is the box volume. Values of *h*, *k*, *l* are selected from
+the range given by `max_hkl` argument to maximize *&tau;* value.
 
 * **Arguments**:
   * ***max_hkl*** <br />
     An Array of 3 Integers representing maximal magnitudes of subsequent Miller indices *h*, *k*, *l*, which will be
-    searched to find the best **k** wavevector, excluding vectors differing only by the sign. For example
-    `max_hkl = [0, 1, 1]` will try `[0, 0, 0]`, `[0, 0, 1]`, `[0, 1, -1]`, `[0, 1, 0]` and `[0, 1, 1]`.
-  * ***dump_tau_vector*** (*=False*) <br />
+    searched to find the best **k** wavevector, excluding vectors differing only by the sign. For example, for
+    `max_hkl = [0, 1, 1]` all independent indices to be checked are `[0, 0, 0]`, `[0, 0, 1]`, `[0, 1, -1]`, `[0, 1, 0]`
+    and `[0, 1, 1]`.
+  * ***dump_tau_vector*** (*= False*) <br />
     If `True`, additional `tau_[function name]_k_x`, `..._y`, `..._z` interval parameters with wavevector **k**
     components will be printed.
-  * ***focal_point*** (*="o"*) <br />
+  * ***focal_point*** (*= "o"*) <br />
     [Named point](shapes.md#named-points) on the particle that will be used as position vector **r**.
-  * ***function*** (*=const*) <br />
+  * ***function*** (*= const*) <br />
     [Shape function](#shape-functions) *f* that will be used in computations.
 * **Primary name**: `Smectic order`
 * **Interval values**:
@@ -280,11 +281,11 @@ bond_order(
 )
 ```
 
-Bond order parameter, which quantifies local order of angles between nearest neighbours. It is defined on a 2D plane as
+Bond order parameter, which quantifies local order of angles between nearest neighbours. On a 2D plane, it is defined as
 
-*&psi;<sub>r</sub>* = 1/n &sum;<sub>*i*</sub> 1/*r* | &sum;<sub>*j*</sub> exp(*r &iota; &theta;<sub>ij</sub>*) |,
+*&psi;<sub>r</sub>* = 1/*n* &sum;<sub>*i*</sub> 1/*r* | &sum;<sub>*j*</sub> exp(*r &iota; &theta;<sub>ij</sub>*) |,
 
-where index *i* goes over all n particles lying on the plane, *r* is the rank of the order parameter,
+where index *i* goes over all *n* particles lying on the plane, *r* is the rank of the order parameter,
 &sum;<sub>*j*</sub> sum goes over *j* = 1, ..., *r* nearest neighbours of the *i*<sup>th</sup> particle, &iota; is the
 imaginary unitand |...| is modulus. Finally, *&theta;<sub>ij</sub>* is the angle between the vector joining
 *i*<sup>th</sup> and *j*<sup>th</sup> particles and a constant arbitrary direction on the plane. 
@@ -292,22 +293,22 @@ imaginary unitand |...| is modulus. Finally, *&theta;<sub>ij</sub>* is the angle
 To make it applicable to a 3D system, the system is assumed to be a layered smectic (you can also project all particles
 on a single plane, see `hkl` argument description). All positions are projected onto nearest layers, *&psi;<sub>r</sub>*
 is calculated for each layer separately and then averaged over all layers. Number of layers and their wavevector are
-specified upfront by `hkl` Miller indices (see [class `smectic_order`](#class-smecticorder)), while their positions
-(phase) as well as association of particles to them are inferred automatically.
+specified upfront by `hkl` Miller indices (see [class `smectic_order`](#class-smecticorder)), while their positions as
+well as association of particles to them are inferred automatically.
 
 * **Arguments**:
   * ***hkl*** <br />
     An Array of Integers specifying Miller indices of the wavevector of layers. For example, `hkl = [0, 0, 6]`
-    represents 6 layers stacked along the z axis. *Tip*: use `hkl = [0, 0, 1]` to project all particles on a single XY
+    represents 6 layers stacked along the z axis. *Tip*: use `hkl = [0, 0, 1]` to project all particles onto a single XY
     plane.
   * ***ranks*** <br />
     An Integer or Array of Integers with one or more ranks *r* of the bond order parameter to be calculated. For
     example, to quantify hexatic honeycomb order you want to use `ranks = 6`, while for a square lattice `ranks = 4`
     will do the job (`ranks = [4, 6]` will calculate both).
-  * ***layering_point*** (*="o"*) <br />
+  * ***layering_point*** (*= "o"*) <br />
     [Named point](shapes.md#named-points) on the particle that will be used to associate particles to the nearest
     layers.
-  * ***focal_point*** (*="o"*) <br />
+  * ***focal_point*** (*= "o"*) <br />
     [Named point](shapes.md#named-points) on the particle that will be used to compute *&theta;<sub>ij</sub>* angles.
 * **Primary name**: `Bond order`
 * **Interval values**:
@@ -331,13 +332,13 @@ which is mathematically equal 0 for a rotation matrix. Then, the Frobenius norm 
 
 *F*<sup>2</sup> = &Vert;**M**&Vert;<sup>2</sup> = &sum;<sub>*i*,*j*</sub> *M<sub>ij</sub>*<sup>2</sup>
 
-For each snapshot, the observable reports minimal, maximal and average value of *F*<sup>2</sup>.
+For each snapshot, the observable reports the minimal, the maximal and the average value of *F*<sup>2</sup>.
 
 * **Primary name**: `Rotation matrix drift`
 * **Interval values**:
-  * `F^2` - average value of *F*<sup>2</sup> over all particles in the snapshot
-  * `min(F^2)` - minimal value of *F*<sup>2</sup> in the snapshot
-  * `max(F^2)` - maximal value of *F*<sup>2</sup> in the snapshot
+  * `F^2` - the average value of *F*<sup>2</sup> over all particles in the snapshot
+  * `min(F^2)` - the minimal value of *F*<sup>2</sup> in the snapshot
+  * `max(F^2)` - the maximal value of *F*<sup>2</sup> in the snapshot
 * **Nominal values**: None
 
 
@@ -364,7 +365,7 @@ pressure( )
 
 The current NpT pressure of the system. It is useful when the temperature is a
 [dynamic parameter](input-file.md#dynamic-parameters), and you want to monitor its instantaneous value. Please note that
-it is not the effective pressure computer from a numerical virial - it is the one imposed in the NpT ensemble.
+it is not the effective pressure computed from a numerical virial - it is the one imposed in the NpT ensemble.
 [Virial pressure](http://www.sklogwiki.org/SklogWiki/index.php/Pressure#Virial_pressure) computation is not yet
 supported.
 
@@ -401,15 +402,14 @@ pair_density_correlation(
 )
 ```
 
-General one-dimensional pair density correlation function *&rho;*(*r*). For a given argument *r*, which is a distance
-between particles (whose meaning is defined by `binning` argument) it is equal to the number of particles in
-the system with a distance around *r* normalized by the number that would be found in a uniform system. For example,
-when `binning = radial`, it reduces to the standard
-[radial distribution function](https://en.wikipedia.org/wiki/Radial_distribution_function).
+General one-dimensional pair density correlation function *&rho;*(*r*). It is equal to the number of particles in
+the system with a distance around *r* normalized by the number that would be found in a uniform system. Please note,
+that the meaning of *distance* is defined by the `binning` argument. For example, when `binning = radial`, it reduces to
+the standard [radial distribution function](https://en.wikipedia.org/wiki/Radial_distribution_function).
 
 * **Arguments**:
   * ***max_r*** <br />
-    Maximal distance which is going to be probed. The observable range starts at 0 and ends at this number.
+    Maximal distance which is going to be probed. The observable range starts at 0 and ends at this value.
   * ***n_bins*** <br />
     Number of bins to use. The more of them, the higher is the resolution of the plot, but the smaller are the statistics
     in the single bin.
@@ -433,13 +433,13 @@ pair_averaged_correlation(
 )
 ```
 
-Correlations *S*(*r*) between particles as a function of a generalized distance *r* (defined by `binning` argument). It
-is defined as the average of correlation function specified by `function` parameter over all particles with a distance
-around *r*.
+Correlations *S*(*r*) between particles as a function of a generalized distance *r* (defined by the `binning` argument).
+It is defined as the average of correlation function specified by `function` parameter over all particles with a
+distance around *r*.
 
 * **Arguments**:
   * ***max_r*** <br />
-    Maximal distance which is going to be probed. The observable range starts at 0 and ends at this number.
+    Maximal distance which is going to be probed. The observable range starts at 0 and ends at this value.
   * ***n_bins*** <br />
     Number of bins to use. The more of them, the higher is the resolution of the plot, but the smaller are the statistics
     in the single bin.
@@ -447,7 +447,7 @@ around *r*.
     [Binning type](#binning-types) used. It defines what *distance* means. For example, for `binning = radial`, *distance*
     is the Euclidean distance between the particles.
   * ***function*** <br />
-    Two particle [correlation function](#correlation-functions) which is being averaged.
+    Two-particle [correlation function](#correlation-functions) which is being averaged.
 * **Short name**: `[function name]_[binning name]`, where `[function name]` depends on the 
   [correlation function](#correlation-functions) (`function` argument), while `[binning name]` depends on the
   [binning type](#binning-types) (`binning` argument).
@@ -487,20 +487,20 @@ Thus, the domain is always [0, 1)<sup>*d*</sup>, where *d* is the dimension.
 
 ## Trackers
 
-A special class of [normal observables](#normal-observables), with 6 specific interval values specifying how the system
+A special class of [normal observables](#normal-observables), with 6 interval values specifying how the system
 translates and rotates during its evolution. Those are:
 
 * `[tracker name]_x`, `[...]_y`, `[...]_z` - evolving position of the origin of the system,
 * `[tracker name]_ox`, `[...]_oy`, `[...]_oz` - evolving orientation of the system (as Euler angles).
 
-What is considered origin and the identity orientation, as well as how the movement is inferred is specific to a
-particular tracker type. Some trackers may track only one type of movement (translational or orientational). Each
-tracker has its **tracker name**, which is used for example in interval value's names.
+What is considered origin and the identity orientation (zero Euler angles), as well as how the movement is inferred is
+specific to a particular tracker type. Some trackers may track only one type of movement (translational or
+orientational). Each tracker has its **tracker name**, which is used for example in interval value's names.
 
-The trackers are mainly used in other types of observables, such as [class `density_histogram`](#class-densityhistogram)
+The trackers are mainly used by other types of observables, such as [class `density_histogram`](#class-densityhistogram)
 to cancel out zero-energy movement of the system during the course of the simulation.
 
-Currently, only one tracker type is supported:
+Currently, the following trackers are available:
 * [Class `fourier_tracker`](#class-fouriertracker)
 
 
@@ -515,44 +515,43 @@ fourier_tracker(
 
 A 1D, 2D or 3D tracker, which tracks system movement based on first-order Fourier expansion of a
 [shape function](#shape-functions) *f*. More precisely, it tracks how modulations of the shape function move in space.
-Most generally, for 3 dimensions, first-order Fourier expansion of *f* is
+Most generally, for 3 dimensions, first-order Fourier expansion of *f* in the relative position **s** is
 
-*F*(**s**) = &sum;<sub>trig<sub>1</sub>, trig<sub>2</sub>, trig<sub>3</sub></sub>
+*F*(**s**) = &sum;<sub>trig<sub>1</sub>,trig<sub>2</sub>,trig<sub>3</sub></sub>
 *A*<sub>trig<sub>1</sub>,trig<sub>2</sub>,trig<sub>3</sub></sub>
-trig<sub>1</sub>(2 &pi; *n*<sub>1</sub>*s*<sub>1</sub>)
-trig<sub>2</sub>(2 &pi; *n*<sub>2</sub>*s*<sub>2</sub>)
-trig<sub>3</sub>(2 &pi; *n*<sub>3</sub>*s*<sub>3</sub>),
+trig<sub>1</sub>(2&pi;*n*<sub>1</sub>*s*<sub>1</sub>)
+trig<sub>2</sub>(2&pi;*n*<sub>2</sub>*s*<sub>2</sub>)
+trig<sub>3</sub>(2&pi;*n*<sub>3</sub>*s*<sub>3</sub>),
 
 where trig<sub>1,2,3</sub> is sin(...) or cos(...), **s** is a relative position in the box and *n<sub>1,2,3* are
-wavenumbers of shape function modulations. The evolving position of system origin is taken as the maximum of F(**s**).
-Please note, that *F*(**s**) is oscillatory and has more than one maximum. Thus, for subsequent snapshots the maximum
-closest to the previous one is chosen. The 8 coefficients for a shapshot are calculated using
+wavenumbers of shape function modulations. The evolving position of the system's origin is taken as the maximum of
+F(**s**), converted back to an absolute position. Please note, that *F*(**s**) is oscillatory and has more than one
+maximum. Thus, for subsequent snapshots the maximum closest to the previous one is chosen. The 8 coefficients for a
+snapshot are calculated using
 
 *A*<sub>trig<sub>1</sub>,trig<sub>2</sub>,trig<sub>3</sub></sub> =
 1/N &sum;<sub>*i*</sub> *f<sub>i</sub>*
-trig<sub>1</sub>(2 &pi; *n*<sub>1</sub>*s*<sub>*i*,1</sub>)
-trig<sub>2</sub>(2 &pi; *n*<sub>2</sub>*s*<sub>*i*,2</sub>)
-trig<sub>3</sub>(2 &pi; *n*<sub>3</sub>*s*<sub>*i*,3</sub>),
+trig<sub>1</sub>(2&pi;*n*<sub>1</sub>*s*<sub>*i*,1</sub>)
+trig<sub>2</sub>(2&pi;*n*<sub>2</sub>*s*<sub>*i*,2</sub>)
+trig<sub>3</sub>(2&pi;*n*<sub>3</sub>*s*<sub>*i*,3</sub>),
 
 where *f<sub>i</sub>* and **s**<sub>*i*</sub> are, respectively value of the shape function *f* and relative position of
 *i*<sup>th</sup> particle. For 2D and 1D (where some *n<sub>i</sub>* are 0), the number of coefficients decreases to,
 respectively 4 and 2.
 
 Please note, that *F*(**s**) is sensitive to density modulation - if *f* = const, it tracks a generalized type of
-[smectic order](#class-smecticorder). In fact, if only a single wavenumber is non-zero (1D), it reduces to the phase of
+[smectic order](#class-smecticorder). In fact, if only a single wavenumber is non-zero (1D), it is equivalent to the
 smectic order parameter.
 
-Arguments:
-
-* ***wavenumbers***
-
-  An Array of Integers (for example `[1, 2, 0`]) representing wavenumbers *n<sub>i</sub>* of modulation. If all are
-  non-zero, the modulation is 3-dimensional, while setting 1 or 2 of them to 0 reduces dimensionality.
-
-* ***function***
-
-  [Shape function](#shape-functions), whose modulation we are testing. It can be [const](#class-const) - then we are
-  probing density modulation.
+* **Arguments**:
+  * ***wavenumbers*** <br />
+    An Array of Integers (for example `[1, 2, 0`]) representing wavenumbers *n<sub>i</sub>* of modulation. If all are
+    non-zero, the modulation is 3-dimensional, while setting 1 or 2 of them to 0 reduces dimensionality.
+  * ***function*** <br />
+    [Shape function](#shape-functions), whose modulation we are testing. It can be [const](#class-const) - then we are
+    probing the density modulation.
+* **Tracker name**: `[function name]_fourier`, where `[function name]` depends on the [shape function](#shape-functions)
+  (`function` argument)
 
 
 ## Binning types
@@ -584,14 +583,84 @@ calculated.
 
 ### Class `layerwise_radial`
 
+```python
+layerwise_radial(
+    hkl,
+    focal_point = "o"
+)
+```
+
+Layerwise, transversal binning type. Particles are projected on nearest layers as specified by `hkl` Miller indices (see
+[class `smectic_order`](#class-smecticorder)) and the *distance* is calculated along the layer (transversally).
+Moreover, pairs of particles in different layers are not enumerated. `focal_point` is a
+[named point](shapes.md#named-points), which is used to associate particles to layers and with respect to which the
+distance should be calculated.
+
 
 ## Correlation functions
 
+Correlation functions take a pair of particles and map it to a single value. They are used in correlation observables,
+such as [class `pair_averaged_correlation`](#class-pairaveragedcorrelation).
+
+Currently, the following correlation functions are available:
+* [Class `s110`](#class-s110)
+
+
 ### Class `s110`
+
+```python
+s110(
+    axis
+)
+```
+
+*S*<sub>110</sub> element of the [S-expansion](https://doi.org/10.1080/00268977800101541), which is defined simply as
+
+*S*<sub>110</sub>(*i*, *j*) = **a**<sub>*i*</sub> &middot; **a**<sub>*j*</sub>,
+
+where **a**<sub>*i*</sub> and **a**<sub>*j*</sub> are (unit) [shape axes](shapes.md#shape-axes) of the *i*<sup>th</sup>
+and *j*<sup>th</sup> molecule, determined by the `axis` argument (`"primary"`, `"secondary"` or `"auxiliary"`). 
 
 
 ## Shape functions
 
+Shape functions take a single particle and map it to a single value. They are used for example in
+[class `smectic_order`](#class-smecticorder) and [class `fourier_tracker`](#class-fouriertracker).
+
+Currently, the following correlation functions are available:
+* [Class `const`](#class-const)
+* [Class `axis`](#class-axis)
+
+
 ### Class `const`
 
+```python
+const(
+    value = 1
+)
+```
+
+Constant shape function always returning `value` (`1` by default).
+
+
 ### Class `axis`
+
+```python
+axis(
+    which,
+    comp
+)
+```
+
+Shape function returning a specific coordinate of a specific shape axis.
+
+Arguments:
+
+* ***which***
+
+  [Shape axis](shapes.md#shape-axes) whose component is to be taken. It can be either of: `"primary"`, `"secondary"` or
+  `"auxiliary"`.
+
+* ***comp***
+
+  Component of the axis vector to be returned. It can be `"x"`, `"y"` or `"z"`.
