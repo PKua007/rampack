@@ -453,8 +453,10 @@ namespace {
 
     MatcherAlternative create_shape_function() {
         auto constFunction = MatcherDataclass("const")
-            .mapTo([](const DataclassData&) -> std::shared_ptr<ShapeFunction> {
-                return std::make_shared<ConstantShapeFunction>();
+            .arguments({{"value", MatcherFloat{}, "1"}})
+            .mapTo([](const DataclassData &const_) -> std::shared_ptr<ShapeFunction> {
+                auto value = const_["value"].as<double>();
+                return std::make_shared<ConstantShapeFunction>(value);
             });
 
         auto axisComp = MatcherString{}
