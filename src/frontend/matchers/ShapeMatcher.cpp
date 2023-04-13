@@ -20,6 +20,7 @@
 #include "core/interactions/SquareInverseCoreInteraction.h"
 
 #include "geometry/xenocollide/XCBodyBuilder.h"
+#include "core/shapes/DistortedTetrahedronTraits.h"
 
 
 using namespace pyon::matcher;
@@ -35,6 +36,7 @@ namespace {
     MatcherDataclass create_polysphere_lollipop_matcher();
     MatcherDataclass create_polysphere_wedge_matcher();
     MatcherDataclass create_spherocylinder_matcher();
+    MatcherDataclass create_distortedtetrahedron_matcher();
     MatcherDataclass create_polyspherocylinder_banana_matcher();
     MatcherDataclass create_smooth_wedge_matcher();
     MatcherDataclass create_polysphere_matcher();
@@ -216,11 +218,21 @@ namespace {
 
     MatcherDataclass create_spherocylinder_matcher() {
         return MatcherDataclass("spherocylinder")
-            .arguments({{"l", MatcherFloat{}.positive()},
-                        {"r", MatcherFloat{}.positive()}})
-            .mapTo([](const DataclassData &sc) -> std::shared_ptr<ShapeTraits> {
-                return std::make_shared<SpherocylinderTraits>(sc["l"].as<double>(), sc["r"].as<double>());
-            });
+                .arguments({{"l", MatcherFloat{}.positive()},
+                            {"r", MatcherFloat{}.positive()}})
+                .mapTo([](const DataclassData &sc) -> std::shared_ptr<ShapeTraits> {
+                    return std::make_shared<SpherocylinderTraits>(sc["l"].as<double>(), sc["r"].as<double>());
+                });
+    }
+
+    MatcherDataclass create_distortedtetrahedron_matcher() {
+        return MatcherDataclass("distorted_tetrahedron")
+                .arguments({{"R", MatcherFloat{}.positive()},
+                            {"r", MatcherFloat{}.positive()},
+                            {"l", MatcherFloat{}.positive()}})
+    .mapTo([](const DataclassData &sc) -> std::shared_ptr<ShapeTraits> {
+                    return std::make_shared<DistortedTetrahedronTraits>(sc["R"].as<double>(), sc["r"].as<double>(), sc["l"].as<double>());
+                });
     }
 
     MatcherDataclass create_polyspherocylinder_banana_matcher() {
@@ -479,6 +491,7 @@ pyon::matcher::MatcherAlternative const ShapeMatcher::shape =
     | create_polysphere_lollipop_matcher()
     | create_polysphere_wedge_matcher()
     | create_spherocylinder_matcher()
+    | create_distortedtetrahedron_matcher()
     | create_polyspherocylinder_banana_matcher()
     | create_smooth_wedge_matcher()
     | create_polysphere_matcher()
