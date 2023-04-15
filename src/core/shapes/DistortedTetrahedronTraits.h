@@ -6,6 +6,7 @@
 #define RAMPACK_DISTORTEDTETRAHEDRONTRAITS_H
 
 #include "XenoCollideTraits.h"
+#include "geometry/xenocollide/XCOperations.h"
 
 
 /**
@@ -19,8 +20,7 @@ public:
      */
     class CollideGeometry {
     private:
-        double R{};
-        double r{};
+        double rxUp{}, ryUp{}, rxDown{}, ryDown{};
         double l{};
         double circumsphereRadius{};
         double insphereRadius{};
@@ -29,33 +29,33 @@ public:
 
     public:
         /**
-         * @brief Creates the distorted tetrahedron along the z axis, with a segment length @a R at the bottom and
-         * @a r at the top. The distance between segments is l.
-         * @details The bottom segment is placed along X axis with the center at {0, 0, - @a l)/2} and
-         * the top segment is placed along Y axis with the center at {0, 0, @a l)/2}.
+         * @brief Creates the distorted tetrahedron along the z axis, with a rectangle (@a 2rxUp, @a 2ryUp) at the top and
+         * (@a 2rxDown, @a 2ryDown) at the bottom. The distance between rectangles is l.
+         * @details The bottom rectangle is placed along X axis with the center at {0, 0, - @a l)/2} and
+         * the top rectangle is placed along Y axis with the center at {0, 0, @a l)/2}.
          */
-        CollideGeometry(double R, double r, double l);
+        CollideGeometry(double rxUp, double ryUp, double rxDown, double ryDown, double l);
 
         [[nodiscard]] Vector<3> getCenter() const { return {}; }
 
         [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const {
+            Vector<3> rUp{this->rxUp, this->ryUp, this->l/2.0};
+            Vector<3> rDown{this->rxDown, this->ryDown, -this->l/2.0};
 
-            Vector<3> vR{0, 0, -l/2.0};
-            if (n[0] < 0)
-                vR[0] = -R/2.0;
-            else
-                vR[0] = R/2.0;
+            if (n[0] < 0){
+                rUp[0] = -rUp[0];
+                rDown[0] = -rDown[0];
+            }
+            if (n[1] < 0) {
+                rUp[1] = -rUp[1];
+                rDown[1] = -rDown[1];
+            }
 
-            Vector<3> vr{0, 0, l/2.0};
-            if (n[1] < 0)
-                vr[1] = -r/2.0;
+            //MAX
+            if ((rUp - rDown) * n > 0)
+                return rUp;
             else
-                vr[1] = r/2.0;
-
-            if ((vR - vr) * n > 0 )
-                return vR;
-            else
-                return vr;
+                return rDown;
         }
 
         [[nodiscard]] double getCircumsphereRadius() const { return this->circumsphereRadius; }
@@ -66,15 +66,14 @@ private:
     double R{};
     double r{};
     double l{};
-    CollideGeometry shapeModel;
+    std::vector<CollideGeometry> shapeModel;
+    std::vector<Vector<3>> interactionCentres;
 
     static double getVolume(double R, double r, double l);
 
-//    [[nodiscard]] std::vector<double> calculateRelativeSpherePositions(std::size_t subdivisions) const;
-
     template<typename Printer>
     std::shared_ptr<Printer> createPrinter(std::size_t meshSubdivisions) const {
-        CollideGeometry geometry(this->R, this->r, this->l);
+        CollideGeometry geometry(0, this->r, this->R, 0, this->l);
         PolymorphicXCAdapter<CollideGeometry> geometryAdapter(geometry);
         return std::make_shared<Printer>(geometryAdapter, meshSubdivisions);
     }
@@ -89,14 +88,16 @@ public:
      * @details If @a subdivision is at least two, the wedge is divided into that many parts (with equal circumscribed
      * spheres' radii) to lower the number of neighbours in the neighbour grid.
      */
-    DistortedTetrahedronTraits(double R, double r, double l);
+    DistortedTetrahedronTraits(double R, double r, double l, std::size_t subdivisions = 0);
 
     /**
      * @brief Returns CollideGeometry object for the interaction center with index @a idx (see XenoCollideTraits).
      */
     [[nodiscard]] const CollideGeometry &getCollideGeometry([[maybe_unused]] std::size_t idx = 0) const {
-        return this->shapeModel;
+        return this->shapeModel[idx];
     }
+
+    [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return this->interactionCentres; }
 
     /**
      * @brief Returns ShapePrinter for a given @a format.
