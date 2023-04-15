@@ -227,11 +227,16 @@ namespace {
 
     MatcherDataclass create_distortedtetrahedron_matcher() {
         return MatcherDataclass("distorted_tetrahedron")
-                .arguments({{"R", MatcherFloat{}.positive()},
-                            {"r", MatcherFloat{}.positive()},
-                            {"l", MatcherFloat{}.positive()}})
-    .mapTo([](const DataclassData &sc) -> std::shared_ptr<ShapeTraits> {
-                    return std::make_shared<DistortedTetrahedronTraits>(sc["R"].as<double>(), sc["r"].as<double>(), sc["l"].as<double>());
+                .arguments({{"bottom_r", MatcherFloat{}.positive()},
+                            {"top_r", MatcherFloat{}.positive()},
+                            {"length", MatcherFloat{}.positive()},
+                            {"subdivisions", MatcherInt{}.positive().mapTo<std::size_t>(), "1"}})
+                .mapTo([](const DataclassData &sc) -> std::shared_ptr<ShapeTraits> {
+                    return std::make_shared<DistortedTetrahedronTraits>(
+                            sc["bottom_r"].as<double>(),
+                            sc["top_r"].as<double>(),
+                            sc["length"].as<double>(),
+                            sc["subdivisions"].as<std::size_t>());
                 });
     }
 
