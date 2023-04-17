@@ -7,41 +7,51 @@
 #include "geometry/xenocollide/XCBodyBuilder.h"
 
 
-double DistortedTetrahedronTraits::getVolume(double R, double r, double l) {
-    return (2.0/3.0)*R*r*l;
+double DistortedTetrahedronTraits::getVolume(double rxUp, double ryUp, double rxDown, double ryDown, double l) {
+    double v = (2.0*l/3.0)*(2*rxDown*ryDown + rxUp*ryDown + rxDown*ryUp + 2*rxUp*ryUp);
+    return v;
 }
 
-DistortedTetrahedronTraits::DistortedTetrahedronTraits(double R, double r, double l, std::size_t subdivisions)
+DistortedTetrahedronTraits::DistortedTetrahedronTraits(double rxUp, double ryUp, double rxDown, double ryDown, double l, std::size_t subdivisions)
         : XenoCollideTraits({0, 0, 1}, {1, 0, 0}, {0, 0, 0},
-                            DistortedTetrahedronTraits::getVolume(R, r, l),
-                            {{"beg", {0, 0, -l/2}}, {"end", {0, 0, l/2}}}), R{R},
-          r{r}, l{l}
+                            DistortedTetrahedronTraits::getVolume(rxUp, ryUp, rxDown, ryDown, l),
+                            {{"beg", {0, 0, -l/2}}, {"end", {0, 0, l/2}}}),
+                            rxUp{rxUp}, ryUp{ryUp}, rxDown{rxDown}, ryDown{ryDown}, l{l}
 {
-    Expects(r > 0);
-    Expects(R > 0);
+    Expects(rxUp >= 0);
+    Expects(ryUp > 0);
+    Expects(rxDown > 0);
+    Expects(ryDown >= 0);
     Expects(l > 0);
 
     if (subdivisions == 0 || subdivisions == 1) {
         this->interactionCentres = {};
-        this->shapeModel.emplace_back(0, this->r, this->R, 0, this->l);
+        this->shapeModel.emplace_back(this->rxUp, this->ryUp, this->rxDown, this->ryDown, this->l);
         return;
     }
 
     double dl = this->l/static_cast<double>(subdivisions);
-    double dy = this->r/static_cast<double>(subdivisions);
-    double dx = this->R/static_cast<double>(subdivisions);
+    double dy = (this->ryDown - this->ryUp)/static_cast<double>(subdivisions);
+    double dx = (this->rxDown - this->rxUp)/static_cast<double>(subdivisions);
     this->shapeModel.reserve(subdivisions);
     this->interactionCentres.reserve(subdivisions);
     for (std::size_t i{}; i < subdivisions; i++) {
-        double rxUp = static_cast<double>(i)*dx;
-        double ryUp = this->r - static_cast<double>(i)*dy;
-        double rxDown = static_cast<double>(i+1)*dx;
-        double ryDown = this->r - static_cast<double>(i+1)*dy;
+        double rxUp = this->rxUp + static_cast<double>(i)*dx;
+        double ryUp = this->ryUp + static_cast<double>(i)*dy;
+        double rxDown = this->rxUp + static_cast<double>(i+1)*dx;
+        double ryDown = this->ryUp + static_cast<double>(i+1)*dy;
 
-        if (ryUp>this->r) ryUp = this->r;
-        if (ryDown<0.0) ryDown = 0.0;
-        if (rxUp<0.0) rxUp = 0.0;
-        if (rxDown>this->R) rxDown = this->R;
+        if (rxUp > std::max(this->rxUp, this->rxDown)) rxUp = std::max(this->rxUp, this->rxDown);
+        if (rxUp < std::min(this->rxUp, this->rxDown)) rxUp = std::min(this->rxUp, this->rxDown);;
+
+        if (rxDown > std::max(this->rxUp, this->rxDown)) rxDown = std::max(this->rxUp, this->rxDown);
+        if (rxDown < std::min(this->rxUp, this->rxDown)) rxDown = std::min(this->rxUp, this->rxDown);;
+
+        if (ryUp > std::max(this->ryUp, this->ryDown)) ryUp = std::max(this->ryUp, this->ryDown);
+        if (ryUp < std::min(this->ryUp, this->ryDown)) ryUp = std::min(this->ryUp, this->ryDown);
+
+        if (ryDown > std::max(this->ryUp, this->ryDown)) ryDown = std::max(this->ryUp, this->ryDown);
+        if (ryDown < std::min(this->ryUp, this->ryDown)) ryDown = std::min(this->ryUp, this->ryDown);
 
         this->shapeModel.emplace_back(rxUp, ryUp, rxDown, ryDown, dl);
         this->interactionCentres.push_back({0, 0, l/2.0-(static_cast<double>(i)+0.5)*dl});
