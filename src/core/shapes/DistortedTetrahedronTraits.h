@@ -63,17 +63,17 @@ public:
     };
 
 private:
-    double R{};
-    double r{};
+    double rxUp{}, ryUp{};
+    double rxDown, ryDown{};
     double l{};
     std::vector<CollideGeometry> shapeModel;
     std::vector<Vector<3>> interactionCentres;
 
-    static double getVolume(double R, double r, double l);
+    static double getVolume(double rxUp, double ryUp, double rxDown, double ryDown, double l);
 
     template<typename Printer>
     std::shared_ptr<Printer> createPrinter(std::size_t meshSubdivisions) const {
-        CollideGeometry geometry(0, this->r, this->R, 0, this->l);
+        CollideGeometry geometry(this->rxUp, this->ryUp, this->rxDown, this->ryDown, this->l);
         PolymorphicXCAdapter<CollideGeometry> geometryAdapter(geometry);
         return std::make_shared<Printer>(geometryAdapter, meshSubdivisions);
     }
@@ -88,7 +88,7 @@ public:
      * @details If @a subdivision is at least two, the wedge is divided into that many parts (with equal circumscribed
      * spheres' radii) to lower the number of neighbours in the neighbour grid.
      */
-    DistortedTetrahedronTraits(double R, double r, double l, std::size_t subdivisions = 0);
+    DistortedTetrahedronTraits(double rxUp, double ryUp, double rxDown, double ryDown, double l, std::size_t subdivisions = 0);
 
     /**
      * @brief Returns CollideGeometry object for the interaction center with index @a idx (see XenoCollideTraits).
