@@ -20,7 +20,7 @@
 #include "core/interactions/SquareInverseCoreInteraction.h"
 
 #include "geometry/xenocollide/XCBodyBuilder.h"
-#include "core/shapes/DistortedTetrahedronTraits.h"
+#include "core/shapes/PolyhedralWedge.h"
 
 
 using namespace pyon::matcher;
@@ -36,11 +36,12 @@ namespace {
     MatcherDataclass create_polysphere_lollipop_matcher();
     MatcherDataclass create_polysphere_wedge_matcher();
     MatcherDataclass create_spherocylinder_matcher();
-    MatcherDataclass create_distortedtetrahedron_matcher();
     MatcherDataclass create_polyspherocylinder_banana_matcher();
     MatcherDataclass create_smooth_wedge_matcher();
     MatcherDataclass create_polysphere_matcher();
     MatcherDataclass create_polyspherocylinder_matcher();
+    MatcherDataclass create_generic_convex_matcher();
+    MatcherDataclass create_polyhedral_wedge_matcher();
 
     bool validate_axes(const DataclassData &dataclass);
 
@@ -222,25 +223,6 @@ namespace {
                             {"r", MatcherFloat{}.positive()}})
                 .mapTo([](const DataclassData &sc) -> std::shared_ptr<ShapeTraits> {
                     return std::make_shared<SpherocylinderTraits>(sc["l"].as<double>(), sc["r"].as<double>());
-                });
-    }
-
-    MatcherDataclass create_distortedtetrahedron_matcher() {
-        return MatcherDataclass("distorted_tetrahedron")
-                .arguments({{"top_rx", MatcherFloat{}.nonNegative()},
-                            {"top_ry", MatcherFloat{}.positive()},
-                            {"bottom_rx", MatcherFloat{}.positive()},
-                            {"bottom_ry", MatcherFloat{}.nonNegative()},
-                            {"length", MatcherFloat{}.positive()},
-                            {"subdivisions", MatcherInt{}.positive().mapTo<std::size_t>(), "1"}})
-                .mapTo([](const DataclassData &sc) -> std::shared_ptr<ShapeTraits> {
-                    return std::make_shared<DistortedTetrahedronTraits>(
-                            sc["top_rx"].as<double>(),
-                            sc["top_ry"].as<double>(),
-                            sc["bottom_rx"].as<double>(),
-                            sc["bottom_ry"].as<double>(),
-                            sc["length"].as<double>(),
-                            sc["subdivisions"].as<std::size_t>());
                 });
     }
 
@@ -479,6 +461,34 @@ namespace {
             });
     }
 
+    MatcherDataclass create_polyhedral_wedge_matcher() {
+        return MatcherDataclass("polyhedral_wedge")
+            .arguments({{"top_rx", MatcherFloat{}.nonNegative()},
+                        {"top_ry", MatcherFloat{}.nonNegative()},
+                        {"bottom_rx", MatcherFloat{}.nonNegative()},
+                        {"bottom_ry", MatcherFloat{}.nonNegative()},
+                        {"length", MatcherFloat{}.positive()},
+                        {"subdivisions", MatcherInt{}.positive().mapTo<std::size_t>(), "1"}})
+            .filter([](const DataclassData &wedge) {
+                auto topRx = wedge["top_rx"].as<double>();
+                auto topRy = wedge["top_ry"].as<double>();
+                auto bottomRx = wedge["bottom_rx"].as<double>();
+                auto bottomRy = wedge["bottom_ry"].as<double>();
+                return (topRx != 0 && bottomRy != 0) || (topRy != 0 && bottomRx != 0);
+            })
+            .describe("with at least one pair of non-zero orthogonal r-s, one at top, one at bottom")
+            .mapTo([](const DataclassData &wedge) -> std::shared_ptr<ShapeTraits> {
+                return std::make_shared<PolyhedralWedge>(
+                    wedge["top_rx"].as<double>(),
+                    wedge["top_ry"].as<double>(),
+                    wedge["bottom_rx"].as<double>(),
+                    wedge["bottom_ry"].as<double>(),
+                    wedge["length"].as<double>(),
+                    wedge["subdivisions"].as<std::size_t>()
+                );
+            });
+    }
+
     bool validate_axes(const DataclassData &dataclass) {
         if (dataclass["primary_axis"].isEmpty()) {
             return dataclass["secondary_axis"].isEmpty();
@@ -500,12 +510,12 @@ pyon::matcher::MatcherAlternative const ShapeMatcher::shape =
     | create_polysphere_lollipop_matcher()
     | create_polysphere_wedge_matcher()
     | create_spherocylinder_matcher()
-    | create_distortedtetrahedron_matcher()
     | create_polyspherocylinder_banana_matcher()
     | create_smooth_wedge_matcher()
     | create_polysphere_matcher()
     | create_polyspherocylinder_matcher()
-    | create_generic_convex_matcher();
+    | create_generic_convex_matcher()
+    | create_polyhedral_wedge_matcher();
 
 
 std::shared_ptr<ShapeTraits> ShapeMatcher::match(const std::string &expression) {
