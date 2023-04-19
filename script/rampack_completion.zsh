@@ -6,7 +6,7 @@ _rampack_verbosity=(fatal error warn info verbose debug)
 _rampack_snapshot_output=(ramsnap wolfram xyz)
 
 _rampack_shape=(sphere kmer polysphere_banana polysphere_lollipop polysphere_wedge spherocylinder
-	polyspherocylinder_banana smooth_wedge polysphere polyspherocylinder generic_convex)
+	polyspherocylinder_banana smooth_wedge polysphere polyspherocylinder generic_convex polyhedral_wedge)
 
 _rampack_shape_output=(wolfram obj)
 

@@ -21,7 +21,7 @@ _rampack_snapshot_out() {
 _rampack_shape() {
 	COMPREPLY=($(compgen -W "\'sphere( \'kmer( \'polysphere_banana( \'polysphere_lollipop( 
 		\'polysphere_wedge( \'spherocylinder( \'polyspherocylinder_banana( \'smooth_wedge(
-		\'polysphere( \'polyspherocylinder( \'generic_convex(" -- "${cur/\'/\\\'}"))
+		\'polysphere( \'polyspherocylinder( \'generic_convex( \'polyhedral_wedge(" -- "${cur/\'/\\\'}"))
 	compopt -o nospace
 }
 
