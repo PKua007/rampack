@@ -26,16 +26,17 @@ int ShapePreviewMode::main(int argc, char **argv) {
         .set_width(120)
         .add_options()
             ("h,help", "prints help for this mode")
-            ("i,input", "an INI/PYON file with parameters of the shape; it can be used instead of manually "
-                        "specifying shape parameters using -S",
+            ("i,input", "a PYON file with parameters of the shape; it can be used instead of manually "
+                        "creating the shape using -S",
              cxxopts::value<std::string>(inputFilename))
-            ("S,shape", "manually specified shape (instead of reading from input file using -i). It is advisable to "
-                        "put the argument in '...' to escape shell special characters '()\"\"|'",
+            ("S,shape", "manually specified shape (instead of reading from input file using `-i`). It is advisable to "
+                        "put the argument in single quotes `' '` to escape special shell characters `\"()|`",
              cxxopts::value<std::string>(shape))
             ("l,log-info", "prints information about the shape")
-            ("o,output", "stores preview of the shape in a format given as an argument: wolfram, obj; multiple formats may "
-                         "be passed using multiple -o options or separated by a pipe '|' in a single one. It is advisable "
-                         "to put the argument in '...' to escape shell special characters '()\"\"|'",
+            ("o,output", "stores preview of the shape in a format given as an argument: `wolfram`, `obj` "
+                         "(Wavefront OBJ); multiple formats may be passed using multiple `-o` options or separated by "
+                         "a pipe `|` in a single one. It is advisable to put the argument in `' '` to escape special "
+                         "shell characters `\"()|`",
              cxxopts::value<std::vector<std::string>>(outputs));
 
     auto parsedOptions = ModeBase::parseOptions(options, argc, argv);

@@ -42,59 +42,62 @@ int TrajectoryMode::main(int argc, char **argv) {
         .set_width(120)
         .add_options()
             ("h,help", "prints help for this mode")
-            ("i,input", "an INI file with parameters that was used to generate the trajectories. See sample_inputs "
-                        "folder for full parameters documentation",
+            ("i,input", "a PYON file with parameters. See "
+                        "https://github.com/PKua007/rampack/blob/main/doc/input-file.md for the documentation of the "
+                        "input file",
              cxxopts::value<std::string>(inputFilename))
-            ("r,run-name", "name of the run, for which the trajectory was generated. Special values '.first' "
-                           "and '.last' (for the first and the last run in the configuration file) are also accepted",
+            ("r,run-name", "name of the run, for which the trajectory was generated. Special values `.first` "
+                           "and `.last` (for the first and the last run in the configuration file) are also accepted",
              cxxopts::value<std::string>(runName)->default_value(".last"))
-            ("f,auto-fix", "tries to auto-fix the trajectory if it is broken; fixed trajectory can be stored back to "
-                           "RAMTRJ using -t 'ramtrj(\"filename\")'")
+            ("f,auto-fix", "tries to auto-fix the trajectory if it is broken; fixed trajectory can be stored back "
+                           "using `-t 'ramtrj(\"filename\")` (please note that `\"filename\" must be different than "
+                           "for the source trajectory)")
             ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
-                            "fatal, error, warn, info, verbose, debug. Defaults to: info if --log-file not specified, "
-                            "otherwise to: warn",
+                            "`fatal`, `error`, `warn`, `info`, `verbose`, `debug`. Defaults to: `info` if `--log-file` "
+                            "not specified, otherwise to: `warn`",
              cxxopts::value<std::string>(verbosity))
-            ("o,output-obs", "calculate observables and output them to a given file. Observables can be specified using "
-                             "-O (--observable)",
+            ("o,output-obs", "calculates observables and outputs them to a given file. Observables can be specified "
+                             "using `-O` (`--observable`)",
              cxxopts::value<std::string>(obsOutputFilename))
             ("O,observable", "replays the simulation and calculates specified observables (format as in the input file). "
-                             "Observables can be passed using multiple options (-O obs1 -O obs2) or pipe-separated in a "
-                             "single one (-O 'obs1|obs2'). It is advisable to put the argument in '...' to escape shell "
-                             "special characters '()\"\"|'",
+                             "Observables can be passed using multiple options (`-O obs1 -O obs2`) or pipe-separated "
+                             "in a single one (`-O 'obs1|obs2'`). It is advisable to put the argument in single quotes "
+                             "`' '` to escape special shell characters `\"()|`",
              cxxopts::value<std::vector<std::string>>(observables))
-            ("b,output-bulk-obs", "calculate bulk observables and output them to the file with a name given by the "
-                                  "specified pattern. In the pattern, every occurrence of {} is replaced with observable "
-                                  "signature name. If not specified, '_{}.txt' is appended at the end. Bulk observables "
-                                  "are specified using -B (--bulk-observable)",
+            ("b,output-bulk-obs", "calculates bulk observables and outputs them to the file with a name given "
+                                  "by the specified pattern. In the pattern, every occurrence of `{}` is replaced with "
+                                  "observable's signature name. When no occurances are found, `_{}.txt` is appended at "
+                                  "the end. Bulk observables are specified using `-B` (`--bulk-observable`)",
              cxxopts::value<std::string>(bulkObsOutputFilename))
             ("B,bulk-observable", "replays the simulation and calculates specified bulk observables (format as in the "
-                                  "input file). Observables can be passed using multiple options (-B obs1 -B obs2) "
-                                  "or pipe-separated in a single one (-B 'obs1|obs2'). It is advisable to put the argument "
-                                  "in '...' to escape shell special characters '()\"\"|'",
+                                  "input file). Observables can be passed using multiple options (`-B obs1 -B obs2`) "
+                                  "or pipe-separated in a single one (`-B 'obs1|obs2'`). It is advisable to put the "
+                                  "argument in single quotes `' '` to escape special shell characters `\"()|`",
              cxxopts::value<std::vector<std::string>>(bulkObservables))
             ("a,averaging-start", "specifies when the averaging starts. It is used for bulk observables",
              cxxopts::value<std::size_t>(averagingStart))
             ("T,max-threads", "specifies maximal number of OpenMP threads that may be used to calculate observables. If 0 "
                               "is passed, all available threads are used",
              cxxopts::value<std::size_t>(maxThreads)->default_value("1"))
-            ("s,output-snapshot", "reads the last snapshot and recreates outputs it in a given format: ramsnap, wolfram, "
-                                  "xyz. More than one output can be stored when multiple -s options are specified or in a "
-                                  "single one using pipe '|'",
+            ("s,output-snapshot", "reads the last snapshot and outputs it in a given format: `ramsnap`, `wolfram`, "
+                                  "`xyz`. More than one output formats can be stored when multiple `-s` options are "
+                                  "specified or in a single one using pipe `|`",
              cxxopts::value<std::vector<std::string>>(snapshotOutputs))
-            ("I,log-info", "print basic information about the recorded trajectory on a standard output")
+            ("I,log-info", "prints basic information about the recorded trajectory on a standard output")
             ("l,log-file", "if specified, messages will be logged both on the standard output and to this file. "
-                           "Verbosity defaults then to: warn for standard output and to: info for log file, unless "
-                           "changed by --verbosity and/or --log-file-verbosity options",
+                           "Verbosity defaults then to: `warn` for standard output and to: `info` for log file, unless "
+                           "changed by `--verbosity` and/or `--log-file-verbosity` options",
              cxxopts::value<std::string>(auxOutput))
             ("log-file-verbosity", "how verbose the output to the log file should be. Allowed values, with increasing "
-                                   "verbosity: error, warn, info, verbose, debug. Defaults to: info",
+                                   "verbosity: `fatal`, `error`, `warn`, `info`, `verbose`, debug`. Defaults to: "
+                                   "`info`",
              cxxopts::value<std::string>(auxVerbosity))
-            ("t,output-trajectory", "store the trajectory in a given format: ramtrj, xyz. More than one output can be "
-                                    "stored when multiple -t options are specified or in a single one using pipe '|'",
+            ("t,output-trajectory", "stores the trajectory in a given format: `ramtrj`, `xyz`. More than one "
+                                    "output format can be stored when multiple `-t` options are specified or in a "
+                                    "single one using pipe `|`",
              cxxopts::value<std::vector<std::string>>(trajectoryOutputs))
-            ("x,truncate", "truncates loaded trajectory to a given number of total cycles (trajectory file remains "
-                           "unchanged); truncated trajectory can be stored to other RAMTRJ file using "
-                           "-t 'ramtrj(\"filename\")'",
+            ("x,truncate", "truncates loaded trajectory to a given number of total cycles; truncated "
+                           "trajectory can be stored to a different RAMTRJ file using `-t 'ramtrj(\"filename\")'`",
              cxxopts::value<std::size_t>(truncatedCycles));
     
     auto parsedOptions = ModeBase::parseOptions(options, argc, argv);

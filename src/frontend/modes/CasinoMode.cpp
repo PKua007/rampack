@@ -29,34 +29,38 @@ int CasinoMode::main(int argc, char **argv) {
         .set_width(120)
         .add_options()
             ("h,help", "prints help for this mode")
-            ("i,input", "an INI/PYON file with parameters. See sample_inputs folder for full parameters documentation",
+            ("i,input", "a PYON file with parameters. See "
+                        "https://github.com/PKua007/rampack/blob/main/doc/input-file.md for the documentation of the "
+                        "input file",
              cxxopts::value<std::string>(inputFilename))
             ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
-                            "fatal error, warn, info, verbose, debug. Defaults to: info if --log-file not specified, "
-                            "otherwise to: warn",
+                            "`fatal`, `error`, `warn`, `info`, `verbose`, `debug`. Defaults to: `info` if `--log-file` "
+                            "not specified, otherwise to: `warn`",
              cxxopts::value<std::string>(verbosity))
             ("s,start-from", "when specified, the simulation will be started from the run with the name given. If not "
-                             "used in conjunction with --continue option, the packing will be restored from the "
-                             "RAMSNAP file of the preceding run. If --continue is used, the current run, but finished "
-                             "or aborted in the past, will be loaded instead. There are also some special values. "
-                             "'.start' and '.end' correspond to, respectively, first and last run in the "
-                             "configuration file. When a special value '.auto' is specified, auto-detection of the "
-                             "starting run will be attempted based on RAMSNAP files (all runs in configuration have to "
-                             "output them). If last attempted run was unfinished, --continue option without argument "
-                             "is implicitly added",
+                             "used in conjunction with `--continue` option, the packing will be restored from the "
+                             "RAMSNAP file of the preceding run. If `--continue` is used, the current run, but "
+                             "finished or aborted in the past, will be loaded instead and continued. There are also "
+                             "some special values. `.start` and `.end` correspond to, respectively, first and last run "
+                             "in the configuration file. When a special value `.auto` is specified, auto-detection of "
+                             "the starting run will be attempted based on RAMSNAP files (all runs in configuration "
+                             "have to output them). If last attempted run was unfinished, `--continue` option without "
+                             "an argument is implicitly added to finish it",
              cxxopts::value<std::string>(startFrom))
             ("c,continue", "when specified, the thermalization of previously finished or aborted run will be continued "
-                           "for as many more cycles as specified. It can be used together with --start-from to specify "
-                           "which run should be continued. If the thermalization phase is already over, the error will "
-                           "be reported. If 0 is specified (or left blank, since 0 is the default value), "
-                           "total number of thermalization cycles from the input file will not be changed",
+                           "for as many more cycles as specified. It can be used together with `--start-from` to "
+                           "specify which run should be continued. If the thermalization phase is already over, "
+                           "the averaging phase will be immediately started. If 0 is specified (or left blank, since "
+                           "0 is the implicit value), total number of thermalization cycles from the input file will "
+                           "not be changed",
              cxxopts::value<std::size_t>(continuationCycles)->implicit_value("0"))
             ("l,log-file", "if specified, messages will be logged both on the standard output and to this file. "
-                           "Verbosity defaults then to: warn for standard output and to: info for log file, unless "
-                           "changed by --verbosity and/or --log-file-verbosity options",
+                           "Verbosity defaults then to: `warn` for standard output and to: `info` for log file, unless "
+                           "changed by `--verbosity` and/or `--log-file-verbosity` options",
              cxxopts::value<std::string>(auxOutput))
             ("log-file-verbosity", "how verbose the output to the log file should be. Allowed values, with increasing "
-                                   "verbosity: error, warn, info, verbose, debug. Defaults to: info",
+                                   "verbosity: `fatal`, `error`, `warn`, `info`, `verbose`, `debug`. Defaults to: "
+                                   "`info`",
              cxxopts::value<std::string>(auxVerbosity));
 
     auto parsedOptions = ModeBase::parseOptions(options, argc, argv);

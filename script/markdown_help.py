@@ -122,8 +122,7 @@ def main():
 
     export_entries(help_entries, doc_path, modes)
 
-    print("Succesfully updated '{}'".format(doc_path
-                                            ))
+    print("Succesfully updated '{}'".format(doc_path))
 
 
 if __name__ == '__main__':

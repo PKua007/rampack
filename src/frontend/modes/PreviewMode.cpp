@@ -22,17 +22,20 @@ int PreviewMode::main(int argc, char **argv) {
         .set_width(120)
         .add_options()
             ("h,help", "prints help for this mode")
-            ("i,input", "an INI/PYON file with parameters. See sample_inputs folder for full parameters documentation",
+            ("i,input", "a PYON file with parameters. See "
+                        "https://github.com/PKua007/rampack/blob/main/doc/input-file.md for the documentation of the "
+                        "input file",
              cxxopts::value<std::string>(inputFilename))
             ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
-                            "fatal, error, warn, info, verbose, debug. Defaults to: info",
+                            "`fatal`, `error`, `warn`, `info`, `verbose`, `debug`. Defaults to: `info`",
              cxxopts::value<std::string>(verbosity))
-            ("o,output", "output of the preview. Supported PYON classes: ramsnap, wolfram, xyz (see the input file "
-                         "documentation). More than one format can be chosen by specifying this option multiple times, or "
-                         "in a single one using pipe '|'. It is advisable to put the argument in '...' to escape shell "
-                         "special characters '()\"\"|'",
+            ("o,output", "outputs the initial configuration loaded from the input file. Supported formats: "
+                         "`ramsnap`, `wolfram`, `xyz`. More than one format can be chosen by specifying this option "
+                         "multiple times, or in a single one using pipe `|`. It is advisable to put the argument in "
+                         "single quotes `' '` to escape special shell characters `\"()|`",
              cxxopts::value<std::vector<std::string>>(outputs))
-            ("r,run-names", "output run names from the input file to stdout. Use with -V warn for a clean output");
+            ("r,run-names", "output run names from the input file to the standard output. Use with "
+                            "`-V warn` for a clean output");
 
     auto parsedOptions = ModeBase::parseOptions(options, argc, argv);
     if (parsedOptions.count("help")) {
