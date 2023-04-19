@@ -2,8 +2,8 @@
 // Created by ciesla on 12/04/23.
 //
 
-#ifndef RAMPACK_POLYHEDRALWEDGE_H
-#define RAMPACK_POLYHEDRALWEDGE_H
+#ifndef RAMPACK_POLYHEDRALWEDGETRAITS_H
+#define RAMPACK_POLYHEDRALWEDGETRAITS_H
 
 #include "XenoCollideTraits.h"
 
@@ -12,7 +12,7 @@
  * @brief Class representing a distorted tetrahedron - a convex hull based on two perpendicular segments of length
  * R and r, placed in XY planes and the distance between them along the Z axis equals l.
  */
-class PolyhedralWedge : public XenoCollideTraits<PolyhedralWedge> {
+class PolyhedralWedgeTraits : public XenoCollideTraits<PolyhedralWedgeTraits> {
 public:
     /**
      * @brief Class representing the geometry of the distorted tetrahedron (see template parameter of XenoCollide)
@@ -24,7 +24,7 @@ public:
         double circumsphereRadius{};
         double insphereRadius{};
 
-        friend PolyhedralWedge;
+        friend PolyhedralWedgeTraits;
 
     public:
         /**
@@ -87,7 +87,7 @@ public:
      * @details If @a subdivision is at least two, the wedge is divided into that many parts (with equal circumscribed
      * spheres' radii) to lower the number of neighbours in the neighbour grid.
      */
-    PolyhedralWedge(double rxTop, double ryTop, double rxBottom, double ryBottom, double length, std::size_t subdivisions = 0);
+    PolyhedralWedgeTraits(double rxTop, double ryTop, double rxBottom, double ryBottom, double length, std::size_t subdivisions = 0);
 
     /**
      * @brief Returns CollideGeometry object for the interaction center with index @a idx (see XenoCollideTraits).
@@ -111,4 +111,4 @@ public:
 };
 
 
-#endif //RAMPACK_POLYHEDRALWEDGE_H
+#endif //RAMPACK_POLYHEDRALWEDGETRAITS_H

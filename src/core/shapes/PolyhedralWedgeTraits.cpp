@@ -2,20 +2,20 @@
 // Created by ciesla on 12/04/23.
 //
 
-#include "PolyhedralWedge.h"
+#include "PolyhedralWedgeTraits.h"
 #include "utils/Exceptions.h"
 #include "geometry/xenocollide/XCBodyBuilder.h"
 
 
-double PolyhedralWedge::getVolume(double rxTop, double ryTop, double rxBottom, double ryBottom, double length) {
+double PolyhedralWedgeTraits::getVolume(double rxTop, double ryTop, double rxBottom, double ryBottom, double length) {
     double v = length / 6 * (2 * rxBottom * ryBottom + rxTop * ryBottom + rxBottom * ryTop + 2 * rxTop * ryTop);
     return v;
 }
 
-PolyhedralWedge::PolyhedralWedge(double rxTop, double ryTop, double rxBottom, double ryBottom, double length,
+PolyhedralWedgeTraits::PolyhedralWedgeTraits(double rxTop, double ryTop, double rxBottom, double ryBottom, double length,
                                  std::size_t subdivisions)
         : XenoCollideTraits({0, 0, 1}, {1, 0, 0}, {0, 0, 0},
-                            PolyhedralWedge::getVolume(rxTop, ryTop, rxBottom, ryBottom, length),
+                            PolyhedralWedgeTraits::getVolume(rxTop, ryTop, rxBottom, ryBottom, length),
                             {{"beg", {0, 0, -length / 2}}, {"end", {0, 0, length / 2}}}),
           rxTop{rxTop}, ryTop{ryTop}, rxBottom{rxBottom}, ryBottom{ryBottom}, length{length}
 {
@@ -58,7 +58,7 @@ PolyhedralWedge::PolyhedralWedge(double rxTop, double ryTop, double rxBottom, do
 
 
 std::shared_ptr<const ShapePrinter>
-PolyhedralWedge::getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const {
+PolyhedralWedgeTraits::getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const {
     // We override the function from XenoCollideTraits not to redundantly print subdivisions
 
     std::size_t meshSubdivisions = XenoCollideTraits::DEFAULT_MESH_SUBDIVISIONS;
@@ -75,7 +75,7 @@ PolyhedralWedge::getPrinter(const std::string &format, const std::map<std::strin
         throw NoSuchShapePrinterException("XenoCollideTraits: unknown printer format: " + format);
 }
 
-PolyhedralWedge::CollideGeometry::CollideGeometry(double rxTop, double ryTop, double rxBottom, double ryBottom,
+PolyhedralWedgeTraits::CollideGeometry::CollideGeometry(double rxTop, double ryTop, double rxBottom, double ryBottom,
                                                   double length)
         : vertexUp{rxTop/2, ryTop/2, length/2}, vertexDown{rxBottom/2, ryBottom/2, -length/2}
 {

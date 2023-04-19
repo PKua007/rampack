@@ -20,7 +20,7 @@
 #include "core/interactions/SquareInverseCoreInteraction.h"
 
 #include "geometry/xenocollide/XCBodyBuilder.h"
-#include "core/shapes/PolyhedralWedge.h"
+#include "core/shapes/PolyhedralWedgeTraits.h"
 
 
 using namespace pyon::matcher;
@@ -478,7 +478,7 @@ namespace {
             })
             .describe("with at least one pair of non-zero orthogonal r-s, one at top, one at bottom")
             .mapTo([](const DataclassData &wedge) -> std::shared_ptr<ShapeTraits> {
-                return std::make_shared<PolyhedralWedge>(
+                return std::make_shared<PolyhedralWedgeTraits>(
                     wedge["top_rx"].as<double>(),
                     wedge["top_ry"].as<double>(),
                     wedge["bottom_rx"].as<double>(),
