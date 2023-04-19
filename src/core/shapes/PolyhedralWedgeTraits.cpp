@@ -39,18 +39,6 @@ PolyhedralWedgeTraits::PolyhedralWedgeTraits(double rxTop, double ryTop, double 
         double rxDown = this->rxTop + static_cast<double>(i + 1) * dx;
         double ryDown = this->ryTop + static_cast<double>(i + 1) * dy;
 
-        if (rxUp > std::max(this->rxTop, this->rxBottom)) rxUp = std::max(this->rxTop, this->rxBottom);
-        if (rxUp < std::min(this->rxTop, this->rxBottom)) rxUp = std::min(this->rxTop, this->rxBottom);
-
-        if (rxDown > std::max(this->rxTop, this->rxBottom)) rxDown = std::max(this->rxTop, this->rxBottom);
-        if (rxDown < std::min(this->rxTop, this->rxBottom)) rxDown = std::min(this->rxTop, this->rxBottom);
-
-        if (ryUp > std::max(this->ryTop, this->ryBottom)) ryUp = std::max(this->ryTop, this->ryBottom);
-        if (ryUp < std::min(this->ryTop, this->ryBottom)) ryUp = std::min(this->ryTop, this->ryBottom);
-
-        if (ryDown > std::max(this->ryTop, this->ryBottom)) ryDown = std::max(this->ryTop, this->ryBottom);
-        if (ryDown < std::min(this->ryTop, this->ryBottom)) ryDown = std::min(this->ryTop, this->ryBottom);
-
         this->shapeModels.emplace_back(rxUp, ryUp, rxDown, ryDown, dl);
         this->interactionCentres.push_back({0, 0, length / 2.0 - (static_cast<double>(i) + 0.5) * dl});
     }
