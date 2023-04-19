@@ -19,8 +19,8 @@ public:
      */
     class CollideGeometry {
     private:
-        double rxTop{}, ryTop{}, rxBottom{}, ryBottom{};
-        double length{};
+        Vector<3> vertexUp;
+        Vector<3> vertexDown;
         double circumsphereRadius{};
         double insphereRadius{};
 
@@ -38,8 +38,8 @@ public:
         [[nodiscard]] Vector<3> getCenter() const { return {}; }
 
         [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const {
-            Vector<3> rUp{this->rxTop, this->ryTop, this->length / 2.0};
-            Vector<3> rDown{this->rxBottom, this->ryBottom, -this->length / 2.0};
+            auto rUp = this->vertexUp;
+            auto rDown = this->vertexDown;
 
             if (n[0] < 0) {
                 rUp[0] = -rUp[0];

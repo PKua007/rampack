@@ -8,7 +8,7 @@
 
 
 double PolyhedralWedge::getVolume(double rxTop, double ryTop, double rxBottom, double ryBottom, double length) {
-    double v = (2 * length / 3) * (2 * rxBottom * ryBottom + rxTop * ryBottom + rxBottom * ryTop + 2 * rxTop * ryTop);
+    double v = length / 6 * (2 * rxBottom * ryBottom + rxTop * ryBottom + rxBottom * ryTop + 2 * rxTop * ryTop);
     return v;
 }
 
@@ -75,17 +75,16 @@ PolyhedralWedge::getPrinter(const std::string &format, const std::map<std::strin
         throw NoSuchShapePrinterException("XenoCollideTraits: unknown printer format: " + format);
 }
 
-PolyhedralWedge::CollideGeometry::CollideGeometry(double rxTop, double ryTop, double rxBottom, double ryBottom, double length)
-        : rxTop{rxTop}, ryTop{ryTop}, rxBottom{rxBottom}, ryBottom{ryBottom}, length{length}
+PolyhedralWedge::CollideGeometry::CollideGeometry(double rxTop, double ryTop, double rxBottom, double ryBottom,
+                                                  double length)
+        : vertexUp{rxTop/2, ryTop/2, length/2}, vertexDown{rxBottom/2, ryBottom/2, -length/2}
 {
     Expects((rxTop > 0 && ryBottom > 0) || (ryTop > 0 && rxBottom > 0));
     Expects(length > 0);
 
-    double crUp = std::sqrt(rxTop * rxTop + ryTop * ryTop + length * length / 4.0);
-    double crDown = std::sqrt(rxBottom * rxBottom + ryBottom * ryBottom + length * length / 4.0);
-    this->circumsphereRadius = std::max(crUp, crDown);
+    this->circumsphereRadius = std::max(this->vertexUp.norm(), this->vertexDown.norm());
 
     double irUp = std::min(rxTop, ryTop);
     double irDown = std::min(rxBottom, ryBottom);
-    this->insphereRadius = std::min(std::min(irUp, irDown), length / 2.0);
+    this->insphereRadius = std::min(std::min(irUp, irDown), length) / 2;
 }
