@@ -9,13 +9,12 @@
 
 
 /**
- * @brief Class representing a distorted tetrahedron - a convex hull based on two perpendicular segments of length
- * R and r, placed in XY planes and the distance between them along the Z axis equals l.
+ * @brief Class representing a wedge build by taking a convex hull of two axis-oriented rectangles.
  */
 class PolyhedralWedgeTraits : public XenoCollideTraits<PolyhedralWedgeTraits> {
 public:
     /**
-     * @brief Class representing the geometry of the distorted tetrahedron (see template parameter of XenoCollide)
+     * @brief Class representing the geometry of the polyhedral wedge (see template parameter of XenoCollide)
      */
     class CollideGeometry {
     private:
@@ -28,10 +27,10 @@ public:
 
     public:
         /**
-         * @brief Creates the distorted tetrahedron along the z axis, with a rectangle (@a 2rxUp, @a 2ryUp) at the top and
-         * (@a 2rxDown, @a 2ryDown) at the bottom. The distance between rectangles is length.
-         * @details The bottom rectangle is placed along X axis with the center at {0, 0, - @a length)/2} and
-         * the top rectangle is placed along Y axis with the center at {0, 0, @a length)/2}.
+         * @brief Creates the polyhedral wedge along the z axis, with a rectangle (@a rxTop, @a ryTop) at the top and
+         * (@a rxBottom, @a ryBottom) at the bottom. The distance between rectangles is @a length.
+         * @details The bottom rectangle has the center at {0, 0, @a -length / 2)} and the top rectangle has the center
+         * at {0, 0, @a length / 2)}.
          */
         CollideGeometry(double rxTop, double ryTop, double rxBottom, double ryBottom, double length);
 
@@ -83,11 +82,13 @@ public:
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 4;
 
     /**
-     * @brief Creates a wedge with parameters @a R, @a r and @a length (see CollideGeometry::CollideGeometry).
-     * @details If @a subdivision is at least two, the wedge is divided into that many parts (with equal circumscribed
-     * spheres' radii) to lower the number of neighbours in the neighbour grid.
+     * @brief Creates a wedge with parameters @a rxTop, @a ryTop, @a rxBottom, @a ryBottom, and @a length
+     * (see CollideGeometry::CollideGeometry).
+     * @details If @a subdivision is at least two, the wedge is divided into that many parts along the length to lower
+     * the number of neighbours in the neighbour grid.
      */
-    PolyhedralWedgeTraits(double rxTop, double ryTop, double rxBottom, double ryBottom, double length, std::size_t subdivisions = 0);
+    PolyhedralWedgeTraits(double rxTop, double ryTop, double rxBottom, double ryBottom, double length,
+                          std::size_t subdivisions = 0);
 
     /**
      * @brief Returns CollideGeometry object for the interaction center with index @a idx (see XenoCollideTraits).

@@ -12,8 +12,8 @@ double PolyhedralWedgeTraits::getVolume(double rxTop, double ryTop, double rxBot
     return v;
 }
 
-PolyhedralWedgeTraits::PolyhedralWedgeTraits(double rxTop, double ryTop, double rxBottom, double ryBottom, double length,
-                                 std::size_t subdivisions)
+PolyhedralWedgeTraits::PolyhedralWedgeTraits(double rxTop, double ryTop, double rxBottom, double ryBottom,
+                                             double length, std::size_t subdivisions)
         : XenoCollideTraits({0, 0, 1}, {1, 0, 0}, {0, 0, 0},
                             PolyhedralWedgeTraits::getVolume(rxTop, ryTop, rxBottom, ryBottom, length),
                             {{"beg", {0, 0, -length / 2}}, {"end", {0, 0, length / 2}}}),
@@ -76,7 +76,7 @@ PolyhedralWedgeTraits::getPrinter(const std::string &format, const std::map<std:
 }
 
 PolyhedralWedgeTraits::CollideGeometry::CollideGeometry(double rxTop, double ryTop, double rxBottom, double ryBottom,
-                                                  double length)
+                                                        double length)
         : vertexUp{rxTop/2, ryTop/2, length/2}, vertexDown{rxBottom/2, ryBottom/2, -length/2}
 {
     Expects((rxTop > 0 && ryBottom > 0) || (ryTop > 0 && rxBottom > 0));
