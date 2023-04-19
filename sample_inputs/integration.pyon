@@ -1,5 +1,5 @@
 rampack(
-    version = "0.10.0",
+    version = "0.11.0",
     arrangement = lattice(cell=sc, box_dim=100, n_shapes=1000),
     temperature = 1,
     move_types = [translation(step=10)],
