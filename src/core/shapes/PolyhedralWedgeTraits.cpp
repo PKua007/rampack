@@ -7,43 +7,43 @@
 #include "geometry/xenocollide/XCBodyBuilder.h"
 
 
-double PolyhedralWedgeTraits::getVolume(double rxTop, double ryTop, double rxBottom, double ryBottom, double length) {
-    double v = length / 6 * (2 * rxBottom * ryBottom + rxTop * ryBottom + rxBottom * ryTop + 2 * rxTop * ryTop);
+double PolyhedralWedgeTraits::getVolume(double axBottom, double ayBottom, double axTop, double ayTop, double length) {
+    double v = length / 6 * (2 * axBottom * ayBottom + axTop * ayBottom + axBottom * ayTop + 2 * axTop * ayTop);
     return v;
 }
 
-PolyhedralWedgeTraits::PolyhedralWedgeTraits(double rxTop, double ryTop, double rxBottom, double ryBottom,
-                                             double length, std::size_t subdivisions)
+PolyhedralWedgeTraits::PolyhedralWedgeTraits(double axBottom, double ayBottom, double axTop, double ayTop,
+                                             double length,
+                                             std::size_t subdivisions)
         : XenoCollideTraits({0, 0, 1}, {1, 0, 0}, {0, 0, 0},
-                            PolyhedralWedgeTraits::getVolume(rxTop, ryTop, rxBottom, ryBottom, length),
+                            PolyhedralWedgeTraits::getVolume(axBottom, ayBottom, axTop, ayTop, length),
                             {{"beg", {0, 0, -length / 2}}, {"end", {0, 0, length / 2}}}),
-          rxTop{rxTop}, ryTop{ryTop}, rxBottom{rxBottom}, ryBottom{ryBottom}, length{length}
+          axBottom{axBottom}, ayBottom{ayBottom}, axTop{axTop}, ayTop{ayTop}, length{length}
 {
-    Expects((rxTop > 0 && ryBottom > 0) || (ryTop > 0 && rxBottom > 0));
+    Expects((axTop > 0 && ayBottom > 0) || (ayTop > 0 && axBottom > 0));
     Expects(length > 0);
 
     if (subdivisions == 0 || subdivisions == 1) {
         this->interactionCentres = {};
-        this->shapeModels.emplace_back(this->rxTop, this->ryTop, this->rxBottom, this->ryBottom, this->length);
+        this->shapeModels.emplace_back(this->axBottom, this->ayBottom, this->axTop, this->ayTop, this->length);
         return;
     }
 
     double dl = this->length / static_cast<double>(subdivisions);
-    double dy = (this->ryBottom - this->ryTop) / static_cast<double>(subdivisions);
-    double dx = (this->rxBottom - this->rxTop) / static_cast<double>(subdivisions);
+    double dy = (this->ayBottom - this->ayTop) / static_cast<double>(subdivisions);
+    double dx = (this->axBottom - this->axTop) / static_cast<double>(subdivisions);
     this->shapeModels.reserve(subdivisions);
     this->interactionCentres.reserve(subdivisions);
     for (std::size_t i{}; i < subdivisions; i++) {
-        double rxUp = this->rxTop + static_cast<double>(i) * dx;
-        double ryUp = this->ryTop + static_cast<double>(i) * dy;
-        double rxDown = this->rxTop + static_cast<double>(i + 1) * dx;
-        double ryDown = this->ryTop + static_cast<double>(i + 1) * dy;
+        double subAxBottom = this->axTop + static_cast<double>(i + 1) * dx;
+        double subAyBottom = this->ayTop + static_cast<double>(i + 1) * dy;
+        double subAxTop = this->axTop + static_cast<double>(i) * dx;
+        double subAyTop = this->ayTop + static_cast<double>(i) * dy;
 
-        this->shapeModels.emplace_back(rxUp, ryUp, rxDown, ryDown, dl);
+        this->shapeModels.emplace_back(subAxBottom, subAyBottom, subAxTop, subAyTop, dl);
         this->interactionCentres.push_back({0, 0, length / 2.0 - (static_cast<double>(i) + 0.5) * dl});
     }
 }
-
 
 std::shared_ptr<const ShapePrinter>
 PolyhedralWedgeTraits::getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const {
@@ -63,16 +63,16 @@ PolyhedralWedgeTraits::getPrinter(const std::string &format, const std::map<std:
         throw NoSuchShapePrinterException("XenoCollideTraits: unknown printer format: " + format);
 }
 
-PolyhedralWedgeTraits::CollideGeometry::CollideGeometry(double rxTop, double ryTop, double rxBottom, double ryBottom,
+PolyhedralWedgeTraits::CollideGeometry::CollideGeometry(double axBottom, double ayBottom, double axTop, double ayTop,
                                                         double length)
-        : vertexUp{rxTop/2, ryTop/2, length/2}, vertexDown{rxBottom/2, ryBottom/2, -length/2}
+        : vertexUp{axTop / 2, ayTop / 2, length / 2}, vertexDown{axBottom / 2, ayBottom / 2, -length / 2}
 {
-    Expects((rxTop > 0 && ryBottom > 0) || (ryTop > 0 && rxBottom > 0));
+    Expects((axTop > 0 && ayBottom > 0) || (ayTop > 0 && axBottom > 0));
     Expects(length > 0);
 
     this->circumsphereRadius = std::max(this->vertexUp.norm(), this->vertexDown.norm());
 
-    double irUp = std::min(rxTop, ryTop);
-    double irDown = std::min(rxBottom, ryBottom);
+    double irUp = std::min(axTop, ayTop);
+    double irDown = std::min(axBottom, ayBottom);
     this->insphereRadius = std::min(std::min(irUp, irDown), length) / 2;
 }

@@ -11,7 +11,7 @@
 
 
 TEST_CASE("PolyhedralWedgeTraits: geometry") {
-    PolyhedralWedgeTraits traits(2, 4, 3, 1, 6);
+    PolyhedralWedgeTraits traits(3, 1, 2, 4, 6);
     const auto &geometry = traits.getGeometry();
     const auto &interaction = traits.getInteraction();
 
@@ -30,7 +30,7 @@ TEST_CASE("PolyhedralWedgeTraits: overlap") {
     auto subdivisions = GENERATE(0, 3);
 
     DYNAMIC_SECTION("subdivisions: " << subdivisions) {
-        PolyhedralWedgeTraits traits(2, 4, 3, 1, 6, subdivisions);
+        PolyhedralWedgeTraits traits(3, 1, 2, 4, 6, subdivisions);
         const auto &interaction = traits.getInteraction();
         FreeBoundaryConditions fbc;
         Shape shape0;
@@ -38,8 +38,8 @@ TEST_CASE("PolyhedralWedgeTraits: overlap") {
         // This case was visually inspected using Mathematica
         SECTION("vertex-face") {
             auto rot1 = Matrix<3, 3>::rotation(0, 1, 0.5);
-            Shape shapeOv1({-2.8, -2.8, 2.8}, rot1);
-            Shape shapeNonOv1({-3, -3, 3}, rot1);
+            Shape shapeOv1({-2.92, -2.92, 2.92}, rot1);
+            Shape shapeNonOv1({-2.93, -2.93, 2.93}, rot1);
 
             CHECK(interaction.overlapBetweenShapes(shape0, shapeOv1, fbc));
             CHECK_FALSE(interaction.overlapBetweenShapes(shape0, shapeNonOv1, fbc));
@@ -48,8 +48,8 @@ TEST_CASE("PolyhedralWedgeTraits: overlap") {
         // Face-face (this one is easily visualized in your head, c'mon)
         SECTION("face-face") {
             auto rot2 = Matrix<3, 3>::rotation(0, 0, 0.5);
-            Shape shapeOv2({0, 0, 5.9}, rot2);
-            Shape shapeNonOv2({0, 0, 6.1}, rot2);
+            Shape shapeOv2({0, 0, 5.99}, rot2);
+            Shape shapeNonOv2({0, 0, 6.01}, rot2);
 
             CHECK(interaction.overlapBetweenShapes(shape0, shapeOv2, fbc));
             CHECK_FALSE(interaction.overlapBetweenShapes(shape0, shapeNonOv2, fbc));

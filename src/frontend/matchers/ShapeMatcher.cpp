@@ -463,26 +463,26 @@ namespace {
 
     MatcherDataclass create_polyhedral_wedge_matcher() {
         return MatcherDataclass("polyhedral_wedge")
-            .arguments({{"top_rx", MatcherFloat{}.nonNegative()},
-                        {"top_ry", MatcherFloat{}.nonNegative()},
-                        {"bottom_rx", MatcherFloat{}.nonNegative()},
-                        {"bottom_ry", MatcherFloat{}.nonNegative()},
+            .arguments({{"bottom_ax", MatcherFloat{}.nonNegative()},
+                        {"bottom_ay", MatcherFloat{}.nonNegative()},
+                        {"top_ax", MatcherFloat{}.nonNegative()},
+                        {"top_ay", MatcherFloat{}.nonNegative()},
                         {"length", MatcherFloat{}.positive()},
                         {"subdivisions", MatcherInt{}.positive().mapTo<std::size_t>(), "1"}})
             .filter([](const DataclassData &wedge) {
-                auto topRx = wedge["top_rx"].as<double>();
-                auto topRy = wedge["top_ry"].as<double>();
-                auto bottomRx = wedge["bottom_rx"].as<double>();
-                auto bottomRy = wedge["bottom_ry"].as<double>();
+                auto bottomRx = wedge["bottom_ax"].as<double>();
+                auto bottomRy = wedge["bottom_ay"].as<double>();
+                auto topRx = wedge["top_ax"].as<double>();
+                auto topRy = wedge["top_ay"].as<double>();
                 return (topRx != 0 && bottomRy != 0) || (topRy != 0 && bottomRx != 0);
             })
-            .describe("with at least one pair of non-zero orthogonal r-s, one at top, one at bottom")
+            .describe("with at least one pair of non-zero orthogonal a-s, one at the top, one at the bottom")
             .mapTo([](const DataclassData &wedge) -> std::shared_ptr<ShapeTraits> {
                 return std::make_shared<PolyhedralWedgeTraits>(
-                    wedge["top_rx"].as<double>(),
-                    wedge["top_ry"].as<double>(),
-                    wedge["bottom_rx"].as<double>(),
-                    wedge["bottom_ry"].as<double>(),
+                    wedge["bottom_ax"].as<double>(),
+                    wedge["bottom_ay"].as<double>(),
+                    wedge["top_ax"].as<double>(),
+                    wedge["top_ay"].as<double>(),
                     wedge["length"].as<double>(),
                     wedge["subdivisions"].as<std::size_t>()
                 );

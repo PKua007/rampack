@@ -27,12 +27,12 @@ public:
 
     public:
         /**
-         * @brief Creates the polyhedral wedge along the z axis, with a rectangle (@a rxTop, @a ryTop) at the top and
-         * (@a rxBottom, @a ryBottom) at the bottom. The distance between rectangles is @a length.
+         * @brief Creates the polyhedral wedge along the z axis, with a rectangle (@a axTop, @a ayTop) at the top and
+         * (@a axBottom, @a ayBottom) at the bottom. The distance between rectangles is @a length.
          * @details The bottom rectangle has the center at {0, 0, @a -length / 2)} and the top rectangle has the center
          * at {0, 0, @a length / 2)}.
          */
-        CollideGeometry(double rxTop, double ryTop, double rxBottom, double ryBottom, double length);
+        CollideGeometry(double axBottom, double ayBottom, double axTop, double ayTop, double length);
 
         [[nodiscard]] Vector<3> getCenter() const { return {}; }
 
@@ -61,17 +61,17 @@ public:
     };
 
 private:
-    double rxTop{}, ryTop{};
-    double rxBottom, ryBottom{};
+    double axBottom, ayBottom{};
+    double axTop{}, ayTop{};
     double length{};
     std::vector<CollideGeometry> shapeModels;
     std::vector<Vector<3>> interactionCentres;
 
-    static double getVolume(double rxTop, double ryTop, double rxBottom, double ryBottom, double length);
+    static double getVolume(double axBottom, double ayBottom, double axTop, double ayTop, double length);
 
     template<typename Printer>
     std::shared_ptr<Printer> createPrinter(std::size_t meshSubdivisions) const {
-        CollideGeometry geometry(this->rxTop, this->ryTop, this->rxBottom, this->ryBottom, this->length);
+        CollideGeometry geometry(this->axBottom, this->ayBottom, this->axTop, this->ayTop, this->length);
         PolymorphicXCAdapter<CollideGeometry> geometryAdapter(geometry);
         return std::make_shared<Printer>(geometryAdapter, meshSubdivisions);
     }
@@ -82,12 +82,12 @@ public:
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 4;
 
     /**
-     * @brief Creates a wedge with parameters @a rxTop, @a ryTop, @a rxBottom, @a ryBottom, and @a length
+     * @brief Creates a wedge with parameters @a axTop, @a ayTop, @a axBottom, @a ayBottom, and @a length
      * (see CollideGeometry::CollideGeometry).
      * @details If @a subdivision is at least two, the wedge is divided into that many parts along the length to lower
      * the number of neighbours in the neighbour grid.
      */
-    PolyhedralWedgeTraits(double rxTop, double ryTop, double rxBottom, double ryBottom, double length,
+    PolyhedralWedgeTraits(double axBottom, double ayBottom, double axTop, double ayTop, double length,
                           std::size_t subdivisions = 0);
 
     /**
