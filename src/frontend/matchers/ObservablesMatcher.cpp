@@ -28,8 +28,10 @@
 #include "core/observables/correlation/LayerwiseRadialEnumerator.h"
 #include "core/observables/correlation/PairAveragedCorrelation.h"
 #include "core/observables/DensityHistogram.h"
+#include "core/observables/ProbabilityEvolution.h"
 
 #include "core/observables/correlation_functions/S110Correlation.h"
+#include "core/observables/correlation_functions/AxesAngle.h"
 
 #include "core/observables/shape_functions/ConstantShapeFunction.h"
 #include "core/observables/shape_functions/ShapeAxisCoordinate.h"
@@ -71,11 +73,13 @@ namespace {
     MatcherDataclass create_pair_density_correlation(std::size_t maxThreads);
     MatcherDataclass create_pair_averaged_correlation(std::size_t maxThreads);
     MatcherDataclass create_density_histogram(std::size_t maxThreads);
+    MatcherDataclass create_probability_evolution(std::size_t maxThreads);
 
     MatcherDataclass create_radial();
     MatcherDataclass create_layerwise_radial();
     MatcherAlternative create_tracker();
     MatcherAlternative create_shape_function();
+    MatcherAlternative create_correlation_function();
 
 
     auto positiveWavenumbers = MatcherArray{}
@@ -100,8 +104,6 @@ namespace {
         .describe("with at least one non-zero element")
         .mapToStdArray<int, 3>();
 
-    auto binning = create_radial() | create_layerwise_radial();
-
     auto primaryAxis = MatcherString("primary").mapTo([](const std::string&) {
         return ShapeGeometry::Axis::PRIMARY;
     });
@@ -112,6 +114,12 @@ namespace {
         return ShapeGeometry::Axis::AUXILIARY;
     });
     auto shapeAxis = primaryAxis | secondaryAxis | auxiliaryAxis;
+
+    auto binning = create_radial() | create_layerwise_radial();
+
+    auto shapeFunction = create_shape_function();
+
+    auto correlationFunction = create_correlation_function();
 
 
     MatcherAlternative create_observable_matcher([[maybe_unused]] std::size_t maxThreads) {
@@ -220,13 +228,11 @@ namespace {
         auto allHkl = positiveWavenumbers;
         auto maxHkl = singleHkl | allHkl;
 
-        auto shape_function = create_shape_function();
-
         return MatcherDataclass("smectic_order")
             .arguments({{"max_hkl", maxHkl},
                         {"dump_tau_vector", MatcherBoolean{}, "False"},
                         {"focal_point", MatcherString{}.nonEmpty(), R"("o")"},
-                        {"function", shape_function, "const"}})
+                        {"function", shapeFunction, "const"}})
             .mapTo([](const DataclassData &smecticOrder) -> ObservableData {
                 auto maxHkl = smecticOrder["max_hkl"].as<std::array<std::size_t, 3>>();
                 auto dumpTauVector = smecticOrder["dump_tau_vector"].as<bool>();
@@ -289,10 +295,9 @@ namespace {
     // TODO: focal point
     MatcherDataclass create_raw_fourier_tracker() {
         auto wavenumbers = positiveWavenumbers;
-        auto function = create_shape_function();
         return MatcherDataclass("fourier_tracker")
             .arguments({{"wavenumbers", wavenumbers},
-                        {"function", function}});
+                        {"function", shapeFunction}});
     }
 
     std::shared_ptr<FourierTracker> do_create_fourier_tracker(const DataclassData &fourierTracker) {
@@ -318,7 +323,8 @@ namespace {
     MatcherAlternative create_bulk_observable_matcher(std::size_t maxThreads) {
         return create_pair_density_correlation(maxThreads)
             | create_pair_averaged_correlation(maxThreads)
-            | create_density_histogram(maxThreads);
+            | create_density_histogram(maxThreads)
+            | create_probability_evolution(maxThreads);
     }
 
     MatcherDataclass create_pair_density_correlation(std::size_t maxThreads) {
@@ -335,18 +341,11 @@ namespace {
     }
 
     MatcherDataclass create_pair_averaged_correlation(std::size_t maxThreads) {
-        auto function = MatcherDataclass("S110")
-            .arguments({{"axis", shapeAxis}})
-            .mapTo([](const DataclassData &s110) -> std::shared_ptr<CorrelationFunction> {
-                auto axis = s110["axis"].as<ShapeGeometry::Axis>();
-                return std::make_shared<S110Correlation>(axis);
-            });
-
         return MatcherDataclass("pair_averaged_correlation")
             .arguments({{"max_r", MatcherFloat{}.positive()},
                         {"n_bins", MatcherInt{}.greaterEquals(2).mapTo<std::size_t>()},
                         {"binning", binning},
-                        {"function", function}})
+                        {"function", correlationFunction}})
             .mapTo([maxThreads](const DataclassData &pairAveragedCorrelation) -> std::shared_ptr<BulkObservable> {
                 auto maxR = pairAveragedCorrelation["max_r"].as<double>();
                 auto nBins = pairAveragedCorrelation["n_bins"].as<std::size_t>();
@@ -382,6 +381,37 @@ namespace {
                 };
                 auto tracker = densityHistogram["tracker"].as<std::shared_ptr<GoldstoneTracker>>();
                 return std::make_shared<DensityHistogram>(nBins, tracker, maxThreads);
+            });
+    }
+
+    MatcherDataclass create_probability_evolution(std::size_t maxThreads) {
+        auto nBins = MatcherInt{}.greaterEquals(2).mapTo<std::size_t>();
+        auto functionRange = MatcherArray(MatcherFloat{}, 2)
+            .filter([](const ArrayData &array) {
+                return array.front().as<double>() < array.back().as<double>();
+            })
+            .describe("with the first element smaller then the second")
+            .mapTo([](const ArrayData &array) -> std::pair<double, double> {
+                return {array.front().as<double>(), array.back().as<double>()};
+            });
+
+        return MatcherDataclass("probability_evolution")
+            .arguments({{"max_r", MatcherFloat{}.positive()},
+                        {"n_bins_r", nBins},
+                        {"binning", binning},
+                        {"function", correlationFunction},
+                        {"fun_range", functionRange},
+                        {"n_bins_fun", nBins}})
+            .mapTo([maxThreads](const DataclassData &probEvolution) -> std::shared_ptr<BulkObservable> {
+                auto maxR = probEvolution["max_r"].as<double>();
+                auto nBinsR = probEvolution["n_bins_r"].as<std::size_t>();
+                auto binning = probEvolution["binning"].as<std::shared_ptr<PairEnumerator>>();
+                auto function = probEvolution["function"].as<std::shared_ptr<CorrelationFunction>>();
+                auto funRange = probEvolution["fun_range"].as<std::pair<double, double>>();
+                auto nBinsFun = probEvolution["n_bins_fun"].as<std::size_t>();
+                return std::make_shared<ProbabilityEvolution>(
+                    maxR, funRange, nBinsR, nBinsFun, binning, function, maxThreads
+                );
             });
     }
 
@@ -435,6 +465,24 @@ namespace {
             });
 
         return constFunction | axisFunction;
+    }
+
+    MatcherAlternative create_correlation_function() {
+        auto s110 = MatcherDataclass("S110")
+            .arguments({{"axis", shapeAxis}})
+            .mapTo([](const DataclassData &s110) -> std::shared_ptr<CorrelationFunction> {
+                auto axis = s110["axis"].as<ShapeGeometry::Axis>();
+                return std::make_shared<S110Correlation>(axis);
+            });
+
+        auto axesAngle = MatcherDataclass("axes_angle")
+            .arguments({{"axis", shapeAxis}})
+            .mapTo([](const DataclassData &axesAngle) -> std::shared_ptr<CorrelationFunction> {
+                auto axis = axesAngle["axis"].as<ShapeGeometry::Axis>();
+                return std::make_shared<AxesAngle>(axis);
+            });
+
+        return s110 | axesAngle;
     }
 }
 
