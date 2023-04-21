@@ -14,6 +14,20 @@
 
 
 template<std::size_t DIM, typename T>
+Histogram<DIM, T>::Histogram(const std::array<double, DIM> &min, const std::array<double, DIM> &max,
+                             const std::array<std::size_t, DIM> &numBins)
+        : min{min}, max{max}, numBins{numBins},
+          bins(std::accumulate(numBins.begin(), numBins.end(), 1., std::multiplies<>{}))
+{
+    for (auto[maxItem, minItem] : Zip(max, min))
+        Expects(maxItem > minItem);
+    Expects(this->size() >= 1);
+
+    for (std::size_t i{}; i < DIM; i++)
+        this->step[i] = (max[i] - min[i]) / static_cast<double>(numBins[i]);
+}
+
+template<std::size_t DIM, typename T>
 Histogram<DIM, T> &Histogram<DIM, T>::operator+=(const Histogram &otherData)
 {
     Expects(otherData.bins.size() == this->bins.size());
@@ -38,26 +52,74 @@ Histogram<DIM, T>::renormalizeBins(const std::vector<double> &factors)
         this->bins[i] *= factors[i];
 }
 
+template<std::size_t DIM, typename T>
+std::array<std::size_t, DIM> Histogram<DIM, T>::calculateBinIndex(const Vector<DIM> &pos) const {
+    std::array<std::size_t, DIM> idx{};
+    for (std::size_t i{}; i < DIM; i++) {
+        idx[i] = static_cast<std::size_t>(std::floor((pos[i] - this->min[i]) / this->step[i]));
+        if (idx[i] >= this->numBins[i])
+            idx[i] = this->numBins[i] - 1;
+    }
+    return idx;
+}
 
-//----------------------------------
+template<std::size_t DIM, typename T>
+std::size_t Histogram<DIM, T>::flattenIndex(const std::array<std::size_t, DIM> &index) const {
+    std::size_t flatIdx{};
+    for (auto [numBinsItem, indexItem] : Zip(this->numBins, index))
+        flatIdx = numBinsItem*flatIdx + indexItem;
+    return flatIdx;
+}
 
+template<std::size_t DIM, typename T>
+std::size_t Histogram<DIM, T>::calculateFlatBinIndex(const Vector<DIM> &pos) const {
+    return this->flattenIndex(this->calculateBinIndex(pos));
+}
 
-template<std::size_t DIM>
-void HistogramBuilder<DIM>::add(const Vector<DIM> &pos, double value) {
+template<std::size_t DIM, typename T>
+const T &Histogram<DIM, T>::atPos(const Vector<DIM> &pos) const {
     for (auto[posItem, minItem, maxItem] : Zip(pos, this->min, this->max)) {
         Expects(posItem >= minItem);
         Expects(posItem <= maxItem);
     }
 
+    auto binIdx = this->calculateFlatBinIndex(pos);
+    if (binIdx >= this->size())
+        binIdx = this->size() - 1;
+
+    return this->bins[binIdx];
+}
+
+template<std::size_t DIM, typename T>
+const T &Histogram<DIM, T>::atIndex(const std::array<std::size_t, DIM> &idx) const {
+    for (auto[idxItem, numBinsItem] : Zip(idx, this->numBins))
+        Expects(idxItem < numBinsItem);
+
+    auto binIdx = this->flattenIndex(idx);
+    return this->bins[binIdx];
+}
+
+
+//----------------------------------
+
+
+template<std::size_t DIM>
+std::array<std::size_t, DIM> HistogramBuilder<DIM>::reshapeIndex(std::size_t flatIdx) const {
+    std::array<std::size_t, DIM> idx{};
+    for (int i = DIM - 1; i >= 0; i--) {
+        idx[i] = flatIdx % this->numBins[i];
+        flatIdx /= this->numBins[i];
+    }
+    return idx;
+}
+
+
+template<std::size_t DIM>
+void HistogramBuilder<DIM>::add(const Vector<DIM> &pos, double value) {
     std::size_t threadId = OMP_THREAD_ID;
     Expects(threadId < this->currentHistograms.size());
-
-    auto binIdx = this->calculateFlatBinIndex(pos);
-    if (binIdx >= this->flatNumBins)
-        binIdx = this->flatNumBins - 1;
-
     auto &currentHistogram = this->currentHistograms[threadId];
-    currentHistogram.bins[binIdx].addPoint(value);
+    currentHistogram.atPos(pos).addPoint(value);
 }
 
 template<std::size_t DIM>
@@ -91,7 +153,7 @@ HistogramBuilder<DIM>::dumpValues(HistogramBuilder::ReductionMethod reductionMet
 
     switch (reductionMethod) {
         case ReductionMethod::SUM:
-            std::transform(this->histogram.bins.begin(), this->histogram.bins.end(), this->binValues.begin(),
+            std::transform(this->histogram.begin(), this->histogram.end(), this->binValues.begin(),
                            result.begin(),
                            [this](const BinData &binData, const Vector<DIM> &binValue) {
                                 return BinValue{binValue, binData.value / static_cast<double>(this->numSnapshots)};
@@ -99,7 +161,7 @@ HistogramBuilder<DIM>::dumpValues(HistogramBuilder::ReductionMethod reductionMet
             break;
 
         case ReductionMethod::AVERAGE:
-            std::transform(this->histogram.bins.begin(), this->histogram.bins.end(), this->binValues.begin(),
+            std::transform(this->histogram.begin(), this->histogram.end(), this->binValues.begin(),
                            result.begin(),
                            [](const BinData &binData, const Vector<DIM> &binValue) {
                                return BinValue{binValue, binData.value / static_cast<double>(binData.numPoints)};
@@ -117,7 +179,7 @@ HistogramBuilder<DIM>::HistogramBuilder(const std::array<double, DIM> &min, cons
                                         const std::array<std::size_t, DIM> &numBins, std::size_t numThreads)
         : min{min}, max{max}, numBins{numBins},
           flatNumBins{std::accumulate(numBins.begin(), numBins.end(), 1ul, std::multiplies<>{})},
-          histogram(flatNumBins), binValues{flatNumBins}
+          histogram(min, max, numBins), binValues{flatNumBins}
 {
     for (auto[maxItem, minItem] : Zip(max, min))
         Expects(maxItem > minItem);
@@ -128,7 +190,7 @@ HistogramBuilder<DIM>::HistogramBuilder(const std::array<double, DIM> &min, cons
 
     if (numThreads == 0)
         numThreads = OMP_MAXTHREADS;
-    this->currentHistograms.resize(numThreads, Histogram<DIM, BinData>(this->flatNumBins));
+    this->currentHistograms.resize(numThreads, Histogram<DIM, BinData>(this->min, this->max, this->numBins));
 
     for (std::size_t i{}; i < this->flatNumBins; i++) {
         auto idx = this->reshapeIndex(i);
@@ -158,42 +220,8 @@ std::enable_if_t<DIM_ == 1, void> HistogramBuilder<DIM>::renormalizeBins(const s
 }
 
 template<std::size_t DIM>
-std::array<std::size_t, DIM> HistogramBuilder<DIM>::calculateBinIndex(const Vector<DIM> &pos) const {
-    std::array<std::size_t, DIM> idx{};
-    for (std::size_t i{}; i < DIM; i++) {
-        idx[i] = static_cast<std::size_t>(std::floor((pos[i] - this->min[i]) / this->step[i]));
-        if (idx[i] >= this->numBins[i])
-            idx[i] = this->numBins[i] - 1;
-    }
-    return idx;
-}
-
-template<std::size_t DIM>
-std::size_t HistogramBuilder<DIM>::flattenIndex(const std::array<std::size_t, DIM> &index) const {
-    std::size_t flatIdx{};
-    for (auto [numBinsItem, indexItem] : Zip(this->numBins, index))
-        flatIdx = numBinsItem*flatIdx + indexItem;
-    return flatIdx;
-}
-
-template<std::size_t DIM>
-std::size_t HistogramBuilder<DIM>::calculateFlatBinIndex(const Vector<DIM> &pos) const {
-    return this->flattenIndex(this->calculateBinIndex(pos));
-}
-
-template<std::size_t DIM>
-std::array<std::size_t, DIM> HistogramBuilder<DIM>::reshapeIndex(std::size_t flatIdx) const {
-    std::array<std::size_t, DIM> idx{};
-    for (int i = DIM - 1; i >= 0; i--) {
-        idx[i] = flatIdx % this->numBins[i];
-        flatIdx /= this->numBins[i];
-    }
-    return idx;
-}
-
-template<std::size_t DIM>
 template<typename T>
-std::array<std::remove_reference_t<T>, DIM> HistogramBuilder<DIM>::filledArray(T &&value) {
+std::array<std::decay_t<T>, DIM> HistogramBuilder<DIM>::filledArray(T &&value) {
     std::array<std::remove_reference_t<T>, DIM> array;
     array.fill(std::forward<T>(value));
     return array;
