@@ -54,7 +54,7 @@ public:
     /**
      * @brief Dumps a flat list of HistogramBuilder3D::BinValue -s averages over snapshots.
      */
-    [[nodiscard]] std::vector<BinValue<3>> dumpValues() const;
+    [[nodiscard]] std::vector<Histogram3D::BinValue> dumpValues() const;
 };
 
 
