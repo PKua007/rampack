@@ -13,6 +13,39 @@
 #include "geometry/Vector.h"
 
 
+/**
+ * @brief A single bin data.
+ */
+template<std::size_t DIM = 1, typename T = double>
+struct BinValue {
+    /** @brief Position corresponding to the middle of the bin. */
+    Vector<DIM> binMiddle{};
+    /** @brief Value of the bin. */
+    T value{};
+
+    BinValue() = default;
+    BinValue(const Vector<DIM> &binMiddle, T value) : binMiddle{binMiddle}, value{std::move(value)} { }
+
+    template<std::size_t DIM_ = DIM>
+    BinValue(std::enable_if_t<DIM_ == 1, double> binMiddle, T value) : binMiddle{binMiddle}, value{std::move(value)} { }
+
+    friend bool operator==(const BinValue &lhs, const BinValue &rhs) {
+        return std::tie(lhs.binMiddle, lhs.value) == std::tie(rhs.binMiddle, rhs.value);
+    }
+
+    friend bool operator!=(const BinValue &lhs, const BinValue &rhs) {
+        return !(rhs == lhs);
+    }
+
+    /**
+     * @brief Stream insertion operator printing the bin in the form "[bin middle] [bin value]".
+     */
+    friend std::ostream &operator<<(std::ostream &out, const BinValue &bin) {
+        return out << bin.binMiddle << " " << bin.value;
+    }
+};
+
+
 template<std::size_t DIM = 1, typename T = double>
 struct Histogram {
 private:
@@ -27,6 +60,10 @@ private:
     [[nodiscard]] std::size_t flattenIndex(const std::array<std::size_t, DIM> &index) const;
 
 public:
+    using iterator = typename decltype(bins)::iterator;
+    using const_iterator = typename decltype(bins)::const_iterator;
+
+
     explicit Histogram(const std::array<double, DIM> &min, const std::array<double, DIM> &max,
                        const std::array<std::size_t, DIM> &numBins);
 
@@ -51,10 +88,10 @@ public:
     [[nodiscard]] std::size_t size() const { return bins.size(); }
     void clear();
 
-    using const_iterator = typename decltype(bins)::const_iterator;
-
-    const_iterator begin() const { return this->bins.cbegin(); }
-    const_iterator end() const { return this->bins.cend(); }
+    [[nodiscard]] iterator begin() { return this->bins.begin(); }
+    [[nodiscard]] iterator end() { return this->bins.end(); }
+    [[nodiscard]] const_iterator begin() const { return this->bins.begin(); }
+    [[nodiscard]] const_iterator end() const { return this->bins.end(); }
 };
 
 
@@ -90,7 +127,6 @@ private:
     std::size_t numSnapshots{};
     Histogram<DIM, BinData> histogram;
     std::vector<Histogram<DIM, BinData>> currentHistograms;
-    std::vector<Vector<DIM>> binValues{};
 
     template<typename T>
     static std::array<std::decay_t<T>, DIM> filledArray(T &&value);
@@ -98,36 +134,6 @@ private:
     [[nodiscard]] std::array<std::size_t, DIM> reshapeIndex(std::size_t flatIdx) const;
 
 public:
-    /**
-     * @brief A single bin data.
-     */
-    struct BinValue {
-        /** @brief Position corresponding to the middle of the bin. */
-        Vector<DIM> binMiddle{};
-        /** @brief Value of the bin. */
-        double value{};
-
-        BinValue() = default;
-        BinValue(const Vector<DIM> &binMiddle, double value) : binMiddle{binMiddle}, value{value} { }
-
-        template<std::size_t DIM_ = DIM>
-        BinValue(std::enable_if_t<DIM_ == 1, double> binMiddle, double value) : binMiddle{binMiddle}, value{value} { }
-
-        friend bool operator==(const BinValue &lhs, const BinValue &rhs) {
-            return std::tie(lhs.binMiddle, lhs.value) == std::tie(rhs.binMiddle, rhs.value);
-        }
-
-        friend bool operator!=(const BinValue &lhs, const BinValue &rhs) {
-            return !(rhs == lhs);
-        }
-
-        /**
-         * @brief Stream insertion operator printing the bin in the form "[bin middle]  space[bin value]".
-         */
-        friend std::ostream &operator<<(std::ostream &out, const BinValue &bin) {
-            return out << bin.binMiddle << " " << bin.value;
-        }
-    };
 
     /**
      * @brief Reduction method for snapshot averaging.
@@ -183,7 +189,14 @@ public:
      * @param reductionMethod method used to average over snapshots (see HistogramBuilder::ReductionMethod)
      * @return Vector of BinValue objects enclosing middle position of bin and appropriately averaged value.
      */
-    [[nodiscard]] std::vector<BinValue> dumpValues(ReductionMethod reductionMethod) const;
+    [[nodiscard]] std::vector<BinValue<DIM>> dumpValues(ReductionMethod reductionMethod) const;
+
+    /**
+     * @brief Creates snapshot-averaged histogram from collected snapshots.
+     * @param reductionMethod method used to average over snapshots (see HistogramBuilder::ReductionMethod)
+     * @return Vector of BinValue objects enclosing middle position of bin and appropriately averaged value.
+     */
+    [[nodiscard]] Histogram<DIM> dumpHistogram(ReductionMethod reductionMethod) const;
 
     /**
      * @brief Clears all snapshots and current temporary snapshot.
