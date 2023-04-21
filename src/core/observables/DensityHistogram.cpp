@@ -7,6 +7,7 @@
 #include "DensityHistogram.h"
 #include "utils/Exceptions.h"
 #include "trackers/DummyTracker.h"
+#include "Histogram.h"
 
 
 void DensityHistogram::addSnapshot(const Packing &packing, [[maybe_unused]] double temperature,
@@ -61,6 +62,6 @@ std::array<std::size_t, 3> DensityHistogram::normalizeNumBins(std::array<std::si
     return array;
 }
 
-std::vector<BinValue<3>> DensityHistogram::dumpValues() const {
+std::vector<Histogram3D::BinValue> DensityHistogram::dumpValues() const {
     return this->histogramBuilder.dumpValues(HistogramBuilder3D::ReductionMethod::SUM);
 }
