@@ -13,6 +13,35 @@
 #include "HistogramBuilder.h"
 
 
+template<std::size_t DIM, typename T>
+Histogram<DIM, T> &Histogram<DIM, T>::operator+=(const Histogram &otherData)
+{
+    Expects(otherData.bins.size() == this->bins.size());
+    for (std::size_t i{}; i < this->size(); i++)
+        this->bins[i] += otherData.bins[i];
+    return *this;
+}
+
+template<std::size_t DIM, typename T>
+void Histogram<DIM, T>::clear() {
+    for (auto &bin : this->bins)
+        bin = T{};
+}
+
+template<std::size_t DIM, typename T>
+template<std::size_t DIM_>
+std::enable_if_t<DIM_ == 1, void>
+Histogram<DIM, T>::renormalizeBins(const std::vector<double> &factors)
+{
+    Expects(factors.size() == this->bins.size());
+    for (std::size_t i{}; i < this->size(); i++)
+        this->bins[i] *= factors[i];
+}
+
+
+//----------------------------------
+
+
 template<std::size_t DIM>
 void HistogramBuilder<DIM>::add(const Vector<DIM> &pos, double value) {
     for (auto[posItem, minItem, maxItem] : Zip(pos, this->min, this->max)) {
@@ -99,7 +128,7 @@ HistogramBuilder<DIM>::HistogramBuilder(const std::array<double, DIM> &min, cons
 
     if (numThreads == 0)
         numThreads = OMP_MAXTHREADS;
-    this->currentHistograms.resize(numThreads, Histogram{this->flatNumBins});
+    this->currentHistograms.resize(numThreads, Histogram<DIM, BinData>(this->flatNumBins));
 
     for (std::size_t i{}; i < this->flatNumBins; i++) {
         auto idx = this->reshapeIndex(i);
@@ -168,32 +197,6 @@ std::array<std::remove_reference_t<T>, DIM> HistogramBuilder<DIM>::filledArray(T
     std::array<std::remove_reference_t<T>, DIM> array;
     array.fill(std::forward<T>(value));
     return array;
-}
-
-template<std::size_t DIM>
-typename HistogramBuilder<DIM>::Histogram &
-HistogramBuilder<DIM>::Histogram::operator+=(const HistogramBuilder::Histogram &otherData)
-{
-    Expects(otherData.bins.size() == this->bins.size());
-    for (std::size_t i{}; i < this->size(); i++)
-        this->bins[i] += otherData.bins[i];
-    return *this;
-}
-
-template<std::size_t DIM>
-void HistogramBuilder<DIM>::Histogram::clear() {
-    for (auto &bin : this->bins)
-        bin = BinData{};
-}
-
-template<std::size_t DIM>
-template<std::size_t DIM_>
-std::enable_if_t<DIM_ == 1, void>
-HistogramBuilder<DIM>::Histogram::renormalizeBins(const std::vector<double> &factors)
-{
-    Expects(factors.size() == this->bins.size());
-    for (std::size_t i{}; i < this->size(); i++)
-        this->bins[i] *= factors[i];
 }
 
 template<std::size_t DIM>

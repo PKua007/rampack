@@ -13,6 +13,22 @@
 #include "geometry/Vector.h"
 
 
+template<std::size_t DIM = 1, typename T = double>
+struct Histogram {
+    std::vector<T> bins;
+
+    explicit Histogram(std::size_t numBins) : bins(numBins) { }
+
+    Histogram &operator+=(const Histogram &otherData);
+
+    template<std::size_t DIM_ = DIM>
+    std::enable_if_t<DIM_ == 1, void> renormalizeBins(const std::vector<double> &factors);
+
+    [[nodiscard]] std::size_t size() const { return bins.size(); }
+    void clear();
+};
+
+
 /**
  * @brief Class facilitating multithreaded building a histogram, where each bin accumulates arbitrary values inserted
  * in it (it is not restricted only to counting points), which are then averaged over many snapshots.
@@ -37,28 +53,14 @@ private:
         BinData &operator*=(double factor);
     };
 
-    struct Histogram {
-        std::vector<BinData> bins;
-
-        explicit Histogram(std::size_t numBins) : bins(numBins) { }
-
-        Histogram &operator+=(const Histogram &otherData);
-
-        template<std::size_t DIM_ = DIM>
-        std::enable_if_t<DIM_ == 1, void> renormalizeBins(const std::vector<double> &factors);
-
-        [[nodiscard]] std::size_t size() const { return bins.size(); }
-        void clear();
-    };
-
     std::array<double, DIM> min{};
     std::array<double, DIM> max{};
     std::array<double, DIM> step{};
     std::array<std::size_t, DIM> numBins{};
     std::size_t flatNumBins{};
     std::size_t numSnapshots{};
-    Histogram histogram;
-    std::vector<Histogram> currentHistograms;
+    Histogram<DIM, BinData> histogram;
+    std::vector<Histogram<DIM, BinData>> currentHistograms;
     std::vector<Vector<DIM>> binValues{};
 
     template<typename T>
