@@ -15,17 +15,46 @@
 
 template<std::size_t DIM = 1, typename T = double>
 struct Histogram {
+private:
+    std::array<double, DIM> min;
+    std::array<double, DIM> max;
+    std::array<double, DIM> step{};
+    std::array<std::size_t, DIM> numBins;
     std::vector<T> bins;
 
-    explicit Histogram(std::size_t numBins) : bins(numBins) { }
+    [[nodiscard]] std::array<std::size_t, DIM> calculateBinIndex(const Vector<DIM> &pos) const;
+    [[nodiscard]] std::size_t calculateFlatBinIndex(const Vector<DIM> &pos) const;
+    [[nodiscard]] std::size_t flattenIndex(const std::array<std::size_t, DIM> &index) const;
+
+public:
+    explicit Histogram(const std::array<double, DIM> &min, const std::array<double, DIM> &max,
+                       const std::array<std::size_t, DIM> &numBins);
 
     Histogram &operator+=(const Histogram &otherData);
 
     template<std::size_t DIM_ = DIM>
     std::enable_if_t<DIM_ == 1, void> renormalizeBins(const std::vector<double> &factors);
 
+
+    [[nodiscard]] const T &atIndex(const std::array<std::size_t, DIM> &idx) const;
+
+    [[nodiscard]] T &atIndex(const std::array<std::size_t, DIM> &idx) {
+        return const_cast<T&>(std::as_const(*this).atIndex(idx));
+    }
+
+    [[nodiscard]] const T &atPos(const Vector<DIM> &pos) const;
+
+    [[nodiscard]] T &atPos(const Vector<DIM> &pos) {
+        return const_cast<T&>(std::as_const(*this).atPos(pos));
+    }
+
     [[nodiscard]] std::size_t size() const { return bins.size(); }
     void clear();
+
+    using const_iterator = typename decltype(bins)::const_iterator;
+
+    const_iterator begin() const { return this->bins.cbegin(); }
+    const_iterator end() const { return this->bins.cend(); }
 };
 
 
@@ -64,11 +93,8 @@ private:
     std::vector<Vector<DIM>> binValues{};
 
     template<typename T>
-    static std::array<std::remove_reference_t<T>, DIM> filledArray(T &&value);
+    static std::array<std::decay_t<T>, DIM> filledArray(T &&value);
 
-    [[nodiscard]] std::array<std::size_t, DIM> calculateBinIndex(const Vector<DIM> &pos) const;
-    [[nodiscard]] std::size_t calculateFlatBinIndex(const Vector<DIM> &pos) const;
-    [[nodiscard]] std::size_t flattenIndex(const std::array<std::size_t, DIM> &index) const;
     [[nodiscard]] std::array<std::size_t, DIM> reshapeIndex(std::size_t flatIdx) const;
 
 public:
