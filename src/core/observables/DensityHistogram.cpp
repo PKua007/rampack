@@ -61,6 +61,6 @@ std::array<std::size_t, 3> DensityHistogram::normalizeNumBins(std::array<std::si
     return array;
 }
 
-std::vector<HistogramBuilder3D::BinValue> DensityHistogram::dumpValues() const {
+std::vector<BinValue<3>> DensityHistogram::dumpValues() const {
     return this->histogramBuilder.dumpValues(HistogramBuilder3D::ReductionMethod::SUM);
 }

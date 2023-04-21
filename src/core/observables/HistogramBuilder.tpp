@@ -140,31 +140,45 @@ void HistogramBuilder<DIM>::clear() {
 }
 
 template<std::size_t DIM>
-std::vector<typename HistogramBuilder<DIM>::BinValue>
+std::vector<BinValue<DIM>>
 HistogramBuilder<DIM>::dumpValues(HistogramBuilder::ReductionMethod reductionMethod) const
 {
-    std::vector<BinValue> result(this->flatNumBins);
-
-    if (this->numSnapshots == 0) {
-        std::transform(this->binValues.begin(), this->binValues.end(), result.begin(),
-                       [](const Vector<DIM> &binMiddle) { return BinValue{binMiddle, 0}; });
-        return result;
+    std::vector<Vector<DIM>> binValues(this->flatNumBins);
+    for (std::size_t i{}; i < this->flatNumBins; i++) {
+        auto idx = this->reshapeIndex(i);
+        for (std::size_t j{}; j < DIM; j++)
+            binValues[i][j] = this->min[j] + (static_cast<double>(idx[j]) + 0.5) * this->step[j];
     }
+
+    auto hist = this->dumpHistogram(reductionMethod);
+    std::vector<BinValue<DIM>> result;
+    result.reserve(this->flatNumBins);
+    std::transform(hist.begin(), hist.end(), binValues.begin(), std::back_inserter(result),
+                   [this](double binData, const Vector<DIM> &binValue) {
+                        return BinValue{binValue, binData};
+                   });
+    return result;
+}
+
+template<std::size_t DIM>
+Histogram<DIM> HistogramBuilder<DIM>::dumpHistogram(HistogramBuilder::ReductionMethod reductionMethod) const {
+    Histogram<DIM> result(this->min, this->max, this->numBins);
+
+    if (this->numSnapshots == 0)
+        return result;
 
     switch (reductionMethod) {
         case ReductionMethod::SUM:
-            std::transform(this->histogram.begin(), this->histogram.end(), this->binValues.begin(),
-                           result.begin(),
-                           [this](const BinData &binData, const Vector<DIM> &binValue) {
-                                return BinValue{binValue, binData.value / static_cast<double>(this->numSnapshots)};
+            std::transform(this->histogram.begin(), this->histogram.end(), result.begin(),
+                           [this](const BinData &binData) {
+                               return binData.value / static_cast<double>(this->numSnapshots);
                            });
             break;
 
         case ReductionMethod::AVERAGE:
-            std::transform(this->histogram.begin(), this->histogram.end(), this->binValues.begin(),
-                           result.begin(),
-                           [](const BinData &binData, const Vector<DIM> &binValue) {
-                               return BinValue{binValue, binData.value / static_cast<double>(binData.numPoints)};
+            std::transform(this->histogram.begin(), this->histogram.end(), result.begin(),
+                           [](const BinData &binData) {
+                               return binData.value / static_cast<double>(binData.numPoints);
                            });
             break;
 
@@ -179,7 +193,7 @@ HistogramBuilder<DIM>::HistogramBuilder(const std::array<double, DIM> &min, cons
                                         const std::array<std::size_t, DIM> &numBins, std::size_t numThreads)
         : min{min}, max{max}, numBins{numBins},
           flatNumBins{std::accumulate(numBins.begin(), numBins.end(), 1ul, std::multiplies<>{})},
-          histogram(min, max, numBins), binValues{flatNumBins}
+          histogram(min, max, numBins)
 {
     for (auto[maxItem, minItem] : Zip(max, min))
         Expects(maxItem > minItem);
@@ -191,12 +205,6 @@ HistogramBuilder<DIM>::HistogramBuilder(const std::array<double, DIM> &min, cons
     if (numThreads == 0)
         numThreads = OMP_MAXTHREADS;
     this->currentHistograms.resize(numThreads, Histogram<DIM, BinData>(this->min, this->max, this->numBins));
-
-    for (std::size_t i{}; i < this->flatNumBins; i++) {
-        auto idx = this->reshapeIndex(i);
-        for (std::size_t j{}; j < DIM; j++)
-            this->binValues[i][j] = min[j] + (static_cast<double>(idx[j]) + 0.5) * this->step[j];
-    }
 }
 
 template<std::size_t DIM>
