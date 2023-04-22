@@ -15,6 +15,23 @@
 
 
 /**
+ * @brief Reduction method for snapshot averaging.
+ */
+enum class ReductionMethod {
+    /**
+     * @brief For each snapshot all bin values are summed. Then, those sums are averaged over snapshots.
+     * @details It is suitable if one wants to obtain a standard histogram by counting points in the bins and then
+     * average obtained histograms over many system snapshots.
+     */
+    SUM,
+    /**
+     * @brief All single values from all snapshots are treated as one set and the average of them is calculated.
+     * @details It is suitable if one wants to calculate averages in bins for many points from many snapshots.
+     */
+    AVERAGE
+};
+
+/**
  * @brief Class facilitating multithreaded building a histogram, where each bin accumulates arbitrary values inserted
  * in it (it is not restricted only to counting points), which are then averaged over many snapshots.
  * @details Histogram is built by using add() method, which accumulates a given value in an appropriate bin. It can be
@@ -51,24 +68,6 @@ private:
     static std::array<std::decay_t<T>, DIM> filledArray(T &&value);
 
 public:
-
-    /**
-     * @brief Reduction method for snapshot averaging.
-     */
-    enum class ReductionMethod {
-        /**
-         * @brief For each snapshot all bin values are summed. Then, those sums are averaged over snapshots.
-         * @details It is suitable if one wants to obtain a standard histogram by counting points in the bins and then
-         * average obtained histograms over many system snapshots.
-         */
-        SUM,
-        /**
-         * @brief All single values from all snapshots are treated as one set and the average of them is calculated.
-         * @details It is suitable if one wants to calculate averages in bins for many points from many snapshots.
-         */
-        AVERAGE
-    };
-
     /**
      * @brief Construct a class to gather values from the range [@a min, @a max] (inclusive) divided into @a numBins
      * bins and enables concurrent accumulation by at most @a numThreads OpenMP threads.
@@ -120,48 +119,31 @@ public:
      */
     void clear();
 
-    [[nodiscard]] std::size_t getNumBins(std::size_t idx) const { return this->numBins.at(idx); }
+    [[nodiscard]] std::size_t getNumBins(std::size_t idx) const { return this->histogram.getNumBins(idx); }
+    [[nodiscard]] double getBinSize(std::size_t idx) const { return this->histogram.getBinSize(idx); }
+    [[nodiscard]] double getMin(std::size_t idx) const { return this->histogram.getMin(idx); }
+    [[nodiscard]] double getMax(std::size_t idx) const { return this->histogram.getMax(idx); }
+    [[nodiscard]] std::vector<double> getBinDividers(std::size_t idx) const {
+        return this->histogram.getBinDividers(idx);
+    }
 
     template<std::size_t DIM_ = DIM>
-    [[nodiscard]] std::enable_if_t<DIM_ == 1, std::size_t> getNumBins() const { return this->numBins.front(); }
-
-    /**
-     * @brief Returns the width of the bin.
-     */
-    [[nodiscard]] double getBinSize(std::size_t idx) const { return this->step.at(idx); }
+    [[nodiscard]] std::enable_if_t<DIM_ == 1, std::size_t> getNumBins() const { return this->histogram.getNumBins(); }
 
     template<std::size_t DIM_ = DIM>
-    [[nodiscard]] std::enable_if_t<DIM_ == 1, double> getBinSize() const { return this->step.front(); }
-
-    /**
-     * @brief Returns a lower end of binned range.
-     */
-    [[nodiscard]] double getMin(std::size_t idx) const { return this->min.at(idx); }
+    [[nodiscard]] std::enable_if_t<DIM_ == 1, double> getBinSize() const { return this->histogram.getBinSize(); }
 
     template<std::size_t DIM_ = DIM>
-    [[nodiscard]] std::enable_if_t<DIM_ == 1, double> getMin() const { return this->min.front(); }
-
-    /**
-     * @brief Returns an upper end of binned range.
-     */
-    [[nodiscard]] double getMax(std::size_t idx) const { return this->max.at(idx); }
+    [[nodiscard]] std::enable_if_t<DIM_ == 1, double> getMin() const { return this->histogram.getMin(); }
 
     template<std::size_t DIM_ = DIM>
-    [[nodiscard]] std::enable_if_t<DIM_ == 1, double> getMax() const { return this->max.front(); }
-
-    /**
-     * @brief Return a sorted vector of getNumBins() + 1 positions of bin boundaries including getMin() and getMax().
-     */
-    [[nodiscard]] std::vector<double> getBinDividers(std::size_t idx) const;
+    [[nodiscard]] std::enable_if_t<DIM_ == 1, double> getMax() const { return this->histogram.getMax(); }
 
     template<std::size_t DIM_ = DIM>
     [[nodiscard]] std::enable_if_t<DIM_ == 1, std::vector<double>> getBinDividers() const {
-        return this->getBinDividers(0);
+        return this->histogram.getBinDividers();
     }
 
-    /**
-     * @brief Multiplies values in a current snapshot in each bin by corresponding element of vector @a factors.
-     */
     template<std::size_t DIM_ = DIM>
     std::enable_if_t<DIM_ == 1, void> renormalizeBins(const std::vector<double> &factors);
 };

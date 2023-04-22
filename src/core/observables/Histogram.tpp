@@ -27,6 +27,22 @@ Histogram<DIM, T> &Histogram<DIM, T>::operator+=(const Histogram &otherData)
 }
 
 template<std::size_t DIM, typename T>
+template<typename T1>
+Histogram<DIM, T> &Histogram<DIM, T>::operator*=(const T1 &val) {
+    for (auto &bin : this->bins)
+        bin *= val;
+    return *this;
+}
+
+template<std::size_t DIM, typename T>
+template<typename T1>
+Histogram<DIM, T> &Histogram<DIM, T>::operator/=(const T1 &val) {
+    for (auto &bin : this->bins)
+        bin /= val;
+    return *this;
+}
+
+template<std::size_t DIM, typename T>
 void Histogram<DIM, T>::clear() {
     for (auto &bin : this->bins)
         bin = T{};
@@ -106,9 +122,7 @@ std::vector<typename Histogram<DIM, T>::BinValue> Histogram<DIM, T>::dumpValues(
     std::vector<BinValue> result;
     result.reserve(this->size());
     std::transform(this->begin(), this->end(), binMiddles.begin(), std::back_inserter(result),
-                   [this](double binData, const Vector<DIM> &binValue) {
-                       return BinValue{binValue, binData};
-                   });
+                   [](double binData, const Vector<DIM> &binValue) { return BinValue{binValue, binData}; });
     return result;
 }
 
@@ -120,4 +134,17 @@ std::array<std::size_t, DIM> Histogram<DIM, T>::reshapeIndex(std::size_t flatIdx
         flatIdx /= this->numBins[i];
     }
     return idx;
+}
+
+template<std::size_t DIM, typename T>
+std::vector<double> Histogram<DIM, T>::getBinDividers(std::size_t idx) const {
+    Expects(idx < DIM);
+
+    std::vector<double> result(this->numBins[idx] + 1);
+    auto numBinsD = static_cast<double>(this->numBins[idx]);
+    for (std::size_t i{}; i <= this->numBins[idx]; i++) {
+        auto iD = static_cast<double>(i);
+        result[i] = this->min[idx] * ((numBinsD - iD) / numBinsD) + this->max[idx] * (iD / numBinsD);
+    }
+    return result;
 }

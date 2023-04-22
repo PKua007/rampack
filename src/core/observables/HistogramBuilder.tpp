@@ -39,13 +39,13 @@ void HistogramBuilder<DIM>::clear() {
 
 template<std::size_t DIM>
 std::vector<typename Histogram<DIM>::BinValue>
-HistogramBuilder<DIM>::dumpValues(HistogramBuilder::ReductionMethod reductionMethod) const
+HistogramBuilder<DIM>::dumpValues(ReductionMethod reductionMethod) const
 {
     return this->dumpHistogram(reductionMethod).dumpValues();
 }
 
 template<std::size_t DIM>
-Histogram<DIM> HistogramBuilder<DIM>::dumpHistogram(HistogramBuilder::ReductionMethod reductionMethod) const {
+Histogram<DIM> HistogramBuilder<DIM>::dumpHistogram(ReductionMethod reductionMethod) const {
     Histogram<DIM> result(this->min, this->max, this->numBins);
 
     if (this->numSnapshots == 0)
@@ -89,19 +89,6 @@ HistogramBuilder<DIM>::HistogramBuilder(const std::array<double, DIM> &min, cons
     if (numThreads == 0)
         numThreads = OMP_MAXTHREADS;
     this->currentHistograms.resize(numThreads, Histogram<DIM, BinData>(this->min, this->max, this->numBins));
-}
-
-template<std::size_t DIM>
-std::vector<double>HistogramBuilder<DIM>::getBinDividers(std::size_t idx) const {
-    Expects(idx < DIM);
-
-    std::vector<double> result(this->numBins[idx] + 1);
-    auto numBinsD = static_cast<double>(this->numBins[idx]);
-    for (std::size_t i{}; i <= this->numBins[idx]; i++) {
-        auto iD = static_cast<double>(i);
-        result[i] = this->min[idx] * ((numBinsD - iD) / numBinsD) + this->max[idx] * (iD / numBinsD);
-    }
-    return result;
 }
 
 template<std::size_t DIM>

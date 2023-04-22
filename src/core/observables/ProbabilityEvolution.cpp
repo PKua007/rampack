@@ -8,11 +8,12 @@
 ProbabilityEvolution::ProbabilityEvolution(double maxDistance, std::pair<double, double> variableRange,
                                            std::size_t numDistanceBins, std::size_t numVariableBins,
                                            std::shared_ptr<PairEnumerator> pairEnumerator,
-                                           std::shared_ptr<CorrelationFunction> function, std::size_t numThreads)
+                                           std::shared_ptr<CorrelationFunction> function,
+                                           Normalization normalization, std::size_t numThreads)
         : PairConsumer(numThreads), maxDistance{maxDistance}, variableRange{variableRange},
           histogramBuilder({0, variableRange.first}, {maxDistance, variableRange.second},
                            {numDistanceBins, numVariableBins}, numThreads),
-          pairEnumerator{std::move(pairEnumerator)}, function{std::move(function)}
+          pairEnumerator{std::move(pairEnumerator)}, function{std::move(function)}, normalization{normalization}
 {
     Expects(maxDistance > 0);
 }
@@ -25,7 +26,10 @@ void ProbabilityEvolution::addSnapshot(const Packing &packing, [[maybe_unused]] 
 }
 
 void ProbabilityEvolution::print(std::ostream &out) const {
-    for (auto [xy, z] : this->histogramBuilder.dumpValues(HistogramBuilder<2>::ReductionMethod::SUM))
+    Histogram2D histogram = this->histogramBuilder.dumpHistogram(ReductionMethod::SUM);
+    this->renormalizeHistogram(histogram);
+
+    for (auto [xy, z] : histogram.dumpValues())
         out << xy[0] << " " << xy[1] << " " << z << std::endl;
 }
 
@@ -53,4 +57,32 @@ void ProbabilityEvolution::consumePair(const Packing &packing, const std::pair<s
         return;
 
     this->histogramBuilder.add({distance, value}, 1);
+}
+
+void ProbabilityEvolution::renormalizeHistogram(Histogram2D &histogram) const {
+    if (this->normalization == Normalization::NONE)
+        return;
+
+    for (std::size_t distI{}; distI < histogram.getNumBins(0); distI++) {
+        double distTotal{};
+        for (std::size_t varI{}; varI < histogram.getNumBins(1); varI++)
+            distTotal += histogram.atIndex({distI, varI});
+
+        if (distTotal == 0)
+            continue;
+        for (std::size_t varI{}; varI < histogram.getNumBins(1); varI++)
+            histogram.atIndex({distI, varI}) /= distTotal;
+    }
+
+    switch (this->normalization) {
+        case Normalization::PDF:
+            histogram *= histogram.getNumBins(1);
+            histogram /= (histogram.getMax(1) - histogram.getMin(1));
+            break;
+        case Normalization::UNIT:
+            histogram *= histogram.getNumBins(1);
+            break;
+        case Normalization::NONE:
+            AssertThrow("Unreachable");
+    }
 }
