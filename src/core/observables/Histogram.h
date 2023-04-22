@@ -76,9 +76,11 @@ public:
 
     Histogram &operator+=(const Histogram &otherData);
 
-    template<std::size_t DIM_ = DIM>
-    std::enable_if_t<DIM_ == 1, void> renormalizeBins(const std::vector<double> &factors);
+    template<typename T1>
+    Histogram &operator*=(const T1 &val);
 
+    template<typename T1>
+    Histogram &operator/=(const T1 &val);
 
     [[nodiscard]] const T &atIndex(const std::array<std::size_t, DIM> &idx) const;
 
@@ -101,6 +103,48 @@ public:
     [[nodiscard]] const_iterator end() const { return this->bins.end(); }
 
     [[nodiscard]] std::vector<BinValue> dumpValues() const;
+
+    template<std::size_t DIM_ = DIM>
+    std::enable_if_t<DIM_ == 1, void> renormalizeBins(const std::vector<double> &factors);
+
+    [[nodiscard]] std::size_t getNumBins(std::size_t idx) const { return this->numBins.at(idx); }
+
+    template<std::size_t DIM_ = DIM>
+    [[nodiscard]] std::enable_if_t<DIM_ == 1, std::size_t> getNumBins() const { return this->numBins.front(); }
+
+    /**
+     * @brief Returns the width of the bin.
+     */
+    [[nodiscard]] double getBinSize(std::size_t idx) const { return this->step.at(idx); }
+
+    template<std::size_t DIM_ = DIM>
+    [[nodiscard]] std::enable_if_t<DIM_ == 1, double> getBinSize() const { return this->step.front(); }
+
+    /**
+     * @brief Returns a lower end of binned range.
+     */
+    [[nodiscard]] double getMin(std::size_t idx) const { return this->min.at(idx); }
+
+    template<std::size_t DIM_ = DIM>
+    [[nodiscard]] std::enable_if_t<DIM_ == 1, double> getMin() const { return this->min.front(); }
+
+    /**
+     * @brief Returns an upper end of binned range.
+     */
+    [[nodiscard]] double getMax(std::size_t idx) const { return this->max.at(idx); }
+
+    template<std::size_t DIM_ = DIM>
+    [[nodiscard]] std::enable_if_t<DIM_ == 1, double> getMax() const { return this->max.front(); }
+
+    /**
+     * @brief Return a sorted vector of getNumBins() + 1 positions of bin boundaries including getMin() and getMax().
+     */
+    [[nodiscard]] std::vector<double> getBinDividers(std::size_t idx) const;
+
+    template<std::size_t DIM_ = DIM>
+    [[nodiscard]] std::enable_if_t<DIM_ == 1, std::vector<double>> getBinDividers() const {
+        return this->getBinDividers(0);
+    }
 };
 
 using Histogram1D = Histogram<1, double>;

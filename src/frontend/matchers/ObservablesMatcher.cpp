@@ -395,13 +395,20 @@ namespace {
                 return {array.front().as<double>(), array.back().as<double>()};
             });
 
+        using Normalization = ProbabilityEvolution::Normalization;
+        auto normalizationNone = MatcherNone{}.mapTo([](){ return Normalization::NONE; });
+        auto normalizationPDF = MatcherString("pdf").mapTo([](const std::string&){ return Normalization::PDF; });
+        auto normalizationUnit = MatcherString("unit").mapTo([](const std::string&){ return Normalization::UNIT; });
+        auto normalization = normalizationNone | normalizationPDF | normalizationUnit;
+
         return MatcherDataclass("probability_evolution")
             .arguments({{"max_r", MatcherFloat{}.positive()},
                         {"n_bins_r", nBins},
                         {"binning", binning},
                         {"function", correlationFunction},
                         {"fun_range", functionRange},
-                        {"n_bins_fun", nBins}})
+                        {"n_bins_fun", nBins},
+                        {"normalization", normalization, "None"}})
             .mapTo([maxThreads](const DataclassData &probEvolution) -> std::shared_ptr<BulkObservable> {
                 auto maxR = probEvolution["max_r"].as<double>();
                 auto nBinsR = probEvolution["n_bins_r"].as<std::size_t>();
@@ -409,8 +416,9 @@ namespace {
                 auto function = probEvolution["function"].as<std::shared_ptr<CorrelationFunction>>();
                 auto funRange = probEvolution["fun_range"].as<std::pair<double, double>>();
                 auto nBinsFun = probEvolution["n_bins_fun"].as<std::size_t>();
+                auto normalization = probEvolution["normalization"].as<Normalization>();
                 return std::make_shared<ProbabilityEvolution>(
-                    maxR, funRange, nBinsR, nBinsFun, binning, function, maxThreads
+                    maxR, funRange, nBinsR, nBinsFun, binning, function, normalization, maxThreads
                 );
             });
     }

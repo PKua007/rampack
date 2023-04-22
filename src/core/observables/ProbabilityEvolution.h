@@ -13,17 +13,28 @@
 
 
 class ProbabilityEvolution : public BulkObservable, public PairConsumer {
+public:
+    enum class Normalization {
+        NONE,
+        PDF,
+        UNIT
+    };
+
 private:
     double maxDistance{};
     std::pair<double, double> variableRange{};
     HistogramBuilder<2> histogramBuilder;
     std::shared_ptr<PairEnumerator> pairEnumerator;
     std::shared_ptr<CorrelationFunction> function;
+    Normalization normalization{};
+
+    void renormalizeHistogram(Histogram2D &histogram) const;
 
 public:
     ProbabilityEvolution(double maxDistance, std::pair<double, double> variableRange, std::size_t numDistanceBins,
                          std::size_t numVariableBins, std::shared_ptr<PairEnumerator> pairEnumerator,
-                         std::shared_ptr<CorrelationFunction> function, std::size_t numThreads = 1);
+                         std::shared_ptr<CorrelationFunction> function,
+                         Normalization normalization = Normalization::PDF, std::size_t numThreads = 1);
 
     void addSnapshot(const Packing &packing, double temperature, double pressure,
                      const ShapeTraits &shapeTraits) override;

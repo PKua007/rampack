@@ -34,7 +34,7 @@ void DensityHistogram::addSnapshot(const Packing &packing, [[maybe_unused]] doub
 }
 
 void DensityHistogram::print(std::ostream &out) const {
-    for (auto [binMiddle, value] : this->histogramBuilder.dumpValues(HistogramBuilder3D::ReductionMethod::SUM))
+    for (auto [binMiddle, value] : this->histogramBuilder.dumpValues(ReductionMethod::SUM))
         out << binMiddle[0] << " " << binMiddle[1] << " " << binMiddle[2] << " " << value << std::endl;
 }
 
@@ -63,5 +63,5 @@ std::array<std::size_t, 3> DensityHistogram::normalizeNumBins(std::array<std::si
 }
 
 std::vector<Histogram3D::BinValue> DensityHistogram::dumpValues() const {
-    return this->histogramBuilder.dumpValues(HistogramBuilder3D::ReductionMethod::SUM);
+    return this->histogramBuilder.dumpValues(ReductionMethod::SUM);
 }
