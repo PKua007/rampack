@@ -23,6 +23,7 @@ This reference page give a full walkthrough over observables that can be compute
   * [Class `pair_density_correlation`](#class-pairdensitycorrelation)
   * [Class `pair_averaged_correlation`](#class-pairaveragedcorrelation)
   * [Class `density_histogram`](#class-densityhistogram)
+  * [Class `probability_evolution`](#class-probabiltyevolution)
 * [Trackers](#trackers)
   * [Class `fourier_tracker`](#class-fouriertracker)
 * [Binning types](#binning-types)
@@ -388,6 +389,7 @@ The following bulk observables are available:
 * [Class `pair_density_correlation`](#class-pairdensitycorrelation)
 * [Class `pair_averaged_correlation`](#class-pairaveragedcorrelation)
 * [Class `density_histogram`](#class-densityhistogram)
+* [Class `probability_evolution`](#class-probabilityevolution)
 
 Each observable has a **short name**, which is used in the output file name.
 
@@ -411,11 +413,11 @@ the standard [radial distribution function](https://en.wikipedia.org/wiki/Radial
   * ***max_r*** <br />
     Maximal distance which is going to be probed. The observable range starts at 0 and ends at this value.
   * ***n_bins*** <br />
-    Number of bins to use. The more of them, the higher is the resolution of the plot, but the smaller are the statistics
-    in the single bin.
+    Number of bins to use. The more of them, the higher is the resolution of the plot, but the smaller are the
+    statistics in the single bin.
   * ***binning*** <br />
-    [Binning type](#binning-types) used. It defines what *distance* means. For example, for `binning = radial`, *distance*
-    is the Euclidean distance between the particles.
+    [Binning type](#binning-types) used. It defines what *distance* means. For example, for `binning = radial`,
+    *distance* is the Euclidean distance between the particles.
 * **Short name**: `rho_[binning name]`, where `[binning name]` depends on the [binning type](#binning-types) (`binning`
   argument).
 * **Output**:
@@ -441,11 +443,11 @@ distance around *r*.
   * ***max_r*** <br />
     Maximal distance which is going to be probed. The observable range starts at 0 and ends at this value.
   * ***n_bins*** <br />
-    Number of bins to use. The more of them, the higher is the resolution of the plot, but the smaller are the statistics
-    in the single bin.
+    Number of bins to use. The more of them, the higher is the resolution of the plot, but the smaller are the
+    statistics in the single bin.
   * ***binning*** <br />
-    [Binning type](#binning-types) used. It defines what *distance* means. For example, for `binning = radial`, *distance*
-    is the Euclidean distance between the particles.
+    [Binning type](#binning-types) used. It defines what *distance* means. For example, for `binning = radial`,
+    *distance* is the Euclidean distance between the particles.
   * ***function*** <br />
     Two-particle [correlation function](#correlation-functions) which is being averaged.
 * **Short name**: `[function name]_[binning name]`, where `[function name]` depends on the 
@@ -481,8 +483,62 @@ Thus, the domain is always [0, 1)<sup>*d*</sup>, where *d* is the dimension.
     [Goldstone tracker](#trackers) used to cancel out system movement. If `None`, no compensation is applied.
 * **Short name**: `rho_xyz`
 * **Output**:
-  Rows with space-separated tuples (*b*<sub>x</sub>, *b*<sub>x</sub>, *b*<sub>x</sub>, *&rho;*(**b**)), where **b** is
+  Rows with space-separated tuples (*b*<sub>x</sub>, *b*<sub>y</sub>, *b*<sub>`</sub>, *&rho;*(**b**)), where **b** is
   relative middle of the bin. If the direction is turned off, the correspinding bin coordinate is equal 0.5.
+
+
+### Class `probability_evolution`
+
+```python
+probability_evolution(
+    max_r,
+    n_bins_r,
+    binning,
+    fun_range,
+    n_bins_fun,
+    function,
+    normalization = None
+)
+```
+
+Two-dimensional plot of a function
+
+*P*(*r*, *f*) = prob(*f*|*r*)
+
+where prob(*f*|*r*) is a conditional probability density of correlation function *f* for fixed a generalized distance
+*r* between particles (defined by the `binning` argument). It represents how the distribution of *f* changes with *r*.
+
+* **Arguments**:
+  * ***max_r*** <br />
+    Maximal distance which is going to be probed. The distance range starts at 0 and ends at this value.
+  * ***n_bins_r*** <br />
+    Number of bins to use for distance. The more of them, the higher is the resolution of the plot, but the smaller are
+    the statistics in the single bin.
+  * ***binning*** <br />
+    [Binning type](#binning-types) used. It defines what *distance* means. For example, for `binning = radial`,
+    *distance* is the Euclidean distance between the particles.
+  * ***fun_range*** <br />
+    An Array of 2 Floats representing minimal and maximal value of the function *f* that will be plotted.
+  * ***n_bins_fun*** <br />
+    Number of bins to use for *f* values. The more of them, the higher is the resolution of the plot, but the smaller
+    are the statistics in the single bin.
+  * ***function*** <br />
+    Two-particle [correlation function](#correlation-functions) which is being averaged.
+  * ***normalization*** (*= None*) <br />
+    How *P*(*r*, *f*) should be normalized. There are 3 options:
+    * `None` <br />
+      No normalization is performed. The values are snapshot-averaged counts of particles in the bins. Please
+      note than in that case the sum of counts for a fixed distance *r* is proportional to the
+      [pair density correlation function](#class-pairdensitycorrelation).
+    * `"pdf"` <br />
+      Standard probability density function normalization, for which &int;*P*(*r*, *f*) d*f* = 1.
+    * `"unit"` <br />
+      Average value in the bin is normalized to 1: &int;*P*(*r*, *f*) d*f* = *f*<sub>max</sub> - *f*<sub>min</sub>
+* **Short name**: `prob_[function name]_[binning name]`, where `[function name]` depends on the
+  [correlation function](#correlation-functions) (`function` argument), while `[binning name]` depends on the
+  [binning type](#binning-types) (`binning` argument).
+* **Output**:
+  Rows with space-separated 3-tuples (*r*, *f*, *P*(*r*, *f*)), where *r*, *f* are bin middles.
 
 
 ## Trackers
