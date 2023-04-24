@@ -40,16 +40,16 @@ enum class ReductionMethod {
  * counter. Before adding the snapshot one can renormalize bin values using renormalizeBins() method. After gathering
  * all snapshots dumpValues() method can be used to obtain a final, snapshot-averaged histogram.
  */
-template<std::size_t DIM = 1>
+template<std::size_t DIM = 1, typename T = double>
 class HistogramBuilder {
     static_assert(DIM >= 1);
 
 private:
     struct BinData {
-        double value{};
+        T value{};
         std::size_t numPoints{};
 
-        void addPoint(double newValue);
+        void addPoint(const T &newValue);
 
         BinData &operator+=(const BinData &other);
         BinData &operator*=(double factor);
@@ -64,8 +64,8 @@ private:
     Histogram<DIM, BinData> histogram;
     std::vector<Histogram<DIM, BinData>> currentHistograms;
 
-    template<typename T>
-    static std::array<std::decay_t<T>, DIM> filledArray(T &&value);
+    template<typename T1>
+    static std::array<std::decay_t<T1>, DIM> filledArray(T1 &&value);
 
 public:
     /**
@@ -86,10 +86,10 @@ public:
      * nextSnapshot() method. If one wants to create an ordinary histogram with points counting, value should be 1 (or
      * other constant) and then ReductionMethod::SUM should be used while dumping.
      */
-    void add(const Vector<DIM> &pos, double value);
+    void add(const Vector<DIM> &pos, const T &value);
 
     template<std::size_t DIM_ = DIM>
-    [[nodiscard]] std::enable_if_t<DIM_ == 1, void> add(double pos, double value) {
+    [[nodiscard]] std::enable_if_t<DIM_ == 1, void> add(double pos, const T &value) {
         return this->add(Vector<1>{pos}, value);
     }
 
@@ -105,14 +105,14 @@ public:
      * @param reductionMethod method used to average over snapshots (see HistogramBuilder::ReductionMethod)
      * @return Vector of BinValue objects enclosing middle position of bin and appropriately averaged value.
      */
-    [[nodiscard]] std::vector<typename Histogram<DIM>::BinValue> dumpValues(ReductionMethod reductionMethod) const;
+    [[nodiscard]] std::vector<typename Histogram<DIM, T>::BinValue> dumpValues(ReductionMethod reductionMethod) const;
 
     /**
      * @brief Creates snapshot-averaged histogram from collected snapshots.
      * @param reductionMethod method used to average over snapshots (see HistogramBuilder::ReductionMethod)
      * @return Vector of BinValue objects enclosing middle position of bin and appropriately averaged value.
      */
-    [[nodiscard]] Histogram<DIM> dumpHistogram(ReductionMethod reductionMethod) const;
+    [[nodiscard]] Histogram<DIM, T> dumpHistogram(ReductionMethod reductionMethod) const;
 
     /**
      * @brief Clears all snapshots and current temporary snapshot.
