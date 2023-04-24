@@ -71,7 +71,7 @@ TEST_CASE("ProbabilityEvolution") {
     out << std::fixed << std::setprecision(1);
 
     SECTION("normalization: NONE") {
-        ProbabilityEvolution evolution(2, {0, 2}, 2, 2, enumerator, function, Normalization::NONE);
+        ProbabilityEvolution evolution(2, 2, enumerator, {0, 2}, 2, function, Normalization::NONE);
         evolution.addSnapshot(packing, 1, 1, traits);
         evolution.addSnapshot(packing, 1, 1, traits);
 
@@ -82,7 +82,7 @@ TEST_CASE("ProbabilityEvolution") {
     }
 
     SECTION("normalization: PDF") {
-        ProbabilityEvolution evolution(2, {0, 2}, 2, 2, enumerator, function, Normalization::PDF);
+        ProbabilityEvolution evolution(2, 2, enumerator, {0, 2}, 2, function, Normalization::PDF);
         evolution.addSnapshot(packing, 1, 1, traits);
         evolution.addSnapshot(packing, 1, 1, traits);
 
@@ -92,7 +92,7 @@ TEST_CASE("ProbabilityEvolution") {
     }
 
     SECTION("normalization: UNIT") {
-        ProbabilityEvolution evolution(2, {0, 2}, 2, 2, enumerator, function, Normalization::UNIT);
+        ProbabilityEvolution evolution(2, 2, enumerator, {0, 2}, 2, function, Normalization::UNIT);
         evolution.addSnapshot(packing, 1, 1, traits);
         evolution.addSnapshot(packing, 1, 1, traits);
 
