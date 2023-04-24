@@ -5,14 +5,14 @@
 #include "ProbabilityEvolution.h"
 
 
-ProbabilityEvolution::ProbabilityEvolution(double maxDistance, std::pair<double, double> variableRange,
-                                           std::size_t numDistanceBins, std::size_t numVariableBins,
+ProbabilityEvolution::ProbabilityEvolution(double maxDistance, std::size_t numDistanceBins,
                                            std::shared_ptr<PairEnumerator> pairEnumerator,
-                                           std::shared_ptr<CorrelationFunction> function,
+                                           std::pair<double, double> functionRange,
+                                           std::size_t numFunctionBins, std::shared_ptr<CorrelationFunction> function,
                                            Normalization normalization, std::size_t numThreads)
-        : PairConsumer(numThreads), maxDistance{maxDistance}, variableRange{variableRange},
-          histogramBuilder({0, variableRange.first}, {maxDistance, variableRange.second},
-                           {numDistanceBins, numVariableBins}, numThreads),
+        : PairConsumer(numThreads), maxDistance{maxDistance}, functionRange{functionRange},
+          histogramBuilder({0, functionRange.first}, {maxDistance, functionRange.second},
+                           {numDistanceBins, numFunctionBins}, numThreads),
           pairEnumerator{std::move(pairEnumerator)}, function{std::move(function)}, normalization{normalization}
 {
     Expects(maxDistance > 0);
@@ -53,7 +53,7 @@ void ProbabilityEvolution::consumePair(const Packing &packing, const std::pair<s
     const auto &shape1 = packing[idxPair.first];
     const auto &shape2 = packing[idxPair.second];
     double value = this->function->calculate(shape1, shape2, shapeTraits);
-    if (value < this->variableRange.first || value > this->variableRange.second)
+    if (value < this->functionRange.first || value > this->functionRange.second)
         return;
 
     this->histogramBuilder.add({distance, value}, 1);
@@ -63,6 +63,7 @@ void ProbabilityEvolution::renormalizeHistogram(Histogram2D &histogram) const {
     if (this->normalization == Normalization::NONE)
         return;
 
+    // Normalize by count so that all bins for a given distance sum to 1
     for (std::size_t distI{}; distI < histogram.getNumBins(0); distI++) {
         double distTotal{};
         for (std::size_t varI{}; varI < histogram.getNumBins(1); varI++)
@@ -70,17 +71,18 @@ void ProbabilityEvolution::renormalizeHistogram(Histogram2D &histogram) const {
 
         if (distTotal == 0)
             continue;
-        for (std::size_t varI{}; varI < histogram.getNumBins(1); varI++)
-            histogram.atIndex({distI, varI}) /= distTotal;
+        for (std::size_t funI{}; funI < histogram.getNumBins(1); funI++)
+            histogram.atIndex({distI, funI}) /= distTotal;
     }
 
+    // Apply the actual normalization
     switch (this->normalization) {
         case Normalization::PDF:
-            histogram *= histogram.getNumBins(1);
+            histogram *= static_cast<double>(histogram.getNumBins(1));
             histogram /= (histogram.getMax(1) - histogram.getMin(1));
             break;
         case Normalization::UNIT:
-            histogram *= histogram.getNumBins(1);
+            histogram *= static_cast<double>(histogram.getNumBins(1));
             break;
         case Normalization::NONE:
             AssertThrow("Unreachable");

@@ -405,20 +405,20 @@ namespace {
             .arguments({{"max_r", MatcherFloat{}.positive()},
                         {"n_bins_r", nBins},
                         {"binning", binning},
-                        {"function", correlationFunction},
                         {"fun_range", functionRange},
                         {"n_bins_fun", nBins},
+                        {"function", correlationFunction},
                         {"normalization", normalization, "None"}})
             .mapTo([maxThreads](const DataclassData &probEvolution) -> std::shared_ptr<BulkObservable> {
                 auto maxR = probEvolution["max_r"].as<double>();
                 auto nBinsR = probEvolution["n_bins_r"].as<std::size_t>();
                 auto binning = probEvolution["binning"].as<std::shared_ptr<PairEnumerator>>();
-                auto function = probEvolution["function"].as<std::shared_ptr<CorrelationFunction>>();
                 auto funRange = probEvolution["fun_range"].as<std::pair<double, double>>();
                 auto nBinsFun = probEvolution["n_bins_fun"].as<std::size_t>();
+                auto function = probEvolution["function"].as<std::shared_ptr<CorrelationFunction>>();
                 auto normalization = probEvolution["normalization"].as<Normalization>();
                 return std::make_shared<ProbabilityEvolution>(
-                    maxR, funRange, nBinsR, nBinsFun, binning, function, normalization, maxThreads
+                    maxR, nBinsR, binning, funRange, nBinsFun, function, normalization, maxThreads
                 );
             });
     }

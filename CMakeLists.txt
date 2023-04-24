@@ -26,6 +26,11 @@ endif()
 
 # Configure compiler options
 add_compile_options(-Wall -Wextra -pedantic)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # Silence stupid warnings about the fix of std::pair API
+    add_compile_options(-Wno-psabi)
+endif()
+
 if (CMAKE_BUILD_TYPE MATCHES "Release")
     # Apple silicon does not like -march=native option
     if (NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"))
