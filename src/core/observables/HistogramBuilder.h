@@ -31,6 +31,7 @@ enum class ReductionMethod {
     AVERAGE
 };
 
+
 /**
  * @brief Class facilitating multithreaded building a histogram, where each bin accumulates arbitrary values inserted
  * in it (it is not restricted only to counting points), which are then averaged over many snapshots.
@@ -38,21 +39,22 @@ enum class ReductionMethod {
  * done concurrently using many OpenMP threads (as specified in the constructor) - each thread has its own storage.
  * Then nextSnapshot() method adds the data accumulated by add() to the main histogram and increases the snapshot
  * counter. Before adding the snapshot one can renormalize bin values using renormalizeBins() method. After gathering
- * all snapshots dumpValues() method can be used to obtain a final, snapshot-averaged histogram.
+ * all snapshots dumpHistogram() (or dumoValues()) method can be used to obtain a final, snapshot-averaged histogram.
  */
 template<std::size_t DIM = 1, typename T = double>
 class HistogramBuilder {
     static_assert(DIM >= 1);
 
 private:
-    struct BinData {
+    /* Helper class, which accumulated the value and counts how many points were passed. */
+    struct CountingAccumulator {
         T value{};
         std::size_t numPoints{};
 
         void addPoint(const T &newValue);
 
-        BinData &operator+=(const BinData &other);
-        BinData &operator*=(double factor);
+        CountingAccumulator &operator+=(const CountingAccumulator &other);
+        CountingAccumulator &operator*=(double factor);
     };
 
     std::array<double, DIM> min{};
@@ -61,21 +63,27 @@ private:
     std::array<std::size_t, DIM> numBins{};
     std::size_t flatNumBins{};
     std::size_t numSnapshots{};
-    Histogram<DIM, BinData> histogram;
-    std::vector<Histogram<DIM, BinData>> currentHistograms;
+    Histogram<DIM, CountingAccumulator> histogram;
+    std::vector<Histogram<DIM, CountingAccumulator>> currentHistograms;
 
     template<typename T1>
     static std::array<std::decay_t<T1>, DIM> filledArray(T1 &&value);
 
 public:
     /**
-     * @brief Construct a class to gather values from the range [@a min, @a max] (inclusive) divided into @a numBins
-     * bins and enables concurrent accumulation by at most @a numThreads OpenMP threads.
+     * @brief Construct a class where for axis @a i = 0, 1, ... values are gathered in the range `[min[i], max[i]]`
+     * (inclusive) divided into `numBins[i]` bins; it setups concurrent accumulation for at most @a numThreads OpenMP
+     * threads.
      * @details If @a numThreads is equal to 0, @a omp_get_max_threads() threads will be used.
      */
     explicit HistogramBuilder(const std::array<double, DIM> &min, const std::array<double, DIM> &max,
                               const std::array<std::size_t, DIM> &numBins, std::size_t numThreads = 1);
 
+    /**
+     * @brief Simplified version of
+     * HistogramBuilder(const std::array<double, DIM>&, const std::array<double, DIM>&, const std::array<std::size_t, DIM>&, std::size_t),
+     * where all dimensions have the same range and are divided into the same number of bins.
+     */
     explicit HistogramBuilder(double min, double max, std::size_t numBins, std::size_t numThreads = 1)
             : HistogramBuilder(filledArray(min), filledArray(max), filledArray(numBins), numThreads)
     { }
@@ -88,6 +96,9 @@ public:
      */
     void add(const Vector<DIM> &pos, const T &value);
 
+    /**
+     * @brief Simplified version of add(const Vector<DIM>&, const T&) for 1D histogram.
+     */
     template<std::size_t DIM_ = DIM>
     [[nodiscard]] std::enable_if_t<DIM_ == 1, void> add(double pos, const T &value) {
         return this->add(Vector<1>{pos}, value);
@@ -101,7 +112,7 @@ public:
     void nextSnapshot();
 
     /**
-     * @brief Creates snapshot-averaged histogram from collected snapshots.
+     * @brief Dumps snapshot-averaged flattened histogram from collected snapshots.
      * @param reductionMethod method used to average over snapshots (see HistogramBuilder::ReductionMethod)
      * @return Vector of BinValue objects enclosing middle position of bin and appropriately averaged value.
      */
@@ -119,31 +130,69 @@ public:
      */
     void clear();
 
+    /**
+     * @brief See Histogram::getNumBins(std::size_t) const.
+     */
     [[nodiscard]] std::size_t getNumBins(std::size_t idx) const { return this->histogram.getNumBins(idx); }
+
+    /**
+     * @brief See Histogram::getBinSize(std::size_t) const.
+     */
     [[nodiscard]] double getBinSize(std::size_t idx) const { return this->histogram.getBinSize(idx); }
+
+    /**
+     * @brief See Histogram::getMin(std::size_t) const.
+     */
     [[nodiscard]] double getMin(std::size_t idx) const { return this->histogram.getMin(idx); }
+
+    /**
+     * @brief See Histogram::getMax(std::size_t) const.
+     */
     [[nodiscard]] double getMax(std::size_t idx) const { return this->histogram.getMax(idx); }
+
+    /**
+     * @brief See Histogram::getBinDividers(std::size_t) const.
+     */
     [[nodiscard]] std::vector<double> getBinDividers(std::size_t idx) const {
         return this->histogram.getBinDividers(idx);
     }
 
+    /**
+     * @brief See Histogram::getNumBins() const.
+     */
     template<std::size_t DIM_ = DIM>
     [[nodiscard]] std::enable_if_t<DIM_ == 1, std::size_t> getNumBins() const { return this->histogram.getNumBins(); }
 
+    /**
+     * @brief See Histogram::getBinSize() const.
+     */
     template<std::size_t DIM_ = DIM>
     [[nodiscard]] std::enable_if_t<DIM_ == 1, double> getBinSize() const { return this->histogram.getBinSize(); }
 
+    /**
+     * @brief See Histogram::getMin() const.
+     */
     template<std::size_t DIM_ = DIM>
     [[nodiscard]] std::enable_if_t<DIM_ == 1, double> getMin() const { return this->histogram.getMin(); }
 
+    /**
+     * @brief See Histogram::getMax() const.
+     */
     template<std::size_t DIM_ = DIM>
     [[nodiscard]] std::enable_if_t<DIM_ == 1, double> getMax() const { return this->histogram.getMax(); }
 
+    /**
+     * @brief See Histogram::getBinDividers() const.
+     */
     template<std::size_t DIM_ = DIM>
     [[nodiscard]] std::enable_if_t<DIM_ == 1, std::vector<double>> getBinDividers() const {
         return this->histogram.getBinDividers();
     }
 
+    /**
+     * @brief For a 1D HistogramBuilder, multiplies all bins of the current histogram by corresponding factors from
+     * @a factors vector.
+     */
     template<std::size_t DIM_ = DIM>
     std::enable_if_t<DIM_ == 1, void> renormalizeBins(const std::vector<double> &factors);
 };

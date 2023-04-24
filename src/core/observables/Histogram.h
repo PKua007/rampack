@@ -19,6 +19,17 @@
 #include "geometry/Vector.h"
 
 
+/**
+ * @brief Class representing a @a DIM -dimensional histogram.
+ *
+ * @tparam DIM dimensionality of the histogram
+ * @tparam T type of the value stored inside the histogram. It is required to support the following operators:
+ * @code
+ * T::operator+=(const T&)
+ * T::operator*=(double)
+ * T::operator/=(double)
+ * @endcode
+ */
 template<std::size_t DIM = 1, typename T = double>
 struct Histogram {
 private:
@@ -39,7 +50,7 @@ public:
     using const_iterator = typename decltype(bins)::const_iterator;
 
     /**
-     * @brief A single bin data.
+     * @brief A single bin data consisting of Vector pointing to bin's middle and the in value.
      */
     struct BinValue {
         /** @brief Position corresponding to the middle of the bin. */
@@ -70,22 +81,49 @@ public:
         }
     };
 
-
+    
+    /**
+     * @brief Created the histogram, where for axis @a i = 0, 1, ... values are from in the range `[min[i], max[i]]`
+     * (inclusive) divided into `numBins[i]` bins.
+     */
     explicit Histogram(const std::array<double, DIM> &min, const std::array<double, DIM> &max,
                        const std::array<std::size_t, DIM> &numBins);
 
-    Histogram &operator+=(const Histogram &otherData);
+    /**
+     * @brief Sums the histogram bin-wise with other histogram @a other.
+     */
+    Histogram &operator+=(const Histogram &other);
+
+    /**
+     * @brief Multiplies all bin values by @a val value.
+     */
     Histogram &operator*=(double val);
+
+    /**
+     * @brief Divides all bin values by @a val value.
+     */
     Histogram &operator/=(double val);
 
+    /**
+     * @brief Returns immutable bin value for a bin with multidimensional index @a idx.
+     */
     [[nodiscard]] const T &atIndex(const std::array<std::size_t, DIM> &idx) const;
 
+    /**
+     * @brief Returns mutable bin value for a bin with multidimensional index @a idx.
+     */
     [[nodiscard]] T &atIndex(const std::array<std::size_t, DIM> &idx) {
         return const_cast<T&>(std::as_const(*this).atIndex(idx));
     }
 
+    /**
+     * @brief Returns immutable bin value for a bin which contains the position @a pos.
+     */
     [[nodiscard]] const T &atPos(const Vector<DIM> &pos) const;
 
+    /**
+     * @brief Returns mutable bin value for a bin which contains the position @a pos.
+     */
     [[nodiscard]] T &atPos(const Vector<DIM> &pos) {
         return const_cast<T&>(std::as_const(*this).atPos(pos));
     }
@@ -98,45 +136,71 @@ public:
     [[nodiscard]] const_iterator begin() const { return this->bins.begin(); }
     [[nodiscard]] const_iterator end() const { return this->bins.end(); }
 
+    /**
+     * @brief Dumps flattened histogram.
+     */
     [[nodiscard]] std::vector<BinValue> dumpValues() const;
 
+    /**
+     * @brief For a 1D histogram, multiplies all bins by corresponding factors from @a factors vector.
+     */
     template< std::size_t DIM_ = DIM>
     std::enable_if_t<DIM_ == 1, void> renormalizeBins(const std::vector<double> &factors);
 
+    /**
+     * @brief Returns the number of bins for a given axis with index @a idx.
+     */
     [[nodiscard]] std::size_t getNumBins(std::size_t idx) const { return this->numBins.at(idx); }
 
+    /**
+     * @brief Returns the number of bins (simplified version for 1D histogram).
+     */
     template<std::size_t DIM_ = DIM>
     [[nodiscard]] std::enable_if_t<DIM_ == 1, std::size_t> getNumBins() const { return this->numBins.front(); }
 
     /**
-     * @brief Returns the width of the bin.
+     * @brief Returns the width of the bin for a given axis with index @a idx.
      */
     [[nodiscard]] double getBinSize(std::size_t idx) const { return this->step.at(idx); }
 
+    /**
+     * @brief Returns the width of the bin (simplified version for 1D histogram).
+     */
     template<std::size_t DIM_ = DIM>
     [[nodiscard]] std::enable_if_t<DIM_ == 1, double> getBinSize() const { return this->step.front(); }
 
     /**
-     * @brief Returns a lower end of binned range.
+     * @brief Returns a lower end of binned range for a given axis with index @a idx.
      */
     [[nodiscard]] double getMin(std::size_t idx) const { return this->min.at(idx); }
 
+    /**
+     * @brief Returns a lower end of binned range (simplified version for 1D histogram).
+     */
     template<std::size_t DIM_ = DIM>
     [[nodiscard]] std::enable_if_t<DIM_ == 1, double> getMin() const { return this->min.front(); }
 
     /**
-     * @brief Returns an upper end of binned range.
+     * @brief Returns an upper end of binned range for a given axis with index @a idx.
      */
     [[nodiscard]] double getMax(std::size_t idx) const { return this->max.at(idx); }
 
+    /**
+     * @brief Returns an upper end of binned range (simplified version for 1D histogram).
+     */
     template<std::size_t DIM_ = DIM>
     [[nodiscard]] std::enable_if_t<DIM_ == 1, double> getMax() const { return this->max.front(); }
 
     /**
-     * @brief Return a sorted vector of getNumBins() + 1 positions of bin boundaries including getMin() and getMax().
+     * @brief Return a sorted vector of getNumBins() + 1 positions of bin boundaries including getMin() and getMax()
+     * for a given axis with index @a idx.
      */
     [[nodiscard]] std::vector<double> getBinDividers(std::size_t idx) const;
 
+    /**
+     * @brief Return a sorted vector of getNumBins() + 1 positions of bin boundaries including getMin() and getMax()
+     * (simplified version for 1D histogram).
+     */
     template<std::size_t DIM_ = DIM>
     [[nodiscard]] std::enable_if_t<DIM_ == 1, std::vector<double>> getBinDividers() const {
         return this->getBinDividers(0);
