@@ -12,16 +12,16 @@
 #include "utils/OMPMacros.h"
 
 
-template<std::size_t DIM>
-void HistogramBuilder<DIM>::add(const Vector<DIM> &pos, double value) {
+template<std::size_t DIM, typename T>
+void HistogramBuilder<DIM, T>::add(const Vector<DIM> &pos, const T &value) {
     std::size_t threadId = OMP_THREAD_ID;
     Expects(threadId < this->currentHistograms.size());
     auto &currentHistogram = this->currentHistograms[threadId];
     currentHistogram.atPos(pos).addPoint(value);
 }
 
-template<std::size_t DIM>
-void HistogramBuilder<DIM>::nextSnapshot() {
+template<std::size_t DIM, typename T>
+void HistogramBuilder<DIM, T>::nextSnapshot() {
     for (auto &currentHistogram : this->currentHistograms) {
         this->histogram += currentHistogram;
         currentHistogram.clear();
@@ -29,24 +29,23 @@ void HistogramBuilder<DIM>::nextSnapshot() {
     this->numSnapshots++;
 }
 
-template<std::size_t DIM>
-void HistogramBuilder<DIM>::clear() {
+template<std::size_t DIM, typename T>
+void HistogramBuilder<DIM, T>::clear() {
     this->histogram.clear();
     for (auto &currentHistogram : this->currentHistograms)
         currentHistogram.clear();
     this->numSnapshots = 0;
 }
 
-template<std::size_t DIM>
-std::vector<typename Histogram<DIM>::BinValue>
-HistogramBuilder<DIM>::dumpValues(ReductionMethod reductionMethod) const
-{
+template<std::size_t DIM, typename T>
+std::vector<typename Histogram<DIM, T>::BinValue>
+HistogramBuilder<DIM, T>::dumpValues(ReductionMethod reductionMethod) const {
     return this->dumpHistogram(reductionMethod).dumpValues();
 }
 
-template<std::size_t DIM>
-Histogram<DIM> HistogramBuilder<DIM>::dumpHistogram(ReductionMethod reductionMethod) const {
-    Histogram<DIM> result(this->min, this->max, this->numBins);
+template<std::size_t DIM, typename T>
+Histogram<DIM, T> HistogramBuilder<DIM, T>::dumpHistogram(ReductionMethod reductionMethod) const {
+    Histogram<DIM, T> result(this->min, this->max, this->numBins);
 
     if (this->numSnapshots == 0)
         return result;
@@ -72,9 +71,9 @@ Histogram<DIM> HistogramBuilder<DIM>::dumpHistogram(ReductionMethod reductionMet
     return result;
 }
 
-template<std::size_t DIM>
-HistogramBuilder<DIM>::HistogramBuilder(const std::array<double, DIM> &min, const std::array<double, DIM> &max,
-                                        const std::array<std::size_t, DIM> &numBins, std::size_t numThreads)
+template<std::size_t DIM, typename T>
+HistogramBuilder<DIM, T>::HistogramBuilder(const std::array<double, DIM> &min, const std::array<double, DIM> &max,
+                                           const std::array<std::size_t, DIM> &numBins, std::size_t numThreads)
         : min{min}, max{max}, numBins{numBins},
           flatNumBins{std::accumulate(numBins.begin(), numBins.end(), 1ul, std::multiplies<>{})},
           histogram(min, max, numBins)
@@ -91,37 +90,37 @@ HistogramBuilder<DIM>::HistogramBuilder(const std::array<double, DIM> &min, cons
     this->currentHistograms.resize(numThreads, Histogram<DIM, BinData>(this->min, this->max, this->numBins));
 }
 
-template<std::size_t DIM>
+template<std::size_t DIM, typename T>
 template<std::size_t DIM_>
-std::enable_if_t<DIM_ == 1, void> HistogramBuilder<DIM>::renormalizeBins(const std::vector<double> &factors) {
+std::enable_if_t<DIM_ == 1, void> HistogramBuilder<DIM, T>::renormalizeBins(const std::vector<double> &factors) {
     for (auto &currentHistogram : this->currentHistograms)
         currentHistogram.renormalizeBins(factors);
 }
 
-template<std::size_t DIM>
-template<typename T>
-std::array<std::decay_t<T>, DIM> HistogramBuilder<DIM>::filledArray(T &&value) {
-    std::array<std::remove_reference_t<T>, DIM> array;
+template<std::size_t DIM, typename T>
+template<typename T1>
+std::array<std::decay_t<T1>, DIM> HistogramBuilder<DIM, T>::filledArray(T1 &&value) {
+    std::array<std::decay_t<T1>, DIM> array;
     array.fill(std::forward<T>(value));
     return array;
 }
 
-template<std::size_t DIM>
-typename HistogramBuilder<DIM>::BinData &
-HistogramBuilder<DIM>::BinData::operator+=(const HistogramBuilder::BinData &other) {
+template<std::size_t DIM, typename T>
+typename HistogramBuilder<DIM, T>::BinData &
+HistogramBuilder<DIM, T>::BinData::operator+=(const HistogramBuilder::BinData &other) {
     this->value += other.value;
     this->numPoints += other.numPoints;
     return *this;
 }
 
-template<std::size_t DIM>
-void HistogramBuilder<DIM>::BinData::addPoint(double newValue) {
+template<std::size_t DIM, typename T>
+void HistogramBuilder<DIM, T>::BinData::addPoint(const T &newValue) {
     this->value += newValue;
     this->numPoints++;
 }
 
-template<std::size_t DIM>
-typename HistogramBuilder<DIM>::BinData &HistogramBuilder<DIM>::BinData::operator*=(double factor) {
+template<std::size_t DIM, typename T>
+typename HistogramBuilder<DIM, T>::BinData &HistogramBuilder<DIM, T>::BinData::operator*=(double factor) {
     this->value *= factor;
     return *this;
 }

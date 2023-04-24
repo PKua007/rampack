@@ -75,12 +75,8 @@ public:
                        const std::array<std::size_t, DIM> &numBins);
 
     Histogram &operator+=(const Histogram &otherData);
-
-    template<typename T1>
-    Histogram &operator*=(const T1 &val);
-
-    template<typename T1>
-    Histogram &operator/=(const T1 &val);
+    Histogram &operator*=(double val);
+    Histogram &operator/=(double val);
 
     [[nodiscard]] const T &atIndex(const std::array<std::size_t, DIM> &idx) const;
 
@@ -104,7 +100,7 @@ public:
 
     [[nodiscard]] std::vector<BinValue> dumpValues() const;
 
-    template<std::size_t DIM_ = DIM>
+    template< std::size_t DIM_ = DIM>
     std::enable_if_t<DIM_ == 1, void> renormalizeBins(const std::vector<double> &factors);
 
     [[nodiscard]] std::size_t getNumBins(std::size_t idx) const { return this->numBins.at(idx); }

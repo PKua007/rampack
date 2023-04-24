@@ -27,16 +27,14 @@ Histogram<DIM, T> &Histogram<DIM, T>::operator+=(const Histogram &otherData)
 }
 
 template<std::size_t DIM, typename T>
-template<typename T1>
-Histogram<DIM, T> &Histogram<DIM, T>::operator*=(const T1 &val) {
+Histogram<DIM, T> &Histogram<DIM, T>::operator*=(double val) {
     for (auto &bin : this->bins)
         bin *= val;
     return *this;
 }
 
 template<std::size_t DIM, typename T>
-template<typename T1>
-Histogram<DIM, T> &Histogram<DIM, T>::operator/=(const T1 &val) {
+Histogram<DIM, T> &Histogram<DIM, T>::operator/=(double val) {
     for (auto &bin : this->bins)
         bin /= val;
     return *this;
