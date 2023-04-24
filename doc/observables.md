@@ -29,8 +29,9 @@ This reference page give a full walkthrough over observables that can be compute
 * [Binning types](#binning-types)
   * [Class `radial`](#class-radial)
   * [Class `layerwise_radial`](#class-layerwiseradial)
-* [Correlation functions](#Correlation-functions)
+* [Correlation functions](#correlation-functions)
   * [Class `s110`](#class-s110)
+  * [Class `axes_angle`](#class-axesangle)
 * [Shape functions](#shape-functions)
   * [Class `const`](#class-const)
   * [Class `axis`](#class-axis)
@@ -483,7 +484,7 @@ Thus, the domain is always [0, 1)<sup>*d*</sup>, where *d* is the dimension.
     [Goldstone tracker](#trackers) used to cancel out system movement. If `None`, no compensation is applied.
 * **Short name**: `rho_xyz`
 * **Output**:
-  Rows with space-separated tuples (*b*<sub>x</sub>, *b*<sub>y</sub>, *b*<sub>`</sub>, *&rho;*(**b**)), where **b** is
+  Rows with space-separated tuples (*b*<sub>x</sub>, *b*<sub>y</sub>, *b*<sub>z</sub>, *&rho;*(**b**)), where **b** is
   relative middle of the bin. If the direction is turned off, the correspinding bin coordinate is equal 0.5.
 
 
@@ -505,7 +506,7 @@ Two-dimensional plot of a function
 
 *P*(*r*, *f*) = prob(*f*|*r*)
 
-where prob(*f*|*r*) is a conditional probability density of correlation function *f* for fixed a generalized distance
+where prob(*f*|*r*) is a conditional probability density of correlation function *f* for a fixed generalized distance
 *r* between particles (defined by the `binning` argument). It represents how the distribution of *f* changes with *r*.
 
 * **Arguments**:
@@ -660,6 +661,7 @@ such as [class `pair_averaged_correlation`](#class-pairaveragedcorrelation).
 
 Currently, the following correlation functions are available:
 * [Class `s110`](#class-s110)
+* [Class `axes_angle`](#class-axesangle)
 
 
 ### Class `s110`
@@ -676,6 +678,22 @@ s110(
 
 where **a**<sub>*i*</sub> and **a**<sub>*j*</sub> are (unit) [shape axes](shapes.md#shape-axes) of the *i*<sup>th</sup>
 and *j*<sup>th</sup> molecule, determined by the `axis` argument (`"primary"`, `"secondary"` or `"auxiliary"`). 
+
+
+### Class `axes_angle`
+
+```python
+axes_angle(
+    axis
+)
+```
+
+The (smaller) angle between axes of two particles, expressed in degrees:
+
+*&theta;*(*i*, *j*) = (180/&pi;) cos<sup>-1</sup>|**a**<sub>*i*</sub> &middot; **a**<sub>*j*</sub>|.
+
+**a**<sub>*i*</sub> and **a**<sub>*j*</sub> are (unit) [shape axes](shapes.md#shape-axes) of the *i*<sup>th</sup>
+and *j*<sup>th</sup> molecule, determined by the `axis` argument (`"primary"`, `"secondary"` or `"auxiliary"`).
 
 
 ## Shape functions
