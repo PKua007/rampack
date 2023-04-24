@@ -40,7 +40,7 @@ _rampack_observable() {
 
 _rampack_bulk_observable() {
 	COMPREPLY=($(compgen -W "\'pair_density_correlation( \'pair_averaged_correlation(
-		\'density_histogram(" -- "${cur/\'/\\\'}"))
+		\'density_histogram( \'probability_evolution(" -- "${cur/\'/\\\'}"))
 	compopt -o nospace
 }
 

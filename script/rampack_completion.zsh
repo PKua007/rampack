@@ -14,7 +14,7 @@ _rampack_observable=(number_density box_dimensions packing_fraction compressibil
 	energy_fluctuations_per_particle nematic_order smectic_order bond_order rotation_matrix_drift temperature
 	pressure fourier_tracker)
 
-_rampack_bulk_observable=(pair_density_correlation pair_averaged_correlation density_histogram)
+_rampack_bulk_observable=(pair_density_correlation pair_averaged_correlation density_histogram probability_evolution)
 
 _rampack_trajectory_output=(ramtrj xyz)
 
