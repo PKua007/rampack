@@ -24,7 +24,6 @@ private:
     std::shared_ptr<PairEnumerator> pairEnumerator;
     HistogramBuilder<1> histogram;
 
-protected:
     void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
                      double distance, const ShapeTraits &shapeTraits) override;
 

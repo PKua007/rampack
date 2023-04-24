@@ -24,6 +24,9 @@ private:
     std::shared_ptr<CorrelationFunction> correlationFunction;
     HistogramBuilder<1> histogram;
 
+    void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
+                     double distance, const ShapeTraits &shapeTraits) override;
+
 public:
     /**
      * @brief Construct the class for the given @a pairEnumerator and @a correlationFunction.
@@ -53,8 +56,6 @@ public:
     void print(std::ostream &out) const override;
 
     void clear() override { this->histogram.clear(); }
-    void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
-                     double distance, const ShapeTraits &shapeTraits) override;
 
     /**
      * @brief Returns a signature name in a format "[correlation function name]_[pair enumerator name]".

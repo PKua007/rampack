@@ -5,11 +5,11 @@
 #ifndef RAMPACK_PROBABILITYEVOLUTION_H
 #define RAMPACK_PROBABILITYEVOLUTION_H
 
-#include "HistogramBuilder.h"
+#include "core/observables/HistogramBuilder.h"
 #include "core/BulkObservable.h"
-#include "correlation/PairConsumer.h"
-#include "correlation/PairEnumerator.h"
-#include "CorrelationFunction.h"
+#include "PairConsumer.h"
+#include "PairEnumerator.h"
+#include "core/observables/CorrelationFunction.h"
 
 
 /**
@@ -51,6 +51,8 @@ private:
     Normalization normalization{};
 
     void renormalizeHistogram(Histogram2D &histogram) const;
+    void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair, double distance,
+                     const ShapeTraits &shapeTraits) override;
 
 public:
     /**
@@ -95,9 +97,6 @@ public:
      * @brief Returns the signature name, which is `prob_[correlation function name]_[pair enumerator name]`
      */
     [[nodiscard]] std::string getSignatureName() const override;
-
-    void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair, double distance,
-                     const ShapeTraits &shapeTraits) override;
 };
 
 
