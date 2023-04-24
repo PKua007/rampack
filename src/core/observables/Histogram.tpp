@@ -18,11 +18,11 @@ Histogram<DIM, T>::Histogram(const std::array<double, DIM> &min, const std::arra
 }
 
 template<std::size_t DIM, typename T>
-Histogram<DIM, T> &Histogram<DIM, T>::operator+=(const Histogram &otherData)
+Histogram<DIM, T> &Histogram<DIM, T>::operator+=(const Histogram &other)
 {
-    Expects(otherData.bins.size() == this->bins.size());
+    Expects(other.bins.size() == this->bins.size());
     for (std::size_t i{}; i < this->size(); i++)
-        this->bins[i] += otherData.bins[i];
+        this->bins[i] += other.bins[i];
     return *this;
 }
 
