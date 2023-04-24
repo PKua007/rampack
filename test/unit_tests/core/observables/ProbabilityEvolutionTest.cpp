@@ -11,7 +11,7 @@
 #include "mocks/MockPairEnumerator.h"
 #include "mocks/MockCorrelationFunction.h"
 
-#include "core/observables/ProbabilityEvolution.h"
+#include "core/observables/correlation/ProbabilityEvolution.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/shapes/SphereTraits.h"
 
