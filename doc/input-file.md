@@ -461,7 +461,7 @@ Arguments:
   numerous matrix multiplications during the simulation. Unless you have a good reason to change it, the default value
   of `10000` should be left as it is.
 
-* ***output_last_snapshot*** (*= []*)
+* ***output_last_snapshot*** (*= []*) <a id="integration_outputlastsnapshot"></a>
 
   The array of formats in which the last snapshot should be stored after the simulation. For example
 
@@ -472,7 +472,7 @@ Arguments:
   will store RAMSNAP representation to the file `packing.ramsnap`.
   See [Last snapshot writers](output-formats.md#last-snapshot-writers) for more information.
 
-* ***record_trajectory*** (*= []*)
+* ***record_trajectory*** (*= []*) <a id="integration_recordtrajectory"></a>
 
   The array of formats in which the trajectory should be stored during the simulation. For example
 
