@@ -21,9 +21,10 @@ This reference page described all output formats supported by the software.
 
 Snapshots of the system are outputted at the end of simulation runs (see
 [Simulation pipeline](input-file.md#simulation-pipeline),
-[integration::output_last_snapshot](input-file.md#integration_outputlastsnapshot)). Some formats may contain more data
-than others. The native representation is the [RAMSNAP](#class-ramsnap) format, which contains metadata such as number
-of cycles or step sizes. Currently, the following snapshot formats are supported:
+[integration.output_last_snapshot](input-file.md#integration_outputlastsnapshot)). The amount of information stored
+(positions and orientation, box dimensions, simulation metadata) varies between the formats. The native representation
+is the [RAMSNAP](#class-ramsnap) format, which contains metadata such as the number of cycles or step sizes. Currently,
+the following snapshot formats are supported:
 
 * [Class `ramsnap`](#class-ramsnap)
 * [Class `wolfram`](#class-wolfram)
@@ -38,12 +39,11 @@ ramsnap(
 )
 ```
 
-Internal RAMPACK text representation of a simulation snapshot, stored to a file with name `filename`. Apart from box
-dimensions and particles' positions and orientation is contains simulation metadata as key=valye pairs. Format's
-specification is technically not a part of the public interface, thus it may change in the future (however retaining the
-software support).
-
-Currently, RAMSNAP files have the following structure:
+Internal RAMPACK text representation of a simulation snapshot, stored to a file with the name given by the `filename`
+argument. Apart from box dimensions and particles' positions and orientations, it contains simulation metadata (which
+is used to resume an interrupted simulation) as key=value pairs. Format's specification is technically not a part of the
+public interface; thus it may change in the future (retaining the software support of older versions). Currently, is has
+the following structure:
 
 ```text
 [k]
@@ -62,16 +62,15 @@ where:
 * `[k]` <br />
    number of key=value pairs
 * `[vij]` <br />
-   is j<sup>th</sup> component of i<sup>th</sup> [box vector](initial-arrangement.md#simulation-box)
-   **v**<sub>*i*</sub>
+   j<sup>th</sup> component of i<sup>th</sup> [box vector](initial-arrangement.md#simulation-box) **v**<sub>*i*</sub>
 * `[N]` <br />
    number of particles
 * `[rij]` <br />
    j<sup>th</sup> component of the absolute position **r**<sub>*i*</sub> of i<sup>th</sup> particle
 * `[Oijk]` <br />
-  j<sup>th</sup> row and k<sup>th</sup> column of the orientation matrix **O**<sub>*i*</sub> of i<sup>th</sup> particle
+   j<sup>th</sup> row and k<sup>th</sup> column of the orientation matrix **O**<sub>*i*</sub> of i<sup>th</sup> particle
 
-Metadata stored (not all of them are always present):
+Metadata keys' names (depending on the context, some of the entries may not be always present):
 * `cycles` <br />
   number of full Monte Carlo cycles performed
 * `step.[move sampler].[move]` <br />
@@ -88,17 +87,18 @@ wolfram(
 )
 ```
 
-[Wolfram Mathematica](https://www.wolfram.com/mathematica/) output of the last snapshot stored to the file named
-`filename`. It is a `Graphics3D` with all particles. Simulation box is not drawn. There are 2 `style` options:
+[Wolfram Mathematica](https://www.wolfram.com/mathematica/) output of the last snapshot stored to a file with the name
+given by the `filename` argument. Simulation box is not drawn. There are 2 `style` options:
 
 * class `standard`
 
-  `Graphics3D` contains a list of individually drawn shapes:
+  In this format,`Graphics3D` contains a list of individually drawn shapes:
+
   ```wolfram
   Graphics3D[{
-      Sphere[pos1, radius],    (* individual shape *)
+      Sphere[position1, radius],    (* individual shape *)
       ...
-      Sphere[posN, radius]
+      Sphere[positionN, radius]
   }]
   ```
   
@@ -121,8 +121,15 @@ wolfram(
   ]
   ```
   
-  It is the most useful for shapes whose textual representation is very large, for example
+  It is the most useful for shapes, for which the Wolfram Mathematica code is very long, for example
   [class `generic_xeno_collide`](shapes.md#class-genericxenocollide).
+
+**NOTE**: It is advisable not to open the output directly in Wolfram Mathematica, but rather copy its content into the
+clipboard and paste is into an empty notebook. Alternatively, the output can be loaded directly into a variable using
+
+```wolfram
+shapshot = ToExpression[Import[filename, "String"]]
+```
 
 
 ### Class `xyz`
@@ -134,15 +141,16 @@ xyz(
 ```
 
 [Extended XYZ](https://www.ovito.org/manual/reference/file_formats/input/xyz.html#extended-xyz-format) snapshot stored
-to the file named `filename`. Unlike
+to a file with the name given by the `filename` argument. Unlike
 [standard XYZ](https://www.ovito.org/manual/reference/file_formats/input/xyz.html#extended-xyz-format) format, which
-contains only positions of atoms, box dimensions and particle orientations are also stored. This flavour is recognized
-by [Ovito](https://www.ovito.org) out of the box. You can use `rampack shape-preview --shape=... --output='obj(...)'`
-(see [`shape-preview` mode](operation-modes.md#shape-preview-mode)) to generate Wavefront OBJ model of the shape and
-load it into Ovito so it can render the system properly.
+contains only positions of atoms, in the extended variant box dimensions and particle orientations are also stored. This
+flavor is recognized by [Ovito](https://www.ovito.org) out of the box. You can use
+`rampack shape-preview --shape=... --output='obj(...)'`
+(see [`shape-preview` mode](operation-modes.md#shape-preview-mode)) to generate a [Wavefront OBJ model](#class-obj) of
+the shape and load it into Ovito, so it can render the system properly.
 
 
-XYZ file structure is the following
+Extended XYZ file structure is the following
 
 ```text
 [N]
@@ -174,9 +182,9 @@ where
 
 Trajectories consist of many snapshots of the system captured every X full MC snapshots. They are stored on the fly
 during the simulation (see [Simulation pipeline](input-file.md#simulation-pipeline),
-[integration::record_trajectory](input-file.md#integration_recordtrajectory))). They can be later processed using the
-[`trajectory` mode](operation-modes.md#trajectory-mode), for example to calculate additional observables. The native
-representation is [RAMTRJ](#class-ramtrj), which is a compact binary format.
+[integration::record_trajectory](input-file.md#integration_recordtrajectory)). The native representation is
+[RAMTRJ](#class-ramtrj), which is a compact binary format. It can be later processed using the
+[`trajectory` mode](operation-modes.md#trajectory-mode), for example, to calculate additional observables.
 
 Currently, the following formats are supported:
 
@@ -192,19 +200,20 @@ ramtrj(
 )
 ```
 
-Trajectory in the internal binary RAMTRJ format stored to the file named `filename`. It is designed to be compact with
-easy access to individual snapshots. It is not the part of a public interface, so its format may change in the future
-(however retaining the software support).
+Trajectory in the internal binary RAMTRJ format stored to a file with the name given by the `filename` argument. It is
+designed to be compact with easy access to individual snapshots. It is not part of a public interface, so its format may
+change in the future (retaining the software support of older versions).
 
-Currently, RAMTRJ files have the following structure [number of bytes are in the parentheses (...)]:
+Currently, RAMTRJ files have the following binary structure (C types of primitive blocks are in `(...)`):
 
 ```text
-[ramtrj(33+72*m+46*m*N)] := [header(33)] [snapshot 1(72+46*N)] ... [snapshot m(72+46*N)]
-[header(33)]             := [magic(7)] [version major(1)] [version minor(1)] [N(8)] [m(8)] [s(8)]
-[magic(7)]               := "RAMTRJ\n" ASCII characters
-[snapshot i(72+46*N)]    := [box dimensions(72)] [particle 1(48)] ... [particle N(48)]
-[box dimensions(72)]     := [v11(8)] [v21(8)] [v31(8)] [v12(8)] [v22(8)] [v32(8)] [v13(8)] [v23(8)] [v33(8)]
-[particle N(48)]         := [r1(8)] [r2(8)] [r3(8)] [e1(8)] [e2(8)] [e3(8)]
+[header] [snapshot 1] ... [snapshot m]
+
+[header] := [magic] [version major(char)] [version minor(char)] [N(unsigned long)] [m(unsigned long)] [s(unsigned long)]
+[magic] := "RAMTRJ\n" ASCII characters
+[snapshot i] := [box dimensions] [particle 1] ... [particle N]
+[box dimensions] := [v11(double)] [v21] [v31] [v12] [v22] [v32] [v13] [v23] [v33]
+[particle i] := [ri1(double)] [ri2] [ri3] [ei1(double)] [ei2] [ei3]
 ```
 
 where
@@ -220,10 +229,10 @@ where
 * `[rij]` <br />
   j<sup>th</sup> component of the absolute position **r**<sub>*i*</sub> of i<sup>th</sup> particle
 * `[eij]` <br />
-  j<sup>th</sup> [Euler angle](https://en.wikipedia.org/wiki/Euler_angles#Conventions) (in the extrinsic XYZ convention)
-  of  i<sup>th</sup> particle
+  j<sup>th</sup> [Euler angle](https://en.wikipedia.org/wiki/Euler_angles#Conventions) (in the extrinsic XYZ, 
+  convention, in radians) of i<sup>th</sup> particle
 
-The initial configuration is not stored - the first captured snapshot is `[s]`.
+The initial configuration is not stored - the first captured snapshot is for cycle number equal step size `[s]`.
 
 ### Class `xyz`
 
@@ -234,18 +243,49 @@ xyz(
 ```
 
 [Extended XYZ](https://www.ovito.org/manual/reference/file_formats/input/xyz.html#extended-xyz-format) trajectory stored
-to the file named `filename`. It is basically a collection of XYZ snapshots, so please refer to
-[snapshot class `xyz`](#class-xyz) documentation. Here, each snapshot has only one key=value pair, which is
+to a file with the name given by the `filename` argument. It is basically a collection of XYZ snapshots, so please refer 
+to [snapshot class `xyz`](#class-xyz) documentation. Here, each snapshot has only one auxiliary key=value pair, which is
 `cycle=[cycle number]`. This trajetory format is recognized by [Ovito](https://www.ovito.org) out of the box. You can
 use `rampack shape-preview --shape=... --output='obj(...)'`
-(see [`shape-preview` mode](operation-modes.md#shape-preview-mode)) to generate Wavefront OBJ model of the shape and 
-load it into Ovito so it can render the system properly.
+(see [`shape-preview` mode](operation-modes.md#shape-preview-mode)) to generate a [Wavefront OBJ model](#class-obj) of
+the shape and load it into Ovito, so it can render the system properly.
 
 
 ## Shape model formats
 
+The [`shape-preview` mode](operation-modes.md#shape-preview-mode) can export the 3D model of a shape for visualization
+purposes. The following formats are currently supported:
+
+* [Class `wolfram`](#class-wolfram-1)
+* [Class `obj`](#class-obj)
+
 
 ### Class `wolfram`
 
+```python
+wolfram(
+    filename
+)
+```
+
+Stores the shape model in [Wolfram Mathematica](https://www.wolfram.com/mathematica/) format to a file with the name
+given by the `filename` argument. The output can be passed as an argument of `Graphics3D` object.
+
+**NOTE**: It is advisable not to open the output directly in Wolfram Mathematica, but rather copy its content into the
+clipboard and paste is into an empty notebook. Alternatively, the output can be loaded directly into a variable using
+
+```wolfram
+shape = ToExpression[Import[filename, "String"]]
+```
 
 ### Class `obj`
+
+```python
+obj(
+    filename
+)
+```
+
+Stores the shape model in [Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefront_.obj_file) format to a file with the
+name given by the `filename` argument. The format is recognized by a wide range of visualization tools, including
+[Ovito](https://www.ovito.org).
