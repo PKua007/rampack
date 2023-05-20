@@ -2,6 +2,7 @@
 
 This reference page describes all options for `arrangement` argument of [class `rampack`](input-file.md#class-rampack).
 
+
 ## Contents
 
 * [Simulation box](#simulation-box)
@@ -25,6 +26,7 @@ This reference page describes all options for `arrangement` argument of [class `
     * [Class `serial`](#class-serial)
     * [Class `random`](#class-random)
 
+
 ## Simulation box
 
 RAMPACK support general triclinic boxes, which facilitates all standard symmetries of equilibrium phases of matter. The
@@ -38,12 +40,14 @@ identical particles characterized by their positions and orientation. Periodic b
 can also be toggled on, which imposes a barrier on hard particles. During the simulation, box may be deformed using
 different types of [box moves](input-file.md#box-move-types).
 
+
 ## Arrangement classes
 
 Currently, initial arrangement may be prepared using:
 
 * [class `presimulated`](#class-presimulated) - loads the configuration from the RAMSNAP file
 * [class `lattice`](#class-presimulated) - creates a Bravais lattice with optional transformations
+
 
 ### Class `presimulated`
 
@@ -54,6 +58,7 @@ presimulated(
 ```
 
 Loads the initial configuration from RAMSNAP with name given by String `file`.
+
 
 ### Class `lattice`
 
@@ -216,6 +221,7 @@ signature. There are 3 available call signatures
      If specified, not all available slots as specified by the unit cell and the lattice will be filled with particles.
      The way they are filled is specified by [Lattice populators](#lattice-populators).
 
+
 ## Unit cell types
 
 Unit cell is defined as a set of particles with given positions and orientations in the cell. Unit cell type does not
@@ -237,6 +243,7 @@ All positions given below in cell classes' descriptions are relative. In the sta
 textbooks, one particle is usually in the corner. Here, all particles in the cell are translated in such a way, that the
 bounding box of the positions lies dead in the middle.
 
+
 ### Class `sc`
 
 ```python
@@ -245,6 +252,7 @@ sc( )
 
 Creates a *simple cubic* cell with a single particle placed at (relative coordinates):
 * (1/2, 1/2, 1/2)
+
 
 ### Class `bcc`
 
@@ -255,6 +263,7 @@ bcc( )
 Creates a *body centered cubic* cell with 2 particles placed at (relative coordinates):
 * (1/4, 1/4, 1/4)
 * (3/4, 3/4, 3/4)
+
 
 ### Class `fcc`
 
@@ -267,6 +276,7 @@ Creates a *face centered cubic* cell with 4 particles placed at (relative coordi
 * (1/4, 3/4, 3/4)
 * (3/4, 1/4, 3/4)
 * (3/4, 3/4, 1/4)
+
 
 ### Class `hcp`
 
@@ -285,6 +295,7 @@ determines the direction of stacking of honeycomb layers. For `axis = "z"`, the 
 
 For `axis = "y"` the coordinates are cyclically shifted left one time, while for `axis = "x"` - two times.
 
+
 ### Class `hex`
 
 ```python
@@ -300,6 +311,7 @@ determines the direction of stacking. For `axis = "z"`, the positions are (relat
 * (3/4, 3/4, 1/2)
 
 For `axis = "y"` the coordinates are cyclically shifted one time left, while for `axis = "x"` - two times left.
+
 
 ### Class `custom`
 
@@ -339,6 +351,7 @@ custom([
 Notably, relative coordinates do not necessarily have to be in [0, 1) range, although they should as a rule of thumb.
 Then, the particles creep out of their corresponding cells, but RAMPACK correctly wraps them in the box according to
 periodic boundary conditions.
+
 
 ## Lattice transformers
 
@@ -384,6 +397,7 @@ of multi-particle cells, there might be gaps between some pairs of particles aft
 different pair of particles is already tangent and further shrinking would introduce an overlap. For a more flexible
 cell optimization one can use [class `optimize_layers`](#class-optimizelayers).
 
+
 ### Class `optimize_layers`
 
 ```python
@@ -428,6 +442,7 @@ one is moved by a random amount along `axis` using RNG seeded with Integer `seed
 After "columnarization", the lattice remains normalized (RAMPACK periodically wraps the columns sticking out of their
 bounds), however it is no longer regular.
 
+
 ### Class `randomize_flip`
 
 ```python
@@ -438,10 +453,12 @@ randomize_flip(
 
 LATTICE REQUIREMENTS: none
 
-With 1/2 probability, it rotates each particle by 180 degrees around its secondary axis, flipping in turn around half
-of the particles in the system. It uses RNG seeded with Integer `seed`. If lattice was normalized prior to using this
-transformer, it is renormalized again (normalization may be lost when the geometric origin of the particle is not
-`[0, 0, 0]`, which is never the case for built-in shapes).
+With 1/2 probability, it rotates each particle by 180 degrees around its [secondary axis](shapes.md#shape-axes),
+attached at the [geometric center](shapes.md#geometric-center), flipping in turn around half of the particles in the
+system. It uses RNG seeded with Integer `seed`. If lattice was normalized prior to using this transformer, it is
+renormalized again (normalization may be lost when the geometric origin of the particle is not `[0, 0, 0]`, which is
+never the case for built-in shapes).
+
 
 ### Class `layer_rotate`
 
@@ -487,6 +504,7 @@ in [class `lattice`](#class-lattice). The following ones are available:
 
 * [class `serial`](#class-serial)
 * [class `random`](#class-random)
+
 
 ### Class `serial`
 
