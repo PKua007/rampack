@@ -749,9 +749,10 @@ flip(
 )
 ```
 
-Monte Carlo move performing the flip, which is a half rotation around particle's [secondary axis](shapes.md#geometry).
-`every` controls how often the flip is performed. For example, its default value `10` means that in a full single MC
-cycle for 10% of all particles flip move will be attempted (and accepted according to the Metropolis criterion).
+Monte Carlo move performing the flip, which is a half rotation around particle's [secondary axis](shapes.md#geometry)
+attached to the [geometric center](shapes.md#geometric-center). `every` controls how often the flip is performed. For
+example, its default value `10` means that in a full single MC cycle for 10% of all particles flip move will be
+attempted (and accepted according to the Metropolis criterion).
 
 ## Box move types
 
