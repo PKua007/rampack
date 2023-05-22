@@ -102,21 +102,133 @@ This section contains predefined shape classes, in contrast to less restricted
 
 ### Class `sphere`
 
+```python
+sphere(
+    r,
+    interaction = hard
+)
+```
+
+<img src="img/shapes/sphere.png" alt="sphere" width="150" height="152">
+
+
+
 ### Class `kmer`
+
+```python
+kmer(
+    k,
+    r,
+    distance,
+    interaction = hard
+)
+```
+
+<img src="img/shapes/kmer.png" alt="sphere" width="205" height="250">
+
+
 
 ### Class `polysphere_banana`
 
+```python
+polysphere_banana(
+    sphere_n,
+    sphere_r,
+    arc_r,
+    arc_angle,
+    interaction = hard
+)
+```
+
+<img src="img/shapes/polysphere_banana.png" alt="sphere" width="587" height="250">
+
+
 ### Class `polysphere_lollipop`
+
+```python
+polysphere_lollipop(
+    sphere_n,
+    small_r,
+    large_r,
+    small_penetration = 0,
+    large_penetration = 0,
+    interaction = hard
+)
+```
+
+<img src="img/shapes/polysphere_lollipop.png" alt="sphere" width="382" height="250">
+
 
 ### Class `polysphere_wedge`
 
+```python
+polysphere_wedge(
+    sphere_n,
+    bottom_r,
+    top_r,
+    penetration = 0,
+    interaction = hard
+)
+```
+
+<img src="img/shapes/polysphere_wedge.png" alt="sphere" width="312" height="250">
+
+
 ### Class `spherocylinder`
+
+```python
+polysphere_wedge(
+    l,
+    r
+)
+```
+
+<img src="img/shapes/spherocylinder.png" alt="sphere" width="125" height="250">
+
 
 ### Class `polyspherocylinder_banana`
 
+```python
+polyspherocylinder_banana(
+    segment_n,
+    sc_r,
+    arc_r,
+    arc_angle,
+    subdivisions = 1
+)
+```
+
+<img src="img/shapes/polyspherocylinder_banana.png" alt="sphere" width="570" height="250">
+
+
 ### Class `smooth_wedge`
 
+```python
+smooth_wedge(
+    l,
+    bottom_r,
+    top_r,
+    subdivisions = 1
+)
+```
+
+<img src="img/shapes/smooth_wedge.png" alt="sphere" width="160" height="250">
+
+
 ### Class `polyhedral_wedge`
+
+```python
+polyhedral_wedge(
+    bottom_ax,
+    bottom_ay,
+    top_ax,
+    top_ay,
+    length,
+    subdivisions = 1
+)
+```
+
+<img src="img/shapes/polyhedral_wedge.png" alt="sphere" width="334" height="250">
 
 
 ## General shape classes
