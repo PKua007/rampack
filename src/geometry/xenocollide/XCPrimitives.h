@@ -201,9 +201,9 @@ private:
 
 public:
     /**
-     * @brief Creates a rugby ball by drawing a circle segment between the points {-@a length/2, 0, 0} and
-     * {@a length/2, 0, 0} and then revolving it around X axis. The radius is chosen in such a way that the height of
-     * the circle segment in Y direction is equal to @a radius.
+     * @brief Creates a rugby ball by drawing a circle segment between the points `{0, 0, -length/2}` and
+     * `{0, 0, length/2}` and then revolving it around Z axis. The radius is chosen in such a way that the XY section
+     * in the middle of the rugby ball is a disk with radius @a radius.
      */
     XCFootball(double length, double radius);
 
@@ -223,9 +223,9 @@ private:
 
 public:
     /**
-     * @brief Creates saucer by drawing a circle segment between the points {0, 0, -@a radius} and {0, 0, @a radius} and
-     * then revolving it around X axis. The radius is chosen in such a way that the height of the circle segment in X
-     * direction is equal to @a halfThickness.
+     * @brief Creates saucer by drawing a circle segment between the points `{-radius, 0, 0}` and `{radius, 0, 0}` and
+     * then revolving it around Z axis. The radius of the circle segment is chosen in such a way that the half-height of
+     * the saucer is @a halfThickness.
      */
     XCSaucer(double radius, double halfThickness);
 

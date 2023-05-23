@@ -106,17 +106,17 @@ TEST_CASE("XCBodyBuilder: football") {
     double l = 2, r = 1;
     double x = 0.5*l*l/r - 1.5*r;
     double R = 0.5*(l*l/r + r);
-    // Curved part - Y direction
-    Vector<3> curvedN{-l + 0.1, x + r, 0};
-    Vector<3> curvedP = Vector<3>{0, -(r + x), 0} + R*curvedN.normalized();
+    // Curved part - X direction
+    Vector<3> curvedN{x + r, 0, -l + 0.1};
+    Vector<3> curvedP = Vector<3>{-(r + x), 0, 0} + R*curvedN.normalized();
     CHECK_THAT(geom->getSupportPoint(curvedN), IsApproxEqual(curvedP, 1e-12));
-    // Curved part - Z direction
-    Vector<3> curvedN2{-l + 0.1, 0, x + r};
-    Vector<3> curvedP2 = Vector<3>{0, 0, -(r + x)} + R*curvedN2.normalized();
+    // Curved part - Y direction
+    Vector<3> curvedN2{ 0, x + r, -l + 0.1};
+    Vector<3> curvedP2 = Vector<3>{0, -(r + x), 0} + R*curvedN2.normalized();
     CHECK_THAT(geom->getSupportPoint(curvedN2), IsApproxEqual(curvedP2, 1e-12));
     // The very tip
-    Vector<3> notCurvedN{-l - 0.1, x + r, 0};
-    CHECK_THAT(geom->getSupportPoint(notCurvedN), IsApproxEqual({-l, 0, 0}, 1e-12));
+    Vector<3> notCurvedN{x + r, 0, -l - 0.1};
+    CHECK_THAT(geom->getSupportPoint(notCurvedN), IsApproxEqual({0, 0, -l}, 1e-12));
 }
 
 TEST_CASE("XCBodyBuilder: point") {
@@ -165,15 +165,15 @@ TEST_CASE("XCBodyBuilder: saucer") {
     double x = 0.5*l*l/r - 1.5*r;
     double R = 0.5*(l*l/r + r);
     // Curved part
-    Vector<3> curvedN{x + r, -l + 0.1, 0};
-    Vector<3> curvedP = Vector<3>{-(r + x), 0, 0} + R*curvedN.normalized();
+    Vector<3> curvedN{-l + 0.1, 0, x + r};
+    Vector<3> curvedP = Vector<3>{0, 0, -(r + x)} + R*curvedN.normalized();
     CHECK_THAT(geom->getSupportPoint(curvedN), IsApproxEqual(curvedP, 1e-12));
     // The rim - Y direction
-    Vector<3> notCurvedN1{x + r, -l - 0.1, 0};
-    CHECK_THAT(geom->getSupportPoint(notCurvedN1), IsApproxEqual({0, -l, 0}, 1e-12));
+    Vector<3> notCurvedN1{-l - 0.1, 0, x + r};
+    CHECK_THAT(geom->getSupportPoint(notCurvedN1), IsApproxEqual({-l, 0, 0}, 1e-12));
     // The rim - Z direction
-    Vector<3> notCurvedN2{x + r, 0, -l - 0.1};
-    CHECK_THAT(geom->getSupportPoint(notCurvedN2), IsApproxEqual({0, 0, -l}, 1e-12));
+    Vector<3> notCurvedN2{0, -l - 0.1, x + r};
+    CHECK_THAT(geom->getSupportPoint(notCurvedN2), IsApproxEqual({0, -l, 0}, 1e-12));
 
 }
 

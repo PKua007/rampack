@@ -125,12 +125,12 @@ Vector<3> XCFootball::getSupportPoint(const Vector<3> &n) const {
     double r2 = 0.5f * (h*h/r1 + r1);
 
     Vector<3> n3 = n.normalized();
-    if (n3[0] * r2 < -h)
-        return {-h, 0, 0};
-    if (n3[0] * r2 > h)
-        return {h, 0, 0};
+    if (n3[2] * r2 < -h)
+        return {0, 0, -h};
+    if (n3[2] * r2 > h)
+        return {0, 0, h};
 
-    Vector<3> n2 = Vector<3>{0, n[1], n[2]}.normalized();
+    Vector<3> n2 = Vector<3>{n[0], n[1], 0}.normalized();
     return -n2*(r2-r1) + n3*r2;
 }
 
@@ -147,16 +147,16 @@ Vector<3> XCSaucer::getSupportPoint(const Vector<3> &n) const {
     double r2 = 0.5f * (h*h/t + t);
 
     Vector<3> n3 = n.normalized();
-    Vector<3> n4{0, n[1], n[2]};
+    Vector<3> n4{n[0], n[1], 0};
     if (!is_vector_zero(n4)) {
         n4 = n4.normalized();
-        double threshold = n3[1]*n3[1] + n3[2]*n3[2];
+        double threshold = n3[0]*n3[0] + n3[1]*n3[1];
         if (threshold * r2 * r2 > h * h)
             return h * n4;
     }
 
-    Vector<3> n2{1, 0, 0};
-    if (n[0] < 0)
+    Vector<3> n2{0, 0, 1};
+    if (n[2] < 0)
         n2 = -n2;
 
     return -n2 * (r2 - t) + n3 * r2;
