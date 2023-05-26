@@ -187,8 +187,8 @@ TEST_CASE("XCBodyBuilder: segment") {
     CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
     CHECK(geom->getInsphereRadius() == 0);
     CHECK(geom->getCircumsphereRadius() == 1.5);
-    CHECK_THAT(geom->getSupportPoint({2, 4, -7}), IsApproxEqual({1.5, 0, 0}, 1e-12));
-    CHECK_THAT(geom->getSupportPoint({-2, 4, -7}), IsApproxEqual({-1.5, 0, 0}, 1e-12));
+    CHECK_THAT(geom->getSupportPoint({2, 4, -7}), IsApproxEqual({0, 0, -1.5}, 1e-12));
+    CHECK_THAT(geom->getSupportPoint({-2, 4, 7}), IsApproxEqual({0, 0, 1.5}, 1e-12));
 }
 
 TEST_CASE("XCBodyBuilder: sphere") {
@@ -209,13 +209,13 @@ TEST_CASE("XCBodyBuilder: rot + sum") {
 
     builder.processCommand("segment 1");
     builder.processCommand("segment 2");
-    builder.processCommand("rot 0 0 90");
+    builder.processCommand("rot 0 90 0");
     builder.processCommand("sum");
     auto geom = builder.releaseCollideGeometry();
     visualize(*geom);
 
     CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
-    CHECK_THAT(geom->getSupportPoint({1, 1, 1}), IsApproxEqual({0.5, 1, 0}, 1e-12));
+    CHECK_THAT(geom->getSupportPoint({1, 1, 1}), IsApproxEqual({1, 0, 0.5}, 1e-12));
 }
 
 TEST_CASE("XCBodyBuilder: move + rot + diff") {
@@ -223,15 +223,15 @@ TEST_CASE("XCBodyBuilder: move + rot + diff") {
 
     builder.processCommand("segment 1");
     builder.processCommand("segment 2");
-    builder.processCommand("move 0.5 0 0");
-    builder.processCommand("rot 0 0 90");
+    builder.processCommand("move 0 0 0.5");
+    builder.processCommand("rot 0 90 0");
     builder.processCommand("diff");
     auto geom = builder.releaseCollideGeometry();
     visualize(*geom);
 
-    CHECK_THAT(geom->getCenter(), IsApproxEqual({-0.5, 0, 0}, 1e-12));
-    CHECK_THAT(geom->getSupportPoint({1, 1, 1}), IsApproxEqual({0, 1, 0}, 1e-12));
-    CHECK_THAT(geom->getSupportPoint({-1, 1, 1}), IsApproxEqual({-1, 1, 0}, 1e-12));
+    CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, -0.5}, 1e-12));
+    CHECK_THAT(geom->getSupportPoint({1, 1, 1}), IsApproxEqual({1, 0, 0}, 1e-12));
+    CHECK_THAT(geom->getSupportPoint({1, 1, -1}), IsApproxEqual({1, 0, -1}, 1e-12));
 }
 
 TEST_CASE("XCBodyBuilder: rot + wrap") {
@@ -239,26 +239,26 @@ TEST_CASE("XCBodyBuilder: rot + wrap") {
 
     builder.processCommand("segment 1");
     builder.processCommand("segment 2");
-    builder.processCommand("rot 0 0 90");
+    builder.processCommand("rot 0 90 0");
     builder.processCommand("wrap");
     auto geom = builder.releaseCollideGeometry();
     visualize(*geom);
 
     CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
-    CHECK_THAT(geom->getSupportPoint({1, 0, 1}), IsApproxEqual({0.5, 0, 0}, 1e-12));
-    CHECK_THAT(geom->getSupportPoint({0, 1, 1}), IsApproxEqual({0, 1, 0}, 1e-12));
+    CHECK_THAT(geom->getSupportPoint({0, 1, 1}), IsApproxEqual({0, 0, 0.5}, 1e-12));
+    CHECK_THAT(geom->getSupportPoint({1, 1, 0}), IsApproxEqual({1, 0, 0}, 1e-12));
 }
 
 TEST_CASE("XCBodyBuilder: dup + move + wrap") {
     XCBodyBuilder builder;
 
-    // We create a riangular prism
+    // We create a triangular prism
     builder.processCommand("segment 1");
-    builder.processCommand("move 0 0 0.5");
+    builder.processCommand("move 0 0.5 0");
     builder.processCommand("segment 1");
-    builder.processCommand("move 0 -0.5 -0.5");
+    builder.processCommand("move -0.5 -0.5 0");
     builder.processCommand("dup 1");
-    builder.processCommand("move 0 1 0");
+    builder.processCommand("move 1 0 0");
     builder.processCommand("wrap");
     builder.processCommand("wrap");
 
@@ -266,14 +266,14 @@ TEST_CASE("XCBodyBuilder: dup + move + wrap") {
     visualize(*geom);
 
     CHECK_THAT(geom->getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
-    CHECK_THAT(geom->getSupportPoint({0.1, 0, 1}), IsApproxEqual({0.5, 0, 0.5}, 1e-12));
-    CHECK_THAT(geom->getSupportPoint({1, 1, -1}), IsApproxEqual({0.5, 0.5, -0.5}, 1e-12));
+    CHECK_THAT(geom->getSupportPoint({0, 1, 0.1}), IsApproxEqual({0, 0.5, 0.5}, 1e-12));
+    CHECK_THAT(geom->getSupportPoint({1, -1, 1}), IsApproxEqual({0.5, -0.5, 0.5}, 1e-12));
 }
 
 TEST_CASE("XCBodyBuilder: swap + pop") {
     XCBodyBuilder builder;
 
-    // We want to see only sphere at the end
+    // We want to see only a sphere at the end
     builder.processCommand("cuboid 1 2 3");
     builder.processCommand("sphere 2");
     builder.processCommand("swap");

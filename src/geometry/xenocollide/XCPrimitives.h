@@ -57,7 +57,7 @@ private:
 
 public:
     /**
-     * @brief Creates the segment centered between the points: {-@a halfLength, 0, 0}, {@a halfLength, 0, 0}.
+     * @brief Creates the segment centered between the points: `{0, 0, -halfLength}`, `{0, 0, halfLength}`.
      */
     explicit XCSegment(double halfLength);
 

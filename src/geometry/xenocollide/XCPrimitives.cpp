@@ -33,10 +33,10 @@ XCSegment::XCSegment(double halfLength) : halfLength{halfLength} {
 
 Vector<3> XCSegment::getSupportPoint(const Vector<3> &n) const {
     Vector<3> v;
-    if (n[0] < 0)
-        v[0] = -this->halfLength;
+    if (n[2] < 0)
+        v[2] = -this->halfLength;
     else
-        v[0] = this->halfLength;
+        v[2] = this->halfLength;
     return v;
 }
 
