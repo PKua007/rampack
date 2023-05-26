@@ -1,4 +1,4 @@
-# Shape
+# Shapes
 
 This reference contains information regarding shapes available in the software.
 
@@ -124,7 +124,7 @@ kmer(
 )
 ```
 
-<img src="img/shapes/kmer.png" alt="sphere" width="205" height="250">
+<img src="img/shapes/kmer.png" alt="sphere" width="207" height="250">
 
 
 
@@ -140,7 +140,7 @@ polysphere_banana(
 )
 ```
 
-<img src="img/shapes/polysphere_banana.png" alt="sphere" width="587" height="250">
+<img src="img/shapes/polysphere_banana.png" alt="sphere" width="563" height="250">
 
 
 ### Class `polysphere_lollipop`
@@ -156,7 +156,7 @@ polysphere_lollipop(
 )
 ```
 
-<img src="img/shapes/polysphere_lollipop.png" alt="sphere" width="382" height="250">
+<img src="img/shapes/polysphere_lollipop.png" alt="sphere" width="385" height="250">
 
 
 ### Class `polysphere_wedge`
@@ -171,7 +171,7 @@ polysphere_wedge(
 )
 ```
 
-<img src="img/shapes/polysphere_wedge.png" alt="sphere" width="312" height="250">
+<img src="img/shapes/polysphere_wedge.png" alt="sphere" width="314" height="250">
 
 
 ### Class `spherocylinder`
@@ -183,7 +183,7 @@ polysphere_wedge(
 )
 ```
 
-<img src="img/shapes/spherocylinder.png" alt="sphere" width="125" height="250">
+<img src="img/shapes/spherocylinder.png" alt="sphere" width="126" height="250">
 
 
 ### Class `polyspherocylinder_banana`
@@ -244,10 +244,64 @@ primitives enables ones to craft most of reasonably-shaped convex particles. The
 
 ### Class `polysphere`
 
+```python
+polysphere(
+    spheres,
+    volume,
+    geometric_origin = [0, 0, 0],
+    primary_axis = None,
+    secondary_axis = None,
+    named_points = {},
+    interaction = hard
+)
+```
+
+<img src="img/shapes/polysphere.png" alt="sphere" width="182" height="200">
+
+
 ### Class `polyspherocylinder`
+
+```python
+polyspherocylinder(
+    scs,
+    volume,
+    geometric_origin = [0, 0, 0],
+    primary_axis = None,
+    secondary_axis = None,
+    named_points = {}
+)
+```
+
+<img src="img/shapes/polyspherocylinder.png" alt="sphere" width="204" height="200">
+
 
 ### Class `generic_convex`
 
+```python
+generic_convex(
+    script,
+    volume,
+    geometric_origin = [0, 0, 0],
+    primary_axis = None,
+    secondary_axis = None,
+    named_points = {}
+)
+```
+
+<img src="img/shapes/generic_convex.png" alt="sphere" width="155" height="200">
+
+|                                Illustration                                | Command, comments          | Comments                              |
+|:--------------------------------------------------------------------------:|----------------------------|---------------------------------------|
+|   <img src="img/shapes/point.png" alt="sphere" width="250" height="125">   | `point [x] [y] [z]`        |                                       |
+|  <img src="img/shapes/segment.png" alt="sphere" width="175" height="125">  | `segment [l]`              |                                       |
+| <img src="img/shapes/rectangle.png" alt="sphere" width="261" height="125"> | `rectangle [ax] [ay]`      |                                       |
+|  <img src="img/shapes/cuboid.png" alt="sphere" width="249" height="200">   | `cuboid [ax] [ay] [az]`    |                                       |
+|   <img src="img/shapes/disk.png" alt="sphere" width="216" height="125">    | `disk [r]`                 |                                       |
+|  <img src="img/shapes/sphere.png" alt="sphere" width="125" height="125">   | `sphere [r]`               |                                       |
+|  <img src="img/shapes/ellipse.png" alt="sphere" width="269" height="125">  | `ellipse [rx] [ry]`        |                                       |
+| <img src="img/shapes/ellipsoid.png" alt="sphere" width="199" height="200"> | `ellipsoid [rx] [ry] [rz]` |                                       |
+|  <img src="img/shapes/saucer.png" alt="sphere" width="264" height="125">   | `saucer [r] [h]`           | two spherical caps                    |
+| <img src="img/shapes/football.png" alt="sphere" width="140" height="200">  | `football [r] [h]`         | circle arch rotated around the z axis |
 
 
 ## Soft interaction classes
