@@ -159,34 +159,34 @@ namespace {
     MatcherDataclass create_polysphere_lollipop_matcher() {
         return MatcherDataclass("polysphere_lollipop")
             .arguments({{"sphere_n", MatcherInt{}.greaterEquals(2).mapTo<std::size_t>()},
-                        {"small_r", MatcherFloat{}.positive()},
-                        {"large_r", MatcherFloat{}.positive()},
-                        {"small_penetration", MatcherFloat{}.nonNegative(), "0"},
-                        {"large_penetration", MatcherFloat{}.nonNegative(), "0"},
+                        {"stick_r", MatcherFloat{}.positive()},
+                        {"tip_r", MatcherFloat{}.positive()},
+                        {"stick_penetration", MatcherFloat{}.nonNegative(), "0"},
+                        {"tip_penetration", MatcherFloat{}.nonNegative(), "0"},
                         {"interaction", sphereInteraction, "hard"}})
             .filter([](const DataclassData &lollipop) {
-                return lollipop["small_penetration"].as<double>() < 2 * lollipop["small_r"].as<double>();
+                return lollipop["stick_penetration"].as<double>() < 2 * lollipop["stick_r"].as<double>();
             })
-            .describe("small_penetration < 2 * small_r")
+            .describe("stick_penetration < 2 * stick_r")
             .filter([](const DataclassData &lollipop) {
-                double smallerR = std::min(lollipop["small_r"].as<double>(), lollipop["large_r"].as<double>());
-                return lollipop["small_penetration"].as<double>() < 2 * smallerR;
+                double smallerR = std::min(lollipop["stick_r"].as<double>(), lollipop["tip_r"].as<double>());
+                return lollipop["tip_penetration"].as<double>() < 2 * smallerR;
             })
-            .describe("small_penetration < 2 * min(small_r, large_r)")
+            .describe("tip_penetration < 2 * min(stick_r, tip_r)")
             .mapTo([](const DataclassData &lollipop) -> std::shared_ptr<ShapeTraits> {
                 auto sphereN = lollipop["sphere_n"].as<std::size_t>();
-                auto smallR = lollipop["small_r"].as<double>();
-                auto largeR = lollipop["large_r"].as<double>();
-                auto smallPenetration = lollipop["small_penetration"].as<double>();
-                auto largePenetration = lollipop["large_penetration"].as<double>();
+                auto stickR = lollipop["stick_r"].as<double>();
+                auto tipR = lollipop["tip_r"].as<double>();
+                auto stickPenetration = lollipop["stick_penetration"].as<double>();
+                auto tipPenetration = lollipop["tip_penetration"].as<double>();
                 auto interaction = lollipop["interaction"].as<std::shared_ptr<CentralInteraction>>();
                 if (interaction == nullptr) {
                     return std::make_shared<PolysphereLollipopTraits>(
-                        sphereN, smallR, largeR, smallPenetration, largePenetration
+                        sphereN, stickR, tipR, stickPenetration, tipPenetration
                     );
                 } else {
                     return std::make_shared<PolysphereLollipopTraits>(
-                        sphereN, smallR, largeR, smallPenetration,largePenetration, interaction
+                        sphereN, stickR, tipR, stickPenetration, tipPenetration, interaction
                     );
                 }
             });

@@ -47,27 +47,27 @@ namespace legacy {
 
 
 PolysphereLollipopTraits::PolysphereGeometry
-PolysphereLollipopTraits::generateGeometry(std::size_t sphereNum, double smallSphereRadius,
-                                           double largeSphereRadius, double smallSpherePenetration,
-                                           double largeSpherePenetration)
+PolysphereLollipopTraits::generateGeometry(std::size_t sphereNum, double stickSphereRadius,
+                                           double tipSphereRadius, double stickSpherePenetration,
+                                           double tipSpherePenetration)
 {
     Expects(sphereNum >= 2);
-    Expects(smallSphereRadius > 0);
-    Expects(largeSphereRadius > 0);
-    Expects(smallSpherePenetration < 2*smallSphereRadius);
-    Expects(largeSpherePenetration < 2*std::min(smallSphereRadius, largeSphereRadius));
+    Expects(stickSphereRadius > 0);
+    Expects(tipSphereRadius > 0);
+    Expects(stickSpherePenetration < 2 * stickSphereRadius);
+    Expects(tipSpherePenetration < 2 * std::min(stickSphereRadius, tipSphereRadius));
 
     std::vector<SphereData> data;
 
     double centrePos{};
     for (std::size_t i{}; i < sphereNum - 1; i++) {
-        data.emplace_back(Vector<3>{0, 0, centrePos}, smallSphereRadius);
+        data.emplace_back(Vector<3>{0, 0, centrePos}, stickSphereRadius);
         if (i < sphereNum - 2)
-            centrePos += 2*smallSphereRadius - smallSpherePenetration;
+            centrePos += 2 * stickSphereRadius - stickSpherePenetration;
     }
 
-    centrePos += smallSphereRadius + largeSphereRadius - largeSpherePenetration;
-    data.emplace_back(Vector<3>{0, 0, centrePos}, largeSphereRadius);
+    centrePos += stickSphereRadius + tipSphereRadius - tipSpherePenetration;
+    data.emplace_back(Vector<3>{0, 0, centrePos}, tipSphereRadius);
 
     {
         double beg = data.front().position[2] - data.front().radius;
@@ -81,16 +81,16 @@ PolysphereLollipopTraits::generateGeometry(std::size_t sphereNum, double smallSp
         std::swap(data, newData);
     }
 
-    double volume = PolysphereLollipopTraits::calculateVolume(data, smallSpherePenetration, largeSpherePenetration);
+    double volume = PolysphereLollipopTraits::calculateVolume(data, stickSpherePenetration, tipSpherePenetration);
     PolysphereGeometry geometry(data, {0, 0, 1}, {1, 0, 0}, {0, 0, 0}, volume);
-    geometry.addCustomNamedPoints({{"ss", data.front().position}, {"sl", data.back().position}});
-    if (smallSpherePenetration == 0 && largeSpherePenetration == 0)
+    geometry.addCustomNamedPoints({{"ss", data.front().position}, {"st", data.back().position}});
+    if (stickSpherePenetration == 0 && tipSpherePenetration == 0)
         geometry.addCustomNamedPoints({{"cm", geometry.calculateMassCentre()}});
     return geometry;
 }
 
 double PolysphereLollipopTraits::calculateVolume(const std::vector<SphereData> &sphereData,
-                                                 double smallSpherePenetration, double largeSpherePenetration)
+                                                 double stickSpherePenetration, double tipSpherePenetration)
 {
     auto volumeAccumulator = [](double volume, const SphereData &data) {
         return volume + 4./3*M_PI*std::pow(data.radius, 3);
@@ -99,19 +99,19 @@ double PolysphereLollipopTraits::calculateVolume(const std::vector<SphereData> &
 
     std::size_t sphereNum = sphereData.size();
 
-    // Subtract overlapping parts between small spheres
-    if (smallSpherePenetration > 0) {
+    // Subtract overlapping parts between lollipop's stick spheres
+    if (stickSpherePenetration > 0) {
         double smallSphereRadius = sphereData.front().radius;
-        double capVolume = VolumeCalculator::sphericalCap(smallSphereRadius, smallSpherePenetration/2);
+        double capVolume = VolumeCalculator::sphericalCap(smallSphereRadius, stickSpherePenetration / 2);
         baseVolume -= 2 * static_cast<double>(sphereNum - 2) * capVolume;
     }
 
-    // Subtract overlapping parts between last small sphere and the large one
-    if (largeSpherePenetration > 0) {
-        const auto &dataLarge = sphereData[sphereNum - 1];
-        const auto &dataSmall = sphereData[sphereNum - 2];
-        double distance = dataLarge.position[2] - dataSmall.position[2];
-        baseVolume -= VolumeCalculator::sphereIntersection(dataLarge.radius, dataSmall.radius, distance);
+    // Subtract overlapping parts between the last sphere in lollipop's stick and lollipop's tip sphere
+    if (tipSpherePenetration > 0) {
+        const auto &dataTip = sphereData[sphereNum - 1];
+        const auto &dataStick = sphereData[sphereNum - 2];
+        double distance = dataTip.position[2] - dataStick.position[2];
+        baseVolume -= VolumeCalculator::sphereIntersection(dataTip.radius, dataStick.radius, distance);
     }
 
     return baseVolume;

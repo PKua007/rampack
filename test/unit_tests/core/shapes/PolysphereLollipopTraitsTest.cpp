@@ -11,12 +11,12 @@
 
 TEST_CASE("PolysphereLollipopTraits: basics") {
     std::size_t sphereNum = 3;
-    double smallSphereRadius = 2;
-    double largeSphereRadius = 4;
-    double smallSpherePenetration = 1;
-    double largeSpherePenetration = 2;
-    PolysphereLollipopTraits traits(sphereNum, smallSphereRadius, largeSphereRadius, smallSpherePenetration,
-                                    largeSpherePenetration);
+    double stickSphereRadius = 2;
+    double tipSphereRadius = 4;
+    double stickSpherePenetration = 1;
+    double tipSpherePenetration = 2;
+    PolysphereLollipopTraits traits(sphereNum, stickSphereRadius, tipSphereRadius, stickSpherePenetration,
+                                    tipSpherePenetration);
 
     SECTION("sphere data") {
         const auto &data = traits.getSphereData();
@@ -38,7 +38,7 @@ TEST_CASE("PolysphereLollipopTraits: basics") {
         CHECK_THAT(geometry.getNamedPoint("s0"), IsApproxEqual({0, 0, -4.5}, 1e-12));
         CHECK_THAT(geometry.getNamedPoint("ss"), IsApproxEqual({0, 0, -4.5}, 1e-12));
         CHECK_THAT(geometry.getNamedPoint("s2"), IsApproxEqual({0, 0, 2.5}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("sl"), IsApproxEqual({0, 0, 2.5}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("st"), IsApproxEqual({0, 0, 2.5}, 1e-12));
         CHECK_THAT(geometry.getNamedPoint("o"), IsApproxEqual({0, 0, 0}, 1e-12));
         // Named point "cm" has its own test
     }
