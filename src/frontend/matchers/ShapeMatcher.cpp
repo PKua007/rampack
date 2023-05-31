@@ -467,7 +467,7 @@ namespace {
                         {"bottom_ay", MatcherFloat{}.nonNegative()},
                         {"top_ax", MatcherFloat{}.nonNegative()},
                         {"top_ay", MatcherFloat{}.nonNegative()},
-                        {"length", MatcherFloat{}.positive()},
+                        {"l", MatcherFloat{}.positive()},
                         {"subdivisions", MatcherInt{}.positive().mapTo<std::size_t>(), "1"}})
             .filter([](const DataclassData &wedge) {
                 auto bottomRx = wedge["bottom_ax"].as<double>();
@@ -483,7 +483,7 @@ namespace {
                     wedge["bottom_ay"].as<double>(),
                     wedge["top_ax"].as<double>(),
                     wedge["top_ay"].as<double>(),
-                    wedge["length"].as<double>(),
+                    wedge["l"].as<double>(),
                     wedge["subdivisions"].as<std::size_t>()
                 );
             });
