@@ -23,7 +23,6 @@ This reference contains information regarding shapes available in the software.
   * [Class `polyspherocylinder`](#class-polyspherocylinder)
   * [Class `generic_convex`](#class-genericconvex)
 * [Soft interaction classes](#soft-interaction-classes)
-  * [Class `hard`](#class-hard)
   * [Class `lj`](#class-lj)
   * [Class `wca`](#class-wca)
   * [Class `square_inverse_core`](#class-squareinversecore)
@@ -66,6 +65,16 @@ of all soft interactions supported by various shapes can be found in
 [Soft interaction classes](#soft-interaction-classes).
 
 
+### Interaction centers
+
+Some shapes, for example the [sphere](#class-sphere), consist of only one part through which they interact with other
+shapes. However, more complicated shapes, for example the [polysphere_banana](#class-polyspherebanana), consist of many
+atomic parts (in the given example - the spherical beads) which interact pairwise with those of other shapes. These
+parts are called *interaction centers*. To speed up the computation of interaction energy, the neighbor grid stores
+individual interaction centers - thus, when the energy is computed, it is only done for center pairs which are close to
+each other.
+
+
 ### Geometric center
 
 Each shape defines the so-called *geometric center*. It usually is the center of the circumscribed sphere with the
@@ -87,7 +96,8 @@ Most of the shapes define the center of mass point `"cm"` as well. Named points 
 ## Specific shape classes
 
 This section contains predefined shape classes, in contrast to less restricted
-[General shape classes](#general-shape-classes). The list includes
+[General shape classes](#general-shape-classes). In all illustrations, the geometric center is denoted as a red cross.
+Currently, the following shape classes are available:
 
 * [Class `sphere`](#class-sphere)
 * [Class `kmer`](#class-kmer)
@@ -111,6 +121,19 @@ sphere(
 
 <img src="img/shapes/sphere.png" alt="sphere" width="150" height="152">
 
+Hard sphere with radius `r`.
+
+* **Geometric origin**: {0, 0, 0}
+* **Interaction centers**: None
+* **Shape axes**: None
+* **Named points**:
+  * `"o"` - geometric origin
+  * `"cm"` - mass center
+* **Interactions**:
+  * class `hard` - hard-core interaction
+  * [class `lj`](#class-lj)
+  * [class `wca`](#class-wca)
+  * [class `square_inverse_core`](#class-squareinversecore)
 
 
 ### Class `kmer`
@@ -126,6 +149,26 @@ kmer(
 
 <img src="img/shapes/kmer.png" alt="sphere" width="207" height="250">
 
+Colinear k-mer consisting of `k` identical spheres with radius `r` with identical distances equal `distance` between
+them, lying on the z-axis. The spheres may partially overlap. The spheres at the end are equidistant from the geometric
+origin.
+
+* **Geometric origin**: {0, 0, 0}
+* **Interaction centers**: center of each sphere
+* **Shape axes**:
+  * *primary* = {0, 0, 1}
+* **Named points**:
+  * `"o"` - geometric origin
+  * `"cm"` - mass center
+  * `"s[i]"` - the center of the `[i]`-th sphere, starting from 0 for the lowermost sphere to `k - 1` for the uppermost
+    sphere
+  * `"beg"` - equivalent to `"s0"`
+  * `"end"` - equivalent to `"s[k - 1]"`
+* **Interactions**:
+  * class `hard` - hard-core interaction
+  * [class `lj`](#class-lj)
+  * [class `wca`](#class-wca)
+  * [class `square_inverse_core`](#class-squareinversecore)
 
 
 ### Class `polysphere_banana`
@@ -141,6 +184,30 @@ polysphere_banana(
 ```
 
 <img src="img/shapes/polysphere_banana.png" alt="sphere" width="563" height="250">
+
+`sphere_n` identical spheres with radius `sphere_r` placed equidistantly on a circular arc with radius `arc_radius` and
+the arc angle `arc_angle`. The arc lies in the xz plane. The arc angle is  symmetric w.r.t. the x-axis and its opens
+toward the negative x-axis. If the angle is below 180 degrees, the geometric center lies in the middle between the 
+endpoints of the arc. Otherwise, the geometric center lies in the arc center.
+
+* **Geometric origin**: {0, 0, 0}
+* **Interaction centers**: center of each sphere
+* **Shape axes**:
+  * *primary* = {0, 0, 1}
+  * *secondary* = {-1, 0, 0}
+  * *auxiliary* = {0, -1, 0}
+* **Named points**:
+  * `"o"` - geometric origin
+  * `"cm"` - mass center
+  * `"s[i]'` - the center of the `[i]`-th sphere, starting from 0 for the endpoint sphere with negative z coordinate to
+    `sphere_n - 1` for the endpoint sphere with positive z coordinate
+  * `"beg"` - the arc endpoint with negative z coordinate (equivalent to `"s0"`)
+  * `"end"` - the arc endpoint with positive z coordinate (equivalent to `"s[sphere_n - 1]"`)
+* **Interactions**:
+  * class `hard` - hard-core interaction
+  * [class `lj`](#class-lj)
+  * [class `wca`](#class-wca)
+  * [class `square_inverse_core`](#class-squareinversecore)
 
 
 ### Class `polysphere_lollipop`
@@ -158,6 +225,30 @@ polysphere_lollipop(
 
 <img src="img/shapes/polysphere_lollipop.png" alt="sphere" width="385" height="250">
 
+The shape similar to the [k-mer](#class-kmer), however, the top sphere may have a radius different the rest of lower
+spheres. There are `sphere_n - 1` identical spheres with radius `stick_r` placed on the z-axis (lollipop's stick) and a
+different sphere with radius `large_r` at the top (lollipop's tip). The overlap between "stick" spheres with radius is
+controlled by `small_penetration` (where 0 means that the spheres are tangent), while the overlap between the "tip"
+sphere and the last "stick" sphere is controlled by `large_penetration`. The spheres are placed in such a way that the
+uppermost and lowermost points on the shape are equidistant from the geometric center.
+
+* **Geometric origin**: {0, 0, 0}
+* **Interaction centers**: center of each sphere
+* **Shape axes**:
+  * *primary* = {0, 0, 1}
+* **Named points**:
+  * `"o"` - geometric origin
+  * `"cm"` - mass center (defined only if both penetrations are 0)
+  * `"s[i]"` - the center of the `[i]`-th sphere, starting from 0 for the lowermost sphere to `sphere_n - 1` for the
+    uppermost sphere
+  * `"ss"` - the center of the bottom sphere with radius `stick_r` (equivalent to `"s0"`)
+  * `"st"` - the center of the top sphere with radius `"tip_r"` (equivalent to `"s[sphere_n - 1]"`)
+* **Interactions**:
+  * class `hard` - hard-core interaction
+  * [class `lj`](#class-lj)
+  * [class `wca`](#class-wca)
+  * [class `square_inverse_core`](#class-squareinversecore)
+
 
 ### Class `polysphere_wedge`
 
@@ -173,6 +264,28 @@ polysphere_wedge(
 
 <img src="img/shapes/polysphere_wedge.png" alt="sphere" width="314" height="250">
 
+The linear polymer with `sphere_n` spheres placed on the z-axis, whose radii change linearly from `bottom_r` for the
+bottom sphere to `top_r` for the top sphere. The overlap between the "stick" spheres controlled by `penetration` (where
+0 means that the spheres are tangent). The spheres are placed in such a way that the uppermost and lowermost points on
+the shape are equidistant from the geometric center.
+
+* **Geometric origin**: {0, 0, 0}
+* **Interaction centers**: center of each sphere
+* **Shape axes**:
+  * *primary* = {0, 0, 1}
+* **Named points**:
+  * `"o"` - geometric origin
+  * `"cm"` - mass center (defined only if `penetration = 0`)
+  * `"s[i]"` - the center of the `[i]`-th sphere, starting from 0 for the lowermost sphere to `sphere_n - 1` for the
+    uppermost sphere
+  * `"beg"` - the center of the bottom sphere (equivalent to `"s0"`)
+  * `"end"` - the center of the top sphere (equivalent to `"s[sphere_n - 1]"`)
+* **Interactions**:
+  * class `hard` - hard-core interaction
+  * [class `lj`](#class-lj)
+  * [class `wca`](#class-wca)
+  * [class `square_inverse_core`](#class-squareinversecore)
+
 
 ### Class `spherocylinder`
 
@@ -184,6 +297,22 @@ polysphere_wedge(
 ```
 
 <img src="img/shapes/spherocylinder.png" alt="sphere" width="126" height="250">
+
+Spherocylinder, spanned along the z-axis - the union of a cylinder and spheres placed at the bases of the cylinder. The
+distance between spheres' centers (the height of the cylinder) is `l` and the radius of the cylinder and the spheres is
+`r`.
+
+* **Geometric origin**: {0, 0, 0}
+* **Interaction centers**: None
+* **Shape axes**:
+  * *primary* = {0, 0, 1}
+* **Named points**:
+  * `"o"` - geometric origin
+  * `"cm"` - mass center
+  * `"beg"` - the center of the bottom sphere
+  * `"end"` - the center of the top sphere
+* **Interactions**:
+  * class `hard` - hard-core interaction
 
 
 ### Class `polyspherocylinder_banana`
@@ -200,6 +329,36 @@ polyspherocylinder_banana(
 
 <img src="img/shapes/polyspherocylinder_banana.png" alt="sphere" width="570" height="250">
 
+The shape is created by spanning `segment_n` identical segments on a circular arc with radius `arc_radius` and
+the arc angle `arc_angle` and then building sperocylinders with radius `sc_r` around these segments (they become the
+heights of the cylinder part of spherocylinders). The arc lies in the xz plane. The arc angle is symmetric w.r.t. the
+x-axis and its opens toward the negative x-axis. If the angle is below 180 degrees, the geometric center lies in the
+middle between the endpoints of the arc. Otherwise, the geometric center lies in the arc center. The optional parameter
+`subdivisions` controls on how many additional parts each spherocylinder should be divided to optimize the neighbor
+grid performance.
+
+* **Geometric origin**: {0, 0, 0}
+* **Interaction centers**: the midpoint of each spherocylinder's height; when `subdivisions > 1`, each subpart counts
+  as an independent spherocylinder, thus the number of interaction centers is `segment_n` * `subdivisions`
+* **Shape axes**:
+  * *primary* = {0, 0, 1}
+  * *secondary* = {-1, 0, 0}
+  * *auxiliary* = {0, -1, 0}
+* **Named points**:
+  * `"o"` - geometric origin
+  * `"cm"` - mass center
+  * `"o[i]"`, `"b[i]"`, `"e[i]"` - midpoint (`o`), beginning (`b`) or end (`e`) of the `i`-th spherocylinder, where
+    "spherocylinder beginning" is the center of the spherical cap closer to the beginning of the arc (the endpoint with
+    a negative z coordinates), while "spherocylinder end" is the center closer to the other end of the arc. The
+    numbering starts from 0 for the spherocylinder containing the beginning of the arc and the index `i` increases
+    towards the end of the arc. Please note that when `subdivisions > 1`, the divided parts count as separate
+    spherocylinders, thus the first arc segment is actually built of spherocylinders with indices
+    `i = 0, 1, ..., subdivisions - 1`, preserving the order along the arc.
+  * `"beg"` - the arc endpoint with negative z coordinate (equivalent to `"b0"`)
+  * `"end"` - the arc endpoint with positive z coordinate (equivalent to `"e[subdivisions * sphere_n - 1]"`)
+* **Interactions**:
+  * class `hard` - hard-core interaction
+
 
 ### Class `smooth_wedge`
 
@@ -214,6 +373,22 @@ smooth_wedge(
 
 <img src="img/shapes/smooth_wedge.png" alt="sphere" width="160" height="250">
 
+The shape which is given by the convex hull of two spheres with radii `bottom_r` and `top_r` placed on the z-axis with
+distance `l` between them. The spheres are placed in such a way that the uppermost and lowermost points on the shape are
+equidistant from the geometric center. The optional parameter `subdivisions` controls into how many parts the wedge
+should be divided to optimize the neighbor grid performance.
+
+* **Geometric origin**: {0, 0, 0}
+* **Interaction centers**: if `subdivisions > 1`, geometric centers of each part, none otherwise
+* **Shape axes**:
+  * *primary* = {0, 0, 1}
+* **Named points**:
+  * `"o"` - geometric origin
+  * `"beg"` - the center of the bottom sphere
+  * `"end"` - the center of the top sphere
+* **Interactions**:
+  * class `hard` - hard-core interaction
+
 
 ### Class `polyhedral_wedge`
 
@@ -223,12 +398,31 @@ polyhedral_wedge(
     bottom_ay,
     top_ax,
     top_ay,
-    length,
+    l,
     subdivisions = 1
 )
 ```
 
 <img src="img/shapes/polyhedral_wedge.png" alt="sphere" width="334" height="250">
+
+A polyhedron built by joining two axis-oriented rectangles placed on the XY planes with z coordinates equal `-l/2` and
+`l/2`. The side lengths of the bottom (`z = -l/2`) rectangle are given by `bottom_ax` and `bottom_ay`, while `top_ax`
+and `top_az` control the size of the top (`z = l/2`) rectangle. Please note that since the geometric origin is in the
+midpoint of length of the polyhedron, the circumsphere may not be optimal. If `subdivisions > 1`, the polyhedron is
+divided into that many parts along its length to optimize neighbor grid performance.
+
+* **Geometric origin**: {0, 0, 0}
+* **Interaction centers**: if `subdivisions > 1`, length midpoints of each part, none otherwise
+* **Shape axes**:
+  * *primary* = {0, 0, 1}
+  * *secondary* = {1, 0, 0}
+  * *auxiliary* = {0, 1, 0}
+* **Named points**:
+  * `"o"` - geometric origin
+  * `"beg"` - the midpoint of the bottom rectangle
+  * `"end"` - the midpoint of the top rectangle
+* **Interactions**:
+  * class `hard` - hard-core interaction
 
 
 ## General shape classes
@@ -290,31 +484,28 @@ generic_convex(
 
 <img src="img/shapes/generic_convex.png" alt="sphere" width="155" height="200">
 
-|                                Illustration                                | Command, comments          | Comments                              |
-|:--------------------------------------------------------------------------:|----------------------------|---------------------------------------|
-|   <img src="img/shapes/point.png" alt="sphere" width="250" height="125">   | `point [x] [y] [z]`        |                                       |
-|  <img src="img/shapes/segment.png" alt="sphere" width="175" height="125">  | `segment [l]`              |                                       |
-| <img src="img/shapes/rectangle.png" alt="sphere" width="261" height="125"> | `rectangle [ax] [ay]`      |                                       |
-|  <img src="img/shapes/cuboid.png" alt="sphere" width="249" height="200">   | `cuboid [ax] [ay] [az]`    |                                       |
-|   <img src="img/shapes/disk.png" alt="sphere" width="216" height="125">    | `disk [r]`                 |                                       |
-|  <img src="img/shapes/sphere.png" alt="sphere" width="125" height="125">   | `sphere [r]`               |                                       |
-|  <img src="img/shapes/ellipse.png" alt="sphere" width="269" height="125">  | `ellipse [rx] [ry]`        |                                       |
-| <img src="img/shapes/ellipsoid.png" alt="sphere" width="199" height="200"> | `ellipsoid [rx] [ry] [rz]` |                                       |
-|  <img src="img/shapes/saucer.png" alt="sphere" width="264" height="125">   | `saucer [r] [h]`           | two spherical caps                    |
-| <img src="img/shapes/football.png" alt="sphere" width="140" height="200">  | `football [r] [h]`         | circle arch rotated around the z axis |
+|                                Illustration                                | Command, comments                                                |
+|:--------------------------------------------------------------------------:|------------------------------------------------------------------|
+|   <img src="img/shapes/point.png" alt="sphere" width="250" height="125">   | `point [x] [y] [z]`                                              |
+|  <img src="img/shapes/segment.png" alt="sphere" width="175" height="125">  | `segment [l]`                                                    |
+| <img src="img/shapes/rectangle.png" alt="sphere" width="261" height="125"> | `rectangle [ax] [ay]`                                            |
+|  <img src="img/shapes/cuboid.png" alt="sphere" width="249" height="200">   | `cuboid [ax] [ay] [az]`                                          |
+|   <img src="img/shapes/disk.png" alt="sphere" width="216" height="125">    | `disk [r]`                                                       |
+|  <img src="img/shapes/sphere.png" alt="sphere" width="125" height="125">   | `sphere [r]`                                                     |
+|  <img src="img/shapes/ellipse.png" alt="sphere" width="269" height="125">  | `ellipse [rx] [ry]`                                              |
+| <img src="img/shapes/ellipsoid.png" alt="sphere" width="199" height="200"> | `ellipsoid [rx] [ry] [rz]`                                       |
+|  <img src="img/shapes/saucer.png" alt="sphere" width="264" height="125">   | `saucer [r] [h]`<br/><br/>two spherical caps                     |
+| <img src="img/shapes/football.png" alt="sphere" width="140" height="200">  | `football [r] [h]`<br/><br/>circle arc rotated around the z axis |
 
 
 ## Soft interaction classes
 
 This section lists all soft interaction types available for selected shapes. The list includes
 
-* [Class `hard`](#class-hard)
 * [Class `lj`](#class-lj)
 * [Class `wca`](#class-wca)
 * [Class `square_inverse_core`](#class-squareinversecore)
 
-
-### Class `hard`
 
 ### Class `lj`
 
