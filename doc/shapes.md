@@ -123,6 +123,7 @@ sphere(
 
 Hard sphere with radius `r`.
 
+Shape traits:
 * **Geometric origin**: {0, 0, 0}
 * **Interaction centers**: None
 * **Shape axes**: None
@@ -153,6 +154,7 @@ Colinear k-mer consisting of `k` identical spheres with radius `r` with identica
 them, lying on the z-axis. The spheres may partially overlap. The spheres at the end are equidistant from the geometric
 origin.
 
+Shape traits:
 * **Geometric origin**: {0, 0, 0}
 * **Interaction centers**: center of each sphere
 * **Shape axes**:
@@ -190,6 +192,7 @@ the arc angle `arc_angle`. The arc lies in the xz plane. The arc angle is  symme
 toward the negative x-axis. If the angle is below 180 degrees, the geometric center lies in the middle between the 
 endpoints of the arc. Otherwise, the geometric center lies in the arc center.
 
+Shape traits:
 * **Geometric origin**: {0, 0, 0}
 * **Interaction centers**: center of each sphere
 * **Shape axes**:
@@ -232,6 +235,7 @@ controlled by `small_penetration` (where 0 means that the spheres are tangent), 
 sphere and the last "stick" sphere is controlled by `large_penetration`. The spheres are placed in such a way that the
 uppermost and lowermost points on the shape are equidistant from the geometric center.
 
+Shape traits:
 * **Geometric origin**: {0, 0, 0}
 * **Interaction centers**: center of each sphere
 * **Shape axes**:
@@ -269,6 +273,7 @@ bottom sphere to `top_r` for the top sphere. The overlap between the "stick" sph
 0 means that the spheres are tangent). The spheres are placed in such a way that the uppermost and lowermost points on
 the shape are equidistant from the geometric center.
 
+Shape traits:
 * **Geometric origin**: {0, 0, 0}
 * **Interaction centers**: center of each sphere
 * **Shape axes**:
@@ -302,6 +307,7 @@ Spherocylinder, spanned along the z-axis - the union of a cylinder and spheres p
 distance between spheres' centers (the height of the cylinder) is `l` and the radius of the cylinder and the spheres is
 `r`.
 
+Shape traits:
 * **Geometric origin**: {0, 0, 0}
 * **Interaction centers**: None
 * **Shape axes**:
@@ -311,8 +317,7 @@ distance between spheres' centers (the height of the cylinder) is `l` and the ra
   * `"cm"` - mass center
   * `"beg"` - the center of the bottom sphere
   * `"end"` - the center of the top sphere
-* **Interactions**:
-  * class `hard` - hard-core interaction
+* **Interactions**: only hard-core
 
 
 ### Class `polyspherocylinder_banana`
@@ -337,6 +342,7 @@ middle between the endpoints of the arc. Otherwise, the geometric center lies in
 `subdivisions` controls on how many additional parts each spherocylinder should be divided to optimize the neighbor
 grid performance.
 
+Shape traits:
 * **Geometric origin**: {0, 0, 0}
 * **Interaction centers**: the midpoint of each spherocylinder's height; when `subdivisions > 1`, each subpart counts
   as an independent spherocylinder, thus the number of interaction centers is `segment_n` * `subdivisions`
@@ -356,8 +362,7 @@ grid performance.
     `i = 0, 1, ..., subdivisions - 1`, preserving the order along the arc.
   * `"beg"` - the arc endpoint with negative z coordinate (equivalent to `"b0"`)
   * `"end"` - the arc endpoint with positive z coordinate (equivalent to `"e[subdivisions * sphere_n - 1]"`)
-* **Interactions**:
-  * class `hard` - hard-core interaction
+* **Interactions**: only hard-core
 
 
 ### Class `smooth_wedge`
@@ -378,6 +383,7 @@ distance `l` between them. The spheres are placed in such a way that the uppermo
 equidistant from the geometric center. The optional parameter `subdivisions` controls into how many parts the wedge
 should be divided to optimize the neighbor grid performance.
 
+Shape traits:
 * **Geometric origin**: {0, 0, 0}
 * **Interaction centers**: if `subdivisions > 1`, geometric centers of each part, none otherwise
 * **Shape axes**:
@@ -386,8 +392,7 @@ should be divided to optimize the neighbor grid performance.
   * `"o"` - geometric origin
   * `"beg"` - the center of the bottom sphere
   * `"end"` - the center of the top sphere
-* **Interactions**:
-  * class `hard` - hard-core interaction
+* **Interactions**: only hard-core
 
 
 ### Class `polyhedral_wedge`
@@ -411,6 +416,7 @@ and `top_az` control the size of the top (`z = l/2`) rectangle. Please note that
 midpoint of length of the polyhedron, the circumsphere may not be optimal. If `subdivisions > 1`, the polyhedron is
 divided into that many parts along its length to optimize neighbor grid performance.
 
+Shape traits:
 * **Geometric origin**: {0, 0, 0}
 * **Interaction centers**: if `subdivisions > 1`, length midpoints of each part, none otherwise
 * **Shape axes**:
@@ -421,8 +427,7 @@ divided into that many parts along its length to optimize neighbor grid performa
   * `"o"` - geometric origin
   * `"beg"` - the midpoint of the bottom rectangle
   * `"end"` - the midpoint of the top rectangle
-* **Interactions**:
-  * class `hard` - hard-core interaction
+* **Interactions**: only hard-core
 
 
 ## General shape classes
@@ -452,6 +457,76 @@ polysphere(
 
 <img src="img/shapes/polysphere.png" alt="sphere" width="182" height="200">
 
+A general union of spheres.
+
+Arguments:
+
+* ***spheres***
+
+  `sphere` object or and Array of `sphere` objects:
+
+  ```python
+  sphere(
+      pos,
+      r
+  )
+  ```
+  
+  where `r` is radius and `pos` can be either a single position (Array of 3 Floats) representing a single sphere or an
+  Array of positions (Array of Arrays of 3 Floats), which represents many spheres with the same radius `r`. As an
+  example, the shape from the illustration can be created using
+
+  ```python
+  spheres=[
+      sphere(pos=[0, 0, 0], r=0.7),                                             # central sphere
+      sphere(pos=[[-1,0,0],[1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]], r=0.5)   # "satellite" spheres
+  ]
+  ```
+
+* ***volume***
+
+  Volume of the shape. Unfortunately, automatic volume calculation of many overlapping spheres is notoriously difficult;
+  thus the user has to do it manually for the specific case.
+
+* ***geometric_origin*** (*= [0, 0, 0]*)
+
+  The geometric origin, which may be different than [0, 0, 0].
+
+* ***primary_axis*** (*= None*)
+
+  The primary axis of the shape - Array of 3 Floats. It may not be normalized (the normalization is done automatically).
+  If the shape does not have the primary axis, `None` should be passed instead.
+
+* ***secondary_axis*** (*= None*)
+
+  The secondary axis of the shape - Array of 3 Floats. It may not be normalized (the normalization is done
+  automatically). If the shape does not have the primary axis, `None` should be passed instead. `secondary_axis` can
+  be defined only if `primary_axis` is not `None`.
+
+* ***named_points*** (*= {}*)
+
+  The Dictionary of custom named points, where the keys are Strings representing point names, while the values are
+  Arrays of 3 Floats representing the positions of the named points.
+
+* ***interation*** (*= hard*)
+
+  Interaction between pairs of spheres. See **Shape traits/Interactions** just below for a list of supported
+  interactions.
+
+Shape traits:
+* **Geometric origin**: as specified by `geometric_origin`
+* **Interaction centers**: centers of spheres
+* **Shape axes**: as specified by `primary_axis` and `secondary axis` (auxiliary axis is computed automatically)
+* **Named points**:
+  * `"o"` - geometric origin
+  * `"s[i]"` - the center of `i`-th sphere, starting from 0
+  * custom ones given by `named_points`
+* **Interactions**:
+  * class `hard` - hard-core interaction
+  * [class `lj`](#class-lj)
+  * [class `wca`](#class-wca)
+  * [class `square_inverse_core`](#class-squareinversecore)
+
 
 ### Class `polyspherocylinder`
 
@@ -466,7 +541,70 @@ polyspherocylinder(
 )
 ```
 
-<img src="img/shapes/polyspherocylinder.png" alt="sphere" width="204" height="200">
+<img src="img/shapes/polyspherocylinder.png" alt="sphere" width="144" height="200">
+
+A general union of spherocylinders.
+
+Arguments:
+
+* ***scs***
+
+  `sc` object or and Array of `sc` objects:
+
+  ```python
+  sc(
+      chain,
+      r
+  )
+  ```
+
+  It represents a chain of spherocylinders. Namely, it is an Array of points (where the point is Array of 3 Floats)
+  building a line, around which the spherocylinders are built. `r` the radius of the chain. As an example, the shape
+  from the illustration can be created using
+
+  ```python
+  scs=[
+      sc(chain=[[0,0,-2],[0,0,2]], r=1),                                # middle spherocylinder     
+      sc(chain=[[1,1,0],[1,-1,0],[-1,-1,0],[-1,1,0],[1,1,0]], r=0.7)    # the "brim" (or halo?)
+  ]
+  ```
+
+* ***volume***
+
+  Volume of the shape. Unfortunately, automatic volume calculation of many overlapping spherocylinders is notoriously
+  difficult; thus the user has to do it manually for the specific case.
+
+* ***geometric_origin*** (*= [0, 0, 0]*)
+
+  The geometric origin, which may be different than [0, 0, 0].
+
+* ***primary_axis*** (*= None*)
+
+  The primary axis of the shape - Array of 3 Floats. It may not be normalized (the normalization is done automatically).
+  If the shape does not have the primary axis, `None` should be passed instead.
+
+* ***secondary_axis*** (*= None*)
+
+  The secondary axis of the shape - Array of 3 Floats. It may not be normalized (the normalization is done
+  automatically). If the shape does not have the primary axis, `None` should be passed instead. `secondary_axis` can
+  be defined only if `primary_axis` is not `None`.
+
+* ***named_points*** (*= {}*)
+
+  The Dictionary of custom named points, where the keys are Strings representing point names, while the values are
+  Arrays of 3 Floats representing the positions of the named points.
+
+Shape traits:
+* **Geometric origin**: as specified by `geometric_origin`
+* **Interaction centers**: centers of spherocylinders
+* **Shape axes**: as specified by `primary_axis` and `secondary axis` (auxiliary axis is computed automatically)
+* **Named points**:
+  * `"o"` - geometric origin
+  * `"o[i]"` - the center of `i`-th spherocylinder, starting from 0
+  * `"b[i]"` - the first endpoint of `i`-th spherocylinder, starting from 0
+  * `"e[i]"` - the second endpoint of `i`-th spherocylinder, starting from 0
+  * custom ones given by `named_points`
+* **Interactions**: only hard-core
 
 
 ### Class `generic_convex`
