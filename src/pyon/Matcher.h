@@ -13,6 +13,7 @@
 #include "MatcherDictionary.h"
 #include "MatcherDataclass.h"
 #include "MatcherAlternative.h"
+#include "RecursiveMatcher.h"
 
 
 namespace pyon::matcher {
