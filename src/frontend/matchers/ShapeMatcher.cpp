@@ -22,6 +22,8 @@
 #include "geometry/xenocollide/XCBodyBuilder.h"
 #include "core/shapes/PolyhedralWedgeTraits.h"
 
+#include "GenericConvexGeometryMatcher.h"
+
 
 using namespace pyon::matcher;
 
@@ -419,23 +421,8 @@ namespace {
     }
 
     MatcherDataclass create_generic_convex_matcher() {
-        auto script = MatcherString{}
-            .filter([](const std::string &script){
-                return !explode(script, '&').empty();
-            })
-            .describe("at least one '&'-separated command")
-            .mapTo([](const std::string &script) -> std::shared_ptr<AbstractXCGeometry> {
-                auto commands = explode(script, '&');
-
-                XCBodyBuilder builder;
-                for (const auto &command : commands)
-                    builder.processCommand(command);
-
-                return builder.releaseCollideGeometry();
-            });
-
         return MatcherDataclass("generic_convex")
-            .arguments({{"script", script},
+            .arguments({{"script", GenericConvexGeometryMatcher::script},
                         {"volume", MatcherFloat{}.positive()},
                         {"geometric_origin", vector, "[0, 0, 0]"},
                         {"primary_axis", axis | MatcherNone{}, "None"},
@@ -444,7 +431,7 @@ namespace {
             .filter(validate_axes)
             .describe("primary_axis and secondary_axis must be orthogonal")
             .mapTo([](const DataclassData &convex) -> std::shared_ptr<ShapeTraits> {
-                auto geometry = convex["script"].as<std::shared_ptr<AbstractXCGeometry>>();
+                auto script = convex["script"].as<XCBodyBuilderScript>();
                 auto volume = convex["volume"].as<double>();
                 auto geometricOrigin = convex["geometric_origin"].as<Vector<3>>();
                 std::optional<Vector<3>> primaryAxis;
@@ -454,6 +441,10 @@ namespace {
                 if (!convex["secondary_axis"].isEmpty())
                     secondaryAxis = convex["secondary_axis"].as<Vector<3>>();
                 auto namedPoints = convex["named_points"].as<ShapeGeometry::NamedPoints>();
+
+                XCBodyBuilder builder;
+                script(builder);
+                auto geometry = builder.releaseCollideGeometry();
 
                 return std::make_shared<GenericXenoCollideTraits>(
                     geometry, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
