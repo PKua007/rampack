@@ -196,19 +196,19 @@ public:
  */
 class XCFootball : public AbstractXCGeometry {
 private:
-    double length{};
+    double halfLength{};
     double radius{};
 
 public:
     /**
-     * @brief Creates a rugby ball by drawing a circle segment between the points `{0, 0, -length/2}` and
-     * `{0, 0, length/2}` and then revolving it around Z axis. The radius is chosen in such a way that the XY section
+     * @brief Creates a rugby ball by drawing a circle segment between the points `{0, 0, -halfLength}` and
+     * `{0, 0, halfLength}` and then revolving it around Z axis. The radius is chosen in such a way that the XY section
      * in the middle of the rugby ball is a disk with radius @a radius.
      */
-    XCFootball(double length, double radius);
+    XCFootball(double halfLength, double radius);
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3> &n) const override;
-    [[nodiscard]] double getCircumsphereRadius() const override { return this->length; }
+    [[nodiscard]] double getCircumsphereRadius() const override { return this->halfLength; }
     [[nodiscard]] double getInsphereRadius() const override { return this->radius; }
 };
 

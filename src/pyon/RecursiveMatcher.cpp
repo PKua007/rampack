@@ -8,28 +8,21 @@ namespace pyon::matcher {
     using namespace pyon::ast;
 
     MatchReport RecursiveMatcher::match(std::shared_ptr<const ast::Node> node, Any &result) const {
-        if (this->container->theMatcherWeak.expired()) {
-            throw UninitializedRecursiveMatcherException("RecursiveMatcher::attach() was never called prior to "
-                                                         "::match()");
-        }
+        this->throwIfUninitialized();
+
         auto theMatcher = this->container->theMatcherWeak.lock();
         return theMatcher->match(node, result);
     }
 
     bool RecursiveMatcher::matchNodeType(Node::Type type) const {
-        if (this->container->theMatcherWeak.expired()) {
-            throw UninitializedRecursiveMatcherException("RecursiveMatcher::attach() was never called prior to "
-                                                         "::matchNodeType()");
-        }
+        this->throwIfUninitialized();
+
         auto theMatcher = this->container->theMatcherWeak.lock();
         return theMatcher->matchNodeType(type);
     }
 
     std::string RecursiveMatcher::outline(std::size_t indent) const {
-        if (this->container->theMatcherWeak.expired()) {
-            throw UninitializedRecursiveMatcherException("RecursiveMatcher::attach() was never called prior to "
-                                                         "::outline()");
-        }
+        this->throwIfUninitialized();
 
         auto theMatcher = this->container->theMatcherWeak.lock();
         std::string spaces(indent, ' ');
@@ -39,11 +32,13 @@ namespace pyon::matcher {
     }
 
     std::string pyon::matcher::RecursiveMatcher::synopsis() const {
-        if (this->container->theMatcherWeak.expired()) {
-            throw UninitializedRecursiveMatcherException("RecursiveMatcher::attach() was never called prior to "
-                                                         "::synopsis()");
-        }
+        this->throwIfUninitialized();
 
         return "{recursion}";
+    }
+
+    void RecursiveMatcher::throwIfUninitialized() const {
+        if (this->container->theMatcherWeak.expired())
+            throw UninitializedRecursiveMatcherException("RecursiveMatcher is not attached to anything");
     }
 }

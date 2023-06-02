@@ -112,14 +112,14 @@ Vector<3> XCEllipsoid::getSupportPoint(const Vector<3> &n) const {
     return vector_comp_mul(n2, this->semiAxes);
 }
 
-XCFootball::XCFootball(double length, double radius) : length{length}, radius{radius} {
+XCFootball::XCFootball(double halfLength, double radius) : halfLength{halfLength}, radius{radius} {
     Expects(radius > 0);
-    Expects(length >= radius);
+    Expects(halfLength >= radius);
 }
 
 Vector<3> XCFootball::getSupportPoint(const Vector<3> &n) const {
     double r1 = this->radius;
-    double h = this->length;
+    double h = this->halfLength;
 
     // Radius of curvature
     double r2 = 0.5f * (h*h/r1 + r1);

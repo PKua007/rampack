@@ -25,6 +25,8 @@ namespace pyon::matcher {
         std::shared_ptr<MatcherContainer> container = std::make_shared<MatcherContainer>();
         std::shared_ptr<MatcherBase> theMatcherStrong;
 
+        void throwIfUninitialized() const;
+
     public:
         MatchReport match(std::shared_ptr<const ast::Node> node, Any &result) const override;
         [[nodiscard]] bool matchNodeType(ast::Node::Type type) const override;

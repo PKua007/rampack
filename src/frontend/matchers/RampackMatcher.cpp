@@ -243,10 +243,10 @@ namespace {
 
     MatcherDataclass create_overlap_relaxation() {
         auto shapeNone = MatcherNone{}.mapTo<std::shared_ptr<ShapeTraits>>();
-        auto helperShape = ShapeMatcher::shape | shapeNone;
+        auto helperShape = ShapeMatcher::create() | shapeNone;
 
         // TODO: optional snapshot_every (when no observables are stored)
-        // TODO: multi-threaded ObservableCollector
+        // TODO: multithreaded ObservableCollector
         return MatcherDataclass("overlap_relaxation")
             .arguments({{"run_name", runName},
                         {"snapshot_every", notNullEvery},
@@ -383,7 +383,7 @@ pyon::matcher::MatcherDataclass RampackMatcher::create() {
     return pyon::matcher::MatcherDataclass("rampack")
         .arguments({{"version", create_version()},
                     {"arrangement", ArrangementMatcher::create()},
-                    {"shape", ShapeMatcher::shape},
+                    {"shape", ShapeMatcher::create()},
                     {"seed", seed},
                     {"runs", create_runs()},
                     {"temperature", dynamicParameter, "None"},

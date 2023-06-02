@@ -47,6 +47,7 @@ namespace {
 
     bool validate_axes(const DataclassData &dataclass);
 
+
     auto hardInteraction = MatcherDataclass("hard")
         .mapTo([](const auto &) -> std::shared_ptr<CentralInteraction> { return nullptr; });
     auto softInteraction = create_lj_matcher() | create_wca_matcher() | create_square_inverse_core_matcher();
@@ -422,7 +423,7 @@ namespace {
 
     MatcherDataclass create_generic_convex_matcher() {
         return MatcherDataclass("generic_convex")
-            .arguments({{"script", GenericConvexGeometryMatcher::script},
+            .arguments({{"geometry", GenericConvexGeometryMatcher::script},
                         {"volume", MatcherFloat{}.positive()},
                         {"geometric_origin", vector, "[0, 0, 0]"},
                         {"primary_axis", axis | MatcherNone{}, "None"},
@@ -431,7 +432,7 @@ namespace {
             .filter(validate_axes)
             .describe("primary_axis and secondary_axis must be orthogonal")
             .mapTo([](const DataclassData &convex) -> std::shared_ptr<ShapeTraits> {
-                auto script = convex["script"].as<XCBodyBuilderScript>();
+                auto script = convex["geometry"].as<XCBodyBuilderScript>();
                 auto volume = convex["volume"].as<double>();
                 auto geometricOrigin = convex["geometric_origin"].as<Vector<3>>();
                 std::optional<Vector<3>> primaryAxis;
@@ -494,27 +495,28 @@ namespace {
 }
 
 
-pyon::matcher::MatcherAlternative const ShapeMatcher::shape =
-    create_sphere_matcher()
-    | create_kmer_matcher()
-    | create_polysphere_banana_matcher()
-    | create_polysphere_lollipop_matcher()
-    | create_polysphere_wedge_matcher()
-    | create_spherocylinder_matcher()
-    | create_polyspherocylinder_banana_matcher()
-    | create_smooth_wedge_matcher()
-    | create_polysphere_matcher()
-    | create_polyspherocylinder_matcher()
-    | create_generic_convex_matcher()
-    | create_polyhedral_wedge_matcher();
-
-
 std::shared_ptr<ShapeTraits> ShapeMatcher::match(const std::string &expression) {
     Any shapeTraits;
     auto shapeAST = pyon::Parser::parse(expression);
-    auto matchReport = shape.match(shapeAST, shapeTraits);
+    auto shapeMatcher = ShapeMatcher::create();
+    auto matchReport = shapeMatcher.match(shapeAST, shapeTraits);
     if (!matchReport)
         throw ValidationException(matchReport.getReason());
 
     return shapeTraits.as<std::shared_ptr<ShapeTraits>>();
+}
+
+pyon::matcher::MatcherAlternative ShapeMatcher::create() {
+    return create_sphere_matcher()
+        | create_kmer_matcher()
+        | create_polysphere_banana_matcher()
+        | create_polysphere_lollipop_matcher()
+        | create_polysphere_wedge_matcher()
+        | create_spherocylinder_matcher()
+        | create_polyspherocylinder_banana_matcher()
+        | create_smooth_wedge_matcher()
+        | create_polysphere_matcher()
+        | create_polyspherocylinder_matcher()
+        | create_generic_convex_matcher()
+        | create_polyhedral_wedge_matcher();
 }

@@ -14,7 +14,7 @@
 class ShapeMatcher {
 
 public:
-    static const pyon::matcher::MatcherAlternative shape;
+    static pyon::matcher::MatcherAlternative create();
     static std::shared_ptr<ShapeTraits> match(const std::string &expression);
 };
 
