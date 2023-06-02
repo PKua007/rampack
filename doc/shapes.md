@@ -463,7 +463,7 @@ Arguments:
 
 * ***spheres***
 
-  `sphere` object or and Array of `sphere` objects:
+  `sphere` object or an Array of `sphere` objects:
 
   ```python
   sphere(
@@ -549,7 +549,7 @@ Arguments:
 
 * ***scs***
 
-  `sc` object or and Array of `sc` objects:
+  `sc` object or an Array of `sc` objects:
 
   ```python
   sc(
@@ -558,9 +558,9 @@ Arguments:
   )
   ```
 
-  It represents a chain of spherocylinders. Namely, it is an Array of points (where the point is Array of 3 Floats)
-  building a line, around which the spherocylinders are built. `r` the radius of the chain. As an example, the shape
-  from the illustration can be created using
+  Class `sc` represents a chain of spherocylinders. Namely, `chain` is an Array of points (where the point is Array of 3
+  Floats) building a line, around which the spherocylinders are built. `r` the radius of the chain. As an example, the
+  shape from the illustration can be created using
 
   ```python
   scs=[
@@ -611,7 +611,7 @@ Shape traits:
 
 ```python
 generic_convex(
-    script,
+    geometry,
     volume,
     geometric_origin = [0, 0, 0],
     primary_axis = None,
@@ -622,18 +622,266 @@ generic_convex(
 
 <img src="img/shapes/generic_convex.png" alt="sphere" width="155" height="200">
 
-|                                Illustration                                | Command, comments                                                |
-|:--------------------------------------------------------------------------:|------------------------------------------------------------------|
-|   <img src="img/shapes/point.png" alt="sphere" width="250" height="125">   | `point [x] [y] [z]`                                              |
-|  <img src="img/shapes/segment.png" alt="sphere" width="175" height="125">  | `segment [l]`                                                    |
-| <img src="img/shapes/rectangle.png" alt="sphere" width="261" height="125"> | `rectangle [ax] [ay]`                                            |
-|  <img src="img/shapes/cuboid.png" alt="sphere" width="249" height="200">   | `cuboid [ax] [ay] [az]`                                          |
-|   <img src="img/shapes/disk.png" alt="sphere" width="216" height="125">    | `disk [r]`                                                       |
-|  <img src="img/shapes/sphere.png" alt="sphere" width="125" height="125">   | `sphere [r]`                                                     |
-|  <img src="img/shapes/ellipse.png" alt="sphere" width="269" height="125">  | `ellipse [rx] [ry]`                                              |
-| <img src="img/shapes/ellipsoid.png" alt="sphere" width="199" height="200"> | `ellipsoid [rx] [ry] [rz]`                                       |
-|  <img src="img/shapes/saucer.png" alt="sphere" width="264" height="125">   | `saucer [r] [h]`<br/><br/>two spherical caps                     |
-| <img src="img/shapes/football.png" alt="sphere" width="140" height="200">  | `football [r] [h]`<br/><br/>circle arc rotated around the z axis |
+General convex shape constructed from primitive building blocks (such as points, segments, spheres, etc.) and geometric
+operations (Minkowski sum, Minkowski difference, convex hull). The overlap check is done using
+[XenoCollide](http://xenocollide.snethen.com) algorithm of Gary Snethen.
+
+Arguments:
+
+* ***geometry***
+
+  The geometry of the shape. It is given by primitive building blocks and geometric operation on them. For example
+
+  ```python
+  geometry=wrap(
+      sphere(r=0.5, pos=[0, 0, -0.5]),
+      cuboid(ax=1, ay=1, az=1, pos=[0, 0, 0.5], rot=[45, 0, 0])
+  )
+  ```
+
+  is a convex hull (`wrap`) of a sphere and a cube and recreates the shape from the illustration above.
+
+  **PRIMITIVE BLOCKS**:
+
+  * Class `point`
+
+    ```python
+    point(
+        pos
+    )
+    ```
+
+    <img src="img/shapes/point.png" alt="sphere" width="250" height="125">
+
+    A point with position `pos` (Array of 3 Floats).
+  
+  * Class `segment` 
+
+    ```python
+    segment(
+        l,
+        pos = [0, 0, 0],
+        rot = [0, 0, 0]
+    )
+    ```
+
+    <img src="img/shapes/segment.png" alt="sphere" width="175" height="125">
+  
+    A segment, which for the default values of `pos` and `rot` is spanned between (0, 0, -`l`/2) and (0, 0, `l`/2).
+    `pos` (Array of 3 Floats) specifies its center. `rot` specifies its orientation - it is an Array of 3 Euler angles,
+    where subsequent elements are angles of rotations around, respectively, x, y and z axis. Rotations are performed
+    around z, y, and x axis, in the given order.
+
+  * Class `rectangle`
+
+    ```python
+    rectangle(
+        ax,
+        ay,
+        pos = [0, 0, 0],
+        rot = [0, 0, 0]
+    )
+    ```
+
+    <img src="img/shapes/rectangle.png" alt="sphere" width="261" height="125">
+
+    A rectangle with midpoint `pos` (Array of 3 Floats). By default, it lies on the xy plane and `ax` and `ay` are its
+    side lengths along, respectively, x and y axis. `rot` specifies its orientation - it is an Array of 3 Euler angles,
+    where subsequent elements are angles of rotations around, respectively, x, y and z axis. Rotations are performed
+    around z, y, and x axis, in the given order.
+
+  * Class `cuboid`
+
+    ```python
+    cuboid(
+        ax,
+        ay,
+        az,
+        pos = [0, 0, 0],
+        rot = [0, 0, 0]
+    )
+    ```
+   
+    <img src="img/shapes/cuboid.png" alt="sphere" width="249" height="200">
+
+    A cuboid with midpoint `pos` (Array of 3 Floats). By default, it is axis-oriented and `ax`, `ay`, `az` are its side
+    lengths along, respectively, x, y and z axis. `rot` specifies its orientation - it is an Array of 3 Euler angles,
+    where subsequent elements are angles of rotations around, respectively, x, y and z axis. Rotations are performed
+    around z, y, and x axis, in the given order.
+
+  * Class `disk`
+
+    ```python
+    disk(
+        r,
+        pos = [0, 0, 0],
+        rot = [0, 0, 0]
+    )
+    ```  
+ 
+    <img src="img/shapes/disk.png" alt="sphere" width="216" height="125">   
+  
+    A disk with radius `r` and center `pos` (Array of 3 Floats). By default, it lies on the xy plane. `rot` specifies
+    its orientation - it is an Array of 3 Euler angles, where subsequent elements are angles of rotations around,
+    respectively, x, y and z axis. Rotations are performed around z, y, and x axis, in the given order.
+
+  * Class `sphere`
+
+    ```python
+    sphere(
+        r,
+        pos = [0, 0, 0]
+    )
+    ```  
+
+    <img src="img/shapes/sphere.png" alt="sphere" width="125" height="125"> 
+
+    A sphere with radius `r` and center `pos` (Array of 3 Floats).
+
+  * Class `ellipse`
+
+    ```python
+    ellipse(
+        rx,
+        ry,
+        pos = [0, 0, 0],
+        rot = [0, 0, 0]
+    )
+    ```
+
+    <img src="img/shapes/ellipse.png" alt="sphere" width="269" height="125">
+
+    An ellipse with midpoint `pos` (Array of 3 Floats). By default, it lies on the xy plane and `rx` and `ry` are its,
+    respectively, x and y semi-axes. `rot` specifies its orientation - it is an Array of 3 Euler angles, where
+    subsequent elements are angles of rotations around, respectively, x, y and z axis. Rotations are performed around z,
+    y, and x axis, in the given order.
+
+  * Class `ellipsoid`
+
+    ```python
+    ellipsoid(
+        rx,
+        ry,
+        rz,
+        pos = [0, 0, 0],
+        rot = [0, 0, 0]
+    )
+    ```
+
+    <img src="img/shapes/ellipsoid.png" alt="sphere" width="199" height="200">
+
+    An ellipsoid with midpoint `pos` (Array of 3 Floats). By default, it is axis-oriented and `rx`, `ry` and `rz` are
+    its, respectively, x, y and z semi-axes. `rot` specifies its orientation - it is an Array of 3 Euler angles, where
+    subsequent elements are angles of rotations around, respectively, x, y and z axis. Rotations are performed around z,
+    y, and x axis in the given order.
+
+  * Class `saucer`
+
+    ```python
+    saucer(
+        r,
+        l,
+        pos = [0, 0, 0],
+        rot = [0, 0, 0]
+    )
+    ```
+    
+    <img src="img/shapes/saucer.png" alt="sphere" width="264" height="125">
+  
+    A shape, created by joning two spherical caps with such dimensions that the distance between cap "tips" is `l` and
+    the radius of a circle where the caps meet is `r`. Shape's midpoint is `pos` (Array of 3 Floats). By default, the
+    circle lies in the xy plane. `rot` specifies shape's orientation - it is an Array of 3 Euler angles, where 
+    subsequent elements are angles of rotations around, respectively, x, y and z axis. Rotations are performed around z,
+    y, and x axis, in the given order.
+
+  * Class `football`
+
+    ```python
+    football(
+        r,
+        l,
+        pos = [0, 0, 0],
+        rot = [0, 0, 0]
+    )
+    ```
+    
+    <img src="img/shapes/football.png" alt="sphere" width="140" height="200">
+
+    A shape, which for the default values of `pos` and `rot` is created by rotating a circle arc with endpoints lying on
+    the z axis around the z axis. Arc radius and angle are such that the distance between the endpoints is `l` and the
+    resulting shape has radius `r` in its thickest place. Shape's midpoint is `pos` (Array of 3 Floats). `rot` specifies
+    shape's orientation - it is an Array of 3 Euler angles, where subsequent elements are angles of rotations around,
+    respectively, x, y and z axis. Rotations are performed around z, y, and x axis, in the given order.
+
+  **GEOMETRIC OPERATIONS**:
+
+  * Class `sum`
+
+    ```python
+    sum(
+        *args
+    )
+    ```
+    
+    [Minkowski sum](https://en.wikipedia.org/wiki/Minkowski_addition) of all geometries given by variadic arguments
+    `*args`. Elements of `*args` can be both primitives and results of other geometric operations.
+
+  * Class `diff`
+
+    ```python
+    diff(
+        g1,
+        g2
+    )
+    ```
+
+    [Minkowski difference](https://en.wikipedia.org/wiki/Minkowski_addition) of geometries `g1` an `g2` - Minkowski sum
+    of `g1` and symmetrically reflected `g2`. `g1` and `g2` can be both primitives and results of other geometric
+    operations.
+
+  * Class `wrap`
+
+    ```python
+    wrap(
+        *args
+    )
+    ```
+
+    [Convex hull](https://en.wikipedia.org/wiki/Convex_hull) of all geometries given by variadic arguments `*args`.
+    Elements of `*args` can be both primitives and results of other geometric operations.
+
+* ***volume***
+
+  Volume of the shape.
+
+* ***geometric_origin*** (*= [0, 0, 0]*)
+
+  The geometric origin, which may be different than [0, 0, 0].
+
+* ***primary_axis*** (*= None*)
+
+  The primary axis of the shape - Array of 3 Floats. It may not be normalized (the normalization is done automatically).
+  If the shape does not have the primary axis, `None` should be passed instead.
+
+* ***secondary_axis*** (*= None*)
+
+  The secondary axis of the shape - Array of 3 Floats. It may not be normalized (the normalization is done
+  automatically). If the shape does not have the primary axis, `None` should be passed instead. `secondary_axis` can
+  be defined only if `primary_axis` is not `None`.
+
+* ***named_points*** (*= {}*)
+
+  The Dictionary of custom named points, where the keys are Strings representing point names, while the values are
+  Arrays of 3 Floats representing the positions of the named points.
+
+Shape traits:
+* **Geometric origin**: as specified by `geometric_origin`
+* **Interaction centers**: None
+* **Shape axes**: as specified by `primary_axis` and `secondary axis` (auxiliary axis is computed automatically)
+* **Named points**:
+  * `"o"` - geometric origin
+  * custom ones given by `named_points`
+* **Interactions**: only hard-core
 
 
 ## Soft interaction classes
