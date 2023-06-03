@@ -61,14 +61,16 @@ function _rampack_preview {
 	_arguments \
 		'(- *)'{-h,--help}'[print help]' \
 		'(-i --input)'{-i,--input=}'[input file]: :_files' \
-		'*'{-o,--output=}'[snapshot output spec]: :'"(${_rampack_snapshot_output[*]})"
+		'(-V --verbosity)'{-V,--verbosity=}'[logging verbosity]: :'"(${_rampack_verbosity[*]})" \
+		'*'{-o,--output=}'[snapshot output spec]: :'"(${_rampack_snapshot_output[*]})" \
+		'(-r --run-names)'{-r,--run-names}'[output run names from the input file to stdout]'
 }
 
 function _rampack_shape_preview {
 	_arguments \
 		'(- *)'{-h,--help}'[print help]' \
 		'(-i --input)'{-i,--input=}'[input file]: :_files' \
-		'(-l --log-info)'{-l,--log-info=}'[print information about the shape on stdout]' \
+		'(-l --log-info)'{-l,--log-info}'[print information about the shape on stdout]' \
 		'(-S --shape)'{-S,--shape=}'[manually specified shape]: :'"(${_rampack_shape[*]})" \
 		'*'{-o,--output=}'[shape model output spec]: :'"(${_rampack_shape_output[*]})"
 }
