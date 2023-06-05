@@ -17,6 +17,7 @@ TEST_CASE("FlipRandomizingTransformer") {
 
     Lattice lattice(UnitCell(TriclinicBox(4), {Shape({0.5, 0.5, 0.5})}), {4, 4, 4});
     MockShapeTraits traits;
+    ALLOW_CALL(traits, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{0, 1, 0});
     ALLOW_CALL(traits, getSecondaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{0, 0, 1});
     ALLOW_CALL(traits, getGeometricOrigin(_)).RETURN(_1.getOrientation() * Vector<3>{0.1, 0.1, 0.1});
     FlipRandomizingTransformer flipRandomizingTransformer(1234);
