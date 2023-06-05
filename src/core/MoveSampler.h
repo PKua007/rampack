@@ -60,13 +60,12 @@ public:
      * @brief Samples a single move according to current step sizes.
      * @param packing Packing on which the move should be performed (notice it is only used to gather information,
      * the actual move is not applied to it)
-     * @param shapeTraits ShapeTraits currently used in a packing
      * @param particleIdxs indices of the particles to be sampled from
      * @param mt Mersene twister engine
      * @return a sampled move
      */
-    virtual MoveData
-    sampleMove(const Packing &packing, const std::vector<std::size_t> &particleIdxs, std::mt19937 &mt) = 0;
+    virtual MoveData sampleMove(const Packing &packing, const std::vector<std::size_t> &particleIdxs,
+                                std::mt19937 &mt) = 0;
 
     /**
      * @brief For a given number of molecules @a numParticles return how many moves the MoveSampler requests to be done
