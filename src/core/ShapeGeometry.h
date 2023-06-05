@@ -119,6 +119,8 @@ public:
     [[nodiscard]] bool hasSecondaryAxis() const;
 
     [[nodiscard]] bool hasAuxiliaryAxis() const;
+
+    [[nodiscard]] Vector<3> findFlipAxis(const Shape &shape) const;
 };
 
 

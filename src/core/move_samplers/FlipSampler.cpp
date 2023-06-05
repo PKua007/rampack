@@ -45,23 +45,8 @@ void FlipSampler::setupForShapeTraits(const ShapeTraits &shapeTraits) {
     Expects(geometry.hasPrimaryAxis());
 
     this->geometricOrigin = geometry.getGeometricOrigin({});
-
     constexpr double EPSILON = 1e-14;
     this->isGeometricOriginZero = (this->geometricOrigin.norm2() < EPSILON*EPSILON);
 
-    if (geometry.hasSecondaryAxis()) {
-        this->flipAxis = geometry.getSecondaryAxis({});
-        return;
-    }
-
-    Vector<3> primaryAxis = geometry.getPrimaryAxis({});
-
-    auto minIt = std::min_element(primaryAxis.begin(), primaryAxis.end(), [](double c1, double c2) {
-        return std::abs(c1) < std::abs(c2);
-    });
-    std::size_t minIdx = minIt - primaryAxis.begin();
-    Vector<3> referenceDirection;
-    referenceDirection[minIdx] = 1;
-
-    this->flipAxis = (primaryAxis ^ referenceDirection).normalized();
+    this->flipAxis = geometry.findFlipAxis({});
 }

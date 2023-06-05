@@ -3,6 +3,8 @@
 //
 
 #include <vector>
+#include <algorithm>
+
 #include "ShapeGeometry.h"
 #include "utils/Exceptions.h"
 
@@ -78,4 +80,23 @@ bool ShapeGeometry::hasAuxiliaryAxis() const {
     } catch (std::runtime_error&) {
         return false;
     }
+}
+
+Vector<3> ShapeGeometry::findFlipAxis(const Shape &shape) const {
+    Expects(this->hasPrimaryAxis());
+
+    if (this->hasSecondaryAxis())
+        return this->getSecondaryAxis(shape);
+
+    Vector<3> primaryAxis = this->getPrimaryAxis({});
+
+    auto minIt = std::min_element(primaryAxis.begin(), primaryAxis.end(), [](double c1, double c2) {
+        return std::abs(c1) < std::abs(c2);
+    });
+    std::size_t minIdx = minIt - primaryAxis.begin();
+    Vector<3> referenceDirection;
+    referenceDirection[minIdx] = 1;
+
+    Vector<3> flipAxis = primaryAxis ^ referenceDirection;
+    return (shape.getOrientation() * flipAxis).normalized();
 }
