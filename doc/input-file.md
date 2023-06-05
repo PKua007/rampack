@@ -586,7 +586,7 @@ Arguments:
 
   See [class `integration`](#class-integration).
 
-* ***helper_shape*** (*= None*)
+* ***helper_shape*** (*= None*) <a id="overlaprelaxation_helpershape"></a>
 
   Helper shape used to speed up overlap relaxation by introducing soft repulsion. Its interaction is imposed on top of
   original shape's interaction (although the original shape and helper shape DO NOT cross-interact). Technically it can
