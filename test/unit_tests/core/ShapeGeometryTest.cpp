@@ -5,6 +5,8 @@
 #include <catch2/catch.hpp>
 #include <ZipIterator.hpp>
 
+#include "mocks/MockShapeGeometry.h"
+
 #include "matchers/VectorApproxMatcher.h"
 
 #include "core/ShapeGeometry.h"
@@ -65,5 +67,33 @@ TEST_CASE("ShapeGeometry: named points") {
         CHECK(geometry.hasNamedPoint("o"));
         CHECK(geometry.hasNamedPoint("z"));
         CHECK_FALSE(geometry.hasNamedPoint("I'm just a poor boy, nobody loves me"));
+    }
+}
+
+TEST_CASE("ShapeGeometry: flip axis") {
+    using trompeloeil::_;
+
+    MockShapeGeometry geometry;
+
+    SECTION("primary + secondary") {
+        ALLOW_CALL(geometry, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{0, 0, 1});
+        ALLOW_CALL(geometry, getSecondaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{1, 0, 0});
+        Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI/2));
+
+        CHECK_THAT(geometry.findFlipAxis(shape), IsApproxEqual(Vector<3>{0, 1, 0}, 1e-12));
+    }
+
+    SECTION("only primary") {
+        ALLOW_CALL(geometry, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{2./3, -2./3, 1./3});
+        ALLOW_CALL(geometry, getSecondaryAxis(_)).THROW(std::runtime_error("no secondary axis"));
+        Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI/2));
+
+        // We do not care how the flip axis is chosen - the only requirement is for it to flip the sign of the primary
+        // axis
+        auto flipAxis = geometry.findFlipAxis(shape);
+        auto rotation = Matrix<3, 3>::rotation(flipAxis, M_PI);
+        shape.rotate(rotation);
+
+        CHECK_THAT(geometry.getPrimaryAxis(shape), IsApproxEqual(Vector<3>{-2./3, -2./3, -1./3}, 1e-12));
     }
 }
