@@ -15,28 +15,53 @@ std::size_t FlipSampler::getNumOfRequestedMoves(std::size_t numParticles) const 
     return numParticles / this->flipEvery;
 }
 
-MoveSampler::MoveData FlipSampler::sampleMove(const Packing &packing, const ShapeTraits &shapeTraits,
-                                              const std::vector<std::size_t> &particleIdxs, std::mt19937 &mt)
+MoveSampler::MoveData FlipSampler::sampleMove(const Packing &packing, const std::vector<std::size_t> &particleIdxs,
+                                              std::mt19937 &mt)
 {
     MoveData moveData;
 
     std::uniform_int_distribution<std::size_t> particleDistribution(0, particleIdxs.size() - 1);
     moveData.particleIdx = particleIdxs[particleDistribution(mt)];
 
-    const ShapeGeometry &geometry = shapeTraits.getGeometry();
-
     const Shape &shape = packing[moveData.particleIdx];
-    Vector<3> axis = geometry.getSecondaryAxis(shape);
-    moveData.rotation = Matrix<3, 3>::rotation(axis.normalized(), M_PI);
+    // Renormalize after rotation for better numerical stability
+    Vector<3> shapeFlipAxis = (shape.getOrientation() * this->flipAxis).normalized();
+    moveData.rotation = Matrix<3, 3>::rotation(shapeFlipAxis, M_PI);
 
-    Vector<3> geometricOrigin = geometry.getGeometricOrigin(shape);
-    if (geometricOrigin == Vector<3>{0, 0, 0}) {
+    if (this->isGeometricOriginZero) {
         moveData.moveType = MoveType::ROTATION;
     } else {
         moveData.moveType = MoveType::ROTOTRANSLATION;
         // Restore original geometric origin position after the flip
-        moveData.translation = -moveData.rotation * geometricOrigin + geometricOrigin;
+        Vector<3> shapeGeometricOrigin = shape.getOrientation()*this->geometricOrigin;
+        moveData.translation = -moveData.rotation * shapeGeometricOrigin + shapeGeometricOrigin;
     }
 
     return moveData;
+}
+
+void FlipSampler::setupForShapeTraits(const ShapeTraits &shapeTraits) {
+    const auto &geometry = shapeTraits.getGeometry();
+    Expects(geometry.hasPrimaryAxis());
+
+    this->geometricOrigin = geometry.getGeometricOrigin({});
+
+    constexpr double EPSILON = 1e-14;
+    this->isGeometricOriginZero = (this->geometricOrigin.norm2() < EPSILON*EPSILON);
+
+    if (geometry.hasSecondaryAxis()) {
+        this->flipAxis = geometry.getSecondaryAxis({});
+        return;
+    }
+
+    Vector<3> primaryAxis = geometry.getPrimaryAxis({});
+
+    auto minIt = std::min_element(primaryAxis.begin(), primaryAxis.end(), [](double c1, double c2) {
+        return std::abs(c1) < std::abs(c2);
+    });
+    std::size_t minIdx = minIt - primaryAxis.begin();
+    Vector<3> referenceDirection;
+    referenceDirection[minIdx] = 1;
+
+    this->flipAxis = (primaryAxis ^ referenceDirection).normalized();
 }

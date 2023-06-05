@@ -23,7 +23,6 @@ private:
     double maxTranslationStepSize{};
     bool isMaxTranslationStepSizeImplicit{};
 
-    void calculateRotationStepSizeIfNeeded(const Interaction &interaction);
     void adjustMaxTranslationStepSize(const Packing &packing);
     bool increaseTranslationStepSize();
 
@@ -39,14 +38,13 @@ public:
 
     [[nodiscard]] std::size_t getNumOfRequestedMoves(std::size_t numParticles) const override { return numParticles; }
 
-    MoveData sampleMove(const Packing &packing, const ShapeTraits &shapeTraits,
-                        const std::vector<std::size_t> &particleIdxs, std::mt19937 &mt) override;
+    MoveData sampleMove(const Packing &packing, const std::vector<std::size_t> &particleIdxs,
+                        std::mt19937 &mt) override;
     bool increaseStepSize() override;
     bool decreaseStepSize() override;
-
     [[nodiscard]] std::vector<std::pair<std::string, double>> getStepSizes() const override;
-
     void setStepSize(const std::string &stepName, double stepSize) override;
+    void setupForShapeTraits(const ShapeTraits &shapeTraits) override;
 };
 
 

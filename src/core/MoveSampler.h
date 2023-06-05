@@ -65,8 +65,8 @@ public:
      * @param mt Mersene twister engine
      * @return a sampled move
      */
-    virtual MoveData sampleMove(const Packing &packing, const ShapeTraits &shapeTraits,
-                                const std::vector<std::size_t> &particleIdxs, std::mt19937 &mt) = 0;
+    virtual MoveData
+    sampleMove(const Packing &packing, const std::vector<std::size_t> &particleIdxs, std::mt19937 &mt) = 0;
 
     /**
      * @brief For a given number of molecules @a numParticles return how many moves the MoveSampler requests to be done
@@ -95,6 +95,10 @@ public:
      * @brief Sets the step size using a name, as returned by getStepSizes().
      */
     virtual void setStepSize(const std::string &stepName, double stepSize) = 0;
+
+    virtual void setupForShapeTraits([[maybe_unused]] const ShapeTraits &shapeTraits) {
+        // Do nothing by default
+    }
 };
 
 
