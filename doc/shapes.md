@@ -891,6 +891,69 @@ This section lists all soft interaction types available for selected shapes. The
 
 ### Class `lj`
 
+```python
+lj(
+    epsilon,
+    sigma
+)
+```
+
+[Lennard-Jones](https://en.wikipedia.org/wiki/Lennard-Jones_potential) interaction between all pairs of interaction
+centers, defined as
+
+*E*(*r*) = 4&epsilon;[(&sigma;/*r*)<sup>12</sup> - (&sigma;/*r*)<sup>6</sup>],
+
+where *r* is the distance between the interaction centers.
+
+**Supported by**: [class `sphere`](#class-sphere), [class `kmer`](#class-kmer),
+[class `polysphere_banana`](#class-polyspherebanana), [class `polysphere`](#class-polysphere).
+
+
 ### Class `wca`
 
+```python
+wca(
+    epsilon,
+    sigma
+)
+```
+
+[Weeks-Chandler-Andersen](https://doi.org/10.1063/1.1674820) interaction between all pairs of interaction centers. It is
+based on a repulsive part of the Lennard-Jones potential and is defined as
+
+|                                                                                           |                                   |
+|-------------------------------------------------------------------------------------------|-----------------------------------|
+| *E*(*r*) = &epsilon; + 4&epsilon;[(&sigma;/*r*)<sup>12</sup> - (&sigma;/*r*)<sup>6</sup>] | for r < 2<sup>1/6</sup>&sigma;    |
+| *E*(*r*) = 0                                                                              | for r &ge; 2<sup>1/6</sup>&sigma; |
+
+where *r* is the distance between the interaction centers. The interaction has a range of r = 2<sup>1/6</sup>&sigma;.
+After that point, it is zero.
+
+**Supported by**: [class `sphere`](#class-sphere), [class `kmer`](#class-kmer),
+[class `polysphere_banana`](#class-polyspherebanana), [class `polysphere`](#class-polysphere).
+
+
 ### Class `square_inverse_core`
+
+```python
+square_inverse_core(
+    epsilon,
+    sigma
+)
+```
+
+Short-ranged repulsive interaction between all pairs of interaction centers decreasing with the inverse square of
+distance, defined as
+
+|                                                     |                    |
+|-----------------------------------------------------|--------------------|
+| *E*(*r*) = &epsilon;[(&sigma;/*r*)<sup>2</sup> - 1] | for r < &sigma;    |
+| *E*(*r*) = 0                                        | for r &ge; &sigma; |
+
+where *r* is the distance between the interaction centers. It is useful in
+[overlap relaxation](input-file.md#class-overlaprelaxation) as a soft
+[helper interaction](input-file.md#overlaprelaxation_helpershape), because of shorter computation time compared to
+for example [WCA potential](#class-wca).
+
+**Supported by**: [class `sphere`](#class-sphere), [class `kmer`](#class-kmer),
+[class `polysphere_banana`](#class-polyspherebanana), [class `polysphere`](#class-polysphere).
