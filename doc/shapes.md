@@ -221,8 +221,7 @@ polysphere_lollipop(
     small_r,
     large_r,
     small_penetration = 0,
-    large_penetration = 0,
-    interaction = hard
+    large_penetration = 0
 )
 ```
 
@@ -247,11 +246,8 @@ Shape traits:
     uppermost sphere
   * `"ss"` - the center of the bottom sphere with radius `stick_r` (equivalent to `"s0"`)
   * `"st"` - the center of the top sphere with radius `"tip_r"` (equivalent to `"s[sphere_n - 1]"`)
-* **Interactions**:
-  * class `hard` - hard-core interaction
-  * [class `lj`](#class-lj)
-  * [class `wca`](#class-wca)
-  * [class `square_inverse_core`](#class-squareinversecore)
+* **Interactions**: only hard-core - spheres are polydisperse, while soft interactions currently do not support
+  pair-wise interaction parameters
 
 
 ### Class `polysphere_wedge`
@@ -285,11 +281,8 @@ Shape traits:
     uppermost sphere
   * `"beg"` - the center of the bottom sphere (equivalent to `"s0"`)
   * `"end"` - the center of the top sphere (equivalent to `"s[sphere_n - 1]"`)
-* **Interactions**:
-  * class `hard` - hard-core interaction
-  * [class `lj`](#class-lj)
-  * [class `wca`](#class-wca)
-  * [class `square_inverse_core`](#class-squareinversecore)
+* **Interactions**:  only hard-core - spheres are polydisperse, while soft interactions currently do not support
+  pair-wise interaction parameters
 
 
 ### Class `spherocylinder`
@@ -526,6 +519,9 @@ Shape traits:
   * [class `lj`](#class-lj)
   * [class `wca`](#class-wca)
   * [class `square_inverse_core`](#class-squareinversecore)
+
+**IMPORTANT NOTE**: currently, if soft interactions are chosen, all pairs of spheres interact via the same potential
+(with the same potential parameters), even if spheres have different radii.
 
 
 ### Class `polyspherocylinder`
