@@ -17,8 +17,7 @@ TranslationSampler::TranslationSampler(double translationStepSize, double maxTra
     Expects(translationStepSize > 0);
 }
 
-MoveSampler::MoveData TranslationSampler::sampleMove([[maybe_unused]] const Packing &packing,
-                                                     [[maybe_unused]] const ShapeTraits &shapeTraits,
+MoveSampler::MoveData TranslationSampler::sampleMove(const Packing &packing,
                                                      const std::vector<std::size_t> &particleIdxs, std::mt19937 &mt)
 {
     using URD = std::uniform_real_distribution<double>;

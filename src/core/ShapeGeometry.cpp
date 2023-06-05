@@ -52,3 +52,30 @@ bool ShapeGeometry::hasNamedPoint(const std::string &pointName) const {
     else
         return this->namedPoints.find(pointName) != this->namedPoints.end();
 }
+
+bool ShapeGeometry::hasPrimaryAxis() const {
+    try {
+        static_cast<void>(this->getPrimaryAxis({}));
+        return true;
+    } catch (std::runtime_error&) {
+        return false;
+    }
+}
+
+bool ShapeGeometry::hasSecondaryAxis() const {
+    try {
+        static_cast<void>(this->getSecondaryAxis({}));
+        return true;
+    } catch (std::runtime_error&) {
+        return false;
+    }
+}
+
+bool ShapeGeometry::hasAuxiliaryAxis() const {
+    try {
+        static_cast<void>(this->getAuxiliaryAxis({}));
+        return true;
+    } catch (std::runtime_error&) {
+        return false;
+    }
+}

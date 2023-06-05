@@ -113,6 +113,12 @@ public:
      * @brief Returns @a true is named point @a namedPoint exists.
      */
     [[nodiscard]] bool hasNamedPoint(const std::string &pointName) const;
+
+    [[nodiscard]] bool hasPrimaryAxis() const;
+
+    [[nodiscard]] bool hasSecondaryAxis() const;
+
+    [[nodiscard]] bool hasAuxiliaryAxis() const;
 };
 
 

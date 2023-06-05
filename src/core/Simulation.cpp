@@ -109,6 +109,9 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
     this->environment.combine(env);
     Expects(this->environment.isComplete());
 
+    for (auto &moveSampler : this->environment.getMoveSamplers())
+        moveSampler->setupForShapeTraits(shapeTraits);
+
     this->observablesCollector = std::move(observablesCollector_);
     this->reset();
 
@@ -224,8 +227,12 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
     Expects(params.inlineInfoEvery > 0);
     Expects(params.rotationMatrixFixEvery > 0);
     Expects(params.snapshotEvery > 0);
+
     this->environment.combine(env);
     Expects(this->environment.isComplete());
+
+    for (auto &moveSampler : this->environment.getMoveSamplers())
+        moveSampler->setupForShapeTraits(shapeTraits);
 
     this->observablesCollector = std::move(observablesCollector_);
     this->reset();
@@ -457,7 +464,7 @@ bool Simulation::tryMove(const ShapeTraits &shapeTraits, const std::vector<std::
     }
 
     auto &moveSampler = moveSamplers[moveType];
-    auto move = moveSampler->sampleMove(*this->packing, shapeTraits, particleIndices, mt);
+    auto move = moveSampler->sampleMove(*this->packing, particleIndices, mt);
     const auto &interaction = shapeTraits.getInteraction();
     double dE{};
     switch (move.moveType) {
