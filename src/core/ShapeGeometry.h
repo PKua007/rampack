@@ -110,16 +110,32 @@ public:
     [[nodiscard]] NamedPoints getNamedPoints() const;
 
     /**
-     * @brief Returns @a true is named point @a namedPoint exists.
+     * @brief Returns @a true if named point @a namedPoint exists.
      */
     [[nodiscard]] bool hasNamedPoint(const std::string &pointName) const;
 
+    /**
+     * @brief Returns @a true if the primary axis exists.
+     */
     [[nodiscard]] bool hasPrimaryAxis() const;
 
+    /**
+     * @brief Returns @a true if the secondary axis exists.
+     */
     [[nodiscard]] bool hasSecondaryAxis() const;
 
+    /**
+     * @brief Returns @a true if the auxiliary axis exists.
+     */
     [[nodiscard]] bool hasAuxiliaryAxis() const;
 
+    /**
+     * @brief Finds a flip axis for a given @a shape - an axis which flips the sign of the primary axis when one
+     * performs a 180-degree rotation around it.
+     * @details If the secondary axis exists, it is returned as the flip axis. Otherwise, arbitrary axis orthogonal to
+     * the primary axis is return.
+     * @throws PreconditionException if the primary axis does not exists.
+     */
     [[nodiscard]] Vector<3> findFlipAxis(const Shape &shape) const;
 };
 
