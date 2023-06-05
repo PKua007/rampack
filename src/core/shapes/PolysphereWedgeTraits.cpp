@@ -75,7 +75,7 @@ PolysphereWedgeTraits::generateGeometry(std::size_t sphereNum, double bottomSphe
     }
 
     double volume = PolysphereWedgeTraits::calculateVolume(data, spherePenetration);
-    PolysphereGeometry geometry(data, {0, 0, 1}, {1, 0, 0}, {0, 0, 0}, volume);
+    PolysphereGeometry geometry(data, {0, 0, 1}, std::nullopt, {0, 0, 0}, volume);
     geometry.addCustomNamedPoints({{"beg", data.front().position}, {"end", data.back().position}});
     if (spherePenetration == 0)
         geometry.addCustomNamedPoints({{"cm", geometry.calculateMassCentre()}});
