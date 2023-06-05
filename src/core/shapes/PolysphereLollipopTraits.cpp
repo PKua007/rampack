@@ -82,7 +82,7 @@ PolysphereLollipopTraits::generateGeometry(std::size_t sphereNum, double stickSp
     }
 
     double volume = PolysphereLollipopTraits::calculateVolume(data, stickSpherePenetration, tipSpherePenetration);
-    PolysphereGeometry geometry(data, {0, 0, 1}, {1, 0, 0}, {0, 0, 0}, volume);
+    PolysphereGeometry geometry(data, {0, 0, 1}, std::nullopt, {0, 0, 0}, volume);
     geometry.addCustomNamedPoints({{"ss", data.front().position}, {"st", data.back().position}});
     if (stickSpherePenetration == 0 && tipSpherePenetration == 0)
         geometry.addCustomNamedPoints({{"cm", geometry.calculateMassCentre()}});

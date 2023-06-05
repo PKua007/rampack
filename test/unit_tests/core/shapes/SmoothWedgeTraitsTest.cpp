@@ -16,7 +16,6 @@ TEST_CASE("SmoothWedge: geometry") {
 
     Shape shape({1, 2, 3}, Matrix<3, 3>::rotation(0, M_PI/2, 0));
     CHECK_THAT(geometry.getPrimaryAxis(shape), IsApproxEqual({1, 0, 0}, 1e-12));
-    CHECK_THAT(geometry.getSecondaryAxis(shape), IsApproxEqual({0, 0, -1}, 1e-12));
     CHECK_THAT(geometry.getGeometricOrigin(shape), IsApproxEqual({0, 0, 0}, 1e-12));
     // Calculated in Mathematica using the analytic formula, cross-checked with numerical convex hull volume
     CHECK(geometry.getVolume() == Approx(272*M_PI/15));

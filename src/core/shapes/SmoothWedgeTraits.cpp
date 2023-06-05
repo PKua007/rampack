@@ -25,7 +25,7 @@ double SmoothWedgeTraits::getVolume(double R, double r, double l) {
 }
 
 SmoothWedgeTraits::SmoothWedgeTraits(double R, double r, double l, std::size_t subdivisions)
-        : XenoCollideTraits({0, 0, 1}, {1, 0, 0}, {0, 0, 0},
+        : XenoCollideTraits({0, 0, 1}, std::nullopt, {0, 0, 0},
                             SmoothWedgeTraits::getVolume(R, r, l),
                             {{"beg", {0, 0, (-l + R - r)/2}}, {"end", {0, 0, (l + R - r)/2}}}),
           R{R}, r{r}, l{l}
