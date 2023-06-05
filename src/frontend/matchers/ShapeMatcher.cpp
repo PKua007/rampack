@@ -165,8 +165,7 @@ namespace {
                         {"stick_r", MatcherFloat{}.positive()},
                         {"tip_r", MatcherFloat{}.positive()},
                         {"stick_penetration", MatcherFloat{}.nonNegative(), "0"},
-                        {"tip_penetration", MatcherFloat{}.nonNegative(), "0"},
-                        {"interaction", sphereInteraction, "hard"}})
+                        {"tip_penetration", MatcherFloat{}.nonNegative(), "0"}})
             .filter([](const DataclassData &lollipop) {
                 return lollipop["stick_penetration"].as<double>() < 2 * lollipop["stick_r"].as<double>();
             })
@@ -182,16 +181,9 @@ namespace {
                 auto tipR = lollipop["tip_r"].as<double>();
                 auto stickPenetration = lollipop["stick_penetration"].as<double>();
                 auto tipPenetration = lollipop["tip_penetration"].as<double>();
-                auto interaction = lollipop["interaction"].as<std::shared_ptr<CentralInteraction>>();
-                if (interaction == nullptr) {
-                    return std::make_shared<PolysphereLollipopTraits>(
-                        sphereN, stickR, tipR, stickPenetration, tipPenetration
-                    );
-                } else {
-                    return std::make_shared<PolysphereLollipopTraits>(
-                        sphereN, stickR, tipR, stickPenetration, tipPenetration, interaction
-                    );
-                }
+                return std::make_shared<PolysphereLollipopTraits>(
+                    sphereN, stickR, tipR, stickPenetration, tipPenetration
+                );
             });
     }
 
@@ -200,8 +192,7 @@ namespace {
             .arguments({{"sphere_n", MatcherInt{}.greaterEquals(2).mapTo<std::size_t>()},
                         {"bottom_r", MatcherFloat{}.positive()},
                         {"top_r", MatcherFloat{}.positive()},
-                        {"penetration", MatcherFloat{}.nonNegative(), "0"},
-                        {"interaction", sphereInteraction, "hard"}})
+                        {"penetration", MatcherFloat{}.nonNegative(), "0"}})
             .filter([](const DataclassData &wedge) {
                 double smallerR = std::min(wedge["bottom_r"].as<double>(), wedge["top_r"].as<double>());
                 return wedge["penetration"].as<double>() < 2 * smallerR;
@@ -212,11 +203,7 @@ namespace {
                 auto bottomR = wedge["bottom_r"].as<double>();
                 auto topR = wedge["top_r"].as<double>();
                 auto penetration = wedge["penetration"].as<double>();
-                auto interaction = wedge["interaction"].as<std::shared_ptr<CentralInteraction>>();
-                if (interaction == nullptr)
-                    return std::make_shared<PolysphereWedgeTraits>(sphereN, bottomR, topR, penetration);
-                else
-                    return std::make_shared<PolysphereWedgeTraits>(sphereN, bottomR, topR, penetration, interaction);
+                return std::make_shared<PolysphereWedgeTraits>(sphereN, bottomR, topR, penetration);
             });
     }
 
