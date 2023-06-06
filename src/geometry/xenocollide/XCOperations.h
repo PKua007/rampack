@@ -53,6 +53,9 @@ private:
     void recalculateGeometry();
 
 public:
+    /**
+     * @brief Creates an empty Minkowski sum.
+     */
     XCSum() = default;
 
     /**
@@ -79,6 +82,9 @@ public:
             : XCSum(std::move(geom1), {}, std::move(geom2), {})
     { }
 
+    /**
+     * @brief Adds another geometry to the Minkowski sum.
+     */
     void add(std::shared_ptr<AbstractXCGeometry> geom, const Vector<3> &pos = {},
              const Matrix<3, 3> &rot = Matrix<3, 3>::identity());
 
@@ -161,6 +167,9 @@ private:
     [[nodiscard]] double calculateInsphereRadius2() const;
 
 public:
+    /**
+     * @brief Creates an empty convex hull.
+     */
     XCMax() = default;
 
     /**
@@ -192,6 +201,9 @@ public:
     [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
     [[nodiscard]] double getInsphereRadius() const override { return this->insphereRadius; }
 
+    /**
+     * @brief Adds another geometry to the convex hull.
+     */
     void add(std::shared_ptr<AbstractXCGeometry> geom, const Vector<3> &pos = {},
              const Matrix<3, 3> &rot = Matrix<3, 3>::identity());
 };
