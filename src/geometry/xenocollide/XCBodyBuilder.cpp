@@ -154,18 +154,18 @@ void XCBodyBuilder::sphere(double radius) {
     this->shapeStack.emplace_back(geom);
 }
 
-void XCBodyBuilder::sum() {
-    ValidateMsg(this->shapeStack.size() >= 2, "Shape stack contains < 2 shapes; cannot compute Minkowski sum");
+void XCBodyBuilder::sum(std::size_t count) {
+    ValidateMsg(count >= 2, "Minkowski sum requires at least 2 components");
+    ValidateMsg(this->shapeStack.size() >= count, "Shape stack contains too few shapes; cannot compute Minkowski sum");
 
-    auto shape1 = this->shapeStack.back();
-    this->shapeStack.pop_back();
+    auto sum = std::make_shared<XCSum>();
+    for (std::size_t i{}; i < count; i++) {
+        auto shape = this->shapeStack.back();
+        this->shapeStack.pop_back();
+        sum->add(shape.geometry, shape.pos, shape.orientation);
+    }
 
-    auto shape2 = this->shapeStack.back();
-    this->shapeStack.pop_back();
-
-    auto geom = std::make_shared<XCSum>(shape1.geometry, shape1.orientation, shape1.pos,
-                                        shape2.geometry, shape2.orientation, shape2.pos);
-    this->shapeStack.emplace_back(geom);
+    this->shapeStack.emplace_back(sum);
 }
 
 void XCBodyBuilder::swap() {
