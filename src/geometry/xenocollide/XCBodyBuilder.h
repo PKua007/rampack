@@ -89,10 +89,10 @@ public:
     /** @brief Computes Minkowski difference of last two shapes in the stack. The sum replaces those two in the
      * stack. */
     void diff();
-    /** @brief Computes Minkowski sum of last @a count shapes in the stack. The sum replaces those two in the stack. */
+    /** @brief Computes Minkowski sum of last @a count shapes in the stack. The sum replaces these ones in the stack. */
     void sum(std::size_t count = 2);
-    /** @brief Computes convex hull of last two shapes in the stack. The sum replaces those two in the stack. */
-    void wrap();
+    /** @brief Computes convex hull of last @a count shapes in the stack. The sum replaces these ones in the stack. */
+    void wrap(std::size_t count = 2);
 
     /** @brief Duplicates @a numShape last entries in the stack. */
     void dup(std::size_t numShapes);
