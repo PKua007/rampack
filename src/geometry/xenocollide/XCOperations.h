@@ -141,25 +141,34 @@ public:
  */
 class XCMax : public AbstractXCGeometry {
 private:
-    Matrix<3,3> rot1;
-    Matrix<3,3> rot2;
-    Vector<3> pos1;
-    Vector<3> pos2;
+    struct Entry {
+        std::shared_ptr<AbstractXCGeometry> geometry;
+        Vector<3> pos;
+        Matrix<3, 3> rot;
+
+        Entry(std::shared_ptr<AbstractXCGeometry> geometry, const Vector<3> &pos, const Matrix<3, 3> &rot)
+                : geometry{std::move(geometry)}, pos{pos}, rot{rot}
+        { }
+    };
+
     double circumsphereRadius{};
     double insphereRadius{};
+    std::vector<Entry> entries;
 
-    std::shared_ptr<AbstractXCGeometry> geom1;
-    std::shared_ptr<AbstractXCGeometry> geom2;
+    void recalculateGeometry();
 
     [[nodiscard]] double calculateInsphereRadius() const;
+    [[nodiscard]] double calculateInsphereRadius2() const;
 
 public:
+    XCMax() = default;
+
     /**
      * @brief Creates the convex hull for two AbstractXCGeometry -ies with fully specified positions and orientations of
      * them.
      */
-    XCMax(std::shared_ptr<AbstractXCGeometry> geom1, const Matrix<3, 3> &rot1, const Vector<3> &pos1,
-          std::shared_ptr<AbstractXCGeometry> geom2, const Matrix<3, 3> &rot2, const Vector<3> &pos2);
+    XCMax(std::shared_ptr<AbstractXCGeometry> geom1, const Vector<3> &pos1, const Matrix<3, 3> &rot1,
+          std::shared_ptr<AbstractXCGeometry> geom2, const Vector<3> &pos2, const Matrix<3, 3> &rot2);
 
     /**
      * @brief Creates the convex hull for two AbstractXCGeometry -ies with fully specified their positions, but default
@@ -167,8 +176,8 @@ public:
      */
     XCMax(std::shared_ptr<AbstractXCGeometry> geom1, const Vector<3> &pos1,
           std::shared_ptr<AbstractXCGeometry> geom2, const Vector<3> &pos2)
-            : XCMax(std::move(geom1), Matrix<3, 3>::identity(), pos1,
-                    std::move(geom2), Matrix<3, 3>::identity(), pos2)
+            : XCMax(std::move(geom1), pos1, Matrix<3, 3>::identity(),
+                    std::move(geom2), pos2, Matrix<3, 3>::identity())
     { }
 
     /**
@@ -182,6 +191,9 @@ public:
     [[nodiscard]] Vector<3> getCenter() const override;
     [[nodiscard]] double getCircumsphereRadius() const override { return this->circumsphereRadius; }
     [[nodiscard]] double getInsphereRadius() const override { return this->insphereRadius; }
+
+    void add(std::shared_ptr<AbstractXCGeometry> geom, const Vector<3> &pos = {},
+             const Matrix<3, 3> &rot = Matrix<3, 3>::identity());
 };
 
 

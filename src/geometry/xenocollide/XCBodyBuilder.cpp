@@ -31,6 +31,7 @@ not be misrepresented as being the original software.
 #include "utils/Exceptions.h"
 #include "XCPrimitives.h"
 #include "XCOperations.h"
+#include "utils/ParseUtils.h"
 
 
 std::shared_ptr<AbstractXCGeometry> XCBodyBuilder::releaseCollideGeometry() {
@@ -176,18 +177,18 @@ void XCBodyBuilder::swap() {
     std::swap(*it1, *it2);
 }
 
-void XCBodyBuilder::wrap() {
-    ValidateMsg(this->shapeStack.size() >= 2, "Shape stack contains < 2 shapes; cannot compute convex hull");
+void XCBodyBuilder::wrap(std::size_t count) {
+    ValidateMsg(count >= 2, "Convex hull sum requires at least 2 components");
+    ValidateMsg(this->shapeStack.size() >= count, "Shape stack contains too few shapes; cannot compute convex hull");
 
-    auto shape1 = this->shapeStack.back();
-    this->shapeStack.pop_back();
+    auto wrap = std::make_shared<XCMax>();
+    for (std::size_t i{}; i < count; i++) {
+        auto shape = this->shapeStack.back();
+        this->shapeStack.pop_back();
+        wrap->add(shape.geometry, shape.pos, shape.orientation);
+    }
 
-    auto shape2 = this->shapeStack.back();
-    this->shapeStack.pop_back();
-
-    auto geom = std::make_shared<XCMax>(shape1.geometry, shape1.orientation, shape1.pos,
-                                        shape2.geometry, shape2.orientation, shape2.pos);
-    this->shapeStack.emplace_back(geom);
+    this->shapeStack.emplace_back(wrap);
 }
 
 void XCBodyBuilder::processCommand(std::string cmd) {
@@ -266,11 +267,27 @@ void XCBodyBuilder::processCommand(std::string cmd) {
         ValidateMsg(cmdStream, "Malformed command arguments. Usage: sphere [radius]");
         this->sphere(radius);
     } else if (commandName == "sum") {
-        this->sum();
+        if (!ParseUtils::isAnythingLeft(cmdStream)) {
+            this->sum();
+            return;
+        }
+
+        std::size_t numShapes;
+        cmdStream >> numShapes;
+        ValidateMsg(cmdStream, "Malformed command arguments. Usage: sum ([number of shapes])");
+        this->sum(numShapes);
     } else if (commandName == "swap") {
         this->swap();
     } else if (commandName == "wrap") {
-        this->wrap();
+        if (!ParseUtils::isAnythingLeft(cmdStream)) {
+            this->wrap();
+            return;
+        }
+
+        std::size_t numShapes;
+        cmdStream >> numShapes;
+        ValidateMsg(cmdStream, "Malformed command arguments. Usage: wrap ([number of shapes])");
+        this->wrap(numShapes);
     } else {
         throw ValidationException("Unknown XCBodyBuilder command: " + commandName);
     }

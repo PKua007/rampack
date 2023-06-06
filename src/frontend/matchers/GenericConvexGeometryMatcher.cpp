@@ -258,8 +258,7 @@ namespace {
                 return [scripts](XCBodyBuilder &builder) {
                     for (const auto &script : scripts)
                         script(builder);
-                    for (std::size_t i{}; i < scripts.size() - 1; i++)
-                        builder.wrap();
+                    builder.wrap(scripts.size());
                 };
             });
     }
