@@ -25,6 +25,9 @@ not be misrepresented as being the original software.
 #ifndef RAMPACK_XCOPERATIONS_H
 #define RAMPACK_XCOPERATIONS_H
 
+#include <utility>
+#include <vector>
+
 #include "AbstractXCGeometry.h"
 
 
@@ -33,23 +36,31 @@ not be misrepresented as being the original software.
  */
 class XCSum : public AbstractXCGeometry {
 private:
-    Matrix<3,3> rot1;
-    Matrix<3,3> rot2;
-    Vector<3> pos1;
-    Vector<3> pos2;
+    struct Entry {
+        std::shared_ptr<AbstractXCGeometry> geometry;
+        Vector<3> pos;
+        Matrix<3, 3> rot;
+
+        Entry(std::shared_ptr<AbstractXCGeometry> geometry, const Vector<3> &pos, const Matrix<3, 3> &rot)
+                : geometry{std::move(geometry)}, pos{pos}, rot{rot}
+        { }
+    };
+
     double circumsphereRadius{};
     double insphereRadius{};
+    std::vector<Entry> entries;
 
-    std::shared_ptr<AbstractXCGeometry> geom1;
-    std::shared_ptr<AbstractXCGeometry> geom2;
+    void recalculateGeometry();
 
 public:
+    XCSum() = default;
+
     /**
      * @brief Creates the Minkowski sum for two AbstractXCGeometry -ies with fully specified positions and orientations
      * of them.
      */
-    XCSum(std::shared_ptr<AbstractXCGeometry> geom1, const Matrix<3, 3> &rot1, const Vector<3> &pos1,
-          std::shared_ptr<AbstractXCGeometry> geom2, const Matrix<3, 3> &rot2, const Vector<3> &pos2);
+    XCSum(std::shared_ptr<AbstractXCGeometry> geom1, const Vector<3> &pos1, const Matrix<3, 3> &rot1,
+          std::shared_ptr<AbstractXCGeometry> geom2, const Vector<3> &pos2, const Matrix<3, 3> &rot2);
 
     /**
      * @brief Creates the Minkowski sum for two AbstractXCGeometry -ies with fully specified their positions, but
@@ -57,8 +68,8 @@ public:
      */
     XCSum(std::shared_ptr<AbstractXCGeometry> geom1, const Vector<3> &pos1,
           std::shared_ptr<AbstractXCGeometry> geom2, const Vector<3> &pos2)
-            : XCSum(std::move(geom1), Matrix<3, 3>::identity(), pos1,
-                    std::move(geom2), Matrix<3, 3>::identity(), pos2)
+            : XCSum(std::move(geom1), pos1, Matrix<3, 3>::identity(),
+                    std::move(geom2), pos2, Matrix<3, 3>::identity())
     { }
 
     /**
@@ -67,6 +78,9 @@ public:
     XCSum(std::shared_ptr<AbstractXCGeometry> geom1, std::shared_ptr<AbstractXCGeometry> geom2)
             : XCSum(std::move(geom1), {}, std::move(geom2), {})
     { }
+
+    void add(std::shared_ptr<AbstractXCGeometry> geom, const Vector<3> &pos = {},
+             const Matrix<3, 3> &rot = Matrix<3, 3>::identity());
 
     [[nodiscard]] Vector<3> getSupportPoint(const Vector<3>& n) const override;
     [[nodiscard]] Vector<3> getCenter() const override;
