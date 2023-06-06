@@ -475,6 +475,17 @@ Arguments:
   ]
   ```
 
+  **IMPORTANT NOTE**: For best performance, choose shape positions in a way that optimizes their distances from
+  the origin {0, 0, 0}:
+
+  ```python
+  sphere(pos=[[0, 0, 0], [0, 0, 1]], r=0.5)
+  sphere(pos=[[0, 0, -0.5], [0, 0, 0.5]], r=0.5)
+  ```
+
+  Both cases are the same dimer, however the first one is centered in {0, 0, 0.5} and has a suboptimal circumsphere
+  radius equal 1.5, while the second one is centered in {0, 0, 0} and has the optimal circumsphere radius equal 1.
+
 * ***volume***
 
   Volume of the shape. Unfortunately, automatic volume calculation of many overlapping spheres is notoriously difficult;
@@ -482,7 +493,7 @@ Arguments:
 
 * ***geometric_origin*** (*= [0, 0, 0]*)
 
-  The geometric origin, which may be different than [0, 0, 0].
+  The geometric origin, which may be different than {0, 0, 0}.
 
 * ***primary_axis*** (*= None*)
 
@@ -559,9 +570,21 @@ Arguments:
   ```python
   scs=[
       sc(chain=[[0,0,-2],[0,0,2]], r=1),                                # middle spherocylinder     
-      sc(chain=[[1,1,0],[1,-1,0],[-1,-1,0],[-1,1,0],[1,1,0]], r=0.7)    # the "brim" (or halo?)
+      sc(chain=[[-1,-1,0],[1,-1,0],[1,1,0],[-1,1,0],[-1,-1,0]], r=0.7)  # the "brim" (or halo?)
   ]
   ```
+
+  **IMPORTANT NOTE**: For best performance, choose shape positions in a way that optimizes their distances from the
+  origin {0, 0, 0}:
+
+  ```python
+  sc(chain=[[0,0,0],[2,0,0],[2,2,0],[0,2,0],[0,0,0]], r=0.7)
+  sc(chain=[[-1,-1,0],[1,-1,0],[1,1,0],[-1,1,0],[-1,-1,0]], r=0.7)
+  ```
+  
+  Both cases are the same shapes, however the first one is centered in {0, 1, 1} and has a suboptimal circumsphere
+  radius equal 0.7 + 2&radic;2, while the second one is centered in {0, 0, 0} and has the optimal circumsphere radius
+  equal 0.7 + 2&radic;2.
 
 * ***volume***
 
@@ -570,7 +593,7 @@ Arguments:
 
 * ***geometric_origin*** (*= [0, 0, 0]*)
 
-  The geometric origin, which may be different than [0, 0, 0].
+  The geometric origin, which may be different than {0, 0, 0}.
 
 * ***primary_axis*** (*= None*)
 
@@ -818,8 +841,10 @@ Arguments:
     ```
     
     [Minkowski sum](https://en.wikipedia.org/wiki/Minkowski_addition) of all geometries given by variadic arguments
-    `*args`. Elements of `*args` can be both primitives and results of other geometric operations. The geometric center
-    of the resulting shape is the vector sum of geometric centers of all geometries.
+    `*args`. Elements of `*args` can be both primitives and results of other geometric operations.
+  
+    **IMPORTANT NOTE**: For all geometries which are primitives, avoid changing the `pos` argument - unnecessary
+    translations yield suboptimal circumsphere radius.
 
   * Class `diff`
 
@@ -832,8 +857,10 @@ Arguments:
 
     [Minkowski difference](https://en.wikipedia.org/wiki/Minkowski_addition) of geometries `g1` an `g2` - Minkowski sum
     of `g1` and symmetrically reflected `g2`. `g1` and `g2` can be both primitives and results of other geometric
-    operations. The geometric center of the resulting shape is the vector difference of geometric centers of `g1` and
-    `g2`.
+    operations.
+
+    **IMPORTANT NOTE**: For geometries which are primitives, avoid changing the `pos` argument - unnecessary
+    translations yield suboptimal circumsphere radius.
 
   * Class `wrap`
 
@@ -844,9 +871,19 @@ Arguments:
     ```
 
     [Convex hull](https://en.wikipedia.org/wiki/Convex_hull) of all geometries given by variadic arguments `*args`.
-    Elements of `*args` can be both primitives and results of other geometric operations. The geometric center of the
-    resulting shape lies somewhere in the convex hull of geometric centers of all geometries, depending on the order
-    in which they are passed.
+    Elements of `*args` can be both primitives and results of other geometric operations.
+
+    **IMPORTANT NOTE**: For best performance, choose shape positions in a way that optimizes their distances from
+    the origin {0, 0, 0}:
+
+    ```python
+    wrap(sphere(r=0.5, pos=[0, 0, 0]), sphere(r=0.5, pos=[0, 0, 2]))
+    wrap(sphere(r=0.5, pos=[0, 0, -1]), sphere(r=0.5, pos=[0, 0, 1]))
+    ```
+    
+    Both cases are the same spherocylinder, however the first one is centered in {0, 0, 1} and has a suboptimal
+    circumsphere radius equal 2.5, while the second one is centered in {0, 0, 0} and has the optimal circumsphere radius
+    equal 1.5.
 
 * ***volume***
 
@@ -854,7 +891,7 @@ Arguments:
 
 * ***geometric_origin*** (*= [0, 0, 0]*)
 
-  The geometric origin, which may be different than [0, 0, 0].
+  The geometric origin, which may be different than {0, 0, 0}.
 
 * ***primary_axis*** (*= None*)
 
