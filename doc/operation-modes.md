@@ -2,6 +2,8 @@
 
 This reference page provides full information about operation modes available in the software.
 
+[&larr; back to Reference](reference.md)
+
 
 ## Contents
 * [Modes overview](#modes-overview)
@@ -224,3 +226,6 @@ trajectories (`-f`, `--auto-fix` option). Below is the full list of available op
   truncates loaded trajectory to a given number of total cycles; truncated trajectory can be stored to a different RAMTRJ file using `-t 'ramtrj("filename")'`
 
 [//]: # (end trajectory)
+
+
+[&uarr; back to the top](#operation-modes)

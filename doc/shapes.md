@@ -2,6 +2,9 @@
 
 This reference contains information regarding shapes available in the software.
 
+[&larr; back to Reference](reference.md)
+
+
 ## Contents
 
 * [Shape traits](#shape-traits)
@@ -996,3 +999,6 @@ for example [WCA potential](#class-wca).
 
 **Supported by**: [class `sphere`](#class-sphere), [class `kmer`](#class-kmer),
 [class `polysphere_banana`](#class-polysphere_banana), [class `polysphere`](#class-polysphere).
+
+
+[&uarr; back to the top](#shapes)

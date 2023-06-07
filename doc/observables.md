@@ -2,6 +2,8 @@
 
 This reference page give a full walkthrough over observables that can be computed during the simulation or afterwards.
 
+[&larr; back to Reference](reference.md)
+
 
 ## Contents
 
@@ -739,3 +741,6 @@ Arguments:
 * ***comp***
 
   Component of the axis vector to be returned. It can be `"x"`, `"y"` or `"z"`.
+
+
+[&uarr; back to the top](#observables)
