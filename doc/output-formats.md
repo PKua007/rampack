@@ -122,7 +122,7 @@ given by the `filename` argument. Simulation box is not drawn. There are 2 `styl
   ```
   
   It is the most useful for shapes, for which the Wolfram Mathematica code is very long, for example
-  [class `generic_xeno_collide`](shapes.md#class-genericxenocollide).
+  [class `generic_convex`](shapes.md#class-generic_convex).
 
 **NOTE**: It is advisable not to open the output directly in Wolfram Mathematica, but rather copy its content into the
 clipboard and paste is into an empty notebook. Alternatively, the output can be loaded directly into a variable using

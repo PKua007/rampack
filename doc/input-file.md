@@ -11,7 +11,7 @@ This reference page described the input file format and simulation pipeline.
   * [Simulation pipeline](#simulation-pipeline)
 * [Run types](#run-types)
   * [Class `integration`](#class-integration)
-  * [Class `overlap_relaxation`](#class-overlaprelaxation)
+  * [Class `overlap_relaxation`](#class-overlap_relaxation)
 * [Dynamic parameters](#dynamic-parameters)
   * [Class `linear`](#class-linear)
   * [Class `log`](#class-log)
@@ -22,10 +22,10 @@ This reference page described the input file format and simulation pipeline.
   * [Class `rototranslation`](#class-rototranslation)
   * [Class `flip`](#class-flip)
 * [Box move types](#box-move-types)
-  * [Class `delta_v`](#class-deltav)
+  * [Class `delta_v`](#class-delta_v)
   * [Class `linear`](#class-linear-1)
   * [Class `log`](#class-log)
-  * [Class `delta_triclinic`](#class-deltatriclinic)
+  * [Class `delta_triclinic`](#class-delta_triclinic)
   * [Class `disabled`](#class-disabled)
 
 ## PYON format
@@ -229,7 +229,8 @@ Arguments:
   ```
   
   first performs an overlap relaxation run, and then an integration run. Both types of runs:
-  [class `integration`](#class-integration), [class `overlap_relaxation`](#class-overlaprelaxation) are described below.
+  [class `integration`](#class-integration), [class `overlap_relaxation`](#class-overlap_relaxation) are described
+  below.
 
 * ***temperature*** (*= None*)
 
@@ -365,7 +366,7 @@ are performed:
 
 There are two types of runs supported by RAMPACK:
 * [Class `integration`](#class-integration)
-* [Class `overlap_relaxation`](#class-overlaprelaxation)
+* [Class `overlap_relaxation`](#class-overlap_relaxation)
 
 ### Class `integration`
 
@@ -470,7 +471,7 @@ Arguments:
   ```
   
   will store RAMSNAP representation to the file `packing.ramsnap`.
-  See [Last snapshot writers](output-formats.md#last-snapshot-writers) for more information.
+  See [Last snapshot writers](output-formats.md#snapshot-formats) for more information.
 
 * ***record_trajectory*** (*= []*) <a id="integration_recordtrajectory"></a>
 
@@ -481,7 +482,7 @@ Arguments:
   ```
  
   will store RAMTRJ trajectory to the file `trajectory.ramtrj`. See
-  [Trajectory writers](output-formats.md#trajectory-writers) for more information.
+  [Trajectory writers](output-formats.md#trajectory-formats) for more information.
 
 * ***averages_out*** (*= None*) <a id="integration_averagesout"></a>
 
@@ -496,15 +497,15 @@ Arguments:
   `inline` and `averaging`. `snapshot` observable values are printed out to `observables_out` every `snapshot_every`
   cycles, `inline` observables' values are included in a simulation state line printed to the standard output, while
   `averaging` observables are averaged in the averaging phase and printed to `averages_out`. By default, observable is
-  in all three scopes. To manually select the scope, one can use [class `scoped`](observables.md#class-scoped). For
-  example
+  in all three scopes. To manually select the scope, one can use class `scoped` (see
+  [Normal observables](observables.md#normal-observables)). For example
 
   ```python
   observables = [packing_fraction, scoped(nematic_order, inline=True)]
   ```
   
-  means that [class `packing_fraction`](observables.md#class-packingfraction) is in all scopes, while
-  [class `nematic_order`](observables.md#class-nematicorder) only in the `inline` scope. See
+  means that [class `packing_fraction`](observables.md#class-packing_fraction) is in all scopes, while
+  [class `nematic_order`](observables.md#class-nematic_order) only in the `inline` scope. See
   [Observables](observables.md) for more information and a full list of available observables.
 
 * ***observables_out*** (*= None*) <a id="integration_observablesout"></a>
@@ -592,8 +593,8 @@ Arguments:
   original shape's interaction (although the original shape and helper shape DO NOT cross-interact). Technically it can
   be any shape, however, to achieve the goal, its interaction should be zero whenever the original shapes are not
   overlapping and be of repulsive soft-core type, when they are overlapping. A good choice is a sphere inscribed in the
-  original shape with soft repulsion, such as [class `square_inverse_core`](shapes.md#class-squareinversecore)
-  or [class `repulsive_lj`](shapes.md#class-repulsive_lj).
+  original shape with soft repulsion, such as [class `square_inverse_core`](shapes.md#class-square_inverse_core)
+  or [class `wca`](shapes.md#class-wca).
 
 * ***output_last_snapshot*** (*= []*)
 
@@ -749,7 +750,7 @@ flip(
 )
 ```
 
-Monte Carlo move performing the flip, which is a half rotation around particle's [secondary axis](shapes.md#geometry)
+Monte Carlo move performing the flip, which is a half rotation around particle's [secondary axis](shapes.md#shape-axes)
 attached to the [geometric center](shapes.md#geometric-center). `every` controls how often the flip is performed. For
 example, its default value `10` means that in a full single MC cycle for 10% of all particles flip move will be
 attempted (and accepted according to the Metropolis criterion).
@@ -757,10 +758,10 @@ attempted (and accepted according to the Metropolis criterion).
 ## Box move types
 
 There are the following box move types:
-* [Class `delta_v`](#class-deltav)
+* [Class `delta_v`](#class-delta_v)
 * [Class `linear`](#class-linear-1)
 * [Class `log`](#class-log)
-* [Class `delta_triclinic`](#class-deltatriclinic)
+* [Class `delta_triclinic`](#class-delta_triclinic)
 * [Class `disabled`](#class-disabled)
 
 Box move types are able to relax the system to a varying degree. `delta_v` type relaxes only the system pressure

@@ -9,6 +9,25 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 
+@dataclass
+class Link:
+    linenum: int
+    filename: str
+    anchor: str
+
+
+@dataclass(init=False)
+class MarkdownFile:
+    filename: str
+    anchors: List[str]
+    links: List[Link]
+
+    def __init__(self, filename: str, document: str):
+        self.filename = filename
+        self.anchors = parse_anchors(document)
+        self.links = find_links(document)
+
+
 def strip_code_blocks(document: str) -> str:
     return re.sub(r'[\t ]*```[\w]*[\t ]*\n(.*?)\n\s*```', '', document, flags=re.DOTALL)
 
@@ -55,38 +74,19 @@ def parse_anchors(document: str) -> List[str]:
     return parse_sections(document) + parse_a_tags(document)
 
 
-@dataclass
-class Link:
-    linenum: int
-    filename: str
-    anchor: str
-
-
 def find_links(document: str) -> List[Link]:
     documents_lines = document.splitlines()
     links = []
 
     for linenum, line in enumerate(documents_lines):
         for filename, anchor in re.findall(r'\[[^]]*]\(([a-zA-Z0-9_\-.]*)#([a-zA-Z0-9_\-]+)\)', line):
-            links.append(Link(linenum, filename, anchor))
+            links.append(Link(linenum+1, filename, anchor))
 
     for linenum, line in enumerate(documents_lines):
         for filename in re.findall(r'\[[^]]*]\(([a-zA-Z0-9_\-.]*)\)', line):
-            links.append(Link(linenum, filename, ""))
+            links.append(Link(linenum+1, filename, ""))
 
     return links
-
-
-@dataclass(init=False)
-class MarkdownFile:
-    filename: str
-    anchors: List[str]
-    links: List[Link]
-
-    def __init__(self, filename: str, document: str):
-        self.filename = filename
-        self.anchors = parse_anchors(document)
-        self.links = find_links(document)
 
 
 def parse_markdown_files(filenames: List[str]) -> dict[str, MarkdownFile]:
@@ -140,6 +140,7 @@ def main():
     directory = sys.argv[1]
     os.chdir(directory)
     markdown_filenames = glob.glob(f"*.md")
+    markdown_filenames.sort()
     if len(markdown_filenames) == 0:
         print(f"No Markdown files found in '{directory}/'")
         exit(1)
