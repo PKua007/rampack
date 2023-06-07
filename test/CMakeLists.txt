@@ -14,7 +14,13 @@ target_link_libraries(valid_tests PRIVATE rampack_lib Catch2::Catch2 trompeloeil
 target_include_directories(valid_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 enable_testing()
+
 add_test(NAME unit_tests COMMAND $<TARGET_FILE:unit_tests>)
+
 add_test(NAME valid_tests COMMAND $<TARGET_FILE:valid_tests>)
+
 # Test if rampack executable even starts and can show basic help
 add_test(NAME rampack_show_help COMMAND $<TARGET_FILE:rampack> --help)
+
+# Verify Markdown links
+add_test(NAME verify_markdown_links COMMAND ${CMAKE_SOURCE_DIR}/script/markdown_link_check.py ${CMAKE_SOURCE_DIR}/doc)
