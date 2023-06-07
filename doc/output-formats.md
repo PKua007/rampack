@@ -5,6 +5,7 @@ This reference page described all output formats supported by the software.
 
 ## Contents
 
+* [Observable averages](#observable-averages)
 * [Snapshot formats](#snapshot-formats)
   * [Class `ramsnap`](#class-ramsnap)
   * [Class `wolfram`](#class-wolfram)
@@ -15,6 +16,27 @@ This reference page described all output formats supported by the software.
 * [Shape model formats](#shape-model-formats)
   * [Class `wolfram`](#class-wolfram-1)
   * [Class `obj`](#class-obj)
+
+
+## Observable averages
+
+In the [`integration`](input-file.md#class-integration) run type, if one specifies
+[`averages_out`](input-file.md#integration_averagesout) output file, average
+[interaval values](observables.md#normal-observables) computed in the averaging phase will be stored in this file. The
+averages are stored as rows of space separated values, where the first two columns are temperature and pressure and the
+next ones are subsequent mean observable values and the standard deviations of the mean.
+
+If the file does not exist, it is created. In the first row, the header with names of observables' nominal values is
+printed (standard deviations have "d" prefix). If the file already exists, the next row is appended to it without
+re-outputting the header. This way, subsequent simulation runs can all print averages to the same file. For example,
+`sample_inputs/integration.pyon` input file produces the averages output similar to
+
+```text
+temperature pressure rho drho Z dZ 
+1 0.10000000000000001 0.083816992988179809 0.00023722361014244265 1.1940170798614786 0.0033628547368692763 
+1 11.5 0.93975692288822354 0.00036038372743663852 12.237385112239892 0.0046913677128219231 
+1 20 1.1505099218769477 0.00036955494794587638 17.383773703103962 0.0055793772870406204 
+```
 
 
 ## Snapshot formats

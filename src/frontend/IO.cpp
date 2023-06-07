@@ -119,10 +119,8 @@ void IO::storeAverageValues(const std::string &filename, const ObservablesCollec
 
     out.precision(std::numeric_limits<double>::max_digits10);
     out << temperature << " " << pressure << " ";
-    for (auto &value : flatValues) {
-        value.quantity.separator = Quantity::SPACE;
-        out << value.quantity << " ";
-    }
+    for (auto &value : flatValues)
+        out << value.quantity.value << " " << value.quantity.error << " ";
     out << std::endl;
 
     this->logger.info() << "Average values stored to '" << filename << "'" << std::endl;
