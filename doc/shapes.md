@@ -11,21 +11,21 @@ This reference contains information regarding shapes available in the software.
 * [Specific shape classes](#specific-shape-classes)
   * [Class `sphere`](#class-sphere)
   * [Class `kmer`](#class-kmer)
-  * [Class `polysphere_banana`](#class-polyspherebanana)
-  * [Class `polysphere_lollipop`](#class-polyspherelollipop)
-  * [Class `polysphere_wedge`](#class-polyspherewedge)
+  * [Class `polysphere_banana`](#class-polysphere_banana)
+  * [Class `polysphere_lollipop`](#class-polysphere_lollipop)
+  * [Class `polysphere_wedge`](#class-polysphere_wedge)
   * [Class `spherocylinder`](#class-spherocylinder)
-  * [Class `polyspherocylinder_banana`](#class-polyspherocylinderbanana)
-  * [Class `smooth_wedge`](#class-smoothwedge)
-  * [Class `polyhedral_wedge`](#class-polyhedralwedge)
+  * [Class `polyspherocylinder_banana`](#class-polyspherocylinder_banana)
+  * [Class `smooth_wedge`](#class-smooth_wedge)
+  * [Class `polyhedral_wedge`](#class-polyhedral_wedge)
 * [General shape classes](#general-shape-classes)
   * [Class `polysphere`](#class-polysphere)
   * [Class `polyspherocylinder`](#class-polyspherocylinder)
-  * [Class `generic_convex`](#class-genericconvex)
+  * [Class `generic_convex`](#class-generic_convex)
 * [Soft interaction classes](#soft-interaction-classes)
   * [Class `lj`](#class-lj)
   * [Class `wca`](#class-wca)
-  * [Class `square_inverse_core`](#class-squareinversecore)
+  * [Class `square_inverse_core`](#class-square_inverse_core)
 
     
 ## Shape traits
@@ -44,15 +44,15 @@ Each shape has from 0 to 3 shape axes, usually perpendicular to one another. The
 
 The number of axes depends on the symmetry of the shape. For example, the [sphere](#class-sphere) has no axes,
 [spherocylinder](#class-spherocylinder) has only the primary axis (along its length), while 
-[polysphere banana](#class-polyspherocylinderbanana) has all three axes defined. If both the primary and the secondary
+[polysphere banana](#class-polyspherocylinder_banana) has all three axes defined. If both the primary and the secondary
 axes are defined, the auxiliary axis is defined automatically as the normalized cross product of the former two axes;
 thus, primary, secondary and auxiliary axes, in the given order, form a right-handed vector triad. 
 
 Shape axes are used in many places throughout the software, for example, in observables:
-[class `nematic_order`](observables.md#class-nematicorder),
-[class `pair_averaged_correlation`](observables.md#class-pairaveragedcorrelation), trial moves:
+[class `nematic_order`](observables.md#class-nematic_order),
+[class `pair_averaged_correlation`](observables.md#class-pair_averaged_correlation), trial moves:
 [class `flip`](input-file.md#class-flip) and lattice transformers: 
-[class `randomize_flip`](initial-arrangement.md#class-randomizeflip).
+[class `randomize_flip`](initial-arrangement.md#class-randomize_flip).
 
 
 ### Interactions
@@ -60,14 +60,14 @@ Shape axes are used in many places throughout the software, for example, in obse
 Each shape supports one or more interaction types. The basic interaction type is hard-core interaction, which is
 implemented for all shapes. Some shapes also support soft interactions, such as Lennard-Jones or
 Weeks-Chandler-Anderson, in particular the ones based on spheres: [class `sphere`](#class-sphere),
-[class `polysphere_banana`](#class-polyspherebanana), [class `polysphere`](#class-polysphere), etc. The list of all soft
+[class `polysphere_banana`](#class-polysphere_banana), [class `polysphere`](#class-polysphere), etc. The list of all soft
 interactions supported by various shapes can be found in [Soft interaction classes](#soft-interaction-classes).
 
 
 ### Interaction centers
 
 Some shapes, for example the [sphere](#class-sphere), consist of only one part through which they interact with other
-shapes. However, more complicated shapes, for example the [polysphere_banana](#class-polyspherebanana), consist of many
+shapes. However, more complicated shapes, for example the [polysphere_banana](#class-polysphere_banana), consist of many
 atomic parts (in the given example - the spherical beads) which interact pairwise with those of other shapes. These
 parts are called *interaction centers*. To speed up the computation of interaction energy, the neighbor grid stores
 individual interaction centers - thus, when the energy is computed, it is only done for center pairs which are close to
@@ -89,7 +89,7 @@ Each shape defines a set of the so-called *named points*. These are characterist
 such as for example centers of spherical caps of the [spherocylinder](#class-spherocylinder). Named points are
 shape-specific, although the point named `"o"`, which is the geometric origin, is defined automatically for each shape.
 Most of the shapes define the center of mass point `"cm"` as well. Named points are often used in observables, such as
-[class `smectic_order`](observables.md#class-smecticorder) or [class `bond_order`](observables.md#class-bondorder).
+[class `smectic_order`](observables.md#class-smectic_order) or [class `bond_order`](observables.md#class-bond_order).
 
 
 ## Specific shape classes
@@ -100,13 +100,13 @@ Currently, the following shape classes are available:
 
 * [Class `sphere`](#class-sphere)
 * [Class `kmer`](#class-kmer)
-* [Class `polysphere_banana`](#class-polyspherebanana)
-* [Class `polysphere_lollipop`](#class-polyspherelollipop)
-* [Class `polysphere_wedge`](#class-polyspherewedge)
+* [Class `polysphere_banana`](#class-polysphere_banana)
+* [Class `polysphere_lollipop`](#class-polysphere_lollipop)
+* [Class `polysphere_wedge`](#class-polysphere_wedge)
 * [Class `spherocylinder`](#class-spherocylinder)
-* [Class `polyspherocylinder_banana`](#class-polyspherocylinderbanana)
-* [Class `smooth_wedge`](#class-smoothwedge)
-* [Class `polyhedral_wedge`](#class-polyhedralwedge)
+* [Class `polyspherocylinder_banana`](#class-polyspherocylinder_banana)
+* [Class `smooth_wedge`](#class-smooth_wedge)
+* [Class `polyhedral_wedge`](#class-polyhedral_wedge)
 
 
 ### Class `sphere`
@@ -133,7 +133,7 @@ Shape traits:
   * class `hard` - hard-core interaction
   * [class `lj`](#class-lj)
   * [class `wca`](#class-wca)
-  * [class `square_inverse_core`](#class-squareinversecore)
+  * [class `square_inverse_core`](#class-square_inverse_core)
 
 
 ### Class `kmer`
@@ -169,7 +169,7 @@ Shape traits:
   * class `hard` - hard-core interaction
   * [class `lj`](#class-lj)
   * [class `wca`](#class-wca)
-  * [class `square_inverse_core`](#class-squareinversecore)
+  * [class `square_inverse_core`](#class-square_inverse_core)
 
 
 ### Class `polysphere_banana`
@@ -209,7 +209,7 @@ Shape traits:
   * class `hard` - hard-core interaction
   * [class `lj`](#class-lj)
   * [class `wca`](#class-wca)
-  * [class `square_inverse_core`](#class-squareinversecore)
+  * [class `square_inverse_core`](#class-square_inverse_core)
 
 
 ### Class `polysphere_lollipop`
@@ -425,12 +425,12 @@ Shape traits:
 ## General shape classes
 
 This section contains general shape classes with an extensive control over the shape. Especially flexible is the
-[class `generic_convex`](#class-genericconvex), which, basing on Minkowski sums and convex hulls of predefined
+[class `generic_convex`](#class-generic_convex), which, basing on Minkowski sums and convex hulls of predefined
 primitive building blocks enables ones to craft most of reasonably-shaped convex particles. The list includes
 
 * [Class `polysphere`](#class-polysphere)
 * [Class `polyspherocylinder`](#class-polyspherocylinder)
-* [Class `generic_convex`](#class-genericconvex)
+* [Class `generic_convex`](#class-generic_convex)
 
 
 ### Class `polysphere`
@@ -530,7 +530,7 @@ Shape traits:
   * class `hard` - hard-core interaction
   * [class `lj`](#class-lj)
   * [class `wca`](#class-wca)
-  * [class `square_inverse_core`](#class-squareinversecore)
+  * [class `square_inverse_core`](#class-square_inverse_core)
 
 
 ### Class `polyspherocylinder`
@@ -925,7 +925,7 @@ This section lists all soft interaction types available for selected shapes. The
 
 * [Class `lj`](#class-lj)
 * [Class `wca`](#class-wca)
-* [Class `square_inverse_core`](#class-squareinversecore)
+* [Class `square_inverse_core`](#class-square_inverse_core)
 
 
 ### Class `lj`
@@ -945,7 +945,7 @@ centers, defined as
 where *r* is the distance between the interaction centers.
 
 **Supported by**: [class `sphere`](#class-sphere), [class `kmer`](#class-kmer),
-[class `polysphere_banana`](#class-polyspherebanana), [class `polysphere`](#class-polysphere).
+[class `polysphere_banana`](#class-polysphere_banana), [class `polysphere`](#class-polysphere).
 
 
 ### Class `wca`
@@ -969,7 +969,7 @@ where *r* is the distance between the interaction centers. The interaction has a
 After that point, it is zero.
 
 **Supported by**: [class `sphere`](#class-sphere), [class `kmer`](#class-kmer),
-[class `polysphere_banana`](#class-polyspherebanana), [class `polysphere`](#class-polysphere).
+[class `polysphere_banana`](#class-polysphere_banana), [class `polysphere`](#class-polysphere).
 
 
 ### Class `square_inverse_core`
@@ -990,9 +990,9 @@ distance, defined as
 | *E*(*r*) = 0                                        | for r &ge; &sigma; |
 
 where *r* is the distance between the interaction centers. It is useful especially in
-[overlap relaxation](input-file.md#class-overlaprelaxation) as a soft
+[overlap relaxation](input-file.md#class-overlap_relaxation) as a soft
 [helper interaction](input-file.md#overlaprelaxation_helpershape) because of shorter computation time compared to
 for example [WCA potential](#class-wca).
 
 **Supported by**: [class `sphere`](#class-sphere), [class `kmer`](#class-kmer),
-[class `polysphere_banana`](#class-polyspherebanana), [class `polysphere`](#class-polysphere).
+[class `polysphere_banana`](#class-polysphere_banana), [class `polysphere`](#class-polysphere).

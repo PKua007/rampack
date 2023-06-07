@@ -15,13 +15,13 @@ This reference page describes all options for `arrangement` argument of [class `
     * [Class `fcc`](#class-fcc)
     * [Class `hcp`](#class-hcp)
     * [Class `hex`](#class-hex)
-    * [Class `custom`](#class)
+    * [Class `custom`](#class-custom)
 * [Lattice transformers](#lattice-transformers)
-    * [Class `optimize_cell`](#class-optimizecell)
-    * [Class `optimize_layers`](#class-optimizelayers)
+    * [Class `optimize_cell`](#class-optimize_cell)
+    * [Class `optimize_layers`](#class-optimize_layers)
     * [Class `columnar`](#class-columnar)
-    * [Class `randomize_flip`](#class-randomizeflip)
-    * [Class `layer_rotate`](#class-layerrotate)
+    * [Class `randomize_flip`](#class-randomize_flip)
+    * [Class `layer_rotate`](#class-layer_rotate)
 * [Lattice populators](#lattice-populators)
     * [Class `serial`](#class-serial)
     * [Class `random`](#class-random)
@@ -363,17 +363,17 @@ lattice appear (which are **NOT** mutually exclusive):
 * **regular lattice** - Bravais lattice fully defined by periodically repeated single unit cell.
   Using [class `lattice`](#class-lattice) without `transformers` produces the regular lattice. On the other hand,
   **irregular lattice** is also build of cells, but they all can be different. Irregular lattice is produced by selected
-  transformers, for example [class `columnar`](#class-columnar) or [class `randomize_flip`](#class-randomizeflip)
+  transformers, for example [class `columnar`](#class-columnar) or [class `randomize_flip`](#class-randomize_flip)
 * **normalized lattice** - lattice where coordinates of all relative positions in all cells are in the range [0, 1)
 
 Each lattice transformer specifies the required lattice type to work properly.
 
 The following transformers are available:
-* [class `optimize_cell`](#class-optimizecell)
-* [class `optimize_layers`](#class-optimizelayers)
+* [class `optimize_cell`](#class-optimize_cell)
+* [class `optimize_layers`](#class-optimize_layers)
 * [class `columnar`](#class-columnar)
-* [class `randomize_flip`](#class-randomizeflip)
-* [class `layer_rotate`](#class-layerrotate)
+* [class `randomize_flip`](#class-randomize_flip)
+* [class `layer_rotate`](#class-layer_rotate)
 
 
 ### Class `optimize_cell`
@@ -395,7 +395,7 @@ heights of the compressed cell parallelepiped are increased by `spacing`.
 It is important to note that relative positions of particles withing the cell remain constant. As a result, in case
 of multi-particle cells, there might be gaps between some pairs of particles after the operation. This happens when a
 different pair of particles is already tangent and further shrinking would introduce an overlap. For a more flexible
-cell optimization one can use [class `optimize_layers`](#class-optimizelayers).
+cell optimization one can use [class `optimize_layers`](#class-optimize_layers).
 
 
 ### Class `optimize_layers`
@@ -410,7 +410,7 @@ optimize_layers(
 LATTICE REQUIREMENTS: regular, normalized
 
 Performs intelligent, layer-wise optimization of the unit cell and cell dimensions. Contrary to
-[class `optimize_cell`](#class-optimizecell), it optimizes the cell layer by layer, minimizing the gaps in
+[class `optimize_cell`](#class-optimize_cell), it optimizes the cell layer by layer, minimizing the gaps in
 multi-particle cells. The drawback is that is performs the optimization only in one direction, specified by `axis`
 (`"x"`, `"y"`, `"z"`).
 
@@ -435,7 +435,7 @@ LATTICE REQUIREMENTS: regular, normalized
 
 Takes a regular lattice and randomly shifts particle columns to form a columnar phase. The columns are created on `axis`
 (`"x"`, `"y"`, `"z"`) axis. It recognizes the columns in a similar way as
-[class `optimize_layers`](#class-optimizelayers) recognizes layers: the column is a set of particles in the whole
+[class `optimize_layers`](#class-optimize_layers) recognizes layers: the column is a set of particles in the whole
 lattice, whose coordinates differ only on a coordinate corresponding to `axis`. After the columns are recognized, each
 one is moved by a random amount along `axis` using RNG seeded with Integer `seed`.
 
@@ -473,7 +473,7 @@ layer_rotate(
 
 LATTICE REQUIREMENTS: regular, normalized
 
-It recognizes the layers in the same way as [class `optimize_layers`](#class-optimizelayers) and rotates the particles
+It recognizes the layers in the same way as [class `optimize_layers`](#class-optimize_layers) and rotates the particles
 in them.
 
 Arguments:

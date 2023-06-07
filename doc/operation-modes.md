@@ -117,7 +117,7 @@ available options.
 This mode is dedicated for inspecting the shapes. It can print shape metadata (`-l`, `--log-info` option) or output
 shape preview to a supported format (`-o`, `--output` option). It is especially useful when you are hand-crafting a
 shape using generic shape classes such as [`polysphere`](shapes.md#class-polysphere),
-[`polyspherocylinder`](shapes.md#class-polyspherocylinder) or [`generic_convex`](shapes.md#class-genericconvex). Below
+[`polyspherocylinder`](shapes.md#class-polyspherocylinder) or [`generic_convex`](shapes.md#class-generic_convex). Below
 is the full list of available options.
 
 [//]: # (start shape-preview)

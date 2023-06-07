@@ -7,31 +7,31 @@ This reference page give a full walkthrough over observables that can be compute
 
 * [Observable types](#observable-types)
 * [Normal observables](#normal-observables)
-  * [Class `number_density`](#class-numberdensity)
-  * [Class `box_dimensions`](#class-boxdimensions)
-  * [Class `packing_fraction`](#class-packingfraction)
-  * [Class `compressibility_factor`](#class-compressibilityfactor)
-  * [Class `energy_per_particle`](#class-energyperparticle)
-  * [Class `energy_fluctuations_per_particle`](#class-energyfluctuationsperparticle)
-  * [Class `nematic_order`](#class-nematicorder)
-  * [Class `smectic_order`](#class-smecticorder)
-  * [Class `bond_order`](#class-bondorder)
-  * [Class `rotation_matrix_drift`](#class-rotationmatrixdrift)
+  * [Class `number_density`](#class-number_density)
+  * [Class `box_dimensions`](#class-box_dimensions)
+  * [Class `packing_fraction`](#class-packing_fraction)
+  * [Class `compressibility_factor`](#class-compressibility_factor)
+  * [Class `energy_per_particle`](#class-energy_per_particle)
+  * [Class `energy_fluctuations_per_particle`](#class-energy_fluctuations_per_particle)
+  * [Class `nematic_order`](#class-nematic_order)
+  * [Class `smectic_order`](#class-smectic_order)
+  * [Class `bond_order`](#class-bond_order)
+  * [Class `rotation_matrix_drift`](#class-rotation_matrix_drift)
   * [Class `temperature`](#class-temperature)
   * [Class `pressure`](#class-pressure)
 * [Bulk observables](#bulk-observables)
-  * [Class `pair_density_correlation`](#class-pairdensitycorrelation)
-  * [Class `pair_averaged_correlation`](#class-pairaveragedcorrelation)
-  * [Class `density_histogram`](#class-densityhistogram)
-  * [Class `probability_evolution`](#class-probabiltyevolution)
+  * [Class `pair_density_correlation`](#class-pair_density_correlation)
+  * [Class `pair_averaged_correlation`](#class-pair_averaged_correlation)
+  * [Class `density_histogram`](#class-density_histogram)
+  * [Class `probability_evolution`](#class-probability_evolution)
 * [Trackers](#trackers)
-  * [Class `fourier_tracker`](#class-fouriertracker)
+  * [Class `fourier_tracker`](#class-fourier_tracker)
 * [Binning types](#binning-types)
   * [Class `radial`](#class-radial)
-  * [Class `layerwise_radial`](#class-layerwiseradial)
+  * [Class `layerwise_radial`](#class-layerwise_radial)
 * [Correlation functions](#correlation-functions)
   * [Class `s110`](#class-s110)
-  * [Class `axes_angle`](#class-axesangle)
+  * [Class `axes_angle`](#class-axes_angle)
 * [Shape functions](#shape-functions)
   * [Class `const`](#class-const)
   * [Class `axis`](#class-axis)
@@ -40,8 +40,8 @@ This reference page give a full walkthrough over observables that can be compute
 ## Observable types
 
 Observables are (usually numerical) parameters characterizing various aspects of the system. They can be a single number
-(such as [number density](#class-numberdensity)), set of numbers (such as [box dimensions](#class-boxdimensions)) or
-even whole matrices of values (such as [density histogram](#class-densityhistogram)). There are 2 types of observables
+(such as [number density](#class-number_density)), set of numbers (such as [box dimensions](#class-box_dimensions)) or
+even whole matrices of values (such as [density histogram](#class-density_histogram)). There are 2 types of observables
 available in the software:
 
 * [(normal) observables](#normal-observables),
@@ -62,7 +62,7 @@ which they can be computed and presented:
    [`snapshot_every`](input-file.md#integration_snapshotevery) cycles and printed as a single entry (a single row) in
    the file given by [`observables_out`](input-file.md#integration_observablesout) (the links refer to
    [class `integration`](input-file.md#class-integration), but for
-   [class `overlap_relaxation`](input-file.md#class-overlaprelaxation) it is analogous). Both interval and nominal
+   [class `overlap_relaxation`](input-file.md#class-overlap_relaxation) it is analogous). Both interval and nominal
    values are printed.
 3. **Averaging scope** - each separate interval value (nominal values are skipped) is averaged in the averaging phase.
    The values are taken every [`averaging_every`](input-file.md#integration_averagingevery) cycles. When the averaging
@@ -82,7 +82,7 @@ scoped(
 ```
 
 where `obs` is the observable, while `snapshot`, `averaging` and `inline` arguments toggle the scopes on/off. For
-example, to print [number density](#class-numberdensity) only on the standard output, one can use
+example, to print [number density](#class-number_density) only on the standard output, one can use
 
 ```python
 scoped(number_density, inline=True)
@@ -90,16 +90,16 @@ scoped(number_density, inline=True)
 
 Currently, the following observables are supported:
 
-* [Class `number_density`](#class-numberdensity)
-* [Class `box_dimensions`](#class-boxdimensions)
-* [Class `packing_fraction`](#class-packingfraction)
-* [Class `compressibility_factor`](#class-compressibilityfactor)
-* [Class `energy_per_particle`](#class-energyperparticle)
-* [Class `energy_fluctuations_per_particle`](#class-energyfluctuationsperparticle)
-* [Class `nematic_order`](#class-nematicorder)
-* [Class `smectic_order`](#class-smecticorder)
-* [Class `bond_order`](#class-bondorder)
-* [Class `rotation_matrix_drift`](#class-rotationmatrixdrift)
+* [Class `number_density`](#class-number_density)
+* [Class `box_dimensions`](#class-box_dimensions)
+* [Class `packing_fraction`](#class-packing_fraction)
+* [Class `compressibility_factor`](#class-compressibility_factor)
+* [Class `energy_per_particle`](#class-energy_per_particle)
+* [Class `energy_fluctuations_per_particle`](#class-energy_fluctuations_per_particle)
+* [Class `nematic_order`](#class-nematic_order)
+* [Class `smectic_order`](#class-smectic_order)
+* [Class `bond_order`](#class-bond_order)
+* [Class `rotation_matrix_drift`](#class-rotation_matrix_drift)
 * [Class `temperature`](#class-temperature)
 * [Class `pressure`](#class-pressure)
 
@@ -295,7 +295,7 @@ imaginary unitand |...| is modulus. Finally, *&theta;<sub>ij</sub>* is the angle
 To make it applicable to a 3D system, the system is assumed to be a layered smectic (you can also project all particles
 on a single plane, see `hkl` argument description). All positions are projected onto nearest layers, *&psi;<sub>r</sub>*
 is calculated for each layer separately and then averaged over all layers. Number of layers and their wavevector are
-specified upfront by `hkl` Miller indices (see [class `smectic_order`](#class-smecticorder)), while their positions as
+specified upfront by `hkl` Miller indices (see [class `smectic_order`](#class-smectic_order)), while their positions as
 well as association of particles to them are inferred automatically.
 
 * **Arguments**:
@@ -387,10 +387,10 @@ a separate file (with name generated using
 specific.
 
 The following bulk observables are available:
-* [Class `pair_density_correlation`](#class-pairdensitycorrelation)
-* [Class `pair_averaged_correlation`](#class-pairaveragedcorrelation)
-* [Class `density_histogram`](#class-densityhistogram)
-* [Class `probability_evolution`](#class-probabilityevolution)
+* [Class `pair_density_correlation`](#class-pair_density_correlation)
+* [Class `pair_averaged_correlation`](#class-pair_averaged_correlation)
+* [Class `density_histogram`](#class-density_histogram)
+* [Class `probability_evolution`](#class-probability_evolution)
 
 Each observable has a **short name**, which is used in the output file name.
 
@@ -530,7 +530,7 @@ where prob(*f*|*r*) is a conditional probability density of correlation function
     * `None` <br />
       No normalization is performed. The values are snapshot-averaged counts of particles in the bins. Please
       note than in that case the sum of counts for a fixed distance *r* is proportional to the
-      [pair density correlation function](#class-pairdensitycorrelation).
+      [pair density correlation function](#class-pair_density_correlation).
     * `"pdf"` <br />
       Standard probability density function normalization, for which &int;*P*(*r*, *f*) d*f* = 1.
     * `"unit"` <br />
@@ -554,11 +554,12 @@ What is considered origin and the identity orientation (zero Euler angles), as w
 specific to a particular tracker type. Some trackers may track only one type of movement (translational or
 orientational). Each tracker has its **tracker name**, which is used for example in interval value's names.
 
-The trackers are mainly used by other types of observables, such as [class `density_histogram`](#class-densityhistogram)
-to cancel out zero-energy movement of the system during the course of the simulation.
+The trackers are mainly used by other types of observables, such as
+[class `density_histogram`](#class-density_histogram) to cancel out zero-energy movement of the system during the course
+of the simulation.
 
 Currently, the following trackers are available:
-* [Class `fourier_tracker`](#class-fouriertracker)
+* [Class `fourier_tracker`](#class-fourier_tracker)
 
 
 ### Class `fourier_tracker`
@@ -597,7 +598,7 @@ where *f<sub>i</sub>* and **s**<sub>*i*</sub> are, respectively value of the sha
 respectively 4 and 2.
 
 Please note, that *F*(**s**) is sensitive to density modulation - if *f* = const, it tracks a generalized type of
-[smectic order](#class-smecticorder). In fact, if only a single wavenumber is non-zero (1D), it is equivalent to the
+[smectic order](#class-smectic_order). In fact, if only a single wavenumber is non-zero (1D), it is equivalent to the
 smectic order parameter.
 
 * **Arguments**:
@@ -615,14 +616,14 @@ smectic order parameter.
 
 Binning type dictates how various types of observables are calculated. Most importantly, it defines what *distance*
 between particles means. Binning type is chosen for example when using
-[class `pair_density_correlation`](#class-pairdensitycorrelation). There, it decides what type of correlation is
+[class `pair_density_correlation`](#class-pair_density_correlation). There, it decides what type of correlation is
 probed - radial, transversal, cylindrical, etc. It can also restrict which pairs of particles should be selected at
-all - for example, [class `layerwise_radial`](#class-layerwiseradial) takes into account only particles from the same
+all - for example, [class `layerwise_radial`](#class-layerwise_radial) takes into account only particles from the same
 layers.
 
 There are the following types of binning:
 * [Class `radial`](#class-radial)
-* [Class `layerwise_radial`](#class-layerwiseradial)
+* [Class `layerwise_radial`](#class-layerwise_radial)
 
 
 ### Class `radial`
@@ -648,7 +649,7 @@ layerwise_radial(
 ```
 
 Layerwise, transversal binning type. Particles are projected on nearest layers as specified by `hkl` Miller indices (see
-[class `smectic_order`](#class-smecticorder)) and the *distance* is calculated along the layer (transversally).
+[class `smectic_order`](#class-smectic_order)) and the *distance* is calculated along the layer (transversally).
 Moreover, pairs of particles in different layers are not enumerated. `focal_point` is a
 [named point](shapes.md#named-points), which is used to associate particles to layers and with respect to which the
 distance should be calculated.
@@ -657,11 +658,11 @@ distance should be calculated.
 ## Correlation functions
 
 Correlation functions take a pair of particles and map it to a single value. They are used in correlation observables,
-such as [class `pair_averaged_correlation`](#class-pairaveragedcorrelation).
+such as [class `pair_averaged_correlation`](#class-pair_averaged_correlation).
 
 Currently, the following correlation functions are available:
 * [Class `s110`](#class-s110)
-* [Class `axes_angle`](#class-axesangle)
+* [Class `axes_angle`](#class-axes_angle)
 
 
 ### Class `s110`
@@ -699,7 +700,7 @@ and *j*<sup>th</sup> molecule, determined by the `axis` argument (`"primary"`, `
 ## Shape functions
 
 Shape functions take a single particle and map it to a single value. They are used for example in
-[class `smectic_order`](#class-smecticorder) and [class `fourier_tracker`](#class-fouriertracker).
+[class `smectic_order`](#class-smectic_order) and [class `fourier_tracker`](#class-fourier_tracker).
 
 Currently, the following correlation functions are available:
 * [Class `const`](#class-const)
