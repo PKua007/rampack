@@ -31,7 +31,7 @@ next ones are subsequent mean observable values and the standard deviations of t
 If the file does not exist, it is created. In the first row, the header with names of observables' nominal values is
 printed (standard deviations have "d" prefix). If the file already exists, the next row is appended to it without
 re-outputting the header. This way, subsequent simulation runs can all print averages to the same file. For example,
-`sample_inputs/integration.pyon` input file produces the averages output similar to
+`sample_inputs/integration.pyon` input file produces the averages' output similar to
 
 ```text
 temperature pressure rho drho Z dZ 
@@ -45,7 +45,7 @@ temperature pressure rho drho Z dZ
 
 Snapshots of the system are outputted at the end of simulation runs (see
 [Simulation pipeline](input-file.md#simulation-pipeline),
-[integration.output_last_snapshot](input-file.md#integration_outputlastsnapshot)). The amount of information stored
+[`integration.output_last_snapshot`](input-file.md#integration_outputlastsnapshot)). The amount of information stored
 (positions and orientation, box dimensions, simulation metadata) varies between the formats. The native representation
 is the [RAMSNAP](#class-ramsnap) format, which contains metadata such as the number of cycles or step sizes. Currently,
 the following snapshot formats are supported:
@@ -66,7 +66,7 @@ ramsnap(
 Internal RAMPACK text representation of a simulation snapshot, stored to a file with the name given by the `filename`
 argument. Apart from box dimensions and particles' positions and orientations, it contains simulation metadata (which
 is used to resume an interrupted simulation) as key=value pairs. Format's specification is technically not a part of the
-public interface; thus it may change in the future (retaining the software support of older versions). Currently, is has
+public interface; thus it may change in the future (retaining the software support of older versions). Currently, it has
 the following structure:
 
 ```text
@@ -107,46 +107,59 @@ Metadata keys' names (depending on the context, some of the entries may not be a
 ```python
 wolfram(
     filename,
-    style = standard
+    style = standard,
+    **kwargs
 )
 ```
 
 [Wolfram Mathematica](https://www.wolfram.com/mathematica/) output of the last snapshot stored to a file with the name
-given by the `filename` argument. Simulation box is not drawn. There are 2 `style` options:
+given by the `filename` argument. Simulation box is not drawn. 
 
-* class `standard`
+Arguments:
 
-  In this format,`Graphics3D` contains a list of individually drawn shapes:
+* ***style*** (*= standard*)
 
-  ```wolfram
-  Graphics3D[{
-      Sphere[position1, radius],    (* individual shape *)
-      ...
-      Sphere[positionN, radius]
-  }]
-  ```
+  The style of the output. There are 2 options:
+
+  * Class `standard`
+
+    In this format,`Graphics3D` contains a list of individually drawn shapes:
+
+    ```wolfram
+    Graphics3D[{
+        Sphere[position1, radius],    (* individual shape *)
+        ...
+        Sphere[positionN, radius]
+    }]
+    ```
   
-  You can easily access the individual shapes by indexing the `Graphics3D` object.
+    You can easily access the individual shapes by indexing the `Graphics3D` object.
 
-* class `affine_transform`
+  * Class `affine_transform`
 
-  The shape is drawn only once, then a list of `AffineTransform`-s is mapped over it:
+    The shape is drawn only once, then a list of `AffineTransform`-s is mapped over it:
 
-  ```wolfram
-  Graphics3D[
-      GeometricTransformation[
-          Tube[{{0, 0, -1}, {0, 0, 1}}, radius],    (* default-oriented shape at {0, 0, 0} *)
-          AffineTransform@#
-      ]& /@ {
-          {orientation1, position1},                (* list of positions and orientations of shapes *)
-          ...
-          {orientationN, positionN}
-      }
-  ]
-  ```
+    ```wolfram
+    Graphics3D[
+        GeometricTransformation[
+            Tube[{{0, 0, -1}, {0, 0, 1}}, radius],    (* default-oriented shape at {0, 0, 0} *)
+            AffineTransform@#
+        ]& /@ {
+            {orientation1, position1},                (* list of positions and orientations of shapes *)
+            ...
+            {orientationN, positionN}
+        }
+    ]
+    ```
   
-  It is the most useful for shapes, for which the Wolfram Mathematica code is very long, for example
-  [class `generic_convex`](shapes.md#class-generic_convex).
+    It is the most useful for shapes, for which Wolfram Mathematica visualization code is very long, for example
+    [class `generic_convex`](shapes.md#class-generic_convex), where the whole polyhedral mesh is outputted for each
+    shape.
+
+* ***\*\*kwargs***
+
+  Keyword arguments passed to shape's Wolfram printing subroutine. Please refer to
+  [shape class `wolfram`](#class-wolfram-1) for available options.
 
 **NOTE**: It is advisable not to open the output directly in Wolfram Mathematica, but rather copy its content into the
 clipboard and paste is into an empty notebook. Alternatively, the output can be loaded directly into a variable using
@@ -172,7 +185,6 @@ flavor is recognized by [Ovito](https://www.ovito.org) out of the box. You can u
 `rampack shape-preview --shape=... --output='obj(...)'`
 (see [`shape-preview` mode](operation-modes.md#shape-preview-mode)) to generate a [Wavefront OBJ model](#class-obj) of
 the shape and load it into Ovito, so it can render the system properly.
-
 
 Extended XYZ file structure is the following
 
@@ -204,9 +216,9 @@ where
 
 ## Trajectory formats
 
-Trajectories consist of many snapshots of the system captured every X full MC snapshots. They are stored on the fly
-during the simulation (see [Simulation pipeline](input-file.md#simulation-pipeline),
-[integration::record_trajectory](input-file.md#integration_recordtrajectory)). The native representation is
+Trajectories consist of many snapshots of the system captured every X full MC cyckes. They are stored on the fly during
+the simulation (see [Simulation pipeline](input-file.md#simulation-pipeline),
+[`integration.record_trajectory`](input-file.md#integration_recordtrajectory)). The native representation is
 [RAMTRJ](#class-ramtrj), which is a compact binary format. It can be later processed using the
 [`trajectory` mode](operation-modes.md#trajectory-mode), for example, to calculate additional observables.
 
@@ -228,11 +240,15 @@ Trajectory in the internal binary RAMTRJ format stored to a file with the name g
 designed to be compact with easy access to individual snapshots. It is not part of a public interface, so its format may
 change in the future (retaining the software support of older versions).
 
-Currently, RAMTRJ files have the following binary structure (C types of primitive blocks are in `(...)`):
+Currently, RAMTRJ files have the following binary structure (C language types of primitive blocks are in `(...)`):
 
 ```text
 [header] [snapshot 1] ... [snapshot m]
+```
 
+with
+
+```text
 [header] := [magic] [version major(char)] [version minor(char)] [N(unsigned long)] [m(unsigned long)] [s(unsigned long)]
 [magic] := "RAMTRJ\n" ASCII characters
 [snapshot i] := [box dimensions] [particle 1] ... [particle N]
@@ -253,8 +269,10 @@ where
 * `[rij]` <br />
   j<sup>th</sup> component of the absolute position **r**<sub>*i*</sub> of i<sup>th</sup> particle
 * `[eij]` <br />
-  j<sup>th</sup> [Euler angle](https://en.wikipedia.org/wiki/Euler_angles#Conventions) (in the extrinsic XYZ, 
-  convention, in radians) of i<sup>th</sup> particle
+  j<sup>th</sup> [aircraft Euler (Tait-Brian) angle](https://en.wikipedia.org/wiki/Euler_angles#Conventions) (in the
+  extrinsic XYZ convention, in radians) of i<sup>th</sup> particle. In the rotation matrix formalism, the net rotation
+  matrix is **R** = **R**<sub>*z*</sub>**R**<sub>*y*</sub>**R**<sub>*x*</sub>, where **R**<sub>*j*</sub> is the rotation
+  around j<sup>th</sup> axis by `[eij]` angle.
 
 The initial configuration is not stored - the first captured snapshot is for cycle number equal step size `[s]`.
 
@@ -288,12 +306,21 @@ purposes. The following formats are currently supported:
 
 ```python
 wolfram(
-    filename
+    filename,
+    **kwargs
 )
 ```
 
 Stores the shape model in [Wolfram Mathematica](https://www.wolfram.com/mathematica/) format to a file with the name
 given by the `filename` argument. The output can be passed as an argument of `Graphics3D` object.
+
+`**kwargs` are shape-specific keyword arguments tweaking visualisation options. These include:
+* ***mesh_divisions*** <br />
+  A **String** with a number of subdivisions (for example `"5"`, not `5`) of the mesh. Higher numbers result in a more
+  accurate representation, but visualisation software's performance may be hindered if the number of polygons is too
+  high. The default value is `"3"`. Available for: [class `smooth_wedge`](shapes.md#class-smooth_wedge),
+  [class `polyhedral_wedge`](shapes.md#class-polyhedral_wedge),
+  [class `generic_convex`](shapes.md#class-generic_convex).
 
 **NOTE**: It is advisable not to open the output directly in Wolfram Mathematica, but rather copy its content into the
 clipboard and paste is into an empty notebook. Alternatively, the output can be loaded directly into a variable using
@@ -302,11 +329,13 @@ clipboard and paste is into an empty notebook. Alternatively, the output can be 
 shape = ToExpression[Import[filename, "String"]]
 ```
 
+
 ### Class `obj`
 
 ```python
 obj(
-    filename
+    filename,
+    **kwargs
 )
 ```
 
@@ -314,5 +343,10 @@ Stores the shape model in [Wavefront OBJ](https://en.wikipedia.org/wiki/Wavefron
 name given by the `filename` argument. The format is recognized by a wide range of visualization tools, including
 [Ovito](https://www.ovito.org).
 
+`**kwargs` are shape-specific keyword arguments tweaking visualisation options. These include:
+* ***mesh_divisions*** <br />
+  A **String** with a number of subdivisions (for example `"5"`, not `5`) of the mesh. Higher numbers result in a more
+  accurate representation, but visualisation software's performance may be hindered if the number of polygons is too
+  high. The default value is `"3"`. Available for all shapes.
 
 [&uarr; back to the top](#output-formats)

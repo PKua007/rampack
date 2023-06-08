@@ -16,21 +16,21 @@ This reference page provides full information about operation modes available in
 ## Modes overview
 
 RAMPACK software operates as a single compiled binary. As it contains the code for both performing simulations and
-analyzing results, the functionality is gathered into a couple of operation modes (subcommands), in a similar fashion to
-for example [git](https://git-scm.com/docs/git#_git_commands). The basic syntax is
+analyzing the results, the functionality is gathered into a couple of operation modes (subcommands), in a similar
+fashion to, for example, [git](https://git-scm.com/docs/git#_git_commands). The basic syntax is
 
 ```shell
 rampack [mode] (mode-specific options)
 ```
 
 The following modes are currently available:
-* `rampack casino` - highly configurable Monte Carlo simulation of hard and soft particles performed based on the
+* `rampack casino` - highly flexible Monte Carlo simulation of hard and soft particles performed based on the
   [input file](input-file.md)
 * `rampack preview` - previews and metadata regarding the [input file](input-file.md)
 * `rampack shape-preview` - previews and metadata regarding [shapes](shapes.md)
 * `rampack trajectory` - analyzer of recorded simulation trajectories
 
-Each mode has its specific options. The modes are describe in details in next sections. There are 2 additional
+Each mode has its specific options. The modes are described in details in next sections. There are 2 additional
 modes
 
 * `rampack help` (alternatively: `--help`, `-h`) - shows list of available modes
@@ -41,10 +41,10 @@ Moreover, built-in help for a specific mode can be shown by executing `rampack [
 
 ## `casino` mode
 
-The heart and soul of the RAMPACK software. This mode provides highly configurable Monte Carlo simulation of a system
-of particles. The course of simulation is dictated by the [input file](input-file.md). Under this link you can find all
+The heart and soul of the RAMPACK software. This mode performs highly flexible Monte Carlo simulations of a system
+of particles. The course of simulation is dictated by the [input file](input-file.md). Under this link, you can find all
 information on how the simulations are performed and how to configure them. This section only describes command line
-options. They can for example change output verbosity, redirect output to file and skip or prolong some runs.
+options. They can, for example, change output verbosity, redirect output to a file and skip or prolong some runs.
 
 [//]: # (start casino)
 [//]: # (This is automatically generated block, do not edit!!!)
@@ -83,10 +83,10 @@ options. They can for example change output verbosity, redirect output to file a
 ## `preview` mode
 
 This mode does basically two things. Firstly, it can export the initial configuration from the input file to all
-supported snapshot formats (`-o`, `--output` option). It is especially useful if you are dealing with more complicated
-initial states with a complex pipeline of [lattice transformations](initial-arrangement.md#lattice-transformers).
-Secondly, it can list the names of runs in the input file (`-r`, `--run-names` option). Below is the full list of
-available options.
+supported [snapshot formats](output-formats.md#snapshot-formats) (`-o`, `--output` option). It is especially useful if
+you are dealing with more complicated initial states with a complex pipeline of
+[lattice transformations](initial-arrangement.md#lattice-transformers). Secondly, it can list the names of runs in the
+input file (`-r`, `--run-names` option). Below is the full list of available options.
 
 [//]: # (start preview)
 [//]: # (This is automatically generated block, do not edit!!!)
@@ -116,11 +116,11 @@ available options.
 
 ## `shape-preview` mode
 
-This mode is dedicated for inspecting the shapes. It can print shape metadata (`-l`, `--log-info` option) or output
-shape preview to a supported format (`-o`, `--output` option). It is especially useful when you are hand-crafting a
-shape using generic shape classes such as [`polysphere`](shapes.md#class-polysphere),
-[`polyspherocylinder`](shapes.md#class-polyspherocylinder) or [`generic_convex`](shapes.md#class-generic_convex). Below
-is the full list of available options.
+This mode is dedicated to inspecting the shapes. It can print shape metadata (`-l`, `--log-info` option) or output
+shape preview to a supported [snapshot formats](output-formats.md#snapshot-formats) (`-o`, `--output` option). It is
+especially useful when you are hand-crafting a shape using generic shape classes such as
+[`polysphere`](shapes.md#class-polysphere), [`polyspherocylinder`](shapes.md#class-polyspherocylinder) or
+[`generic_convex`](shapes.md#class-generic_convex). Below is the full list of available options.
 
 [//]: # (start shape-preview)
 [//]: # (This is automatically generated block, do not edit!!!)
@@ -150,8 +150,8 @@ is the full list of available options.
 
 ## `trajectory` mode
 
-The mode can perform various tasks on recorded trajectories, including outputting last snapshots, recalculating
-observables or exporting the trajectory to other format. It also contains auto-fixing capability to restore damaged
+This mode can perform various tasks on recorded trajectories, including outputting last snapshots, recalculating
+observables or exporting the trajectory to another format. It also contains auto-fixing capability to restore damaged
 trajectories (`-f`, `--auto-fix` option). Below is the full list of available options.
 
 [//]: # (start trajectory)
@@ -171,7 +171,7 @@ trajectories (`-f`, `--auto-fix` option). Below is the full list of available op
 
 * ***-f***, ***--auto-fix***
 
-  tries to auto-fix the trajectory if it is broken; fixed trajectory can be stored back using `-t 'ramtrj("filename")` (please note that `"filename" must be different than for the source trajectory)
+  tries to auto-fix the trajectory if it is broken; fixed trajectory can be stored back using `-t 'ramtrj("filename")'` (please note that `"filename"` must be different than for the source trajectory)
 
 * ***-V***, ***--verbosity*** *arg*
 
@@ -203,7 +203,7 @@ trajectories (`-f`, `--auto-fix` option). Below is the full list of available op
 
 * ***-s***, ***--output-snapshot*** *arg*
 
-  reads the last snapshot and outputs it in a given format: `ramsnap`, `wolfram`, `xyz`. More than one output formats can be stored when multiple `-s` options are specified or in a single one using pipe `|`
+  reads the last snapshot and outputs it in a given format: `ramsnap`, `wolfram`, `xyz`. More that one output format can be specified using multiple options (`-s out1 -s out2`) or pipe-separated in a single one (`-s 'out1|out2'`). It is advisable to put the argument in single quotes `' '` to escape special shell characters `"()|`
 
 * ***-I***, ***--log-info***
 
@@ -215,11 +215,11 @@ trajectories (`-f`, `--auto-fix` option). Below is the full list of available op
 
 * ***--log-file-verbosity*** *arg*
 
-  how verbose the output to the log file should be. Allowed values, with increasing verbosity: `fatal`, `error`, `warn`, `info`, `verbose`, debug`. Defaults to: `info`
+  how verbose the output to the log file should be. Allowed values, with increasing verbosity: `fatal`, `error`, `warn`, `info`, `verbose`, `debug`. Defaults to: `info`
 
 * ***-t***, ***--output-trajectory*** *arg*
 
-  stores the trajectory in a given format: `ramtrj`, `xyz`. More than one output format can be stored when multiple `-t` options are specified or in a single one using pipe `|`
+  stores the trajectory in a given format: `ramtrj`, `xyz`. More that one output format can be specified using multiple options (`-t out1 -t out2`) or pipe-separated in a single one (`-t 'out1|out2'`). It is advisable to put the argument in single quotes `' '` to escape special shell characters `"()|`
 
 * ***-x***, ***--truncate*** *arg*
 

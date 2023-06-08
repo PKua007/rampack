@@ -52,7 +52,7 @@ private:
 public:
     /** @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::XCPrinter
      * @a subdivision parameter) */
-    static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 4;
+    static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
 
     /**
      * @brief Creates a hard sphere.

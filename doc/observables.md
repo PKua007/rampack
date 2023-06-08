@@ -1,6 +1,6 @@
 # Observables
 
-This reference page give a full walkthrough over observables that can be computed during the simulation or afterwards.
+This reference page give a full walkthrough over observables that can be computed during the simulation or afterward.
 
 [&larr; back to Reference](reference.md)
 
@@ -51,6 +51,7 @@ available in the software:
 
 They are described in corresponding sections of this documentation page.
 
+
 ## Normal observables
 
 **Normal observables** can be calculated for a single snapshot. They consist of a couple of numbers
@@ -58,7 +59,7 @@ They are described in corresponding sections of this documentation page.
 averaged. They can be computed in both the thermalization and the averaging phase. Normal observables have 3 scopes in
 which they can be computed and presented:
 
-1. **Inline scope** - they are computed and presented in simulation standard output together with cycle number and other
+1. **Inline scope** - they are computed and printed to the standard output together with cycle number and other
    information. Both interval and nominal values are printed.
 2. **Snapshot scope** - they are gathered in both the thermalization and the averaging phase every
    [`snapshot_every`](input-file.md#integration_snapshotevery) cycles and printed as a single entry (a single row) in
@@ -84,7 +85,7 @@ scoped(
 ```
 
 where `obs` is the observable, while `snapshot`, `averaging` and `inline` arguments toggle the scopes on/off. For
-example, to print [number density](#class-number_density) only on the standard output, one can use
+example, to print the [number density](#class-number_density) only on the standard output, one can use:
 
 ```python
 scoped(number_density, inline=True)
@@ -105,8 +106,8 @@ Currently, the following observables are supported:
 * [Class `temperature`](#class-temperature)
 * [Class `pressure`](#class-pressure)
 
-as well as [Trackers](#trackers), which are described in a separate section. All observable have primary name (displayed
-when printing averages on the standard output) and one or more named interval/nominal values.
+as well as [Trackers](#trackers), which are described in a separate section. All observables have the **primary name**
+(displayed when printing averages on the standard output) and one or more named interval/nominal values.
 
 
 ### Class `number_density`
@@ -117,7 +118,7 @@ number_density( )
 
 * **Primary name**: `Number density`
 * **Interval values**:
-  * `rho` - number density N/V, where N is number of particle and V is box volume
+  * `rho` - number density *N*/*V*, where *N* is number of particle and *V* is box volume
 * **Nominal values**: None
 
 
@@ -129,9 +130,12 @@ box_dimensions( )
 
 * **Primary name**: `Box dimensions`
 * **Interval values**:
-  * `L_X` - height of the box corresponding to 1<sup>st</sup> vector (orthogonal to 2<sup>nd</sup> and 3<sup>rd</sup>)
-  * `L_Y` - height of the box corresponding to 2<sup>nd</sup> vector (orthogonal to 3<sup>rd</sup> and 1<sup>st</sup>)
-  * `L_Z` - height of the box corresponding to 3<sup>rd</sup> vector (orthogonal to 1<sup>st</sup> and 2<sup>nd</sup>)
+  * `L_X` - height of the box orthogonal to 2<sup>nd</sup> and 3<sup>rd</sup> box vectors (parallel to the
+            1<sup>st</sup> vector if the box is orthorhombic)
+  * `L_Y` - height of the box orthogonal to 3<sup>rd</sup> and 1<sup>st</sup> box vectors (parallel to the
+            2<sup>nd</sup> vector if the box is orthorhombic)
+  * `L_Z` - height of the box orthogonal to 1<sup>st</sup> and 2<sup>nd</sup> box vectors (parallel to the
+            3<sup>rd</sup> vector if the box is orthorhombic)
 * **Nominal values**: None
 
 
@@ -143,8 +147,8 @@ packing_fraction( )
 
 * **Primary name**: `Packing fraction`
 * **Interval values**:
-  * `theta` - packing fraction N V<sub>mol</sub> / V, where N is number of particle and V is the box volume and
-    V<sub>mol</sub> is the volume of a particle
+  * `theta` - packing fraction *NV*<sub>*P*</sub>/*V*, where N is number of particle, *V* is the box volume and
+    *V*<sub>*P*</sub> is the volume of a particle
 * **Nominal values**: None
 
 
@@ -154,11 +158,11 @@ packing_fraction( )
 compressibility_factor( )
 ```
 
-Factor &ge; 1, which describe how much the state deviates from the ideal gas equation.
+Factor &ge; 1, which describes how much the state deviates from the ideal gas equation.
 
 * **Primary name**: `Compressibility factor`
 * **Interval values**:
-  * `Z` - pV/NT, where p - pressure, V - box volume, N - number of molecules, T - temperature
+  * `Z` - *pV*/*NT*, where *p* - pressure, *V* - box volume, *N* - number of particles, *T* - temperature
 * **Nominal values**: None
 
 
@@ -197,13 +201,13 @@ nematic_order(
 Nematic order parameter, which quantifies ordering of orientations along a preferred direction. It is an eigenvalue of
 the symmetric **Q**-tensor with the largest magnitude. The **Q**-tensor is defined as
 
-**Q** = 1/N &sum;<sub>*i*</sub> (3/2 **a**<sub>*i*</sub>&otimes;**a**<sub>*i*</sub> - 1/2),
+**Q** = 1/*N* &sum;<sub>*i*</sub> (3/2 **a**<sub>*i*</sub>&otimes;**a**<sub>*i*</sub> - 1/2),
 
-where index *i* runs over all N particles.
+where index *i* runs over all *N* particles.
 
 * **Arguments**:
   * ***dump_qtensor*** (*= False*) <br />
-    If `True`, in addition to nematic order value, independent entries of the **Q**-tensor will be printed
+    If `True`, in addition to nematic order value, independent entries of the **Q**-tensor will be printed.
 * **Primary name**: `Nematic order`
 * **Interval values**:
   * `P2` - eigenvalue of the **Q**-tensor with the highest magnitude
@@ -226,16 +230,16 @@ smectic_order(
 Smectic order parameter, which in its most general form quantifies modulation of some quantity in the direction of
 wavevector **k**. It is defined as
 
-*&tau;<sub>f</sub>* = | 1/N &sum;<sub>*i*</sub> *f<sub>i</sub>* exp(&iota;**k** &middot; **r**<sub>*i*</sub>) |,
+*&tau;<sub>f</sub>* = | 1/*N* &sum;<sub>*i*</sub> *f<sub>i</sub>* exp(&iota;**k** &middot; **r**<sub>*i*</sub>) |,
 
-where index *i* goes over all N particles, **r**<sub>*i*</sub> is the position of *i*<sup>th</sup> particle,
+where index *i* goes over all *N* particles, **r**<sub>*i*</sub> is the position of *i*<sup>th</sup> particle,
 *f<sub>i</sub>* is the value of `function` for this particle, &iota; is the imaginary unit and |...| is modulus. If
 `function = const` (default argument value), it recudes to a standard smectic parameter quantifying the density
 modulation:
 
-*&tau;* = | 1/N &sum;<sub>*i*</sub> exp(&iota;**k** &middot; **r**<sub>*i*</sub>) |.
+*&tau;* = | 1/*N* &sum;<sub>*i*</sub> exp(&iota;**k** &middot; **r**<sub>*i*</sub>) |.
 
-Wavevector **k** has to be compatible with periodic boundary conditions, thus it is specified using Miller indices *h*,
+Wavevector **k** has to be compatible with periodic boundary conditions; thus it is specified using Miller indices *h*,
 *k*, *l*:
 
 **k** = *h* **g**<sub>1</sub> + *k* **g**<sub>2</sub> + *l* **g**<sub>3</sub>,
@@ -268,10 +272,10 @@ the range given by `max_hkl` argument to maximize *&tau;* value.
   * `tau_[function name]_k_x`, `..._y`, `..._z` - components of wavevector **k**. Those parameters are only present if
     `dump_tau_vector = True`
 * **Nominal values**:
-  * `tau_[function name]_hkl` - *h*, *k*, *l* giving the best *&tau;* in the format `h.k.l`, for example `0.-1.5`
+  * `tau_[function name]_hkl` - *h*, *k*, *l* giving the highest *&tau;* in the format `h.k.l`, for example `0.-1.5`
 
-`[function name]` describes the [Shape function](#shape-functions) used. If `function = const`, all `[function name]`
-tokens are dropped from constituent values' names.
+`[function name]` describes the [Shape function](#shape-functions) used. If `function = const`,  `[function name]` is 
+dropped from constituent values' names - thus, for example `tau_[function name]_k_x` becomes just `tau_k_x`.
 
 
 ### Class `bond_order`
@@ -285,19 +289,20 @@ bond_order(
 )
 ```
 
-Bond order parameter, which quantifies local order of angles between nearest neighbours. On a 2D plane, it is defined as
+Bond order parameter, which quantifies local order of angles between the nearest neighbours. On a 2D plane, it is
+defined as
 
 *&psi;<sub>r</sub>* = 1/*n* &sum;<sub>*i*</sub> 1/*r* | &sum;<sub>*j*</sub> exp(*r &iota; &theta;<sub>ij</sub>*) |,
 
 where index *i* goes over all *n* particles lying on the plane, *r* is the rank of the order parameter,
 &sum;<sub>*j*</sub> sum goes over *j* = 1, ..., *r* nearest neighbours of the *i*<sup>th</sup> particle, &iota; is the
-imaginary unitand |...| is modulus. Finally, *&theta;<sub>ij</sub>* is the angle between the vector joining
+imaginary unit and |...| is modulus. Finally, *&theta;<sub>ij</sub>* is the angle between the vector joining
 *i*<sup>th</sup> and *j*<sup>th</sup> particles and a constant arbitrary direction on the plane. 
 
-To make it applicable to a 3D system, the system is assumed to be a layered smectic (you can also project all particles
+To make it applicable to a 3D system, the system is assumed to be layered smectic (you can also project all particles
 on a single plane, see `hkl` argument description). All positions are projected onto nearest layers, *&psi;<sub>r</sub>*
 is calculated for each layer separately and then averaged over all layers. Number of layers and their wavevector are
-specified upfront by `hkl` Miller indices (see [class `smectic_order`](#class-smectic_order)), while their positions as
+specified upfront by `hkl` Miller indices (see [class `smectic_order`](#class-smectic_order)), while layer shifts as
 well as association of particles to them are inferred automatically.
 
 * **Arguments**:
@@ -307,7 +312,7 @@ well as association of particles to them are inferred automatically.
     plane.
   * ***ranks*** <br />
     An Integer or Array of Integers with one or more ranks *r* of the bond order parameter to be calculated. For
-    example, to quantify hexatic honeycomb order you want to use `ranks = 6`, while for a square lattice `ranks = 4`
+    example, to quantify hexatic honeycomb order, you want to use `ranks = 6`, while for a square lattice `ranks = 4`
     will do the job (`ranks = [4, 6]` will calculate both).
   * ***layering_point*** (*= "o"*) <br />
     [Named point](shapes.md#named-points) on the particle that will be used to associate particles to the nearest
@@ -382,11 +387,11 @@ supported.
 ## Bulk observables
 
 Bulk observables, contrary to [normal observables](#normal-observables), consist of too many values to be meaningfully
-presented as a part of a single-line entry on the standard output or other form of the output. They are usually whole
-plots, maps, etc. Their data is gathered only in the averaging phase, averaged over many system snapshots and printed to
-a separate file (with name generated using
-[`bulk_observables_out_pattern`](input-file.md#integration_bulkobservablesoutpattern)), whose format is bulk observable
-specific.
+presented as a part of a single-line entry on the standard output or in the observables' snapshots file. They are
+usually entire plots, maps, etc. Their data is gathered only in the averaging phase, averaged over many system snapshots
+and printed to a separate file (with name generated using
+[`bulk_observables_out_pattern`](input-file.md#integration_bulkobservablesoutpattern)). The format of the output is
+specific to a given bulk observable.
 
 The following bulk observables are available:
 * [Class `pair_density_correlation`](#class-pair_density_correlation)
@@ -408,7 +413,7 @@ pair_density_correlation(
 ```
 
 General one-dimensional pair density correlation function *&rho;*(*r*). It is equal to the number of particles in
-the system with a distance around *r* normalized by the number that would be found in a uniform system. Please note,
+the system with a distance around *r* normalized by the number that would be found in a uniform system. Please note
 that the meaning of *distance* is defined by the `binning` argument. For example, when `binning = radial`, it reduces to
 the standard [radial distribution function](https://en.wikipedia.org/wiki/Radial_distribution_function).
 
@@ -472,8 +477,8 @@ density_histogram(
 ```
 
 Density histogram, which can be 1D, 2D or 3D. It also supports cancelling out the translational Goldstone mode to
-prevent softening of the histogram due to zero-energy bulk system movement. Relative positions are used for binning.
-Thus, the domain is always [0, 1)<sup>*d*</sup>, where *d* is the dimension. 
+prevent softening of the histogram due to zero-energy bulk system drift. Relative positions are used for binning. Thus,
+the domain is always [0, 1)<sup>*d*</sup>, where *d* is the dimension. 
 
 * **Arguments**:
   * ***n_bins_x*** (*= None*) <br />
@@ -483,11 +488,12 @@ Thus, the domain is always [0, 1)<sup>*d*</sup>, where *d* is the dimension.
     example, to prepare the density histogram of the system projected on YZ plane (with 100 x 100 bins), you should
     specify `n_bins_x = 1` (or `n_bins_x = None`), `n_bins_y = 100` and `n_bins_z = 100`.
   * ***tracker*** (*= None*) <br />
-    [Goldstone tracker](#trackers) used to cancel out system movement. If `None`, no compensation is applied.
+    [Goldstone tracker](#trackers) used to cancel out system drift. If `None`, no compensation is applied.
 * **Short name**: `rho_xyz`
 * **Output**:
   Rows with space-separated tuples (*b*<sub>x</sub>, *b*<sub>y</sub>, *b*<sub>z</sub>, *&rho;*(**b**)), where **b** is
-  relative middle of the bin. If the direction is turned off, the correspinding bin coordinate is equal 0.5.
+  relative middle of the bin (with coordinates from the range [0, 1)). If the direction is turned off, the corresponding
+  bin coordinate is equal 0.5.
 
 
 ### Class `probability_evolution`
@@ -583,14 +589,14 @@ trig<sub>1</sub>(2&pi;*n*<sub>1</sub>*s*<sub>1</sub>)
 trig<sub>2</sub>(2&pi;*n*<sub>2</sub>*s*<sub>2</sub>)
 trig<sub>3</sub>(2&pi;*n*<sub>3</sub>*s*<sub>3</sub>),
 
-where trig<sub>1,2,3</sub> is sin(...) or cos(...), **s** is a relative position in the box and *n<sub>1,2,3* are
+where trig<sub>i</sub>, *i* = 1, 2, 3 is sin(...) or cos(...), **s** is a relative position in the box and *n<sub>i* are
 wavenumbers of shape function modulations. The evolving position of the system's origin is taken as the maximum of
-F(**s**), converted back to an absolute position. Please note, that *F*(**s**) is oscillatory and has more than one
+F(**s**), converted back to an absolute position. Please note that *F*(**s**) is oscillatory and has more than one
 maximum. Thus, for subsequent snapshots the maximum closest to the previous one is chosen. The 8 coefficients for a
 snapshot are calculated using
 
 *A*<sub>trig<sub>1</sub>,trig<sub>2</sub>,trig<sub>3</sub></sub> =
-1/N &sum;<sub>*i*</sub> *f<sub>i</sub>*
+1/*N* &sum;<sub>*i*</sub> *f<sub>i</sub>*
 trig<sub>1</sub>(2&pi;*n*<sub>1</sub>*s*<sub>*i*,1</sub>)
 trig<sub>2</sub>(2&pi;*n*<sub>2</sub>*s*<sub>*i*,2</sub>)
 trig<sub>3</sub>(2&pi;*n*<sub>3</sub>*s*<sub>*i*,3</sub>),
@@ -605,7 +611,7 @@ smectic order parameter.
 
 * **Arguments**:
   * ***wavenumbers*** <br />
-    An Array of Integers (for example `[1, 2, 0`]) representing wavenumbers *n<sub>i</sub>* of modulation. If all are
+    An Array of Integers (for example `[1, 2, 0]`) representing wavenumbers *n<sub>i</sub>* of modulation. If all are
     non-zero, the modulation is 3-dimensional, while setting 1 or 2 of them to 0 reduces dimensionality.
   * ***function*** <br />
     [Shape function](#shape-functions), whose modulation we are testing. It can be [const](#class-const) - then we are
@@ -617,11 +623,10 @@ smectic order parameter.
 ## Binning types
 
 Binning type dictates how various types of observables are calculated. Most importantly, it defines what *distance*
-between particles means. Binning type is chosen for example when using
+between particles means. Binning type is chosen, for example, when using
 [class `pair_density_correlation`](#class-pair_density_correlation). There, it decides what type of correlation is
-probed - radial, transversal, cylindrical, etc. It can also restrict which pairs of particles should be selected at
-all - for example, [class `layerwise_radial`](#class-layerwise_radial) takes into account only particles from the same
-layers.
+probed - radial, transversal, etc. It can also restrict which pairs of particles should be selected at all - for
+example, [class `layerwise_radial`](#class-layerwise_radial) takes into account only particles from the same layers.
 
 There are the following types of binning:
 * [Class `radial`](#class-radial)
@@ -655,6 +660,9 @@ Layerwise, transversal binning type. Particles are projected on nearest layers a
 Moreover, pairs of particles in different layers are not enumerated. `focal_point` is a
 [named point](shapes.md#named-points), which is used to associate particles to layers and with respect to which the
 distance should be calculated.
+
+**Hint**: class `layerwise_radial` can be also used for cylindrical binning. For example, to project all particles onto a
+single XY plane, one can use `hkl = [0, 0, 1]`.
 
 
 ## Correlation functions
