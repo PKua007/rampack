@@ -203,12 +203,13 @@ Arguments:
   version = "1.0.0"     # MAJOR.MINOR.PATCH
   version = [1, 0, 0]   # [MAJOR, MINOR, PATCH]
   ```
-  The rule of thumb is that it should be set to a current version (which is 1.0) when creating the file and left
-  unchanged. It is introduced as a safeguard to ensure that the input files produce replicable results and remain valid,
-  even if breaking changes are introduced in an update, as well as to prevent running it in older versions of RAMPACK
-  (where some required features may be lacking). As RAMPACK is [versioned semantically](https://semver.org), all future
-  1.x versions should not introduce any breaking changes, and we plan to retain support of 1.x input files when 2.0
-  version is released in the future (actually, we still support 0.x input files, even in an old INI format).
+  The rule of thumb is that it should be set to a current version (which can be checked using `rampack --versions`) whe
+  creating the file and left unchanged. It is introduced as a safeguard to ensure that the input files produce
+  replicable results and remain valid, even if breaking changes are introduced in an update, as well as to prevent
+  running it in older versions of RAMPACK (where some required features may be lacking). As RAMPACK is
+  [versioned semantically](https://semver.org), all future 1.x versions should not introduce any breaking changes, and
+  we plan to retain support of 1.x input files when 2.0 version is released in the future (in fact, we still support 0.x
+  input files, even in an old INI format).
 
 * ***arrangement*** <a id="rampack_arrangement"></a>
   

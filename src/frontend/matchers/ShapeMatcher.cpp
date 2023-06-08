@@ -312,7 +312,7 @@ namespace {
         return MatcherDataclass("polysphere")
             .arguments({{"spheres", sphere | sphereArray},
                         {"volume", MatcherFloat{}.positive()},
-                        {"geometric_origin", vector, "[0, 0, 0]"},
+                        {"geometric_center", vector, "[0, 0, 0]"},
                         {"primary_axis", axis | MatcherNone{}, "None"},
                         {"secondary_axis", axis | MatcherNone{}, "None"},
                         {"named_points", namedPoints, "{}"},
@@ -322,7 +322,7 @@ namespace {
             .mapTo([](const DataclassData &polysphere) -> std::shared_ptr<ShapeTraits> {
                 auto spheres = polysphere["spheres"].as<std::vector<PolysphereTraits::SphereData>>();
                 auto volume = polysphere["volume"].as<double>();
-                auto geometricOrigin = polysphere["geometric_origin"].as<Vector<3>>();
+                auto geometricOrigin = polysphere["geometric_center"].as<Vector<3>>();
                 std::optional<Vector<3>> primaryAxis;
                 if (!polysphere["primary_axis"].isEmpty())
                     primaryAxis = polysphere["primary_axis"].as<Vector<3>>();
@@ -381,7 +381,7 @@ namespace {
         return MatcherDataclass("polyspherocylinder")
             .arguments({{"scs", spherocylinder | spherocylinderArray},
                         {"volume", MatcherFloat{}.positive()},
-                        {"geometric_origin", vector, "[0, 0, 0]"},
+                        {"geometric_center", vector, "[0, 0, 0]"},
                         {"primary_axis", axis | MatcherNone{}, "None"},
                         {"secondary_axis", axis | MatcherNone{}, "None"},
                         {"named_points", namedPoints, "{}"}})
@@ -391,7 +391,7 @@ namespace {
                 using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
                 auto sc = polysc["scs"].as<std::vector<SpherocylinderData>>();
                 auto volume = polysc["volume"].as<double>();
-                auto geometricOrigin = polysc["geometric_origin"].as<Vector<3>>();
+                auto geometricOrigin = polysc["geometric_center"].as<Vector<3>>();
                 std::optional<Vector<3>> primaryAxis;
                 if (!polysc["primary_axis"].isEmpty())
                     primaryAxis = polysc["primary_axis"].as<Vector<3>>();
@@ -412,7 +412,7 @@ namespace {
         return MatcherDataclass("generic_convex")
             .arguments({{"geometry", GenericConvexGeometryMatcher::script},
                         {"volume", MatcherFloat{}.positive()},
-                        {"geometric_origin", vector, "[0, 0, 0]"},
+                        {"geometric_center", vector, "[0, 0, 0]"},
                         {"primary_axis", axis | MatcherNone{}, "None"},
                         {"secondary_axis", axis | MatcherNone{}, "None"},
                         {"named_points", namedPoints, "{}"}})
@@ -421,7 +421,7 @@ namespace {
             .mapTo([](const DataclassData &convex) -> std::shared_ptr<ShapeTraits> {
                 auto script = convex["geometry"].as<XCBodyBuilderScript>();
                 auto volume = convex["volume"].as<double>();
-                auto geometricOrigin = convex["geometric_origin"].as<Vector<3>>();
+                auto geometricOrigin = convex["geometric_center"].as<Vector<3>>();
                 std::optional<Vector<3>> primaryAxis;
                 if (!convex["primary_axis"].isEmpty())
                     primaryAxis = convex["primary_axis"].as<Vector<3>>();

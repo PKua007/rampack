@@ -41,7 +41,7 @@ as [shape axes](#shape-axes) and [named points](#named-points), which are used i
 
 Each shape has from 0 to 3 shape axes, usually perpendicular to one another. These are:
 
-* **primary axis** - the main axis of the shape, usually in the direction of longest dimension of the shape
+* **primary axis** - the main axis of the shape, usually in the direction of the longest dimension of the shape
 * **secondary axis** - the secondary direction, for example the direction of bending of squashing
 * **auxiliary axis** - the axis orthogonal to both the primary axis and the secondary axis
 
@@ -82,7 +82,7 @@ each other.
 Each shape defines the so-called *geometric center*. It usually is the center of the circumscribed sphere with the
 smallest radius. It is one of the [named points](#named-points) (`"o"`), and it is used, for example, as a point of
 rotation in the [flip move](input-file.md#class-flip). For all [specific (built-in) shapes](#specific-shape-classes),
-the geometric center is (0, 0, 0), however, it may be chosen in a different way in
+the geometric center is {0, 0, 0}, however, it may be chosen in a different way in
 [general (user-defined) shapes](#general-shape-classes).
 
 
@@ -90,16 +90,16 @@ the geometric center is (0, 0, 0), however, it may be chosen in a different way 
 
 Each shape defines a set of the so-called *named points*. These are characteristic points (in shape's coordinate system)
 such as for example centers of spherical caps of the [spherocylinder](#class-spherocylinder). Named points are
-shape-specific, although the point named `"o"`, which is the geometric origin, is defined automatically for each shape.
+shape-specific, although the point named `"o"`, which is the geometric center, is defined automatically for each shape.
 Most of the shapes define the center of mass point `"cm"` as well. Named points are often used in observables, such as
 [class `smectic_order`](observables.md#class-smectic_order) or [class `bond_order`](observables.md#class-bond_order).
 
 
 ## Specific shape classes
 
-This section contains predefined shape classes, in contrast to less restricted
+This section contains built-in shape classes, in contrast to less specific and less restricted
 [General shape classes](#general-shape-classes). In all illustrations, the geometric center is denoted as a red cross.
-Currently, the following shape classes are available:
+The following specific shape classes are available:
 
 * [Class `sphere`](#class-sphere)
 * [Class `kmer`](#class-kmer)
@@ -126,11 +126,11 @@ sphere(
 Hard sphere with radius `r`.
 
 Shape traits:
-* **Geometric origin**: {0, 0, 0} (red cross)
-* **Interaction centers**: geometric origin
+* **Geometric center**: {0, 0, 0} (red cross)
+* **Interaction centers**: geometric center
 * **Shape axes**: None
 * **Named points**:
-  * `"o"` - geometric origin
+  * `"o"` - geometric center
   * `"cm"` - mass center
 * **Interactions**:
   * class `hard` - hard-core interaction
@@ -152,17 +152,17 @@ kmer(
 
 <img src="img/shapes/kmer.png" alt="kmer" width="207" height="250">
 
-Colinear k-mer consisting of `k` identical spheres with radius `r` with identical distances equal `distance` between
+Colinear k-mer consisting of `k` identical spheres with radius `r` and identical distances equal `distance` between
 them, lying on the z-axis. The spheres may partially overlap. The spheres at the end are equidistant from the geometric
-origin.
+center.
 
 Shape traits:
-* **Geometric origin**: {0, 0, 0} (red cross)
+* **Geometric center**: {0, 0, 0} (red cross)
 * **Interaction centers**: center of each sphere
 * **Shape axes**:
   * *primary* = {0, 0, 1}
 * **Named points**:
-  * `"o"` - geometric origin
+  * `"o"` - geometric center
   * `"cm"` - mass center
   * `"si"` - the center of the `i`-th sphere, starting from 0 for the lowermost sphere to `k - 1` for the uppermost
     sphere
@@ -195,14 +195,14 @@ toward the positive x-axis. If the angle is below 180&deg;, the geometric center
 endpoints of the arc. Otherwise, the geometric center lies in the arc center.
 
 Shape traits:
-* **Geometric origin**: {0, 0, 0} (red cross)
+* **Geometric center**: {0, 0, 0} (red cross)
 * **Interaction centers**: center of each sphere
 * **Shape axes**:
   * *primary* = {0, 0, 1}
   * *secondary* = {-1, 0, 0}
   * *auxiliary* = {0, -1, 0}
 * **Named points**:
-  * `"o"` - geometric origin
+  * `"o"` - geometric center
   * `"cm"` - mass center
   * `"si"` - the center of the `i`-th sphere, starting from 0 for the endpoint sphere with negative z coordinate to
     `sphere_n - 1` for the endpoint sphere with positive z coordinate
@@ -232,17 +232,17 @@ polysphere_lollipop(
 The shape similar to the [k-mer](#class-kmer), however the top sphere may have a radius different the rest of lower
 spheres. There are `sphere_n - 1` identical spheres with radius `stick_r` placed on the z-axis (lollipop's stick) and a
 different sphere with radius `large_r` at the top (lollipop's tip). The overlap between "stick" spheres is controlled by 
-`small_penetration` (where 0 means that the spheres are tangent), while the overlap between the "tip" sphere and the
-uppermost "stick" sphere is controlled by `large_penetration`. The spheres are placed in such a way that the uppermost
+`stick_penetration` (where 0 means that the spheres are tangent), while the overlap between the "tip" sphere and the
+uppermost "stick" sphere is controlled by `tip_penetration`. The spheres are placed in such a way that the uppermost
 and lowermost points on the shape are equidistant from the geometric center.
 
 Shape traits:
-* **Geometric origin**: {0, 0, 0} (red cross)
+* **Geometric center**: {0, 0, 0} (red cross)
 * **Interaction centers**: center of each sphere
 * **Shape axes**:
   * *primary* = {0, 0, 1}
 * **Named points**:
-  * `"o"` - geometric origin
+  * `"o"` - geometric center
   * `"cm"` - mass center (defined only if both penetrations are 0)
   * `"si"` - the center of the `i`-th sphere, starting from 0 for the lowermost sphere to `sphere_n - 1` for the
     uppermost sphere
@@ -272,12 +272,12 @@ bottom sphere to `top_r` for the top sphere. The overlap between the spheres is 
 the shape are equidistant from the geometric center.
 
 Shape traits:
-* **Geometric origin**: {0, 0, 0} (red cross)
+* **Geometric center**: {0, 0, 0} (red cross)
 * **Interaction centers**: center of each sphere
 * **Shape axes**:
   * *primary* = {0, 0, 1}
 * **Named points**:
-  * `"o"` - geometric origin (red cross)
+  * `"o"` - geometric center (red cross)
   * `"cm"` - mass center (defined only if `penetration = 0`)
   * `"si"` - the center of the `i`-th sphere, starting from 0 for the lowermost sphere to `sphere_n - 1` for the
     uppermost sphere
@@ -302,12 +302,12 @@ Spherocylinder, spanned along the z-axis - the union of a cylinder and spheres p
 distance between spheres' centers is `l` and the radius of the cylinder and the spheres is `r`.
 
 Shape traits:
-* **Geometric origin**: {0, 0, 0} (red cross)
-* **Interaction centers**: geometric origin
+* **Geometric center**: {0, 0, 0} (red cross)
+* **Interaction centers**: geometric center
 * **Shape axes**:
   * *primary* = {0, 0, 1}
 * **Named points**:
-  * `"o"` - geometric origin
+  * `"o"` - geometric center
   * `"cm"` - mass center
   * `"beg"` - the center of the bottom sphere
   * `"end"` - the center of the top sphere
@@ -337,7 +337,7 @@ between the endpoints of the arc. Otherwise, the geometric center lies in the ar
 grid performance.
 
 Shape traits:
-* **Geometric origin**: {0, 0, 0} (red cross)
+* **Geometric center**: {0, 0, 0} (red cross)
 * **Interaction centers**: the midpoint of each spherocylinder's height; when `subdivisions > 1`, each subpart counts
   as an independent spherocylinder, thus the number of interaction centers is `segment_n * subdivisions`
 * **Shape axes**:
@@ -345,13 +345,13 @@ Shape traits:
   * *secondary* = {-1, 0, 0}
   * *auxiliary* = {0, -1, 0}
 * **Named points**:
-  * `"o"` - geometric origin
+  * `"o"` - geometric center
   * `"cm"` - mass center
   * `"oi"`, `"bi"`, `"ei"` - midpoint (`o`), beginning (`b`) or end (`e`) of the `i`-th spherocylinder. The
     numbering starts from 0 for the spherocylinder containing the beginning of the arc (the endpoint with
     a negative z coordinates) and the index `i` increases towards the end of the arc. Spherocylinder's beginning (`b`)
     and end (`e`) points follow the same ordering. Please note that when `subdivisions > 1`, the divided parts count as
-    separate spherocylinders, thus the first arc segment is actually built of spherocylinders with indices
+    separate spherocylinders, thus, for example the first arc segment is actually built of spherocylinders with indices
     `i = 0, 1, ..., subdivisions - 1`.
   * `"beg"` - the arc endpoint with negative z coordinate (equivalent to `"b0"`)
   * `"end"` - the arc endpoint with positive z coordinate (equivalent to `"e[subdivisions * sphere_n - 1]"`)
@@ -377,13 +377,13 @@ equidistant from the geometric center. The optional parameter `subdivisions` con
 should be divided to optimize the neighbor grid performance.
 
 Shape traits:
-* **Geometric origin**: {0, 0, 0} (red cross)
-* **Interaction centers**: if `subdivisions > 1`, geometric origin of each part, otherwise the geometric origin of the
+* **Geometric center**: {0, 0, 0} (red cross)
+* **Interaction centers**: if `subdivisions > 1`, geometric center of each part, otherwise the geometric center of the
   whole shape
 * **Shape axes**:
   * *primary* = {0, 0, 1}
 * **Named points**:
-  * `"o"` - geometric origin
+  * `"o"` - geometric center
   * `"beg"` - the center of the bottom sphere
   * `"end"` - the center of the top sphere
 * **Interactions**: only hard-core
@@ -406,20 +406,20 @@ polyhedral_wedge(
 
 A polyhedron built by joining two axis-oriented rectangles placed on the XY planes with z coordinates equal `-l/2` and
 `l/2`. The side lengths of the bottom (`z = -l/2`) rectangle are given by `bottom_ax` and `bottom_ay`, while `top_ax`
-and `top_az` control the size of the top (`z = l/2`) rectangle. Please note that since the geometric origin is in the
+and `top_az` control the size of the top (`z = l/2`) rectangle. Please note that since the geometric center is in the
 midpoint of length of the polyhedron, the circumsphere may not be optimal. If `subdivisions > 1`, the polyhedron is
 divided into that many parts along its length to optimize neighbor grid performance.
 
 Shape traits:
-* **Geometric origin**: {0, 0, 0} (red cross)
+* **Geometric center**: {0, 0, 0} (red cross)
 * **Interaction centers**: if `subdivisions > 1`, length midpoints of each part, otherwise the length midpoint of the
-  whole shape (geometric origin)
+  whole shape (geometric center)
 * **Shape axes**:
   * *primary* = {0, 0, 1}
   * *secondary* = {1, 0, 0}
   * *auxiliary* = {0, 1, 0}
 * **Named points**:
-  * `"o"` - geometric origin
+  * `"o"` - geometric center
   * `"beg"` - the midpoint of the bottom rectangle
   * `"end"` - the midpoint of the top rectangle
 * **Interactions**: only hard-core
@@ -442,7 +442,7 @@ primitive building blocks enables ones to craft most of reasonably-shaped convex
 polysphere(
     spheres,
     volume,
-    geometric_origin = [0, 0, 0],
+    geometric_center = [0, 0, 0],
     primary_axis = None,
     secondary_axis = None,
     named_points = {},
@@ -494,9 +494,9 @@ Arguments:
   Volume of the shape. Unfortunately, automatic volume calculation of many overlapping spheres is notoriously difficult;
   thus the user has to do it manually for the specific case.
 
-* ***geometric_origin*** (*= [0, 0, 0]*)
+* ***geometric_center*** (*= [0, 0, 0]*)
 
-  The geometric origin, which may be different than {0, 0, 0}.
+  The geometric center, which may be different than {0, 0, 0}.
 
 * ***primary_axis*** (*= None*)
 
@@ -522,11 +522,11 @@ Arguments:
   interaction, where the radii are respected.
 
 Shape traits:
-* **Geometric origin**: as specified by `geometric_origin`
+* **Geometric center**: as specified by `geometric_center`
 * **Interaction centers**: centers of spheres
 * **Shape axes**: as specified by `primary_axis` and `secondary axis` (auxiliary axis is computed automatically)
 * **Named points**:
-  * `"o"` - geometric origin
+  * `"o"` - geometric center
   * `"si"` - the center of `i`-th sphere, starting from 0
   * custom ones given by `named_points`
 * **Interactions**:
@@ -542,7 +542,7 @@ Shape traits:
 polyspherocylinder(
     scs,
     volume,
-    geometric_origin = [0, 0, 0],
+    geometric_center = [0, 0, 0],
     primary_axis = None,
     secondary_axis = None,
     named_points = {}
@@ -587,16 +587,16 @@ Arguments:
   
   Both cases are the same shapes, however the first one is centered in {0, 1, 1} and has a suboptimal circumsphere
   radius equal 0.7 + 2&radic;2, while the second one is centered in {0, 0, 0} and has the optimal circumsphere radius
-  equal 0.7 + 2&radic;2.
+  equal 0.7 + &radic;2.
 
 * ***volume***
 
   Volume of the shape. Unfortunately, automatic volume calculation of many overlapping spherocylinders is notoriously
   difficult; thus the user has to do it manually for the specific case.
 
-* ***geometric_origin*** (*= [0, 0, 0]*)
+* ***geometric_center*** (*= [0, 0, 0]*)
 
-  The geometric origin, which may be different than {0, 0, 0}.
+  The geometric center, which may be different than {0, 0, 0}.
 
 * ***primary_axis*** (*= None*)
 
@@ -615,11 +615,11 @@ Arguments:
   Arrays of 3 Floats representing the positions of the named points.
 
 Shape traits:
-* **Geometric origin**: as specified by `geometric_origin`
+* **Geometric center**: as specified by `geometric_center`
 * **Interaction centers**: centers of spherocylinders
 * **Shape axes**: as specified by `primary_axis` and `secondary axis` (auxiliary axis is computed automatically)
 * **Named points**:
-  * `"o"` - geometric origin
+  * `"o"` - geometric center
   * `"oi"` - the center of `i`-th spherocylinder, starting from 0
   * `"bi"` - the first endpoint of `i`-th spherocylinder, starting from 0
   * `"ei"` - the second endpoint of `i`-th spherocylinder, starting from 0
@@ -633,7 +633,7 @@ Shape traits:
 generic_convex(
     geometry,
     volume,
-    geometric_origin = [0, 0, 0],
+    geometric_center = [0, 0, 0],
     primary_axis = None,
     secondary_axis = None,
     named_points = {}
@@ -688,9 +688,9 @@ Arguments:
     <img src="img/shapes/segment.png" alt="segment" width="175" height="125">
   
     A segment, which for the default values of `pos` and `rot` is spanned between `[0, 0, -l/2]` and `[0, 0, l/2]`.
-    `pos` (Array of 3 Floats) specifies its center. `rot` specifies its orientation - it is an Array of 3 Euler angles,
-    where subsequent elements are angles of rotations around, respectively, x, y and z axis. Rotations are performed
-    around z, y, and x axis, in the given order.
+    `pos` (Array of 3 Floats) specifies its center. `rot` specifies its orientation - it is an Array of 3 Tait-Bryan
+    angles (in degrees), where subsequent elements are angles of rotations around, respectively, x, y and z axis,
+    performed in a given order.
 
   * Class `rectangle`
 
@@ -706,9 +706,9 @@ Arguments:
     <img src="img/shapes/rectangle.png" alt="rectangle" width="261" height="125">
 
     A rectangle with midpoint `pos` (Array of 3 Floats). By default, it lies on the xy plane and `ax` and `ay` are its
-    side lengths along, respectively, x and y axis. `rot` specifies its orientation - it is an Array of 3 Euler angles,
-    where subsequent elements are angles of rotations around, respectively, x, y and z axis. Rotations are performed
-    around z, y, and x axis, in the given order.
+    side lengths along, respectively, x and y axis. `rot` specifies its orientation - it is an Array of 3 Tait-Bryan
+    angles (in degrees), where subsequent elements are angles of rotations around, respectively, x, y and z axis,
+    performed in a given order.
 
   * Class `cuboid`
 
@@ -725,9 +725,9 @@ Arguments:
     <img src="img/shapes/cuboid.png" alt="cuboid" width="249" height="200">
 
     A cuboid with midpoint `pos` (Array of 3 Floats). By default, it is axis-oriented and `ax`, `ay`, `az` are its side
-    lengths along, respectively, x, y and z axis. `rot` specifies its orientation - it is an Array of 3 Euler angles,
-    where subsequent elements are angles of rotations around, respectively, x, y and z axis. Rotations are performed
-    around z, y, and x axis, in the given order.
+    lengths along, respectively, x, y and z axis. `rot` specifies its orientation - it is an Array of 3 Tait-Bryan
+    angles (in degrees), where subsequent elements are angles of rotations around, respectively, x, y and z axis,
+    performed in a given order.
 
   * Class `disk`
 
@@ -742,8 +742,8 @@ Arguments:
     <img src="img/shapes/disk.png" alt="disk" width="216" height="125">   
   
     A disk with radius `r` and center `pos` (Array of 3 Floats). By default, it lies on the xy plane. `rot` specifies
-    its orientation - it is an Array of 3 Euler angles, where subsequent elements are angles of rotations around,
-    respectively, x, y and z axis. Rotations are performed around z, y, and x axis, in the given order.
+    its orientation - it is an Array of 3 Tait-Bryan angles (in degrees), where subsequent elements are angles of
+    rotations around, respectively, x, y and z axis, performed in a given order.
 
   * Class `sphere`
 
@@ -772,9 +772,9 @@ Arguments:
     <img src="img/shapes/ellipse.png" alt="ellipse" width="269" height="125">
 
     An ellipse with midpoint `pos` (Array of 3 Floats). By default, it lies on the xy plane and `rx` and `ry` are its,
-    respectively, x and y semi-axes. `rot` specifies its orientation - it is an Array of 3 Euler angles, where
-    subsequent elements are angles of rotations around, respectively, x, y and z axis. Rotations are performed around z,
-    y, and x axis, in the given order.
+    respectively, x and y semi-axes. `rot` specifies its orientation - it is an Array of 3 Tait-Bryan angles (in
+    degrees), where subsequent elements are angles of rotations around, respectively, x, y and z axis, performed in a
+    given order.
 
   * Class `ellipsoid`
 
@@ -791,9 +791,9 @@ Arguments:
     <img src="img/shapes/ellipsoid.png" alt="ellipsoid" width="199" height="200">
 
     An ellipsoid with midpoint `pos` (Array of 3 Floats). By default, it is axis-oriented and `rx`, `ry` and `rz` are
-    its, respectively, x, y and z semi-axes. `rot` specifies its orientation - it is an Array of 3 Euler angles, where
-    subsequent elements are angles of rotations around, respectively, x, y and z axis. Rotations are performed around z,
-    y, and x axis in the given order.
+    its, respectively, x, y and z semi-axes. `rot` specifies its orientation - it is an Array of 3 Tait-Bryan angles (in
+    degrees), where subsequent elements are angles of rotations around, respectively, x, y and z axis, performed in a
+    given order.
 
   * Class `saucer`
 
@@ -810,9 +810,9 @@ Arguments:
   
     A shape created by joning two spherical caps with such dimensions that the distance between cap "tips" is `l` and
     the radius of a circle where the caps meet is `r`. Shape's midpoint is `pos` (Array of 3 Floats). By default, the
-    circle lies in the xy plane. `rot` specifies shape's orientation - it is an Array of 3 Euler angles, where 
-    subsequent elements are angles of rotations around, respectively, x, y and z axis. Rotations are performed around z,
-    y, and x axis, in the given order.
+    circle lies in the xy plane. `rot` specifies shape's orientation - it is an Array of 3 Tait-Bryan angles (in
+    degrees), where subsequent elements are angles of rotations around, respectively, x, y and z axis, performed in a
+    given order.
 
   * Class `football`
 
@@ -830,8 +830,8 @@ Arguments:
     A shape, which for the default values of `pos` and `rot` is created by rotating a circle arc with endpoints lying on
     the z axis around the z axis. Arc radius and angle are such that the distance between the endpoints is `l` and the
     resulting shape has radius `r` in its thickest place. Shape's midpoint is `pos` (Array of 3 Floats). `rot` specifies
-    shape's orientation - it is an Array of 3 Euler angles, where subsequent elements are angles of rotations around,
-    respectively, x, y and z axis. Rotations are performed around z, y, and x axis, in the given order.
+    shape's orientation - it is an Array of 3 Tait-Bryan angles (in degrees), where subsequent elements are angles of
+    rotations around, respectively, x, y and z axis, performed in a given order.
 
   **GEOMETRIC OPERATIONS**:
 
@@ -892,9 +892,9 @@ Arguments:
 
   Volume of the shape.
 
-* ***geometric_origin*** (*= [0, 0, 0]*)
+* ***geometric_center*** (*= [0, 0, 0]*)
 
-  The geometric origin, which may be different than {0, 0, 0}.
+  The geometric center, which may be different than {0, 0, 0}.
 
 * ***primary_axis*** (*= None*)
 
@@ -913,11 +913,11 @@ Arguments:
   Arrays of 3 Floats representing the positions of the named points.
 
 Shape traits:
-* **Geometric origin**: as specified by `geometric_origin`
+* **Geometric center**: as specified by `geometric_center`
 * **Interaction centers**: None
 * **Shape axes**: as specified by `primary_axis` and `secondary axis` (auxiliary axis is computed automatically)
 * **Named points**:
-  * `"o"` - geometric origin
+  * `"o"` - geometric center
   * custom ones given by `named_points`
 * **Interactions**: only hard-core
 
@@ -945,7 +945,8 @@ centers, defined as
 
 *E*(*r*) = 4&epsilon;[(&sigma;/*r*)<sup>12</sup> - (&sigma;/*r*)<sup>6</sup>],
 
-where *r* is the distance between the interaction centers.
+where *r* is the distance between the interaction centers. The interaction has cut-off radius of *r* = 3&sigma;, which
+is a widely accepted trade-off between accuracy and computational efficiency.
 
 **Supported by**: [class `sphere`](#class-sphere), [class `kmer`](#class-kmer),
 [class `polysphere_banana`](#class-polysphere_banana), [class `polysphere`](#class-polysphere).
