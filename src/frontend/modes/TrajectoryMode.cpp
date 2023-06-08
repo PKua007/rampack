@@ -50,7 +50,7 @@ int TrajectoryMode::main(int argc, char **argv) {
                            "and `.last` (for the first and the last run in the configuration file) are also accepted",
              cxxopts::value<std::string>(runName)->default_value(".last"))
             ("f,auto-fix", "tries to auto-fix the trajectory if it is broken; fixed trajectory can be stored back "
-                           "using `-t 'ramtrj(\"filename\")` (please note that `\"filename\" must be different than "
+                           "using `-t 'ramtrj(\"filename\")'` (please note that `\"filename\"` must be different than "
                            "for the source trajectory)")
             ("V,verbosity", "how verbose the output should be. Allowed values, with increasing verbosity: "
                             "`fatal`, `error`, `warn`, `info`, `verbose`, `debug`. Defaults to: `info` if `--log-file` "
@@ -80,8 +80,10 @@ int TrajectoryMode::main(int argc, char **argv) {
                               "is passed, all available threads are used",
              cxxopts::value<std::size_t>(maxThreads)->default_value("1"))
             ("s,output-snapshot", "reads the last snapshot and outputs it in a given format: `ramsnap`, `wolfram`, "
-                                  "`xyz`. More than one output formats can be stored when multiple `-s` options are "
-                                  "specified or in a single one using pipe `|`",
+                                  "`xyz`. More that one output format can be specified using multiple options (`-s "
+                                  "out1 -s out2`) or pipe-separated in a single one (`-s 'out1|out2'`). It is advisable "
+                                  "to put the argument in single quotes `' '` to escape special shell characters "
+                                  "`\"()|`",
              cxxopts::value<std::vector<std::string>>(snapshotOutputs))
             ("I,log-info", "prints basic information about the recorded trajectory on a standard output")
             ("l,log-file", "if specified, messages will be logged both on the standard output and to this file. "
@@ -89,12 +91,13 @@ int TrajectoryMode::main(int argc, char **argv) {
                            "changed by `--verbosity` and/or `--log-file-verbosity` options",
              cxxopts::value<std::string>(auxOutput))
             ("log-file-verbosity", "how verbose the output to the log file should be. Allowed values, with increasing "
-                                   "verbosity: `fatal`, `error`, `warn`, `info`, `verbose`, debug`. Defaults to: "
+                                   "verbosity: `fatal`, `error`, `warn`, `info`, `verbose`, `debug`. Defaults to: "
                                    "`info`",
              cxxopts::value<std::string>(auxVerbosity))
-            ("t,output-trajectory", "stores the trajectory in a given format: `ramtrj`, `xyz`. More than one "
-                                    "output format can be stored when multiple `-t` options are specified or in a "
-                                    "single one using pipe `|`",
+            ("t,output-trajectory", "stores the trajectory in a given format: `ramtrj`, `xyz`. More that one output "
+                                    "format can be specified using multiple options (`-t out1 -t out2`) or "
+                                    "pipe-separated in a single one (`-t 'out1|out2'`). It is advisable to put the "
+                                    "argument in single quotes `' '` to escape special shell characters `\"()|`",
              cxxopts::value<std::vector<std::string>>(trajectoryOutputs))
             ("x,truncate", "truncates loaded trajectory to a given number of total cycles; truncated "
                            "trajectory can be stored to a different RAMTRJ file using `-t 'ramtrj(\"filename\")'`",
