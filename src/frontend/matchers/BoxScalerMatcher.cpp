@@ -74,14 +74,14 @@ namespace {
         return MatcherDataclass(className)
             .arguments({{"spec", scalingDirection},
                         {"step", MatcherFloat{}.positive()},
-                        {"independent", MatcherBoolean{}, "False"}})
+                        {"scale_together", MatcherBoolean{}, "True"}})
             .mapTo([className, factorSamplerFactory](const DataclassData &linear) -> std::shared_ptr<TriclinicBoxScaler> {
                 auto scalingDirection = linear["spec"].as<AnisotropicVolumeScaler::ScalingDirection>();
                 auto step = linear["step"].as<double>();
-                auto independent = linear["independent"].as<bool>();
+                auto scaleTogether = linear["scale_together"].as<bool>();
                 auto factorSampler = factorSamplerFactory();
                 auto scaler = std::make_unique<AnisotropicVolumeScaler>(
-                    std::move(factorSampler), scalingDirection, independent
+                    std::move(factorSampler), scalingDirection, !scaleTogether
                 );
                 return std::make_shared<TriclinicAdapter>(std::move(scaler), step);
             });
@@ -98,11 +98,11 @@ namespace {
     MatcherDataclass create_delta_triclinic() {
         return MatcherDataclass("delta_triclinic")
             .arguments({{"step", MatcherFloat{}.positive()},
-                        {"independent", MatcherBoolean{}, "False"}})
+                        {"scale_together", MatcherBoolean{}, "True"}})
             .mapTo([](const DataclassData &deltaTriclinic) -> std::shared_ptr<TriclinicBoxScaler> {
                 auto step = deltaTriclinic["step"].as<double>();
-                auto independent = deltaTriclinic["independent"].as<bool>();
-                return std::make_shared<TriclinicDeltaScaler>(step, !independent);
+                auto scaleTogether = deltaTriclinic["scale_together"].as<bool>();
+                return std::make_shared<TriclinicDeltaScaler>(step, scaleTogether);
             });
     }
 }

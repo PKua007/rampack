@@ -61,5 +61,5 @@ in the [Tutorial](doc/tutorial.md).
 ## Contribution
 
 The contribution to the project is highly appreciated and can be done via the pull request. Contribution guide can be
-found in [Contributing](doc/contributing.md). [Source code](doc/source-code.md) describes how RAMPACK-s source code is
+found in [Contributing](doc/contributing.md). [Source code](doc/source-code.md) describes how RAMPACK's source code is
 organized and walks through all important API-s.
