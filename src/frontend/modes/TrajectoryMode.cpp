@@ -17,6 +17,7 @@
 #include "frontend/matchers/SimulationRecorderFactoryMatcher.h"
 #include "frontend/matchers/ObservablesMatcher.h"
 #include "frontend/matchers/FileSnapshotWriterMatcher.h"
+#include "utils/Fold.h"
 
 
 int TrajectoryMode::main(int argc, char **argv) {
@@ -48,7 +49,7 @@ int TrajectoryMode::main(int argc, char **argv) {
              cxxopts::value<std::string>(inputFilename))
             ("r,run-name", "name of the run, for which the trajectory was generated. Special values `.first` "
                            "and `.last` (for the first and the last run in the configuration file) are also accepted",
-             cxxopts::value<std::string>(runName)->default_value(".last"))
+             cxxopts::value<std::string>(runName))
             ("f,auto-fix", "tries to auto-fix the trajectory if it is broken; fixed trajectory can be stored back "
                            "using `-t 'ramtrj(\"filename\")'` (please note that `\"filename\"` must be different than "
                            "for the source trajectory)")
@@ -143,16 +144,11 @@ int TrajectoryMode::main(int argc, char **argv) {
     if (runName == ".auto")
         throw ValidationException("'.auto' run is not supported in the trajectory mode");
 
-    // Prepare initial packing
-    RampackParameters rampackParams = this->io.dispatchParams(inputFilename);
-    const auto &baseParams = rampackParams.baseParameters;
-    auto shapeTraits = baseParams.shapeTraits;
-    auto packingFactory = baseParams.packingFactory;
-    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    auto packing = packingFactory->createPacking(std::move(pbc), *shapeTraits, maxThreads, maxThreads);
-    packing->toggleWalls(baseParams.walls);
-
     // Find and validate run whose trajectory we want to process
+    RampackParameters rampackParams = this->io.dispatchParams(inputFilename);
+    if (!parsedOptions.count("run-name"))
+        runName = TrajectoryMode::getDefaultRunName(rampackParams.runs);
+
     std::size_t startRunIndex = PackingLoader::findStartRunIndex(runName, rampackParams.runs);
     const auto &startRun = rampackParams.runs[startRunIndex];
 
@@ -169,6 +165,14 @@ int TrajectoryMode::main(int argc, char **argv) {
         this->logger.info() << "Trajectory of the run '" << runName << "' ('" << foundRunName << "') will be processed";
         this->logger << std::endl;
     }
+
+    // Prepare initial packing
+    const auto &baseParams = rampackParams.baseParameters;
+    auto shapeTraits = baseParams.shapeTraits;
+    auto packingFactory = baseParams.packingFactory;
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    auto packing = packingFactory->createPacking(std::move(pbc), *shapeTraits, maxThreads, maxThreads);
+    packing->toggleWalls(baseParams.walls);
 
     // Recreate environment
     auto environment = this->recreateRawEnvironment(rampackParams, startRunIndex);
@@ -349,4 +353,26 @@ Simulation::Environment TrajectoryMode::recreateRawEnvironment(const RampackPara
     for (std::size_t i{}; i <= startRunIndex; i++)
         combine_environment(env, params.runs[i]);
     return env;
+}
+
+std::string TrajectoryMode::getDefaultRunName(const std::vector<Run> &runs) {
+    if (runs.size() < 2)
+        return ".last";
+
+    std::ostringstream errorOut;
+    errorOut << Fold("Input file has more than one run - the name of the run whose trajectory should be analyzed "
+                     "must be specified using -r (--run-name) option. The following runs are present:").width(80);
+    errorOut << std::endl;
+    for (std::size_t i{}, size = runs.size(); i < size; i++) {
+        const auto &run =runs[i];
+        errorOut << "- " << std::visit([](const auto &run) { return run.runName; }, run);
+        if (i == 0)
+            errorOut << " (.first)" << std::endl;
+        else if (i == size - 1)
+            errorOut << " (.last)" << std::endl;
+        else
+            errorOut << std::endl;
+    }
+
+    throw ValidationException(errorOut.str());
 }

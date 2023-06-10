@@ -14,6 +14,8 @@ class TrajectoryMode : public ModeBase {
 private:
     Simulation::Environment recreateRawEnvironment(const RampackParameters &params, std::size_t startRunIndex) const;
 
+    static std::string getDefaultRunName(const std::vector<Run> &runs);
+
 public:
     explicit TrajectoryMode(Logger &logger) : ModeBase(logger) { }
 
