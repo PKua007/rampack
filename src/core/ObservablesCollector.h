@@ -44,6 +44,7 @@ private:
     std::vector<std::size_t> snapshotCycleNumbers;
     std::vector<std::vector<std::string>> snapshotValues;
     std::vector<std::vector<double>> averagingValues;
+    std::size_t onTheFlyLastCycleNumber{};
     std::unique_ptr<std::iostream> onTheFlyOut;
 
     mutable double computationMicroseconds{};
@@ -53,6 +54,7 @@ private:
     void doPrintSnapshotHeader(std::ostream &out, bool printNewline = true) const;
     void doPrintSnapshotValues(std::ostream &out, std::size_t snapshotIdx) const;
     void verifyOnTheFlyOutputHeader();
+    void findOnTheFlyLastCycleNumber();
 
 public:
     /**
@@ -130,9 +132,15 @@ public:
     void attachOnTheFlyOutput(std::unique_ptr<std::iostream> out);
 
     /**
+     * @brief Returns last cycle number in the on-the-fly observable output.
+     * @details If no output is attached, it returns 0.
+     */
+    [[nodiscard]] std::size_t getOnTheFlyOutputLastCycleNumber() const { return this->onTheFlyLastCycleNumber; }
+
+    /**
      * @brief Detaches and returns "on the fly" output stream (or @a nullptr if nothing is attached).
      */
-    std::unique_ptr<std::ostream> detachOnTheFlyOutput() { return std::move(this->onTheFlyOut); }
+    std::unique_ptr<std::iostream> detachOnTheFlyOutput();
 
     /**
      * @brief Generate a short inline string with current interval and nominal values of all ObservableType::INLINE

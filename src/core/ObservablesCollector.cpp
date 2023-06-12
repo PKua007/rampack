@@ -74,8 +74,11 @@ void ObservablesCollector::addSnapshot(const Packing &packing, std::size_t cycle
     auto end = std::chrono::high_resolution_clock::now();
     this->computationMicroseconds += std::chrono::duration<double, std::micro>(end - start).count();
 
-    if (this->onTheFlyOut != nullptr)
+    if (this->onTheFlyOut != nullptr) {
         this->doPrintSnapshotValues(*this->onTheFlyOut, this->snapshotCycleNumbers.size() - 1);
+        this->onTheFlyLastCycleNumber = cycleNumber;
+    }
+
 }
 
 void ObservablesCollector::addAveragingValues(const Packing &packing, const ShapeTraits &shapeTraits) {
@@ -164,6 +167,7 @@ void ObservablesCollector::clear() {
         singleSet.clear();
     for (const auto &bulkObservable : this->bulkObservables)
         bulkObservable->clear();
+    static_cast<void>(this->detachOnTheFlyOutput());
     this->computationMicroseconds = 0;
 }
 
@@ -250,13 +254,16 @@ void ObservablesCollector::visitBulkObservables(std::function<void(const BulkObs
 
 void ObservablesCollector::attachOnTheFlyOutput(std::unique_ptr<std::iostream> out) {
     this->onTheFlyOut = std::move(out);
+    this->onTheFlyLastCycleNumber = 0;
     if (this->onTheFlyOut == nullptr)
         return;
 
-    if (this->onTheFlyOut->tellp() == 0)
+    if (this->onTheFlyOut->tellp() == 0) {
         this->doPrintSnapshotHeader(*this->onTheFlyOut);
-    else
+    } else {
         this->verifyOnTheFlyOutputHeader();
+        this->findOnTheFlyLastCycleNumber();
+    }
 }
 
 void ObservablesCollector::verifyOnTheFlyOutputHeader() {
@@ -278,4 +285,27 @@ void ObservablesCollector::verifyOnTheFlyOutputHeader() {
         errorMsg << "Already present : " << actualHeader;
         throw IncompatibleObservablesHeaderException(errorMsg.str());
     }
+}
+
+std::unique_ptr<std::iostream> ObservablesCollector::detachOnTheFlyOutput() {
+    this->onTheFlyLastCycleNumber = 0;
+    return std::move(this->onTheFlyOut);
+}
+
+void ObservablesCollector::findOnTheFlyLastCycleNumber() {
+    Assert(this->onTheFlyOut != nullptr);
+
+    // VERY crude and inefficient way of reading the last line - reading all the lines one by one.
+    // However, observable output won't usually be very long, so why bother...
+    this->onTheFlyOut->seekg(0, std::ios::beg);
+    std::string nonEmptyLine;
+    std::string line;
+    while (std::getline(*this->onTheFlyOut, line))
+        if (!line.empty())
+            nonEmptyLine = line;
+    this->onTheFlyOut->seekg(0, std::ios::beg);
+
+    std::istringstream lineStream(nonEmptyLine);
+    ValidateMsg(lineStream >> this->onTheFlyLastCycleNumber,
+                "Could not read last cycle number: broken observable output stream");
 }
