@@ -515,11 +515,11 @@ void CasinoMode::overwriteMoveStepSizes(Simulation::Environment &env,
 void CasinoMode::attachSnapshotOut(ObservablesCollector &collector, const std::string &filename,
                                    bool isContinuation) const
 {
-    std::unique_ptr<std::ofstream> out;
+    std::unique_ptr<std::fstream> out;
     if (isContinuation)
-        out = std::make_unique<std::ofstream>(filename, std::ios_base::app);
+        out = std::make_unique<std::fstream>(filename, std::ios_base::in | std::ios_base::out | std::ios_base::app);
     else
-        out = std::make_unique<std::ofstream>(filename);
+        out = std::make_unique<std::fstream>(filename, std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
 
     ValidateOpenedDesc(*out, filename, "to store observables");
     this->logger.info() << "Observable snapshots are stored on the fly to '" << filename << "'" << std::endl;
