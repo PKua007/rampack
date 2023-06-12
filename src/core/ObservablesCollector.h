@@ -15,6 +15,13 @@
 #include "BulkObservable.h"
 #include "utils/Quantity.h"
 
+
+class IncompatibleObservablesHeaderException : public ValidationException {
+public:
+    using ValidationException::ValidationException;
+};
+
+
 /**
  * @brief The class responsible for collection and storing of all Observable -s and BulkObservable -s.
  * @details The class is responsible for three possible observable scopes: snapshots, inline printing on the standard
@@ -37,14 +44,15 @@ private:
     std::vector<std::size_t> snapshotCycleNumbers;
     std::vector<std::vector<std::string>> snapshotValues;
     std::vector<std::vector<double>> averagingValues;
-    std::unique_ptr<std::ostream> onTheFlyOut;
+    std::unique_ptr<std::iostream> onTheFlyOut;
 
     mutable double computationMicroseconds{};
 
     void printInlineObservable(unsigned long observableIdx, const Packing &packing, const ShapeTraits &shapeTraits,
                                std::ostringstream &out) const;
-    void doPrintSnapshotHeader(std::ostream &out) const;
+    void doPrintSnapshotHeader(std::ostream &out, bool printNewline = true) const;
     void doPrintSnapshotValues(std::ostream &out, std::size_t snapshotIdx) const;
+    void verifyOnTheFlyOutputHeader();
 
 public:
     /**
@@ -116,9 +124,10 @@ public:
     /**
      * @brief Starts saving observable snapshots "on the fly" to the output stream @a out.
      * @details If something was attached previously, its destructor is called. If @a nullptr is passed, it is analogous
-     * to calling detachOnTheFlyOutput.
+     * to calling detachOnTheFlyOutput. If the output is not empty, the method verifies if has a correct header to
+     * ensure consistency of outputted observables.
      */
-    void attachOnTheFlyOutput(std::unique_ptr<std::ostream> out);
+    void attachOnTheFlyOutput(std::unique_ptr<std::iostream> out);
 
     /**
      * @brief Detaches and returns "on the fly" output stream (or @a nullptr if nothing is attached).

@@ -95,13 +95,13 @@ TEST_CASE("ObservablesCollector") {
         }
 
         SECTION("on the fly snapshots") {
-            std::stringbuf buf(std::ios::out);
+            std::stringbuf buf(std::ios::in | std::ios::out);
 
-            auto out1 = std::make_unique<std::ostream>(&buf);
+            auto out1 = std::make_unique<std::iostream>(&buf);
             collector.attachOnTheFlyOutput(std::move(out1));
             collector.addSnapshot(packing, 100, mockShapeTraits);
             packing.tryScaling(2, mockShapeTraits.getInteraction());
-            auto out2 = std::make_unique<std::ostream>(&buf);
+            auto out2 = std::make_unique<std::iostream>(&buf);
             collector.attachOnTheFlyOutput(std::move(out2));
             collector.addSnapshot(packing, 200, mockShapeTraits);
 

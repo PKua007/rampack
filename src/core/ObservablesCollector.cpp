@@ -189,10 +189,11 @@ void ObservablesCollector::doPrintSnapshotValues(std::ostream &out, std::size_t 
     out << std::endl;
 }
 
-void ObservablesCollector::doPrintSnapshotHeader(std::ostream &out) const {
+void ObservablesCollector::doPrintSnapshotHeader(std::ostream &out, bool printNewline) const {
     out << "cycle ";
     std::copy(snapshotHeader.begin(), snapshotHeader.end(), std::ostream_iterator<std::string>(out, " "));
-    out << std::endl;
+    if (printNewline)
+        out << std::endl;
 }
 
 std::vector<ObservablesCollector::ObservableData> ObservablesCollector::getFlattenedAverageValues() const {
@@ -247,11 +248,34 @@ void ObservablesCollector::visitBulkObservables(std::function<void(const BulkObs
         visitor(*bulkObservable);
 }
 
-void ObservablesCollector::attachOnTheFlyOutput(std::unique_ptr<std::ostream> out) {
+void ObservablesCollector::attachOnTheFlyOutput(std::unique_ptr<std::iostream> out) {
     this->onTheFlyOut = std::move(out);
     if (this->onTheFlyOut == nullptr)
         return;
 
     if (this->onTheFlyOut->tellp() == 0)
         this->doPrintSnapshotHeader(*this->onTheFlyOut);
+    else
+        this->verifyOnTheFlyOutputHeader();
+}
+
+void ObservablesCollector::verifyOnTheFlyOutputHeader() {
+    Assert(this->onTheFlyOut != nullptr);
+
+    this->onTheFlyOut->seekg(0, std::ios::beg);
+    std::string actualHeader;
+    std::getline(*this->onTheFlyOut, actualHeader);
+    this->onTheFlyOut->seekg(0, std::ios::beg);
+
+    std::ostringstream expectedHeaderStream;
+    this->doPrintSnapshotHeader(expectedHeaderStream, false);
+    std::string expectedHeader = expectedHeaderStream.str();
+
+    if (actualHeader != expectedHeader) {
+        std::ostringstream errorMsg;
+        errorMsg << "On-the-fly observable output stream already stores different observables." << std::endl;
+        errorMsg << "To be stored    : " << expectedHeader << std::endl;
+        errorMsg << "Already present : " << actualHeader;
+        throw IncompatibleObservablesHeaderException(errorMsg.str());
+    }
 }
