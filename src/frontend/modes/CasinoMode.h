@@ -14,6 +14,27 @@
 
 class CasinoMode : public ModeBase {
 private:
+    // Helper class for managing and validating on-the-fly output channels
+    class OnTheFlyOutput {
+    private:
+        std::size_t absoluteCyclesNumber{};
+        std::size_t roundedCyclesNumber{};
+        std::size_t snapshotEvery{};
+        bool isContinuation{};
+        Logger &logger;
+
+        void attachSnapshotOut(const std::string &filename) const;
+        void verifyLastCycleNumbers(const std::vector<std::pair<std::string, std::size_t>> &lastCycleNumbers) const;
+
+    public:
+        std::shared_ptr<ObservablesCollector> collector;
+        std::vector<std::unique_ptr<SimulationRecorder>> recorders;
+
+        OnTheFlyOutput(const Run &run, std::size_t numParticles, std::size_t absoluteCyclesNumber, bool isContinuation,
+                       Logger &logger);
+    };
+
+
     [[nodiscard]] Simulation::Environment recreateEnvironment(const RampackParameters &params, const PackingLoader &loader) const;
     void verifyDynamicParameter(const DynamicParameter &dynamicParameter, const std::string &parameterName,
                                 const IntegrationRun &run, std::size_t cycleOffset) const;
@@ -24,7 +45,6 @@ private:
                                   bool isContinuation);
     void overwriteMoveStepSizes(Simulation::Environment &env,
                                 const std::map<std::string, std::string> &packingAuxInfo) const;
-    void attachSnapshotOut(ObservablesCollector &collector, const std::string& filename, bool isContinuation) const;
     void printPerformanceInfo(const Simulation &simulation);
     void printAverageValues(const ObservablesCollector &collector);
     void printMoveStatistics(const Simulation &simulation) const;

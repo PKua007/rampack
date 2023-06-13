@@ -12,6 +12,7 @@
 #include "utils/Utils.h"
 #include "core/shapes/CompoundShapeTraits.h"
 #include "core/PeriodicBoundaryConditions.h"
+#include "utils/Fold.h"
 
 
 int CasinoMode::main(int argc, char **argv) {
@@ -194,16 +195,7 @@ void CasinoMode::performIntegration(Simulation &simulation, Simulation::Environm
     this->logger << "Starting integration '" << run.runName << "'" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    std::vector<std::unique_ptr<SimulationRecorder>> recorders;
-    for (const auto &factory : run.simulationRecorders) {
-        auto recorder = factory->create(simulation.getPacking().size(), run.snapshotEvery, isContinuation,
-                                        this->logger);
-        recorders.push_back(std::move(recorder));
-    }
-
-    auto collector = run.observablesCollector;
-    if (run.observablesOut.has_value())
-        this->attachSnapshotOut(*collector, *run.observablesOut, isContinuation);
+    OnTheFlyOutput onTheFlyOutput(run, simulation.getPacking().size(), cycleOffset, isContinuation, this->logger);
 
     Simulation::IntegrationParameters integrationParams;
     integrationParams.thermalisationCycles = run.thermalizationCycles.value_or(0);
@@ -214,7 +206,8 @@ void CasinoMode::performIntegration(Simulation &simulation, Simulation::Environm
     integrationParams.rotationMatrixFixEvery = run.orientationFixEvery;
     integrationParams.cycleOffset = cycleOffset;
 
-    simulation.integrate(env, integrationParams, shapeTraits, std::move(collector), std::move(recorders), this->logger);
+    simulation.integrate(env, integrationParams, shapeTraits, std::move(onTheFlyOutput.collector),
+                         std::move(onTheFlyOutput.recorders), this->logger);
     const ObservablesCollector &observablesCollector = simulation.getObservablesCollector();
 
     this->logger.info() << "--------------------------------------------------------------------" << std::endl;
@@ -276,19 +269,10 @@ void CasinoMode::performOverlapRelaxation(Simulation &simulation, Simulation::En
     this->logger << "Starting overlap relaxation '" << run.runName << "'" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    std::vector<std::unique_ptr<SimulationRecorder>> recorders;
-    for (const auto &factory : run.simulationRecorders) {
-        auto recorder = factory->create(simulation.getPacking().size(), run.snapshotEvery, isContinuation,
-                                        this->logger);
-        recorders.push_back(std::move(recorder));
-    }
+    OnTheFlyOutput onTheFlyOutput(run, simulation.getPacking().size(), cycleOffset, isContinuation, this->logger);
 
     if (run.helperShapeTraits != nullptr)
         shapeTraits = std::make_shared<CompoundShapeTraits>(shapeTraits, run.helperShapeTraits);
-
-    auto collector = run.observablesCollector;
-    if (run.observablesOut.has_value())
-        this->attachSnapshotOut(*collector, *run.observablesOut, isContinuation);
 
     Simulation::OverlapRelaxationParameters relaxParams;
     relaxParams.snapshotEvery = run.snapshotEvery;
@@ -296,7 +280,8 @@ void CasinoMode::performOverlapRelaxation(Simulation &simulation, Simulation::En
     relaxParams.rotationMatrixFixEvery = run.orientationFixEvery;
     relaxParams.cycleOffset = cycleOffset;
 
-    simulation.relaxOverlaps(env, relaxParams, *shapeTraits, std::move(collector), std::move(recorders), this->logger);
+    simulation.relaxOverlaps(env, relaxParams, *shapeTraits, std::move(onTheFlyOutput.collector),
+                             std::move(onTheFlyOutput.recorders), this->logger);
 
     this->logger.info();
     this->logger << "--------------------------------------------------------------------" << std::endl;
@@ -512,18 +497,16 @@ void CasinoMode::overwriteMoveStepSizes(Simulation::Environment &env,
         this->logger << notUsedStepSize << " = " << packingAuxInfo.at(notUsedStepSize) << std::endl;
 }
 
-void CasinoMode::attachSnapshotOut(ObservablesCollector &collector, const std::string &filename,
-                                   bool isContinuation) const
-{
+void CasinoMode::OnTheFlyOutput::attachSnapshotOut(const std::string &filename) const {
     std::unique_ptr<std::fstream> out;
     if (isContinuation)
-        out = std::make_unique<std::fstream>(filename, std::ios_base::in | std::ios_base::out | std::ios_base::app);
+        out = std::make_unique<std::fstream>(filename, std::ios_base::in | std::ios_base::out | std::ios_base::ate);
     else
         out = std::make_unique<std::fstream>(filename, std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
 
     ValidateOpenedDesc(*out, filename, "to store observables");
     this->logger.info() << "Observable snapshots are stored on the fly to '" << filename << "'" << std::endl;
-    collector.attachOnTheFlyOutput(std::move(out));
+    this->collector->attachOnTheFlyOutput(std::move(out));
 }
 
 void CasinoMode::printMoveStatistics(const Simulation &simulation) const {
@@ -559,4 +542,64 @@ std::string CasinoMode::formatMoveKey(const std::string &groupName, const std::s
     moveKey += ".";
     moveKey += moveName;
     return moveKey;
+}
+
+CasinoMode::OnTheFlyOutput::OnTheFlyOutput(const Run &run, std::size_t numParticles, std::size_t absoluteCyclesNumber,
+                                           bool isContinuation, Logger &logger)
+        : absoluteCyclesNumber{absoluteCyclesNumber}, isContinuation{isContinuation}, logger{logger}
+{
+    this->snapshotEvery = std::visit([](auto &&run) { return run.snapshotEvery; }, run);
+    std::optional<std::string> observablesOut = std::visit([](auto &&run) { return run.observablesOut; }, run);
+    this->roundedCyclesNumber = this->absoluteCyclesNumber - this->absoluteCyclesNumber % this->snapshotEvery;
+
+    std::vector<std::pair<std::string, std::size_t>> lastCycleNumbers;
+
+    for (const auto &factory : std::visit([](auto &&run) { return run.simulationRecorders; }, run)) {
+        auto recorder = factory->create(numParticles, this->snapshotEvery, isContinuation, this->logger);
+        lastCycleNumbers.emplace_back(factory->getFilename(), recorder->getLastCycleNumber());
+        this->recorders.push_back(std::move(recorder));
+    }
+
+    this->collector = std::visit([](auto &&run) { return run.observablesCollector; }, run);
+    if (observablesOut.has_value()) {
+        this->attachSnapshotOut(*observablesOut);
+        lastCycleNumbers.emplace_back(*observablesOut, this->collector->getOnTheFlyOutputLastCycleNumber());
+    }
+
+    this->verifyLastCycleNumbers(lastCycleNumbers);
+}
+
+void CasinoMode::OnTheFlyOutput
+    ::verifyLastCycleNumbers(const std::vector<std::pair<std::string, std::size_t>> &lastCycleNumbers) const
+{
+    auto isCycleNumberCorrect = [this](const auto &pair) {
+        return pair.second == this->roundedCyclesNumber;
+    };
+    bool numbersConsistent = std::all_of(lastCycleNumbers.begin(), lastCycleNumbers.end(), isCycleNumberCorrect);
+    if (numbersConsistent)
+        return;
+
+    std::vector<std::pair<std::string, std::string>> errorListEntries{
+        {"Total cycles", std::to_string(this->absoluteCyclesNumber)},
+        {"Snapshot every", std::to_string(this->snapshotEvery)},
+        {"Last snapshot cycles", std::to_string(this->roundedCyclesNumber)}
+    };
+
+    for (const auto&[filename, cycles] : lastCycleNumbers)
+        errorListEntries.emplace_back(filename, std::to_string(cycles));
+
+    auto lengthComp = [](const auto &pair1, const auto &pair2) { return pair1.first.length() < pair2.first.length(); };
+    auto maxLengthIt = std::max_element(errorListEntries.begin(), errorListEntries.end(), lengthComp);
+    std::size_t maxLength = maxLengthIt->first.length();
+
+    std::ostringstream errorOut;
+    errorOut << "Last stored cycle numbers are inconsistent throughout the outputs:" << std::endl;
+    for (const auto &[entry, cycles] : errorListEntries)
+        errorOut << std::left << std::setw(static_cast<int>(maxLength)) << entry << " : " << cycles << std::endl;
+    errorOut << std::endl;
+    errorOut << Fold("This may happen when the simulation run is interrupted due to an error. If RAMTRJ recording was "
+                     "stored, all simulation outputs can be regenerated. See").width(80) << std::endl;
+    errorOut << "`rampack trajectory --help`";
+
+    throw ValidationException(errorOut.str());
 }
