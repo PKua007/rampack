@@ -8,6 +8,8 @@
 
 #include "ObservablesCollector.h"
 #include "utils/Utils.h"
+#include "utils/GetlineBackwards.h"
+
 
 void ObservablesCollector::addObservable(std::shared_ptr<Observable> observable, std::size_t observableType) {
     if (!this->snapshotValues.empty())
@@ -167,7 +169,6 @@ void ObservablesCollector::clear() {
         singleSet.clear();
     for (const auto &bulkObservable : this->bulkObservables)
         bulkObservable->clear();
-    static_cast<void>(this->detachOnTheFlyOutput());
     this->computationMicroseconds = 0;
 }
 
@@ -191,6 +192,7 @@ void ObservablesCollector::doPrintSnapshotValues(std::ostream &out, std::size_t 
     for (const auto &observableValues : this->snapshotValues)
         out << observableValues[snapshotIdx] << " ";
     out << std::endl;
+    Expects(out.good());
 }
 
 void ObservablesCollector::doPrintSnapshotHeader(std::ostream &out, bool printNewline) const {
@@ -258,6 +260,7 @@ void ObservablesCollector::attachOnTheFlyOutput(std::unique_ptr<std::iostream> o
     if (this->onTheFlyOut == nullptr)
         return;
 
+    this->onTheFlyOut->seekp(0, std::ios::end);
     if (this->onTheFlyOut->tellp() == 0) {
         this->doPrintSnapshotHeader(*this->onTheFlyOut);
     } else {
@@ -272,7 +275,6 @@ void ObservablesCollector::verifyOnTheFlyOutputHeader() {
     this->onTheFlyOut->seekg(0, std::ios::beg);
     std::string actualHeader;
     std::getline(*this->onTheFlyOut, actualHeader);
-    this->onTheFlyOut->seekg(0, std::ios::beg);
 
     std::ostringstream expectedHeaderStream;
     this->doPrintSnapshotHeader(expectedHeaderStream, false);
@@ -280,10 +282,11 @@ void ObservablesCollector::verifyOnTheFlyOutputHeader() {
 
     if (actualHeader != expectedHeader) {
         std::ostringstream errorMsg;
-        errorMsg << "On-the-fly observable output stream already stores different observables." << std::endl;
+        errorMsg << "ObservablesCollector: On-the-fly observable output stream already stores different observables.";
+        errorMsg << std::endl;
         errorMsg << "To be stored    : " << expectedHeader << std::endl;
         errorMsg << "Already present : " << actualHeader;
-        throw IncompatibleObservablesHeaderException(errorMsg.str());
+        throw ValidationException(errorMsg.str());
     }
 }
 
@@ -295,17 +298,20 @@ std::unique_ptr<std::iostream> ObservablesCollector::detachOnTheFlyOutput() {
 void ObservablesCollector::findOnTheFlyLastCycleNumber() {
     Assert(this->onTheFlyOut != nullptr);
 
-    // VERY crude and inefficient way of reading the last line - reading all the lines one by one.
-    // However, observable output won't usually be very long, so why bother...
-    this->onTheFlyOut->seekg(0, std::ios::beg);
-    std::string nonEmptyLine;
-    std::string line;
-    while (std::getline(*this->onTheFlyOut, line))
-        if (!line.empty())
-            nonEmptyLine = line;
-    this->onTheFlyOut->seekg(0, std::ios::beg);
+    this->onTheFlyOut->seekg(0, std::ios::end);
+    std::string emptyLine, line;
+    GetlineBackwards::getline(*this->onTheFlyOut, emptyLine);
+    GetlineBackwards::getline(*this->onTheFlyOut, line);
+    ValidateMsg(this->onTheFlyOut->good() && emptyLine.empty(),
+                "ObservablesCollector: Could not read last cycle number - broken observable output stream");
 
-    std::istringstream lineStream(nonEmptyLine);
+    // Only header is present
+    if (this->onTheFlyOut->tellp() == 0) {
+        this->onTheFlyLastCycleNumber = 0;
+        return;
+    }
+
+    std::istringstream lineStream(line);
     ValidateMsg(lineStream >> this->onTheFlyLastCycleNumber,
-                "Could not read last cycle number: broken observable output stream");
+                "ObservablesCollector: Could not read last cycle number: broken observable output stream");
 }

@@ -16,12 +16,6 @@
 #include "utils/Quantity.h"
 
 
-class IncompatibleObservablesHeaderException : public ValidationException {
-public:
-    using ValidationException::ValidationException;
-};
-
-
 /**
  * @brief The class responsible for collection and storing of all Observable -s and BulkObservable -s.
  * @details The class is responsible for three possible observable scopes: snapshots, inline printing on the standard
