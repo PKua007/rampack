@@ -26,6 +26,9 @@ private:
         void attachSnapshotOut(const std::string &filename) const;
         void verifyLastCycleNumbers(const std::vector<std::pair<std::string, std::size_t>> &lastCycleNumbers) const;
 
+        void
+        throwInconsistencyException(const std::vector<std::pair<std::string, std::size_t>> &lastCycleNumbers) const;
+
     public:
         std::shared_ptr<ObservablesCollector> collector;
         std::vector<std::unique_ptr<SimulationRecorder>> recorders;

@@ -578,11 +578,17 @@ void CasinoMode::OnTheFlyOutput
     bool numbersConsistent = std::all_of(lastCycleNumbers.begin(), lastCycleNumbers.end(), isCycleNumberCorrect);
     if (numbersConsistent)
         return;
+    else
+        this->throwInconsistencyException(lastCycleNumbers);
+}
 
+void CasinoMode::OnTheFlyOutput
+    ::throwInconsistencyException(const std::vector<std::pair<std::string, std::size_t>> &lastCycleNumbers) const
+{
     std::vector<std::pair<std::string, std::string>> errorListEntries{
-        {"Total cycles", std::to_string(this->absoluteCyclesNumber)},
-        {"Snapshot every", std::to_string(this->snapshotEvery)},
-        {"Last snapshot cycles", std::to_string(this->roundedCyclesNumber)}
+            {"Total cycles", std::to_string(this->absoluteCyclesNumber)},
+            {"Snapshot every", std::to_string(this->snapshotEvery)},
+            {"Last snapshot cycles", std::to_string(this->roundedCyclesNumber)}
     };
 
     for (const auto&[filename, cycles] : lastCycleNumbers)
