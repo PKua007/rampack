@@ -22,6 +22,11 @@ public:
     virtual void recordSnapshot(const Packing &packing, std::size_t cycle) = 0;
 
     /**
+     * @brief Returns last recorder cycle number.
+     */
+     [[nodiscard]] virtual std::size_t getLastCycleNumber() const = 0;
+
+    /**
      * @brief Closes the underlying sink on demand and prevents any further operations.
      */
     virtual void close() = 0;
