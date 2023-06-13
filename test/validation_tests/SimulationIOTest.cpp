@@ -111,6 +111,7 @@ TEST_CASE("Simulation IO: storing and restoring")
         std::vector<std::unique_ptr<SimulationRecorder>> recorders2;
         recorders2.push_back(std::make_unique<RamtrjRecorder>(std::move(inout_stream2), simulation.getPacking().size(),
                                                               100, true));
+        CHECK(recorders2.front()->getLastCycleNumber() == 1000);
         auto collector2 = std::make_unique<ObservablesCollector>();
         simulation.integrate(1, 1, 500, 500, 100, 100, traits, std::move(collector2), std::move(recorders2), logger,
                              1000);
@@ -138,6 +139,7 @@ TEST_CASE("Simulation IO: storing and restoring")
         std::vector<std::unique_ptr<SimulationRecorder>> recorders2;
         recorders2.push_back(std::make_unique<RamtrjRecorder>(std::move(inout_stream2), simulation.getPacking().size(),
                                                               100, true));
+        CHECK(recorders2.front()->getLastCycleNumber() == 0);
         auto collector2 = std::make_unique<ObservablesCollector>();
         simulation.integrate(1, 1, 500, 500, 100, 100, traits, std::move(collector2), std::move(recorders2), logger);
 

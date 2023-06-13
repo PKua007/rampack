@@ -22,10 +22,10 @@ TEST_CASE("XYZRecorder") {
     std::stringbuf outBuf;
 
     {
-        auto out = std::make_unique<std::ostream>(&outBuf);
+        auto out = std::make_unique<std::iostream>(&outBuf);
         out->precision(1);
         *out << std::fixed;
-        XYZRecorder recorder(std::move(out));
+        XYZRecorder recorder(std::move(out), false);
         recorder.recordSnapshot(packing, 1000);
         packing.tryScaling(2, traits.getInteraction());
         recorder.recordSnapshot(packing, 2000);
@@ -44,4 +44,10 @@ A 9.0 1.0 1.0 0.0 0.0 0.0 1.0
 A 5.0 5.0 8.0 0.0 0.0 0.0 1.0
 )";
     CHECK(outBuf.str() == expectedOut);
+
+    SECTION("last cycle number when appending") {
+        auto out = std::make_unique<std::iostream>(&outBuf);
+        XYZRecorder recorder(std::move(out), true);
+        CHECK(recorder.getLastCycleNumber() == 2000);
+    }
 }
