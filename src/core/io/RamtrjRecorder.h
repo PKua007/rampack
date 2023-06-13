@@ -46,6 +46,7 @@ public:
      */
     void recordSnapshot(const Packing &packing, std::size_t cycle) override;
 
+    [[nodiscard]] std::size_t getLastCycleNumber() const override { return this->numSnapshots * this->cycleStep; }
     void close() override { this->close0(); }
 };
 

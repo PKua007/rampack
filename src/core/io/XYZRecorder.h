@@ -21,10 +21,13 @@
  */
 class XYZRecorder : public SimulationRecorder {
 private:
-    std::unique_ptr<std::ostream> out;
+    std::unique_ptr<std::iostream> out;
+    std::size_t lastCycleNumber{};
+
+    void findLastCycleNumber();
 
 public:
-    explicit XYZRecorder(std::unique_ptr<std::ostream> out) : out{std::move(out)} { }
+    explicit XYZRecorder(std::unique_ptr<std::iostream> out, bool append);
     ~XYZRecorder() override = default;
 
     /**
@@ -33,6 +36,7 @@ public:
      */
     void recordSnapshot(const Packing &packing, std::size_t cycle) override;
 
+    [[nodiscard]] std::size_t getLastCycleNumber() const override { return this->lastCycleNumber; }
     void close() override { this->out = nullptr; }
 };
 

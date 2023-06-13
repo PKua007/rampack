@@ -21,8 +21,7 @@ std::unique_ptr<SimulationRecorder> RamtrjRecorderFactory::create(std::size_t nu
         );
     } else {
         inout = std::make_unique<std::fstream>(
-                this->filename,
-            std::ios_base::in | std::ios_base::out | std::ios_base::binary | std::ios_base::trunc
+            this->filename, std::ios_base::in | std::ios_base::out | std::ios_base::binary | std::ios_base::trunc
         );
     }
 
@@ -37,12 +36,17 @@ std::unique_ptr<SimulationRecorder> XYZRecorderFactory::create([[maybe_unused]] 
 {
     std::unique_ptr<std::fstream> inout;
 
-    if (isContinuation)
-        inout = std::make_unique<std::fstream>(this->filename, std::ios_base::app);
-    else
-        inout = std::make_unique<std::fstream>(this->filename, std::ios_base::out);
+    if (isContinuation) {
+        inout = std::make_unique<std::fstream>(
+            this->filename, std::ios_base::in | std::ios_base::out | std::ios_base::ate
+        );
+    } else {
+        inout = std::make_unique<std::fstream>(
+            this->filename,std::ios_base::in | std::ios_base::out | std::ios_base::trunc
+        );
+    }
 
     ValidateOpenedDesc(*inout, this->filename, "to store XYZ trajectory");
     logger.info() << "XYZ trajectory is stored on the fly to '" << this->filename << "'" << std::endl;
-    return std::make_unique<XYZRecorder>(std::move(inout));
+    return std::make_unique<XYZRecorder>(std::move(inout), isContinuation);
 }
