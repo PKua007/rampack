@@ -4,7 +4,8 @@
 
 #include <utility>
 #include <variant>
-#include "ZipIterator.hpp"
+#include <iterator> // Must be included before ZipIterator!
+#include <ZipIterator.hpp>
 
 #include "LatticeMatcher.h"
 #include "ArrangementMatcher.h"
