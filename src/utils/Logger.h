@@ -9,6 +9,7 @@
 #include <utility>
 #include <algorithm>
 #include <functional>
+#include <vector>
 
 #include "Exceptions.h"
 
