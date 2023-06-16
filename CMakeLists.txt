@@ -73,12 +73,6 @@ endif()
 add_library(quickhull STATIC extern/quickhull/QuickHull.cpp)
 target_include_directories(quickhull PUBLIC extern/quickhull/)
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_compile_options(quickhull PRIVATE -Wno-maybe-uninitialized)
-    # unset _GLIBCXX_CONCEPT_CHECKS for quickhull because it causes compilation errors
-    target_compile_options(quickhull PRIVATE -U_GLIBCXX_CONCEPT_CHECKS)
-endif()
-
 # Allow overriding CMake options with set() and turn off tests for cxxopts
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 set(CXXOPTS_BUILD_TESTS OFF)
