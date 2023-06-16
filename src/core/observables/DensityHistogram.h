@@ -25,7 +25,7 @@ private:
     std::shared_ptr<GoldstoneTracker> tracker;
     HistogramBuilder3D histogramBuilder;
     std::optional<Vector<3>> firstOrigin;
-    [[maybe_unused]] std::size_t numThreads{};  // maybe_unused for builds without OpenMP support
+    OMP_MAYBE_UNUSED std::size_t numThreads{};  // maybe_unused for builds without OpenMP support
 
     static std::array<std::size_t, 3> normalizeNumBins(std::array<std::size_t, 3> array);
 
