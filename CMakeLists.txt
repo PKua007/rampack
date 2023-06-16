@@ -79,19 +79,32 @@ set(CXXOPTS_BUILD_TESTS OFF)
 
 # Turn off tests and documentation for Eigen
 set(EIGEN_BUILD_DOC OFF)
+# This is quite precarious, because it changes the global behavior of CMake:
+# https://cmake.org/cmake/help/latest/command/enable_testing.html
+# But as long as using rampack as static library is not officially supported, I don't care >:)
 set(BUILD_TESTING OFF)
 
 # Now we can safely add submodule subdirectories
 add_subdirectory(extern/Catch2 EXCLUDE_FROM_ALL)
 add_subdirectory(extern/trompeloeil EXCLUDE_FROM_ALL)
 add_subdirectory(extern/cxxopts EXCLUDE_FROM_ALL)
+
+# Add Eigen but silence it, because it displays unhelpful message about targets
+message(STATUS "Configuring Eigen...")
+set(_saved_CMAKE_MESSAGE_LOG_LEVEL ${CMAKE_MESSAGE_LOG_LEVEL})
+set(CMAKE_MESSAGE_LOG_LEVEL NOTICE)
 add_subdirectory(extern/eigen EXCLUDE_FROM_ALL)
+set(CMAKE_MESSAGE_LOG_LEVEL ${_saved_CMAKE_MESSAGE_LOG_LEVEL})
+message(STATUS "Configuring Eigen done")
 
 # Set CXXOPTS_VECTOR_DELIMITER globally to avoid potential errors when used in more than one translation unit
 set_property(TARGET cxxopts APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS CXXOPTS_VECTOR_DELIMITER='|')
 
 add_subdirectory(src)
-add_subdirectory(test)
+if (RAMPACK_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(test)
+endif()
 
 # Install rampack bin
 install(TARGETS rampack DESTINATION "bin")
