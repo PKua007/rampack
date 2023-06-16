@@ -7,6 +7,7 @@
 
 #include "AnisotropicVolumeScaler.h"
 #include "utils/Exceptions.h"
+#include "utils/CompilerMacros.h"
 
 
 const AnisotropicVolumeScaler::ScalingDirection AnisotropicVolumeScaler::X({{true, false, false}});
@@ -47,7 +48,7 @@ AnisotropicVolumeScaler::ScalingDirection operator&(const AnisotropicVolumeScale
 // GCC 13 incorrectly reports a warning on malformed bounds in __builtin_memmove, similar to
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=100366
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=107852
-#if defined(__GNUC__) && __GNUC__ == 13 && !defined(__clang__)
+#if defined(RAMPACK_GCC) && RAMPACK_GCC >= 130000
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Warray-bounds"
     #pragma GCC diagnostic ignored "-Wstringop-overflow"
@@ -58,7 +59,7 @@ AnisotropicVolumeScaler::ScalingDirection operator&(const AnisotropicVolumeScale
     if (sd2.empty() && sd1.size() == 1)
         return sd1;
 
-#if defined(__GNUC__) && __GNUC__ == 13 && !defined(__clang__)
+#if defined(RAMPACK_GCC) && RAMPACK_GCC >= 130000
     #pragma GCC diagnostic pop
 #endif
 
