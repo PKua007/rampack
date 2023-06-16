@@ -661,8 +661,8 @@ Moreover, pairs of particles in different layers are not enumerated. `focal_poin
 [named point](shapes.md#named-points), which is used to associate particles to layers and with respect to which the
 distance should be calculated.
 
-**Hint**: class `layerwise_radial` can be also used for cylindrical binning. For example, to project all particles onto a
-single XY plane, one can use `hkl = [0, 0, 1]`.
+**Hint**: class `layerwise_radial` can be also used for cylindrical binning. For example, to project all particles onto
+a single XY plane, one can use `hkl = [0, 0, 1]`.
 
 
 ## Correlation functions
@@ -748,7 +748,7 @@ Arguments:
 
 * ***comp***
 
-  Component of the axis vector to be returned. It can be `"x"`, `"y"` or `"z"`.
+  Coordinate system component of the axis vector to be returned. It can be `"x"`, `"y"` or `"z"`.
 
 
 [&uarr; back to the top](#observables)

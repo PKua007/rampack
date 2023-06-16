@@ -423,7 +423,7 @@ optimize_layers(
 Performs intelligent, layer-wise optimization of the unit cell and cell dimensions. Contrary to
 [class `optimize_cell`](#class-optimize_cell), it optimizes the cell layer by layer, minimizing the gaps in
 multi-particle cells. The drawback is that is performs the optimization only in one direction, specified by `axis`
-(`"x"`, `"y"`, `"z"`).
+(`"x"`, `"y"`, `"z"`). The axis is defined in box relative coordinates and may not coincide with coordinate system axes.
 
 First, it identifies the layers. The layer is a group of particles in the unit cell, whose relative coordinate
 corresponding to `axis` is identical. For example, for [class `fcc`](#class-fcc) cell and `axis = "z"`, one layer
@@ -445,11 +445,12 @@ columnar(
 * **Lattice requirements**: regular, normalized
 * **Resulting lattice**: irregular, normalized
 
-Takes a regular lattice and randomly shifts particle columns to form a columnar phase. The columns are created on `axis`
-(`"x"`, `"y"`, `"z"`) axis. It recognizes the columns in a way analogous to how
-[class `optimize_layers`](#class-optimize_layers) recognizes layers: the column is a set of particles in the whole
-lattice, whose coordinates differ only on a coordinate corresponding to `axis`. After the columns are recognized, each
-one is moved by a random amount along `axis` using RNG seeded with Integer `seed`.
+Takes a regular lattice and randomly shifts particle columns to form a columnar phase along the axis specified by `axis`
+(`"x"`, `"y"`, `"z"`). The axis is defined in box relative coordinates and may not coincide with coordinate system axes.
+Columns are recognized a way analogous to how [class `optimize_layers`](#class-optimize_layers) recognizes layers:
+the column is a set of particles in the whole lattice, whose relative coordinates differ only on a coordinate
+corresponding to `axis`. After the columns are recognized, each one is moved by a random amount along `axis` using RNG
+seeded with Integer `seed`.
 
 After "columnarization", the lattice remains normalized (RAMPACK periodically wraps the columns sticking out of their
 bounds), however it is no longer regular.
@@ -494,9 +495,8 @@ Arguments:
 
 * ***layer_axis***
 
-  `"x"`, `"y"` or `"z"` String representing the axis orthogonal to layers; more precisely, it corresponds to the only
-  box vector that is not parallel to the layers (`"x"`, `"y"`, `"z"` refer to, respectively, first, second and third
-  box vector).
+  `"x"`, `"y"` or `"z"` String representing the axis orthogonal to layers; the axis is defined in box relative
+  coordinates and may not coincide with coordinate system axes.
 
 * ***rot_axis***
 
