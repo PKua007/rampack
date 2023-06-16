@@ -4,13 +4,15 @@
 
 #include <algorithm>
 
+#include "utils/CompilerMacros.h"
+
 // Ignore -Wclass-memaccess warnings in Eigen in GCC arm64 compilation
-#ifndef __clang__
+#ifdef RAMPACK_GCC
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wclass-memaccess"
 #endif
 #include <Eigen/Core>
-#ifndef __clang__
+#ifdef RAMPACK_GCC
     #pragma GCC diagnostic pop
 #endif
 
