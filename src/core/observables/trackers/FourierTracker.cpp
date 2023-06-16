@@ -6,17 +6,23 @@
 
 #include "utils/CompilerMacros.h"
 
-// Ignore -Wclass-memaccess warnings in Eigen in GCC arm64 compilation
-#ifdef RAMPACK_GCC
+// Ignore specific warnings in Eigen in GCC and Clang
+#if defined(RAMPACK_GCC)
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wclass-memaccess"
-#endif
-#include <Eigen/Core>
-#ifdef RAMPACK_GCC
-    #pragma GCC diagnostic pop
+#elif defined(RAMPACK_CLANG)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wunused-but-set-variable"
 #endif
 
+#include <Eigen/Core>
 #include <root_finder/root_finder.hpp>
+
+#if defined(RAMPACK_GCC)
+    #pragma GCC diagnostic pop
+#elif defined(RAMPACK_CLANG)
+    #pragma clang diagnostic pop
+#endif
 
 #include "FourierTracker.h"
 #include "utils/Exceptions.h"
