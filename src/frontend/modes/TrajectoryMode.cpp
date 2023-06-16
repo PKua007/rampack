@@ -31,7 +31,7 @@ int TrajectoryMode::main(int argc, char **argv) {
     std::string bulkObsOutputFilename;
     std::vector<std::string> bulkObservables;
     std::size_t averagingStart{};
-    std::size_t maxThreads{};
+    std::size_t maxThreads = 1;
     std::vector<std::string> snapshotOutputs;
     std::string verbosity;
     std::string auxOutput;
@@ -78,7 +78,7 @@ int TrajectoryMode::main(int argc, char **argv) {
             ("a,averaging-start", "specifies when the averaging starts. It is used for bulk observables",
              cxxopts::value<std::size_t>(averagingStart))
             ("T,max-threads", "specifies maximal number of OpenMP threads that may be used to calculate observables. If 0 "
-                              "is passed, all available threads are used",
+                              "is passed, all available threads are used.",
              cxxopts::value<std::size_t>(maxThreads)->default_value("1"))
             ("s,output-snapshot", "reads the last snapshot and outputs it in a given format: `ramsnap`, `wolfram`, "
                                   "`xyz`. More that one output format can be specified using multiple options (`-s "
@@ -126,8 +126,15 @@ int TrajectoryMode::main(int argc, char **argv) {
     std::string cmd(argv[0]);
     if (!parsedOptions.unmatched().empty())
         throw ValidationException("Unexpected positional arguments. See " + cmd + " --help");
+
     if (!parsedOptions.count("input"))
         throw ValidationException("Input file must be specified with option -i [input file name]");
+
+#ifndef _OPENMP
+    if (maxThreads > 1)
+        this->logger.warn() << "OpenMP is disabled in this build. Falling back to --max-threads=1" << std::endl;
+#endif
+
     if (!parsedOptions.count("log-info") && !parsedOptions.count("output-obs")
         && !parsedOptions.count("output-bulk-obs") && !parsedOptions.count("output-snapshot")
         && !parsedOptions.count("output-trajectory"))

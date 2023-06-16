@@ -97,7 +97,7 @@ int CasinoMode::main(int argc, char **argv) {
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
     RampackParameters rampackParams = this->io.dispatchParams(inputFilename);
-    const auto &baseParams = rampackParams.baseParameters;
+    auto &baseParams = rampackParams.baseParameters;
     const auto &shapeTraits = baseParams.shapeTraits;
 
     this->logger << "--------------------------------------------------------------------" << std::endl;
@@ -105,11 +105,12 @@ int CasinoMode::main(int argc, char **argv) {
     this->logger << "Total interaction range  : " << shapeTraits->getInteraction().getTotalRangeRadius() << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
+#ifdef _OPENMP
     std::size_t numDomains = std::accumulate(baseParams.domainDivisions.begin(), baseParams.domainDivisions.end(), 1ul,
                                              std::multiplies<>{});
 
     // We use the same number of threads for scaling and particle moves, otherwise OpenMP leaks memory
-    // Too many domain threads are ok, some will just be jobless. But we cannot use less scaling threads than
+    // Too many domain threads are ok, some will just be jobless. But we cannot use fewer scaling threads than
     // domain threads
     // See https://stackoverflow.com/questions/67267035/...
     // ...increasing-memory-consumption-for-2-alternating-openmp-parallel-regions-with-dif
@@ -124,13 +125,26 @@ int CasinoMode::main(int argc, char **argv) {
         this->logger << "Using 1 thread without domain decomposition for particle moves" << std::endl;
     } else {
         this->logger << "Using " << baseParams.domainDivisions[0] << " x " << baseParams.domainDivisions[1] << " x ";
-        this->logger << baseParams.domainDivisions[2] << " = " << numDomains << " domains for particle moves" << std::endl;
+        this->logger << baseParams.domainDivisions[2] << " = " << numDomains << " domains for particle moves";
+        this->logger << std::endl;
     }
     this->logger << "--------------------------------------------------------------------" << std::endl;
+#else
+    if (baseParams.domainDivisions != std::array<std::size_t, 3>{1, 1, 1} || baseParams.scalingThreads != 1) {
+        baseParams.domainDivisions = {1, 1, 1};
+        baseParams.scalingThreads = 1;
+
+        this->logger.warn() << "OpenMP is disabled in the build - domain division and parallel scaling are ";
+        this->logger << "unavailable." << std::endl;
+        this->logger << "Falling back to sequential execution." << std::endl;
+    } else {
+        this->logger.info() << "OpenMP is disabled in the build." << std::endl;
+    }
+    this->logger.info() << "--------------------------------------------------------------------" << std::endl;
+#endif
 
     // Load starting state from a previous or current run packing depending on --start-from and --continue
     // options combination
-
     std::optional<std::string> optionalStartFrom;
     std::optional<std::size_t> optionalContinuationCycles;
     if (parsedOptions.count("start-from"))
