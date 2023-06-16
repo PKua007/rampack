@@ -44,10 +44,23 @@ AnisotropicVolumeScaler::ScalingDirection operator|(const AnisotropicVolumeScale
 AnisotropicVolumeScaler::ScalingDirection operator&(const AnisotropicVolumeScaler::ScalingDirection &sd1,
                                                     const AnisotropicVolumeScaler::ScalingDirection &sd2)
 {
+// GCC 13 incorrectly reports a warning on malformed bounds in __builtin_memmove, similar to
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=100366
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=107852
+#if defined(__GNUC__) && __GNUC__ == 13 && !defined(__clang__)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Warray-bounds"
+    #pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
+
     if (sd1.empty() && sd2.size() == 1)
         return sd2;
     if (sd2.empty() && sd1.size() == 1)
         return sd1;
+
+#if defined(__GNUC__) && __GNUC__ == 13 && !defined(__clang__)
+    #pragma GCC diagnostic pop
+#endif
 
     Expects(sd1.size() == 1);
     Expects(sd2.size() == 1);

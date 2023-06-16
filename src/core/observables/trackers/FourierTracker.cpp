@@ -14,11 +14,7 @@
     #pragma GCC diagnostic pop
 #endif
 
-// Some stray ';' require turning off -Wpedantic for this header (for both GCC and Clang)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
 #include <root_finder/root_finder.hpp>
-#pragma GCC diagnostic pop
 
 #include "FourierTracker.h"
 #include "utils/Exceptions.h"
