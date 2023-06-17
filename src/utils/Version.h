@@ -97,7 +97,7 @@ public:
 };
 
 
-constexpr Version CURRENT_VERSION{0, 15, 0};
+constexpr Version CURRENT_VERSION{RAMPACK_VERSION_MAJOR, RAMPACK_VERSION_MINOR, RAMPACK_VERSION_PATCH};
 
 // Auxiliary versions user in the code
 
