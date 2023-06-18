@@ -6,10 +6,11 @@
 
 #include "utils/CompilerMacros.h"
 
-// Ignore specific warnings in Eigen in GCC and Clang
+// Ignore specific warnings in Eigen/root_finder in GCC and Clang
 #if defined(RAMPACK_GCC)
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wclass-memaccess"
+    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #elif defined(RAMPACK_CLANG)
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wunused-but-set-variable"

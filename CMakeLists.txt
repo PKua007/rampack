@@ -4,6 +4,7 @@ project(rampack VERSION 0.15.0)
 # Available options
 option(RAMPACK_STATIC_LINKING "Build no-dependency static executable" OFF)
 option(RAMPACK_BUILD_TESTS "Build unit and validation tests" OFF)
+option(RAMPACK_ARCH_NATIVE "Compile for native CPU architecture" ON)
 
 add_compile_definitions(RAMPACK_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
                         RAMPACK_VERSION_MINOR=${PROJECT_VERSION_MINOR}
@@ -39,15 +40,17 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES "Release")
-    # Apple silicon does not like -march=native option
-    if (NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"))
-        add_compile_options(-march=native)
+    if (RAMPACK_ARCH_NATIVE)
+        # Apple silicon does not like -march=native option
+        if (NOT (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64"))add_compile_options(-march=native)
+        endif()
     endif()
     add_compile_options(-O3)
 elseif (CMAKE_BUILD_TYPE MATCHES "Debug")
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         add_compile_definitions(_GLIBCXX_DEBUG _GLIBCXX_DEBUG_PEDANTIC)
     endif()
+    # This is needed for debugging on macOS
     add_compile_options(-gdwarf-4)
 endif()
 
