@@ -14,17 +14,14 @@ library (later, with Python bindings as well).
 ## [Unreleased]
 
 
-## [1.0.0] - 2023-06-30
+## [1.0.0] - 2023-06-18
 
 This is the initial stable release of the simulation software.
 
 
 ## Previous versions
 
-During the development stage (0.x versions) no changelog was maintained.
-The changes can be inferred from git history as well as closed
-[Issues](https://github.com/PKua007/rampack/issues?q=is%3Aissue+is%3Aclosed) and
-[Pull requests](https://github.com/PKua007/rampack/pulls?q=is%3Apr+is%3Aclosed)
+During the development stage (0.x versions) no changelog was maintained. The changes can be inferred from git history.
 
 [Unreleased]: hhttps://github.com/PKua007/rampack/compare/v1.0.0..HEAD
 [1.0.0]: https://github.com/PKua007/rampack/releases/tag/v1.0.0
