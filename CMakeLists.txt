@@ -174,12 +174,16 @@ endif()
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "Piotr Kubala and rampack Contributors")
 set(CPACK_PACKAGE_DESCRIPTION "The software for simulating particle systems using different flavors of Monte Carlo sampling.")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Random And Maximal PACKing PACKage.")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Random And Maximal PACKing PACKage")
 set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/PKua007/rampack")
 set(CPACK_PACKAGE_MAINTAINER "${CPACK_PACKAGE_VENDOR}")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md")
 set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 
+# DEB-specific options
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_MAINTAINER}")
+
+# RPM-specific options
+set(CPACK_RPM_PACKAGE_DESCRIPTION "${CPACK_PACKAGE_DESCRIPTION}")
 
 include(CPack)
