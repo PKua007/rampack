@@ -13,6 +13,14 @@ library (later, with Python bindings as well).
 
 ## [Unreleased]
 
+### Fixed
+
+* Fixed typos in documentation and changelog.
+
+### Added
+
+* Added [v1] and [latest] tags.
+
 
 ## [1.0.0] - 2023-06-18
 
@@ -23,7 +31,10 @@ This is the initial stable release of the simulation software.
 
 During the development stage (0.x versions) no changelog was maintained. The changes can be inferred from git history.
 
-[Unreleased]: hhttps://github.com/PKua007/rampack/compare/v1.0.0..HEAD
+[Unreleased]: https://github.com/PKua007/rampack/compare/v1.0.0..HEAD
+[latest]: https://github.com/PKua007/rampack/releases/tag/latest
+[v1]: https://github.com/PKua007/rampack/releases/tag/v1
 [1.0.0]: https://github.com/PKua007/rampack/releases/tag/v1.0.0
+
 
 [&uarr; back to the top](#changelog)
