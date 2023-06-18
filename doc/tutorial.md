@@ -24,43 +24,10 @@ Also: [see full Reference](reference.md)
 
 ## Installation
 
-Each release of RAMPACK contains both a compiled binary and a source code. The compiled binary is ready to be used out
-of the box. However, it is recommended to compile it from source to fully utilize native CPU optimizations. The project
-uses CMake build system - you need CMake installed on your system. All other dependencies are contained within the git
-repository as submodules. It is important to clone it with `--recurse-submodules` option
+There are various methods of installing the software. Compilation from the source code is available on all popular
+OSes (Linux/macOS/Windows). For Linux, we also provide standalone static-linked binary (with no dependencies) as well
+as DEB/RPM packages. See [Installation](installation.md) for a full instruction.
 
-```shell
-git clone https://github.com/PKua007/rampack.git --recurse-submodules
-```
-
-or, if the project was already cloned without it, one should execute
-
-```shell
-git submodule update --init
-```
-
-Then issuing the following commands with install the program with tab completion scripts for `bash` and `zsh` shells
-
-```shell
-mkdir build
-cd build
-cmake ../
-cmake --build .
-sudo cmake --build . --target install
-```
-
-The first CMake command `cmake ../` prepares the build. One can pass CMake options `-DCMAKE_C_COMPILER=...`, 
-`-DCMAKE_CXX_COMPILER=...` to select the compiler and `-DCMAKE_INSTALL_PREFIX=/prefix/path` to change CMake install path
-(the default is `/usr/local`).
-
-The `rampack` executable will be copied to `/prefix/path/bin`, `bash` autocompletion script
-to `/prefix/path/share/bash-completion/completions` and `zsh` autocompletion script to
-`/prefix/path/share/zsh/site-functions`. Autocompletion scripts will be installed only if the corresponding shell is
-detected. You can verify the installation by executing
-
-```shell
-rampack --version
-```
 
 ## Simulation model
 

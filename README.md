@@ -17,11 +17,15 @@ library (later also with Python bindings) in the near future.
 
 ## Quickstart
 
-Each release of RAMPACK contains both a compiled binary `rampack` and a source code. The compiled binary is ready to be
-used out of the box. However, it is recommended to compile it from source to fully utilize native CPU optimizations. See 
-[this](doc/tutorial.md#installation) for the details. If you choose the first option, you can add the folder containing
-the `rampack` binary to your `$PATH` to be able to skip the leading `./` when executing. `bash` and `zsh` autocompletion
-scripts are bundled. They are installed automatically when compiled from source.
+Each release of RAMPACK contains:
+* source core (Linux / macOS / Windows)
+* standalone static-linked `rampack` binary (Linux)
+* DEB/RPM packages with static-linked `rampack` binary and autocompletion scripts (Linux)
+
+The compiled binary (standalone/DEB/RPM) is ready to be used out of the box (Linux only). However, it is recommended to
+compile it from source to fully utilize native CPU optimizations. See [Intstallation](doc/installation.md) for the
+details. `bash` and `zsh` autocompletion scripts are bundled. They are installed automatically when compiled from source
+and are included in DEB/RPM packages.
 
 We provided a few sample input files in the `sample_inputs` folder. They can be used to verify that the software is
 working correctly and are a good learning materials. For example,
