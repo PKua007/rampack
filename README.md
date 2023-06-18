@@ -23,7 +23,7 @@ Each release of RAMPACK contains:
 * DEB/RPM packages with static-linked `rampack` binary and autocompletion scripts (Linux)
 
 The compiled binary (standalone/DEB/RPM) is ready to be used out of the box (Linux only). However, it is recommended to
-compile it from source to fully utilize native CPU optimizations. See [Intstallation](doc/installation.md) for the
+compile it from source to fully utilize native CPU optimizations. See [Installation](doc/installation.md) for the
 details. `bash` and `zsh` autocompletion scripts are bundled. They are installed automatically when compiled from source
 and are included in DEB/RPM packages.
 
