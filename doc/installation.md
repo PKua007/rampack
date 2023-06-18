@@ -26,12 +26,12 @@ This reference page gives installation instructions for all methods in all suppo
 ## Source code compilation
 
 Source code compilation is a recommended method of RAMPACK installation. It enables you to utilize native CPU
-optimizations, which usually increase the speed by around 10%. To build the project, you need the following
+optimizations, which usually increase the performance by around 10%. To build the project, you need the following
 prerequisites:
 
-- git
 - cmake 3.10+
 - gcc 7+ / clang 7+
+- git (optionally)
 
 All other dependencies are contained within the git repository as submodules. The compilation was tested on:
 
@@ -39,15 +39,14 @@ All other dependencies are contained within the git repository as submodules. Th
 - macOS (Intel, Apple Silicon)
 - Windows (Cygwin, WSL)
 
-
-The project should be cloned with
-`--recurse-submodules` option
+First, unpack the source code archive (TAR.GZ / ZIP) or clone the project using `git`. If using `git`, the project
+should be cloned with `--recurse-submodules` option
 
 ```shell
 git clone https://github.com/PKua007/rampack.git --recurse-submodules
 ```
 
-or, if the project was already cloned without it, one should execute
+or, if the project was already cloned without it, you should execute
 
 ```shell
 git submodule update --init
@@ -92,11 +91,11 @@ There are also project-specific CMake options to customize the build:
   Turns on/off static linking. Static-linked binaries have minimal or no dependencies and should be able to be run on
   all versions of the same platform (unavailable on macOS).
 
-* ***-DRAMPACK_BUILD_TESTS*** (*= OFF*)
+* ***-DRAMPACK_BUILD_TESTS=ON/OFF*** (*= OFF*)
 
   Turns on/off building unit and validation tests. The tests can be executed using `ctest` command in the build folder.
 
-* ***-DRAMPACK_NATIVE_ARCH*** (*= ON*)
+* ***-DRAMPACK_NATIVE_ARCH=ON/OFF*** (*= ON*)
 
   Turns on/off native CPU optimizations `-march=native` (unavailable in Apple Clang on Apple Silicon).
 
