@@ -1,6 +1,7 @@
 name: Automatically create v[x] / latest tags
 
 on:
+  workflow_dispatch:
   release:
     types: [published, edited]
 
