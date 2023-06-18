@@ -95,7 +95,7 @@ There are also project-specific CMake options to customize the build:
 
   Turns on/off building unit and validation tests. The tests can be executed using `ctest` command in the build folder.
 
-* ***-DRAMPACK_NATIVE_ARCH=ON/OFF*** (*= ON*)
+* ***-RAMPACK_ARCH_NATIVE=ON/OFF*** (*= ON*)
 
   Turns on/off native CPU optimizations `-march=native` (unavailable in Apple Clang on Apple Silicon).
 
