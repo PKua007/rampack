@@ -12,7 +12,7 @@
 	url = https://github.com/dpellegr/ZipIterator.git
 [submodule "extern/Root-Finder"]
 	path = extern/Root-Finder
-	url = https://github.com/ZhepeiWang/Root-Finder.git
+	url = https://github.com/PKua007/Root-Finder.git
 [submodule "extern/eigen"]
 	path = extern/eigen
 	url = https://gitlab.com/libeigen/eigen.git
