@@ -20,6 +20,7 @@ library (later, with Python bindings as well).
 ### Added
 
 * Added [v1] and [latest] tags.
+* Added MinGW support.
 
 
 ## [1.0.0] - 2023-06-18
