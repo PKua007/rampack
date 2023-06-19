@@ -173,9 +173,9 @@ Vector<3> FourierTracker::normalizeOriginPos(const Vector<3> &originPosRel) {
     Vector<3> bestOriginPosRel = originPosRel;
     double bestDeltaR2 = pbc.getDistance2(this->previousRelValue, originPosRel);
     std::array<std::size_t, 3> idxs{};
-    for (idxs[0] = 0; idxs[0] < std::max(2*this->wavenumbers[0], 1ul); idxs[0]++) {
-        for (idxs[1] = 0; idxs[1] < std::max(2*this->wavenumbers[1], 1ul); idxs[1]++) {
-            for (idxs[2] = 0; idxs[2] < std::max(2*this->wavenumbers[2], 1ul); idxs[2]++) {
+    for (idxs[0] = 0; idxs[0] < std::max(2*this->wavenumbers[0], std::size_t{1}); idxs[0]++) {
+        for (idxs[1] = 0; idxs[1] < std::max(2*this->wavenumbers[1], std::size_t{1}); idxs[1]++) {
+            for (idxs[2] = 0; idxs[2] < std::max(2*this->wavenumbers[2], std::size_t{1}); idxs[2]++) {
                 // Only "even" indices move from maximum to maximum ("odd" ones move to minimum)
                 if (std::accumulate(idxs.begin(), idxs.end(), 0ul) % 2 != 0)
                     continue;

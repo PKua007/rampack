@@ -189,7 +189,7 @@ public:
         if (this->rangeRadius.has_value())
             return *this->rangeRadius;
 
-        std::size_t numCenters = std::max(this->getInteractionCentres().size(), 1ul);
+        std::size_t numCenters = std::max(this->getInteractionCentres().size(), std::size_t{1});
         const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
         double maxRadius{};
         for (std::size_t i{}; i < numCenters; i++) {
