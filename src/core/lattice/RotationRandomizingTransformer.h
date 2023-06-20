@@ -10,6 +10,9 @@
 #include "LatticeTransformer.h"
 
 
+/**
+ * @brief Lattice transformer rotating randomly all particles.
+ */
 class RotationRandomizingTransformer : public LatticeTransformer {
 private:
     mutable std::mt19937 mt;
@@ -17,6 +20,9 @@ private:
     void rotateRandomly(Shape &shape) const;
 
 public:
+    /**
+     * @brief Setups random rotations with seed @a seed.
+     */
     explicit RotationRandomizingTransformer(unsigned long seed) : mt(seed) { }
 
     void transform(Lattice &lattice, const ShapeTraits &shapeTraits) const override;
