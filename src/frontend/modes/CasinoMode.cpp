@@ -513,7 +513,7 @@ void CasinoMode::overwriteMoveStepSizes(Simulation::Environment &env,
 
 void CasinoMode::OnTheFlyOutput::attachSnapshotOut(const std::string &filename) const {
     std::unique_ptr<std::fstream> out;
-    if (isContinuation)
+    if (this->isContinuation)
         out = std::make_unique<std::fstream>(filename, std::ios_base::in | std::ios_base::out | std::ios_base::ate);
     else
         out = std::make_unique<std::fstream>(filename, std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
