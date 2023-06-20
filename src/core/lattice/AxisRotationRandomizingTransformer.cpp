@@ -2,10 +2,10 @@
 // Created by Piotr Kubala on 20/06/2023.
 //
 
-#include "RandomAxisRotationTransformer.h"
+#include "AxisRotationRandomizingTransformer.h"
 
 
-RandomAxisRotationTransformer::RandomAxisRotationTransformer(const Axis &axis, unsigned long seed)
+AxisRotationRandomizingTransformer::AxisRotationRandomizingTransformer(const Axis &axis, unsigned long seed)
         : mt(seed), axis{axis}
 {
     if (std::holds_alternative<Vector<3>>(this->axis)) {
@@ -17,7 +17,7 @@ RandomAxisRotationTransformer::RandomAxisRotationTransformer(const Axis &axis, u
     }
 }
 
-void RandomAxisRotationTransformer::transform(Lattice &lattice, const ShapeTraits &shapeTraits) const {
+void AxisRotationRandomizingTransformer::transform(Lattice &lattice, const ShapeTraits &shapeTraits) const {
     auto dim = lattice.getDimensions();
     for (std::size_t i{}; i < dim[0]; i++)
         for (std::size_t j{}; j < dim[1]; j++)
@@ -26,7 +26,7 @@ void RandomAxisRotationTransformer::transform(Lattice &lattice, const ShapeTrait
                     this->rotateRandomly(shape, shapeTraits.getGeometry());
 }
 
-void RandomAxisRotationTransformer::rotateRandomly(Shape &shape, const ShapeGeometry &geometry) const {
+void AxisRotationRandomizingTransformer::rotateRandomly(Shape &shape, const ShapeGeometry &geometry) const {
     auto getAxis = [&geometry, &shape](auto &&axisVariant) -> Vector<3> {
         using T = std::decay_t<decltype(axisVariant)>;
         if constexpr (std::is_same_v<T, Vector<3>>)
