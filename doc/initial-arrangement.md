@@ -535,13 +535,12 @@ Randomizes rotations of particles. Rotations may be around a specific or random 
 
   Axis of the rotation. The following values are accepted:
   * ***"random"*** <br />
-    All shapes are rotated by random angle around random axis giving with a uniform probability of all angles.
+    All shapes are rotated by a random angle around a random axis with a uniform probability of all rotations.
   * Array of Floats (eg. `[1, 1, 0]`) <br />
     Specific constant (lab) axis. Axis normalization is performed automatically. All shapes are rotated around the same
     axis by a random angle.
   * ***"x"***, ***"y"***, ***"z"*** <br />
-    Shorthands for x, y and z lab axes. All shapes are rotated around the same axis. All shapes are rotated around the
-    same axis by a random angle.
+    Shorthands for x, y and z lab axes. All shapes are rotated around the same axis by a random angle.
   * ***"primary"***, ***"secondary"***, ***"auxiliary"*** <br />
     Rotation around [shape axis](shapes.md#shape-axes) by a random angle. Rotation axis is not constant - shape axes are
     defined in shape's coordinate system, thus the axis of rotation depends on the orientation of a shape.
