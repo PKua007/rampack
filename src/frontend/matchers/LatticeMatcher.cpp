@@ -23,8 +23,8 @@
 #include "core/lattice/FlipRandomizingTransformer.h"
 #include "core/lattice/LayerRotationTransformer.h"
 #include "core/lattice/LayerWiseCellOptimizationTransformer.h"
-#include "core/lattice/RandomRotationTransformer.h"
-#include "core/lattice/RandomAxisRotationTransformer.h"
+#include "core/lattice/RotationRandomizingTransformer.h"
+#include "core/lattice/AxisRotationRandomizingTransformer.h"
 
 using namespace pyon::matcher;
 
@@ -459,7 +459,7 @@ namespace {
     }
 
     MatcherDataclass create_randomize_rotations() {
-        using Axis = RandomAxisRotationTransformer::Axis;
+        using Axis = AxisRotationRandomizingTransformer::Axis;
 
         auto axisNone = MatcherNone{}.mapTo<std::optional<Axis>>();
         auto axisArray = MatcherArray(MatcherFloat{}, 3)
@@ -490,9 +490,9 @@ namespace {
                 auto seed = randomizeRotations["seed"].as<unsigned long>();
                 auto axis = randomizeRotations["axis"].as<std::optional<Axis>>();
                 if (axis.has_value())
-                    return std::make_shared<RandomAxisRotationTransformer>(*axis, seed);
+                    return std::make_shared<AxisRotationRandomizingTransformer>(*axis, seed);
                 else
-                    return std::make_shared<RandomRotationTransformer>(seed);
+                    return std::make_shared<RotationRandomizingTransformer>(seed);
             });
     }
 

@@ -2,10 +2,12 @@
 // Created by Piotr Kubala on 20/06/2023.
 //
 
-#include "RandomRotationTransformer.h"
+#include "RotationRandomizingTransformer.h"
 
 
-void RandomRotationTransformer::transform(Lattice &lattice, [[maybe_unused]] const ShapeTraits &shapeTraits) const {
+void RotationRandomizingTransformer::transform(Lattice &lattice,
+                                               [[maybe_unused]] const ShapeTraits &shapeTraits) const
+{
     auto dim = lattice.getDimensions();
     for (std::size_t i{}; i < dim[0]; i++)
         for (std::size_t j{}; j < dim[1]; j++)
@@ -14,7 +16,7 @@ void RandomRotationTransformer::transform(Lattice &lattice, [[maybe_unused]] con
                     this->rotateRandomly(shape);
 }
 
-void RandomRotationTransformer::rotateRandomly(Shape &shape) const {
+void RotationRandomizingTransformer::rotateRandomly(Shape &shape) const {
     std::uniform_real_distribution<double> zero2pi(0, 2*M_PI);
     std::uniform_real_distribution<double> plusMinusOne(-1, 1);
 
