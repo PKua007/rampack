@@ -85,4 +85,7 @@ T convert_string(const std::string &str) {
 
 std::string demangle(const char *abiName);
 
+template <class... T>
+constexpr bool always_false = false;
+
 #endif //RAMPACK_UTILS_H
