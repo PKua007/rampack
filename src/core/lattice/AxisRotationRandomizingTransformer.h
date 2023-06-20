@@ -2,8 +2,8 @@
 // Created by Piotr Kubala on 20/06/2023.
 //
 
-#ifndef RAMPACK_RANDOMAXISROTATIONTRANSFORMER_H
-#define RAMPACK_RANDOMAXISROTATIONTRANSFORMER_H
+#ifndef RAMPACK_AXISROTATIONRANDOMIZINGTRANSFORMER_H
+#define RAMPACK_AXISROTATIONRANDOMIZINGTRANSFORMER_H
 
 
 #include <random>
@@ -12,7 +12,7 @@
 #include "LatticeTransformer.h"
 
 
-class RandomAxisRotationTransformer : public LatticeTransformer {
+class AxisRotationRandomizingTransformer : public LatticeTransformer {
 public:
     using Axis = std::variant<Vector<3>, ShapeGeometry::Axis>;
 
@@ -23,10 +23,10 @@ private:
     void rotateRandomly(Shape &shape, const ShapeGeometry &geometry) const;
 
 public:
-    RandomAxisRotationTransformer(const Axis &axis, unsigned long seed);
+    AxisRotationRandomizingTransformer(const Axis &axis, unsigned long seed);
 
     void transform(Lattice &lattice, const ShapeTraits &shapeTraits) const override;
 };
 
 
-#endif //RAMPACK_RANDOMAXISROTATIONTRANSFORMER_H
+#endif //RAMPACK_AXISROTATIONRANDOMIZINGTRANSFORMER_H
