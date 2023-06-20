@@ -16,6 +16,7 @@ library (later, with Python bindings as well).
 ### Fixed
 
 * Fixed typos in documentation and changelog.
+* Fixed corrupted observables' output file when `--continue` is used.
 
 ### Added
 
