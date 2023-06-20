@@ -23,6 +23,8 @@
 #include "core/lattice/FlipRandomizingTransformer.h"
 #include "core/lattice/LayerRotationTransformer.h"
 #include "core/lattice/LayerWiseCellOptimizationTransformer.h"
+#include "core/lattice/RandomRotationTransformer.h"
+#include "core/lattice/RandomAxisRotationTransformer.h"
 
 using namespace pyon::matcher;
 
@@ -130,6 +132,7 @@ namespace {
     MatcherDataclass create_columnar();
     MatcherDataclass create_randomize_flip();
     MatcherDataclass create_layer_rotate();
+    MatcherDataclass create_randomize_rotations();
 
     std::vector<std::shared_ptr<LatticeTransformer>> do_create_transformations(const DictionaryData &kwargs);
     PopulatorData do_create_populator(const DictionaryData &kwargs);
@@ -359,7 +362,8 @@ namespace {
             | create_optimize_layers()
             | create_columnar()
             | create_randomize_flip()
-            | create_layer_rotate();
+            | create_layer_rotate()
+            | create_randomize_rotations();
 
         return MatcherArray{}
             .elementsMatch(transformation)
@@ -451,6 +455,44 @@ namespace {
                 auto rotAngle = M_PI * layerRotate["rot_angle"].as<double>() / 180;
                 auto alternating = layerRotate["alternating"].as<bool>();
                 return std::make_shared<LayerRotationTransformer>(layerAxis, rotAxis, rotAngle, alternating);
+            });
+    }
+
+    MatcherDataclass create_randomize_rotations() {
+        using Axis = RandomAxisRotationTransformer::Axis;
+
+        auto axisNone = MatcherNone{}.mapTo<std::optional<Axis>>();
+        auto axisArray = MatcherArray(MatcherFloat{}, 3)
+            .filter([](const ArrayData &arrayData) {
+                return arrayData.asVector<3>().norm2() > 1e-20;
+            })
+            .describe("non-zero norm")
+            .mapTo([](const ArrayData &arrayData) -> std::optional<Axis> {
+                return arrayData.asVector<3>();
+            });
+        auto axisString = MatcherString{}
+            .anyOf({"x", "y", "z", "primary", "secondary", "auxiliary"})
+            .mapTo([](const std::string &axis) -> std::optional<Axis> {
+                if (axis == "x")                return Vector<3>{1, 0, 0};
+                else if (axis == "y")           return Vector<3>{0, 1, 0};
+                else if (axis == "z")           return Vector<3>{0, 0, 1};
+                else if (axis == "primary")     return ShapeGeometry::Axis::PRIMARY;
+                else if (axis == "secondary")   return ShapeGeometry::Axis::SECONDARY;
+                else if (axis == "auxiliary")   return ShapeGeometry::Axis::AUXILIARY;
+                else                            AssertThrow(axis);
+            });
+        auto rotAxis = axisNone | axisArray | axisString;
+
+        return MatcherDataclass("randomize_rotations")
+            .arguments({{"seed", MatcherInt{}.mapTo<unsigned long>()},
+                        {"axis", rotAxis, "None"}})
+            .mapTo([](const DataclassData &randomizeRotations) -> std::shared_ptr<LatticeTransformer> {
+                auto seed = randomizeRotations["seed"].as<unsigned long>();
+                auto axis = randomizeRotations["axis"].as<std::optional<Axis>>();
+                if (axis.has_value())
+                    return std::make_shared<RandomAxisRotationTransformer>(*axis, seed);
+                else
+                    return std::make_shared<RandomRotationTransformer>(seed);
             });
     }
 
