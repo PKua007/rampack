@@ -100,3 +100,16 @@ Vector<3> ShapeGeometry::findFlipAxis(const Shape &shape) const {
     Vector<3> flipAxis = primaryAxis ^ referenceDirection;
     return (shape.getOrientation() * flipAxis).normalized();
 }
+
+Vector<3> ShapeGeometry::getAxis(const Shape &shape, ShapeGeometry::Axis axis) const {
+    switch(axis) {
+        case Axis::PRIMARY:
+            return this->getPrimaryAxis(shape);
+        case Axis::SECONDARY:
+            return this->getSecondaryAxis(shape);
+        case Axis::AUXILIARY:
+            return this->getAuxiliaryAxis(shape);
+        default:
+            AssertThrow("axis");
+    }
+}

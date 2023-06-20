@@ -5,24 +5,37 @@
 #include "RandomAxisRotationTransformer.h"
 
 
-RandomAxisRotationTransformer::RandomAxisRotationTransformer(const Vector<3> &axis, unsigned long seed)
-        : mt(seed)
+RandomAxisRotationTransformer::RandomAxisRotationTransformer(const Axis &axis, unsigned long seed)
+        : mt(seed), axis{axis}
 {
-    // Absolute values of components at least approx 1e-10
-    Expects(axis.norm2() > 1e-20);
-    this->axis = axis.normalized();
+    if (std::holds_alternative<Vector<3>>(this->axis)) {
+        auto &vectorAxis = std::get<Vector<3>>(this->axis);
+
+        // Absolute values of components at least approx 1e-10
+        Expects(vectorAxis.norm2() > 1e-20);
+        vectorAxis = vectorAxis.normalized();
+    }
 }
 
-void RandomAxisRotationTransformer::transform(Lattice &lattice, [[maybe_unused]] const ShapeTraits &shapeTraits) const {
+void RandomAxisRotationTransformer::transform(Lattice &lattice, const ShapeTraits &shapeTraits) const {
     auto dim = lattice.getDimensions();
     for (std::size_t i{}; i < dim[0]; i++)
         for (std::size_t j{}; j < dim[1]; j++)
             for (std::size_t k{}; k < dim[2]; k++)
                 for (auto &shape : lattice.modifySpecificCellMolecules(i, j, k))
-                    this->rotateRandomly(shape);
+                    this->rotateRandomly(shape, shapeTraits.getGeometry());
 }
 
-void RandomAxisRotationTransformer::rotateRandomly(Shape &shape) const {
+void RandomAxisRotationTransformer::rotateRandomly(Shape &shape, const ShapeGeometry &geometry) const {
+    auto getAxis = [&geometry, &shape](auto &&axisVariant) -> Vector<3> {
+        using T = std::decay_t<decltype(axisVariant)>;
+        if constexpr (std::is_same_v<T, Vector<3>>)
+            return axisVariant;
+        else if constexpr (std::is_same_v<T, ShapeGeometry::Axis>)
+            return geometry.getAxis(shape, axisVariant);
+    };
+    auto theAxis = std::visit(getAxis, this->axis);
+
     std::uniform_real_distribution<double> zero2pi(0, 2*M_PI);
-    shape.rotate(Matrix<3, 3>::rotation(this->axis, zero2pi(this->mt)));
+    shape.rotate(Matrix<3, 3>::rotation(theAxis, zero2pi(this->mt)));
 }

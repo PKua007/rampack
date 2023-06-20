@@ -81,6 +81,11 @@ public:
     }
 
     /**
+     * @brief Returns shape axis of type @a axis for shape @a shape.
+     */
+     [[nodiscard]] Vector<3> getAxis(const Shape &shape, Axis axis) const;
+
+    /**
      * @brief Returns the geometric origin a given @a shape (with respect to its centre) which is usually the center of
      * its bounding box.
      * @details Geometric origin may be different from mass center. It is used for example for flip moves.
