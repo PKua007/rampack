@@ -7,19 +7,23 @@
 
 
 #include <random>
+#include <variant>
 
 #include "LatticeTransformer.h"
 
 
 class RandomAxisRotationTransformer : public LatticeTransformer {
+public:
+    using Axis = std::variant<Vector<3>, ShapeGeometry::Axis>;
+
 private:
     mutable std::mt19937 mt;
-    Vector<3> axis;
+    Axis axis;
 
-    void rotateRandomly(Shape &shape) const;
+    void rotateRandomly(Shape &shape, const ShapeGeometry &geometry) const;
 
 public:
-    RandomAxisRotationTransformer(const Vector<3> &axis, unsigned long seed);
+    RandomAxisRotationTransformer(const Axis &axis, unsigned long seed);
 
     void transform(Lattice &lattice, const ShapeTraits &shapeTraits) const override;
 };
