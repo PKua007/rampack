@@ -28,7 +28,7 @@ details. `bash` and `zsh` autocompletion scripts are bundled. They are installed
 and are included in DEB/RPM packages.
 
 We provided a few sample input files in the `sample_inputs` folder. They can be used to verify that the software is
-working correctly and are a good learning materials. For example,
+working correctly and are good learning materials. For example,
 
 ```shell
 rampack casino -i integration.pyon

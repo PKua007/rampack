@@ -260,13 +260,16 @@ void ObservablesCollector::attachOnTheFlyOutput(std::unique_ptr<std::iostream> o
     if (this->onTheFlyOut == nullptr)
         return;
 
-    this->onTheFlyOut->seekp(0, std::ios::end);
-    if (this->onTheFlyOut->tellp() == 0) {
+    this->onTheFlyOut->seekg(0, std::ios::end);
+    if (this->onTheFlyOut->tellg() == 0) {
         this->doPrintSnapshotHeader(*this->onTheFlyOut);
     } else {
         this->verifyOnTheFlyOutputHeader();
         this->findOnTheFlyLastCycleNumber();
     }
+
+    // After all checks, rewind the write head to the end
+    this->onTheFlyOut->seekp(0, std::ios::end);
 }
 
 void ObservablesCollector::verifyOnTheFlyOutputHeader() {
@@ -284,8 +287,8 @@ void ObservablesCollector::verifyOnTheFlyOutputHeader() {
         std::ostringstream errorMsg;
         errorMsg << "ObservablesCollector: On-the-fly observable output stream already stores different observables.";
         errorMsg << std::endl;
-        errorMsg << "To be stored    : " << expectedHeader << std::endl;
-        errorMsg << "Already present : " << actualHeader;
+        errorMsg << "To be stored    : `" << expectedHeader << "`" << std::endl;
+        errorMsg << "Already present : `" << actualHeader << "`";
         throw ValidationException(errorMsg.str());
     }
 }
@@ -306,12 +309,12 @@ void ObservablesCollector::findOnTheFlyLastCycleNumber() {
                 "ObservablesCollector: Could not read last cycle number - broken observable output stream");
 
     // Only header is present
-    if (this->onTheFlyOut->tellp() == 0) {
+    if (this->onTheFlyOut->tellg() == 0) {
         this->onTheFlyLastCycleNumber = 0;
         return;
     }
 
     std::istringstream lineStream(line);
     ValidateMsg(lineStream >> this->onTheFlyLastCycleNumber,
-                "ObservablesCollector: Could not read last cycle number: broken observable output stream");
+                "ObservablesCollector: Could not read last cycle number - broken observable output stream");
 }

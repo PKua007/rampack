@@ -24,6 +24,7 @@ This reference page describes all options for `arrangement` argument of [class `
     * [Class `columnar`](#class-columnar)
     * [Class `randomize_flip`](#class-randomize_flip)
     * [Class `layer_rotate`](#class-layer_rotate)
+    * [Class `randomize_rotation`](#class-randomize_rotation)
 * [Lattice populators](#lattice-populators)
     * [Class `serial`](#class-serial)
     * [Class `random`](#class-random)
@@ -511,6 +512,39 @@ Arguments:
   If `False`, all particles in the system will be rotated in the same direction. If `True`, particles in even layers
   will be rotated counterclockwise, and particle in odd layers clockwise. 
   
+
+### Class `randomize_rotation`
+
+```python
+randomize_rotation(
+    seed,
+    axis = "random",
+)
+```
+
+* **Lattice requirements**: none
+* **Resulting lattice**: irregular, normalized if was before
+
+Randomizes rotations of particles. Rotations may be around a specific or random axis depending on the `axis` parameter.
+
+* ***seed***
+
+  Seed of the RNG used to randomize rotations.
+
+* ***axis*** (*= "random"*)
+
+  Axis of the rotation. The following values are accepted:
+  * ***"random"*** <br />
+    All shapes are rotated by a random angle around a random axis with a uniform probability of all rotations.
+  * Array of Floats (eg. `[1, 1, 0]`) <br />
+    Specific constant (lab) axis. Axis normalization is performed automatically. All shapes are rotated around the same
+    axis by random angles.
+  * ***"x"***, ***"y"***, ***"z"*** <br />
+    Shorthands for x, y and z lab axes. All shapes are rotated around the same axis by random angles.
+  * ***"primary"***, ***"secondary"***, ***"auxiliary"*** <br />
+    Rotation around a [shape axis](shapes.md#shape-axes) by a random angle. Rotation axis is not constant - shape axes
+    are defined in shape's coordinate system, thus the axis of rotation depends on the orientation of a shape.
+
 
 ## Lattice populators
 

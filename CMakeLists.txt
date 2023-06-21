@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(rampack VERSION 1.0.0)
+project(rampack VERSION 1.1.0)
 
 # Available options
 option(RAMPACK_STATIC_LINKING "Build no-dependency static executable" OFF)
