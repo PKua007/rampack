@@ -39,7 +39,8 @@ All other dependencies are contained within the git repository as submodules. Th
 - macOS (Intel, Apple Silicon)
 - Windows (Cygwin, WSL)
 
-First, unpack the source code archive (TAR.GZ / ZIP) or clone the project using `git`. If using `git`, the project
+First, unpack the source code archive (`rampack-[version]-source.tar.gz` in
+[Releases](https://github.com/PKua007/rampack/releases)) or clone the project using `git`. If using `git`, the project
 should be cloned with `--recurse-submodules` option
 
 ```shell
@@ -72,7 +73,8 @@ rampack --version
 
 
 ### Advanced build option
-There are also project-specific CMake options to customize the build:
+
+There are also general and project-specific CMake options to customize the build:
 
 * ***-DCMAKE_C_COMPILER=...*** (*= as detected by CMake*)<br />
   ***-DCMAKE_CXX_COMPILER=...*** (*= as detected by CMake*)
