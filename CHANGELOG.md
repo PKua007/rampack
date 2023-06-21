@@ -13,6 +13,9 @@ library (later, with Python bindings as well).
 
 ## [Unreleased]
 
+
+## [1.1.0] - 2023-06-21
+
 ### Fixed
 
 * Fixed typos in documentation and changelog.
@@ -37,6 +40,7 @@ During the development stage (0.x versions) no changelog was maintained. The cha
 [Unreleased]: https://github.com/PKua007/rampack/compare/latest..develop
 [latest]: https://github.com/PKua007/rampack/releases/tag/latest
 [v1]: https://github.com/PKua007/rampack/releases/tag/v1
+[1.1.0]: https://github.com/PKua007/rampack/releases/tag/v1.0.0
 [1.0.0]: https://github.com/PKua007/rampack/releases/tag/v1.0.0
 
 
