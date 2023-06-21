@@ -16,17 +16,17 @@ This reference page gives installation instructions for all methods in all suppo
 
 ## Supported platforms
 
-|                                                                      | Linux                   | macOS (Intel, Apple Silicon)                                                            | Windows                                  |
-|----------------------------------------------------------------------|-------------------------|-----------------------------------------------------------------------------------------|------------------------------------------|
-| [Source code compilation](#source-code-compilation)                  | - GCC 7+<br/>- Clang 7+ | Apple:<br/>- Clang 7+ (**no multithreading**)<br/>Homebrew:<br/>- GCC 7+<br/>- Clang 7+ | Cygwin/WSL:<br/>- GCC 7+<br/>- Clang 7+  |
-| [Standalone binary](#standalone-binary)<br />(**no tab completion**) | &#9989;                 | &#10060;                                                                                | &#10060;                                 |
-| [Packages](#packages)                                                | DEB/RMP                 | &#10060;                                                                                | &#10060;                                 |
+|                                                                      | Linux                   | macOS (Intel, Apple Silicon)                                                            | Windows                                       |
+|----------------------------------------------------------------------|-------------------------|-----------------------------------------------------------------------------------------|-----------------------------------------------|
+| [Source code compilation](#source-code-compilation)                  | - GCC 7+<br/>- Clang 7+ | Apple:<br/>- Clang 7+ (**no multithreading**)<br/>Homebrew:<br/>- GCC 7+<br/>- Clang 7+ | Cygwin/MinGW/WSL:<br/>- GCC 7+<br/>- Clang 7+ |
+| [Standalone binary](#standalone-binary)<br />(**no tab completion**) | &#9989;                 | &#10060;                                                                                | &#10060;                                      |
+| [Packages](#packages)                                                | DEB/RMP                 | &#10060;                                                                                | &#10060;                                      |
 
 
 ## Source code compilation
 
 Source code compilation is a recommended method of RAMPACK installation. It enables you to utilize native CPU
-optimizations, which usually increase the performance by around 10%. To build the project, you need the following
+optimizations, which usually increases the performance by around 10%. To build the project, you need the following
 prerequisites:
 
 - cmake 3.10+
@@ -37,7 +37,7 @@ All other dependencies are contained within the git repository as submodules. Th
 
 - Linux
 - macOS (Intel, Apple Silicon)
-- Windows (Cygwin, WSL)
+- Windows (Cygwin, MinGW, WSL)
 
 First, unpack the source code archive (`rampack-[version]-source.tar.gz` in
 [Releases](https://github.com/PKua007/rampack/releases)) or clone the project using `git`. If using `git`, the project
@@ -53,7 +53,8 @@ or, if the project was already cloned without it, you should execute
 git submodule update --init
 ```
 
-Then issuing the following commands with install the program with tab completion scripts for `bash` and `zsh` shells
+Then issuing the following commands in project's root directory will install the program with tab completion scripts for
+`bash` and `zsh` shells.
 
 ```shell
 mkdir build
