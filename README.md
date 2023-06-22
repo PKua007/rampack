@@ -1,8 +1,9 @@
 ![rampack](artwork/rampack.svg)
 
+[![version](https://img.shields.io/github/v/release/PKua007/rampack)](https://github.com/PKua007/rampack/releases)
+[![license](https://img.shields.io/github/license/PKua007/rampack)](https://github.com/PKua007/rampack/blob/main/LICENSE.md)
 [![cmake workflow](https://github.com/PKua007/rampack/actions/workflows/cmake.yml/badge.svg)](https://github.com/PKua007/rampack/actions/workflows/cmake.yml)
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/badges/StandWithUkraine.svg)](https://stand-with-ukraine.pp.ua)
-
 
 Random And Maximal PACKing PACKage - the software for simulating particle systems using different flavors of Monte Carlo
 sampling. Currently, it features, among others, full isobaric-isotension relaxation in a triclinic box, many types of
