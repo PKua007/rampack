@@ -176,11 +176,11 @@ std::vector<PackingLoader::PerformedRunData> PackingLoader::gatherRunData() cons
 
         auto packingFilenameGetter = [](auto &&run) { return *run.ramsnapOut; };
         auto packingFilename = std::visit(packingFilenameGetter, runParams);
-        std::ifstream datInput(packingFilename);
-        if (datInput) {
+        std::ifstream ramsnapInput(packingFilename);
+        if (ramsnapInput) {
             runData.wasPerformed = true;
             try {
-                auto auxInfo_ = RamsnapReader::restoreAuxInfo(datInput);
+                auto auxInfo_ = RamsnapReader::restoreAuxInfo(ramsnapInput);
                 ValidateMsg(auxInfo_.find("cycles") != auxInfo_.end(), "No 'cycles' key in RAMSNAP metadata");
                 runData.doneCycles = std::stoul(auxInfo_.at("cycles"));
             } catch (std::logic_error &) {
@@ -238,18 +238,17 @@ void PackingLoader::loadPackingContinuation(std::unique_ptr<BoundaryConditions> 
         this->logger << "' will be skipped, since " << *this->continuationCycles << " or more cycles were ";
         this->logger << "already performed." << std::endl;
 
-        if (integrationStartRun.averagingCycles == 0) {
-            this->logger << "Averaging phase is turned off, moving to the next run." << std::endl;
+        if (integrationStartRun.averagingCycles > 0)
+            return;
 
-            this->isContinuation_ = false;
-            this->cycleOffset = 0;
-            this->startRunIndex++;
+        this->logger << "Averaging phase is turned off, moving to the next run." << std::endl;
 
-            if (this->startRunIndex == runsParameters.size()) {
-                this->isAllFinished_ = true;
-                return;
-            }
-        }
+        this->isContinuation_ = false;
+        this->cycleOffset = 0;
+        this->startRunIndex++;
+
+        if (this->startRunIndex == this->runsParameters.size())
+            this->isAllFinished_ = true;
     } else {
         integrationStartRun.thermalizationCycles = *this->continuationCycles - this->cycleOffset;
         this->logger.info() << "Thermalization from the finished run '" << integrationStartRun.runName;
