@@ -46,6 +46,8 @@ private:
     void logRunsStatus(const std::vector<PerformedRunData> &runDatas) const;
     [[nodiscard]] bool allRunsHaveDatOutput() const;
     void warnIfOverlapRelaxation() const;
+    void restorePacking(const Run &startingPackingRun, std::unique_ptr<BoundaryConditions> bc,
+                        const Interaction &interaction, std::size_t moveThreads, std::size_t scalingThreads);
 
 public:
     static std::size_t findStartRunIndex(const std::string &runName, const std::vector<Run> &runsParameters);

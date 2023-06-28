@@ -21,30 +21,13 @@ void PackingLoader::loadPacking(std::unique_ptr<BoundaryConditions> bc, const In
     if ((!this->startFrom.has_value() || this->startRunIndex == 0) && !this->continuationCycles.has_value())
         return;
 
-    std::size_t startingPackingRunIndex{};
-    if (this->continuationCycles.has_value())
-        startingPackingRunIndex = this->startRunIndex;
-    else
-        startingPackingRunIndex = this->startRunIndex - 1;
-    // A run, whose resulting packing will be the starting point
-    auto &startingPackingRun = this->runsParameters[startingPackingRunIndex];
-
-    auto packingFilenameGetter = [](auto &&run) { return *run.ramsnapOut; };
-    std::string startingPackingFilename = std::visit(packingFilenameGetter, startingPackingRun);
-    std::ifstream packingFile(startingPackingFilename);
-    ValidateOpenedDesc(packingFile, startingPackingFilename, "to load initial packing");
-    // Same number of scaling and domain decemposition threads
-    this->packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
-    this->auxInfo = this->packing->restore(packingFile, interaction);
-    this->isRestored_ = true;
-
-    auto runNameGetter = [](auto &&run) { return run.runName; };
-    std::string startingRunName = std::visit(runNameGetter, startingPackingRun);
-    this->logger.info() << "Loaded packing '" << startingPackingFilename << "' from the run '" << startingRunName;
-    this->logger << "' as a starting point." << std::endl;
-
-
     if (this->continuationCycles.has_value()) {
+        std::size_t startingPackingRunIndex{};
+        startingPackingRunIndex = this->startRunIndex;
+        // A run, whose resulting packing will be the starting point
+        auto &startingPackingRun = this->runsParameters[startingPackingRunIndex];
+        this->restorePacking(startingPackingRun, std::move(bc), interaction, moveThreads, scalingThreads);
+
         this->cycleOffset = std::stoul(this->auxInfo.at("cycles"));
         this->isContinuation_ = true;
 
@@ -81,7 +64,32 @@ void PackingLoader::loadPacking(std::unique_ptr<BoundaryConditions> bc, const In
                 this->logger << *startingRun.thermalizationCycles << " to go)" << std::endl;
             }
         }
+    } else {
+        std::size_t startingPackingRunIndex{};
+        startingPackingRunIndex = this->startRunIndex - 1;
+        // A run, whose resulting packing will be the starting point
+        auto &startingPackingRun = this->runsParameters[startingPackingRunIndex];
+        this->restorePacking(startingPackingRun, std::move(bc), interaction, moveThreads, scalingThreads);
     }
+}
+
+void PackingLoader::restorePacking(const Run &startingPackingRun, std::unique_ptr<BoundaryConditions> bc,
+                                   const Interaction &interaction, std::size_t moveThreads,
+                                   std::size_t scalingThreads)
+{
+    auto packingFilenameGetter = [](auto &&run) { return *run.ramsnapOut; };
+    std::string startingPackingFilename = std::visit(packingFilenameGetter, startingPackingRun);
+    std::ifstream packingFile(startingPackingFilename);
+    ValidateOpenedDesc(packingFile, startingPackingFilename, "to load initial packing");
+
+    this->packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
+    this->auxInfo = this->packing->restore(packingFile, interaction);
+    this->isRestored_ = true;
+
+    auto runNameGetter = [](auto &&run) { return run.runName; };
+    std::string startingRunName = std::visit(runNameGetter, startingPackingRun);
+    this->logger.info() << "Loaded packing '" << startingPackingFilename << "' from the run '" << startingRunName;
+    this->logger << "' as a starting point." << std::endl;
 }
 
 void PackingLoader::findStartRunIndex() {
