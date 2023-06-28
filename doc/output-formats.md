@@ -65,15 +65,15 @@ ramsnap(
 
 Internal RAMPACK text representation of a simulation snapshot, stored to a file with the name given by the `filename`
 argument. Apart from box dimensions and particles' positions and orientations, it contains simulation metadata (which
-is used to resume an interrupted simulation) as key=value pairs. Format's specification is technically not a part of the
+is used to resume an interrupted simulation) as key-value pairs. Format's specification is technically not a part of the
 public interface; thus it may change in the future (retaining the software support of older versions). Currently, it has
 the following structure:
 
 ```text
 [k]
-[key 1]=[value 1]
+[key 1] [value 1]
 ...
-[key k]=[value k]
+[key k] [value k]
 [v11] [v21] [v31] [v12] [v22] [v32] [v13] [v23] [v33]
 [N]
 [r11] [r12] [r13] [O111] [O112] [O113] [O121] [O122] [O123] [O131] [O132] [O133]
@@ -84,7 +84,7 @@ the following structure:
 where:
 
 * `[k]` <br />
-   number of key=value pairs
+   number of key-value pairs
 * `[vij]` <br />
    j<sup>th</sup> component of i<sup>th</sup> [box vector](initial-arrangement.md#simulation-box) **v**<sub>*i*</sub>
 * `[N]` <br />
