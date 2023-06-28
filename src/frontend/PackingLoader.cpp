@@ -36,6 +36,13 @@ void PackingLoader::loadPacking(std::unique_ptr<BoundaryConditions> bc, const In
     // Same number of scaling and domain decemposition threads
     this->packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
     this->auxInfo = this->packing->restore(packingFile, interaction);
+    this->isRestored_ = true;
+
+    auto runNameGetter = [](auto &&run) { return run.runName; };
+    std::string startingRunName = std::visit(runNameGetter, startingPackingRun);
+    this->logger.info() << "Loaded packing '" << startingPackingFilename << "' from the run '" << startingRunName;
+    this->logger << "' as a starting point." << std::endl;
+
 
     if (this->continuationCycles.has_value()) {
         this->cycleOffset = std::stoul(this->auxInfo.at("cycles"));
@@ -51,24 +58,30 @@ void PackingLoader::loadPacking(std::unique_ptr<BoundaryConditions> bc, const In
 
             if (this->continuationCycles <= this->cycleOffset) {
                 startingRun.thermalizationCycles = std::nullopt;
-                this->logger.info() << "Thermalisation of the finished run '" << startingRun.runName;
+                this->logger.info() << "Thermalization of the finished run '" << startingRun.runName;
                 this->logger << "' will be skipped, since " << *this->continuationCycles << " or more cycles were ";
                 this->logger << "already performed." << std::endl;
+
+                if (startingRun.averagingCycles == 0) {
+                    this->logger << "Averaging phase is turned off, moving to the next run." << std::endl;
+
+                    this->isContinuation_ = false;
+                    this->cycleOffset = 0;
+                    this->startRunIndex++;
+
+                    if (this->startRunIndex == runsParameters.size()) {
+                        this->isAllFinished_ = true;
+                        return;
+                    }
+                }
             } else {
                 startingRun.thermalizationCycles = *this->continuationCycles - this->cycleOffset;
-                this->logger.info() << "Thermalisation from the finished run '" << startingRun.runName;
+                this->logger.info() << "Thermalization from the finished run '" << startingRun.runName;
                 this->logger << "' will be continued up to " << *this->continuationCycles << " cycles (";
                 this->logger << *startingRun.thermalizationCycles << " to go)" << std::endl;
             }
         }
     }
-
-    auto runNameGetter = [](auto &&run) { return run.runName; };
-    std::string startingRunName = std::visit(runNameGetter, startingPackingRun);
-    this->logger.info() << "Loaded packing '" << startingPackingFilename << "' from the run '" << startingRunName;
-    this->logger << "' as a starting point." << std::endl;
-
-    this->isRestored_ = true;
 }
 
 void PackingLoader::findStartRunIndex() {

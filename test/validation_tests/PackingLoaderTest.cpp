@@ -5,6 +5,7 @@
 #include <catch2/catch.hpp>
 #include <filesystem>
 #include <sstream>
+#include <iostream>
 
 #include "frontend/PackingLoader.h"
 #include "core/PeriodicBoundaryConditions.h"
@@ -19,6 +20,7 @@ TEST_CASE("PackingLoader") {
     const auto PACKING_UNFINISHED_PATH = SOURCE_DIR / "data/packing_loader/packing_unfinished.ramsnap";
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
+    logger.addOutput(std::cout);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     SphereTraits sphereTraits(0.5);
     const auto &interaction = sphereTraits.getInteraction();
@@ -72,35 +74,8 @@ TEST_CASE("PackingLoader") {
             CHECK(loader.getStartRunIndex() == 0);
         }
 
-        SECTION("continue first (no averaging)") {
-            run1.averagingCycles = 0;
-            PackingLoader loader(logger, std::nullopt, 20000, runs);
-
-            loader.loadPacking(std::move(bc), interaction, 1, 1);
-
-            CHECK_FALSE(loader.isContinuation());
-            CHECK_FALSE(loader.isAllFinished());
-            CHECK(loader.isRestored());
-            CHECK(loader.getCycleOffset() == 0);
-            CHECK(loader.getStartRunIndex() == 1);
-        }
-
-        SECTION("continue first (therm. finished + no averaging)") {
-            run1.averagingCycles = 0;
-            PackingLoader loader(logger, std::nullopt, 20000, runs);
-
-            loader.loadPacking(std::move(bc), interaction, 1, 1);
-
-            CHECK_FALSE(loader.isContinuation());
-            CHECK_FALSE(loader.isAllFinished());
-            CHECK(loader.isRestored());
-            CHECK(loader.getCycleOffset() == 0);
-            CHECK(loader.getStartRunIndex() == 1);
-        }
-
-        SECTION("continue second (therm. finished  + no averaging)") {
-            run2.averagingCycles = 0;
-            PackingLoader loader(logger, "run2", 20000, runs);
+        SECTION("continue second") {
+            PackingLoader loader(logger, "run2", 30000, runs);
 
             loader.loadPacking(std::move(bc), interaction, 1, 1);
 
@@ -109,6 +84,34 @@ TEST_CASE("PackingLoader") {
             CHECK(loader.isRestored());
             CHECK(loader.getCycleOffset() == 20000);
             CHECK(loader.getStartRunIndex() == 1);
+        }
+
+        SECTION("continue first (thermalization finished + no averaging)") {
+            run1.averagingCycles = 0;
+            runs = {run1, run2};
+            PackingLoader loader(logger, std::nullopt, 20000, runs);
+
+            loader.loadPacking(std::move(bc), interaction, 1, 1);
+
+            CHECK_FALSE(loader.isContinuation());
+            CHECK_FALSE(loader.isAllFinished());
+            CHECK(loader.isRestored());
+            CHECK(loader.getCycleOffset() == 0);
+            CHECK(loader.getStartRunIndex() == 1);
+        }
+
+        SECTION("continue second (thermalization finished + no averaging)") {
+            run2.averagingCycles = 0;
+            runs = {run1, run2};
+            PackingLoader loader(logger, "run2", 20000, runs);
+
+            loader.loadPacking(std::move(bc), interaction, 1, 1);
+
+            CHECK_FALSE(loader.isContinuation());
+            CHECK(loader.isAllFinished());
+            CHECK(loader.isRestored());
+            CHECK(loader.getCycleOffset() == 0);
+            CHECK(loader.getStartRunIndex() == 2);
         }
 
         SECTION(".auto - all finished") {
