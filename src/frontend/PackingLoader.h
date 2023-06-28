@@ -48,6 +48,11 @@ private:
     void warnIfOverlapRelaxation() const;
     void restorePacking(const Run &startingPackingRun, std::unique_ptr<BoundaryConditions> bc,
                         const Interaction &interaction, std::size_t moveThreads, std::size_t scalingThreads);
+    void loadPackingContinuation(std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction,
+                                 std::size_t moveThreads, std::size_t scalingThreads);
+    void loadPackingNoContinuation(std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction,
+                                   std::size_t moveThreads, std::size_t scalingThreads);
+    [[nodiscard]] bool isStartingFromScratch() const;
 
 public:
     static std::size_t findStartRunIndex(const std::string &runName, const std::vector<Run> &runsParameters);
