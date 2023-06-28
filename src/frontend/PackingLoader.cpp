@@ -93,7 +93,7 @@ void PackingLoader::autoFindStartRunIndex() {
 
     auto firstUnfinished = std::find_if_not(runDatas.begin(), runDatas.end(), isRunFinished);
     if (firstUnfinished == runDatas.end()) {
-        this->logger.warn() << "Starting run auto-detect: all runs were finished.";
+        this->logger.info() << "Starting run auto-detect: all runs were finished.";
         this->logger << std::endl;
 
         this->continuationCycles = std::nullopt;
