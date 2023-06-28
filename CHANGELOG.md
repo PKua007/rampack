@@ -19,6 +19,10 @@ library (later, with Python bindings as well).
 * Using `--continue` on a finished run without averaging phases no longer throws `PreconditionException`
   ([#68](https://github.com/PKua007/rampack/issues/68))
 
+### Changed
+
+* Internal error reports now show a relative path of source location instead of an absolute one
+
 
 ## [1.1.0] - 2023-06-21
 
