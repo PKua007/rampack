@@ -15,13 +15,15 @@ library (later, with Python bindings as well).
 
 ### Fixed
 
-* Corrected [RAMSNAP](docs/output-formats.md#class-ramsnap) format documentation
+* Corrected [RAMSNAP](docs/output-formats.md#class-ramsnap) format documentation.
 * Using `--continue` on a finished run without averaging phases no longer throws `PreconditionException`
-  ([#68](https://github.com/PKua007/rampack/issues/68))
+  ([#68](https://github.com/PKua007/rampack/issues/68)).
 
 ### Changed
 
-* Internal error reports now show a relative path of source location instead of an absolute one
+* Internal error reports now show a relative path of source location instead of an absolute one.
+* Documentation directory `doc/` renamed to `docs/` (needed for GitHub to recognize
+  [contributing.md](docs/contributing.md)).
 
 
 ## [1.1.0] - 2023-06-21
