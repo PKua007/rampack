@@ -112,7 +112,7 @@ def export_entries(help_entries: List[List[HelpEntry]], doc_path: str, modes: Li
 
 
 def main():
-    doc_path = 'doc/operation-modes.md'
+    doc_path = 'docs/operation-modes.md'
     rampack_exec = 'rampack'
     modes = ['casino', 'preview', 'shape-preview', 'trajectory']
     help_entries = []

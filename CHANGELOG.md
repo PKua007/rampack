@@ -4,8 +4,8 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 The functionality is contained in a binary compiled from a source code.
-* [Input file format](doc/input-file.md) adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-* [Command line options](doc/operation-modes.md) do not strictly follow semantic versioning, although breaking changes
+* [Input file format](docs/input-file.md) adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+* [Command line options](docs/operation-modes.md) do not strictly follow semantic versioning, although breaking changes
   are not introduced unless necessary.
 * The source code API will not be versioned semantically until the software is also distributed as a static-linked C++
 library (later, with Python bindings as well).
@@ -15,7 +15,7 @@ library (later, with Python bindings as well).
 
 ### Fixed
 
-* Corrected [RAMSNAP](doc/output-formats.md#class-ramsnap) format documentation
+* Corrected [RAMSNAP](docs/output-formats.md#class-ramsnap) format documentation
 * Using `--continue` on a finished run without averaging phases no longer throws `PreconditionException`
   ([#68](https://github.com/PKua007/rampack/issues/68))
 
