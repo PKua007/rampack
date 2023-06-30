@@ -5,7 +5,6 @@
 #include <catch2/catch.hpp>
 #include <filesystem>
 #include <sstream>
-#include <iostream>
 
 #include "frontend/PackingLoader.h"
 #include "core/PeriodicBoundaryConditions.h"
@@ -20,7 +19,6 @@ TEST_CASE("PackingLoader") {
     const auto PACKING_UNFINISHED_PATH = SOURCE_DIR / "data/packing_loader/packing_unfinished.ramsnap";
     std::ostringstream loggerStream;
     Logger logger(loggerStream);
-    logger.addOutput(std::cout);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     SphereTraits sphereTraits(0.5);
     const auto &interaction = sphereTraits.getInteraction();
