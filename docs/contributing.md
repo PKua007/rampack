@@ -13,7 +13,9 @@ This document gathers instructions for contributors.
 * [Code documentation](#code-documentation)
 * [User documentation](#user-documentation)
   * [Class `example_class`](#class-example_class)
-* [Updating the changelog](#updating-the-changelog) 
+* [Commandline documentation](#commandline-documentation)
+* [Updating the changelog](#updating-the-changelog)
+* [Additional tools](#additional-tools)
 
 
 ## General remarks
