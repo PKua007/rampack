@@ -21,7 +21,7 @@ This document gathers instructions for contributors.
 Yay! Thank you for your interest in improving the RAMPACK software!
 
 If you want to report an error or propose a new feature,
-you can create a [new issue](https://github.com/PKua007/rampack/issues). However, before doing so, please search
+you can create a [New issue](https://github.com/PKua007/rampack/issues). However, before doing so, please search
 existing ones to avoid duplicates.
 
 Code contributions are also highly appreciated! They can be both as small as fixing
@@ -69,6 +69,15 @@ environment.
 
 New classes should be documented using [Doxygen](https://www.doxygen.nl) comments. Code comments are generally a code
 smell (clean code documents itself), but some technical remarks about the algorithms are sometimes needed.
+
+Invoking
+
+```shell
+doxygen Doxyfile
+```
+
+in project root build the documentation in the `doxygen-doc` folder. The index is located at
+`doxygen-doc/html/index.html`.
 
 
 ## User documentation
@@ -121,6 +130,7 @@ introduced. As you cannot be sure in which version your changes will be applied,
 
 The above example will be rendered as follows:
 
+
 ### Class `example_class`
 
 > Since v1.1.0
@@ -147,10 +157,46 @@ Arguments:
 > Since v1.2.0, some additional comments were added here, for example telling what was improved.
 
 
+## Commandline documentation
+
+RAMPACK uses [cxxopts](https://github.com/jarro2783/cxxopts/) to handle commandline options. The framework
+auto-generates the help, which is mirrored to [operation-modes.md](operation-modes.md) documentation page. The mirroring
+is done by the Python script `scripts/regenerate_modes_help.py`. It should be used to regenerate the documentation after
+every change in commandline options. Usage:
+
+```
+./regenerate_modes_help.py [rampack executable] [operation-modes.md path]
+```
+
+Of course `[rampack executable]` should be the one with updated options. If you want to add a new program mode, you
+should add it to the list of modes `regenerate_modes_help.py` and mark the place in
+[operation-modes.md](operation-modes.md) where the auto-generated help should be inserted. Assuming that the new mode is
+called `foo`, the markers are:
+
+```markdown
+[//]: # (start foo)
+Here the auto-generated help will be inserted.
+[//]: # (end foo)
+```
+
+
 ## Updating the changelog
 
 You should reflect your changes in the changelog within the
-[Unreleased](https://github.com/PKua007/rampack/blob/main/CHANGELOG.md#unreleased) section.
+[Unreleased](https://github.com/PKua007/rampack/blob/main/CHANGELOG.md#unreleased) section. You should only document
+changes visible to the end user. Code refactoring is not visible, but a 20% performance increase due to optimizations
+definitely is.
+
+
+## Additional tools
+
+The Python script `scripts/markdown_link_check.py` validates cross-links in the documentation directory. Usage:
+
+```
+./markdown_link_check.py [docs path]
+```
+
+It will report all dead links, if found. The script is included as a part of CI and is invoked by `ctest`.
 
 
 [&uarr; back to the top](#contributing)

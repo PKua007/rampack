@@ -22,6 +22,7 @@ class MarkdownFile:
     anchors: List[str]
     links: List[Link]
 
+
     def __init__(self, filename: str, document: str):
         self.filename = filename
         self.anchors = parse_anchors(document)
@@ -29,7 +30,11 @@ class MarkdownFile:
 
 
 def strip_code_blocks(document: str) -> str:
-    return re.sub(r'[\t ]*```[\w]*[\t ]*\n(.*?)\n\s*```', '', document, flags=re.DOTALL)
+    # First, strip code block containing code blocks, namely with six ``````
+    document = re.sub(r'[\t ]*``````[\w]*[\t ]*\n(.*?)\n\s*``````', '', document, flags=re.DOTALL)
+    # After that, strip "normal" code blocks with three ```
+    document = re.sub(r'[\t ]*```[\w]*[\t ]*\n(.*?)\n\s*```', '', document, flags=re.DOTALL)
+    return document
 
 
 def process_section_names(matches: List[str]) -> List[str]:
