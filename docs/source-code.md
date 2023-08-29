@@ -72,7 +72,23 @@ The test code has the following directories:
 - `validation_test` - validation tests
 
 
-## Important interfaces
+## Code architecture
+
+The central point is the `core/Simulation` class, which performs the runs. Monte Carlo moves, sampled by implementations
+of `core/MoveSampler` (for particle moves) and `core/TriclinicBoxScaler` (for box moves) are delegated to the 
+`core/Packing` class, which stores the simulation box. The `Packing` class uses `core/NeighbourGrid` for a constant-time
+lookup of neighboring particles. `core/DomainDecomposition` class is responsible for handling domain division and ghost
+layers. Parallelization is done using OpenMP code extensions.
+
+Shape and interactions are controlled by implementations of `src/ShapeTraits`. The interface exposes 3 sub-interfaces:
+`core/ShapeGeometry` for geometric properties (shape axes, named points, etc.), `core/Interaction` for overlap
+detection and/or interaction energy calculation, and `core/ShapePrinter` for printing out the shape in a given format.
+
+The observables are collected by `src/ObservablesCollector`, trajectories are recorded using implementations of
+`src/SimulationRecorder` interface and snapshots are stored by implementations of `src/SnapshotWriter`. All observables
+implement `src/Observable` interface, while bulk observables - `src/BulkObservable`.
+
+Dynamic simulation parameters (temeprature and pressure) implement `src/DynamicParameter` interface.
 
 
 
