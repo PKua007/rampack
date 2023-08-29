@@ -9,12 +9,13 @@
 
 
 /**
- * @brief Parameter measuring local order of nearest neighbour.
+ * @brief Parameter measuring local/global bond order of nearest neighbour.
  * @details <p> The parameter is calculated with respect to the plane specified in the constructor. For rank @a r, @a r
  * nearest neighbours of each particles are found. Then, the angle \f$ \phi_i \f$ between an arbitrary direction lying
  * in the plane and the projection of vector joining molecule with the i-th neighbour is computed. Local parameter is
- * computed as \f$ \psi_r = 1/r \sum_i \exp(i r \phi_i) \f$. At the end, the absolute value of this quantity is averaged
- * over all molecules in the system.
+ * computed as \f$ \psi_r = 1/r \sum_i \exp(i r \phi_i) \f$. At the end, the value of this quantity is averaged over all
+ * molecules in the system. For a local case, modulus is computed before averaging over all molecules, while for a
+ * global case - afterwards.
  *
  * <p> Physically meaningful ranks are 3, 4 and 6 for triatic, tetratic and hexatic order, however the class allows all
  * values greater or equal 2 (because why not).
@@ -57,6 +58,7 @@ public:
      * to layers
      * @param bondOrderPointName named point (see ShapeGeometry::getNamedPointForShape) which should be used to calculate
      * nearest neighbours and bond order
+     * @param local if @a True, lo
      */
     BondOrder(std::size_t rank, const std::array<int, 3> &planeMillerIndices,
               const std::string &layeringPointName = "o", const std::string &bondOrderPointName = "o",

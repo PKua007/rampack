@@ -263,13 +263,15 @@ namespace {
             .arguments({{"hkl", hkl},
                         {"ranks", ranks},
                         {"layering_point", namedPoint, R"("o")"},
-                        {"focal_point", namedPoint, R"("o")"}})
+                        {"focal_point", namedPoint, R"("o")"},
+                        {"local", MatcherBoolean{}, "True"}})
             .mapTo([](const DataclassData &bondOrder) -> ObservableData {
                 auto hkl = bondOrder["hkl"].as<std::array<int, 3>>();
                 auto ranks = bondOrder["ranks"].as<std::vector<std::size_t>>();
                 auto layeringPoint = bondOrder["layering_point"].as<std::string>();
                 auto focalPoint = bondOrder["focal_point"].as<std::string>();
-                auto observable = std::make_shared<BondOrder>(ranks, hkl, layeringPoint, focalPoint);
+                auto local = bondOrder["local"].as<bool>();
+                auto observable = std::make_shared<BondOrder>(ranks, hkl, layeringPoint, focalPoint, local);
                 return {FULL_SCOPE, observable};
             });
     }

@@ -285,25 +285,31 @@ bond_order(
     hkl,
     ranks,
     layering_point = "o",
-    focal_point = "o"
+    focal_point = "o",
+    local = True
 )
 ```
 
-Bond order parameter, which quantifies local order of angles between the nearest neighbours. On a 2D plane, it is
+Bond order parameter, which quantifies the order of angles between the nearest neighbors. On a 2D plane, it is
 defined as
 
-*&psi;<sub>r</sub>* = 1/*n* &sum;<sub>*i*</sub> 1/*r* | &sum;<sub>*j*</sub> exp(*r &iota; &theta;<sub>ij</sub>*) |,
+1) *Local bond order* <br />
+   *&psi;<sub>r</sub>* = 1/*n* &sum;<sub>*i*</sub> 1/*r* | &sum;<sub>*j*</sub> exp(*r &iota; &theta;<sub>ij</sub>*) |
+2) *Global bond order* <br />
+   *&psi;<sub>r</sub>* = 1/*n* | &sum;<sub>*i*</sub> 1/*r*  &sum;<sub>*j*</sub> exp(*r &iota; &theta;<sub>ij</sub>*) |
 
 where index *i* goes over all *n* particles lying on the plane, *r* is the rank of the order parameter,
 &sum;<sub>*j*</sub> sum goes over *j* = 1, ..., *r* nearest neighbours of the *i*<sup>th</sup> particle, &iota; is the
 imaginary unit and |...| is modulus. Finally, *&theta;<sub>ij</sub>* is the angle between the vector joining
-*i*<sup>th</sup> and *j*<sup>th</sup> particles and a constant arbitrary direction on the plane. 
+*i*<sup>th</sup> and *j*<sup>th</sup> particles and a constant arbitrary direction on the plane. *Local* and *global*
+bond order parameter differ by the placement of the absolute value. Local bond order quantifies only the ordering of
+nearest neighbors, while global bond order also takes into account phase differences between all particles.
 
 To make it applicable to a 3D system, the system is assumed to be layered smectic (you can also project all particles
-on a single plane, see `hkl` argument description). All positions are projected onto nearest layers, *&psi;<sub>r</sub>*
-is calculated for each layer separately and then averaged over all layers. Number of layers and their wavevector are
-specified upfront by `hkl` Miller indices (see [class `smectic_order`](#class-smectic_order)), while layer shifts as
-well as association of particles to them are inferred automatically.
+on a single plane, see `hkl` argument description). All positions are projected onto the nearest layers,
+*&psi;<sub>r</sub>* is calculated for each layer separately and then averaged over all layers. Number of layers and
+their wavevector are specified upfront by `hkl` Miller indices (see [class `smectic_order`](#class-smectic_order)),
+while layer shifts as well as association of particles to them are inferred automatically.
 
 * **Arguments**:
   * ***hkl*** <br />
@@ -319,6 +325,8 @@ well as association of particles to them are inferred automatically.
     layers.
   * ***focal_point*** (*= "o"*) <br />
     [Named point](shapes.md#named-points) on the particle that will be used to compute *&theta;<sub>ij</sub>* angles.
+  * ***local*** (*= True*) <br />
+    If `True`, local bond order is computed, otherwise - global.
 * **Primary name**: `Bond order`
 * **Interval values**:
   * `psi_[r1]`, `psi_[r2]`, ... - bond order parameters for all `[r1]`, `[r2]`, ... ranks specified by `ranks` argument. 
