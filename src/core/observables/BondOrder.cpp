@@ -11,9 +11,9 @@
 
 
 BondOrder::BondOrder(std::vector<std::size_t> ranks, const std::array<int, 3> &planeMillerIndices,
-                     std::string layeringPointName, std::string bondOrderPointName)
+                     std::string layeringPointName, std::string bondOrderPointName, bool local)
         : ranks{std::move(ranks)}, layeringPointName{std::move(layeringPointName)},
-          bondOrderPointName{std::move(bondOrderPointName)}
+          bondOrderPointName{std::move(bondOrderPointName)}, local{local}
 {
     Expects(!this->ranks.empty());
     Expects(std::all_of(this->ranks.begin(), this->ranks.end(), [](auto rank) { return rank >= 2; }));
@@ -62,7 +62,7 @@ void BondOrder::calculate(const Packing &packing, [[maybe_unused]] double temper
 double BondOrder::doCalculateBondOrder(const std::vector<Vector<3>> &bondOrderPoints, std::size_t rank,
                                        const std::vector<KnnVector> &knn, const BoundaryConditions &bc)
 {
-    double psi{};
+    std::complex<double> psi{};
     for (std::size_t particleIdx{}; particleIdx < bondOrderPoints.size(); particleIdx++) {
         const auto &particlePos = bondOrderPoints[particleIdx];
         const auto &neighboursIdxs = knn[particleIdx];
@@ -83,7 +83,11 @@ double BondOrder::doCalculateBondOrder(const std::vector<Vector<3>> &bondOrderPo
             using namespace std::complex_literals;
             localPsi += std::exp(1i * static_cast<double>(rank) * angle);
         }
-        psi += std::abs(localPsi) / static_cast<double>(rank);
+
+        if (this->local)
+            psi += std::abs(localPsi) / static_cast<double>(rank);
+        else
+            psi += localPsi / static_cast<double>(rank);
     }
 
     return std::abs(psi) / static_cast<double>(bondOrderPoints.size());

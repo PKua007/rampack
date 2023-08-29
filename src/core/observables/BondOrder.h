@@ -31,6 +31,8 @@ private:
     std::string layeringPointName;
     std::string bondOrderPointName;
 
+    bool local{};
+
     Vector<3> kVector;
     Vector<3> planeVector1;
     Vector<3> planeVector2;
@@ -57,8 +59,10 @@ public:
      * nearest neighbours and bond order
      */
     BondOrder(std::size_t rank, const std::array<int, 3> &planeMillerIndices,
-              const std::string &layeringPointName = "o", const std::string &bondOrderPointName = "o")
-            : BondOrder(std::vector<std::size_t>{rank}, planeMillerIndices, layeringPointName, bondOrderPointName)
+              const std::string &layeringPointName = "o", const std::string &bondOrderPointName = "o",
+              bool local = true)
+            : BondOrder(std::vector<std::size_t>{rank}, planeMillerIndices, layeringPointName, bondOrderPointName,
+                        local)
     { }
 
     /**
@@ -72,7 +76,7 @@ public:
      * nearest neighbours and bond order
      */
     BondOrder(std::vector<std::size_t> ranks, const std::array<int, 3> &planeMillerIndices,
-              std::string layeringPointName = "o", std::string bondOrderPointName = "o");
+              std::string layeringPointName = "o", std::string bondOrderPointName = "o", bool local = true);
 
     /**
      * @brief Computes the bond order parameter(s) for given @a packing. Rest of parameters are ignored.
