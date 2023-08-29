@@ -25,6 +25,10 @@ library (later, with Python bindings as well).
 * Documentation directory `doc/` renamed to `docs/` (needed for GitHub to recognize
   [contributing.md](docs/contributing.md)).
 
+### Added
+
+* Global/local switch for [class `bond_order`](docs/observables.md#class-bond_order).
+
 
 ## [1.1.0] - 2023-06-21
 
