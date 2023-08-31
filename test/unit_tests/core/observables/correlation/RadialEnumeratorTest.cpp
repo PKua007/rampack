@@ -3,29 +3,13 @@
 //
 
 #include <catch2/catch.hpp>
-#include <map>
 
 #include "mocks/MockShapeTraits.h"
+#include "PairCollector.h"
 
 #include "core/observables/correlation/RadialEnumerator.h"
 #include "core/PeriodicBoundaryConditions.h"
 
-
-namespace {
-    class PairCollector : public PairConsumer {
-    public:
-        using PairMap = std::map<std::pair<std::size_t, std::size_t>, double>;
-
-        PairMap pairData;
-
-        void consumePair([[maybe_unused]] const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
-                         double distance, [[maybe_unused]] const ShapeTraits &shapeTraits) override
-        {
-            CHECK(this->pairData.find(idxPair) == this->pairData.end());
-            this->pairData[idxPair] = distance;
-        }
-    };
-}
 
 TEST_CASE("RadialEnumerator") {
     using trompeloeil::_;
