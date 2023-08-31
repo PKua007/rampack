@@ -23,9 +23,11 @@
 #include "core/observables/trackers/FourierTracker.h"
 #include "core/observables/trackers/DummyTracker.h"
 
-#include "core/observables/correlation/PairDensityCorrelation.h"
 #include "core/observables/correlation/RadialEnumerator.h"
 #include "core/observables/correlation/LayerwiseRadialEnumerator.h"
+#include "core/observables/correlation/LinearEnumerator.h"
+
+#include "core/observables/correlation/PairDensityCorrelation.h"
 #include "core/observables/correlation/PairAveragedCorrelation.h"
 #include "core/observables/DensityHistogram.h"
 #include "core/observables/correlation/ProbabilityEvolution.h"
@@ -77,6 +79,8 @@ namespace {
 
     MatcherDataclass create_radial();
     MatcherDataclass create_layerwise_radial();
+    MatcherDataclass create_linear();
+
     MatcherAlternative create_tracker();
     MatcherAlternative create_shape_function();
     MatcherAlternative create_correlation_function();
@@ -115,7 +119,7 @@ namespace {
     });
     auto shapeAxis = primaryAxis | secondaryAxis | auxiliaryAxis;
 
-    auto binning = create_radial() | create_layerwise_radial();
+    auto binning = create_radial() | create_layerwise_radial() | create_linear();
 
     auto shapeFunction = create_shape_function();
 
@@ -442,6 +446,26 @@ namespace {
                 auto hkl = layerwiseRadial["hkl"].as<std::array<int, 3>>();
                 auto focalPoint = layerwiseRadial["focal_point"].as<std::string>();
                 return std::make_shared<LayerwiseRadialEnumerator>(hkl, focalPoint);
+            });
+    }
+
+    MatcherDataclass create_linear() {
+        auto axis = MatcherString{}
+            .anyOf({"x", "y", "z"})
+            .mapTo([](const std::string &str) -> LinearEnumerator::Axis {
+                Assert(str.length() == 1 && str[0] >= 'x' && str[0] <= 'z');
+                return static_cast<LinearEnumerator::Axis>(str[0] - 'x');
+            });
+
+        return MatcherDataclass("linear")
+            .arguments({
+                {"axis", axis},
+                {"focal_point", MatcherString{}.nonEmpty(), R"("o")"}
+            })
+            .mapTo([](const DataclassData &linear) -> std::shared_ptr<PairEnumerator> {
+                auto theAxis = linear["axis"].as<LinearEnumerator::Axis>();
+                auto focalPoint = linear["focal_point"].as<std::string>();
+                return std::make_shared<LinearEnumerator>(theAxis, focalPoint);
             });
     }
 
