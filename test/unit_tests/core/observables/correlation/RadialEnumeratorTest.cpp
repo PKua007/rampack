@@ -5,6 +5,8 @@
 #include <catch2/catch.hpp>
 
 #include "mocks/MockShapeTraits.h"
+#include "matchers/VectorApproxMatcher.h"
+
 #include "PairCollector.h"
 
 #include "core/observables/correlation/RadialEnumerator.h"
@@ -16,9 +18,9 @@ TEST_CASE("RadialEnumerator") {
 
     TriclinicBox box(10);
     // distance pairs:
-    // (0, 1) => 2
-    // (0, 2) => sqrt(12)
-    // (1, 2) => sqrt(24)
+    // (0, 1) => {0, 2, 0}
+    // (0, 2) => {-2, -2, -2}   through PBC
+    // (1, 2) => {-2, -4, -2}   through PBC
     // (0, 0), (1, 1), (2, 2) => 0
     std::vector<Shape> shapes{Shape{{1, 1, 1}}, Shape{{1, 3, 1}}, Shape{{9, 9, 9}}};
     MockShapeTraits traits;
@@ -36,12 +38,12 @@ TEST_CASE("RadialEnumerator") {
         enumerator.enumeratePairs(packing, traits, collector);
 
         REQUIRE(collector.pairData.size() == 6);
-        CHECK(collector.pairData.at({0, 0}) == 0);
-        CHECK(collector.pairData.at({0, 1}) == Approx(2));
-        CHECK(collector.pairData.at({0, 2}) == Approx(std::sqrt(12)));
-        CHECK(collector.pairData.at({1, 2}) == Approx(std::sqrt(24)));
-        CHECK(collector.pairData.at({1, 1}) == 0);
-        CHECK(collector.pairData.at({2, 2}) == 0);
+        CHECK(collector.pairData.at({0, 0}) == Vector<3>{0, 0, 0});
+        CHECK_THAT(collector.pairData.at({0, 1}), IsApproxEqual(Vector<3>{0, 2, 0}, 1e-12));
+        CHECK_THAT(collector.pairData.at({0, 2}), IsApproxEqual(Vector<3>{-2, -2, -2}, 1e-12));
+        CHECK_THAT(collector.pairData.at({1, 2}), IsApproxEqual(Vector<3>{-2, -4, -2}, 1e-12));
+        CHECK(collector.pairData.at({1, 1}) == Vector<3>{0, 0, 0});
+        CHECK(collector.pairData.at({2, 2}) == Vector<3>{0, 0, 0});
     }
 
     SECTION("number of molecules in shells") {

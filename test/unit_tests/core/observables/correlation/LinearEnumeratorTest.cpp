@@ -42,16 +42,16 @@ TEST_CASE("LinearEnumerator") {
         enumerator.enumeratePairs(packing, traits, collector);
 
         REQUIRE(collector.pairData.size() == 10);
-        CHECK(collector.pairData.at({0, 0}) == 0);
-        CHECK(collector.pairData.at({0, 1}) == 1);
-        CHECK(collector.pairData.at({0, 2}) == 1);
-        CHECK(collector.pairData.at({0, 3}) == 2);
-        CHECK(collector.pairData.at({1, 1}) == 0);
-        CHECK(collector.pairData.at({1, 2}) == 0);
-        CHECK(collector.pairData.at({1, 3}) == 2);
-        CHECK(collector.pairData.at({2, 2}) == 0);
-        CHECK(collector.pairData.at({2, 3}) == 2);
-        CHECK(collector.pairData.at({3, 3}) == 0);
+        CHECK(collector.pairData.at({0, 0}) == Vector<3>{0, 0, 0});
+        CHECK(collector.pairData.at({0, 1}) == Vector<3>{0, 1, 0});
+        CHECK(collector.pairData.at({0, 2}) == Vector<3>{0, 1, 0});
+        CHECK(collector.pairData.at({0, 3}) == Vector<3>{0, -2, 0});
+        CHECK(collector.pairData.at({1, 1}) == Vector<3>{0, 0, 0});
+        CHECK(collector.pairData.at({1, 2}) == Vector<3>{0, 0, 0});
+        CHECK(collector.pairData.at({1, 3}) == Vector<3>{0, 2, 0});
+        CHECK(collector.pairData.at({2, 2}) == Vector<3>{0, 0, 0});
+        CHECK(collector.pairData.at({2, 3}) == Vector<3>{0, 2, 0});
+        CHECK(collector.pairData.at({3, 3}) == Vector<3>{0, 0, 0});
     }
 
     SECTION("number of molecules in shells") {

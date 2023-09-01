@@ -12,7 +12,7 @@
 
 class PairCollector : public PairConsumer {
 public:
-    using PairMap = std::map<std::pair<std::size_t, std::size_t>, double>;
+    using PairMap = std::map<std::pair<std::size_t, std::size_t>, Vector<3>>;
 
     PairMap pairData;
 
@@ -20,7 +20,7 @@ public:
                      const Vector<3> &distanceVector, [[maybe_unused]] const ShapeTraits &shapeTraits) override
     {
         CHECK(this->pairData.find(idxPair) == this->pairData.end());
-        this->pairData[idxPair] = distanceVector.norm();
+        this->pairData[idxPair] = distanceVector;
     }
 };
 

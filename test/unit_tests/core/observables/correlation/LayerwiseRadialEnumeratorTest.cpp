@@ -5,6 +5,8 @@
 #include <catch2/catch.hpp>
 
 #include "mocks/MockShapeTraits.h"
+#include "matchers/VectorApproxMatcher.h"
+
 #include "PairCollector.h"
 
 #include "core/observables/correlation/LayerwiseRadialEnumerator.h"
@@ -37,19 +39,20 @@ TEST_CASE("LayerwiseRadialEnumerator") {
     SECTION("pair enumerating") {
         PairCollector collector;
         auto tangent = Vector<2>{7, 2}.normalized();
+        Vector<3> tangent3D = {tangent[0], tangent[1], 0};
 
         enumerator.enumeratePairs(packing, traits, collector);
 
         REQUIRE(collector.pairData.size() == 9);
-        CHECK(collector.pairData.at({0, 0}) == 0);
-        CHECK(collector.pairData.at({0, 1}) == Approx(std::abs(tangent * Vector<2>{3, 0})));
-        CHECK(collector.pairData.at({1, 1}) == 0);
-        CHECK(collector.pairData.at({2, 2}) == 0);
-        CHECK(collector.pairData.at({2, 3}) == Approx(std::abs(tangent * Vector<2>{5, 0})));
-        CHECK(collector.pairData.at({2, 4}) == Approx(std::abs(tangent * Vector<2>{-2, 2})));
-        CHECK(collector.pairData.at({3, 3}) == 0);
-        CHECK(collector.pairData.at({3, 4}) == Approx(std::abs(tangent * Vector<2>{3, 2})));
-        CHECK(collector.pairData.at({4, 4}) == 0);
+        CHECK(collector.pairData.at({0, 0}) == Vector<3>{0, 0, 0});
+        CHECK_THAT(collector.pairData.at({0, 1}), IsApproxEqual((tangent * Vector<2>{3, 0}) * tangent3D, 1e-12));
+        CHECK(collector.pairData.at({1, 1}) == Vector<3>{0, 0, 0});
+        CHECK(collector.pairData.at({2, 2}) == Vector<3>{0, 0, 0});
+        CHECK_THAT(collector.pairData.at({2, 3}), IsApproxEqual((tangent * Vector<2>{-5, 0}) * tangent3D, 1e-12));
+        CHECK_THAT(collector.pairData.at({2, 4}), IsApproxEqual((tangent * Vector<2>{-2, 2}) * tangent3D, 1e-12));
+        CHECK(collector.pairData.at({3, 3}) == Vector<3>{0, 0, 0});
+        CHECK_THAT(collector.pairData.at({3, 4}), IsApproxEqual((tangent * Vector<2>{3, 2}) * tangent3D, 1e-12));
+        CHECK(collector.pairData.at({4, 4}) == Vector<3>{0, 0, 0});
     }
 
     SECTION("number of molecules in shells") {
