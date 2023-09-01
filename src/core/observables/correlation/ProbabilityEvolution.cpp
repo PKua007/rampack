@@ -42,11 +42,12 @@ std::string ProbabilityEvolution::getSignatureName() const {
 }
 
 void ProbabilityEvolution::consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
-                                       double distance, const Vector<3> &distanceVector, const ShapeTraits &shapeTraits)
+                                       const Vector<3> &distanceVector, const ShapeTraits &shapeTraits)
 {
     if (idxPair.first == idxPair.second)
         return;
 
+    double distance = distanceVector.norm();
     if (distance > this->maxDistance)
         return;
 

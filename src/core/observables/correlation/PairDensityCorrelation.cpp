@@ -22,12 +22,14 @@ void PairDensityCorrelation::print(std::ostream &out) const {
         out << x.front() << " " << y << std::endl;
 }
 
-void PairDensityCorrelation::consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
-                                         double distance, const Vector<3> &distanceVector,
-                                         const ShapeTraits &shapeTraits)
+void PairDensityCorrelation::consumePair([[maybe_unused]] const Packing &packing,
+                                         const std::pair<std::size_t, std::size_t> &idxPair,
+                                         const Vector<3> &distanceVector,
+                                         [[maybe_unused]] const ShapeTraits &shapeTraits)
 {
     if (idxPair.first == idxPair.second)
         return;
+    double distance = distanceVector.norm();
     if (distance > this->histogram.getMax())
         return;
 

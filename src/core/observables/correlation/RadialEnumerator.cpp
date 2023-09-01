@@ -25,7 +25,7 @@ void RadialEnumerator::enumeratePairs(const Packing &packing, const ShapeTraits 
             pos2 += bc.getTranslation(pos1, pos2);
 
             Vector<3> diff = pos2 - pos1;
-            pairConsumer.consumePair(packing, {i, j}, diff.norm(), diff, shapeTraits);
+            pairConsumer.consumePair(packing, {i, j}, diff, shapeTraits);
         }
     }
 }

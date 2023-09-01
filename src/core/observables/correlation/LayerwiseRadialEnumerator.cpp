@@ -43,7 +43,7 @@ void LayerwiseRadialEnumerator::enumeratePairs(const Packing &packing, const Sha
 
             Vector<3> diff = pos2 - pos1;
             diff -= (diff * kVectorNorm) * kVectorNorm; // Subtract normal component
-            pairConsumer.consumePair(packing, {i, j}, diff.norm(), diff, traits);
+            pairConsumer.consumePair(packing, {i, j}, diff, traits);
         }
     }
 }

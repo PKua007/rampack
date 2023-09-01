@@ -34,10 +34,10 @@ TEST_CASE("PairDensityCorrelation") {
     REQUIRE_CALL(*enumerator, enumeratePairs(_, _, _))
         .LR_WITH(&_1 == &packing1 && &_2 == &traits)
         .SIDE_EFFECT (
-            _3.consumePair(_1, {0, 0}, 1.5, {1.5, 0, 0}, _2);   // REJECTED because 0 = 0
-            _3.consumePair(_1, {0, 1}, 2.5, {2.5, 0, 0}, _2);   // ends in BIN 2
-            _3.consumePair(_1, {0, 2}, 3.5, {3.5, 0, 0}, _2);   // ends in BIN 2
-            _3.consumePair(_1, {1, 2}, 5.5, {5.5, 0, 0}, _2);   // REJECTED because too big distance
+            _3.consumePair(_1, {0, 0}, {1.5, 0, 0}, _2);   // REJECTED because 0 = 0
+            _3.consumePair(_1, {0, 1}, {2.5, 0, 0}, _2);   // ends in BIN 2
+            _3.consumePair(_1, {0, 2}, {3.5, 0, 0}, _2);   // ends in BIN 2
+            _3.consumePair(_1, {1, 2}, {5.5, 0, 0}, _2);   // REJECTED because too big distance
         );
     REQUIRE_CALL(*enumerator, getExpectedNumOfMoleculesInShells(_, binDividers))
         .LR_WITH(&_1 == &packing1)
@@ -49,8 +49,8 @@ TEST_CASE("PairDensityCorrelation") {
     REQUIRE_CALL(*enumerator, enumeratePairs(_, _, _))
         .LR_WITH(&_1 == &packing2 && &_2 == &traits)
         .SIDE_EFFECT (
-            _3.consumePair(_1, {0, 1}, 1.5, {1.5, 0, 0}, _2);  // ends in BIN 1
-            _3.consumePair(_1, {1, 2}, 2.5, {2.3, 0, 0}, _2);  // ends in BIN 2
+            _3.consumePair(_1, {0, 1}, {1.5, 0, 0}, _2);  // ends in BIN 1
+            _3.consumePair(_1, {1, 2}, {2.3, 0, 0}, _2);  // ends in BIN 2
         );
     REQUIRE_CALL(*enumerator, getExpectedNumOfMoleculesInShells(_, binDividers))
         .LR_WITH(&_1 == &packing2)

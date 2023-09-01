@@ -24,7 +24,7 @@ private:
     std::shared_ptr<CorrelationFunction> correlationFunction;
     HistogramBuilder<1> histogram;
 
-    void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair, double distance,
+    void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
                      const Vector<3> &distanceVector, const ShapeTraits &shapeTraits) override;
 
 public:

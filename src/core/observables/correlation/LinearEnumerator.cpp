@@ -68,7 +68,7 @@ void LinearEnumerator::enumeratePairs(const Packing &packing, const ShapeTraits 
 
             Vector<3> diff = pos2 - pos1;
             diff = (diff * direction) * direction;
-            pairConsumer.consumePair(packing, {i, j}, diff.norm(), diff, shapeTraits);
+            pairConsumer.consumePair(packing, {i, j}, diff, shapeTraits);
         }
     }
 }

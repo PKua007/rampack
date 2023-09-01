@@ -46,16 +46,16 @@ TEST_CASE("ProbabilityEvolution") {
     REQUIRE_CALL(*enumerator, enumeratePairs(_, _, _))
         .LR_SIDE_EFFECT(
             PairConsumer &consumer = _3;
-            // Distance vectors are chosen arbitrarily - they have no effect here
-            consumer.consumePair(packing, pairs[0], distances[0], {distances[0], 0, 0}, traits);
-            consumer.consumePair(packing, pairs[1], distances[1], {distances[1], 0, 0}, traits);
+            // Distance vectors are chosen arbitrarily - they have no effect here (but the norm is correct)
+            consumer.consumePair(packing, pairs[0], {distances[0], 0, 0}, traits);
+            consumer.consumePair(packing, pairs[1], {distances[1], 0, 0}, traits);
         )
         .IN_SEQUENCE(seq);
     REQUIRE_CALL(*enumerator, enumeratePairs(_, _, _))
         .LR_SIDE_EFFECT(
             PairConsumer &consumer = _3;
-            consumer.consumePair(packing, pairs[2], distances[2], {distances[2], 0, 0}, traits);
-            consumer.consumePair(packing, pairs[3], distances[3], {distances[3], 0, 0}, traits);
+            consumer.consumePair(packing, pairs[2], {distances[2], 0, 0}, traits);
+            consumer.consumePair(packing, pairs[3], {distances[3], 0, 0}, traits);
         )
         .IN_SEQUENCE(seq);
     ALLOW_CALL(*enumerator, getSignatureName()).RETURN("enumerator");
