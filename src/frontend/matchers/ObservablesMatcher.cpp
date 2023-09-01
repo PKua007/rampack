@@ -33,6 +33,8 @@
 #include "core/observables/correlation/ProbabilityEvolution.h"
 
 #include "core/observables/correlation_functions/S110Correlation.h"
+#include "core/observables/correlation_functions/S220Correlation.h"
+#include "core/observables/correlation_functions/S221Correlation.h"
 #include "core/observables/correlation_functions/AxesAngle.h"
 
 #include "core/observables/shape_functions/ConstantShapeFunction.h"
@@ -511,6 +513,20 @@ namespace {
                 return std::make_shared<S110Correlation>(axis);
             });
 
+        auto s220 = MatcherDataclass("s220")
+            .arguments({{"axis", shapeAxis}})
+            .mapTo([](const DataclassData &s220) -> std::shared_ptr<CorrelationFunction> {
+                auto axis = s220["axis"].as<ShapeGeometry::Axis>();
+                return std::make_shared<S220Correlation>(axis);
+            });
+
+        auto s221 = MatcherDataclass("s221")
+            .arguments({{"axis", shapeAxis}})
+            .mapTo([](const DataclassData &s221) -> std::shared_ptr<CorrelationFunction> {
+                auto axis = s221["axis"].as<ShapeGeometry::Axis>();
+                return std::make_shared<S221Correlation>(axis);
+            });
+
         auto axesAngle = MatcherDataclass("axes_angle")
             .arguments({{"axis", shapeAxis}})
             .mapTo([](const DataclassData &axesAngle) -> std::shared_ptr<CorrelationFunction> {
@@ -518,7 +534,7 @@ namespace {
                 return std::make_shared<AxesAngle>(axis);
             });
 
-        return s110 | axesAngle;
+        return s110 | s220 | s221 | axesAngle;
     }
 }
 
