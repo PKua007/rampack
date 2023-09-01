@@ -31,8 +31,11 @@ This reference page give a full walkthrough over observables that can be compute
 * [Binning types](#binning-types)
   * [Class `radial`](#class-radial)
   * [Class `layerwise_radial`](#class-layerwise_radial)
+  * [Class `linear`](#class-linear)
 * [Correlation functions](#correlation-functions)
   * [Class `s110`](#class-s110)
+  * [Class `s220`](#class-s220)
+  * [Class `s221`](#class-s221)
   * [Class `axes_angle`](#class-axes_angle)
 * [Shape functions](#shape-functions)
   * [Class `const`](#class-const)
@@ -432,8 +435,8 @@ the standard [radial distribution function](https://en.wikipedia.org/wiki/Radial
     Number of bins to use. The more of them, the higher is the resolution of the plot, but the smaller are the
     statistics in the single bin.
   * ***binning*** <br />
-    [Binning type](#binning-types) used. It defines what *distance* means. For example, for `binning = radial`,
-    *distance* is the Euclidean distance between the particles.
+    [Binning type](#binning-types) used. It defines what *distance* as a norm of a *distance vector* means. For example, for
+    `binning = radial`, *distance* reduces to a standard Euclidean distance between the particles.
 * **Short name**: `rho_[binning name]`, where `[binning name]` depends on the [binning type](#binning-types) (`binning`
   argument).
 * **Output**:
@@ -462,10 +465,11 @@ distance around *r*.
     Number of bins to use. The more of them, the higher is the resolution of the plot, but the smaller are the
     statistics in the single bin.
   * ***binning*** <br />
-    [Binning type](#binning-types) used. It defines what *distance* means. For example, for `binning = radial`,
-    *distance* is the Euclidean distance between the particles.
+    [Binning type](#binning-types) used. It defines what *distance* as a norm of a *distance vector* means. For example, for
+    `binning = radial`, *distance* reduces to a standard Euclidean distance between the particles. Some
+    [correlation function](#correlation-functions) also use the *distance vector* explicitly.
   * ***function*** <br />
-    Two-particle [correlation function](#correlation-functions) which is being averaged.
+    Two-particle [correlation functions](#correlation-functions) which is being averaged.
 * **Short name**: `[function name]_[binning name]`, where `[function name]` depends on the 
   [correlation function](#correlation-functions) (`function` argument), while `[binning name]` depends on the
   [binning type](#binning-types) (`binning` argument).
@@ -532,8 +536,9 @@ where prob(*f*|*r*) is a conditional probability density of correlation function
     Number of bins to use for distance. The more of them, the higher is the resolution of the plot, but the smaller are
     the statistics in the single bin.
   * ***binning*** <br />
-    [Binning type](#binning-types) used. It defines what *distance* means. For example, for `binning = radial`,
-    *distance* is the Euclidean distance between the particles.
+    [Binning type](#binning-types) used. It defines what *distance* as a norm of a *distance vector* means. For example, for
+    `binning = radial`, *distance* reduces to a standard Euclidean distance between the particles. Some
+    [correlation functions](#correlation-functions) also use the *distance vector* explicitly.
   * ***fun_range*** <br />
     An Array of 2 Floats representing minimal and maximal value of the function *f* that will be plotted.
   * ***n_bins_fun*** <br />
@@ -630,15 +635,17 @@ smectic order parameter.
 
 ## Binning types
 
-Binning type dictates how various types of observables are calculated. Most importantly, it defines what *distance*
-between particles means. Binning type is chosen, for example, when using
+Binning type dictates how various types of observables are calculated. Most importantly, it defines what *distance
+vector* between particles means. Binning type is chosen, for example, when using
 [class `pair_density_correlation`](#class-pair_density_correlation). There, it decides what type of correlation is
 probed - radial, transversal, etc. It can also restrict which pairs of particles should be selected at all - for
-example, [class `layerwise_radial`](#class-layerwise_radial) takes into account only particles from the same layers.
+example, [class `layerwise_radial`](#class-layerwise_radial) takes into account only particles from the same layers. Each binning type has
+*binning name* which is used in a signature name of observables.
 
 There are the following types of binning:
 * [Class `radial`](#class-radial)
 * [Class `layerwise_radial`](#class-layerwise_radial)
+* [Class `linear`](#class-linear)
 
 
 ### Class `radial`
@@ -649,9 +656,11 @@ radial(
 )
 ```
 
-The standard, radial binning type. Here, the *distance* is a standard Euclidean distance and all pairs of particles are
-enumerated. `focal_point` is a [named point](shapes.md#named-points), with respect to which the distance should be
-calculated.
+The standard, radial binning type. Here, the *vector distance* is simply a vector joining first particle with the 
+second, and all pairs of particles are enumerated. `focal_point` is a [named point](shapes.md#named-points), with respect to which the
+distance should be calculated.
+
+* **Binning name**: `r`
 
 
 ### Class `layerwise_radial`
@@ -664,22 +673,53 @@ layerwise_radial(
 ```
 
 Layerwise, transversal binning type. Particles are projected on nearest layers as specified by `hkl` Miller indices (see
-[class `smectic_order`](#class-smectic_order)) and the *distance* is calculated along the layer (transversally).
-Moreover, pairs of particles in different layers are not enumerated. `focal_point` is a
-[named point](shapes.md#named-points), which is used to associate particles to layers and with respect to which the
-distance should be calculated.
+[class `smectic_order`](#class-smectic_order)) and the *vector distance* is calculated along the layer (transversally) - it is a vector
+joining the first particle's projection with that of a second one. Moreover, pairs of particles in different layers are
+not enumerated. `focal_point` is a [named point](shapes.md#named-points), which is used to associate particles to layers and with respect
+to which the distance should be calculated.
 
 **Hint**: class `layerwise_radial` can be also used for cylindrical binning. For example, to project all particles onto
 a single XY plane, one can use `hkl = [0, 0, 1]`.
+
+* **Binning name**: `lr`
+
+
+### Class `linear`
+
+```python
+linear(
+    axis,
+    focal_point = "o"
+)
+```
+
+Linear binning type. Particles are projected onto the height of the simulation box specified by `axis` and the *vector
+distance* is calculated along this axis - it is a vector joining the first particle's projection with that of a second
+one.
+
+* **Arguments**:
+  * ***axis*** <br />
+    The axis (height of the simulation box) along which the binning is performed. Allowed values:
+    * `"x"` - height of the box orthogonal to 2<sup>nd</sup> and 3<sup>rd</sup> box vectors (parallel to the
+      1<sup>st</sup> vector if the box is orthorhombic)
+    * `"y"` - height of the box orthogonal to 3<sup>rd</sup> and 1<sup>st</sup> box vectors (parallel to the
+      2<sup>nd</sup> vector if the box is orthorhombic)
+    * `"z"` - height of the box orthogonal to 1<sup>st</sup> and 2<sup>nd</sup> box vectors (parallel to the
+      3<sup>rd</sup> vector if the box is orthorhombic)
+  * ***focal_point*** <br />
+    A [named point](shapes.md#named-points), with respect to which the distance should be calculated.
+* **Binning name**: `x`, `y` or `z`, as chosen for `axis`
 
 
 ## Correlation functions
 
 Correlation functions take a pair of particles and map it to a single value. They are used in correlation observables,
-such as [class `pair_averaged_correlation`](#class-pair_averaged_correlation).
+such as [class `pair_averaged_correlation`](#class-pair_averaged_correlation). All have a *function name*, which is used in observables signatures.
 
 Currently, the following correlation functions are available:
 * [Class `s110`](#class-s110)
+* [Class `s220`](#class-s220)
+* [Class `s221`](#class-s221)
 * [Class `axes_angle`](#class-axes_angle)
 
 
@@ -691,12 +731,52 @@ s110(
 )
 ```
 
-*S*<sub>110</sub> element of the [S-expansion](https://doi.org/10.1080/00268977800101541), which is defined simply as
+*S*<sub>110</sub> element of the [S-expansion](https://doi.org/10.1080/00268977800101541), which is defined as
 
 *S*<sub>110</sub>(*i*, *j*) = **a**<sub>*i*</sub> &middot; **a**<sub>*j*</sub>,
 
 where **a**<sub>*i*</sub> and **a**<sub>*j*</sub> are (unit) [shape axes](shapes.md#shape-axes) of the *i*<sup>th</sup>
 and *j*<sup>th</sup> molecule, determined by the `axis` argument (`"primary"`, `"secondary"` or `"auxiliary"`). 
+
+* **Function name**: `S110`
+
+
+### Class `s220`
+
+```python
+s220(
+    axis
+)
+```
+
+*S*<sub>220</sub> element of the [S-expansion](https://doi.org/10.1080/00268977800101541), which is defined as
+
+*S*<sub>220</sub>(*i*, *j*) = 3/2 (**a**<sub>*i*</sub> &middot; **a**<sub>*j*</sub>)<sup>2</sup> - 1/2,
+
+where **a**<sub>*i*</sub> and **a**<sub>*j*</sub> are (unit) [shape axes](shapes.md#shape-axes) of the *i*<sup>th</sup>
+and *j*<sup>th</sup> molecule, determined by the `axis` argument (`"primary"`, `"secondary"` or `"auxiliary"`).
+
+* **Function name**: `S220`
+
+
+### Class `s221`
+
+```python
+s221(
+    axis
+)
+```
+
+*S*<sub>221</sub> element of the [S-expansion](https://doi.org/10.1080/00268977800101541), which is defined as
+
+*S*<sub>221</sub>(*i*, *j*) = [(**a**<sub>*i*</sub> &times; **a**<sub>*j*</sub>) &middot; **r**]
+(**a**<sub>*i*</sub> &middot; **a**<sub>*j*</sub>),
+
+where **a**<sub>*i*</sub> and **a**<sub>*j*</sub> are (unit) [shape axes](shapes.md#shape-axes) of the *i*<sup>th</sup>
+and *j*<sup>th</sup> molecule, determined by the `axis` argument (`"primary"`, `"secondary"` or `"auxiliary"`), while
+**r** is the *distance vector*, as defined by the [binning type](#binning-types) used.
+
+* **Function name**: `S221`
 
 
 ### Class `axes_angle`
@@ -713,6 +793,8 @@ The (smaller) angle between axes of two particles, expressed in degrees:
 
 **a**<sub>*i*</sub> and **a**<sub>*j*</sub> are (unit) [shape axes](shapes.md#shape-axes) of the *i*<sup>th</sup>
 and *j*<sup>th</sup> molecule, determined by the `axis` argument (`"primary"`, `"secondary"` or `"auxiliary"`).
+
+* **Function name**: `theta`
 
 
 ## Shape functions
