@@ -19,7 +19,7 @@ protected:
     [[nodiscard]] double calculateForAxes(const Vector<3> &axis1, const Vector<3> &axis2,
                                           [[maybe_unused]] const Vector<3> &distanceVector) const override
     {
-        return 1.5 * (axis1 * axis2 - 1./3);
+        return 1.5 * (std::pow(axis1 * axis2, 2) - 1./3);
     }
 
 public:
@@ -29,9 +29,9 @@ public:
     explicit S220Correlation(ShapeGeometry::Axis axis) : AxisCorrelation(axis) { }
 
     /**
-     * @brief Returns "S110" as the signature name.
+     * @brief Returns "S220" as the signature name.
      */
-    [[nodiscard]] std::string getSignatureName() const override { return "S110"; }
+    [[nodiscard]] std::string getSignatureName() const override { return "S220"; }
 };
 
 
