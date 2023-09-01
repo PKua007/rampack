@@ -22,7 +22,7 @@ public:
      */
     explicit AxesAngle(ShapeGeometry::Axis axis) : axis{axis} { }
 
-    [[nodiscard]] double calculate(const Shape &shape1, const Shape &shape2,
+    [[nodiscard]] double calculate(const Shape &shape1, const Shape &shape2, const Vector<3> &distanceVector,
                                    const ShapeTraits &shapeTraits) const override;
 
     /**

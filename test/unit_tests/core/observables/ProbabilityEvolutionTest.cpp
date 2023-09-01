@@ -45,25 +45,26 @@ TEST_CASE("ProbabilityEvolution") {
     trompeloeil::sequence seq;
     REQUIRE_CALL(*enumerator, enumeratePairs(_, _, _))
         .LR_SIDE_EFFECT(
-                PairConsumer &consumer = _3;
-                consumer.consumePair(packing, pairs[0], distances[0], traits);
-                consumer.consumePair(packing, pairs[1], distances[1], traits);
+            PairConsumer &consumer = _3;
+            // Distance vectors are chosen arbitrarily - they have no effect here
+            consumer.consumePair(packing, pairs[0], distances[0], {distances[0], 0, 0}, traits);
+            consumer.consumePair(packing, pairs[1], distances[1], {distances[1], 0, 0}, traits);
         )
         .IN_SEQUENCE(seq);
     REQUIRE_CALL(*enumerator, enumeratePairs(_, _, _))
         .LR_SIDE_EFFECT(
-                PairConsumer &consumer = _3;
-                consumer.consumePair(packing, pairs[2], distances[2], traits);
-                consumer.consumePair(packing, pairs[3], distances[3], traits);
+            PairConsumer &consumer = _3;
+            consumer.consumePair(packing, pairs[2], distances[2], {distances[2], 0, 0}, traits);
+            consumer.consumePair(packing, pairs[3], distances[3], {distances[3], 0, 0}, traits);
         )
         .IN_SEQUENCE(seq);
     ALLOW_CALL(*enumerator, getSignatureName()).RETURN("enumerator");
 
     auto function = std::make_shared<MockCorrelationFunction>();
-    ALLOW_CALL(*function, calculate(shapes[pairs[0].first], shapes[pairs[0].second], _)).RETURN(values[0]);
-    ALLOW_CALL(*function, calculate(shapes[pairs[1].first], shapes[pairs[1].second], _)).RETURN(values[1]);
-    ALLOW_CALL(*function, calculate(shapes[pairs[2].first], shapes[pairs[2].second], _)).RETURN(values[2]);
-    ALLOW_CALL(*function, calculate(shapes[pairs[3].first], shapes[pairs[3].second], _)).RETURN(values[3]);
+    ALLOW_CALL(*function, calculate(shapes[pairs[0].first], shapes[pairs[0].second], _, _)).RETURN(values[0]);
+    ALLOW_CALL(*function, calculate(shapes[pairs[1].first], shapes[pairs[1].second], _, _)).RETURN(values[1]);
+    ALLOW_CALL(*function, calculate(shapes[pairs[2].first], shapes[pairs[2].second], _, _)).RETURN(values[2]);
+    ALLOW_CALL(*function, calculate(shapes[pairs[3].first], shapes[pairs[3].second], _, _)).RETURN(values[3]);
     ALLOW_CALL(*function, getSignatureName()).RETURN("function");
 
     using Normalization = ProbabilityEvolution::Normalization;

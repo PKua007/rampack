@@ -66,8 +66,9 @@ void LinearEnumerator::enumeratePairs(const Packing &packing, const ShapeTraits 
             Vector<3> pos2 = focalPoints[j];
             pos2 += bc.getTranslation(pos1, pos2);
 
-            double distance = std::abs((pos2 - pos1) * direction);
-            pairConsumer.consumePair(packing, {i, j}, distance, shapeTraits);
+            Vector<3> diff = pos2 - pos1;
+            diff = (diff * direction) * direction;
+            pairConsumer.consumePair(packing, {i, j}, diff.norm(), diff, shapeTraits);
         }
     }
 }

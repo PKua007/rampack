@@ -15,7 +15,9 @@
  */
 class S110Correlation : public AxisCorrelation {
 protected:
-    [[nodiscard]] double calculateForAxes(const Vector<3> &axis1, const Vector<3> &axis2) const override {
+    [[nodiscard]] double calculateForAxes(const Vector<3> &axis1, const Vector<3> &axis2,
+                                          [[maybe_unused]] const Vector<3> &distanceVector) const override
+    {
         return axis1 * axis2;
     }
 

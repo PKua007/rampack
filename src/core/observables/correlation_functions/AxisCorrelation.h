@@ -13,7 +13,8 @@ private:
     ShapeGeometry::Axis axis;
 
 protected:
-    [[nodiscard]] virtual double calculateForAxes(const Vector<3> &axis1, const Vector<3> &axis2) const = 0;
+    [[nodiscard]] virtual double calculateForAxes(const Vector<3> &axis1, const Vector<3> &axis2,
+                                                  const Vector<3> &distanceVector) const = 0;
 
 public:
     /**
@@ -21,7 +22,7 @@ public:
      */
     explicit AxisCorrelation(ShapeGeometry::Axis axis) : axis{axis} { }
 
-    [[nodiscard]] double calculate(const Shape &shape1, const Shape &shape2,
+    [[nodiscard]] double calculate(const Shape &shape1, const Shape &shape2, const Vector<3> &distanceVector,
                                    const ShapeTraits &shapeTraits) const final;
 };
 

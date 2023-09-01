@@ -42,7 +42,7 @@ std::string ProbabilityEvolution::getSignatureName() const {
 }
 
 void ProbabilityEvolution::consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
-                                       double distance, const ShapeTraits &shapeTraits)
+                                       double distance, const Vector<3> &distanceVector, const ShapeTraits &shapeTraits)
 {
     if (idxPair.first == idxPair.second)
         return;
@@ -52,7 +52,7 @@ void ProbabilityEvolution::consumePair(const Packing &packing, const std::pair<s
 
     const auto &shape1 = packing[idxPair.first];
     const auto &shape2 = packing[idxPair.second];
-    double value = this->function->calculate(shape1, shape2, shapeTraits);
+    double value = this->function->calculate(shape1, shape2, distanceVector, shapeTraits);
     if (value < this->functionRange.first || value > this->functionRange.second)
         return;
 

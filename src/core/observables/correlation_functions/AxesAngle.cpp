@@ -5,7 +5,8 @@
 #include "AxesAngle.h"
 
 
-double AxesAngle::calculate(const Shape &shape1, const Shape &shape2, const ShapeTraits &shapeTraits) const {
+double AxesAngle::calculate(const Shape &shape1, const Shape &shape2, [[maybe_unused]] const Vector<3> &distanceVector,
+                            const ShapeTraits &shapeTraits) const {
     const auto &geometry = shapeTraits.getGeometry();
     double cosine{};
     switch (this->axis) {

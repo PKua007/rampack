@@ -52,7 +52,7 @@ private:
 
     void renormalizeHistogram(Histogram2D &histogram) const;
     void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair, double distance,
-                     const ShapeTraits &shapeTraits) override;
+                     const Vector<3> &distanceVector, const ShapeTraits &shapeTraits) override;
 
 public:
     /**

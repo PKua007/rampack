@@ -30,10 +30,10 @@ TEST_CASE("PairAveragedCorrelation") {
     ALLOW_CALL(*function, getSignatureName()).RETURN("func");
     trompeloeil::sequence seq;
     // Shapes correspond to subsequent consumePair invocations
-    REQUIRE_CALL(*function, calculate(s0, s0, _)).LR_WITH(&_3 == &traits).IN_SEQUENCE(seq).RETURN(1);
-    REQUIRE_CALL(*function, calculate(s0, s2, _)).LR_WITH(&_3 == &traits).IN_SEQUENCE(seq).RETURN(2);
-    REQUIRE_CALL(*function, calculate(s0, s1, _)).LR_WITH(&_3 == &traits).IN_SEQUENCE(seq).RETURN(3);
-    REQUIRE_CALL(*function, calculate(s1, s2, _)).LR_WITH(&_3 == &traits).IN_SEQUENCE(seq).RETURN(4);
+    REQUIRE_CALL(*function, calculate(s0, s0, Vector<3>{1.5, 0, 0}, _)).LR_WITH(&_4 == &traits).IN_SEQUENCE(seq).RETURN(1);
+    REQUIRE_CALL(*function, calculate(s0, s2, Vector<3>{1.8, 0, 0}, _)).LR_WITH(&_4 == &traits).IN_SEQUENCE(seq).RETURN(2);
+    REQUIRE_CALL(*function, calculate(s0, s1, Vector<3>{1.5, 0, 0}, _)).LR_WITH(&_4 == &traits).IN_SEQUENCE(seq).RETURN(3);
+    REQUIRE_CALL(*function, calculate(s1, s2, Vector<3>{2.5, 0, 0}, _)).LR_WITH(&_4 == &traits).IN_SEQUENCE(seq).RETURN(4);
 
     auto enumerator = std::make_unique<MockPairEnumerator>();
     ALLOW_CALL(*enumerator, getSignatureName()).RETURN("enum");
@@ -41,21 +41,21 @@ TEST_CASE("PairAveragedCorrelation") {
     auto bc1 = std::make_unique<PeriodicBoundaryConditions>();
     Packing packing1(box, shapes, std::move(bc1), traits.getInteraction());
     REQUIRE_CALL(*enumerator, enumeratePairs(_, _, _))
-            .LR_WITH(&_1 == &packing1 && &_2 == &traits)
-            .SIDE_EFFECT (
-                    _3.consumePair(_1, {0, 0}, 1.5, _2);   // ends in BIN 1 with value 1
-                    _3.consumePair(_1, {0, 2}, 1.8, _2);   // ends in BIN 1 with value 2
-                    _3.consumePair(_1, {1, 2}, 5.5, _2);   // REJECTED because too big distance
-            );
+        .LR_WITH(&_1 == &packing1 && &_2 == &traits)
+        .SIDE_EFFECT (
+            _3.consumePair(_1, {0, 0}, 1.5, {1.5, 0, 0}, _2);   // ends in BIN 1 with value 1
+            _3.consumePair(_1, {0, 2}, 1.8, {1.8, 0, 0}, _2);   // ends in BIN 1 with value 2
+            _3.consumePair(_1, {1, 2}, 5.5, {5.5, 0, 0}, _2);   // REJECTED because too big distance
+        );
     // Snapshot 2 - expected bins: {3, 4}
     auto bc2 = std::make_unique<PeriodicBoundaryConditions>();
     Packing packing2(box, shapes, std::move(bc2), traits.getInteraction());
     REQUIRE_CALL(*enumerator, enumeratePairs(_, _, _))
-            .LR_WITH(&_1 == &packing2 && &_2 == &traits)
-            .SIDE_EFFECT (
-                    _3.consumePair(_1, {0, 1}, 1.5, _2);  // ends in BIN 1 with value 3
-                    _3.consumePair(_1, {1, 2}, 2.5, _2);  // ends in BIN 2 with value 4
-            );
+        .LR_WITH(&_1 == &packing2 && &_2 == &traits)
+        .SIDE_EFFECT (
+            _3.consumePair(_1, {0, 1}, 1.5, {1.5, 0, 0}, _2);  // ends in BIN 1 with value 3
+            _3.consumePair(_1, {1, 2}, 2.5, {2.5, 0, 0}, _2);  // ends in BIN 2 with value 4
+        );
 
     // Bin ranges: [0, 2), [2, 4]
     PairAveragedCorrelation correlation(std::move(enumerator), std::move(function), 4, 2);

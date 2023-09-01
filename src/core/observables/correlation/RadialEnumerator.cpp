@@ -24,8 +24,8 @@ void RadialEnumerator::enumeratePairs(const Packing &packing, const ShapeTraits 
             Vector<3> pos2 = focalPoints[j];
             pos2 += bc.getTranslation(pos1, pos2);
 
-            double distance2 = (pos2 - pos1).norm2();
-            pairConsumer.consumePair(packing, {i, j}, std::sqrt(distance2), shapeTraits);
+            Vector<3> diff = pos2 - pos1;
+            pairConsumer.consumePair(packing, {i, j}, diff.norm(), diff, shapeTraits);
         }
     }
 }
