@@ -5,7 +5,7 @@
 #ifndef RAMPACK_S110CORRELATION_H
 #define RAMPACK_S110CORRELATION_H
 
-#include "core/observables/CorrelationFunction.h"
+#include "AxisCorrelation.h"
 
 
 /**
@@ -13,18 +13,17 @@
  * @details It is defined as \f$ \mathbf{\hat{a}}_i \cdot \mathbf{\hat{a}}_j \f$, where \f$ \mathbf{\hat{a}}_\alpha \f$
  * is either primary or secondary axis of \f$ \alpha^\mathrm{th} \f$ molecule.
  */
-class S110Correlation : public CorrelationFunction {
-private:
-    ShapeGeometry::Axis axis;
+class S110Correlation : public AxisCorrelation {
+protected:
+    [[nodiscard]] double calculateForAxes(const Vector<3> &axis1, const Vector<3> &axis2) const override {
+        return axis1 * axis2;
+    }
 
 public:
     /**
      * @brief Construct the class for a given @a axis axis type.
      */
-    explicit S110Correlation(ShapeGeometry::Axis axis) : axis{axis} { }
-
-    [[nodiscard]] double calculate(const Shape &shape1, const Shape &shape2,
-                                   const ShapeTraits &shapeTraits) const override;
+    explicit S110Correlation(ShapeGeometry::Axis axis) : AxisCorrelation(axis) { }
 
     /**
      * @brief Returns "S110" as the signature name.
