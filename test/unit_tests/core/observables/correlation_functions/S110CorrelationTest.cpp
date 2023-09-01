@@ -30,4 +30,8 @@ TEST_CASE("S110Correlation") {
         S110Correlation s110Correlation(ShapeGeometry::Axis::AUXILIARY);
         CHECK(s110Correlation.calculate(s1, s2, {1, 0, 0}, traits) == Approx(M_SQRT1_2));
     }
+
+    SECTION("signature name") {
+        CHECK(S110Correlation(ShapeGeometry::Axis::PRIMARY).getSignatureName() == "S110");
+    }
 }

@@ -8,6 +8,13 @@
 #include "AxisCorrelation.h"
 
 
+/**
+ * @brief Calculates \f$ S_{221} \f$ correlation function for two shapes.
+ * @details It is defined as
+ * \f$ [(\mathbf{\hat{a}}_i \times \mathbf{\hat{a}}_j) \cdot \hat{r}] (\mathbf{\hat{a}}_i \cdot \mathbf{\hat{a}}_j) \f$,
+ * where \f$ \mathbf{\hat{a}}_\alpha \f$ is either primary, secondary or auxiliary axis of \f$ \alpha^\mathrm{th} \f$
+ * molecule and \f$ \hat{r} \f$ is normalized distance vector (see PairConsumer::consumePair).
+ */
 class S221Correlation : public AxisCorrelation {
 protected:
     [[nodiscard]] double calculateForAxes(const Vector<3> &axis1, const Vector<3> &axis2,

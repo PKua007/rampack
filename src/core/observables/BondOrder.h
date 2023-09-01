@@ -58,7 +58,7 @@ public:
      * to layers
      * @param bondOrderPointName named point (see ShapeGeometry::getNamedPointForShape) which should be used to calculate
      * nearest neighbours and bond order
-     * @param local if @a True, lo
+     * @param local if @a True, local bond order is calculated; otherwise - global.
      */
     BondOrder(std::size_t rank, const std::array<int, 3> &planeMillerIndices,
               const std::string &layeringPointName = "o", const std::string &bondOrderPointName = "o",
@@ -76,6 +76,7 @@ public:
      * to layers
      * @param bondOrderPointName named point (see ShapeGeometry::getNamedPointForShape) which should be used to calculate
      * nearest neighbours and bond order
+     * @param local if @a True, local bond order is calculated; otherwise - global.
      */
     BondOrder(std::vector<std::size_t> ranks, const std::array<int, 3> &planeMillerIndices,
               std::string layeringPointName = "o", std::string bondOrderPointName = "o", bool local = true);

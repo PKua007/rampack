@@ -29,7 +29,8 @@ public:
      * @brief This method is called by PairEnumerator for each enumerated pair (possibly from different OpenMP threads).
      * @param packing Packing from which the pairs are enumerated
      * @param idxPair pair of indices of shapes from the @a packing
-     * @param distance distance between the shapes calculated in a way specific to given PairEnumerator
+     * @param distanceVector distance vector between the shapes calculated in a way specific to given PairEnumerator,
+     * pointing from the first shape to the second
      * @param shapeTraits ShapeTraits used in the @a packing
      */
     virtual void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,

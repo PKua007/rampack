@@ -10,7 +10,7 @@
 
 /**
  * @brief Calculates \f$ S_{220} \f$ correlation function for two shapes.
- * @details It is defined as \f$ 3/2 (\mathbf{\hat{a}}_i \cdot \mathbf{\hat{a}}_j - 1/3)\f$, where
+ * @details It is defined as \f$ 3/2 (\mathbf{\hat{a}}_i \cdot \mathbf{\hat{a}}_j)^2 - 1/2\f$, where
  * \f$ \mathbf{\hat{a}}_\alpha \f$ is either primary, secondary or auxiliary axis of \f$ \alpha^\mathrm{th} \f$
  * molecule.
  */
