@@ -11,7 +11,7 @@
 /**
  * @brief Calculates \f$ S_{110} \f$ correlation function for two shapes.
  * @details It is defined as \f$ \mathbf{\hat{a}}_i \cdot \mathbf{\hat{a}}_j \f$, where \f$ \mathbf{\hat{a}}_\alpha \f$
- * is either primary or secondary axis of \f$ \alpha^\mathrm{th} \f$ molecule.
+ * is either primary, secondary or auxiliary axis of \f$ \alpha^\mathrm{th} \f$ molecule.
  */
 class S110Correlation : public AxisCorrelation {
 protected:
