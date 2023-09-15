@@ -22,12 +22,11 @@ public:
     /**
      * @brief Returns the function value for the given @a shape based on its @a traits ShapeTraits.
      */
-    [[nodiscard]] virtual double calculate(const Shape &shape, const ShapeTraits &traits) const = 0;
+    virtual void calculate(const Shape &shape, const ShapeTraits &traits) = 0;
 
-    /**
-     * @brief Returns the short name representing the function.
-     */
-    [[nodiscard]] virtual std::string getName() const = 0;
+    [[nodiscard]] virtual std::vector<std::string> getNames() const = 0;
+
+    [[nodiscard]] virtual std::vector<double> getValues() const = 0;
 };
 
 

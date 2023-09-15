@@ -18,13 +18,10 @@ private:
 public:
     explicit ConstantShapeFunction(double value = 1) : value{value} { }
 
-    [[nodiscard]] double calculate([[maybe_unused]] const Shape &shape,
-                                   [[maybe_unused]] const ShapeTraits &traits) const override
-    {
-        return this->value;
-    }
+    void calculate([[maybe_unused]] const Shape &shape, [[maybe_unused]] const ShapeTraits &traits) override { }
 
-    [[nodiscard]] std::string getName() const override { return "const"; }
+    [[nodiscard]] std::vector<std::string> getNames() const override { return {"const"}; }
+    [[nodiscard]] std::vector<double> getValues() const override { return {this->value}; }
 };
 
 

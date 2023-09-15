@@ -11,16 +11,20 @@ ShapeAxisCoordinate::ShapeAxisCoordinate(ShapeGeometry::Axis axis, std::size_t c
     this->name = this->constructName();
 }
 
-double ShapeAxisCoordinate::calculate(const Shape &shape, const ShapeTraits &traits) const {
+void ShapeAxisCoordinate::calculate(const Shape &shape, const ShapeTraits &traits) {
     switch (this->axis) {
         case ShapeGeometry::Axis::PRIMARY:
-            return traits.getGeometry().getPrimaryAxis(shape)[this->coord];
+            this->value = traits.getGeometry().getPrimaryAxis(shape)[this->coord];
+            break;
         case ShapeGeometry::Axis::SECONDARY:
-            return traits.getGeometry().getSecondaryAxis(shape)[this->coord];
+            this->value = traits.getGeometry().getSecondaryAxis(shape)[this->coord];
+            break;
         case ShapeGeometry::Axis::AUXILIARY:
-            return traits.getGeometry().getAuxiliaryAxis(shape)[this->coord];
+            this->value = traits.getGeometry().getAuxiliaryAxis(shape)[this->coord];
+            break;
+        default:
+            AssertThrow("unreachable");
     }
-    AssertThrow("");
 }
 
 std::string ShapeAxisCoordinate::constructName() const {

@@ -15,11 +15,17 @@ TEST_CASE("ConstantShapeFunction") {
     SECTION("default") {
         ConstantShapeFunction constantShapeFunction;
 
-        CHECK(constantShapeFunction.calculate(shape, traits) == 1);
-        CHECK(constantShapeFunction.getName() == "const");
+        constantShapeFunction.calculate(shape, traits);
+
+        CHECK(constantShapeFunction.getValues() == std::vector<double>{1});
+        CHECK(constantShapeFunction.getNames() == std::vector<std::string>{"const"});
     }
 
     SECTION("given") {
-        CHECK(ConstantShapeFunction(3).calculate(shape, traits) == 3);
+        ConstantShapeFunction constantShapeFunction(3);
+
+        constantShapeFunction.calculate(shape, traits);
+
+        CHECK(constantShapeFunction.getValues() == std::vector<double>{3});
     }
 }

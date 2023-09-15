@@ -31,7 +31,7 @@
 
 
 std::string FourierTracker::getTrackingMethodName() const {
-    return this->function->getName() + "_fourier";
+    return this->function->getNames().front() + "_fourier";
 }
 
 void FourierTracker::calculateOrigin(const Packing &packing, const ShapeTraits &shapeTraits) {
@@ -128,7 +128,8 @@ FourierTracker::FourierCoefficients FourierTracker::calculateFourierCoefficients
                 coefficient = 0;
                 for (std::size_t shapeI{}; shapeI < packing.size(); shapeI++) {
                     const auto &shape = packing[shapeI];
-                    double functionMapping = this->function->calculate(shape, shapeTraits);
+                    this->function->calculate(shape, shapeTraits);
+                    double functionMapping = this->function->getValues().front();
                     Vector<3> relativePos = packing.getBox().absoluteToRelative(shape.getPosition());
                     coefficient += fProduct(relativePos) * functionMapping;
                 }
@@ -148,6 +149,8 @@ FourierTracker::FourierTracker(const std::array<std::size_t, 3> &wavenumbers, st
             this->nonzeroWavenumberIdxs.push_back(i);
     }
     Expects(!this->nonzeroWavenumberIdxs.empty());
+
+    Expects(this->function->getNames().size() == 1);
 
     this->fillFourierFunctions();
 }

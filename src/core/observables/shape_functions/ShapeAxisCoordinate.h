@@ -16,6 +16,7 @@ private:
     ShapeGeometry::Axis axis{};
     std::size_t coord{};
     std::string name;
+    double value{};
 
     [[nodiscard]] std::string constructName() const;
 
@@ -25,8 +26,10 @@ public:
      */
     ShapeAxisCoordinate(ShapeGeometry::Axis axis, std::size_t coord);
 
-    [[nodiscard]] double calculate(const Shape &shape, const ShapeTraits &traits) const override;
-    [[nodiscard]] std::string getName() const override { return this->name; }
+    void calculate(const Shape &shape, const ShapeTraits &traits) override;
+
+    [[nodiscard]] std::vector<double> getValues() const override { return {this->value}; }
+    [[nodiscard]] std::vector<std::string> getNames() const override { return {this->name}; }
 };
 
 

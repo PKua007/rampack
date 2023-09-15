@@ -12,8 +12,9 @@
 
 class MockShapeFunction : public trompeloeil::mock_interface<ShapeFunction> {
 public:
-    IMPLEMENT_CONST_MOCK2(calculate);
-    IMPLEMENT_CONST_MOCK0(getName);
+    IMPLEMENT_MOCK2(calculate);
+    IMPLEMENT_CONST_MOCK0(getValues);
+    IMPLEMENT_CONST_MOCK0(getNames);
 };
 
 
