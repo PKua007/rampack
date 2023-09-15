@@ -5,9 +5,10 @@
 
 template<std::size_t DIM, typename T>
 Histogram<DIM, T>::Histogram(const std::array<double, DIM> &min, const std::array<double, DIM> &max,
-                             const std::array<std::size_t, DIM> &numBins)
+                             const std::array<std::size_t, DIM> &numBins, const T& initialValue)
         : min{min}, max{max}, numBins{numBins},
-          bins(std::accumulate(numBins.begin(), numBins.end(), 1., std::multiplies<>{}))
+          bins(std::accumulate(numBins.begin(), numBins.end(), 1., std::multiplies<>{}), initialValue),
+          initialValue{initialValue}
 {
     for (auto[maxItem, minItem] : Zip(max, min))
         Expects(maxItem > minItem);
@@ -43,7 +44,7 @@ Histogram<DIM, T> &Histogram<DIM, T>::operator/=(double val) {
 template<std::size_t DIM, typename T>
 void Histogram<DIM, T>::clear() {
     for (auto &bin : this->bins)
-        bin = T{};
+        bin = this->initialValue;
 }
 
 template<std::size_t DIM, typename T>
@@ -120,7 +121,7 @@ std::vector<typename Histogram<DIM, T>::BinValue> Histogram<DIM, T>::dumpValues(
     std::vector<BinValue> result;
     result.reserve(this->size());
     std::transform(this->begin(), this->end(), binMiddles.begin(), std::back_inserter(result),
-                   [](double binData, const Vector<DIM> &binValue) { return BinValue{binValue, binData}; });
+                   [](T binData, const Vector<DIM> &binValue) { return BinValue{binValue, binData}; });
     return result;
 }
 

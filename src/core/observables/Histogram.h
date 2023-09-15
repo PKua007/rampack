@@ -38,6 +38,7 @@ private:
     std::array<double, DIM> step{};
     std::array<std::size_t, DIM> numBins;
     std::vector<T> bins;
+    T initialValue{};
 
     [[nodiscard]] std::array<std::size_t, DIM> calculateBinIndex(const Vector<DIM> &pos) const;
     [[nodiscard]] std::size_t calculateFlatBinIndex(const Vector<DIM> &pos) const;
@@ -87,7 +88,7 @@ public:
      * (inclusive) divided into `numBins[i]` bins.
      */
     explicit Histogram(const std::array<double, DIM> &min, const std::array<double, DIM> &max,
-                       const std::array<std::size_t, DIM> &numBins);
+                       const std::array<std::size_t, DIM> &numBins, const T &initialValue = T{});
 
     /**
      * @brief Sums the histogram bin-wise with other histogram @a other.

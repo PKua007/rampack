@@ -45,7 +45,7 @@ HistogramBuilder<DIM, T>::dumpValues(ReductionMethod reductionMethod) const {
 
 template<std::size_t DIM, typename T>
 Histogram<DIM, T> HistogramBuilder<DIM, T>::dumpHistogram(ReductionMethod reductionMethod) const {
-    Histogram<DIM, T> result(this->min, this->max, this->numBins);
+    Histogram<DIM, T> result(this->min, this->max, this->numBins, this->initialValue);
 
     if (this->numSnapshots == 0)
         return result;
@@ -73,10 +73,12 @@ Histogram<DIM, T> HistogramBuilder<DIM, T>::dumpHistogram(ReductionMethod reduct
 
 template<std::size_t DIM, typename T>
 HistogramBuilder<DIM, T>::HistogramBuilder(const std::array<double, DIM> &min, const std::array<double, DIM> &max,
-                                           const std::array<std::size_t, DIM> &numBins, std::size_t numThreads)
+                                           const std::array<std::size_t, DIM> &numBins,
+                                           std::size_t numThreads, const T &initialValue)
         : min{min}, max{max}, numBins{numBins},
           flatNumBins{std::accumulate(numBins.begin(), numBins.end(), 1ul, std::multiplies<>{})},
-          histogram(min, max, numBins)
+          histogram(min, max, numBins, {initialValue}),
+          initialValue{initialValue}
 {
     for (auto[maxItem, minItem] : Zip(max, min))
         Expects(maxItem > minItem);
@@ -87,7 +89,9 @@ HistogramBuilder<DIM, T>::HistogramBuilder(const std::array<double, DIM> &min, c
 
     if (numThreads == 0)
         numThreads = OMP_MAXTHREADS;
-    this->currentHistograms.resize(numThreads, Histogram<DIM, CountingAccumulator>(this->min, this->max, this->numBins));
+    this->currentHistograms.resize(
+        numThreads, Histogram<DIM, CountingAccumulator>(this->min, this->max, this->numBins, {initialValue})
+    );
 }
 
 template<std::size_t DIM, typename T>

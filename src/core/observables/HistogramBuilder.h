@@ -65,6 +65,7 @@ private:
     std::size_t numSnapshots{};
     Histogram<DIM, CountingAccumulator> histogram;
     std::vector<Histogram<DIM, CountingAccumulator>> currentHistograms;
+    T initialValue{};
 
     template<typename T1>
     static std::array<std::decay_t<T1>, DIM> filledArray(T1 &&value);
@@ -77,15 +78,18 @@ public:
      * @details If @a numThreads is equal to 0, @a omp_get_max_threads() threads will be used.
      */
     explicit HistogramBuilder(const std::array<double, DIM> &min, const std::array<double, DIM> &max,
-                              const std::array<std::size_t, DIM> &numBins, std::size_t numThreads = 1);
+                              const std::array<std::size_t, DIM> &numBins, std::size_t numThreads = 1,
+                              const T &initialValue = T{});
 
     /**
      * @brief Simplified version of
      * HistogramBuilder(const std::array<double, DIM>&, const std::array<double, DIM>&, const std::array<std::size_t, DIM>&, std::size_t),
      * where all dimensions have the same range and are divided into the same number of bins.
      */
-    explicit HistogramBuilder(double min, double max, std::size_t numBins, std::size_t numThreads = 1)
-            : HistogramBuilder(filledArray(min), filledArray(max), filledArray(numBins), numThreads)
+    explicit HistogramBuilder(double min, double max, std::size_t numBins, std::size_t numThreads = 1,
+                              const T &initialValue = T{})
+            : HistogramBuilder(filledArray(min), filledArray(max), filledArray(numBins), numThreads,
+                               initialValue)
     { }
 
     /**
