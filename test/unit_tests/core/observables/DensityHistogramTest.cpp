@@ -2,8 +2,8 @@
 // Created by pkua on 01.11.22.
 //
 
-#include <catch2/catch.hpp>
-#include <ZipIterator.hpp>
+#include "catch2/catch.hpp"
+#include "ZipIterator.hpp"
 
 #include "matchers/VectorApproxMatcher.h"
 

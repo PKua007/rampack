@@ -2,10 +2,23 @@
 // Created by pkua on 14.09.22.
 //
 
-#include "catch2/catch.hpp"
+#include <catch2/catch.hpp>
+#include <valarray>
 
 #include "core/observables/HistogramBuilder.h"
 #include "utils/OMPMacros.h"
+
+
+namespace {
+    using BinValue = Histogram<1, std::valarray<double>>::BinValue;
+
+    void compare_valarray_bin_value(const BinValue &bv1, const BinValue &bv2) {
+        CHECK(bv1.binMiddle == bv2.binMiddle);
+        REQUIRE(bv1.value.size() == bv2.value.size());
+        for (std::size_t i{}; i < bv1.value.size(); i++)
+            CHECK(bv1.value[i] == bv2.value[i]);
+    }
+}
 
 
 TEST_CASE("Histogram 1D: reduction methods") {
@@ -152,4 +165,29 @@ TEST_CASE("Histogram 1D: renormalization") {
 
     auto values = histogram.dumpValues(ReductionMethod::SUM);
     CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 8}, {2.5, 33}});
+}
+
+TEST_CASE("Histogram: non-trivial initial value") {
+    HistogramBuilder<1, std::valarray<double>> histogram(0, 1, 2, 1, std::valarray<double>(0.0, 2));
+
+    SECTION("reduction") {
+        histogram.add(0.3, {1, 2});
+        histogram.add(0.7, {-4, 7});
+        histogram.nextSnapshot();
+        histogram.add(0.3, {5, 12});
+        histogram.add(0.7, {-6, -1});
+        histogram.nextSnapshot();
+
+        auto values = histogram.dumpValues(ReductionMethod::AVERAGE);
+        compare_valarray_bin_value(values[0], BinValue(0.25, {3, 7}));
+        compare_valarray_bin_value(values[1], BinValue(0.75, {-5, 3}));
+
+        SECTION("clearing") {
+            histogram.clear();
+
+            values = histogram.dumpValues(ReductionMethod::AVERAGE);
+            compare_valarray_bin_value(values[0], BinValue(0.25, {0, 0}));
+            compare_valarray_bin_value(values[1], BinValue(0.75, {0, 0}));
+        }
+    }
 }

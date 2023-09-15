@@ -105,7 +105,7 @@ template<std::size_t DIM, typename T>
 template<typename T1>
 std::array<std::decay_t<T1>, DIM> HistogramBuilder<DIM, T>::filledArray(T1 &&value) {
     std::array<std::decay_t<T1>, DIM> array;
-    array.fill(std::forward<T>(value));
+    array.fill(std::forward<T1>(value));
     return array;
 }
 
