@@ -20,6 +20,7 @@ public:
 
     void calculate([[maybe_unused]] const Shape &shape, [[maybe_unused]] const ShapeTraits &traits) override { }
 
+    [[nodiscard]] std::string getPrimaryName() const override { return "const"; }
     [[nodiscard]] std::vector<std::string> getNames() const override { return {"const"}; }
     [[nodiscard]] std::vector<double> getValues() const override { return {this->value}; }
 };

@@ -28,8 +28,9 @@ public:
 
     void calculate(const Shape &shape, const ShapeTraits &traits) override;
 
-    [[nodiscard]] std::vector<double> getValues() const override { return {this->value}; }
+    [[nodiscard]] std::string getPrimaryName() const override { return this->name; }
     [[nodiscard]] std::vector<std::string> getNames() const override { return {this->name}; }
+    [[nodiscard]] std::vector<double> getValues() const override { return {this->value}; }
 };
 
 

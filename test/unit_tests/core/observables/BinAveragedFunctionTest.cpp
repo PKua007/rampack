@@ -41,31 +41,38 @@ TEST_CASE("BinAveragedFunction") {
     ALLOW_CALL(*mockShapeFunction, calculate(std::ref(packing[2]), _)).LR_SIDE_EFFECT(functionValue = 4);
     ALLOW_CALL(*mockShapeFunction, calculate(std::ref(packing[3]), _)).LR_SIDE_EFFECT(functionValue = 5);
     ALLOW_CALL(*mockShapeFunction, getValues()).LR_RETURN(std::vector<double>{functionValue});
+    ALLOW_CALL(*mockShapeFunction, getPrimaryName()).RETURN("func");
 
     auto densityFunction = std::make_shared<ConstantShapeFunction>();
     auto tracker = std::make_unique<FourierTracker>(std::array<std::size_t, 3>{1, 0, 0}, densityFunction);
     BinAveragedFunction binAveragedFunction({10, 0, 0}, std::move(mockShapeFunction), std::move(tracker));
 
-    // We do Fourier tracking on the density - in each snapshot we move a bit in the x direction
-    for (std::size_t i{}; i < 10; i++) {
-        binAveragedFunction.addSnapshot(packing, 1, 1, traits);
-        for (std::size_t j{}; j < packing.size(); j++) {
-            packing.tryTranslation(j, {0.3, 0, 0}, traits.getInteraction());
-            packing.acceptTranslation();
+    SECTION("the histogram") {
+        // We do Fourier tracking on the density - in each snapshot we move a bit in the x direction
+        for (std::size_t i{}; i < 10; i++) {
+            binAveragedFunction.addSnapshot(packing, 1, 1, traits);
+            for (std::size_t j{}; j < packing.size(); j++) {
+                packing.tryTranslation(j, {0.3, 0, 0}, traits.getInteraction());
+                packing.acceptTranslation();
+            }
         }
-    }
 
-    auto histogram = binAveragedFunction.dumpValues();
-    using BinValue = decltype(histogram)::value_type;
-    auto nanRemover = [](const BinValue &binValue) { return std::isnan(binValue.value[0]); };
-    histogram.erase(std::remove_if(histogram.begin(), histogram.end(), nanRemover), histogram.end());
-    std::vector<BinValue> expected = {
+        auto histogram = binAveragedFunction.dumpValues();
+        using BinValue = decltype(histogram)::value_type;
+        auto nanRemover = [](const BinValue &binValue) { return std::isnan(binValue.value[0]); };
+        histogram.erase(std::remove_if(histogram.begin(), histogram.end(), nanRemover), histogram.end());
+        std::vector<BinValue> expected = {
             {{0.45, 0.5, 0.5}, {1}},
             {{0.55, 0.5, 0.5}, {3}},
             {{0.65, 0.5, 0.5}, {5}}
-    };
-    for (auto[expectedItem, actualItem] : Zip(expected, histogram)) {
-        CHECK_THAT(actualItem.binMiddle, IsApproxEqual(expectedItem.binMiddle, 1e-12));
-        CHECK(actualItem.value[0] == Approx(expectedItem.value[0]));
+        };
+        for (auto [expectedItem, actualItem]: Zip(expected, histogram)) {
+            CHECK_THAT(actualItem.binMiddle, IsApproxEqual(expectedItem.binMiddle, 1e-12));
+            CHECK(actualItem.value[0] == Approx(expectedItem.value[0]));
+        }
+    }
+
+    SECTION("signature name") {
+        CHECK(binAveragedFunction.getSignatureName() == "func_xyz");
     }
 }

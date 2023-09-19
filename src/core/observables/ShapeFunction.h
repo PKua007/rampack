@@ -24,6 +24,8 @@ public:
      */
     virtual void calculate(const Shape &shape, const ShapeTraits &traits) = 0;
 
+    [[nodiscard]] virtual std::string getPrimaryName() const = 0;
+
     [[nodiscard]] virtual std::vector<std::string> getNames() const = 0;
 
     [[nodiscard]] virtual std::vector<double> getValues() const = 0;

@@ -48,7 +48,9 @@ public:
     /**
      * @brief Returns "rho_xyz" as the signature name.
      */
-    [[nodiscard]] std::string getSignatureName() const override { return "temp_xyz"; };
+    [[nodiscard]] std::string getSignatureName() const override {
+        return this->shapeFunction->getPrimaryName() + "_xyz";
+    }
 
     /**
      * @brief Dumps a flat list of HistogramBuilder3D::BinValue -s averaged over snapshots.
