@@ -18,12 +18,16 @@
  * given by linear combinations with integer coefficients of reciprocal box vectors (Miller indices).
  *
  * <p> The Observable consists of the following values:
+ *
  * <ul>
- * <li> (interval value) @a tau - absolute value of the smectic order
- * <li> (interval value) @a tau_k_x, @a tau_k_y, @a tau_k_z - coordinates of the wavevector (present only only if
+ * <li> (interval value) `tau` - absolute value of the smectic order
+ * <li> (interval value) `tau_k_x`, `tau_k_y`, `tau_k_z` - coordinates of the wavevector (present only only if
  * `dumpTauVector_ = true`, see SmecticOrder::SmecticOrder)
- * <li> (nominal value) @a tau_hkl - Miller indices (format: @a "h.k.l")
+ * <li> (nominal value) `tau_hkl` - Miller indices (format: `"h.k.l"`)
  * </ul>
+ *
+ * If a non-constant shape function is used, for all names, `tau` becomes `tau_[function name]`, where `[function name]`
+ * is the primary function name (see ShapeFunction::getPrimaryName()).
  */
 class SmecticOrder : public Observable {
 private:
@@ -52,7 +56,7 @@ public:
      * @param focalPoint focal point (see ShapeGeometry) that will be used to compute the smectic order
      * @param shapeFunction ShapeFunction \f$ f \f$ that will be integrated together with the smectic order:
      * \f$ \tau = \left\langle f_i \exp(i \mathbf{k} \cdot \mathbf{r}_i) \right\rangle_i \f$. By default, it is a
-     * constant equal 1.
+     * constant equal 1. The function has to be single-valued, otherwise an exception is thrown.
      */
     explicit SmecticOrder(const std::array<std::size_t, 3> &hklRange = {5, 5, 5}, bool dumpTauVector_ = false,
                           std::string focalPoint = "o",

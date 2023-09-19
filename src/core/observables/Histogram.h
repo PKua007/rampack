@@ -85,7 +85,7 @@ public:
     
     /**
      * @brief Created the histogram, where for axis @a i = 0, 1, ... values are from in the range `[min[i], max[i]]`
-     * (inclusive) divided into `numBins[i]` bins.
+     * (inclusive) divided into `numBins[i]` bins, with initial value given by @a initialValue.
      */
     explicit Histogram(const std::array<double, DIM> &min, const std::array<double, DIM> &max,
                        const std::array<std::size_t, DIM> &numBins, const T &initialValue = T{});

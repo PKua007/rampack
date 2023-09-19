@@ -15,6 +15,11 @@
 #include "ShapeFunction.h"
 
 
+/**
+ * @brief Divides the system into bins and averages some observable over those bins and over the system snapshots.
+ * @details The class may use GoldstoneTracker to accommodate for the movement of the system. The initial captured
+ * snapshot fixes system origin position and its movement in subsequent snapshots is cancelled.
+ */
 class BinAveragedFunction : public BulkObservable {
 private:
     std::array<std::size_t, 3> numBins{};
@@ -32,6 +37,7 @@ public:
      * @brief Creates the class.
      * @param numBins number of bins in each direction. One can specify 0 or 1 in a given direction to turn off binning
      * in this direction.
+     * @param shapeFunction shape function to be averaged in the bins. It can be multivalued
      * @param tracker GoldstoneTracker used to track the movement of the system. If @a nullptr is specified, no tracking
      * will be performed
      * @param numThreads number of threads used to generate the histogram. If 0, all available threads will be used
@@ -42,11 +48,20 @@ public:
 
     void addSnapshot(const Packing &packing, double temperature, double pressure,
                      const ShapeTraits &shapeTraits) override;
+
+    /**
+     * @brief Prints averaged function values as space-separated rows.
+     * @details Each row corresponds to a single bin with format
+     * @code
+     * [x bin middle] [y ...] [z ...] [function value 1] [function value 2] ...
+     * @endcode
+     */
     void print(std::ostream &out) const override;
+
     void clear() override;
 
     /**
-     * @brief Returns "rho_xyz" as the signature name.
+     * @brief Returns `[shape function primary name]_xyz` as the signature name.
      */
     [[nodiscard]] std::string getSignatureName() const override {
         return this->shapeFunction->getPrimaryName() + "_xyz";

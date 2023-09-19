@@ -73,8 +73,8 @@ private:
 public:
     /**
      * @brief Construct a class where for axis @a i = 0, 1, ... values are gathered in the range `[min[i], max[i]]`
-     * (inclusive) divided into `numBins[i]` bins; it setups concurrent accumulation for at most @a numThreads OpenMP
-     * threads.
+     * (inclusive) divided into `numBins[i]` bins with initial value @a initialValue; it setups concurrent accumulation
+     * for at most @a numThreads OpenMP threads.
      * @details If @a numThreads is equal to 0, @a omp_get_max_threads() threads will be used.
      */
     explicit HistogramBuilder(const std::array<double, DIM> &min, const std::array<double, DIM> &max,
