@@ -46,7 +46,7 @@ TEST_CASE("ShapeQTensor") {
     }
 
     SECTION("names") {
-        std::vector<std::string> expected = {"c11", "c12", "c13", "c22", "c23", "c33"};
+        std::vector<std::string> expected = {"xx", "xy", "xz", "yy", "yz", "zz"};
         CHECK(ShapeQTensor(ShapeGeometry::Axis::PRIMARY).getNames() == expected);
     }
 }

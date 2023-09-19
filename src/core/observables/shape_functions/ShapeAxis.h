@@ -2,25 +2,25 @@
 // Created by Piotr Kubala on 19/09/2023.
 //
 
-#ifndef RAMPACK_SHAPEQTENSOR_H
-#define RAMPACK_SHAPEQTENSOR_H
+#ifndef RAMPACK_SHAPEAXIS_H
+#define RAMPACK_SHAPEAXIS_H
 
 #include "core/observables/ShapeFunction.h"
 
 
-class ShapeQTensor : public ShapeFunction {
+class ShapeAxis : public ShapeFunction {
 private:
     std::vector<double> values;
     ShapeGeometry::Axis axis{};
 
 public:
-    explicit ShapeQTensor(ShapeGeometry::Axis axis) : values(6), axis{axis} { }
+    explicit ShapeAxis(ShapeGeometry::Axis axis) : values(3), axis{axis} { }
 
     void calculate(const Shape &shape, const ShapeTraits &traits) override;
     [[nodiscard]] std::string getPrimaryName() const override;
-    [[nodiscard]] std::vector<std::string> getNames() const override { return {"xx", "xy", "xz", "yy", "yz", "zz"}; }
+    [[nodiscard]] std::vector<std::string> getNames() const override { return {"x", "y", "z"}; }
     [[nodiscard]] std::vector<double> getValues() const override { return this->values; };
 };
 
 
-#endif //RAMPACK_SHAPEQTENSOR_H
+#endif //RAMPACK_SHAPEAXIS_H
