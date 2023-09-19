@@ -31,6 +31,7 @@
 #include "core/observables/correlation/PairAveragedCorrelation.h"
 #include "core/observables/DensityHistogram.h"
 #include "core/observables/correlation/ProbabilityEvolution.h"
+#include "core/observables/BinAveragedFunction.h"
 
 #include "core/observables/correlation_functions/S110Correlation.h"
 #include "core/observables/correlation_functions/S220Correlation.h"
@@ -39,6 +40,8 @@
 
 #include "core/observables/shape_functions/ConstantShapeFunction.h"
 #include "core/observables/shape_functions/ShapeAxisCoordinate.h"
+#include "core/observables/shape_functions/ShapeAxis.h"
+#include "core/observables/shape_functions/ShapeQTensor.h"
 
 
 using namespace pyon::matcher;
@@ -78,6 +81,7 @@ namespace {
     MatcherDataclass create_pair_averaged_correlation(std::size_t maxThreads);
     MatcherDataclass create_density_histogram(std::size_t maxThreads);
     MatcherDataclass create_probability_evolution(std::size_t maxThreads);
+    MatcherDataclass create_bin_averaged_function(std::size_t maxThreads);
 
     MatcherDataclass create_radial();
     MatcherDataclass create_layerwise_radial();
@@ -239,6 +243,11 @@ namespace {
                         {"dump_tau_vector", MatcherBoolean{}, "False"},
                         {"focal_point", MatcherString{}.nonEmpty(), R"("o")"},
                         {"function", shapeFunction, "const"}})
+            .filter([](const DataclassData &smecticOrder) {
+                const auto &function = *smecticOrder["function"].as<std::shared_ptr<ShapeFunction>>();
+                return function.getNames().size() == 1;
+            })
+            .describe("with function mapping to a single value")
             .mapTo([](const DataclassData &smecticOrder) -> ObservableData {
                 auto maxHkl = smecticOrder["max_hkl"].as<std::array<std::size_t, 3>>();
                 auto dumpTauVector = smecticOrder["dump_tau_vector"].as<bool>();
@@ -305,7 +314,12 @@ namespace {
         auto wavenumbers = positiveWavenumbers;
         return MatcherDataclass("fourier_tracker")
             .arguments({{"wavenumbers", wavenumbers},
-                        {"function", shapeFunction}});
+                        {"function", shapeFunction}})
+            .filter([](const DataclassData &fourierTracker) {
+                const auto &function = *fourierTracker["function"].as<std::shared_ptr<ShapeFunction>>();
+                return function.getNames().size() == 1;
+            })
+            .describe("with function mapping to a single value");
     }
 
     std::shared_ptr<FourierTracker> do_create_fourier_tracker(const DataclassData &fourierTracker) {
@@ -332,7 +346,8 @@ namespace {
         return create_pair_density_correlation(maxThreads)
             | create_pair_averaged_correlation(maxThreads)
             | create_density_histogram(maxThreads)
-            | create_probability_evolution(maxThreads);
+            | create_probability_evolution(maxThreads)
+            | create_bin_averaged_function(maxThreads);
     }
 
     MatcherDataclass create_pair_density_correlation(std::size_t maxThreads) {
@@ -431,6 +446,38 @@ namespace {
             });
     }
 
+    MatcherDataclass create_bin_averaged_function(std::size_t maxThreads) {
+        auto nBinsInt = MatcherInt{}.greaterEquals(2).mapTo<std::size_t>();
+        auto nBinsNone = MatcherNone{}.mapTo([]() -> std::size_t { return 1; });
+        auto nBins = nBinsInt | nBinsNone;
+
+        auto tracker = create_tracker();
+        auto function = create_shape_function();
+
+        return MatcherDataclass("bin_averaged_function")
+            .arguments({{"function", function},
+                {"n_bins_x", nBins, "None"},
+                {"n_bins_y", nBins, "None"},
+                {"n_bins_z", nBins, "None"},
+                {"tracker", tracker, "None"}})
+            .filter([](const DataclassData &binAveragedFunction) {
+                return binAveragedFunction["n_bins_x"].as<std::size_t>() != 1
+                       || binAveragedFunction["n_bins_y"].as<std::size_t>() != 1
+                       || binAveragedFunction["n_bins_z"].as<std::size_t>() != 1;
+            })
+            .describe("with at least 2 bins in at least one direction")
+            .mapTo([maxThreads](const DataclassData &binAveragedFunction) -> std::shared_ptr<BulkObservable> {
+                std::array<std::size_t, 3> nBins{
+                    binAveragedFunction["n_bins_x"].as<std::size_t>(),
+                    binAveragedFunction["n_bins_y"].as<std::size_t>(),
+                    binAveragedFunction["n_bins_z"].as<std::size_t>()
+                };
+                auto tracker = binAveragedFunction["tracker"].as<std::shared_ptr<GoldstoneTracker>>();
+                auto function = binAveragedFunction["function"].as<std::shared_ptr<ShapeFunction>>();
+                return std::make_shared<BinAveragedFunction>(nBins, function, tracker, maxThreads);
+            });
+    }
+
     MatcherDataclass create_radial() {
         return MatcherDataclass("radial")
             .arguments({{"focal_point", MatcherString{}.nonEmpty(), R"("o")"}})
@@ -487,22 +534,33 @@ namespace {
                 return std::make_shared<ConstantShapeFunction>(value);
             });
 
-        auto axisComp = MatcherString{}
-            .anyOf({"x", "y", "z"})
-            .mapTo([](const std::string &str) -> std::size_t {
-                return str.front() - 'x';
-            });
-
+        auto axisComp = MatcherString{}.anyOf({"x", "y", "z", "xyz"});
         auto axisFunction = MatcherDataclass("axis")
             .arguments({{"which", shapeAxis},
-                        {"comp",  axisComp}})
+                        {"comp", axisComp, R"("xyz")"}})
             .mapTo([](const DataclassData &axis) -> std::shared_ptr<ShapeFunction> {
                 auto whichAxis = axis["which"].as<ShapeGeometry::Axis>();
-                auto axisComp = axis["comp"].as<std::size_t>();
-                return std::make_shared<ShapeAxisCoordinate>(whichAxis, axisComp);
+                auto axisComp = axis["comp"].as<std::string>();
+                if (axisComp == "x")
+                    return std::make_shared<ShapeAxisCoordinate>(whichAxis, 0);
+                else if (axisComp == "y")
+                    return std::make_shared<ShapeAxisCoordinate>(whichAxis, 1);
+                else if (axisComp == "z")
+                    return std::make_shared<ShapeAxisCoordinate>(whichAxis, 2);
+                else if (axisComp == "xyz")
+                    return std::make_shared<ShapeAxis>(whichAxis);
+                else
+                    AssertThrow("unreachable");
             });
 
-        return constFunction | axisFunction;
+        auto qTensorFunction = MatcherDataclass("q_tensor")
+            .arguments({{"axis", shapeAxis}})
+            .mapTo([](const DataclassData &qTensor) -> std::shared_ptr<ShapeFunction> {
+                auto axis = qTensor["axis"].as<ShapeGeometry::Axis>();
+                return std::make_shared<ShapeQTensor>(axis);
+            });
+
+        return constFunction | axisFunction | qTensorFunction;
     }
 
     MatcherAlternative create_correlation_function() {
