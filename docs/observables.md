@@ -567,6 +567,8 @@ where prob(*f*|*r*) is a conditional probability density of correlation function
 
 ### Class `bin_averaged_function`
 
+> Since v1.2.0
+
 ```python
 bin_averaged_function(
     function,
@@ -685,6 +687,9 @@ There are the following types of binning:
 * [Class `layerwise_radial`](#class-layerwise_radial)
 * [Class `linear`](#class-linear)
 
+> Note: *distance vector* was introduced in v1.2.0 for observables such as [class `s221`](#class-s221). Previously only
+> its norm (the *distance*) was considered.
+
 
 ### Class `radial`
 
@@ -723,6 +728,8 @@ a single XY plane, one can use `hkl = [0, 0, 1]`.
 
 
 ### Class `linear`
+
+> Since v1.2.0
 
 ```python
 linear(
@@ -781,6 +788,8 @@ and *j*<sup>th</sup> molecule, determined by the `axis` argument (`"primary"`, `
 
 ### Class `s220`
 
+> Since v1.2.0
+
 ```python
 s220(
     axis
@@ -798,6 +807,8 @@ and *j*<sup>th</sup> molecule, determined by the `axis` argument (`"primary"`, `
 
 
 ### Class `s221`
+
+> Since v1.2.0
 
 ```python
 s221(
@@ -848,6 +859,9 @@ Currently, the following correlation functions are available:
 * [Class `axis`](#class-axis)
 * [Class `q_tensor`](#class-q_tensor)
 
+> Note: shape functions can be multivalued since v1.2.0. Previously, all were single-valued. The distinction between
+> *primary name* and *component names* was also introduced in that version.
+
 
 ### Class `const`
 
@@ -897,8 +911,12 @@ Shape function returning either a specific component of a specific shape axis or
     * `y` - y coordinate of the axis
     * `z` - z coordinate of the axis
 
+> Since v1.2.0 `"xyz"` value for the `comp` argument was introduced and was made its default value.
+
 
 ### Class `q_tensor`
+
+> Since v1.2.0
 
 ```python
 q_tensor(

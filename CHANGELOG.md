@@ -25,13 +25,17 @@ library (later, with Python bindings as well).
 * Documentation directory `doc/` renamed to `docs/` (needed for GitHub to recognize
   [contributing.md](docs/contributing.md)).
 * *Distance* definition is now generalized to *distance vector* in [binning types](docs/observables.md#binning-types).
+* [Shape functions](docs/observables.md#shape-functions) can now be multivalued.
+* [Class `q_tensor`](docs/observables.md#class-qtensor) shape function can now also output all three components of the
+  axis.
 
 ### Added
 
-* Global/local switch for [class `bond_order`](docs/observables.md#class-bond_order).
-* [Class `s220`](docs/observables.md#class-s220) and [class `s221`](docs/observables.md#class-s221) correlation
-  functions.
-* New [class `linear`](docs/observables.md#class-linear) binning type.
+* Added global/local switch for [class `bond_order`](docs/observables.md#class-bond_order).
+* Added [class `s220`](docs/observables.md#class-s220) and [class `s221`](docs/observables.md#class-s221) correlation functions.
+* Added [class `linear`](docs/observables.md#class-linear) binning type.
+* Added [class `q_tensor`](docs/observables.md#class-q_tensor) shape function.
+* Added [class `bin_averaged_function`](docs/observables.md#class-bin_averaged_function) bulk observable.
 
 
 ## [1.1.0] - 2023-06-21
@@ -45,7 +49,7 @@ library (later, with Python bindings as well).
 
 * Added [v1] and [latest] tags.
 * Added MinGW support.
-* Added `randomize_rotation` lattice transformer.
+* Added [class `randomize_rotation`](docs/initial-arrangement.md#class-randomize_rotation) lattice transformer.
 
 
 ## [1.0.0] - 2023-06-18
