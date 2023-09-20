@@ -26,6 +26,7 @@ This reference page give a full walkthrough over observables that can be compute
   * [Class `pair_averaged_correlation`](#class-pair_averaged_correlation)
   * [Class `density_histogram`](#class-density_histogram)
   * [Class `probability_evolution`](#class-probability_evolution)
+  * [Class `bin_averaged_function`](#class-bin_averaged_function)
 * [Trackers](#trackers)
   * [Class `fourier_tracker`](#class-fourier_tracker)
 * [Binning types](#binning-types)
@@ -40,6 +41,7 @@ This reference page give a full walkthrough over observables that can be compute
 * [Shape functions](#shape-functions)
   * [Class `const`](#class-const)
   * [Class `axis`](#class-axis)
+  * [Class `q_tensor`](#class-q_tensor)
 
 
 ## Observable types
@@ -563,6 +565,42 @@ where prob(*f*|*r*) is a conditional probability density of correlation function
   Rows with space-separated 3-tuples (*r*, *f*, *P*(*r*, *f*)), where *r*, *f* are bin middles.
 
 
+### Class `bin_averaged_function`
+
+```python
+bin_averaged_function(
+    function,
+    n_bins_x = None,
+    n_bins_y = None,
+    n_bins_z = None,
+    tracker = None
+)
+```
+
+[Shape function](#shape-functions) (possibly multivalued) averaged in 1D, 2D or 3D bins over system snapshots. It
+supports cancelling out the translational Goldstone mode to prevent softening of values due to zero-energy bulk system
+drift. Relative positions are used for binning. Thus, the domain is always [0, 1)<sup>*d*</sup>, where *d* is the
+dimension.
+
+* **Arguments**:
+  * ***function*** <br />
+    Single or multivalued [shape function](#shape-functions) to be averaged.
+  * ***n_bins_x*** (*= None*) <br />
+    ***n_bins_y*** (*= None*) <br />
+    ***n_bins_z*** (*= None*) <br />
+    Number of bins in each direction. If 1 or `None` is specified, the given direction is turned off completely. For
+    example, to average the function over all X values with 100 x 100 bins on a YZ plane, you should
+    specify `n_bins_x = 1` (or `n_bins_x = None`), `n_bins_y = 100` and `n_bins_z = 100`.
+  * ***tracker*** (*= None*) <br />
+    [Goldstone tracker](#trackers) used to cancel out system drift. If `None`, no compensation is applied.
+* **Short name**: `[function name]_xyz`, where `[function name]` is shape function's *primary name*.
+* **Output**:
+  Rows with space-separated tuples (*b<sub>x</sub>*, *b<sub>y</sub>*, *b<sub>z</sub>*, *f*<sub>1</sub>(**b**), ...,
+  *f*<sub>*n*</sub>(**b**)), where **b** is relative middle of the bin (with coordinates from the range [0, 1)) and 
+  *f*<sub>1</sub>(**b**), ..., *f*<sub>*n*</sub>(**b**) are subsequent bin and snapshot averaged function values. If the
+  direction is turned off, the corresponding  bin coordinate is equal 0.5.
+
+
 ## Trackers
 
 A special class of [normal observables](#normal-observables), with 6 interval values specifying how the system
@@ -799,12 +837,16 @@ and *j*<sup>th</sup> molecule, determined by the `axis` argument (`"primary"`, `
 
 ## Shape functions
 
-Shape functions take a single particle and map it to a single value. They are used for example in
-[class `smectic_order`](#class-smectic_order) and [class `fourier_tracker`](#class-fourier_tracker).
+Shape functions take a single particle and map it to a single or multiple values. They are used for example in
+[class `smectic_order`](#class-smectic_order) and [class `fourier_tracker`](#class-fourier_tracker). Each shape function has a *primary name* describing it
+as a whole. Moreover, each function value is named. For example, function representing an axis can have primary name
+`axis` and values named `x`, `y`, `z` (axis components). If a function is single-valued, the primary name and the name
+of the only value are always the same.
 
 Currently, the following correlation functions are available:
 * [Class `const`](#class-const)
 * [Class `axis`](#class-axis)
+* [Class `q_tensor`](#class-q_tensor)
 
 
 ### Class `const`
@@ -817,28 +859,73 @@ const(
 
 Constant shape function always returning `value` (`1` by default).
 
+* **Primary name**: `const`
+* **Values**:
+  * `const` - constant value of the function
+
 
 ### Class `axis`
 
 ```python
 axis(
     which,
-    comp
+    comp = "xyz"
 )
 ```
 
-Shape function returning a specific coordinate of a specific shape axis.
+Shape function returning either a specific component of a specific shape axis or all components.
 
-Arguments:
+* **Arguments**:
+  * ***which*** <br />
+    [Shape axis](shapes.md#shape-axes) whose component(s) is/are to be taken. It can be either of: `"primary"`,
+    `"secondary"` or `"auxiliary"`.
+  * ***comp*** <br />
+    Coordinate system component of the axis vector to be returned. It can be `"x"`, `"y"` or `"z"` for a single
+    component and `"xyz"` for all components.
+* **Primary name**:
+  * If `comp` = `"x"`, `"y"`, `"z"`:
+    * `[the axis]_[the comp]`
+  * If `comp` = `"xyz"`:
+    * `[the axis]`
+  * In both cases `[the axis]` is `pa`, `sa` or `aa`, standing for, respectively, primary, secondary and auxiliary axis,
+    while `[the comp]` is `x`, `y` or `z`, depending on the arguments passed.
+* **Values**:
+  * If `comp` = `"x"`, `"y"`, `"z"`:
+    * `[the axis]_[the comp]` - particular component of the axis, depending on the arguments passed.
+  * If `comp` = `"xyz"`:
+    * `x` - x coordinate of the axis
+    * `y` - y coordinate of the axis
+    * `z` - z coordinate of the axis
 
-* ***which***
 
-  [Shape axis](shapes.md#shape-axes) whose component is to be taken. It can be either of: `"primary"`, `"secondary"` or
-  `"auxiliary"`.
+### Class `q_tensor`
 
-* ***comp***
+```python
+q_tensor(
+    axis
+)
+```
 
-  Coordinate system component of the axis vector to be returned. It can be `"x"`, `"y"` or `"z"`.
+Shape function returning independent values of the symetric **Q**-tensor for a given particle. It is defined as
+
+**Q** = 3/2 (**a** &otimes; **a** - 1/3 **I**),
+
+where **a** is shape's axis and **I** is the identity matrix. The independent values of the **Q**-tensor are its upper
+triangular part.
+
+* **Arguments**:
+  * ***axis*** <br />
+    [Shape axis](shapes.md#shape-axes) for which the **Q**-tensor should be computed. It can be either of: `"primary"`,
+    `"secondary"` or `"auxiliary"`.
+* **Primary name**: `Q_[the axis]`, where `[the axis]` is `pa`, `sa` or `aa`, standing for, respectively, primary,
+  secondary and auxiliary axis
+* **Values**:
+  * `xx` - *Q*<sub>11</sub> tensor component
+  * `xy` - *Q*<sub>12</sub> tensor component
+  * `xz` - *Q*<sub>13</sub> tensor component
+  * `yy` - *Q*<sub>22</sub> tensor component
+  * `yz` - *Q*<sub>23</sub> tensor component
+  * `zz` - *Q*<sub>33</sub> tensor component
 
 
 [&uarr; back to the top](#observables)
