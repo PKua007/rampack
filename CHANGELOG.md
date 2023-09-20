@@ -26,8 +26,7 @@ library (later, with Python bindings as well).
   [contributing.md](docs/contributing.md)).
 * *Distance* definition is now generalized to *distance vector* in [binning types](docs/observables.md#binning-types).
 * [Shape functions](docs/observables.md#shape-functions) can now be multivalued.
-* [Class `q_tensor`](docs/observables.md#class-qtensor) shape function can now also output all three components of the
-  axis.
+* [Class `axis`](docs/observables.md#class-axis) shape function can now also output all three components of the axis.
 
 ### Added
 
