@@ -37,7 +37,7 @@ void BinAveragedFunction::addSnapshot(const Packing &packing, [[maybe_unused]] d
 }
 
 void BinAveragedFunction::print(std::ostream &out) const {
-    for (const auto &[binMiddle, values] : this->histogramBuilder.dumpValues(ReductionMethod::AVERAGE)) {
+    for (const auto &[binMiddle, values, count] : this->histogramBuilder.dumpValues(ReductionMethod::AVERAGE)) {
         out << binMiddle[0] << " " << binMiddle[1] << " " << binMiddle[2];
         for (double value : values)
             out << " " << value;

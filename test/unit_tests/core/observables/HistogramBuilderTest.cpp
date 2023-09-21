@@ -11,21 +11,13 @@
 
 namespace {
     using ValarrayBinValue = Histogram<1, std::valarray<double>>::BinValue;
-    using ValarrayBinValueCount = Histogram<1, CountingAccumulator<std::valarray<double>>>::BinValue;
 
     void compare_valarray_bin_value(const ValarrayBinValue &bv1, const ValarrayBinValue &bv2) {
         CHECK(bv1.binMiddle == bv2.binMiddle);
+        CHECK(bv1.count == bv2.count);
         REQUIRE(bv1.value.size() == bv2.value.size());
         for (std::size_t i{}; i < bv1.value.size(); i++)
             CHECK(bv1.value[i] == bv2.value[i]);
-    }
-
-    void compare_valarray_bin_value_count(const ValarrayBinValueCount &bvc1, const ValarrayBinValueCount &bvc2) {
-        CHECK(bvc1.binMiddle == bvc2.binMiddle);
-        CHECK(bvc1.value.numPoints == bvc2.value.numPoints);
-        REQUIRE(bvc1.value.value.size() == bvc2.value.value.size());
-        for (std::size_t i{}; i < bvc1.value.value.size(); i++)
-            CHECK(bvc1.value.value[i] == bvc2.value.value[i]);
     }
 }
 
@@ -50,22 +42,14 @@ TEST_CASE("Histogram 1D: reduction methods") {
 
     SECTION("sum reduction") {
         auto values = histogram.dumpValues(ReductionMethod::SUM);
-        auto valueCounts = histogram.dumpValuesWithCount(ReductionMethod::SUM);
 
-        using BinValue = decltype(values)::value_type;
-        using BinValueCount = decltype(valueCounts)::value_type;
-        CHECK(values == std::vector<BinValue>{{1.5, 4}, {2.5, 12}});
-        CHECK(valueCounts == std::vector<BinValueCount>{{1.5, {4, 2}}, {2.5, {12, 3}}});
+        CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 4, 2}, {2.5, 12, 3}});
     }
 
     SECTION("average reduction") {
         auto values = histogram.dumpValues(ReductionMethod::AVERAGE);
-        auto valueCounts = histogram.dumpValuesWithCount(ReductionMethod::AVERAGE);
 
-        using BinValue = decltype(values)::value_type;
-        using BinValueCount = decltype(valueCounts)::value_type;
-        CHECK(values == std::vector<BinValue>{{1.5, 4}, {2.5, 8}});
-        CHECK(valueCounts == std::vector<BinValueCount>{{1.5, {4, 2}}, {2.5, {8, 3}}});
+        CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 4, 2}, {2.5, 8, 3}});
     }
 
     SECTION("clearing") {
@@ -75,12 +59,8 @@ TEST_CASE("Histogram 1D: reduction methods") {
         histogram.nextSnapshot();
 
         auto values = histogram.dumpValues(ReductionMethod::SUM);
-        auto valueCounts = histogram.dumpValuesWithCount(ReductionMethod::SUM);
 
-        using BinValue = decltype(values)::value_type;
-        using BinValueCount = decltype(valueCounts)::value_type;
-        CHECK(values == std::vector<BinValue>{{1.5, 2}, {2.5, 4}});
-        CHECK(valueCounts == std::vector<BinValueCount>{{1.5, {2, 1}}, {2.5, {4, 1}}});
+        CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 2, 1}, {2.5, 4, 1}});
     }
 }
 
@@ -110,12 +90,8 @@ TEST_CASE("Histogram 1D: OpenMP") {
     histogram.nextSnapshot();
 
     auto values = histogram.dumpValues(ReductionMethod::SUM);
-    auto valueCounts = histogram.dumpValuesWithCount(ReductionMethod::SUM);
 
-    using BinValue = decltype(values)::value_type;
-    using BinValueCount = decltype(valueCounts)::value_type;
-    CHECK(values == std::vector<BinValue>{{1.5, 4}, {2.5, 12}});
-    CHECK(valueCounts == std::vector<BinValueCount>{{1.5, {4, 2}}, {2.5, {12, 3}}});
+    CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 4, 2}, {2.5, 12, 3}});
 }
 #endif // _OPENMP
 
@@ -125,12 +101,8 @@ TEST_CASE("Histogram 1D: empty histogram") {
 
     auto reductionMethod = GENERATE(ReductionMethod::SUM, ReductionMethod::AVERAGE);
     auto values = histogram.dumpValues(reductionMethod);
-    auto valueCounts = histogram.dumpValuesWithCount(reductionMethod);
 
-    using BinValue = decltype(values)::value_type;
-    using BinValueCount = decltype(valueCounts)::value_type;
-    CHECK(values == std::vector<BinValue>{{1.5, 0}, {2.5, 0}});
-    CHECK(valueCounts == std::vector<BinValueCount>{{1.5, {0, 0}}, {2.5, {0, 0}}});
+    CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 0, 0}, {2.5, 0, 0}});
 }
 
 TEST_CASE("Histogram 2D: info") {
@@ -161,12 +133,8 @@ TEST_CASE("Histogram 1D: add") {
         histogram.nextSnapshot();
 
         auto values = histogram.dumpValues(ReductionMethod::SUM);
-        auto valueCounts = histogram.dumpValuesWithCount(ReductionMethod::SUM);
 
-        using BinValue = decltype(values)::value_type;
-        using BinValueCount = decltype(valueCounts)::value_type;
-        CHECK(values == std::vector<BinValue>{{1.5, 4}, {2.5, 11}});
-        CHECK(valueCounts == std::vector<BinValueCount>{{1.5, {4, 1}}, {2.5, {11, 2}}});
+        CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 4, 1}, {2.5, 11, 2}});
     }
 
     SECTION("errors") {
@@ -186,8 +154,8 @@ TEST_CASE("Histogram 2D: add") {
 
     auto values = histogram.dumpValues(ReductionMethod::SUM);
     auto expected = std::vector<Histogram2D::BinValue>{
-        {{1.5, 1.5}, 3}, {{1.5, 2.5}, 0}, {{1.5, 3.5}, 0},
-        {{2.5, 1.5}, 5}, {{2.5, 2.5}, 0}, {{2.5, 3.5}, 7}
+        {{1.5, 1.5}, 3, 2}, {{1.5, 2.5}, 0, 0}, {{1.5, 3.5}, 0, 0},
+        {{2.5, 1.5}, 5, 1}, {{2.5, 2.5}, 0, 0}, {{2.5, 3.5}, 7, 0}
     };
     CHECK_THAT(values, Catch::UnorderedEquals(expected));
 }
@@ -203,12 +171,8 @@ TEST_CASE("Histogram 1D: renormalization") {
     histogram.nextSnapshot();
 
     auto values = histogram.dumpValues(ReductionMethod::SUM);
-    auto valueCounts = histogram.dumpValuesWithCount(ReductionMethod::SUM);
 
-    using BinValue = decltype(values)::value_type;
-    using BinValueCount = decltype(valueCounts)::value_type;
-    CHECK(values == std::vector<BinValue>{{1.5, 8}, {2.5, 33}});
-    CHECK(valueCounts == std::vector<BinValueCount>{{1.5, {8, 1}}, {2.5, {33, 2}}});
+    CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 8, 1}, {2.5, 33, 2}});
 }
 
 TEST_CASE("Histogram: non-trivial initial value") {
@@ -223,23 +187,17 @@ TEST_CASE("Histogram: non-trivial initial value") {
         histogram.nextSnapshot();
 
         auto values = histogram.dumpValues(ReductionMethod::AVERAGE);
-        auto valueCounts = histogram.dumpValuesWithCount(ReductionMethod::AVERAGE);
 
-        compare_valarray_bin_value(values[0], ValarrayBinValue(0.25, {3, 7}));
-        compare_valarray_bin_value(values[1], ValarrayBinValue(0.75, {-5, 3}));
-        compare_valarray_bin_value_count(valueCounts[0], ValarrayBinValueCount(0.25, {{3, 7}, 2}));
-        compare_valarray_bin_value_count(valueCounts[1], ValarrayBinValueCount(0.75, {{-5, 3}, 2}));
+        compare_valarray_bin_value(values[0], ValarrayBinValue(0.25, {3, 7}, 2));
+        compare_valarray_bin_value(values[1], ValarrayBinValue(0.75, {-5, 3}, 2));
 
         SECTION("clearing") {
             histogram.clear();
 
             values = histogram.dumpValues(ReductionMethod::AVERAGE);
-            valueCounts = histogram.dumpValuesWithCount(ReductionMethod::AVERAGE);
 
-            compare_valarray_bin_value(values[0], ValarrayBinValue(0.25, {0, 0}));
-            compare_valarray_bin_value(values[1], ValarrayBinValue(0.75, {0, 0}));
-            compare_valarray_bin_value_count(valueCounts[0], ValarrayBinValueCount(0.25, {{0, 0}, 0}));
-            compare_valarray_bin_value_count(valueCounts[1], ValarrayBinValueCount(0.75, {{0, 0}, 0}));
+            compare_valarray_bin_value(values[0], ValarrayBinValue(0.25, {0, 0}, 0));
+            compare_valarray_bin_value(values[1], ValarrayBinValue(0.75, {0, 0}, 0));
         }
     }
 }

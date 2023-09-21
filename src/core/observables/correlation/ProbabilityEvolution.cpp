@@ -29,7 +29,7 @@ void ProbabilityEvolution::print(std::ostream &out) const {
     Histogram2D histogram = this->histogramBuilder.dumpHistogram(ReductionMethod::SUM);
     this->renormalizeHistogram(histogram);
 
-    for (auto [xy, z] : histogram.dumpValues())
+    for (auto [xy, z, count] : histogram.dumpValues())
         out << xy[0] << " " << xy[1] << " " << z << std::endl;
 }
 
@@ -68,7 +68,7 @@ void ProbabilityEvolution::renormalizeHistogram(Histogram2D &histogram) const {
     for (std::size_t distI{}; distI < histogram.getNumBins(0); distI++) {
         double distTotal{};
         for (std::size_t varI{}; varI < histogram.getNumBins(1); varI++)
-            distTotal += histogram.atIndex({distI, varI});
+            distTotal += histogram.atIndex({distI, varI}).value;
 
         if (distTotal == 0)
             continue;

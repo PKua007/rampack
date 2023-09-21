@@ -32,12 +32,63 @@
  */
 template<std::size_t DIM = 1, typename T = double>
 struct Histogram {
+public:
+    struct ValueCount {
+        T value{};
+        std::size_t count{};
+
+        ValueCount &operator+=(const ValueCount &vc) {
+            this->value += vc.value;
+            this->count += vc.count;
+            return *this;
+        }
+
+        template <typename U>
+        ValueCount &operator*=(const U &u) {
+            this->value *= u;
+            return *this;
+        }
+
+        template <typename U>
+        ValueCount &operator/=(const U &u) {
+            this->value /= u;
+            return *this;
+        }
+
+        friend ValueCount operator+(const ValueCount &lhs, const ValueCount &rhs) {
+            return ValueCount(lhs) += rhs;
+        }
+
+        template <typename U>
+        friend ValueCount operator*(const ValueCount &lhs, const U &rhs) {
+            return ValueCount(lhs) *= rhs;
+        }
+
+        template <typename U>
+        friend ValueCount operator/(const ValueCount &lhs, const U &rhs) {
+            return ValueCount(lhs) /= rhs;
+        }
+
+        friend bool operator==(const ValueCount &lhs, const ValueCount &rhs) {
+            return std::tie(lhs.value, lhs.count) == std::tie(rhs.value, rhs.count);
+        }
+
+        friend bool operator!=(const ValueCount &lhs, const ValueCount &rhs) {
+            return !(rhs == lhs);
+        }
+
+        friend std::ostream &operator<<(std::ostream &os, const ValueCount &valueCount) {
+            os << "{value: " << valueCount.value << ", count: " << valueCount.count << "}";
+            return os;
+        }
+    };
+
 private:
     std::array<double, DIM> min{};
     std::array<double, DIM> max{};
     std::array<double, DIM> step{};
     std::array<std::size_t, DIM> numBins;
-    std::vector<T> bins;
+    std::vector<ValueCount> bins;
     T initialValue{};
 
     [[nodiscard]] std::array<std::size_t, DIM> calculateBinIndex(const Vector<DIM> &pos) const;
@@ -58,12 +109,15 @@ public:
         Vector<DIM> binMiddle{};
         /** @brief Value of the bin. */
         T value{};
+        std::size_t count{};
 
-        BinValue() = default;
-        BinValue(const Vector<DIM> &binMiddle, T value) : binMiddle{binMiddle}, value{std::move(value)} { }
+        BinValue(const Vector<DIM> &binMiddle, T value, std::size_t count = 0)
+                : binMiddle{binMiddle}, value{std::move(value)}, count{count}
+        { }
 
         template<std::size_t DIM_ = DIM>
-        BinValue(std::enable_if_t<DIM_ == 1, double> binMiddle, T value) : binMiddle{binMiddle}, value{std::move(value)}
+        BinValue(std::enable_if_t<DIM_ == 1, double> binMiddle, T value, std::size_t count = 0)
+                : binMiddle{binMiddle}, value{std::move(value)}, count{count}
         { }
 
         friend bool operator==(const BinValue &lhs, const BinValue &rhs) {
@@ -108,25 +162,25 @@ public:
     /**
      * @brief Returns immutable bin value for a bin with multidimensional index @a idx.
      */
-    [[nodiscard]] const T &atIndex(const std::array<std::size_t, DIM> &idx) const;
+    [[nodiscard]] const ValueCount &atIndex(const std::array<std::size_t, DIM> &idx) const;
 
     /**
      * @brief Returns mutable bin value for a bin with multidimensional index @a idx.
      */
-    [[nodiscard]] T &atIndex(const std::array<std::size_t, DIM> &idx) {
-        return const_cast<T&>(std::as_const(*this).atIndex(idx));
+    [[nodiscard]] ValueCount &atIndex(const std::array<std::size_t, DIM> &idx) {
+        return const_cast<ValueCount&>(std::as_const(*this).atIndex(idx));
     }
 
     /**
      * @brief Returns immutable bin value for a bin which contains the position @a pos.
      */
-    [[nodiscard]] const T &atPos(const Vector<DIM> &pos) const;
+    [[nodiscard]] const ValueCount &atPos(const Vector<DIM> &pos) const;
 
     /**
      * @brief Returns mutable bin value for a bin which contains the position @a pos.
      */
-    [[nodiscard]] T &atPos(const Vector<DIM> &pos) {
-        return const_cast<T&>(std::as_const(*this).atPos(pos));
+    [[nodiscard]] ValueCount &atPos(const Vector<DIM> &pos) {
+        return const_cast<ValueCount&>(std::as_const(*this).atPos(pos));
     }
 
     [[nodiscard]] std::size_t size() const { return bins.size(); }

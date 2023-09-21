@@ -62,13 +62,14 @@ TEST_CASE("BinAveragedFunction") {
         auto nanRemover = [](const BinValue &binValue) { return std::isnan(binValue.value[0]); };
         histogram.erase(std::remove_if(histogram.begin(), histogram.end(), nanRemover), histogram.end());
         std::vector<BinValue> expected = {
-            {{0.45, 0.5, 0.5}, {1}},
-            {{0.55, 0.5, 0.5}, {3}},
-            {{0.65, 0.5, 0.5}, {5}}
+            {{0.45, 0.5, 0.5}, {1}, 10},
+            {{0.55, 0.5, 0.5}, {3}, 20},
+            {{0.65, 0.5, 0.5}, {5}, 10}
         };
         for (auto [expectedItem, actualItem]: Zip(expected, histogram)) {
             CHECK_THAT(actualItem.binMiddle, IsApproxEqual(expectedItem.binMiddle, 1e-12));
             CHECK(actualItem.value[0] == Approx(expectedItem.value[0]));
+            CHECK(actualItem.count == Approx(expectedItem.count));
         }
     }
 
