@@ -44,6 +44,12 @@ HistogramBuilder<DIM, T>::dumpValues(ReductionMethod reductionMethod) const {
 }
 
 template<std::size_t DIM, typename T>
+std::vector<typename Histogram<DIM, CountingAccumulator<T>>::BinValue>
+HistogramBuilder<DIM, T>::dumpValuesWithCount(ReductionMethod reductionMethod) const {
+    return this->dumpHistogramWithCount(reductionMethod).dumpValues();
+}
+
+template<std::size_t DIM, typename T>
 Histogram<DIM, T> HistogramBuilder<DIM, T>::dumpHistogram(ReductionMethod reductionMethod) const {
     Histogram<DIM, T> result(this->min, this->max, this->numBins, this->initialValue);
 
@@ -53,20 +59,51 @@ Histogram<DIM, T> HistogramBuilder<DIM, T>::dumpHistogram(ReductionMethod reduct
     switch (reductionMethod) {
         case ReductionMethod::SUM:
             std::transform(this->histogram.begin(), this->histogram.end(), result.begin(),
-                           [this](const CountingAccumulator &binData) {
+                           [this](const CountingAccumulator<T> &binData) {
                                return binData.value / static_cast<double>(this->numSnapshots);
                            });
             break;
 
         case ReductionMethod::AVERAGE:
             std::transform(this->histogram.begin(), this->histogram.end(), result.begin(),
-                           [](const CountingAccumulator &binData) {
+                           [](const CountingAccumulator<T> &binData) {
                                return binData.value / static_cast<double>(binData.numPoints);
                            });
             break;
 
         default:
-            throw std::runtime_error("");
+            AssertThrow("unreachable");
+    }
+    return result;
+}
+
+template<std::size_t DIM, typename T>
+Histogram<DIM, CountingAccumulator<T>> HistogramBuilder<DIM, T>
+    ::dumpHistogramWithCount(ReductionMethod reductionMethod) const
+{
+    Histogram<DIM, CountingAccumulator<T>> result(this->min, this->max, this->numBins,
+                                                  CountingAccumulator<T>{this->initialValue, 0});
+
+    if (this->numSnapshots == 0)
+        return result;
+
+    switch (reductionMethod) {
+        case ReductionMethod::SUM:
+            std::transform(this->histogram.begin(), this->histogram.end(), result.begin(),
+                           [this](const CountingAccumulator<T> &binData) -> CountingAccumulator<T> {
+                               return {binData.value / static_cast<double>(this->numSnapshots), binData.numPoints};
+                           });
+            break;
+
+        case ReductionMethod::AVERAGE:
+            std::transform(this->histogram.begin(), this->histogram.end(), result.begin(),
+                           [](const CountingAccumulator<T> &binData) -> CountingAccumulator<T> {
+                               return {binData.value / static_cast<double>(binData.numPoints), binData.numPoints};
+                           });
+            break;
+
+        default:
+            AssertThrow("unreachable");
     }
     return result;
 }
@@ -90,7 +127,7 @@ HistogramBuilder<DIM, T>::HistogramBuilder(const std::array<double, DIM> &min, c
     if (numThreads == 0)
         numThreads = OMP_MAXTHREADS;
     this->currentHistograms.resize(
-        numThreads, Histogram<DIM, CountingAccumulator>(this->min, this->max, this->numBins, {initialValue})
+        numThreads, Histogram<DIM, CountingAccumulator<T>>(this->min, this->max, this->numBins, {initialValue})
     );
 }
 
@@ -109,22 +146,21 @@ std::array<std::decay_t<T1>, DIM> HistogramBuilder<DIM, T>::filledArray(T1 &&val
     return array;
 }
 
-template<std::size_t DIM, typename T>
-typename HistogramBuilder<DIM, T>::CountingAccumulator &
-HistogramBuilder<DIM, T>::CountingAccumulator::operator+=(const HistogramBuilder::CountingAccumulator &other) {
+template<typename T>
+CountingAccumulator<T> &CountingAccumulator<T>::operator+=(const CountingAccumulator &other) {
     this->value += other.value;
     this->numPoints += other.numPoints;
     return *this;
 }
 
-template<std::size_t DIM, typename T>
-void HistogramBuilder<DIM, T>::CountingAccumulator::addPoint(const T &newValue) {
+template<typename T>
+void CountingAccumulator<T>::addPoint(const T &newValue) {
     this->value += newValue;
     this->numPoints++;
 }
 
-template<std::size_t DIM, typename T>
-typename HistogramBuilder<DIM, T>::CountingAccumulator &HistogramBuilder<DIM, T>::CountingAccumulator::operator*=(double factor) {
+template<typename T>
+CountingAccumulator<T> &CountingAccumulator<T>::operator*=(double factor) {
     this->value *= factor;
     return *this;
 }

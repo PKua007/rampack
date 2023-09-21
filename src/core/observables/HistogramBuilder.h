@@ -31,6 +31,31 @@ enum class ReductionMethod {
     AVERAGE
 };
 
+/* Helper class, which accumulated the value and counts how many points were passed. */
+template <typename T>
+struct CountingAccumulator {
+    T value{};
+    std::size_t numPoints{};
+
+    void addPoint(const T &newValue);
+
+    CountingAccumulator &operator+=(const CountingAccumulator &other);
+    CountingAccumulator &operator*=(double factor);
+
+    friend bool operator==(const CountingAccumulator &lhs, const CountingAccumulator &rhs) {
+        return std::tie(lhs.value, lhs.numPoints) == std::tie(rhs.value, rhs.numPoints);
+    }
+
+    friend bool operator!=(const CountingAccumulator &lhs, const CountingAccumulator &rhs) {
+        return !(rhs == lhs);
+    }
+
+    friend std::ostream &operator<<(std::ostream &os, const CountingAccumulator &accumulator) {
+        os << "{value: " << accumulator.value << ", count: " << accumulator.numPoints << "}";
+        return os;
+    }
+};
+
 
 /**
  * @brief Class facilitating multithreaded building a histogram, where each bin accumulates arbitrary values inserted
@@ -46,25 +71,14 @@ class HistogramBuilder {
     static_assert(DIM >= 1);
 
 private:
-    /* Helper class, which accumulated the value and counts how many points were passed. */
-    struct CountingAccumulator {
-        T value{};
-        std::size_t numPoints{};
-
-        void addPoint(const T &newValue);
-
-        CountingAccumulator &operator+=(const CountingAccumulator &other);
-        CountingAccumulator &operator*=(double factor);
-    };
-
     std::array<double, DIM> min{};
     std::array<double, DIM> max{};
     std::array<double, DIM> step{};
     std::array<std::size_t, DIM> numBins{};
     std::size_t flatNumBins{};
     std::size_t numSnapshots{};
-    Histogram<DIM, CountingAccumulator> histogram;
-    std::vector<Histogram<DIM, CountingAccumulator>> currentHistograms;
+    Histogram<DIM, CountingAccumulator<T>> histogram;
+    std::vector<Histogram<DIM, CountingAccumulator<T>>> currentHistograms;
     T initialValue{};
 
     template<typename T1>
@@ -122,12 +136,17 @@ public:
      */
     [[nodiscard]] std::vector<typename Histogram<DIM, T>::BinValue> dumpValues(ReductionMethod reductionMethod) const;
 
+    [[nodiscard]] std::vector<typename Histogram<DIM, CountingAccumulator<T>>::BinValue>
+    dumpValuesWithCount(ReductionMethod reductionMethod) const;
+
     /**
      * @brief Creates snapshot-averaged histogram from collected snapshots.
      * @param reductionMethod method used to average over snapshots (see HistogramBuilder::ReductionMethod)
      * @return Vector of BinValue objects enclosing middle position of bin and appropriately averaged value.
      */
     [[nodiscard]] Histogram<DIM, T> dumpHistogram(ReductionMethod reductionMethod) const;
+
+    [[nodiscard]] Histogram<DIM, CountingAccumulator<T>> dumpHistogramWithCount(ReductionMethod reductionMethod) const;
 
     /**
      * @brief Clears all snapshots and current temporary snapshot.
