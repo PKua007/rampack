@@ -385,11 +385,18 @@ namespace {
 
         auto tracker = create_tracker();
 
+        using Normalization = DensityHistogram::Normalization;
+        auto normalizationAvgCount = MatcherString("avg_count").mapTo([](const std::string&){ return Normalization::AVG_COUNT; });
+        auto normalizationUnit = MatcherString("unit").mapTo([](const std::string&){ return Normalization::UNIT; });
+        auto normalization = normalizationAvgCount | normalizationUnit;
+
         return MatcherDataclass("density_histogram")
             .arguments({{"n_bins_x", nBins, "None"},
                         {"n_bins_y", nBins, "None"},
                         {"n_bins_z", nBins, "None"},
-                        {"tracker", tracker, "None"}})
+                        {"tracker", tracker, "None"},
+                        {"normalization", normalization, R"("unit")"},
+                        {"print_count", MatcherBoolean{}, "False"}})
             .filter([](const DataclassData &densityHistoram) {
                 return densityHistoram["n_bins_x"].as<std::size_t>() != 1
                     || densityHistoram["n_bins_y"].as<std::size_t>() != 1
@@ -403,7 +410,10 @@ namespace {
                     densityHistogram["n_bins_z"].as<std::size_t>()
                 };
                 auto tracker = densityHistogram["tracker"].as<std::shared_ptr<GoldstoneTracker>>();
-                return std::make_shared<DensityHistogram>(nBins, tracker, maxThreads);
+                auto normalization = densityHistogram["normalization"].as<Normalization>();
+                auto printCount = densityHistogram["print_count"].as<bool>();
+
+                return std::make_shared<DensityHistogram>(nBins, tracker, normalization, printCount, maxThreads);
             });
     }
 

@@ -389,15 +389,16 @@ namespace {
         std::array<std::size_t, 3> nBins{};
         std::copy(nBinsTokens.begin(), nBinsTokens.end(), nBins.begin());
 
+        const auto UNIT_NORMALIZATION = DensityHistogram::Normalization::UNIT;
         if (fields.find("tracker") == fields.end())
-            return std::make_unique<DensityHistogram>(nBins, nullptr, maxThreads);
+            return std::make_unique<DensityHistogram>(nBins, nullptr, UNIT_NORMALIZATION, false, maxThreads);
 
         std::istringstream trackerStream(fields.at("tracker"));
         std::string trackerName;
         trackerStream >> trackerName;
         ValidateMsg(trackerStream, DENSITY_HISTOGRAM_USAGE);
         std::unique_ptr<GoldstoneTracker> tracker = parse_tracker(trackerName, trackerStream);
-        return std::make_unique<DensityHistogram>(nBins, std::move(tracker));
+        return std::make_unique<DensityHistogram>(nBins, std::move(tracker), UNIT_NORMALIZATION, false, maxThreads);
     }
 
     void parse_observables(const std::vector<std::string> &observables, ObservablesCollector &collector,

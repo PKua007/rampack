@@ -22,20 +22,37 @@ void DensityHistogram::addSnapshot(const Packing &packing, [[maybe_unused]] doub
     std::size_t totalBins = std::accumulate(this->numBins.begin(), this->numBins.end(), 1ul, std::multiplies<>{});
     const auto &box = packing.getBox();
     const auto &bc = packing.getBoundaryConditions();
-    #pragma omp parallel for shared(packing, bc, box, histogramBuilder, originDelta, totalBins) default(none) \
-            num_threads(this->numThreads)
+
+    double value{};
+    switch (this->normalization) {
+        case Normalization::AVG_COUNT:
+            value = 1;
+            break;
+        case Normalization::UNIT:
+            value = static_cast<double>(totalBins) / static_cast<double>(packing.size());
+            break;
+        default:
+            AssertThrow("unreachable");
+    }
+
+    #pragma omp parallel for shared(packing, bc, box, histogramBuilder) firstprivate(originDelta, totalBins, value) \
+            default(none) num_threads(this->numThreads)
     for (std::size_t i = 0; i < packing.size(); i++) {
         Vector<3> pos = packing[i].getPosition();
         pos -= originDelta;
         pos += bc.getCorrection(pos);
-        this->histogramBuilder.add(box.absoluteToRelative(pos), static_cast<double>(totalBins)/packing.size());
+        this->histogramBuilder.add(box.absoluteToRelative(pos), value);
     }
     this->histogramBuilder.nextSnapshot();
 }
 
 void DensityHistogram::print(std::ostream &out) const {
-    for (auto [binMiddle, value, count] : this->histogramBuilder.dumpValues(ReductionMethod::SUM))
-        out << binMiddle[0] << " " << binMiddle[1] << " " << binMiddle[2] << " " << value << std::endl;
+    for (auto [binMiddle, value, count] : this->histogramBuilder.dumpValues(ReductionMethod::SUM)) {
+        out << binMiddle[0] << " " << binMiddle[1] << " " << binMiddle[2] << " " << value;
+        if (this->printCount)
+            out << " " << count;
+        out << std::endl;
+    }
 }
 
 void DensityHistogram::clear() {
@@ -45,10 +62,11 @@ void DensityHistogram::clear() {
 }
 
 DensityHistogram::DensityHistogram(const std::array<std::size_t, 3> &numBins, std::shared_ptr<GoldstoneTracker> tracker,
-                                   std::size_t numThreads)
+                                   Normalization normalization, bool printCount, std::size_t numThreads)
         : numBins{normalizeNumBins(numBins)}, tracker{std::move(tracker)},
           histogramBuilder({0, 0, 0}, {1, 1, 1}, this->numBins, numThreads),
-          numThreads{numThreads == 0 ? OMP_MAXTHREADS : numThreads}
+          numThreads{numThreads == 0 ? OMP_MAXTHREADS : numThreads}, normalization{normalization},
+          printCount{printCount}
 {
     if (this->tracker == nullptr)
         this->tracker = std::make_unique<DummyTracker>();
