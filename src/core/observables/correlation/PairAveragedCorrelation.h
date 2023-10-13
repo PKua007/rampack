@@ -56,10 +56,10 @@ public:
      * count). The last column is optional (as per @a printCount from the constructor).
      * @details The output looks like this:
      * @code
-     * distance1 value1
-     * distance2 value2
+     * distance1 value1 count1
+     * distance2 value2 count2
      * ...
-     * distanceN valueN
+     * distanceN valueN countN
      * @endcode
      */
     void print(std::ostream &out) const override;

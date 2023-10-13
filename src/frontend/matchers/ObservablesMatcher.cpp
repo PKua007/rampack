@@ -354,12 +354,15 @@ namespace {
         return MatcherDataclass("pair_density_correlation")
             .arguments({{"max_r", MatcherFloat{}.positive()},
                         {"n_bins", MatcherInt{}.greaterEquals(2).mapTo<std::size_t>()},
-                        {"binning", binning}})
+                        {"binning", binning},
+                        {"print_count", MatcherBoolean{}, "False"}})
             .mapTo([maxThreads](const DataclassData &pairDensityCorrelation) -> std::shared_ptr<BulkObservable> {
                 auto maxR = pairDensityCorrelation["max_r"].as<double>();
                 auto nBins = pairDensityCorrelation["n_bins"].as<std::size_t>();
                 auto binning = pairDensityCorrelation["binning"].as<std::shared_ptr<PairEnumerator>>();
-                return std::make_shared<PairDensityCorrelation>(binning, maxR, nBins, maxThreads);
+                auto printCount = pairDensityCorrelation["print_count"].as<bool>();
+
+                return std::make_shared<PairDensityCorrelation>(binning, maxR, nBins, printCount, maxThreads);
             });
     }
 

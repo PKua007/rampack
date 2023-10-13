@@ -433,7 +433,7 @@ namespace {
 
                 auto pairEnumerator = parse_pair_enumerator(observableStream, version);
                 auto rhoCorr = std::make_unique<PairDensityCorrelation>(
-                        std::move(pairEnumerator), maxDistance, numBins, maxThreads
+                    std::move(pairEnumerator), maxDistance, numBins, false, maxThreads
                 );
                 collector.addBulkObservable(std::move(rhoCorr));
             } else if (observableName == "pairAveragedCorrelation") {

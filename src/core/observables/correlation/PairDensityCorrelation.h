@@ -23,6 +23,7 @@ class PairDensityCorrelation : public BulkObservable, protected PairConsumer {
 private:
     std::shared_ptr<PairEnumerator> pairEnumerator;
     HistogramBuilder<1> histogram;
+    bool printCount{};
 
     void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
                      const Vector<3> &distanceVector, const ShapeTraits &shapeTraits) override;
@@ -34,9 +35,9 @@ public:
      * using @a numThreads, if @a pairEnumerator supports concurrency.
      */
     explicit PairDensityCorrelation(std::shared_ptr<PairEnumerator> pairEnumerator, double maxR, std::size_t numBins,
-                                    std::size_t numThreads = 1)
+                                    bool printCount = false, std::size_t numThreads = 1)
             : PairConsumer(numThreads), pairEnumerator{std::move(pairEnumerator)},
-              histogram(0, maxR, numBins, numThreads)
+              histogram(0, maxR, numBins, numThreads), printCount{printCount}
     { }
 
     void addSnapshot(const Packing &packing, double temperature, double pressure,
@@ -44,13 +45,13 @@ public:
 
     /**
      * @brief Prints pair density correlation function vs distance onto @a out stream as space separated columns
-     * (distance, value).
+     * (distance, value, count). The last column is optional (as per @a printCount from the constructor).
      * @details The output looks like this:
      * @code
-     * distance1 value1
-     * distance2 value2
+     * distance1 value1 count1
+     * distance2 value2 count2
      * ...
-     * dinstanceN valueN
+     * dinstanceN valueN countN
      * @endcode
      */
     void print(std::ostream &out) const override;
