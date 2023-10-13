@@ -35,6 +35,10 @@ library (later, with Python bindings as well).
 * Added [class `linear`](docs/observables.md#class-linear) binning type.
 * Added [class `q_tensor`](docs/observables.md#class-q_tensor) shape function.
 * Added [class `bin_averaged_function`](docs/observables.md#class-bin_averaged_function) bulk observable.
+* Added `print_count` switch to [class `pair_density_correlation`](#class-pair_density_correlation), [class `pair_averaged_correlation`](#class-pair_averaged_correlation),
+  [class `density_histogram`](#class-density_histogram), [class `probability_evolution`](#class-probability_evolution) and
+  [class `bin_averaged_function`](#class-bin_averaged_function) observables.
+* Added `normalization` arguments to [class `density_histogram`](#class-density_histogram).
 
 
 ## [1.1.0] - 2023-06-21
