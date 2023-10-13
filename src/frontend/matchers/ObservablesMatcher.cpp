@@ -459,7 +459,8 @@ namespace {
                 {"n_bins_x", nBins, "None"},
                 {"n_bins_y", nBins, "None"},
                 {"n_bins_z", nBins, "None"},
-                {"tracker", tracker, "None"}})
+                {"tracker", tracker, "None"},
+                {"print_count", MatcherBoolean{}, "False"}})
             .filter([](const DataclassData &binAveragedFunction) {
                 return binAveragedFunction["n_bins_x"].as<std::size_t>() != 1
                        || binAveragedFunction["n_bins_y"].as<std::size_t>() != 1
@@ -474,7 +475,8 @@ namespace {
                 };
                 auto tracker = binAveragedFunction["tracker"].as<std::shared_ptr<GoldstoneTracker>>();
                 auto function = binAveragedFunction["function"].as<std::shared_ptr<ShapeFunction>>();
-                return std::make_shared<BinAveragedFunction>(nBins, function, tracker, maxThreads);
+                auto printCount = binAveragedFunction["print_count"].as<bool>();
+                return std::make_shared<BinAveragedFunction>(nBins, function, tracker, printCount, maxThreads);
             });
     }
 

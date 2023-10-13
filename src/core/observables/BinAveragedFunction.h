@@ -28,8 +28,9 @@ private:
     std::optional<Vector<3>> firstOrigin;
     OMP_MAYBE_UNUSED std::size_t numThreads{};  // maybe_unused for builds without OpenMP support
     std::shared_ptr<ShapeFunction> shapeFunction;
-    static std::array<std::size_t, 3> normalizeNumBins(std::array<std::size_t, 3> array);
+    bool printCount;
 
+    static std::array<std::size_t, 3> normalizeNumBins(std::array<std::size_t, 3> array);
     static std::valarray<double> makeInitialValarray(const ShapeFunction &shapeFunction);
 
 public:
@@ -40,21 +41,24 @@ public:
      * @param shapeFunction shape function to be averaged in the bins. It can be multivalued
      * @param tracker GoldstoneTracker used to track the movement of the system. If @a nullptr is specified, no tracking
      * will be performed
+     * @param printCount if @a true, bin count will be additionally printed in the output
      * @param numThreads number of threads used to generate the histogram. If 0, all available threads will be used
      */
     explicit BinAveragedFunction(const std::array<std::size_t, 3> &numBins,
                                  std::shared_ptr<ShapeFunction> shapeFunction,
-                                 std::shared_ptr<GoldstoneTracker> tracker = nullptr, std::size_t numThreads = 1);
+                                 std::shared_ptr<GoldstoneTracker> tracker = nullptr, bool printCount = false,
+                                 std::size_t numThreads = 1);
 
     void addSnapshot(const Packing &packing, double temperature, double pressure,
                      const ShapeTraits &shapeTraits) override;
 
     /**
-     * @brief Prints averaged function values as space-separated rows.
+     * @brief Prints averaged function values as space-separated rows to @a out output stream.
      * @details Each row corresponds to a single bin with format
      * @code
-     * [x bin middle] [y ...] [z ...] [function value 1] [function value 2] ...
+     * [x bin middle] [y ...] [z ...] [function value 1] [function value 2] ... [print count]
      * @endcode
+     * The last `[print count]` column is outputted only if @a printCount was set @a true in the constructor.
      */
     void print(std::ostream &out) const override;
 

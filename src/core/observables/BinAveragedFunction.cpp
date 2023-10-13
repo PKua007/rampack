@@ -41,6 +41,8 @@ void BinAveragedFunction::print(std::ostream &out) const {
         out << binMiddle[0] << " " << binMiddle[1] << " " << binMiddle[2];
         for (double value : values)
             out << " " << value;
+        if (this->printCount)
+            out << " " << count;
         out << std::endl;
     }
 }
@@ -53,12 +55,13 @@ void BinAveragedFunction::clear() {
 
 BinAveragedFunction::BinAveragedFunction(const std::array<std::size_t, 3> &numBins,
                                          std::shared_ptr<ShapeFunction> shapeFunction,
-                                         std::shared_ptr<GoldstoneTracker> tracker, std::size_t numThreads)
+                                         std::shared_ptr<GoldstoneTracker> tracker, bool printCount,
+                                         std::size_t numThreads)
         : numBins{normalizeNumBins(numBins)}, tracker{std::move(tracker)},
           histogramBuilder({0, 0, 0}, {1, 1, 1}, this->numBins, numThreads,
                            BinAveragedFunction::makeInitialValarray(*shapeFunction)),
           numThreads{numThreads == 0 ? OMP_MAXTHREADS : numThreads},
-          shapeFunction{std::move(shapeFunction)}
+          shapeFunction{std::move(shapeFunction)}, printCount{printCount}
 {
     if (this->tracker == nullptr)
         this->tracker = std::make_unique<DummyTracker>();
