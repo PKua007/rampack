@@ -570,7 +570,7 @@ where prob(*f*|*r*) is a conditional probability density of correlation function
     Two-particle [correlation function](#correlation-functions) which is being averaged.
   * ***normalization*** (*= "avg_count"*) <br />
     How *P*(*r*, *f*) should be normalized. There are 3 options:
-    * `"avg_count"` or (<span style="color:orange">[[deprecated since v1.2.0]]</span> `None`) <br />
+    * `"avg_count"` or (`deprecated since v1.2.0` `None`) <br />
       No normalization is performed. The values are snapshot-averaged counts of particles in the bins. Please
       note that in that case, the sum of counts for a fixed distance *r* is proportional to the
       [pair density correlation function](#class-pair_density_correlation).

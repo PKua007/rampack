@@ -117,10 +117,15 @@ Arguments:
 * ***arg1***
 
   This is the first argument.
-  
+
+* `since v1.1.0` `deprecated since v1.2.0` ***arg2*** (*= "default value"*)
+
+  This is the second argument with the default value.
+  It was introduced in version 1.1.0 and deprecated in version 1.2.0.
+
 * `since v1.2.0` ***arg2*** (*= "default value"*)
 
-  This is the second argument with the default value. It was introduced in version 1.2.0.
+  This is the third argument with the default value. It was introduced in version 1.2.0.
   
 > Since v1.2.0, some additional comments were added here, for example telling what was improved.
 ``````
@@ -152,9 +157,18 @@ Arguments:
 
   This is the first argument.
 
+* ***arg1***
+
+  This is the first argument.
+
+* `since v1.1.0` `deprecated since v1.2.0` ***arg2*** (*= "default value"*)
+
+  This is the second argument with the default value.
+  It was introduced in version 1.1.0 and deprecated in version 1.2.0.
+
 * `since v1.2.0` ***arg2*** (*= "default value"*)
 
-  This is the second argument with the default value. It was introduced in version 1.2.0.
+  This is the third argument with the default value. It was introduced in version 1.2.0.
 
 > Since v1.2.0, some additional comments were added here, for example telling what was improved.
 
