@@ -411,6 +411,7 @@ The following bulk observables are available:
 * [Class `pair_averaged_correlation`](#class-pair_averaged_correlation)
 * [Class `density_histogram`](#class-density_histogram)
 * [Class `probability_evolution`](#class-probability_evolution)
+* [Class `bin_averaged_function`](#class-bin_averaged_function)
 
 Each observable has a **short name**, which is used in the output file name.
 
@@ -421,7 +422,8 @@ Each observable has a **short name**, which is used in the output file name.
 pair_density_correlation(
     max_r,
     n_bins,
-    binning
+    binning,
+    print_count = False
 )
 ```
 
@@ -439,10 +441,13 @@ the standard [radial distribution function](https://en.wikipedia.org/wiki/Radial
   * ***binning*** <br />
     [Binning type](#binning-types) used. It defines what *distance* as a norm of a *distance vector* means. For example, for
     `binning = radial`, *distance* reduces to a standard Euclidean distance between the particles.
+  * `since v1.2.0` ***print_count*** (*= False*) <br />
+    If `True`, additional column with total bin count from all snapshots will be added to the output.
 * **Short name**: `rho_[binning name]`, where `[binning name]` depends on the [binning type](#binning-types) (`binning`
   argument).
 * **Output**:
-  Rows with space-separated pairs (*r*, *&rho;*(*r*)).
+  Rows with space-separated pairs (*r*, *&rho;*(*r*)). If `print_count = True`, additional column with total bin count
+  from all snapshots is added.
 
 
 ### Class `pair_averaged_correlation`
@@ -472,11 +477,14 @@ distance around *r*.
     [correlation function](#correlation-functions) also use the *distance vector* explicitly.
   * ***function*** <br />
     Two-particle [correlation functions](#correlation-functions) which is being averaged.
+  * `since v1.2.0` ***print_count*** (*= False*) <br />
+    If `True`, additional column with total bin count from all snapshots will be added to the output.
 * **Short name**: `[function name]_[binning name]`, where `[function name]` depends on the 
   [correlation function](#correlation-functions) (`function` argument), while `[binning name]` depends on the
   [binning type](#binning-types) (`binning` argument).
 * **Output**:
-  Rows with space-separated pairs (*r*, *S*(*r*)).
+  Rows with space-separated pairs (*r*, *S*(*r*)). If `print_count = True`, additional column with total bin count from
+  all snapshots is added.
 
 
 ### Class `density_histogram`
@@ -486,7 +494,9 @@ density_histogram(
     n_bins_x = None,
     n_bins_y = None,
     n_bins_z = None,
-    tracker = None
+    tracker = None,
+    normalization = "unit",
+    print_count = False
 )
 ```
 
@@ -503,11 +513,20 @@ the domain is always [0, 1)<sup>*d*</sup>, where *d* is the dimension.
     specify `n_bins_x = 1` (or `n_bins_x = None`), `n_bins_y = 100` and `n_bins_z = 100`.
   * ***tracker*** (*= None*) <br />
     [Goldstone tracker](#trackers) used to cancel out system drift. If `None`, no compensation is applied.
+  * `since v1.2.0` ***normalization*** (*= "unit"*) <br />
+    Normalization of the density. Allowed values:
+    * `"avg_count"` <br />
+      No normalization is performed - each bin contains the count divided by the number of snapshots.
+    * `"unit"` <br />
+      Average value in the bin is normalized to 1.
+  * `since v1.2.0` ***print_count*** (*= False*) <br />
+    If `True`, additional column with total bin count from all snapshots will be added to the output.
 * **Short name**: `rho_xyz`
 * **Output**:
   Rows with space-separated tuples (*b*<sub>x</sub>, *b*<sub>y</sub>, *b*<sub>z</sub>, *&rho;*(**b**)), where **b** is
   relative middle of the bin (with coordinates from the range [0, 1)). If the direction is turned off, the corresponding
-  bin coordinate is equal 0.5.
+  bin coordinate is equal 0.5. If `print_count = True`, additional column with total bin count from all snapshots is
+  added.
 
 
 ### Class `probability_evolution`
@@ -520,7 +539,8 @@ probability_evolution(
     fun_range,
     n_bins_fun,
     function,
-    normalization = None
+    normalization = "avg_count",
+    print_count = False
 )
 ```
 
@@ -548,21 +568,24 @@ where prob(*f*|*r*) is a conditional probability density of correlation function
     are the statistics in the single bin.
   * ***function*** <br />
     Two-particle [correlation function](#correlation-functions) which is being averaged.
-  * ***normalization*** (*= None*) <br />
+  * ***normalization*** (*= "avg_count"*) <br />
     How *P*(*r*, *f*) should be normalized. There are 3 options:
-    * `None` <br />
+    * `"avg_count"` or (<span style="color:orange">[[deprecated since v1.2.0]]</span> `None`) <br />
       No normalization is performed. The values are snapshot-averaged counts of particles in the bins. Please
-      note than in that case the sum of counts for a fixed distance *r* is proportional to the
+      note that in that case, the sum of counts for a fixed distance *r* is proportional to the
       [pair density correlation function](#class-pair_density_correlation).
     * `"pdf"` <br />
       Standard probability density function normalization, for which &int;*P*(*r*, *f*) d*f* = 1.
     * `"unit"` <br />
       Average value in the bin is normalized to 1: &int;*P*(*r*, *f*) d*f* = *f*<sub>max</sub> - *f*<sub>min</sub>
+  * `since v1.2.0` ***print_count*** (*= False*) <br />
+    If `True`, additional column with total bin count from all snapshots will be added to the output.
 * **Short name**: `prob_[function name]_[binning name]`, where `[function name]` depends on the
   [correlation function](#correlation-functions) (`function` argument), while `[binning name]` depends on the
   [binning type](#binning-types) (`binning` argument).
 * **Output**:
-  Rows with space-separated 3-tuples (*r*, *f*, *P*(*r*, *f*)), where *r*, *f* are bin middles.
+  Rows with space-separated 3-tuples (*r*, *f*, *P*(*r*, *f*)), where *r*, *f* are bin middles. If `print_count = True`,
+  additional column with total bin count from all snapshots is added.
 
 
 ### Class `bin_averaged_function`
@@ -575,7 +598,8 @@ bin_averaged_function(
     n_bins_x = None,
     n_bins_y = None,
     n_bins_z = None,
-    tracker = None
+    tracker = None,
+    print_count = False
 )
 ```
 
@@ -595,12 +619,15 @@ dimension.
     specify `n_bins_x = 1` (or `n_bins_x = None`), `n_bins_y = 100` and `n_bins_z = 100`.
   * ***tracker*** (*= None*) <br />
     [Goldstone tracker](#trackers) used to cancel out system drift. If `None`, no compensation is applied.
+  * `since v1.2.0` ***print_count*** (*= False*) <br />
+    If `True`, additional column with total bin count from all snapshots will be added to the output.
 * **Short name**: `[function name]_xyz`, where `[function name]` is shape function's *primary name*.
 * **Output**:
   Rows with space-separated tuples (*b<sub>x</sub>*, *b<sub>y</sub>*, *b<sub>z</sub>*, *f*<sub>1</sub>(**b**), ...,
   *f*<sub>*n*</sub>(**b**)), where **b** is relative middle of the bin (with coordinates from the range [0, 1)) and 
   *f*<sub>1</sub>(**b**), ..., *f*<sub>*n*</sub>(**b**) are subsequent bin and snapshot averaged function values. If the
-  direction is turned off, the corresponding  bin coordinate is equal 0.5.
+  direction is turned off, the corresponding bin coordinate is equal 0.5. If `print_count = True`, additional column
+  with total bin count from all snapshots is added.
 
 
 ## Trackers
