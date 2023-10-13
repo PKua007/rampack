@@ -9,11 +9,12 @@ ProbabilityEvolution::ProbabilityEvolution(double maxDistance, std::size_t numDi
                                            std::shared_ptr<PairEnumerator> pairEnumerator,
                                            std::pair<double, double> functionRange,
                                            std::size_t numFunctionBins, std::shared_ptr<CorrelationFunction> function,
-                                           Normalization normalization, std::size_t numThreads)
+                                           Normalization normalization, bool printCount, std::size_t numThreads)
         : PairConsumer(numThreads), maxDistance{maxDistance}, functionRange{functionRange},
           histogramBuilder({0, functionRange.first}, {maxDistance, functionRange.second},
                            {numDistanceBins, numFunctionBins}, numThreads),
-          pairEnumerator{std::move(pairEnumerator)}, function{std::move(function)}, normalization{normalization}
+          pairEnumerator{std::move(pairEnumerator)}, function{std::move(function)}, normalization{normalization},
+          printCount{printCount}
 {
     Expects(maxDistance > 0);
 }
@@ -29,8 +30,12 @@ void ProbabilityEvolution::print(std::ostream &out) const {
     Histogram2D histogram = this->histogramBuilder.dumpHistogram(ReductionMethod::SUM);
     this->renormalizeHistogram(histogram);
 
-    for (auto [xy, z, count] : histogram.dumpValues())
-        out << xy[0] << " " << xy[1] << " " << z << std::endl;
+    for (auto [xy, z, count] : histogram.dumpValues()) {
+        out << xy[0] << " " << xy[1] << " " << z;
+        if (this->printCount)
+            out << " " << count;
+        out << std::endl;
+    }
 }
 
 void ProbabilityEvolution::clear() {

@@ -83,7 +83,7 @@ TEST_CASE("ProbabilityEvolution") {
     }
 
     SECTION("normalization: PDF") {
-        ProbabilityEvolution evolution(2, 2, enumerator, {0, 2}, 2, function, Normalization::PDF);
+        ProbabilityEvolution evolution(2, 2, enumerator, {0, 2}, 2, function, Normalization::PDF, false);
         evolution.addSnapshot(packing, 1, 1, traits);
         evolution.addSnapshot(packing, 1, 1, traits);
 
@@ -93,7 +93,7 @@ TEST_CASE("ProbabilityEvolution") {
     }
 
     SECTION("normalization: UNIT") {
-        ProbabilityEvolution evolution(2, 2, enumerator, {0, 2}, 2, function, Normalization::UNIT);
+        ProbabilityEvolution evolution(2, 2, enumerator, {0, 2}, 2, function, Normalization::UNIT, false);
         evolution.addSnapshot(packing, 1, 1, traits);
         evolution.addSnapshot(packing, 1, 1, traits);
 
