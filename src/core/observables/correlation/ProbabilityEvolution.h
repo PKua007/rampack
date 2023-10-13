@@ -28,7 +28,7 @@ public:
          * the sum of counts for a given distance will vary with the distance (it will be proportional to
          * PairDensityCorrelation).
          */
-        NONE,
+        AVG_COUNT,
 
         /** @brief Normalize the probability as the probability distribution function
          * \f$ \int_{f_\mathrm{min}}^{f_\mathrm{max}} P(f|r)\ \mathrm{d}f = 1\f$

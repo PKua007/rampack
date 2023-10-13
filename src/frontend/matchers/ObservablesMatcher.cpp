@@ -437,10 +437,11 @@ namespace {
             });
 
         using Normalization = ProbabilityEvolution::Normalization;
-        auto normalizationNone = MatcherNone{}.mapTo([](){ return Normalization::NONE; });
+        auto normalizationNone = MatcherNone{}.mapTo([](){ return Normalization::AVG_COUNT; });
+        auto normalizationAvgCount = MatcherString("avg_count").mapTo([](const std::string&){ return Normalization::AVG_COUNT; });
         auto normalizationPDF = MatcherString("pdf").mapTo([](const std::string&){ return Normalization::PDF; });
         auto normalizationUnit = MatcherString("unit").mapTo([](const std::string&){ return Normalization::UNIT; });
-        auto normalization = normalizationNone | normalizationPDF | normalizationUnit;
+        auto normalization = normalizationNone | normalizationAvgCount | normalizationPDF | normalizationUnit;
 
         return MatcherDataclass("probability_evolution")
             .arguments({{"max_r", MatcherFloat{}.positive()},
@@ -449,7 +450,7 @@ namespace {
                         {"fun_range", functionRange},
                         {"n_bins_fun", nBins},
                         {"function", correlationFunction},
-                        {"normalization", normalization, "None"},
+                        {"normalization", normalization, R"("avg_count")"},
                         {"print_count", MatcherBoolean{}, "False"}})
             .mapTo([maxThreads](const DataclassData &probEvolution) -> std::shared_ptr<BulkObservable> {
                 auto maxR = probEvolution["max_r"].as<double>();

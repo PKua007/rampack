@@ -66,7 +66,7 @@ void ProbabilityEvolution::consumePair(const Packing &packing, const std::pair<s
 }
 
 void ProbabilityEvolution::renormalizeHistogram(Histogram2D &histogram) const {
-    if (this->normalization == Normalization::NONE)
+    if (this->normalization == Normalization::AVG_COUNT)
         return;
 
     // Normalize by count so that all bins for a given distance sum to 1
@@ -90,7 +90,7 @@ void ProbabilityEvolution::renormalizeHistogram(Histogram2D &histogram) const {
         case Normalization::UNIT:
             histogram *= static_cast<double>(histogram.getNumBins(1));
             break;
-        case Normalization::NONE:
+        case Normalization::AVG_COUNT:
             AssertThrow("Unreachable");
     }
 }

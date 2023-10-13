@@ -72,7 +72,7 @@ TEST_CASE("ProbabilityEvolution") {
     out << std::fixed << std::setprecision(1);
 
     SECTION("normalization: NONE") {
-        ProbabilityEvolution evolution(2, 2, enumerator, {0, 2}, 2, function, Normalization::NONE);
+        ProbabilityEvolution evolution(2, 2, enumerator, {0, 2}, 2, function, Normalization::AVG_COUNT);
         evolution.addSnapshot(packing, 1, 1, traits);
         evolution.addSnapshot(packing, 1, 1, traits);
 
