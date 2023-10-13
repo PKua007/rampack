@@ -368,13 +368,18 @@ namespace {
             .arguments({{"max_r", MatcherFloat{}.positive()},
                         {"n_bins", MatcherInt{}.greaterEquals(2).mapTo<std::size_t>()},
                         {"binning", binning},
-                        {"function", correlationFunction}})
+                        {"function", correlationFunction},
+                        {"print_count", MatcherBoolean{}, "False"}})
             .mapTo([maxThreads](const DataclassData &pairAveragedCorrelation) -> std::shared_ptr<BulkObservable> {
                 auto maxR = pairAveragedCorrelation["max_r"].as<double>();
                 auto nBins = pairAveragedCorrelation["n_bins"].as<std::size_t>();
                 auto binning = pairAveragedCorrelation["binning"].as<std::shared_ptr<PairEnumerator>>();
                 auto function = pairAveragedCorrelation["function"].as<std::shared_ptr<CorrelationFunction>>();
-                return std::make_shared<PairAveragedCorrelation>(binning, function, maxR, nBins, maxThreads);
+                auto printCount = pairAveragedCorrelation["print_count"].as<bool>();
+
+                return std::make_shared<PairAveragedCorrelation>(
+                    binning, function, maxR, nBins, printCount, maxThreads
+                );
             });
     }
 

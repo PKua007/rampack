@@ -447,7 +447,7 @@ namespace {
                 auto correlationFunction = parse_correlation_function(observableStream);
                 auto pairEnumerator = parse_pair_enumerator(observableStream, version);
                 auto avgCorr = std::make_unique<PairAveragedCorrelation>(
-                        std::move(pairEnumerator), std::move(correlationFunction), maxDistance, numBins, maxThreads
+                    std::move(pairEnumerator), std::move(correlationFunction), maxDistance, numBins, false, maxThreads
                 );
                 collector.addBulkObservable(std::move(avgCorr));
             } else if (observableName == "densityHistogram") {
