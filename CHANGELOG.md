@@ -18,6 +18,8 @@ library (later, with Python bindings as well).
 * Corrected [RAMSNAP](docs/output-formats.md#class-ramsnap) format documentation.
 * Using `--continue` on a finished run without averaging phases no longer throws `PreconditionException`
   ([#68](https://github.com/PKua007/rampack/issues/68)).
+* Improved numerical stability of [class `optimize_cell`](docs/initial-arrangement.md#class-optimize_cell).
+  Before the fix, the minimal distance may have been determined incorrectly in selected cases.
 
 ### Changed
 
