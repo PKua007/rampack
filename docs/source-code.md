@@ -5,6 +5,15 @@ This documentation page describes coding guidelines and sums up the most importa
 [&larr; back to Reference](reference.md)
 
 
+## Contents
+
+* [Coding guidelines](#coding-guidelines)
+* [Project structure](#project-structure)
+* [Code architecture](#code-architecture)
+* [PYON bindings](#pyon-bindings)
+* [Code documentation](#code-documentation)
+
+
 ## Coding guidelines
 
 RAMPACK is written in C++17. At the moment, the source code does not follow any particular coding style (which may
@@ -16,7 +25,7 @@ change). General rules read as follows:
 4.  Naming conventions:
     - classes: `PascalCase`
     - class methods: `camelCase`
-    - functions: `snake_case`
+    - global functions: `snake_case`
     - function/method arguments: `camelCase`
     - class fields: `camelCase`
     - variables: `camelCase`
@@ -41,8 +50,8 @@ change). General rules read as follows:
 12. Generally, write a code that you-in-the-six-months will understand. Other developers might then have a slight chance
     of understanding it as well ;-)
 13. Write [unit/validation tests](contributing.md#testing) for your shiny new features.
-14. Try to make your code in a general fashion. If you add a new shape resembling a star, make the number of rays a 
-    parameter.
+14. Try to make your code in a general fashion. As an example - if you add a new shape resembling a star,
+    make the number of rays a parameter.
 
 
 ## Project structure
@@ -53,8 +62,8 @@ The project root contains the following files/directories:
 - `docs/` - documentation pages
 - `sample_inputs/` - example input files
 - `script/` - miscellaneous dev tools, tab completion scripts
-- `src/` - source code
-- `test/` - unit and validation tests and test infrastructure
+- `src/` - the source code
+- `test/` - unit and validation tests and testing infrastructure
 - `CMakeLists.txt` - root CMake build configuration file
 - `Doxyfile` - Doxygen configuration
 
@@ -78,19 +87,35 @@ The central point is the `core/Simulation` class, which performs the runs. Monte
 of `core/MoveSampler` (for particle moves) and `core/TriclinicBoxScaler` (for box moves) are delegated to the 
 `core/Packing` class, which stores the simulation box. The `Packing` class uses `core/NeighbourGrid` for a constant-time
 lookup of neighboring particles. `core/DomainDecomposition` class is responsible for handling domain division and ghost
-layers. Parallelization is done using OpenMP code extensions.
+layers. Parallelization is done using OpenMP code extensions. Dynamic simulation parameters (temperature and pressure)
+implement `src/DynamicParameter` interface.
 
 Shape and interactions are controlled by implementations of `src/ShapeTraits`. The interface exposes 3 sub-interfaces:
 `core/ShapeGeometry` for geometric properties (shape axes, named points, etc.), `core/Interaction` for overlap
 detection and/or interaction energy calculation, and `core/ShapePrinter` for printing out the shape in a given format.
 
-The observables are collected by `src/ObservablesCollector`, trajectories are recorded using implementations of
-`src/SimulationRecorder` interface and snapshots are stored by implementations of `src/SnapshotWriter`. All observables
-implement `src/Observable` interface, while bulk observables - `src/BulkObservable`.
+The observables are collected by `core/ObservablesCollector`, trajectories are recorded using implementations of
+`core/SimulationRecorder` interface and snapshots are stored by implementations of `core/SnapshotWriter`.
+All observables implement `core/Observable` interface, while bulk observables - `core/BulkObservable`.
+Observables have a set of helper interfaces, such as `core/observables/CorrelationFunction` for two-particle correlation
+functions, `core/observables/ShapeFunction` mapping a single shape to one or more values, or
+`core/observables/correlation/PairEnumerator` for enumerating pairs of particles.
 
-Dynamic simulation parameters (temeprature and pressure) implement `src/DynamicParameter` interface.
+There is a whole subsystem devoted to preparing initial arrangements. The class `lattice/Lattice` stores the information
+about the unit cell. Is can be then modified by classes implementing the `lattice/LatticeTransformer` interface.
+Finally, the lattice is populated using implementations of the `lattice/LatticePopulator` interface.
 
 
+## PYON bindings
+
+All runtime polymorphic classes are exposed to the user by their [PYON](input-file.md#pyon-format) bindings.
+The PYON subsystem is implemented in `pyon` subdirectory. It is based on the so-called matchers that map PYON
+structures to C++ objects. All PYON matchers reside in the `frontend/matchers` subdirectory.
+
+
+## Code documentation
+
+See [Contributing.md](contributing.md#code-documentation).
 
 
 [&uarr; back to the top](#source-code)
