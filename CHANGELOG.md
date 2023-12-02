@@ -41,6 +41,7 @@ library (later, with Python bindings as well).
   [class `density_histogram`](#class-density_histogram), [class `probability_evolution`](#class-probability_evolution) and
   [class `bin_averaged_function`](#class-bin_averaged_function) observables.
 * Added `normalization` arguments to [class `density_histogram`](#class-density_histogram).
+* Added the [source code walkthrough](docs/source-code.md) document.
 
 
 ## [1.1.0] - 2023-06-21
