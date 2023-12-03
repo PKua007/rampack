@@ -23,7 +23,8 @@ void BinAveragedFunction::addSnapshot(const Packing &packing, [[maybe_unused]] d
     const auto &bc = packing.getBoundaryConditions();
     #pragma omp parallel for shared(packing, bc, box, histogramBuilder, originDelta, shapeTraits) \
             default(none) num_threads(this->numThreads)
-    for (const auto &shape : packing) {
+    for (std::size_t i = 0; i < packing.size(); i++) {
+        const auto &shape = packing[i];
         Vector<3> pos = shape.getPosition();
         pos -= originDelta;
         pos += bc.getCorrection(pos);
