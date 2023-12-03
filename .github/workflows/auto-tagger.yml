@@ -1,7 +1,6 @@
 name: Automatically create v[x] / latest tags
 
 on:
-  workflow_dispatch:
   release:
     types: [published, edited]
 
@@ -10,7 +9,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: Actions-R-Us/actions-tagger@v2
-        env:
-          GITHUB_TOKEN: "${{secrets.GITHUB_TOKEN}}"
         with:
           publish_latest_tag: true

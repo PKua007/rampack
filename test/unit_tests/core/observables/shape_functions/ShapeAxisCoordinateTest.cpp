@@ -18,16 +18,25 @@ TEST_CASE("ShapeAxisCoordinate") {
 
     SECTION("primary axis") {
         ShapeAxisCoordinate shapeAxisCoordinate(ShapeGeometry::Axis::PRIMARY, 0);
-        CHECK(shapeAxisCoordinate.calculate(shape, traits) == Approx(M_SQRT1_2));
+
+        shapeAxisCoordinate.calculate(shape, traits);
+
+        CHECK_THAT(shapeAxisCoordinate.getValues(), Catch::Matchers::Approx(std::vector<double>{M_SQRT1_2}));
     }
 
     SECTION("secondary axis") {
         ShapeAxisCoordinate shapeAxisCoordinate(ShapeGeometry::Axis::SECONDARY, 0);
-        CHECK(shapeAxisCoordinate.calculate(shape, traits) == Approx(-M_SQRT1_2));
+
+        shapeAxisCoordinate.calculate(shape, traits);
+
+        CHECK_THAT(shapeAxisCoordinate.getValues(), Catch::Matchers::Approx(std::vector<double>{-M_SQRT1_2}));
     }
 
     SECTION("auxiliary axis") {
         ShapeAxisCoordinate shapeAxisCoordinate(ShapeGeometry::Axis::AUXILIARY, 2);
-        CHECK(shapeAxisCoordinate.calculate(shape, traits) == Approx(1));
+
+        shapeAxisCoordinate.calculate(shape, traits);
+
+        CHECK_THAT(shapeAxisCoordinate.getValues(), Catch::Matchers::Approx(std::vector<double>{1}));
     }
 }

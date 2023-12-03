@@ -34,13 +34,13 @@ _rampack_observable() {
 	COMPREPLY=($(compgen -W "number_density box_dimensions packing_fraction compressibility_factor
 		energy_per_particle energy_fluctuations_per_particle nematic_order \'nematic_order(
 		\'smectic_order( \'bond_order( rotation_matrix_drift temperature pressure
-		\'fourier_tracker \'scoped(" -- "${cur/\'/\\\'}"))
+		\'fourier_tracker( \'scoped(" -- "${cur/\'/\\\'}"))
 	compopt -o nospace
 }
 
 _rampack_bulk_observable() {
 	COMPREPLY=($(compgen -W "\'pair_density_correlation( \'pair_averaged_correlation(
-		\'density_histogram( \'probability_evolution(" -- "${cur/\'/\\\'}"))
+		\'density_histogram( \'probability_evolution( \'bin_averaged_function(" -- "${cur/\'/\\\'}"))
 	compopt -o nospace
 }
 

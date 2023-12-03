@@ -21,4 +21,4 @@ add_test(NAME valid_tests COMMAND $<TARGET_FILE:valid_tests>)
 add_test(NAME rampack_show_help COMMAND $<TARGET_FILE:rampack> --help)
 
 # Verify Markdown links
-add_test(NAME verify_markdown_links COMMAND ${CMAKE_SOURCE_DIR}/script/markdown_link_check.py ${CMAKE_SOURCE_DIR}/doc)
+add_test(NAME verify_markdown_links COMMAND ${CMAKE_SOURCE_DIR}/script/markdown_link_check.py ${CMAKE_SOURCE_DIR}/docs)

@@ -44,7 +44,7 @@ int TrajectoryMode::main(int argc, char **argv) {
         .add_options()
             ("h,help", "prints help for this mode")
             ("i,input", "a PYON file with parameters. See "
-                        "https://github.com/PKua007/rampack/blob/main/doc/input-file.md for the documentation of the "
+                        "https://github.com/PKua007/rampack/blob/main/docs/input-file.md for the documentation of the "
                         "input file",
              cxxopts::value<std::string>(inputFilename))
             ("r,run-name", "name of the run, for which the trajectory was generated. Special values `.first` "

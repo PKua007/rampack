@@ -55,7 +55,7 @@ options. They can, for example, change output verbosity, redirect output to a fi
 
 * ***-i***, ***--input*** *arg*
 
-  a PYON file with parameters. See https://github.com/PKua007/rampack/blob/main/doc/input-file.md for the documentation of the input file
+  a PYON file with parameters. See https://github.com/PKua007/rampack/blob/main/docs/input-file.md for the documentation of the input file
 
 * ***-V***, ***--verbosity*** *arg*
 
@@ -97,7 +97,7 @@ input file (`-r`, `--run-names` option). Below is the full list of available opt
 
 * ***-i***, ***--input*** *arg*
 
-  a PYON file with parameters. See https://github.com/PKua007/rampack/blob/main/doc/input-file.md for the documentation of the input file
+  a PYON file with parameters. See https://github.com/PKua007/rampack/blob/main/docs/input-file.md for the documentation of the input file
 
 * ***-V***, ***--verbosity*** *arg*
 
@@ -163,11 +163,11 @@ trajectories (`-f`, `--auto-fix` option). Below is the full list of available op
 
 * ***-i***, ***--input*** *arg*
 
-  a PYON file with parameters. See https://github.com/PKua007/rampack/blob/main/doc/input-file.md for the documentation of the input file
+  a PYON file with parameters. See https://github.com/PKua007/rampack/blob/main/docs/input-file.md for the documentation of the input file
 
 * ***-r***, ***--run-name*** *arg*
 
-  name of the run, for which the trajectory was generated. Special values `.first` and `.last` (for the first and the last run in the configuration file) are also accepted (default: .last)
+  name of the run, for which the trajectory was generated. Special values `.first` and `.last` (for the first and the last run in the configuration file) are also accepted
 
 * ***-f***, ***--auto-fix***
 
@@ -199,7 +199,7 @@ trajectories (`-f`, `--auto-fix` option). Below is the full list of available op
 
 * ***-T***, ***--max-threads*** *arg*
 
-  specifies maximal number of OpenMP threads that may be used to calculate observables. If 0 is passed, all available threads are used (default: 1)
+  specifies maximal number of OpenMP threads that may be used to calculate observables. If 0 is passed, all available threads are used. (default: 1)
 
 * ***-s***, ***--output-snapshot*** *arg*
 

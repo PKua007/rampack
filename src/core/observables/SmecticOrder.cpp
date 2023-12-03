@@ -75,11 +75,14 @@ SmecticOrder::SmecticOrder(const std::array<std::size_t, 3> &hklRange, bool dump
 {
     Expects(std::any_of(hklRange.begin(), hklRange.end(), [](int i) { return i != 0; }));
     Expects(std::all_of(hklRange.begin(), hklRange.end(), [](int i) { return i >= 0; }));
+    if (this->shapeFunction != nullptr)
+        Expects(this->shapeFunction->getNames().size() == 1);
+
     std::copy(hklRange.begin(), hklRange.end(), this->hklRange.begin());
 }
 
 std::vector<std::string> SmecticOrder::getIntervalHeader() const {
-    std::string functionName = this->shapeFunction->getName();
+    std::string functionName = this->shapeFunction->getNames().front();
     std::string tauName = (functionName == "const") ? "tau" : ("tau_" + functionName);
     std::string kPrefix = tauName + "_k_";
 
@@ -99,13 +102,15 @@ std::vector<double> SmecticOrder::getIntervalValues() const {
 std::vector<double> SmecticOrder::calculateFunctionValues(const Packing &packing, const ShapeTraits &traits) const {
     std::vector<double> values;
     values.reserve(packing.size());
-    for (const auto &shape : packing)
-        values.push_back(this->shapeFunction->calculate(shape, traits));
+    for (const auto &shape : packing) {
+        this->shapeFunction->calculate(shape, traits);
+        values.push_back(this->shapeFunction->getValues().front());
+    }
     return values;
 }
 
 std::vector<std::string> SmecticOrder::getNominalHeader() const {
-    std::string functionName = this->shapeFunction->getName();
+    std::string functionName = this->shapeFunction->getNames().front();
     if (functionName == "const")
         return {"tau_hkl"};
     else
@@ -113,7 +118,7 @@ std::vector<std::string> SmecticOrder::getNominalHeader() const {
 }
 
 std::string SmecticOrder::getName() const {
-    std::string functionName = this->shapeFunction->getName();
+    std::string functionName = this->shapeFunction->getNames().front();
     if (functionName == "const")
         return "smectic order";
     else

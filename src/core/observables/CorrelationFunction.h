@@ -20,7 +20,7 @@ public:
      * @brief For two shapes @a shape1 and @a shape2 characterized by @a shapeTraits, it return value of the specific
      * correlation function.
      */
-    [[nodiscard]] virtual double calculate(const Shape &shape1, const Shape &shape2,
+    [[nodiscard]] virtual double calculate(const Shape &shape1, const Shape &shape2, const Vector<3> &distanceVector,
                                            const ShapeTraits &shapeTraits) const = 0;
 
     /**

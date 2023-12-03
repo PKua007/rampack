@@ -9,13 +9,17 @@
 
 
 /**
- * @brief Function returning a given coordinate value of a given shape axis
+ * @brief Function returning a given coordinate value of a given shape axis.
+ * @details Both the primary name and a singular component name are `[axis]_[comp]`, where `[axis]` is `pa`, `sa` or
+ * `aa`, referring to, respectively` primary, secondary and auxiliary axis (see ShapeGeometry) and `[comp]` is `x`, `y`
+ * or `z`.
  */
 class ShapeAxisCoordinate : public ShapeFunction {
 private:
     ShapeGeometry::Axis axis{};
     std::size_t coord{};
     std::string name;
+    double value{};
 
     [[nodiscard]] std::string constructName() const;
 
@@ -25,8 +29,11 @@ public:
      */
     ShapeAxisCoordinate(ShapeGeometry::Axis axis, std::size_t coord);
 
-    [[nodiscard]] double calculate(const Shape &shape, const ShapeTraits &traits) const override;
-    [[nodiscard]] std::string getName() const override { return this->name; }
+    void calculate(const Shape &shape, const ShapeTraits &traits) override;
+
+    [[nodiscard]] std::string getPrimaryName() const override { return this->name; }
+    [[nodiscard]] std::vector<std::string> getNames() const override { return {this->name}; }
+    [[nodiscard]] std::vector<double> getValues() const override { return {this->value}; }
 };
 
 
