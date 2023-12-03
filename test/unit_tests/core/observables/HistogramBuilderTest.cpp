@@ -2,10 +2,24 @@
 // Created by pkua on 14.09.22.
 //
 
-#include "catch2/catch.hpp"
+#include <catch2/catch.hpp>
+#include <valarray>
 
 #include "core/observables/HistogramBuilder.h"
 #include "utils/OMPMacros.h"
+
+
+namespace {
+    using ValarrayBinValue = Histogram<1, std::valarray<double>>::BinValue;
+
+    void compare_valarray_bin_value(const ValarrayBinValue &bv1, const ValarrayBinValue &bv2) {
+        CHECK(bv1.binMiddle == bv2.binMiddle);
+        CHECK(bv1.count == bv2.count);
+        REQUIRE(bv1.value.size() == bv2.value.size());
+        for (std::size_t i{}; i < bv1.value.size(); i++)
+            CHECK(bv1.value[i] == bv2.value[i]);
+    }
+}
 
 
 TEST_CASE("Histogram 1D: reduction methods") {
@@ -28,12 +42,14 @@ TEST_CASE("Histogram 1D: reduction methods") {
 
     SECTION("sum reduction") {
         auto values = histogram.dumpValues(ReductionMethod::SUM);
-        CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 4}, {2.5, 12}});
+
+        CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 4, 2}, {2.5, 12, 3}});
     }
 
     SECTION("average reduction") {
         auto values = histogram.dumpValues(ReductionMethod::AVERAGE);
-        CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 4}, {2.5, 8}});
+
+        CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 4, 2}, {2.5, 8, 3}});
     }
 
     SECTION("clearing") {
@@ -43,7 +59,8 @@ TEST_CASE("Histogram 1D: reduction methods") {
         histogram.nextSnapshot();
 
         auto values = histogram.dumpValues(ReductionMethod::SUM);
-        CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 2}, {2.5, 4}});
+
+        CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 2, 1}, {2.5, 4, 1}});
     }
 }
 
@@ -73,7 +90,8 @@ TEST_CASE("Histogram 1D: OpenMP") {
     histogram.nextSnapshot();
 
     auto values = histogram.dumpValues(ReductionMethod::SUM);
-    CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 4}, {2.5, 12}});
+
+    CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 4, 2}, {2.5, 12, 3}});
 }
 #endif // _OPENMP
 
@@ -83,7 +101,8 @@ TEST_CASE("Histogram 1D: empty histogram") {
 
     auto reductionMethod = GENERATE(ReductionMethod::SUM, ReductionMethod::AVERAGE);
     auto values = histogram.dumpValues(reductionMethod);
-    CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 0}, {2.5, 0}});
+
+    CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 0, 0}, {2.5, 0, 0}});
 }
 
 TEST_CASE("Histogram 2D: info") {
@@ -114,7 +133,8 @@ TEST_CASE("Histogram 1D: add") {
         histogram.nextSnapshot();
 
         auto values = histogram.dumpValues(ReductionMethod::SUM);
-        CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 4}, {2.5, 11}});
+
+        CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 4, 1}, {2.5, 11, 2}});
     }
 
     SECTION("errors") {
@@ -134,8 +154,8 @@ TEST_CASE("Histogram 2D: add") {
 
     auto values = histogram.dumpValues(ReductionMethod::SUM);
     auto expected = std::vector<Histogram2D::BinValue>{
-        {{1.5, 1.5}, 3}, {{1.5, 2.5}, 0}, {{1.5, 3.5}, 0},
-        {{2.5, 1.5}, 5}, {{2.5, 2.5}, 0}, {{2.5, 3.5}, 7}
+        {{1.5, 1.5}, 3, 2}, {{1.5, 2.5}, 0, 0}, {{1.5, 3.5}, 0, 0},
+        {{2.5, 1.5}, 5, 1}, {{2.5, 2.5}, 0, 0}, {{2.5, 3.5}, 7, 0}
     };
     CHECK_THAT(values, Catch::UnorderedEquals(expected));
 }
@@ -151,5 +171,33 @@ TEST_CASE("Histogram 1D: renormalization") {
     histogram.nextSnapshot();
 
     auto values = histogram.dumpValues(ReductionMethod::SUM);
-    CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 8}, {2.5, 33}});
+
+    CHECK(values == std::vector<Histogram1D::BinValue>{{1.5, 8, 1}, {2.5, 33, 2}});
+}
+
+TEST_CASE("Histogram: non-trivial initial value") {
+    HistogramBuilder<1, std::valarray<double>> histogram(0, 1, 2, 1, std::valarray<double>(0.0, 2));
+
+    SECTION("reduction") {
+        histogram.add(0.3, {1, 2});
+        histogram.add(0.7, {-4, 7});
+        histogram.nextSnapshot();
+        histogram.add(0.3, {5, 12});
+        histogram.add(0.7, {-6, -1});
+        histogram.nextSnapshot();
+
+        auto values = histogram.dumpValues(ReductionMethod::AVERAGE);
+
+        compare_valarray_bin_value(values[0], ValarrayBinValue(0.25, {3, 7}, 2));
+        compare_valarray_bin_value(values[1], ValarrayBinValue(0.75, {-5, 3}, 2));
+
+        SECTION("clearing") {
+            histogram.clear();
+
+            values = histogram.dumpValues(ReductionMethod::AVERAGE);
+
+            compare_valarray_bin_value(values[0], ValarrayBinValue(0.25, {0, 0}, 0));
+            compare_valarray_bin_value(values[1], ValarrayBinValue(0.75, {0, 0}, 0));
+        }
+    }
 }

@@ -8,15 +8,11 @@
 
 #include "matchers/VectorApproxMatcher.h"
 
-#include "mocks/MockShapeFunction.h"
-
 #include "core/observables/trackers/FourierTracker.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/shapes/SphereTraits.h"
 #include "core/observables/shape_functions/ConstantShapeFunction.h"
 
-
-using trompeloeil::_;
 
 namespace {
     class CustomFunction : public ShapeFunction {
@@ -26,15 +22,18 @@ namespace {
     private:
         Function function;
         std::string name;
+        double value{};
 
     public:
         CustomFunction(Function function, std::string name) : function{std::move(function)}, name{std::move(name)} { }
 
-        [[nodiscard]] double calculate(const Shape &shape, const ShapeTraits &traits) const override {
-            return this->function(shape, traits);
+        void calculate(const Shape &shape, const ShapeTraits &traits) override {
+            this->value = this->function(shape, traits);
         }
 
-        [[nodiscard]] std::string getName() const override { return this->name; }
+        [[nodiscard]] std::string getPrimaryName() const override { return this->name; }
+        [[nodiscard]] std::vector<std::string> getNames() const override { return {this->name}; }
+        [[nodiscard]] std::vector<double> getValues() const override { return {this->value}; }
     };
 
     std::shared_ptr<CustomFunction> make_function(CustomFunction::Function function, std::string name = "test") {

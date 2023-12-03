@@ -5,9 +5,10 @@
 
 template<std::size_t DIM, typename T>
 Histogram<DIM, T>::Histogram(const std::array<double, DIM> &min, const std::array<double, DIM> &max,
-                             const std::array<std::size_t, DIM> &numBins)
+                             const std::array<std::size_t, DIM> &numBins, const T& initialValue)
         : min{min}, max{max}, numBins{numBins},
-          bins(std::accumulate(numBins.begin(), numBins.end(), 1., std::multiplies<>{}))
+          bins(std::accumulate(numBins.begin(), numBins.end(), 1., std::multiplies<>{}), {initialValue}),
+          initialValue{initialValue}
 {
     for (auto[maxItem, minItem] : Zip(max, min))
         Expects(maxItem > minItem);
@@ -43,7 +44,7 @@ Histogram<DIM, T> &Histogram<DIM, T>::operator/=(double val) {
 template<std::size_t DIM, typename T>
 void Histogram<DIM, T>::clear() {
     for (auto &bin : this->bins)
-        bin = T{};
+        bin = {this->initialValue, 0};
 }
 
 template<std::size_t DIM, typename T>
@@ -81,7 +82,7 @@ std::size_t Histogram<DIM, T>::calculateFlatBinIndex(const Vector<DIM> &pos) con
 }
 
 template<std::size_t DIM, typename T>
-const T &Histogram<DIM, T>::atPos(const Vector<DIM> &pos) const {
+const typename Histogram<DIM, T>::ValueCount &Histogram<DIM, T>::atPos(const Vector<DIM> &pos) const {
     for (auto[posItem, minItem, maxItem] : Zip(pos, this->min, this->max)) {
         Expects(posItem >= minItem);
         Expects(posItem <= maxItem);
@@ -95,7 +96,7 @@ const T &Histogram<DIM, T>::atPos(const Vector<DIM> &pos) const {
 }
 
 template<std::size_t DIM, typename T>
-const T &Histogram<DIM, T>::atIndex(const std::array<std::size_t, DIM> &idx) const {
+const typename Histogram<DIM, T>::ValueCount &Histogram<DIM, T>::atIndex(const std::array<std::size_t, DIM> &idx) const {
     for (auto[idxItem, numBinsItem] : Zip(idx, this->numBins))
         Expects(idxItem < numBinsItem);
 
@@ -119,8 +120,10 @@ std::vector<typename Histogram<DIM, T>::BinValue> Histogram<DIM, T>::dumpValues(
     std::vector<Vector<DIM>> binMiddles = this->dumpBinMiddles();
     std::vector<BinValue> result;
     result.reserve(this->size());
-    std::transform(this->begin(), this->end(), binMiddles.begin(), std::back_inserter(result),
-                   [](double binData, const Vector<DIM> &binValue) { return BinValue{binValue, binData}; });
+    auto binValueConverter = [](const ValueCount &valueCount, const Vector<DIM> &binMiddle) {
+        return BinValue{binMiddle, valueCount.value, valueCount.count};
+    };
+    std::transform(this->begin(), this->end(), binMiddles.begin(), std::back_inserter(result), binValueConverter);
     return result;
 }
 

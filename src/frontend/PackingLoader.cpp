@@ -13,62 +13,41 @@ void PackingLoader::loadPacking(std::unique_ptr<BoundaryConditions> bc, const In
                                 std::size_t moveThreads, std::size_t scalingThreads)
 {
     this->reset();
-    this->findStartRunIndex();
 
+    this->findStartRunIndex();
     if (this->isAllFinished_)
         return;
 
-    if ((!this->startFrom.has_value() || this->startRunIndex == 0) && !this->continuationCycles.has_value())
+    if (this->isStartingFromScratch())
         return;
 
-    std::size_t startingPackingRunIndex{};
     if (this->continuationCycles.has_value())
-        startingPackingRunIndex = this->startRunIndex;
+        this->loadPackingContinuation(std::move(bc), interaction, moveThreads, scalingThreads);
     else
-        startingPackingRunIndex = this->startRunIndex - 1;
-    // A run, whose resulting packing will be the starting point
-    auto &startingPackingRun = this->runsParameters[startingPackingRunIndex];
+        this->loadPackingNoContinuation(std::move(bc), interaction, moveThreads, scalingThreads);
+}
 
+bool PackingLoader::isStartingFromScratch() const {
+    return (!startFrom.has_value() || startRunIndex == 0) && !continuationCycles.has_value();
+}
+
+void PackingLoader::restorePacking(const Run &startingPackingRun, std::unique_ptr<BoundaryConditions> bc,
+                                   const Interaction &interaction, std::size_t moveThreads,
+                                   std::size_t scalingThreads)
+{
     auto packingFilenameGetter = [](auto &&run) { return *run.ramsnapOut; };
     std::string startingPackingFilename = std::visit(packingFilenameGetter, startingPackingRun);
     std::ifstream packingFile(startingPackingFilename);
     ValidateOpenedDesc(packingFile, startingPackingFilename, "to load initial packing");
-    // Same number of scaling and domain decemposition threads
+
     this->packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
     this->auxInfo = this->packing->restore(packingFile, interaction);
-
-    if (this->continuationCycles.has_value()) {
-        this->cycleOffset = std::stoul(this->auxInfo.at("cycles"));
-        this->isContinuation_ = true;
-
-        // Value of continuation cycles is only used in integration mode. For overlaps rejection it is redundant
-        if (std::holds_alternative<IntegrationRun>(startingPackingRun)) {
-            // Because we continue this already finished run
-            auto &startingRun = std::get<IntegrationRun>(startingPackingRun);
-
-            if (this->continuationCycles == 0)
-                this->continuationCycles = startingRun.thermalizationCycles.value_or(0);
-
-            if (this->continuationCycles <= this->cycleOffset) {
-                startingRun.thermalizationCycles = std::nullopt;
-                this->logger.info() << "Thermalisation of the finished run '" << startingRun.runName;
-                this->logger << "' will be skipped, since " << *this->continuationCycles << " or more cycles were ";
-                this->logger << "already performed." << std::endl;
-            } else {
-                startingRun.thermalizationCycles = *this->continuationCycles - this->cycleOffset;
-                this->logger.info() << "Thermalisation from the finished run '" << startingRun.runName;
-                this->logger << "' will be continued up to " << *this->continuationCycles << " cycles (";
-                this->logger << *startingRun.thermalizationCycles << " to go)" << std::endl;
-            }
-        }
-    }
+    this->isRestored_ = true;
 
     auto runNameGetter = [](auto &&run) { return run.runName; };
     std::string startingRunName = std::visit(runNameGetter, startingPackingRun);
     this->logger.info() << "Loaded packing '" << startingPackingFilename << "' from the run '" << startingRunName;
     this->logger << "' as a starting point." << std::endl;
-
-    this->isRestored_ = true;
 }
 
 void PackingLoader::findStartRunIndex() {
@@ -114,7 +93,7 @@ void PackingLoader::autoFindStartRunIndex() {
 
     auto firstUnfinished = std::find_if_not(runDatas.begin(), runDatas.end(), isRunFinished);
     if (firstUnfinished == runDatas.end()) {
-        this->logger.warn() << "Starting run auto-detect: all runs were finished.";
+        this->logger.info() << "Starting run auto-detect: all runs were finished.";
         this->logger << std::endl;
 
         this->continuationCycles = std::nullopt;
@@ -197,11 +176,11 @@ std::vector<PackingLoader::PerformedRunData> PackingLoader::gatherRunData() cons
 
         auto packingFilenameGetter = [](auto &&run) { return *run.ramsnapOut; };
         auto packingFilename = std::visit(packingFilenameGetter, runParams);
-        std::ifstream datInput(packingFilename);
-        if (datInput) {
+        std::ifstream ramsnapInput(packingFilename);
+        if (ramsnapInput) {
             runData.wasPerformed = true;
             try {
-                auto auxInfo_ = RamsnapReader::restoreAuxInfo(datInput);
+                auto auxInfo_ = RamsnapReader::restoreAuxInfo(ramsnapInput);
                 ValidateMsg(auxInfo_.find("cycles") != auxInfo_.end(), "No 'cycles' key in RAMSNAP metadata");
                 runData.doneCycles = std::stoul(auxInfo_.at("cycles"));
             } catch (std::logic_error &) {
@@ -233,4 +212,55 @@ std::size_t PackingLoader::findStartRunIndex(const std::string &runName, const s
 
     ValidateMsg(it != runsParameters.end(), "Invalid run name to start from");
     return it - runsParameters.begin();
+}
+
+void PackingLoader::loadPackingContinuation(std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction,
+                                            std::size_t moveThreads, std::size_t scalingThreads)
+{
+    auto &startRun = this->runsParameters[this->startRunIndex];
+    this->restorePacking(startRun, std::move(bc), interaction, moveThreads, scalingThreads);
+
+    this->cycleOffset = std::stoul(this->auxInfo.at("cycles"));
+    this->isContinuation_ = true;
+
+    // Value of continuation cycles is only used in integration mode. For overlaps rejection it is redundant
+    if (!std::holds_alternative<IntegrationRun>(startRun))
+        return;
+
+    auto &integrationStartRun = std::get<IntegrationRun>(startRun);
+
+    if (this->continuationCycles == 0)
+        this->continuationCycles = integrationStartRun.thermalizationCycles.value_or(0);
+
+    if (this->continuationCycles <= this->cycleOffset) {
+        integrationStartRun.thermalizationCycles = std::nullopt;
+        this->logger.info() << "Thermalization of the finished run '" << integrationStartRun.runName;
+        this->logger << "' will be skipped, since " << *this->continuationCycles << " or more cycles were ";
+        this->logger << "already performed." << std::endl;
+
+        if (integrationStartRun.averagingCycles > 0)
+            return;
+
+        this->logger << "Averaging phase is turned off, moving to the next run." << std::endl;
+
+        this->isContinuation_ = false;
+        this->cycleOffset = 0;
+        this->startRunIndex++;
+
+        if (this->startRunIndex == this->runsParameters.size())
+            this->isAllFinished_ = true;
+    } else {
+        integrationStartRun.thermalizationCycles = *this->continuationCycles - this->cycleOffset;
+        this->logger.info() << "Thermalization from the finished run '" << integrationStartRun.runName;
+        this->logger << "' will be continued up to " << *this->continuationCycles << " cycles (";
+        this->logger << *integrationStartRun.thermalizationCycles << " to go)" << std::endl;
+    }
+
+}
+
+void PackingLoader::loadPackingNoContinuation(std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction,
+                                              std::size_t moveThreads, std::size_t scalingThreads)
+{
+    auto &startingPackingRun = this->runsParameters[this->startRunIndex - 1];
+    this->restorePacking(startingPackingRun, std::move(bc), interaction, moveThreads, scalingThreads);
 }

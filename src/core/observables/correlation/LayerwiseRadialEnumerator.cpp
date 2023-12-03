@@ -41,11 +41,9 @@ void LayerwiseRadialEnumerator::enumeratePairs(const Packing &packing, const Sha
             if (layer1 != layer2)
                 continue;
 
-            Vector<3> diff = (pos2 - pos1);
-            double distance2 = diff.norm2() - std::pow(diff * kVectorNorm, 2);   // Subtract normal component
-            distance2 = std::max(0.0, distance2);   // Make sure it is not < 0 due to numerical precision
-            double distance = std::sqrt(distance2);
-            pairConsumer.consumePair(packing, {i, j}, distance, traits);
+            Vector<3> diff = pos2 - pos1;
+            diff -= (diff * kVectorNorm) * kVectorNorm; // Subtract normal component
+            pairConsumer.consumePair(packing, {i, j}, diff, traits);
         }
     }
 }

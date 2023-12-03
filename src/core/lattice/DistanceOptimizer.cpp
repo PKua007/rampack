@@ -9,6 +9,7 @@
 #include "core/FreeBoundaryConditions.h"
 #include "LatticeTransformer.h"
 
+
 double DistanceOptimizer::minimizeForDirection(Shape shape1, Shape shape2, Vector<3> direction,
                                                const Interaction &interaction)
 {
@@ -63,8 +64,8 @@ void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &inter
     const auto &initialHeights = packing.getBox().getHeights();
     constexpr double FACTOR_EPSILON = 1 + 1e-12;
 
-    // Verify initial dimensions whether they are large enough
-    // range (plus epsilon), since we don't want self intersections through PBC
+    // Verify initial dimensions whether they are large enough.
+    // Use range (plus epsilon), since we don't want self intersections through PBC
     TransformerValidateMsg(std::all_of(initialHeights.begin(), initialHeights.end(),
                                        [range](double d) { return d > FACTOR_EPSILON*range; }),
                            "Initial dimensions are not large enough to perform distance optimization; particles may "
@@ -104,7 +105,6 @@ void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &inter
             packing.reset(midShapes, TriclinicBox(midBox), interaction);
             if (packing.countTotalOverlaps(interaction)) {
                 begFactor = factorMid;
-                begShapes = std::move(midShapes);
                 begBox = midBox;
             } else {
                 endFactor = factorMid;
@@ -112,6 +112,13 @@ void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &inter
                 endBox = midBox;
             }
         } while (std::abs(endFactor - begFactor) > EPSILON);
+
+        // Expand maximally shrunk axis a bit for greater numerical stability in the box optimization procedure.
+        // In essence, make sure that the error margin is always between FACTOR_EPSILON and 2*FACTOR_EPSILON
+        // (which would be 0 to FACTOR_EPSILON without this step - bisection may find the tangent position arbitrarily
+        // close "by accident")
+        for (std::size_t i{}; i < 3; i++)
+            endBox(i, axisNum) *= FACTOR_EPSILON;
 
         // Finally, apply the factor found
         packing.reset(endShapes, TriclinicBox(endBox), interaction);

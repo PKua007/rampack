@@ -26,17 +26,22 @@ This reference page give a full walkthrough over observables that can be compute
   * [Class `pair_averaged_correlation`](#class-pair_averaged_correlation)
   * [Class `density_histogram`](#class-density_histogram)
   * [Class `probability_evolution`](#class-probability_evolution)
+  * [Class `bin_averaged_function`](#class-bin_averaged_function)
 * [Trackers](#trackers)
   * [Class `fourier_tracker`](#class-fourier_tracker)
 * [Binning types](#binning-types)
   * [Class `radial`](#class-radial)
   * [Class `layerwise_radial`](#class-layerwise_radial)
+  * [Class `linear`](#class-linear)
 * [Correlation functions](#correlation-functions)
   * [Class `s110`](#class-s110)
+  * [Class `s220`](#class-s220)
+  * [Class `s221`](#class-s221)
   * [Class `axes_angle`](#class-axes_angle)
 * [Shape functions](#shape-functions)
   * [Class `const`](#class-const)
   * [Class `axis`](#class-axis)
+  * [Class `q_tensor`](#class-q_tensor)
 
 
 ## Observable types
@@ -285,25 +290,31 @@ bond_order(
     hkl,
     ranks,
     layering_point = "o",
-    focal_point = "o"
+    focal_point = "o",
+    local = True
 )
 ```
 
-Bond order parameter, which quantifies local order of angles between the nearest neighbours. On a 2D plane, it is
+Bond order parameter, which quantifies the order of angles between the nearest neighbors. On a 2D plane, it is
 defined as
 
-*&psi;<sub>r</sub>* = 1/*n* &sum;<sub>*i*</sub> 1/*r* | &sum;<sub>*j*</sub> exp(*r &iota; &theta;<sub>ij</sub>*) |,
+1) *Local bond order* <br />
+   *&psi;<sub>r</sub>* = 1/*n* &sum;<sub>*i*</sub> 1/*r* | &sum;<sub>*j*</sub> exp(*r &iota; &theta;<sub>ij</sub>*) |
+2) *Global bond order* <br />
+   *&psi;<sub>r</sub>* = 1/*n* | &sum;<sub>*i*</sub> 1/*r*  &sum;<sub>*j*</sub> exp(*r &iota; &theta;<sub>ij</sub>*) |
 
 where index *i* goes over all *n* particles lying on the plane, *r* is the rank of the order parameter,
 &sum;<sub>*j*</sub> sum goes over *j* = 1, ..., *r* nearest neighbours of the *i*<sup>th</sup> particle, &iota; is the
 imaginary unit and |...| is modulus. Finally, *&theta;<sub>ij</sub>* is the angle between the vector joining
-*i*<sup>th</sup> and *j*<sup>th</sup> particles and a constant arbitrary direction on the plane. 
+*i*<sup>th</sup> and *j*<sup>th</sup> particles and a constant arbitrary direction on the plane. *Local* and *global*
+bond order parameter differ by the placement of the absolute value. Local bond order quantifies only the ordering of
+nearest neighbors, while global bond order also takes into account phase differences between all particles.
 
 To make it applicable to a 3D system, the system is assumed to be layered smectic (you can also project all particles
-on a single plane, see `hkl` argument description). All positions are projected onto nearest layers, *&psi;<sub>r</sub>*
-is calculated for each layer separately and then averaged over all layers. Number of layers and their wavevector are
-specified upfront by `hkl` Miller indices (see [class `smectic_order`](#class-smectic_order)), while layer shifts as
-well as association of particles to them are inferred automatically.
+on a single plane, see `hkl` argument description). All positions are projected onto the nearest layers,
+*&psi;<sub>r</sub>* is calculated for each layer separately and then averaged over all layers. Number of layers and
+their wavevector are specified upfront by `hkl` Miller indices (see [class `smectic_order`](#class-smectic_order)),
+while layer shifts as well as association of particles to them are inferred automatically.
 
 * **Arguments**:
   * ***hkl*** <br />
@@ -319,6 +330,8 @@ well as association of particles to them are inferred automatically.
     layers.
   * ***focal_point*** (*= "o"*) <br />
     [Named point](shapes.md#named-points) on the particle that will be used to compute *&theta;<sub>ij</sub>* angles.
+  * ***local*** (*= True*) <br />
+    If `True`, local bond order is computed, otherwise - global.
 * **Primary name**: `Bond order`
 * **Interval values**:
   * `psi_[r1]`, `psi_[r2]`, ... - bond order parameters for all `[r1]`, `[r2]`, ... ranks specified by `ranks` argument. 
@@ -398,6 +411,7 @@ The following bulk observables are available:
 * [Class `pair_averaged_correlation`](#class-pair_averaged_correlation)
 * [Class `density_histogram`](#class-density_histogram)
 * [Class `probability_evolution`](#class-probability_evolution)
+* [Class `bin_averaged_function`](#class-bin_averaged_function)
 
 Each observable has a **short name**, which is used in the output file name.
 
@@ -408,7 +422,8 @@ Each observable has a **short name**, which is used in the output file name.
 pair_density_correlation(
     max_r,
     n_bins,
-    binning
+    binning,
+    print_count = False
 )
 ```
 
@@ -424,12 +439,15 @@ the standard [radial distribution function](https://en.wikipedia.org/wiki/Radial
     Number of bins to use. The more of them, the higher is the resolution of the plot, but the smaller are the
     statistics in the single bin.
   * ***binning*** <br />
-    [Binning type](#binning-types) used. It defines what *distance* means. For example, for `binning = radial`,
-    *distance* is the Euclidean distance between the particles.
+    [Binning type](#binning-types) used. It defines what *distance* as a norm of a *distance vector* means. For example, for
+    `binning = radial`, *distance* reduces to a standard Euclidean distance between the particles.
+  * `since v1.2.0` ***print_count*** (*= False*) <br />
+    If `True`, additional column with total bin count from all snapshots will be added to the output.
 * **Short name**: `rho_[binning name]`, where `[binning name]` depends on the [binning type](#binning-types) (`binning`
   argument).
 * **Output**:
-  Rows with space-separated pairs (*r*, *&rho;*(*r*)).
+  Rows with space-separated pairs (*r*, *&rho;*(*r*)). If `print_count = True`, additional column with total bin count
+  from all snapshots is added.
 
 
 ### Class `pair_averaged_correlation`
@@ -454,15 +472,19 @@ distance around *r*.
     Number of bins to use. The more of them, the higher is the resolution of the plot, but the smaller are the
     statistics in the single bin.
   * ***binning*** <br />
-    [Binning type](#binning-types) used. It defines what *distance* means. For example, for `binning = radial`,
-    *distance* is the Euclidean distance between the particles.
+    [Binning type](#binning-types) used. It defines what *distance* as a norm of a *distance vector* means. For example, for
+    `binning = radial`, *distance* reduces to a standard Euclidean distance between the particles. Some
+    [correlation function](#correlation-functions) also use the *distance vector* explicitly.
   * ***function*** <br />
-    Two-particle [correlation function](#correlation-functions) which is being averaged.
+    Two-particle [correlation functions](#correlation-functions) which is being averaged.
+  * `since v1.2.0` ***print_count*** (*= False*) <br />
+    If `True`, additional column with total bin count from all snapshots will be added to the output.
 * **Short name**: `[function name]_[binning name]`, where `[function name]` depends on the 
   [correlation function](#correlation-functions) (`function` argument), while `[binning name]` depends on the
   [binning type](#binning-types) (`binning` argument).
 * **Output**:
-  Rows with space-separated pairs (*r*, *S*(*r*)).
+  Rows with space-separated pairs (*r*, *S*(*r*)). If `print_count = True`, additional column with total bin count from
+  all snapshots is added.
 
 
 ### Class `density_histogram`
@@ -472,7 +494,9 @@ density_histogram(
     n_bins_x = None,
     n_bins_y = None,
     n_bins_z = None,
-    tracker = None
+    tracker = None,
+    normalization = "unit",
+    print_count = False
 )
 ```
 
@@ -489,11 +513,20 @@ the domain is always [0, 1)<sup>*d*</sup>, where *d* is the dimension.
     specify `n_bins_x = 1` (or `n_bins_x = None`), `n_bins_y = 100` and `n_bins_z = 100`.
   * ***tracker*** (*= None*) <br />
     [Goldstone tracker](#trackers) used to cancel out system drift. If `None`, no compensation is applied.
+  * `since v1.2.0` ***normalization*** (*= "unit"*) <br />
+    Normalization of the density. Allowed values:
+    * `"avg_count"` <br />
+      No normalization is performed - each bin contains the count divided by the number of snapshots.
+    * `"unit"` <br />
+      Average value in the bin is normalized to 1.
+  * `since v1.2.0` ***print_count*** (*= False*) <br />
+    If `True`, additional column with total bin count from all snapshots will be added to the output.
 * **Short name**: `rho_xyz`
 * **Output**:
   Rows with space-separated tuples (*b*<sub>x</sub>, *b*<sub>y</sub>, *b*<sub>z</sub>, *&rho;*(**b**)), where **b** is
   relative middle of the bin (with coordinates from the range [0, 1)). If the direction is turned off, the corresponding
-  bin coordinate is equal 0.5.
+  bin coordinate is equal 0.5. If `print_count = True`, additional column with total bin count from all snapshots is
+  added.
 
 
 ### Class `probability_evolution`
@@ -506,7 +539,8 @@ probability_evolution(
     fun_range,
     n_bins_fun,
     function,
-    normalization = None
+    normalization = "avg_count",
+    print_count = False
 )
 ```
 
@@ -524,8 +558,9 @@ where prob(*f*|*r*) is a conditional probability density of correlation function
     Number of bins to use for distance. The more of them, the higher is the resolution of the plot, but the smaller are
     the statistics in the single bin.
   * ***binning*** <br />
-    [Binning type](#binning-types) used. It defines what *distance* means. For example, for `binning = radial`,
-    *distance* is the Euclidean distance between the particles.
+    [Binning type](#binning-types) used. It defines what *distance* as a norm of a *distance vector* means. For example, for
+    `binning = radial`, *distance* reduces to a standard Euclidean distance between the particles. Some
+    [correlation functions](#correlation-functions) also use the *distance vector* explicitly.
   * ***fun_range*** <br />
     An Array of 2 Floats representing minimal and maximal value of the function *f* that will be plotted.
   * ***n_bins_fun*** <br />
@@ -533,21 +568,66 @@ where prob(*f*|*r*) is a conditional probability density of correlation function
     are the statistics in the single bin.
   * ***function*** <br />
     Two-particle [correlation function](#correlation-functions) which is being averaged.
-  * ***normalization*** (*= None*) <br />
+  * ***normalization*** (*= "avg_count"*) <br />
     How *P*(*r*, *f*) should be normalized. There are 3 options:
-    * `None` <br />
+    * `"avg_count"` or (`deprecated since v1.2.0` `None`) <br />
       No normalization is performed. The values are snapshot-averaged counts of particles in the bins. Please
-      note than in that case the sum of counts for a fixed distance *r* is proportional to the
+      note that in that case, the sum of counts for a fixed distance *r* is proportional to the
       [pair density correlation function](#class-pair_density_correlation).
     * `"pdf"` <br />
       Standard probability density function normalization, for which &int;*P*(*r*, *f*) d*f* = 1.
     * `"unit"` <br />
       Average value in the bin is normalized to 1: &int;*P*(*r*, *f*) d*f* = *f*<sub>max</sub> - *f*<sub>min</sub>
+  * `since v1.2.0` ***print_count*** (*= False*) <br />
+    If `True`, additional column with total bin count from all snapshots will be added to the output.
 * **Short name**: `prob_[function name]_[binning name]`, where `[function name]` depends on the
   [correlation function](#correlation-functions) (`function` argument), while `[binning name]` depends on the
   [binning type](#binning-types) (`binning` argument).
 * **Output**:
-  Rows with space-separated 3-tuples (*r*, *f*, *P*(*r*, *f*)), where *r*, *f* are bin middles.
+  Rows with space-separated 3-tuples (*r*, *f*, *P*(*r*, *f*)), where *r*, *f* are bin middles. If `print_count = True`,
+  additional column with total bin count from all snapshots is added.
+
+
+### Class `bin_averaged_function`
+
+> Since v1.2.0
+
+```python
+bin_averaged_function(
+    function,
+    n_bins_x = None,
+    n_bins_y = None,
+    n_bins_z = None,
+    tracker = None,
+    print_count = False
+)
+```
+
+[Shape function](#shape-functions) (possibly multivalued) averaged in 1D, 2D or 3D bins over system snapshots. It
+supports cancelling out the translational Goldstone mode to prevent softening of values due to zero-energy bulk system
+drift. Relative positions are used for binning. Thus, the domain is always [0, 1)<sup>*d*</sup>, where *d* is the
+dimension.
+
+* **Arguments**:
+  * ***function*** <br />
+    Single or multivalued [shape function](#shape-functions) to be averaged.
+  * ***n_bins_x*** (*= None*) <br />
+    ***n_bins_y*** (*= None*) <br />
+    ***n_bins_z*** (*= None*) <br />
+    Number of bins in each direction. If 1 or `None` is specified, the given direction is turned off completely. For
+    example, to average the function over all X values with 100 x 100 bins on a YZ plane, you should
+    specify `n_bins_x = 1` (or `n_bins_x = None`), `n_bins_y = 100` and `n_bins_z = 100`.
+  * ***tracker*** (*= None*) <br />
+    [Goldstone tracker](#trackers) used to cancel out system drift. If `None`, no compensation is applied.
+  * `since v1.2.0` ***print_count*** (*= False*) <br />
+    If `True`, additional column with total bin count from all snapshots will be added to the output.
+* **Short name**: `[function name]_xyz`, where `[function name]` is shape function's *primary name*.
+* **Output**:
+  Rows with space-separated tuples (*b<sub>x</sub>*, *b<sub>y</sub>*, *b<sub>z</sub>*, *f*<sub>1</sub>(**b**), ...,
+  *f*<sub>*n*</sub>(**b**)), where **b** is relative middle of the bin (with coordinates from the range [0, 1)) and 
+  *f*<sub>1</sub>(**b**), ..., *f*<sub>*n*</sub>(**b**) are subsequent bin and snapshot averaged function values. If the
+  direction is turned off, the corresponding bin coordinate is equal 0.5. If `print_count = True`, additional column
+  with total bin count from all snapshots is added.
 
 
 ## Trackers
@@ -622,15 +702,20 @@ smectic order parameter.
 
 ## Binning types
 
-Binning type dictates how various types of observables are calculated. Most importantly, it defines what *distance*
-between particles means. Binning type is chosen, for example, when using
+Binning type dictates how various types of observables are calculated. Most importantly, it defines what *distance
+vector* between particles means. Binning type is chosen, for example, when using
 [class `pair_density_correlation`](#class-pair_density_correlation). There, it decides what type of correlation is
 probed - radial, transversal, etc. It can also restrict which pairs of particles should be selected at all - for
-example, [class `layerwise_radial`](#class-layerwise_radial) takes into account only particles from the same layers.
+example, [class `layerwise_radial`](#class-layerwise_radial) takes into account only particles from the same layers. Each binning type has
+*binning name* which is used in a signature name of observables.
 
 There are the following types of binning:
 * [Class `radial`](#class-radial)
 * [Class `layerwise_radial`](#class-layerwise_radial)
+* [Class `linear`](#class-linear)
+
+> Note: *distance vector* was introduced in v1.2.0 for observables such as [class `s221`](#class-s221). Previously only
+> its norm (the *distance*) was considered.
 
 
 ### Class `radial`
@@ -641,9 +726,11 @@ radial(
 )
 ```
 
-The standard, radial binning type. Here, the *distance* is a standard Euclidean distance and all pairs of particles are
-enumerated. `focal_point` is a [named point](shapes.md#named-points), with respect to which the distance should be
-calculated.
+The standard, radial binning type. Here, the *vector distance* is simply a vector joining first particle with the 
+second, and all pairs of particles are enumerated. `focal_point` is a [named point](shapes.md#named-points), with respect to which the
+distance should be calculated.
+
+* **Binning name**: `r`
 
 
 ### Class `layerwise_radial`
@@ -656,22 +743,55 @@ layerwise_radial(
 ```
 
 Layerwise, transversal binning type. Particles are projected on nearest layers as specified by `hkl` Miller indices (see
-[class `smectic_order`](#class-smectic_order)) and the *distance* is calculated along the layer (transversally).
-Moreover, pairs of particles in different layers are not enumerated. `focal_point` is a
-[named point](shapes.md#named-points), which is used to associate particles to layers and with respect to which the
-distance should be calculated.
+[class `smectic_order`](#class-smectic_order)) and the *vector distance* is calculated along the layer (transversally) - it is a vector
+joining the first particle's projection with that of a second one. Moreover, pairs of particles in different layers are
+not enumerated. `focal_point` is a [named point](shapes.md#named-points), which is used to associate particles to layers and with respect
+to which the distance should be calculated.
 
 **Hint**: class `layerwise_radial` can be also used for cylindrical binning. For example, to project all particles onto
 a single XY plane, one can use `hkl = [0, 0, 1]`.
+
+* **Binning name**: `lr`
+
+
+### Class `linear`
+
+> Since v1.2.0
+
+```python
+linear(
+    axis,
+    focal_point = "o"
+)
+```
+
+Linear binning type. Particles are projected onto the height of the simulation box specified by `axis` and the *vector
+distance* is calculated along this axis - it is a vector joining the first particle's projection with that of a second
+one.
+
+* **Arguments**:
+  * ***axis*** <br />
+    The axis (height of the simulation box) along which the binning is performed. Allowed values:
+    * `"x"` - height of the box orthogonal to 2<sup>nd</sup> and 3<sup>rd</sup> box vectors (parallel to the
+      1<sup>st</sup> vector if the box is orthorhombic)
+    * `"y"` - height of the box orthogonal to 3<sup>rd</sup> and 1<sup>st</sup> box vectors (parallel to the
+      2<sup>nd</sup> vector if the box is orthorhombic)
+    * `"z"` - height of the box orthogonal to 1<sup>st</sup> and 2<sup>nd</sup> box vectors (parallel to the
+      3<sup>rd</sup> vector if the box is orthorhombic)
+  * ***focal_point*** <br />
+    A [named point](shapes.md#named-points), with respect to which the distance should be calculated.
+* **Binning name**: `x`, `y` or `z`, as chosen for `axis`
 
 
 ## Correlation functions
 
 Correlation functions take a pair of particles and map it to a single value. They are used in correlation observables,
-such as [class `pair_averaged_correlation`](#class-pair_averaged_correlation).
+such as [class `pair_averaged_correlation`](#class-pair_averaged_correlation). All have a *function name*, which is used in observables signatures.
 
 Currently, the following correlation functions are available:
 * [Class `s110`](#class-s110)
+* [Class `s220`](#class-s220)
+* [Class `s221`](#class-s221)
 * [Class `axes_angle`](#class-axes_angle)
 
 
@@ -683,12 +803,56 @@ s110(
 )
 ```
 
-*S*<sub>110</sub> element of the [S-expansion](https://doi.org/10.1080/00268977800101541), which is defined simply as
+*S*<sub>110</sub> element of the [S-expansion](https://doi.org/10.1080/00268977800101541), which is defined as
 
 *S*<sub>110</sub>(*i*, *j*) = **a**<sub>*i*</sub> &middot; **a**<sub>*j*</sub>,
 
 where **a**<sub>*i*</sub> and **a**<sub>*j*</sub> are (unit) [shape axes](shapes.md#shape-axes) of the *i*<sup>th</sup>
 and *j*<sup>th</sup> molecule, determined by the `axis` argument (`"primary"`, `"secondary"` or `"auxiliary"`). 
+
+* **Function name**: `S110`
+
+
+### Class `s220`
+
+> Since v1.2.0
+
+```python
+s220(
+    axis
+)
+```
+
+*S*<sub>220</sub> element of the [S-expansion](https://doi.org/10.1080/00268977800101541), which is defined as
+
+*S*<sub>220</sub>(*i*, *j*) = 3/2 (**a**<sub>*i*</sub> &middot; **a**<sub>*j*</sub>)<sup>2</sup> - 1/2,
+
+where **a**<sub>*i*</sub> and **a**<sub>*j*</sub> are (unit) [shape axes](shapes.md#shape-axes) of the *i*<sup>th</sup>
+and *j*<sup>th</sup> molecule, determined by the `axis` argument (`"primary"`, `"secondary"` or `"auxiliary"`).
+
+* **Function name**: `S220`
+
+
+### Class `s221`
+
+> Since v1.2.0
+
+```python
+s221(
+    axis
+)
+```
+
+*S*<sub>221</sub> element of the [S-expansion](https://doi.org/10.1080/00268977800101541), which is defined as
+
+*S*<sub>221</sub>(*i*, *j*) = [(**a**<sub>*i*</sub> &times; **a**<sub>*j*</sub>) &middot; **r**]
+(**a**<sub>*i*</sub> &middot; **a**<sub>*j*</sub>),
+
+where **a**<sub>*i*</sub> and **a**<sub>*j*</sub> are (unit) [shape axes](shapes.md#shape-axes) of the *i*<sup>th</sup>
+and *j*<sup>th</sup> molecule, determined by the `axis` argument (`"primary"`, `"secondary"` or `"auxiliary"`), while
+**r** is the *distance vector*, as defined by the [binning type](#binning-types) used.
+
+* **Function name**: `S221`
 
 
 ### Class `axes_angle`
@@ -706,15 +870,24 @@ The (smaller) angle between axes of two particles, expressed in degrees:
 **a**<sub>*i*</sub> and **a**<sub>*j*</sub> are (unit) [shape axes](shapes.md#shape-axes) of the *i*<sup>th</sup>
 and *j*<sup>th</sup> molecule, determined by the `axis` argument (`"primary"`, `"secondary"` or `"auxiliary"`).
 
+* **Function name**: `theta`
+
 
 ## Shape functions
 
-Shape functions take a single particle and map it to a single value. They are used for example in
-[class `smectic_order`](#class-smectic_order) and [class `fourier_tracker`](#class-fourier_tracker).
+Shape functions take a single particle and map it to a single or multiple values. They are used for example in
+[class `smectic_order`](#class-smectic_order) and [class `fourier_tracker`](#class-fourier_tracker). Each shape function has a *primary name* describing it
+as a whole. Moreover, each function value is named. For example, function representing an axis can have primary name
+`axis` and values named `x`, `y`, `z` (axis components). If a function is single-valued, the primary name and the name
+of the only value are always the same.
 
 Currently, the following correlation functions are available:
 * [Class `const`](#class-const)
 * [Class `axis`](#class-axis)
+* [Class `q_tensor`](#class-q_tensor)
+
+> Note: shape functions can be multivalued since v1.2.0. Previously, all were single-valued. The distinction between
+> *primary name* and *component names* was also introduced in that version.
 
 
 ### Class `const`
@@ -727,28 +900,77 @@ const(
 
 Constant shape function always returning `value` (`1` by default).
 
+* **Primary name**: `const`
+* **Values**:
+  * `const` - constant value of the function
+
 
 ### Class `axis`
 
 ```python
 axis(
     which,
-    comp
+    comp = "xyz"
 )
 ```
 
-Shape function returning a specific coordinate of a specific shape axis.
+Shape function returning either a specific component of a specific shape axis or all components.
 
-Arguments:
+* **Arguments**:
+  * ***which*** <br />
+    [Shape axis](shapes.md#shape-axes) whose component(s) is/are to be taken. It can be either of: `"primary"`,
+    `"secondary"` or `"auxiliary"`.
+  * ***comp*** <br />
+    Coordinate system component of the axis vector to be returned. It can be `"x"`, `"y"` or `"z"` for a single
+    component and `"xyz"` for all components.
+* **Primary name**:
+  * If `comp` = `"x"`, `"y"`, `"z"`:
+    * `[the axis]_[the comp]`
+  * If `comp` = `"xyz"`:
+    * `[the axis]`
+  * In both cases `[the axis]` is `pa`, `sa` or `aa`, standing for, respectively, primary, secondary and auxiliary axis,
+    while `[the comp]` is `x`, `y` or `z`, depending on the arguments passed.
+* **Values**:
+  * If `comp` = `"x"`, `"y"`, `"z"`:
+    * `[the axis]_[the comp]` - particular component of the axis, depending on the arguments passed.
+  * If `comp` = `"xyz"`:
+    * `x` - x coordinate of the axis
+    * `y` - y coordinate of the axis
+    * `z` - z coordinate of the axis
 
-* ***which***
+> Since v1.2.0 `"xyz"` value for the `comp` argument was introduced and was made its default value.
 
-  [Shape axis](shapes.md#shape-axes) whose component is to be taken. It can be either of: `"primary"`, `"secondary"` or
-  `"auxiliary"`.
 
-* ***comp***
+### Class `q_tensor`
 
-  Coordinate system component of the axis vector to be returned. It can be `"x"`, `"y"` or `"z"`.
+> Since v1.2.0
+
+```python
+q_tensor(
+    axis
+)
+```
+
+Shape function returning independent values of the symetric **Q**-tensor for a given particle. It is defined as
+
+**Q** = 3/2 (**a** &otimes; **a** - 1/3 **I**),
+
+where **a** is shape's axis and **I** is the identity matrix. The independent values of the **Q**-tensor are its upper
+triangular part.
+
+* **Arguments**:
+  * ***axis*** <br />
+    [Shape axis](shapes.md#shape-axes) for which the **Q**-tensor should be computed. It can be either of: `"primary"`,
+    `"secondary"` or `"auxiliary"`.
+* **Primary name**: `Q_[the axis]`, where `[the axis]` is `pa`, `sa` or `aa`, standing for, respectively, primary,
+  secondary and auxiliary axis
+* **Values**:
+  * `xx` - *Q*<sub>11</sub> tensor component
+  * `xy` - *Q*<sub>12</sub> tensor component
+  * `xz` - *Q*<sub>13</sub> tensor component
+  * `yy` - *Q*<sub>22</sub> tensor component
+  * `yz` - *Q*<sub>23</sub> tensor component
+  * `zz` - *Q*<sub>33</sub> tensor component
 
 
 [&uarr; back to the top](#observables)

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(rampack VERSION 1.1.0)
+project(rampack VERSION 1.2.0)
 
 # Available options
 option(RAMPACK_STATIC_LINKING "Build no-dependency static executable" OFF)
@@ -9,6 +9,8 @@ option(RAMPACK_ARCH_NATIVE "Compile for native CPU architecture" ON)
 add_compile_definitions(RAMPACK_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
                         RAMPACK_VERSION_MINOR=${PROJECT_VERSION_MINOR}
                         RAMPACK_VERSION_PATCH=${PROJECT_VERSION_PATCH})
+
+add_compile_definitions("RAMPACK_ROOT_DIR=\"${PROJECT_SOURCE_DIR}\"")
 
 # Check compiler support
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

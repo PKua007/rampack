@@ -12,7 +12,7 @@
 
 class MockCorrelationFunction : public trompeloeil::mock_interface<CorrelationFunction> {
 public:
-    IMPLEMENT_CONST_MOCK3(calculate);
+    IMPLEMENT_CONST_MOCK4(calculate);
     IMPLEMENT_CONST_MOCK0(getSignatureName);
 };
 

@@ -28,7 +28,7 @@ public:
          * the sum of counts for a given distance will vary with the distance (it will be proportional to
          * PairDensityCorrelation).
          */
-        NONE,
+        AVG_COUNT,
 
         /** @brief Normalize the probability as the probability distribution function
          * \f$ \int_{f_\mathrm{min}}^{f_\mathrm{max}} P(f|r)\ \mathrm{d}f = 1\f$
@@ -49,10 +49,11 @@ private:
     std::shared_ptr<PairEnumerator> pairEnumerator;
     std::shared_ptr<CorrelationFunction> function;
     Normalization normalization{};
+    bool printCount{};
 
     void renormalizeHistogram(Histogram2D &histogram) const;
-    void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair, double distance,
-                     const ShapeTraits &shapeTraits) override;
+    void consumePair(const Packing &packing, const std::pair<std::size_t, std::size_t> &idxPair,
+                     const Vector<3> &distanceVector, const ShapeTraits &shapeTraits) override;
 
 public:
     /**
@@ -64,30 +65,34 @@ public:
      * @param numFunctionBins number of bins for the CorrelationFunction values
      * @param function the CorrelationFunctions to compute
      * @param normalization type of normalization
+     * @param printCount if @a true, raw bin count will be printed in addition to function values
      * @param numThreads number of threads used to generate the histogram. If 0, all available threads will be used
      */
     ProbabilityEvolution(double maxDistance, std::size_t numDistanceBins,
                          std::shared_ptr<PairEnumerator> pairEnumerator, std::pair<double, double> functionRange,
                          std::size_t numFunctionBins, std::shared_ptr<CorrelationFunction> function,
-                         Normalization normalization = Normalization::PDF, std::size_t numThreads = 1);
+                         Normalization normalization = Normalization::PDF, bool printCount = false,
+                         std::size_t numThreads = 1);
 
     void addSnapshot(const Packing &packing, double temperature, double pressure,
                      const ShapeTraits &shapeTraits) override;
 
     /**
-     * @brief Output the histogram.
+     * @brief Outputs the histogram.
      * @details The format is
      * @code
-     * [distance 1] [function value 1] [probability/count 1,1]
+     * [distance 1] [function value 1] [probability/count 1,1] [raw count 1,1]
      * ...
-     * [distance 1] [function value N] [probability/count 1,N]
+     * [distance 1] [function value N] [probability/count 1,N] [raw count 1,N]
      *
      *   ...
      *
-     * [distance M] [function value 1] [probability/count M,1]
+     * [distance M] [function value 1] [probability/count M,1] [raw count M,1]
      * ...
-     * [distance M] [function value N] [probability/count M,N]
+     * [distance M] [function value N] [probability/count M,N] [raw count M,N]
      * @endcode
+     *
+     * The last column is outputted only if @a printCount was set @a true.
      */
     void print(std::ostream &out) const override;
 

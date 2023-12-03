@@ -389,15 +389,16 @@ namespace {
         std::array<std::size_t, 3> nBins{};
         std::copy(nBinsTokens.begin(), nBinsTokens.end(), nBins.begin());
 
+        const auto UNIT_NORMALIZATION = DensityHistogram::Normalization::UNIT;
         if (fields.find("tracker") == fields.end())
-            return std::make_unique<DensityHistogram>(nBins, nullptr, maxThreads);
+            return std::make_unique<DensityHistogram>(nBins, nullptr, UNIT_NORMALIZATION, false, maxThreads);
 
         std::istringstream trackerStream(fields.at("tracker"));
         std::string trackerName;
         trackerStream >> trackerName;
         ValidateMsg(trackerStream, DENSITY_HISTOGRAM_USAGE);
         std::unique_ptr<GoldstoneTracker> tracker = parse_tracker(trackerName, trackerStream);
-        return std::make_unique<DensityHistogram>(nBins, std::move(tracker));
+        return std::make_unique<DensityHistogram>(nBins, std::move(tracker), UNIT_NORMALIZATION, false, maxThreads);
     }
 
     void parse_observables(const std::vector<std::string> &observables, ObservablesCollector &collector,
@@ -432,7 +433,7 @@ namespace {
 
                 auto pairEnumerator = parse_pair_enumerator(observableStream, version);
                 auto rhoCorr = std::make_unique<PairDensityCorrelation>(
-                        std::move(pairEnumerator), maxDistance, numBins, maxThreads
+                    std::move(pairEnumerator), maxDistance, numBins, false, maxThreads
                 );
                 collector.addBulkObservable(std::move(rhoCorr));
             } else if (observableName == "pairAveragedCorrelation") {
@@ -446,7 +447,7 @@ namespace {
                 auto correlationFunction = parse_correlation_function(observableStream);
                 auto pairEnumerator = parse_pair_enumerator(observableStream, version);
                 auto avgCorr = std::make_unique<PairAveragedCorrelation>(
-                        std::move(pairEnumerator), std::move(correlationFunction), maxDistance, numBins, maxThreads
+                    std::move(pairEnumerator), std::move(correlationFunction), maxDistance, numBins, false, maxThreads
                 );
                 collector.addBulkObservable(std::move(avgCorr));
             } else if (observableName == "densityHistogram") {

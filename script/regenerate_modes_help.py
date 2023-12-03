@@ -2,6 +2,7 @@
 
 import subprocess
 import re
+import sys
 from typing import Union, List
 from dataclasses import dataclass
 
@@ -112,8 +113,12 @@ def export_entries(help_entries: List[List[HelpEntry]], doc_path: str, modes: Li
 
 
 def main():
-    doc_path = 'doc/operation-modes.md'
-    rampack_exec = 'rampack'
+    if len(sys.argv) != 3:
+        print(f"Usage: {sys.argv[0]} [rampack executable] [operation-modes.md path]")
+        exit(1)
+
+    rampack_exec = sys.argv[1]
+    doc_path = sys.argv[2]
     modes = ['casino', 'preview', 'shape-preview', 'trajectory']
     help_entries = []
 

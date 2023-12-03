@@ -8,11 +8,13 @@
 #include <catch2/catch.hpp>
 
 #include "core/observables/BondOrder.h"
+
 #include "core/lattice/OrthorhombicArrangingModel.h"
-#include "core/FreeBoundaryConditions.h"
-#include "core/PeriodicBoundaryConditions.h"
+#include "core/lattice/Lattice.h"
 #include "core/shapes/SphereTraits.h"
 #include "core/shapes/SpherocylinderTraits.h"
+#include "core/FreeBoundaryConditions.h"
+#include "core/PeriodicBoundaryConditions.h"
 
 
 TEST_CASE("BondOrder: hexatic") {
@@ -141,4 +143,35 @@ TEST_CASE("BondOrder: non-standard layering and bond order points") {
     bondOrder.calculate(packing, 1, 1, spherocylinderTraits);
 
     CHECK(bondOrder.getIntervalValues()[0] == Approx(1));
+}
+
+TEST_CASE("BondOrder: local vs global") {
+    // We create two square layers but rotated by 45 w.r.t. each other. The 45-degree layer has two times more shapes
+    TriclinicBox cellBox(2);
+    UnitCell unitCell(cellBox, {Shape({0.5, 0.5, 0.25}), Shape({0.75, 0.25, 0.75}), Shape({0.25, 0.75, 0.75})});
+    Lattice lattice(unitCell, {4, 4, 1});
+    auto box = lattice.getLatticeBox();
+    auto shapes = lattice.generateMolecules();
+
+    SphereTraits sphereTraits(0.5);
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    Packing packing(box, shapes, std::move(pbc), sphereTraits.getInteraction(), 1, 1);
+
+    SECTION("local bond order") {
+        BondOrder bondOrder(4, {0, 0, 2}, "o", "o", true);
+
+        bondOrder.calculate(packing, 1, 1, sphereTraits);
+
+        CHECK(bondOrder.getIntervalValues().front() == Approx(1));
+    }
+
+    SECTION("global bond order") {
+        BondOrder bondOrder(4, {0, 0, 2}, "o", "o", false);
+
+        bondOrder.calculate(packing, 1, 1, sphereTraits);
+
+        // "Normal layer" has phase 0 giving psi = 1 and "rotated" layer has phase pi/8 giving psi = -1, however
+        // "rotated" layer has two times more shapes, so it "dominates" giving 1/3 as a total bond order
+        CHECK(bondOrder.getIntervalValues().front() == Approx(1./3));
+    }
 }

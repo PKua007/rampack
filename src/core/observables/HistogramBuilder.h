@@ -46,25 +46,15 @@ class HistogramBuilder {
     static_assert(DIM >= 1);
 
 private:
-    /* Helper class, which accumulated the value and counts how many points were passed. */
-    struct CountingAccumulator {
-        T value{};
-        std::size_t numPoints{};
-
-        void addPoint(const T &newValue);
-
-        CountingAccumulator &operator+=(const CountingAccumulator &other);
-        CountingAccumulator &operator*=(double factor);
-    };
-
     std::array<double, DIM> min{};
     std::array<double, DIM> max{};
     std::array<double, DIM> step{};
     std::array<std::size_t, DIM> numBins{};
     std::size_t flatNumBins{};
     std::size_t numSnapshots{};
-    Histogram<DIM, CountingAccumulator> histogram;
-    std::vector<Histogram<DIM, CountingAccumulator>> currentHistograms;
+    Histogram<DIM, T> histogram;
+    std::vector<Histogram<DIM, T>> currentHistograms;
+    T initialValue{};
 
     template<typename T1>
     static std::array<std::decay_t<T1>, DIM> filledArray(T1 &&value);
@@ -72,20 +62,23 @@ private:
 public:
     /**
      * @brief Construct a class where for axis @a i = 0, 1, ... values are gathered in the range `[min[i], max[i]]`
-     * (inclusive) divided into `numBins[i]` bins; it setups concurrent accumulation for at most @a numThreads OpenMP
-     * threads.
+     * (inclusive) divided into `numBins[i]` bins with initial value @a initialValue; it setups concurrent accumulation
+     * for at most @a numThreads OpenMP threads.
      * @details If @a numThreads is equal to 0, @a omp_get_max_threads() threads will be used.
      */
     explicit HistogramBuilder(const std::array<double, DIM> &min, const std::array<double, DIM> &max,
-                              const std::array<std::size_t, DIM> &numBins, std::size_t numThreads = 1);
+                              const std::array<std::size_t, DIM> &numBins, std::size_t numThreads = 1,
+                              const T &initialValue = T{});
 
     /**
      * @brief Simplified version of
      * HistogramBuilder(const std::array<double, DIM>&, const std::array<double, DIM>&, const std::array<std::size_t, DIM>&, std::size_t),
      * where all dimensions have the same range and are divided into the same number of bins.
      */
-    explicit HistogramBuilder(double min, double max, std::size_t numBins, std::size_t numThreads = 1)
-            : HistogramBuilder(filledArray(min), filledArray(max), filledArray(numBins), numThreads)
+    explicit HistogramBuilder(double min, double max, std::size_t numBins, std::size_t numThreads = 1,
+                              const T &initialValue = T{})
+            : HistogramBuilder(filledArray(min), filledArray(max), filledArray(numBins), numThreads,
+                               initialValue)
     { }
 
     /**

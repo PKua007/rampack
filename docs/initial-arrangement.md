@@ -515,6 +515,8 @@ Arguments:
 
 ### Class `randomize_rotation`
 
+> Since v1.1.0
+
 ```python
 randomize_rotation(
     seed,

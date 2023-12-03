@@ -18,16 +18,20 @@ TEST_CASE("S110Correlation") {
 
     SECTION("primary axis") {
         S110Correlation s110Correlation(ShapeGeometry::Axis::PRIMARY);
-        CHECK(s110Correlation.calculate(s1, s2, traits) == Approx(M_SQRT1_2));
+        CHECK(s110Correlation.calculate(s1, s2, {1, 0, 0}, traits) == Approx(M_SQRT1_2));
     }
 
     SECTION("secondary axis") {
         S110Correlation s110Correlation(ShapeGeometry::Axis::SECONDARY);
-        CHECK(s110Correlation.calculate(s1, s2, traits) == Approx(1));
+        CHECK(s110Correlation.calculate(s1, s2, {1, 0, 0}, traits) == Approx(1));
     }
 
     SECTION("auxiliary axis") {
         S110Correlation s110Correlation(ShapeGeometry::Axis::AUXILIARY);
-        CHECK(s110Correlation.calculate(s1, s2, traits) == Approx(M_SQRT1_2));
+        CHECK(s110Correlation.calculate(s1, s2, {1, 0, 0}, traits) == Approx(M_SQRT1_2));
+    }
+
+    SECTION("signature name") {
+        CHECK(S110Correlation(ShapeGeometry::Axis::PRIMARY).getSignatureName() == "S110");
     }
 }

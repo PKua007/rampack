@@ -18,16 +18,22 @@ void PairDensityCorrelation::addSnapshot(const Packing &packing, [[maybe_unused]
 }
 
 void PairDensityCorrelation::print(std::ostream &out) const {
-    for (auto [x, y] : this->histogram.dumpValues(ReductionMethod::SUM))
-        out << x.front() << " " << y << std::endl;
+    for (auto [x, y, count] : this->histogram.dumpValues(ReductionMethod::SUM)) {
+        out << x.front() << " " << y;
+        if (this->printCount)
+            out << " " << count;
+        out << std::endl;
+    }
 }
 
 void PairDensityCorrelation::consumePair([[maybe_unused]] const Packing &packing,
-                                         const std::pair<std::size_t, std::size_t> &idxPair, double distance,
+                                         const std::pair<std::size_t, std::size_t> &idxPair,
+                                         const Vector<3> &distanceVector,
                                          [[maybe_unused]] const ShapeTraits &shapeTraits)
 {
     if (idxPair.first == idxPair.second)
         return;
+    double distance = distanceVector.norm();
     if (distance > this->histogram.getMax())
         return;
 

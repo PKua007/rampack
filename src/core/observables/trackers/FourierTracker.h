@@ -97,9 +97,8 @@ public:
     FourierTracker(const std::array<std::size_t, 3> &wavenumbers, std::shared_ptr<ShapeFunction> function);
 
     /**
-     * @brief Returns the method name, which is '`functionName`_tracker', with `functionName` as passed in the
-     * constructor.
-     * @return
+     * @brief Returns the method name, which is '`functionName`_tracker', where `functionName` is the primary name of
+     * the ShapeFunction passed in the constructor (see ShapeFunction::getPrimaryName()).
      */
     [[nodiscard]] std::string getTrackingMethodName() const override;
 
