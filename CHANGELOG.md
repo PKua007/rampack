@@ -13,6 +13,11 @@ library (later, with Python bindings as well).
 
 ## [Unreleased]
 
+### Added
+
+* Added support for all [shape axes](docs/shapes.md#shape-axes) in
+  [class `nematic_order`](docs/observables.md#class-nematic_order) observable.
+
 
 ## [1.2.0] - 2023-12-03
 
