@@ -91,6 +91,9 @@ namespace {
     MatcherAlternative create_shape_function();
     MatcherAlternative create_correlation_function();
 
+    MatcherAlternative create_shape_axis();
+    MatcherAlternative create_defaulted_shape_axis();
+
 
     auto positiveWavenumbers = MatcherArray{}
         .elementsMatch(MatcherInt{}.nonNegative().mapTo<std::size_t>())
@@ -114,16 +117,10 @@ namespace {
         .describe("with at least one non-zero element")
         .mapToStdArray<int, 3>();
 
-    auto primaryAxis = MatcherString("primary").mapTo([](const std::string&) {
-        return ShapeGeometry::Axis::PRIMARY;
-    });
-    auto secondaryAxis = MatcherString("secondary").mapTo([](const std::string&) {
-        return ShapeGeometry::Axis::SECONDARY;
-    });
-    auto auxiliaryAxis = MatcherString("auxiliary").mapTo([](const std::string&) {
-        return ShapeGeometry::Axis::AUXILIARY;
-    });
-    auto shapeAxis = primaryAxis | secondaryAxis | auxiliaryAxis;
+
+    auto shapeAxis = create_shape_axis();
+
+    auto defaultedShapeAxis = create_defaulted_shape_axis();
 
     auto binning = create_radial() | create_layerwise_radial() | create_linear();
 
@@ -220,10 +217,12 @@ namespace {
 
     MatcherDataclass create_nematic_order() {
         return MatcherDataclass("nematic_order")
-            .arguments({{"dump_qtensor", MatcherBoolean{}, "False"}})
+            .arguments({{"dump_qtensor", MatcherBoolean{}, "False"},
+                        {"axis", defaultedShapeAxis, R"("default")"}})
             .mapTo([](const DataclassData &nematicOrder) -> ObservableData {
                 auto dumpQTensor = nematicOrder["dump_qtensor"].as<bool>();
-                return {FULL_SCOPE, std::make_shared<NematicOrder>(dumpQTensor)};
+                auto axis = nematicOrder["axis"].as<std::optional<ShapeGeometry::Axis>>();
+                return {FULL_SCOPE, std::make_shared<NematicOrder>(dumpQTensor, axis)};
             });
     }
 
@@ -617,6 +616,39 @@ namespace {
             });
 
         return s110 | s220 | s221 | axesAngle;
+    }
+
+    MatcherAlternative create_shape_axis() {
+        auto primaryAxis = MatcherString("primary").mapTo([](const std::string&) {
+            return ShapeGeometry::Axis::PRIMARY;
+        });
+        auto secondaryAxis = MatcherString("secondary").mapTo([](const std::string&) {
+            return ShapeGeometry::Axis::SECONDARY;
+        });
+        auto auxiliaryAxis = MatcherString("auxiliary").mapTo([](const std::string&) {
+            return ShapeGeometry::Axis::AUXILIARY;
+        });
+
+        return primaryAxis | secondaryAxis | auxiliaryAxis;
+    }
+
+    MatcherAlternative create_defaulted_shape_axis() {
+        using OptionalAxis = std::optional<ShapeGeometry::Axis>;
+
+        auto primaryAxis = MatcherString("primary").mapTo([](const std::string&) -> OptionalAxis {
+            return ShapeGeometry::Axis::PRIMARY;
+        });
+        auto secondaryAxis = MatcherString("secondary").mapTo([](const std::string&) -> OptionalAxis {
+            return ShapeGeometry::Axis::SECONDARY;
+        });
+        auto auxiliaryAxis = MatcherString("auxiliary").mapTo([](const std::string&) -> OptionalAxis {
+            return ShapeGeometry::Axis::AUXILIARY;
+        });
+        auto defaultAxis = MatcherString("default").mapTo([](const std::string&) -> OptionalAxis {
+            return std::nullopt;
+        });
+
+        return primaryAxis | secondaryAxis | auxiliaryAxis | defaultAxis;
     }
 }
 
