@@ -29,9 +29,6 @@ TEST_CASE("NematicOrder") {
 
         nematicOrder.calculate(packing, 1, 1, mockShapeTraits);
 
-        CHECK(nematicOrder.getIntervalHeader()
-              == std::vector<std::string>{"P2", "Q_11", "Q_12", "Q_13", "Q_22", "Q_23", "Q_33"});
-        CHECK(nematicOrder.getName() == "nematic order");
         REQUIRE(nematicOrder.getIntervalValues().size() == 7);
         CHECK(nematicOrder.getIntervalValues()[0] == Approx(0.6403882032022076)); // Mathematica
         CHECK(nematicOrder.getIntervalValues()[1] == Approx(0.5));
@@ -57,6 +54,20 @@ TEST_CASE("NematicOrder") {
         CHECK(nematicOrderPrimary.getIntervalValues()[0] == Approx(1));
         REQUIRE(nematicOrderSecondary.getIntervalValues().size() == 1);
         CHECK(nematicOrderSecondary.getIntervalValues()[0] == Approx(-1./2));
+    }
+
+    SECTION("name + header") {
+        using Axis = ShapeGeometry::Axis;
+
+        CHECK(NematicOrder().getName() == "nematic order");
+        CHECK(NematicOrder(false).getIntervalHeader() == std::vector<std::string>{"P2"});
+        CHECK(NematicOrder(true).getIntervalHeader()
+              == std::vector<std::string>{"P2", "Q_11", "Q_12", "Q_13", "Q_22", "Q_23", "Q_33"});
+        CHECK(NematicOrder(false, Axis::PRIMARY).getIntervalHeader() == std::vector<std::string>{"P2_pa"});
+        CHECK(NematicOrder(true, Axis::PRIMARY).getIntervalHeader()
+              == std::vector<std::string>{"P2_pa", "Q_pa_11", "Q_pa_12", "Q_pa_13", "Q_pa_22", "Q_pa_23", "Q_pa_33"});
+        CHECK(NematicOrder(false, Axis::SECONDARY).getIntervalHeader() == std::vector<std::string>{"P2_sa"});
+        CHECK(NematicOrder(false, Axis::AUXILIARY).getIntervalHeader() == std::vector<std::string>{"P2_aa"});
     }
 
     SECTION("bug: numerical stability of eigenvalues") {

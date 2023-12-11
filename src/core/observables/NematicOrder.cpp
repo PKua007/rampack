@@ -11,7 +11,8 @@ void NematicOrder::calculate(const Packing &packing, [[maybe_unused]] double tem
 {
     this->QTensor = Matrix<3, 3>{};
     for (const auto &shape : packing) {
-        Vector<3> shapeAxis = shapeTraits.getGeometry().getAxis(shape, this->axis);
+        Vector<3> shapeAxis = shapeTraits.getGeometry().getAxis(shape,
+                                                                this->axis.value_or(ShapeGeometry::Axis::PRIMARY));
         for (std::size_t i{}; i < 3; i++)
             for (std::size_t j{}; j < 3; j++)
                 this->QTensor(i, j) += shapeAxis[i] * shapeAxis[j];
@@ -60,10 +61,35 @@ std::array<double, 3> NematicOrder::calculateEigenvalues(const Matrix<3, 3> &mat
 }
 
 std::vector<std::string> NematicOrder::getIntervalHeader() const {
-    if (this->dumpQTensor)
-        return {"P2", "Q_11", "Q_12", "Q_13", "Q_22", "Q_23", "Q_33"};
-    else
-        return {"P2"};
+    std::string subscript = this->getSubscript();
+
+    if (this->dumpQTensor) {
+        return {"P2" + subscript,
+                "Q" + subscript + "_11",
+                "Q" + subscript + "_12",
+                "Q" + subscript + "_13",
+                "Q" + subscript + "_22",
+                "Q" + subscript + "_23",
+                "Q" + subscript + "_33"};
+    } else {
+        return {"P2" + subscript};
+    }
+}
+
+std::string NematicOrder::getSubscript() const {
+    if (!axis.has_value())
+        return "";
+
+    switch (*axis) {
+        case ShapeGeometry::Axis::PRIMARY:
+            return "_pa";
+        case ShapeGeometry::Axis::SECONDARY:
+            return "_sa";
+        case ShapeGeometry::Axis::AUXILIARY:
+            return "_aa";
+    }
+
+    AssertThrow("unreachable");
 }
 
 std::vector<double> NematicOrder::getIntervalValues() const {
