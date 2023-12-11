@@ -199,7 +199,8 @@ energy_fluctuations_per_particle( )
 
 ```python
 nematic_order(
-    dump_qtensor = False
+    dump_qtensor = False,
+    axis = "default"
 )
 ```
 
@@ -208,17 +209,27 @@ the symmetric **Q**-tensor with the largest magnitude. The **Q**-tensor is defin
 
 **Q** = 1/*N* &sum;<sub>*i*</sub> (3/2 **a**<sub>*i*</sub>&otimes;**a**<sub>*i*</sub> - 1/2),
 
-where index *i* runs over all *N* particles.
+where **a**<sub>*i*</sub> is the shape axis, index *i* runs over all *N* particles and &otimes; is the outer product.
 
 * **Arguments**:
   * ***dump_qtensor*** (*= False*) <br />
     If `True`, in addition to nematic order value, independent entries of the **Q**-tensor will be printed.
+  * `since v1.3.0` ***axis*** (*= "default"*) <br />
+    [Shape axis](shapes.md#shape-axes) for which the observable should be computed. Supported values: `"primary"`,
+    `"secondary"`, `"auxiliary"`. Additional value `"default"` corresponds to the primary axis and is for backwards
+    compatibility for versions `< 1.3.0`. It should not be used in new input files.
 * **Primary name**: `Nematic order`
 * **Interval values**:
-  * `P2` - eigenvalue of the **Q**-tensor with the highest magnitude
-  * `Q11`, `Q12`, `Q13`, `Q22`, `Q23`, `Q33` - all independent (upper triangular) entries of the **Q**-tensor. Those
-    parameters are only present if `dump_qtensor = True`
+  * `P2_[ax]` - eigenvalue of the **Q**-tensor with the highest magnitude
+  * `Q_[ax]_11`, `Q_[ax]_12`, `Q_[ax]_13`, `Q_[ax]_22`, `Q_[ax]_23`, `Q_[ax]_33` - all independent (upper triangular)
+    entries of the **Q**-tensor. Those parameters are only present if `dump_qtensor = True`
+  * The subscript `[ax]` is `pa`, `sa`, or `aa` for, respectively, primary, secondary and auxiliary axis. If the axis
+    is `"default"`, the subscript is dropped altogether (`P2`, `Q_11`, etc.), for backwards compatibility.
 * **Nominal values**: None
+
+> Since v1.3.0 the shape axis can be specified. Interval values' names acquire then a subscript denoting the selected
+> axis. Leaving the argument unspecified results in a fallback to the old behavior, where the primary axis was the
+> default one and no subscripts were added.
 
 
 ### Class `smectic_order`
