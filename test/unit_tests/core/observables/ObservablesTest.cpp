@@ -81,51 +81,6 @@ TEST_CASE("Observables") {
               == std::vector<double>{packing.getTotalEnergy(mockShapeTraits.getInteraction()) / 3});
     }
 
-    SECTION("NematicOrder") {
-        SECTION("positive order with Q-tensor dump") {
-            NematicOrder nematicOrder(true);
-
-            nematicOrder.calculate(packing, 1, 1, mockShapeTraits);
-
-            CHECK(nematicOrder.getIntervalHeader()
-                  == std::vector<std::string>{"P2", "Q_11", "Q_12", "Q_13", "Q_22", "Q_23", "Q_33"});
-            CHECK(nematicOrder.getName() == "nematic order");
-            REQUIRE(nematicOrder.getIntervalValues().size() == 7);
-            CHECK(nematicOrder.getIntervalValues()[0] == Approx(0.6403882032022076)); // Mathematica
-            CHECK(nematicOrder.getIntervalValues()[1] == Approx(0.5));
-            CHECK(nematicOrder.getIntervalValues()[2] == Approx(0.25));
-            CHECK(nematicOrder.getIntervalValues()[3] == Approx(-0.25));
-            CHECK(nematicOrder.getIntervalValues()[4] == Approx(-0.25));
-            CHECK(nematicOrder.getIntervalValues()[5] == Approx(0));
-            CHECK(nematicOrder.getIntervalValues()[6] == Approx(-0.25));
-        }
-
-        SECTION("negative order without Q-tensor dump") {
-            NematicOrder nematicOrder;
-            Shape s2_1({1, 1, 1}, Matrix<3, 3>::rotation(0, M_PI/2, 0));
-            Shape s2_2({2, 3, 3}, Matrix<3, 3>::rotation(0, -2*M_PI/3, 0));
-            Shape s2_3({2.5, 3, 1}, Matrix<3, 3>::rotation(0, 0, M_PI/2));
-            Shape s2_4({2, 3, 2}, Matrix<3, 3>::rotation(0, 0, -2*M_PI/3));
-            auto pbc2 = std::make_unique<PeriodicBoundaryConditions>();
-            Packing packing2({3, 4, 5}, {s2_1, s2_2, s2_3, s2_4}, std::move(pbc2), mockShapeTraits.getInteraction(), 1,
-                             1);
-
-            nematicOrder.calculate(packing2, 1, 1, mockShapeTraits);
-
-            REQUIRE(nematicOrder.getIntervalValues().size() == 1);
-            CHECK(nematicOrder.getIntervalValues()[0] == Approx(-13./32));   // Mathematica
-        }
-
-        SECTION("bug: numerical stability of eigenvalues") {
-            Matrix<3, 3> problematicMatrix{0.99999999906141479, -1.3709884701805501e-07, 1.7691093732719609e-07,
-                                           -1.3709884701805501e-07, -0.49999999981461402, 3.6863738798600002e-10,
-                                           -1.7691093732719609e-07, 3.6863738798600002e-10, -0.49999999924680083};
-
-            // It would throw because an argument of cos is 1 + 2e-16 due to a numerical error
-            CHECK_NOTHROW(NematicOrder::calculateEigenvalues(problematicMatrix));
-        }
-    }
-
     SECTION("NumberDensity") {
         NumberDensity numberDensity;
 

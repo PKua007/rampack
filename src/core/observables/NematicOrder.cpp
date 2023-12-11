@@ -11,13 +11,13 @@ void NematicOrder::calculate(const Packing &packing, [[maybe_unused]] double tem
 {
     this->QTensor = Matrix<3, 3>{};
     for (const auto &shape : packing) {
-        Vector<3> axis = shapeTraits.getGeometry().getPrimaryAxis(shape);
+        Vector<3> shapeAxis = shapeTraits.getGeometry().getAxis(shape, this->axis);
         for (std::size_t i{}; i < 3; i++)
             for (std::size_t j{}; j < 3; j++)
-                this->QTensor(i, j) += axis[i] * axis[j];
+                this->QTensor(i, j) += shapeAxis[i] * shapeAxis[j];
     }
     this->QTensor /= static_cast<double>(packing.size());
-    // Take into account the normalisation of the order parameter
+    // Take into account the normalization of the order parameter
     this->QTensor = 0.5*(3.*this->QTensor - Matrix<3, 3>::identity());
     auto eigenvalues = calculateEigenvalues(this->QTensor);
 

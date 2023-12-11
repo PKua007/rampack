@@ -17,6 +17,7 @@ private:
     bool dumpQTensor{};
     Matrix<3, 3> QTensor;
     double P2{};
+    ShapeGeometry::Axis axis{};
 
 public:
     /**
@@ -28,7 +29,8 @@ public:
      * @brief Creates the class. If @a dumpQTensor_ is @a true, whole Q tensor (upper-triangle part) will be also
      * dumped.
      */
-    explicit NematicOrder(bool dumpQTensor_ = false) : dumpQTensor{dumpQTensor_} { }
+    explicit NematicOrder(bool dumpQTensor_ = false, ShapeGeometry::Axis axis = ShapeGeometry::Axis::PRIMARY)
+        : dumpQTensor{dumpQTensor_}, axis{axis} { }
 
     void calculate(const Packing &packing, double temperature, double pressure,
                    const ShapeTraits &shapeTraits) override;
