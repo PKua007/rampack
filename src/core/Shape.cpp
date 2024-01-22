@@ -6,6 +6,7 @@
 
 #include "Shape.h"
 
+
 void Shape::translate(const Vector<3> &translation, const BoundaryConditions &bc) {
     this->position += translation;
     this->position += bc.getCorrection(this->position);
@@ -42,7 +43,7 @@ std::ostream &operator<<(std::ostream &out, const Shape &shape) {
     out << "{" << shape.orientation(0, 0) << ", " << shape.orientation(0, 1) << ", " << shape.orientation(0, 2) << "}, ";
     out << "{" << shape.orientation(1, 0) << ", " << shape.orientation(1, 1) << ", " << shape.orientation(1, 2) << "}, ";
     out << "{" << shape.orientation(2, 0) << ", " << shape.orientation(2, 1) << ", " << shape.orientation(2, 2) << "}";
-    out << "}}";
+    out << "}, data: " << shape.getData().getSize() << " bytes}";
     return out;
 }
 
