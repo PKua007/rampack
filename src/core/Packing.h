@@ -36,6 +36,7 @@ private:
 
     // Shapes in the packing - mass centers and orientations
     std::vector<Shape> shapes;
+    std::vector<std::byte> shapeData;
     // Positions of interaction centers with respect to mass centers (coherent with particle orientations)
     std::vector<Vector<3>> interactionCentres;
     // Absolute positions of interaction centers (shapes[i].getPosition() + interactionCentres[i] + bc correction)
@@ -46,6 +47,7 @@ private:
     std::optional<NeighbourGrid> neighbourGrid;
     double interactionRange{};
     std::size_t numInteractionCentres{};
+    std::size_t shapeDataSize{};
 
     std::size_t moveThreads{};
     std::size_t scalingThreads{};
@@ -132,7 +134,49 @@ private:
     [[nodiscard]] iterator end() { return this->shapes.end() - this->moveThreads; }
 
 public:
-    using const_iterator = decltype(shapes)::const_iterator;
+    class PackingConstIterator {
+    private:
+        const Packing *packing{};
+        std::size_t idx{};
+
+        PackingConstIterator(const Packing *packing, std::size_t idx) : packing{packing}, idx{idx} { }
+
+        friend class Packing;
+
+    public:
+        using iterator_category = std::input_iterator_tag;
+        using value_type = const Shape;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const Shape*;
+        using reference = const Shape;
+
+        PackingConstIterator() = default;
+
+        PackingConstIterator& operator++() {
+            this->idx++;
+            return *this;
+        }
+
+        PackingConstIterator operator++(int) {
+            PackingConstIterator retval = *this;
+            ++(*this);
+            return retval;
+        }
+
+        bool operator==(const PackingConstIterator &other) const { return this->idx == other.idx; }
+        bool operator!=(const PackingConstIterator &other) const { return !(*this == other); }
+        value_type operator*() const {
+            Shape copiedShape = this->packing->shapes[this->idx];
+            std::size_t dataSize = this->packing->shapeDataSize;
+            const std::byte *data = this->packing->shapeData.data() + (this->idx * dataSize);
+            copiedShape.setData(ShapeData(data, dataSize, false));
+            return copiedShape;
+        }
+    };
+
+    friend class PackingConstIterator;
+
+    using const_iterator = PackingConstIterator;
 
     /**
      * @brief Creates an empty packing. Packing::restore method can then be used to load shapes.
@@ -193,12 +237,12 @@ public:
     /**
      * @brief Returns the begin iterator over the shapes in the packing.
      */
-    [[nodiscard]] const_iterator begin() const { return this->shapes.begin(); }
+    [[nodiscard]] const_iterator begin() const { return PackingConstIterator(this, 0); }
 
     /**
      * @brief Returns the end iterator over the shapes in the packing.
      */
-    [[nodiscard]] const_iterator end() const { return this->shapes.end() - this->moveThreads; }
+    [[nodiscard]] const_iterator end() const { return PackingConstIterator(this, this->size()); }
 
     /**
      * @brief Read-only access to @a i -th shape
