@@ -8,6 +8,7 @@
 #include <memory>
 #include <iosfwd>
 
+#include "ShapeData.h"
 #include "BoundaryConditions.h"
 #include "geometry/Vector.h"
 #include "geometry/Matrix.h"
@@ -21,6 +22,7 @@ class Shape {
 private:
     Vector<3> position{};
     Matrix<3, 3> orientation{};
+    ShapeData data{};
 
 public:
     /**
@@ -37,6 +39,9 @@ public:
      * @brief Constructor taking both the position and orientation of a shape.
      */
     Shape(const Vector<3> &position, const Matrix<3, 3> &orientation) : position{position}, orientation{orientation} { }
+
+    Shape(const Vector<3> &position, const Matrix<3, 3> &orientation, ShapeData data)
+            : position{position}, orientation{orientation}, data{std::move(data)} { }
 
     /**
      * @brief Translates the shape by @a translation vector respecting the boundary conditions @a bc.
@@ -62,6 +67,8 @@ public:
 
     void setOrientation(const Matrix<3, 3> &orientation_);
 
+    void setData(ShapeData data_) { this->data = std::move(data_); }
+
     /**
      * @brief Applies boundary conditions @a bc translation to @a other shape moving it near this shape.
      */
@@ -69,9 +76,11 @@ public:
 
     [[nodiscard]] const Vector<3> &getPosition() const { return this->position; }
     [[nodiscard]] const Matrix<3, 3> &getOrientation() const { return this->orientation; }
+    [[nodiscard]] const ShapeData &getData() const { return this->data; }
 
     friend bool operator==(const Shape &lhs, const Shape &rhs) {
-        return std::tie(lhs.position, lhs.orientation) == std::tie(rhs.position, rhs.orientation);
+        return std::tie(lhs.position, lhs.orientation, lhs.data)
+            == std::tie(rhs.position, rhs.orientation, rhs.data);
     }
 
     friend bool operator!=(const Shape &lhs, const Shape &rhs) {
