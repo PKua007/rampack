@@ -36,10 +36,10 @@ TEST_CASE("BinAveragedFunction") {
     using trompeloeil::_;
     auto mockShapeFunction = std::make_unique<MockShapeFunction>();
     double functionValue{};
-    ALLOW_CALL(*mockShapeFunction, calculate(std::ref(packing[0]), _)).LR_SIDE_EFFECT(functionValue = 1);
-    ALLOW_CALL(*mockShapeFunction, calculate(std::ref(packing[1]), _)).LR_SIDE_EFFECT(functionValue = 2);
-    ALLOW_CALL(*mockShapeFunction, calculate(std::ref(packing[2]), _)).LR_SIDE_EFFECT(functionValue = 4);
-    ALLOW_CALL(*mockShapeFunction, calculate(std::ref(packing[3]), _)).LR_SIDE_EFFECT(functionValue = 5);
+    ALLOW_CALL(*mockShapeFunction, calculate(_, _)).LR_WITH(_1 == packing[0]).LR_SIDE_EFFECT(functionValue = 1);
+    ALLOW_CALL(*mockShapeFunction, calculate(_, _)).LR_WITH(_1 == packing[1]).LR_SIDE_EFFECT(functionValue = 2);
+    ALLOW_CALL(*mockShapeFunction, calculate(_, _)).LR_WITH(_1 == packing[2]).LR_SIDE_EFFECT(functionValue = 4);
+    ALLOW_CALL(*mockShapeFunction, calculate(_, _)).LR_WITH(_1 == packing[3]).LR_SIDE_EFFECT(functionValue = 5);
     ALLOW_CALL(*mockShapeFunction, getValues()).LR_RETURN(std::vector<double>{functionValue});
     ALLOW_CALL(*mockShapeFunction, getPrimaryName()).RETURN("func");
 
