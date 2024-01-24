@@ -31,8 +31,9 @@ void WolframWriter::storeAffineTransform(std::ostream &out, const Packing &packi
     out << shapePrinter.print({});
     out << ",AffineTransform@#]& /@ {" << std::endl;
     for (std::size_t i{}; i < size; i++) {
-        const auto &pos = packing[i].getPosition();
-        const auto &rot = packing[i].getOrientation();
+        const auto &shape = packing[i];
+        const auto pos = shape.getPosition();
+        const auto rot = shape.getOrientation();
         out << "{{{" << rot(0, 0) << ", " << rot(0, 1) << ", " << rot(0, 2) << "}, ";
         out << "{" << rot(1, 0) << ", " << rot(1, 1) << ", " << rot(1, 2) << "}, ";
         out << "{" << rot(2, 0) << ", " << rot(2, 1) << ", " << rot(2, 2) << "}}, ";

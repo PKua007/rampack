@@ -34,12 +34,14 @@ private:
     // shapes, interactionCentres and absoluteInteractionCentres contain additional slots at the end for temporary data
     // for all threads
 
-    // Shapes in the packing - mass centers and orientations
-    std::vector<Shape> shapes;
-    std::vector<std::byte> shapeData;
-    // Positions of interaction centers with respect to mass centers (coherent with particle orientations)
+    // Shapes in the packing - centers, orientations and auxiliary data
+    std::vector<Vector<3>> shapePositions;
+    std::vector<Matrix<3, 3>> shapeOrientations;
+    std::vector<std::byte> shapeDatas;
+
+    // Positions of interaction centers with respect to shape centers (coherent with particle orientations)
     std::vector<Vector<3>> interactionCentres;
-    // Absolute positions of interaction centers (shapes[i].getPosition() + interactionCentres[i] + bc correction)
+    // Absolute positions of interaction centers (shapesPositions[i] + interactionCentres[i] + bc correction)
     std::vector<Vector<3>> absoluteInteractionCentres;
 
     TriclinicBox box;
@@ -62,13 +64,17 @@ private:
     std::vector<int> lastMoveOverlapDeltas{};
     std::size_t lastScalingNumOverlaps{};
     TriclinicBox lastBox;
-    std::vector<Shape> lastShapes;
+    std::vector<Vector<3>> lastShapePositions;
     std::optional<NeighbourGrid> tempNeighbourGrid;     // temp ng is used for swapping in volume moves
 
     std::size_t neighbourGridRebuilds{};
     std::size_t neighbourGridResizes{};
     double neighbourGridRebuildMicroseconds{};
 
+
+    void copyShape(std::size_t fromIdx, std::size_t toIdx);
+    void translateShapeWithoutInteractionCenters(std::size_t idx, const Vector<3> &translation);
+    void rotateShapeWithoutInteractionCenters(std::size_t idx, const Matrix<3, 3> &rotation);
 
     static bool areShapesWithinBox(const std::vector<Shape> &shapes, const TriclinicBox &box);
     static bool isBoxUpscaled(const TriclinicBox &oldBox, const TriclinicBox &newBox);
@@ -128,10 +134,17 @@ private:
     [[nodiscard]] double getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coord,
                                                     const Interaction &interaction) const;
 
-    using iterator = decltype(shapes)::iterator;
+    // Must be inline so that the iterator is inlined by the optimizer
+    Shape generateShapeView(std::size_t idx) const {
+        const auto &pos = this->shapePositions[idx];
+        const auto &rot = this->shapeOrientations[idx];
 
-    [[nodiscard]] iterator begin() { return this->shapes.begin(); }
-    [[nodiscard]] iterator end() { return this->shapes.end() - this->moveThreads; }
+        std::size_t dataSize = this->shapeDataSize;
+        const std::byte *data = this->shapeDatas.data() + (idx * dataSize);
+        ShapeData shapeData(data, dataSize, false);
+
+        return Shape(pos, rot, std::move(shapeData));
+    }
 
 public:
     class PackingConstIterator {
@@ -165,13 +178,7 @@ public:
 
         bool operator==(const PackingConstIterator &other) const { return this->idx == other.idx; }
         bool operator!=(const PackingConstIterator &other) const { return !(*this == other); }
-        value_type operator*() const {
-            Shape copiedShape = this->packing->shapes[this->idx];
-            std::size_t dataSize = this->packing->shapeDataSize;
-            const std::byte *data = this->packing->shapeData.data() + (this->idx * dataSize);
-            copiedShape.setData(ShapeData(data, dataSize, false));
-            return copiedShape;
-        }
+        value_type operator*() const { return this->packing->generateShapeView(this->idx); }
     };
 
     friend class PackingConstIterator;
@@ -227,12 +234,12 @@ public:
     /**
      * @brief Return the number of shapes in the packing.
      */
-    [[nodiscard]] std::size_t size() const { return this->shapes.size() - this->moveThreads; }
+    [[nodiscard]] std::size_t size() const { return this->shapePositions.size() - this->moveThreads; }
 
     /**
      * @brief Returns @a true, if packing is empty, false otherwise.
      */
-    [[nodiscard]] bool empty() const { return this->shapes.size() == this->moveThreads; }
+    [[nodiscard]] bool empty() const { return this->shapePositions.size() == this->moveThreads; }
 
     /**
      * @brief Returns the begin iterator over the shapes in the packing.
@@ -247,17 +254,17 @@ public:
     /**
      * @brief Read-only access to @a i -th shape
      */
-    [[nodiscard]] const Shape &operator[](std::size_t i) const;
+    [[nodiscard]] Shape operator[](std::size_t i) const;
 
     /**
      * @brief Returns the first shape in the packing.
      */
-    [[nodiscard]] const Shape &front() const;
+    [[nodiscard]] Shape front() const;
 
     /**
      * @brief Returns the last shape in the packing.
      */
-    [[nodiscard]] const Shape &back() const;
+    [[nodiscard]] Shape back() const;
 
     [[nodiscard]] const TriclinicBox &getBox() const { return this->box; }
 
