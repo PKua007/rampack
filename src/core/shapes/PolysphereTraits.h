@@ -93,7 +93,7 @@ public:
             return shape.getOrientation() * this->geometricOrigin;
         }
 
-        [[nodiscard]] double getVolume() const override { return this->volume; }
+        [[nodiscard]] double getVolume([[maybe_unused]] const Shape &shape) const override { return this->volume; }
 
         [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->sphereData; }
 

@@ -100,11 +100,11 @@ TEST_CASE("PolyspherocylinderBananaTraits: points") {
 TEST_CASE("PolyspherocylinderBananaTraits: volume") {
     SECTION("2 acute segments") {
         PolyspherocylinderBananaTraits traits(3, 5*M_PI/3, 2, 1);
-        CHECK(traits.getGeometry().getVolume() == Approx(37.3725974707442));    // Mathematica value
+        CHECK(traits.getGeometry().getVolume({}) == Approx(37.3725974707442));    // Mathematica value
     }
 
     SECTION("3 obtuse segments") {
         PolyspherocylinderBananaTraits traits(2, M_PI/3, 3, 1);
-        CHECK(traits.getGeometry().getVolume() == Approx(10.73038812797451));    // Mathematica value
+        CHECK(traits.getGeometry().getVolume({}) == Approx(10.73038812797451));    // Mathematica value
     }
 }

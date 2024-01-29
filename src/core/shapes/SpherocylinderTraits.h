@@ -65,7 +65,7 @@ public:
     getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;
 
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
-    [[nodiscard]] double getVolume() const override;
+    [[nodiscard]] double getVolume(const Shape &shape) const override;
 
     [[nodiscard]] bool hasHardPart() const override { return true; }
     [[nodiscard]] bool hasWallPart() const override { return true; }

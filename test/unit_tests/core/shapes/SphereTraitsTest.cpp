@@ -74,5 +74,5 @@ TEST_CASE("Sphere: geometry") {
     CHECK_THROWS(sphereTraits.getGeometry().getPrimaryAxis(Shape{}));
     CHECK_THROWS(sphereTraits.getGeometry().getSecondaryAxis(Shape{}));
     CHECK(sphereTraits.getGeometry().getGeometricOrigin(Shape{}) == Vector<3>{0, 0, 0});
-    CHECK(sphereTraits.getVolume() == Approx(32./3*M_PI));
+    CHECK(sphereTraits.getVolume({}) == Approx(32./3*M_PI));
 }

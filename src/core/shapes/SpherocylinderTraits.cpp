@@ -46,7 +46,7 @@ bool SpherocylinderTraits::overlapBetween(const Vector<3> &pos1, const Matrix<3,
            < 4 * this->radius * this->radius;
 }
 
-double SpherocylinderTraits::getVolume() const {
+double SpherocylinderTraits::getVolume([[maybe_unused]] const Shape &shape) const {
     return M_PI*this->radius*this->radius*this->length + 4./3*M_PI*std::pow(this->radius, 3);
 }
 

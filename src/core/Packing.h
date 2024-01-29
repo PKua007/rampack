@@ -312,7 +312,7 @@ public:
     /**
      * @brief Calculates the packing fraction of the packing assuming that a single molecule has @a shapeVolume volume.
      */
-    [[nodiscard]] double getPackingFraction(double shapeVolume) const;
+    [[nodiscard]] double getPackingFraction(const ShapeGeometry &geometry) const;
 
     /**
      * @brief Return the number density, so the number of particles divided by the volume of the packing.

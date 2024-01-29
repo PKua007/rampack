@@ -23,7 +23,7 @@ TEST_CASE("Observables") {
     using trompeloeil::_;
 
     MockShapeTraits mockShapeTraits;
-    ALLOW_CALL(mockShapeTraits, getVolume()).RETURN(2);
+    ALLOW_CALL(mockShapeTraits, getVolume(_)).RETURN(2);
     ALLOW_CALL(mockShapeTraits, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{1, 0, 0});
     ALLOW_CALL(mockShapeTraits, hasSoftPart()).RETURN(true);
     ALLOW_CALL(mockShapeTraits, hasHardPart()).RETURN(false);

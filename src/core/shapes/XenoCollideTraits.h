@@ -137,7 +137,7 @@ public:
         return shape.getOrientation() * this->geometricOrigin;
     }
 
-    [[nodiscard]] double getVolume() const final { return this->volume; }
+    [[nodiscard]] double getVolume([[maybe_unused]] const Shape &shape) const final { return this->volume; }
 
     [[nodiscard]] bool hasHardPart() const override { return true; }
     [[nodiscard]] bool hasWallPart() const override { return true; }

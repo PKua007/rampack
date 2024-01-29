@@ -247,13 +247,15 @@ Shape Packing::back() const {
     return this->generateShapeView(this->size() - 1);
 }
 
-double Packing::getPackingFraction(double shapeVolume) const {
-    Expects(shapeVolume >= 0);
-    return this->getNumberDensity() * shapeVolume;
+double Packing::getPackingFraction(const ShapeGeometry &geometry) const {
+    double shapesVolume = std::accumulate(this->begin(), this->end(), 0.0, [&geometry](double vol, const Shape &shape) {
+        return vol + geometry.getVolume(shape);
+    });
+    return shapesVolume / this->getVolume();
 }
 
 double Packing::getNumberDensity() const {
-    return this->size() / this->getVolume();
+    return static_cast<double>(this->size()) / this->getVolume();
 }
 
 void Packing::acceptTranslation() {

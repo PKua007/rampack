@@ -86,7 +86,8 @@ int ShapePreviewMode::main(int argc, char **argv) {
 
 void ShapePreviewMode::printGeometryInfo(const ShapeGeometry &geometry) {
     this->logger << "## Geometry info" << std::endl;
-    this->logger << "Volume           : " << geometry.getVolume() << std::endl;
+    // TODO: what about shape volume for polidispersity?
+    //this->logger << "Volume           : " << geometry.getVolume() << std::endl;
     this->logger << "Geometric origin : " << geometry.getGeometricOrigin({}) << std::endl;
 
     // Axes

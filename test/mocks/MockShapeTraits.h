@@ -38,7 +38,7 @@ public:
     MAKE_CONST_MOCK0(getInteractionCentres, std::vector<Vector<3>>(), override);
     MAKE_CONST_MOCK0(getTotalRangeRadius, double(), override);
 
-    MAKE_CONST_MOCK0(getVolume, double(), override);
+    MAKE_CONST_MOCK1(getVolume, double(const Shape &), override);
     MAKE_CONST_MOCK1(getPrimaryAxis, Vector<3>(const Shape &), override);
     MAKE_CONST_MOCK1(getSecondaryAxis, Vector<3>(const Shape &), override);
     MAKE_CONST_MOCK1(getGeometricOrigin, Vector<3>(const Shape &), override);
