@@ -33,7 +33,7 @@ TEST_CASE("PolysphereLollipopTraits: basics") {
         const auto &geometry = traits.getGeometry();
         CHECK_THAT(geometry.getGeometricOrigin({}), IsApproxEqual({0, 0, 0}, 1e-12));
         CHECK_THAT(geometry.getPrimaryAxis({}), IsApproxEqual({0, 0, 1}, 1e-12));
-        CHECK(geometry.getVolume() == Approx(1217*M_PI/12));      // Mathematica value
+        CHECK(geometry.getVolume({}) == Approx(1217*M_PI/12));      // Mathematica value
         CHECK_THAT(geometry.getNamedPoint("s0"), IsApproxEqual({0, 0, -4.5}, 1e-12));
         CHECK_THAT(geometry.getNamedPoint("ss"), IsApproxEqual({0, 0, -4.5}, 1e-12));
         CHECK_THAT(geometry.getNamedPoint("s2"), IsApproxEqual({0, 0, 2.5}, 1e-12));

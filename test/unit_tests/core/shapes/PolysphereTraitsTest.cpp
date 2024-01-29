@@ -74,7 +74,7 @@ TEST_CASE("PolysphereTraits: hard interactions") {
     }
 
     SECTION("getVolume") {
-        CHECK(traits.getGeometry().getVolume() == Approx(4.71238898038469));
+        CHECK(traits.getGeometry().getVolume({}) == Approx(4.71238898038469));
     }
 
     SECTION("primary axis") {

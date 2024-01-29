@@ -142,7 +142,7 @@ TEST_CASE("Spherocylinder: wall overlap") {
 TEST_CASE("Spherocylinder: getVolume") {
     SpherocylinderTraits traits(3, 2);
 
-    CHECK(traits.getVolume() == Approx(68 * M_PI / 3));
+    CHECK(traits.getVolume({}) == Approx(68 * M_PI / 3));
 }
 
 TEST_CASE("Spherocylinder: toWolfram") {

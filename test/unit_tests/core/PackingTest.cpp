@@ -85,6 +85,18 @@ namespace {
 
         [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return {{0, 0, 0}, {1, 0, 0}}; }
     };
+
+    class SphereGeometry : public ShapeGeometry {
+    private:
+        double radius{};
+
+    public:
+        explicit SphereGeometry(double radius) : radius{radius} { }
+
+        double getVolume([[maybe_unused]] const Shape &shape) const override {
+            return  4./3*M_PI*std::pow(this->radius, 3);
+        }
+    };
 }
 
 TEST_CASE("Packing: single interaction center operations") {
@@ -189,8 +201,8 @@ TEST_CASE("Packing: single interaction center operations") {
     }
 
     SECTION("packing fraction") {
-        double sphereVolume = 4./3*M_PI*std::pow(radius, 3);
-        CHECK(packing.getPackingFraction(sphereVolume) == Approx(0.001570796326794897));
+        SphereGeometry geometry(radius);
+        CHECK(packing.getPackingFraction(geometry) == Approx(0.001570796326794897));
     }
 
     SECTION("number density") {

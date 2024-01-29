@@ -15,7 +15,7 @@
 namespace {
     class HelperShapeGeometry : public ShapeGeometry {
     public:
-        [[nodiscard]] double getVolume() const override { return 0; }
+        [[nodiscard]] double getVolume([[maybe_unused]] const Shape &) const override { return 0; }
 
         [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const override {
             return shape.getOrientation() * Vector<3>{1, 0, 0};

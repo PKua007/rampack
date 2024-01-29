@@ -233,7 +233,7 @@ TEST_CASE("XenoCollide: spherocylinder basic features") {
     XenoCollideSpherocylinderTraits traits(l, r);
 
     SECTION("volume") {
-        CHECK(traits.getVolume() == Approx(68 * M_PI / 3));
+        CHECK(traits.getVolume({}) == Approx(68 * M_PI / 3));
     }
 
     SECTION("primary axis") {

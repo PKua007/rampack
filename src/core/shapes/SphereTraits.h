@@ -80,7 +80,7 @@ public:
     getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;
 
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
-    [[nodiscard]] double getVolume() const override;
+    [[nodiscard]] double getVolume(const Shape &shape) const override;
 
     [[nodiscard]] double getRadius() const { return this->radius; }
 };

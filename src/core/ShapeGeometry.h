@@ -57,7 +57,7 @@ public:
     /**
      * @brief Returns the volume of the shape.
      */
-    [[nodiscard]] virtual double getVolume() const = 0;
+    [[nodiscard]] virtual double getVolume(const Shape &shape) const = 0;
 
     /**
      * @brief Returns the primary (long) molecular axis for a given @a shape.

@@ -91,7 +91,7 @@ public:
                                    std::optional<double> volume = 0,
                                    const ShapeGeometry::NamedPoints& customNamedPoints = {});
 
-        [[nodiscard]] double getVolume() const override { return this->volume; }
+        [[nodiscard]] double getVolume([[maybe_unused]] const Shape &shape) const override { return this->volume; }
 
         [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override {
             if (!this->primaryAxis.has_value())

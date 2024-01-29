@@ -28,7 +28,7 @@ SphereTraits::SphereTraits(double radius, std::shared_ptr<CentralInteraction> ce
     this->registerNamedPoint("cm", {0, 0, 0});
 }
 
-double SphereTraits::getVolume() const {
+double SphereTraits::getVolume([[maybe_unused]] const Shape &shape) const {
     return 4./3 * M_PI * std::pow(this->radius, 3);
 }
 
