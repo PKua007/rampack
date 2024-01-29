@@ -36,35 +36,57 @@ CompoundInteraction::CompoundInteraction(const Interaction &interaction1, const 
 }
 
 double CompoundInteraction::calculateEnergyBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1,
-                                                   std::size_t idx1, const Vector<3> &pos2,
-                                                   const Matrix<3, 3> &orientation2, std::size_t idx2,
-                                                   const BoundaryConditions &bc) const
+                                                   const std::byte *data1, std::size_t idx1, const Vector<3> &pos2,
+                                                   const Matrix<3, 3> &orientation2, const std::byte *data2,
+                                                   std::size_t idx2, const BoundaryConditions &bc) const
 {
     double energy{};
-    if (this->hasSoftPart1)
-        energy += this->interaction1.calculateEnergyBetween(pos1, orientation1, idx1, pos2, orientation2, idx2, bc);
-    if (this->hasSoftPart2)
-        energy += this->interaction2.calculateEnergyBetween(pos1, orientation1, idx1, pos2, orientation2, idx2, bc);
+    if (this->hasSoftPart1) {
+        energy += this->interaction1.calculateEnergyBetween(pos1, orientation1, data1, idx1,
+                                                            pos2, orientation2, data2, idx2,
+                                                            bc);
+    }
+    if (this->hasSoftPart2) {
+        energy += this->interaction2.calculateEnergyBetween(pos1, orientation1, data1, idx1,
+                                                            pos2, orientation2, data2, idx2,
+                                                            bc);
+    }
     return energy;
 }
 
-bool CompoundInteraction::overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1, std::size_t idx1,
-                                         const Vector<3> &pos2, const Matrix<3, 3> &orientation2, std::size_t idx2,
+bool CompoundInteraction::overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1,
+                                         const std::byte *data1, std::size_t idx1, const Vector<3> &pos2,
+                                         const Matrix<3, 3> &orientation2, const std::byte *data2, std::size_t idx2,
                                          const BoundaryConditions &bc) const
 {
-    if (this->hasHardPart1 && this->interaction1.overlapBetween(pos1, orientation1, idx1, pos2, orientation2, idx2, bc))
+    if (this->hasHardPart1 && this->interaction1.overlapBetween(pos1, orientation1, data1, idx1,
+                                                                pos2, orientation2, data2, idx2,
+                                                                bc))
+    {
         return true;
-    if (this->hasHardPart2 && this->interaction2.overlapBetween(pos1, orientation1, idx1, pos2, orientation2, idx2, bc))
+    }
+    if (this->hasHardPart2 && this->interaction2.overlapBetween(pos1, orientation1, data1, idx1,
+                                                                pos2, orientation2, data2, idx2,
+                                                                bc))
+    {
         return true;
+    }
     return false;
 }
 
-bool CompoundInteraction::overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation, std::size_t idx,
-                                          const Vector<3> &wallOrigin,  const Vector<3> &wallVector) const
+bool CompoundInteraction::overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation, const std::byte *data,
+                                          std::size_t idx, const Vector<3> &wallOrigin,
+                                          const Vector<3> &wallVector) const
 {
-    if (this->hasWallPart1 && this->interaction1.overlapWithWall(pos, orientation, idx, wallOrigin, wallVector))
+    if (this->hasWallPart1
+        && this->interaction1.overlapWithWall(pos, orientation, data, idx, wallOrigin, wallVector))
+    {
         return true;
-    if (this->hasWallPart2 && this->interaction2.overlapWithWall(pos, orientation, idx, wallOrigin, wallVector))
+    }
+    if (this->hasWallPart2
+        && this->interaction2.overlapWithWall(pos, orientation, data, idx, wallOrigin, wallVector))
+    {
         return true;
+    }
     return false;
 }

@@ -4,6 +4,7 @@
 
 #include "Interaction.h"
 
+
 double Interaction::calculateEnergyBetweenShapes(const Shape &shape1, const Shape &shape2,
                                                  const BoundaryConditions &bc) const
 {
@@ -11,16 +12,16 @@ double Interaction::calculateEnergyBetweenShapes(const Shape &shape1, const Shap
 
     auto centres = this->getInteractionCentres();
     if (centres.empty()) {
-        return this->calculateEnergyBetween(shape1.getPosition(), shape1.getOrientation(), 0,
-                                            shape2.getPosition(), shape2.getOrientation(), 0,
+        return this->calculateEnergyBetween(shape1.getPosition(), shape1.getOrientation(), shape1.getData().raw(), 0,
+                                            shape2.getPosition(), shape2.getOrientation(), shape2.getData().raw(), 0,
                                             bc);
     } else {
         for (std::size_t i{}; i < centres.size(); i++) {
             auto pos1 = Interaction::getCentrePositionForShape(shape1, centres[i]);
             for (std::size_t j{}; j < centres.size(); j++) {
                 auto pos2 = Interaction::getCentrePositionForShape(shape2, centres[j]);
-                energy += this->calculateEnergyBetween(pos1, shape1.getOrientation(), i,
-                                                       pos2, shape2.getOrientation(), j,
+                energy += this->calculateEnergyBetween(pos1, shape1.getOrientation(), shape1.getData().raw(), i,
+                                                       pos2, shape2.getOrientation(), shape2.getData().raw(), j,
                                                        bc);
             }
         }
@@ -32,16 +33,20 @@ double Interaction::calculateEnergyBetweenShapes(const Shape &shape1, const Shap
 bool Interaction::overlapBetweenShapes(const Shape &shape1, const Shape &shape2, const BoundaryConditions &bc) const {
     auto centres = this->getInteractionCentres();
     if (centres.empty()) {
-        return this->overlapBetween(shape1.getPosition(), shape1.getOrientation(), 0,
-                                    shape2.getPosition(), shape2.getOrientation(), 0,
+        return this->overlapBetween(shape1.getPosition(), shape1.getOrientation(), shape1.getData().raw(), 0,
+                                    shape2.getPosition(), shape2.getOrientation(), shape2.getData().raw(), 0,
                                     bc);
     } else {
         for (std::size_t i{}; i < centres.size(); i++) {
             auto pos1 = Interaction::getCentrePositionForShape(shape1, centres[i]);
             for (std::size_t j{}; j < centres.size(); j++) {
                 auto pos2 = Interaction::getCentrePositionForShape(shape2, centres[j]);
-                if (this->overlapBetween(pos1, shape1.getOrientation(), i, pos2, shape2.getOrientation(), j, bc))
+                if (this->overlapBetween(pos1, shape1.getOrientation(), shape1.getData().raw(), i,
+                                         pos2, shape2.getOrientation(), shape2.getData().raw(), j,
+                                         bc))
+                {
                     return true;
+                }
             }
         }
         return false;
@@ -74,11 +79,12 @@ bool Interaction::overlapWithWallForShape(const Shape &shape, const Vector<3> &w
 {
     auto centres = this->getInteractionCentres();
     if (centres.empty()) {
-        return this->overlapWithWall(shape.getPosition(), shape.getOrientation(), 0, wallOrigin, wallVector);
+        return this->overlapWithWall(shape.getPosition(), shape.getOrientation(), shape.getData().raw(), 0, wallOrigin,
+                                     wallVector);
     } else {
         for (std::size_t i{}; i < centres.size(); i++) {
             auto pos = Interaction::getCentrePositionForShape(shape, centres[i]);
-            if (this->overlapWithWall(pos, shape.getOrientation(), i, wallOrigin, wallVector))
+            if (this->overlapWithWall(pos, shape.getOrientation(), shape.getData().raw(), i, wallOrigin, wallVector))
                 return true;
         }
         return false;

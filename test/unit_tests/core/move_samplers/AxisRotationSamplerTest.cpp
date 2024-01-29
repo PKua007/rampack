@@ -43,7 +43,7 @@ TEST_CASE("AxisRotationSampler") {
     ALLOW_CALL(sphereWithAxis, hasSoftPart()).RETURN(false);
     ALLOW_CALL(sphereWithAxis, getRangeRadius()).RETURN(1);
     ALLOW_CALL(sphereWithAxis, getTotalRangeRadius()).RETURN(1);
-    ALLOW_CALL(sphereWithAxis, overlapBetween(_, _, _, _, _, _, _)).RETURN(_7.getDistance2(_1, _4) < 1);
+    ALLOW_CALL(sphereWithAxis, overlapBetween(_, _, _, _, _, _, _, _, _)).RETURN(_9.getDistance2(_1, _5) < 1);
     ALLOW_CALL(sphereWithAxis, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(sphereWithAxis, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{1, 0, 0});
 

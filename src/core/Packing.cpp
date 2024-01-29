@@ -87,7 +87,7 @@ void Packing::reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, co
 
         const auto &shapeData = shape.getData();
         Assert(shapeData.getSize() == this->shapeDataSize);
-        const auto *data = shapeData.getRawData();
+        const auto *data = shapeData.raw();
         std::copy(data, data + this->shapeDataSize,
                   newDatas.begin() + static_cast<std::ptrdiff_t>(i * this->shapeDataSize));
     }
@@ -420,9 +420,11 @@ std::size_t Packing::countParticleOverlaps(std::size_t originalParticleIdx, std:
 
                     if (interaction.overlapBetween(this->shapePositions[tempParticleIdx],
                                                    this->shapeOrientations[tempParticleIdx],
+                                                   this->getShapeDataPtr(tempParticleIdx),
                                                    0,
                                                    this->shapePositions[j],
                                                    this->shapeOrientations[j],
+                                                   this->getShapeDataPtr(j),
                                                    0,
                                                    cellTranslation))
                     {
@@ -473,6 +475,7 @@ std::size_t Packing::countTotalOverlapsNGCellHelper(const std::array<std::size_t
             std::size_t particleIdx1 = *cellIt1;
             const auto &pos1 = this->shapePositions[particleIdx1];
             const auto &orientation1 = this->shapeOrientations[particleIdx1];
+            const auto *data1 = this->getShapeDataPtr(particleIdx1);
 
             // Overlaps within the cell
             HardcodedTranslation noTranslation({});
@@ -480,7 +483,11 @@ std::size_t Packing::countTotalOverlapsNGCellHelper(const std::array<std::size_t
                 std::size_t particleIdx2 = *cellIt2;
                 const auto &pos2 = this->shapePositions[particleIdx2];
                 const auto &orientation2 = this->shapeOrientations[particleIdx2];
-                if (interaction.overlapBetween(pos1, orientation1, 0, pos2, orientation2, 0, noTranslation)) {
+                const auto *data2 = this->getShapeDataPtr(particleIdx2);
+                if (interaction.overlapBetween(pos1, orientation1, data1, 0,
+                                               pos2, orientation2, data2, 0,
+                                               noTranslation))
+                {
                     if (earlyExit) return 1;
                     overlapsCounted++;
                 }
@@ -492,7 +499,11 @@ std::size_t Packing::countTotalOverlapsNGCellHelper(const std::array<std::size_t
                 for (auto particleIdx2 : cell.getNeighbours()) { // NOLINT(readability-use-anyofallof)
                     const auto &pos2 = this->shapePositions[particleIdx2];
                     const auto &orientation2 = this->shapeOrientations[particleIdx2];
-                    if (interaction.overlapBetween(pos1, orientation1, 0, pos2, orientation2, 0, cellTranslation)) {
+                    const auto *data2 = this->getShapeDataPtr(particleIdx2);
+                    if (interaction.overlapBetween(pos1, orientation1, data1, 0,
+                                                   pos2, orientation2, data2, 0,
+                                                   cellTranslation))
+                    {
                         if (earlyExit) return 1;
                         overlapsCounted++;
                     }
@@ -507,6 +518,7 @@ std::size_t Packing::countTotalOverlapsNGCellHelper(const std::array<std::size_t
             std::size_t centre1 = centreIdx1 % this->numInteractionCentres;
             const auto &pos1 = this->absoluteInteractionCentres[centreIdx1];
             const auto &orientation1 = this->shapeOrientations[particleIdx1];
+            const auto *data1 = this->getShapeDataPtr(particleIdx1);
 
             // Overlaps within the cell
             HardcodedTranslation noTranslation({});
@@ -518,7 +530,9 @@ std::size_t Packing::countTotalOverlapsNGCellHelper(const std::array<std::size_t
                 std::size_t centre2 = centreIdx2 % this->numInteractionCentres;
                 const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
                 const auto &orientation2 = this->shapeOrientations[particleIdx2];
-                if (interaction.overlapBetween(pos1, orientation1, centre1, pos2, orientation2, centre2,
+                const auto *data2 = this->getShapeDataPtr(particleIdx2);
+                if (interaction.overlapBetween(pos1, orientation1, data1, centre1,
+                                               pos2, orientation2, data2, centre2,
                                                noTranslation))
                 {
                     if (earlyExit) return 1;
@@ -536,7 +550,9 @@ std::size_t Packing::countTotalOverlapsNGCellHelper(const std::array<std::size_t
                     std::size_t centre2 = centreIdx2 % this->numInteractionCentres;
                     const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
                     const auto &orientation2 = this->shapeOrientations[particleIdx2];
-                    if (interaction.overlapBetween(pos1, orientation1, centre1, pos2, orientation2, centre2,
+                    const auto *data2 = this->getShapeDataPtr(particleIdx2);
+                    if (interaction.overlapBetween(pos1, orientation1, data1, centre1,
+                                                   pos2, orientation2, data2, centre2,
                                                    cellTrans))
                     {
                         if (earlyExit) return 1;
@@ -621,9 +637,11 @@ std::size_t Packing::countOverlapsBetweenParticlesWithoutNG(std::size_t tempPart
     if (this->numInteractionCentres == 0) {
         if (interaction.overlapBetween(this->shapePositions[tempParticleIdx],
                                        this->shapeOrientations[tempParticleIdx],
+                                       this->getShapeDataPtr(tempParticleIdx),
                                        0,
                                        this->shapePositions[anotherParticleIdx],
                                        this->shapeOrientations[anotherParticleIdx],
+                                       this->getShapeDataPtr(anotherParticleIdx),
                                        0,
                                        *this->bc))
         {
@@ -635,11 +653,16 @@ std::size_t Packing::countOverlapsBetweenParticlesWithoutNG(std::size_t tempPart
             std::size_t centreIdx1 = tempParticleIdx * this->numInteractionCentres + centre1;
             const auto &pos1 = this->absoluteInteractionCentres[centreIdx1];
             const auto &orientation1 = this->shapeOrientations[tempParticleIdx];
+            const auto *data1 = this->getShapeDataPtr(tempParticleIdx);
             for (std::size_t centre2{}; centre2 < this->numInteractionCentres; centre2++) {
                 std::size_t centreIdx2 = anotherParticleIdx * this->numInteractionCentres + centre2;
                 const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
                 const auto &orientation2 = this->shapeOrientations[anotherParticleIdx];
-                if (interaction.overlapBetween(pos1, orientation1, centre1, pos2, orientation2, centre2, *this->bc)) {
+                const auto *data2 = this->getShapeDataPtr(anotherParticleIdx);
+                if (interaction.overlapBetween(pos1, orientation1, data1, centre1,
+                                               pos2, orientation2, data2, centre2,
+                                               *this->bc))
+                {
                     if (earlyExit) return 1;
                     overlapsCounted++;
                 }
@@ -661,6 +684,7 @@ std::size_t Packing::countInteractionCentreOverlapsWithNG(std::size_t originalPa
     std::size_t centreIdx1 = tempParticleIdx * this->numInteractionCentres + centre;
     auto pos1 = this->absoluteInteractionCentres[centreIdx1];
     const auto &orientation1 = this->shapeOrientations[tempParticleIdx];
+    const auto *data1 = this->getShapeDataPtr(tempParticleIdx);
     for (const auto &cell : this->neighbourGrid->getNeighbouringCells(pos1)) {
         HardcodedTranslation cellTranslation(cell.getTranslation());
         for (auto centreIdx2 : cell.getNeighbours()) { // NOLINT(readability-use-anyofallof)
@@ -670,7 +694,11 @@ std::size_t Packing::countInteractionCentreOverlapsWithNG(std::size_t originalPa
             std::size_t centre2 = centreIdx2 % this->numInteractionCentres;
             const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
             const auto &orientation2 = this->shapeOrientations[j];
-            if (interaction.overlapBetween(pos1, orientation1, centre, pos2, orientation2, centre2, cellTranslation)){
+            const auto *data2 = this->getShapeDataPtr(j);
+            if (interaction.overlapBetween(pos1, orientation1, data1, centre,
+                                           pos2, orientation2, data2, centre2,
+                                           cellTranslation))
+            {
                 if (earlyExit) return 1;
                 overlapsCounted++;
             }
@@ -698,9 +726,11 @@ double Packing::calculateParticleEnergy(std::size_t originalParticleIdx, std::si
                         continue;
                     energy += interaction.calculateEnergyBetween(this->shapePositions[tempParticleIdx],
                                                                  this->shapeOrientations[tempParticleIdx],
+                                                                 this->getShapeDataPtr(tempParticleIdx),
                                                                  0,
                                                                  this->shapePositions[j],
                                                                  this->shapeOrientations[j],
+                                                                 this->getShapeDataPtr(j),
                                                                  0,
                                                                  cellTranslation);
                 }
@@ -749,9 +779,11 @@ double Packing::calculateEnergyBetweenParticlesWithoutNG(std::size_t tempParticl
     if (this->numInteractionCentres == 0) {
         energy += interaction.calculateEnergyBetween(this->shapePositions[tempParticleIdx],
                                                      this->shapeOrientations[tempParticleIdx],
+                                                     this->getShapeDataPtr(tempParticleIdx),
                                                      0,
                                                      this->shapePositions[anotherParticleIdx],
                                                      this->shapeOrientations[anotherParticleIdx],
+                                                     this->getShapeDataPtr(anotherParticleIdx),
                                                      0,
                                                      *this->bc);
     } else {
@@ -759,11 +791,14 @@ double Packing::calculateEnergyBetweenParticlesWithoutNG(std::size_t tempParticl
             std::size_t centreIdx1 = tempParticleIdx * this->numInteractionCentres + centre1;
             const auto &pos1 = this->absoluteInteractionCentres[centreIdx1];
             const auto &orientation1 = this->shapeOrientations[tempParticleIdx];
+            const auto *data1 = this->getShapeDataPtr(tempParticleIdx);
             for (size_t centre2{}; centre2 < this->numInteractionCentres; centre2++) {
                 std::size_t centreIdx2 = anotherParticleIdx * this->numInteractionCentres + centre2;
                 const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
                 const auto &orientation2 =  this->shapeOrientations[anotherParticleIdx];
-                energy += interaction.calculateEnergyBetween(pos1, orientation1, centre1, pos2, orientation2, centre2,
+                const auto *data2 = this->getShapeDataPtr(anotherParticleIdx);
+                energy += interaction.calculateEnergyBetween(pos1, orientation1, data1, centre1,
+                                                             pos2, orientation2, data2, centre2,
                                                              *this->bc);
             }
         }
@@ -781,6 +816,7 @@ double Packing::calculateInteractionCentreEnergyWithNG(size_t originalParticleId
     std::size_t centreIdx1 = tempParticleIdx * this->numInteractionCentres + centre;
     auto pos1 = this->absoluteInteractionCentres[centreIdx1];
     const auto &orientation1 = this->shapeOrientations[tempParticleIdx];
+    const auto *data1 = this->getShapeDataPtr(tempParticleIdx);
     for (const auto &cell : this->neighbourGrid->getNeighbouringCells(pos1)) {
         HardcodedTranslation cellTranslation(cell.getTranslation());
         for (auto centreIdx2 : cell.getNeighbours()) {
@@ -790,7 +826,9 @@ double Packing::calculateInteractionCentreEnergyWithNG(size_t originalParticleId
             size_t centre2 = centreIdx2 % this->numInteractionCentres;
             const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
             const auto &orientation2 = this->shapeOrientations[j];
-            energy += interaction.calculateEnergyBetween(pos1, orientation1, centre, pos2, orientation2, centre2,
+            const auto *data2 = this->getShapeDataPtr(j);
+            energy += interaction.calculateEnergyBetween(pos1, orientation1, data1, centre,
+                                                         pos2, orientation2, data2, centre2,
                                                          cellTranslation);
         }
     }
@@ -807,6 +845,7 @@ double Packing::getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coo
             std::size_t particleIdx1 = *cellIt1;
             const auto &pos1 = this->shapePositions[particleIdx1];
             const auto &orientation1 = this->shapeOrientations[particleIdx1];
+            const auto *data1 = this->getShapeDataPtr(particleIdx1);
 
             // Energy within the cell
             HardcodedTranslation noTranslation({});
@@ -814,7 +853,9 @@ double Packing::getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coo
                 std::size_t particleIdx2 = *cellIt2;
                 const auto &pos2 = this->shapePositions[particleIdx2];
                 const auto &orientation2 = this->shapeOrientations[particleIdx2];
-                energy += interaction.calculateEnergyBetween(pos1, orientation1, 0, pos2, orientation2, 0,
+                const auto *data2 = this->getShapeDataPtr(particleIdx2);
+                energy += interaction.calculateEnergyBetween(pos1, orientation1, data1, 0,
+                                                             pos2, orientation2, data2, 0,
                                                              noTranslation);
             }
 
@@ -824,7 +865,9 @@ double Packing::getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coo
                 for (auto particleIdx2 : cell.getNeighbours()) { // NOLINT(readability-use-anyofallof)
                     const auto &pos2 = this->shapePositions[particleIdx2];
                     const auto &orientation2 = this->shapeOrientations[particleIdx2];
-                    energy += interaction.calculateEnergyBetween(pos1, orientation1, 0, pos2, orientation2, 0,
+                    const auto *data2 = this->getShapeDataPtr(particleIdx2);
+                    energy += interaction.calculateEnergyBetween(pos1, orientation1, data1, 0,
+                                                                 pos2, orientation2, data2, 0,
                                                                  cellTranslation);
                 }
             }
@@ -837,6 +880,7 @@ double Packing::getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coo
             std::size_t centre1 = centreIdx1 % this->numInteractionCentres;
             const auto &pos1 = this->absoluteInteractionCentres[centreIdx1];
             const auto &orientation1 = this->shapeOrientations[particleIdx1];
+            const auto *data1 = this->getShapeDataPtr(particleIdx1);
 
             // Energy within the cell
             HardcodedTranslation noTranslation({});
@@ -848,7 +892,9 @@ double Packing::getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coo
                 std::size_t centre2 = centreIdx2 % this->numInteractionCentres;
                 const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
                 const auto &orientation2 = this->shapeOrientations[particleIdx2];
-                energy += interaction.calculateEnergyBetween(pos1, orientation1, centre1, pos2, orientation2, centre2,
+                const auto *data2 = this->getShapeDataPtr(particleIdx2);
+                energy += interaction.calculateEnergyBetween(pos1, orientation1, data1, centre1,
+                                                             pos2, orientation2, data2, centre2,
                                                              noTranslation);
             }
 
@@ -862,8 +908,10 @@ double Packing::getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coo
                     std::size_t centre2 = centreIdx2 % this->numInteractionCentres;
                     const auto &pos2 = this->absoluteInteractionCentres[centreIdx2];
                     const auto &orientation2 = this->shapeOrientations[particleIdx2];
-                    energy += interaction.calculateEnergyBetween(pos1, orientation1, centre1, pos2, orientation2,
-                                                                 centre2, cellTranslation);
+                    const auto *data2 = this->getShapeDataPtr(particleIdx2);
+                    energy += interaction.calculateEnergyBetween(pos1, orientation1, data1, centre1,
+                                                                 pos2, orientation2, data2, centre2,
+                                                                 cellTranslation);
                 }
             }
         }
@@ -1144,10 +1192,11 @@ std::size_t Packing::countParticleWallOverlaps(std::size_t particleIdx, const In
         Vector<3> wallVector = (boxSides[nextCoord] ^ boxSides[nextNextCoord]).normalized();
         const auto &shapePos = this->shapePositions[particleIdx];
         const auto &shapeRot = this->shapeOrientations[particleIdx];
+        const auto *shapeData = this->getShapeDataPtr(particleIdx);
         if (shapePos * wallVector < halfTotalRangeRadius) {
             // Nearer wall
             if (this->numInteractionCentres == 0) {
-                if (interaction.overlapWithWall(shapePos, shapeRot, 0, boxOrigin, wallVector)) {
+                if (interaction.overlapWithWall(shapePos, shapeRot, shapeData, 0, boxOrigin, wallVector)) {
                     if (earlyExit) return 1;
                     countedOverlaps++;
                 }
@@ -1155,7 +1204,7 @@ std::size_t Packing::countParticleWallOverlaps(std::size_t particleIdx, const In
                 std::size_t centreIdxOrigin = particleIdx * this->numInteractionCentres;
                 for (std::size_t centre{}; centre < this->numInteractionCentres; centre++) {
                     Vector<3> centrePos = shapePos + this->interactionCentres[centreIdxOrigin + centre];
-                    if (interaction.overlapWithWall(centrePos, shapeRot, centre, boxOrigin, wallVector)) {
+                    if (interaction.overlapWithWall(centrePos, shapeRot, shapeData, centre, boxOrigin, wallVector)) {
                         if (earlyExit) return 1;
                         countedOverlaps++;
                     }
@@ -1164,7 +1213,7 @@ std::size_t Packing::countParticleWallOverlaps(std::size_t particleIdx, const In
         } else if ((furtherBoxOrigin - shapePos) * wallVector < halfTotalRangeRadius) {
             // Further wall
             if (this->numInteractionCentres == 0) {
-                if (interaction.overlapWithWall(shapePos, shapeRot, 0, furtherBoxOrigin, -wallVector)) {
+                if (interaction.overlapWithWall(shapePos, shapeRot, shapeData, 0, furtherBoxOrigin, -wallVector)) {
                     if (earlyExit) return 1;
                     countedOverlaps++;
                 }
@@ -1172,7 +1221,9 @@ std::size_t Packing::countParticleWallOverlaps(std::size_t particleIdx, const In
                 std::size_t centreIdxOrigin = particleIdx * this->numInteractionCentres;
                 for (std::size_t centre{}; centre < this->numInteractionCentres; centre++) {
                     Vector<3> centrePos = shapePos + this->interactionCentres[centreIdxOrigin + centre];
-                    if (interaction.overlapWithWall(centrePos, shapeRot, centre, furtherBoxOrigin, -wallVector)) {
+                    if (interaction.overlapWithWall(centrePos, shapeRot, shapeData, centre, furtherBoxOrigin,
+                                                    -wallVector))
+                    {
                         if (earlyExit) return 1;
                         countedOverlaps++;
                     }
@@ -1294,5 +1345,9 @@ void Packing::translateShapeWithoutInteractionCenters(std::size_t idx, const Vec
 void Packing::rotateShapeWithoutInteractionCenters(std::size_t idx, const Matrix<3, 3> &rotation) {
     auto &shapeRot = this->shapeOrientations[idx];
     shapeRot = rotation * shapeRot;
+}
+
+const std::byte *Packing::getShapeDataPtr(std::size_t particleIdx) const {
+    return this->shapeDatas.data() + static_cast<std::ptrdiff_t>(particleIdx * this->shapeDataSize);
 }
 

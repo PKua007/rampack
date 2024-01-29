@@ -76,6 +76,11 @@ public:
         }
     }
 
+    ~ShapeData() {
+        if (this->managed)
+            delete[] data;
+    }
+
     ShapeData &operator=(const ShapeData &other) {
         if (this == &other)
             return *this;
@@ -128,7 +133,7 @@ public:
 
     [[nodiscard]] bool isManaged() const { return this->managed; }
     [[nodiscard]] std::size_t getSize() const { return this->size; }
-    [[nodiscard]] const std::byte *getRawData() const { return this->data; }
+    [[nodiscard]] const std::byte *raw() const { return this->data; }
 
     friend bool operator==(const ShapeData &lhs, const ShapeData &rhs) {
         return std::equal(lhs.data, lhs.data + lhs.size, rhs.data, rhs.data + rhs.size);

@@ -55,9 +55,11 @@ std::shared_ptr<ShapePrinter> SphereTraits::createObjPrinter(double radius, std:
 
 bool SphereTraits::HardInteraction::overlapBetween(const Vector<3> &pos1,
                                                    [[maybe_unused]] const Matrix<3, 3> &orientation1,
+                                                   [[maybe_unused]] const std::byte *data1,
                                                    [[maybe_unused]] std::size_t idx1,
                                                    const Vector<3> &pos2,
                                                    [[maybe_unused]] const Matrix<3, 3> &orientation2,
+                                                   [[maybe_unused]] const std::byte *data2,
                                                    [[maybe_unused]] std::size_t idx2,
                                                    const BoundaryConditions &bc) const
 {
@@ -66,6 +68,7 @@ bool SphereTraits::HardInteraction::overlapBetween(const Vector<3> &pos1,
 
 bool SphereTraits::HardInteraction::overlapWithWall(const Vector<3> &pos,
                                                     [[maybe_unused]] const Matrix<3, 3> &orientation,
+                                                    [[maybe_unused]] const std::byte *data,
                                                     [[maybe_unused]] std::size_t idx,
                                                     const Vector<3> &wallOrigin,
                                                     const Vector<3> &wallVector) const
