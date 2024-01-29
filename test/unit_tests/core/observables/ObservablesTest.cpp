@@ -27,7 +27,7 @@ TEST_CASE("Observables") {
     ALLOW_CALL(mockShapeTraits, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{1, 0, 0});
     ALLOW_CALL(mockShapeTraits, hasSoftPart()).RETURN(true);
     ALLOW_CALL(mockShapeTraits, hasHardPart()).RETURN(false);
-    ALLOW_CALL(mockShapeTraits, calculateEnergyBetween(_, _, _, _, _, _, _)).RETURN((_1 - _4).norm());
+    ALLOW_CALL(mockShapeTraits, calculateEnergyBetween(_, _, _, _, _, _, _, _, _)).RETURN((_1 - _5).norm());
     ALLOW_CALL(mockShapeTraits, getRangeRadius()).RETURN(std::numeric_limits<double>::infinity());
     ALLOW_CALL(mockShapeTraits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(mockShapeTraits, getTotalRangeRadius()).RETURN(std::numeric_limits<double>::infinity());

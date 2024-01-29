@@ -57,9 +57,11 @@ public:
      */
     [[nodiscard]] virtual double calculateEnergyBetween([[maybe_unused]] const Vector<3> &pos1,
                                                         [[maybe_unused]] const Matrix<3, 3> &orientation1,
+                                                        [[maybe_unused]] const std::byte *data1,
                                                         [[maybe_unused]] std::size_t idx1,
                                                         [[maybe_unused]] const Vector<3> &pos2,
                                                         [[maybe_unused]] const Matrix<3, 3> &orientation2,
+                                                        [[maybe_unused]] const std::byte *data2,
                                                         [[maybe_unused]] std::size_t idx2,
                                                         [[maybe_unused]] const BoundaryConditions &bc) const
     {
@@ -80,9 +82,11 @@ public:
      */
     [[nodiscard]] virtual bool overlapBetween([[maybe_unused]] const Vector<3> &pos1,
                                               [[maybe_unused]] const Matrix<3, 3> &orientation1,
+                                              [[maybe_unused]] const std::byte *data1,
                                               [[maybe_unused]] std::size_t idx1,
                                               [[maybe_unused]] const Vector<3> &pos2,
                                               [[maybe_unused]] const Matrix<3, 3> &orientation2,
+                                              [[maybe_unused]] const std::byte *data2,
                                               [[maybe_unused]] std::size_t idx2,
                                               [[maybe_unused]] const BoundaryConditions &bc) const
     {
@@ -102,6 +106,7 @@ public:
      */
     [[nodiscard]] virtual bool overlapWithWall([[maybe_unused]] const Vector<3> &pos,
                                                [[maybe_unused]] const Matrix<3, 3> &orientation,
+                                               [[maybe_unused]] const std::byte *data,
                                                [[maybe_unused]] std::size_t idx,
                                                [[maybe_unused]] const Vector<3> &wallOrigin,
                                                [[maybe_unused]] const Vector<3> &wallVector) const

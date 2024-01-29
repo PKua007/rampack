@@ -106,27 +106,29 @@ Vector<3> PolyspherocylinderTraits::SpherocylinderData::halfAxisForShape(const S
     return shape.getOrientation() * this->halfAxis;
 }
 
-bool PolyspherocylinderTraits::overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1, std::size_t idx1,
-                                              const Vector<3> &pos2, const Matrix<3, 3> &orientation2, std::size_t idx2,
+bool PolyspherocylinderTraits::overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1,
+                                              [[maybe_unused]] const std::byte *data1, std::size_t idx1,
+                                              const Vector<3> &pos2, const Matrix<3, 3> &orientation2,
+                                              [[maybe_unused]] const std::byte *data2, std::size_t idx2,
                                               const BoundaryConditions &bc) const
 {
     const auto &spherocylinderData = this->getSpherocylinderData();
-    const auto &data1 = spherocylinderData[idx1];
-    const auto &data2 = spherocylinderData[idx2];
+    const auto &scData1 = spherocylinderData[idx1];
+    const auto &scData2 = spherocylinderData[idx2];
 
     Vector<3> pos2bc = pos2 + bc.getTranslation(pos1, pos2);
     double distance2 = (pos2bc - pos1).norm2();
-    double insphereR = data1.radius + data2.radius;
+    double insphereR = scData1.radius + scData2.radius;
     double insphereR2 = insphereR * insphereR;
     if (distance2 < insphereR2)
         return true;
-    double circumsphereR = data1.circumsphereRadius + data2.circumsphereRadius;
+    double circumsphereR = scData1.circumsphereRadius + scData2.circumsphereRadius;
     double circumsphereR2 = circumsphereR * circumsphereR;
     if (distance2 >= circumsphereR2)
         return false;
 
-    Vector<3> halfAxis1 = orientation1 * data1.halfAxis;
-    Vector<3> halfAxis2 = orientation2 * data2.halfAxis;
+    Vector<3> halfAxis1 = orientation1 * scData1.halfAxis;
+    Vector<3> halfAxis2 = orientation2 * scData2.halfAxis;
     return SegmentDistanceCalculator::calculate(pos1+halfAxis1, pos1-halfAxis1, pos2bc+halfAxis2, pos2bc-halfAxis2)
            < insphereR2;
 }
@@ -149,7 +151,8 @@ double PolyspherocylinderTraits::getRangeRadius() const {
     return 2 * maxIt->circumsphereRadius;
 }
 
-bool PolyspherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation, std::size_t idx,
+bool PolyspherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation,
+                                               [[maybe_unused]] const std::byte *data, std::size_t idx,
                                                const Vector<3> &wallOrigin, const Vector<3> &wallVector) const
 {
     const auto &spherocylinderData = this->getSpherocylinderData()[idx];

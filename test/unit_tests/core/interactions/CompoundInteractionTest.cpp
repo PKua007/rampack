@@ -146,12 +146,12 @@ TEST_CASE("CompoundInteraction") {
     bool ov1{}, ov2{}, result{};
 
     SECTION("hard + soft overlap and energy") {
-        REQUIRE_CALL(hard, overlapBetween(pos1, rot1, idx1, pos2, rot2, idx2, _)).RETURN(true);
-        REQUIRE_CALL(soft, calculateEnergyBetween(pos1, rot1, idx1, pos2, rot2, idx2, _)).RETURN(2);
+        REQUIRE_CALL(hard, overlapBetween(pos1, rot1, _, idx1, pos2, rot2, _, idx2, _)).RETURN(true);
+        REQUIRE_CALL(soft, calculateEnergyBetween(pos1, rot1, _, idx1, pos2, rot2, _, idx2, _)).RETURN(2);
         CompoundInteraction compound(hard, soft);
 
-        CHECK(compound.overlapBetween(pos1, rot1, idx1, pos2, rot2, idx2, bc));
-        CHECK(compound.calculateEnergyBetween(pos1, rot1, idx1, pos2, rot2, idx2, bc) == 2);
+        CHECK(compound.overlapBetween(pos1, rot1, nullptr, idx1, pos2, rot2, nullptr, idx2, bc));
+        CHECK(compound.calculateEnergyBetween(pos1, rot1, nullptr, idx1, pos2, rot2, nullptr, idx2, bc) == 2);
     }
 
     SECTION("hard + hard overlap") {
@@ -163,11 +163,11 @@ TEST_CASE("CompoundInteraction") {
                                               std::make_tuple(true, true, true));
 
         DYNAMIC_SECTION(std::boolalpha << ov1 << " and " << ov2 << " give " << result) {
-            ALLOW_CALL(hard, overlapBetween(pos1, rot1, idx1, pos2, rot2, idx2, _)).RETURN(ov1);
-            ALLOW_CALL(hard2, overlapBetween(pos1, rot1, idx1, pos2, rot2, idx2, _)).RETURN(ov2);
+            ALLOW_CALL(hard, overlapBetween(pos1, rot1, _, idx1, pos2, rot2, _, idx2, _)).RETURN(ov1);
+            ALLOW_CALL(hard2, overlapBetween(pos1, rot1, _, idx1, pos2, rot2, _, idx2, _)).RETURN(ov2);
             CompoundInteraction compound(hard, hard2);
 
-            CHECK(compound.overlapBetween(pos1, rot1, idx1, pos2, rot2, idx2, bc) == result);
+            CHECK(compound.overlapBetween(pos1, rot1, nullptr, idx1, pos2, rot2, nullptr, idx2, bc) == result);
         }
     }
 
@@ -180,21 +180,21 @@ TEST_CASE("CompoundInteraction") {
                                               std::make_tuple(true, true, true));
 
         DYNAMIC_SECTION(std::boolalpha << ov1 << " and " << ov2 << " give " << result) {
-            ALLOW_CALL(wall, overlapWithWall(pos1, rot1, idx1, wallOrigin, wallVector)).RETURN(ov1);
-            ALLOW_CALL(wall2, overlapWithWall(pos1, rot1, idx1, wallOrigin, wallVector)).RETURN(ov2);
+            ALLOW_CALL(wall, overlapWithWall(pos1, rot1, _, idx1, wallOrigin, wallVector)).RETURN(ov1);
+            ALLOW_CALL(wall2, overlapWithWall(pos1, rot1, _, idx1, wallOrigin, wallVector)).RETURN(ov2);
             CompoundInteraction compound(wall, wall2);
 
-            CHECK(compound.overlapWithWall(pos1, rot1, idx1, wallOrigin, wallVector) == result);
+            CHECK(compound.overlapWithWall(pos1, rot1, nullptr, idx1, wallOrigin, wallVector) == result);
         }
     }
 
     SECTION("soft + soft energy") {
         MAKE_SOFT_MOCK(soft2);
 
-        REQUIRE_CALL(soft, calculateEnergyBetween(pos1, rot1, idx1, pos2, rot2, idx2, _)).RETURN(1);
-        REQUIRE_CALL(soft2, calculateEnergyBetween(pos1, rot1, idx1, pos2, rot2, idx2, _)).RETURN(2);
+        REQUIRE_CALL(soft, calculateEnergyBetween(pos1, rot1, _, idx1, pos2, rot2, _, idx2, _)).RETURN(1);
+        REQUIRE_CALL(soft2, calculateEnergyBetween(pos1, rot1, _, idx1, pos2, rot2, _, idx2, _)).RETURN(2);
         CompoundInteraction compound(soft, soft2);
 
-        CHECK(compound.calculateEnergyBetween(pos1, rot1, idx1, pos2, rot2, idx2, bc) == 3);
+        CHECK(compound.calculateEnergyBetween(pos1, rot1, nullptr, idx1, pos2, rot2, nullptr, idx2, bc) == 3);
     }
 }

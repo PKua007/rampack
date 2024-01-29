@@ -31,9 +31,11 @@ namespace {
 
         [[nodiscard]] bool overlapBetween(const Vector<3> &pos1,
                                           [[maybe_unused]] const Matrix<3, 3> &orientaton1,
+                                          [[maybe_unused]] const std::byte *data1,
                                           [[maybe_unused]] std::size_t idx1,
                                           const Vector<3> &pos2,
                                           [[maybe_unused]] const Matrix<3, 3> &orientaton2,
+                                          [[maybe_unused]] const std::byte *data2,
                                           [[maybe_unused]] std::size_t idx2,
                                           const BoundaryConditions &bc) const override
         {
@@ -41,8 +43,8 @@ namespace {
         }
 
         [[nodiscard]] bool overlapWithWall(const Vector<3> &pos, [[maybe_unused]] const Matrix<3, 3> &orientation,
-                                           [[maybe_unused]] std::size_t idx, const Vector<3> &wallOrigin,
-                                           const Vector<3> &wallVector) const override
+                                           [[maybe_unused]] const std::byte *data, [[maybe_unused]] std::size_t idx,
+                                           const Vector<3> &wallOrigin, const Vector<3> &wallVector) const override
         {
             double dotProduct = wallVector * (pos - wallOrigin);
             return dotProduct < this->radius;
@@ -60,9 +62,11 @@ namespace {
 
         [[nodiscard]] double calculateEnergyBetween(const Vector<3> &pos1,
                                                     [[maybe_unused]] const Matrix<3, 3> &orientaton1,
+                                                    [[maybe_unused]] const std::byte *data1,
                                                     [[maybe_unused]] std::size_t idx1,
                                                     const Vector<3> &pos2,
                                                     [[maybe_unused]] const Matrix<3, 3> &orientaton2,
+                                                    [[maybe_unused]] const std::byte *data2,
                                                     [[maybe_unused]] std::size_t idx2,
                                                     const BoundaryConditions &bc) const override
         {

@@ -144,8 +144,10 @@ public:
     [[nodiscard]] bool hasSoftPart() const override { return false; }
     [[nodiscard]] bool isConvex() const override { return true; }
 
-    [[nodiscard]] bool overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1, std::size_t idx1,
-                                      const Vector<3> &pos2, const Matrix<3, 3> &orientation2, std::size_t idx2,
+    [[nodiscard]] bool overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1,
+                                      [[maybe_unused]] const std::byte *data1, std::size_t idx1,
+                                      const Vector<3> &pos2, const Matrix<3, 3> &orientation2,
+                                      [[maybe_unused]] const std::byte *data2, std::size_t idx2,
                                       const BoundaryConditions &bc) const override
     {
         const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
@@ -168,8 +170,8 @@ public:
     }
 
     [[nodiscard]] bool overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation,
-                                       [[maybe_unused]] std::size_t idx, const Vector<3> &wallOrigin,
-                                       const Vector<3> &wallVector) const override
+                                       [[maybe_unused]] const std::byte *data, std::size_t idx,
+                                       const Vector<3> &wallOrigin, const Vector<3> &wallVector) const override
     {
         const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
         const auto &collideGeometry = thisConcreteTraits.getCollideGeometry(idx);

@@ -26,8 +26,9 @@ Vector<3> SpherocylinderTraits::getCapCentre(short beginOrEnd, const Shape &shap
 }
 
 bool SpherocylinderTraits::overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1,
-                                          [[maybe_unused]] std::size_t idx1, const Vector<3> &pos2,
-                                          const Matrix<3, 3> &orientation2, [[maybe_unused]] std::size_t idx2,
+                                          [[maybe_unused]] const std::byte *data1, [[maybe_unused]] std::size_t idx1,
+                                          const Vector<3> &pos2, const Matrix<3, 3> &orientation2,
+                                          [[maybe_unused]] const std::byte *data2, [[maybe_unused]] std::size_t idx2,
                                           const BoundaryConditions &bc) const
 {
     Vector<3> pos2bc = pos2 + bc.getTranslation(pos1, pos2);
@@ -54,8 +55,8 @@ Vector<3> SpherocylinderTraits::getPrimaryAxis(const Shape &shape) const {
 }
 
 bool SpherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation,
-                                           [[maybe_unused]] std::size_t idx, const Vector<3> &wallOrigin,
-                                           const Vector<3> &wallVector) const
+                                           [[maybe_unused]] const std::byte *data, [[maybe_unused]] std::size_t idx,
+                                           const Vector<3> &wallOrigin, const Vector<3> &wallVector) const
 {
     Vector<3> halfAxis = orientation.column(2) * (this->length/2);
 

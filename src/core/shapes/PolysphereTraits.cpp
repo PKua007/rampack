@@ -96,9 +96,11 @@ Vector<3> PolysphereTraits::SphereData::centreForShape(const Shape &shape) const
 
 bool PolysphereTraits::HardInteraction::overlapBetween(const Vector<3> &pos1,
                                                        [[maybe_unused]] const Matrix<3, 3> &orientation1,
+                                                       [[maybe_unused]] const std::byte *data1,
                                                        std::size_t idx1,
                                                        const Vector<3> &pos2,
                                                        [[maybe_unused]] const Matrix<3, 3> &orientation2,
+                                                       [[maybe_unused]] const std::byte *data2,
                                                        std::size_t idx2, const BoundaryConditions &bc) const
 {
     double r = this->sphereData[idx1].radius + this->sphereData[idx2].radius;
@@ -128,6 +130,7 @@ PolysphereTraits::HardInteraction::HardInteraction(std::vector<SphereData> spher
 
 bool PolysphereTraits::HardInteraction::overlapWithWall(const Vector<3> &pos,
                                                         [[maybe_unused]] const Matrix<3, 3> &orientation,
+                                                        [[maybe_unused]] const std::byte *data,
                                                         std::size_t idx, const Vector<3> &wallOrigin,
                                                         const Vector<3> &wallVector) const
 {

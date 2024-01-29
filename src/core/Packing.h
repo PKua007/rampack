@@ -73,6 +73,7 @@ private:
 
 
     void copyShape(std::size_t fromIdx, std::size_t toIdx);
+    const std::byte *getShapeDataPtr(std::size_t particleIdx) const;
     void translateShapeWithoutInteractionCenters(std::size_t idx, const Vector<3> &translation);
     void rotateShapeWithoutInteractionCenters(std::size_t idx, const Matrix<3, 3> &rotation);
 
@@ -135,7 +136,7 @@ private:
                                                     const Interaction &interaction) const;
 
     // Must be inline so that the iterator is inlined by the optimizer
-    Shape generateShapeView(std::size_t idx) const {
+    [[nodiscard]] Shape generateShapeView(std::size_t idx) const {
         const auto &pos = this->shapePositions[idx];
         const auto &rot = this->shapeOrientations[idx];
 

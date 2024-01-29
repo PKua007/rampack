@@ -46,7 +46,7 @@ TEST_CASE("FlipSampler") {
     ALLOW_CALL(traits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(traits, getRangeRadius()).RETURN(1);
     ALLOW_CALL(traits, getTotalRangeRadius()).RETURN(1);
-    ALLOW_CALL(traits, overlapBetween(_, _, _, _, _, _, _)).RETURN(_7.getDistance2(_1, _4) < 1);
+    ALLOW_CALL(traits, overlapBetween(_, _, _, _, _, _, _, _, _)).RETURN(_9.getDistance2(_1, _5) < 1);
     ALLOW_CALL(traits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
 
     SECTION("primary + secondary + nonzero origin") {
