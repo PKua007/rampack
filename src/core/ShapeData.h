@@ -50,14 +50,21 @@ public:
         other.managed = false;
     }
 
-    template<typename T, typename = std::enable_if_t<!std::is_same_v<ShapeData, std::decay_t<T>>>>
-    explicit ShapeData(T &&data) {
-        static_assert(std::is_pod_v<T>, "Only POD types are allowed");
+    template<typename T,
+             typename DecayedT = std::decay_t<T>,
+             typename = std::enable_if_t<!std::is_same_v<ShapeData, DecayedT>>>
+    explicit ShapeData(T &&data, bool managed = true) {
+        static_assert(std::is_trivially_copyable_v<DecayedT>, "Type must be trivially copyable");
 
-        this->managed = true;
-        this->size = sizeof(T);
-        this->data = new std::byte[this->size];
-        this->as<T>() = std::forward<T>(data);
+        if (managed) {
+            this->copyManagedData(reinterpret_cast<const std::byte*>(&data), sizeof(T));
+        } else {
+            ExpectsMsg(std::is_lvalue_reference_v<T>, "ShapeData::ShapeData(): unmanaged rvalue reference");
+
+            this->data = reinterpret_cast<const std::byte*>(&data);
+            this->size = sizeof(T);
+            this->managed = false;
+        }
     }
 
     ShapeData(const std::byte *data, std::size_t size, bool managed = false) {
@@ -117,18 +124,24 @@ public:
         return *this;
     }
 
-    template<typename T, typename = std::enable_if_t<!std::is_same_v<ShapeData, std::decay_t<T>>>>
+    template<typename T,
+             typename DecayedT = std::decay_t<T>,
+             typename = std::enable_if_t<!std::is_same_v<ShapeData, DecayedT>>>
     ShapeData &operator=(T &&data_) {
-        static_assert(std::is_pod_v<T>, "Only POD types are allowed");
+        static_assert(std::is_trivially_copyable_v<DecayedT>, "Type must be trivially copyable");
+
         *this = ShapeData(data_);
         return *this;
     }
 
-    template <typename T>
+    template<typename T,
+             typename DecayedT = std::decay_t<T>,
+             typename = std::enable_if_t<!std::is_same_v<ShapeData, DecayedT>>>
     const T &as() const {
-        static_assert(std::is_pod_v<T>, "Only POD types are allowed");
-        Expects(sizeof(T) == this->size);
-        return *reinterpret_cast<const T*>(this->data);
+        static_assert(std::is_trivially_copyable_v<DecayedT>, "Type must be trivially copyable");
+        ExpectsMsg(sizeof(T) <= this->size, "ShapeData::as(): extracting too large type");
+
+        return *reinterpret_cast<const DecayedT*>(this->data);
     }
 
     [[nodiscard]] bool isManaged() const { return this->managed; }
@@ -137,6 +150,10 @@ public:
 
     friend bool operator==(const ShapeData &lhs, const ShapeData &rhs) {
         return std::equal(lhs.data, lhs.data + lhs.size, rhs.data, rhs.data + rhs.size);
+    }
+
+    friend bool operator!=(const ShapeData &lhs, const ShapeData &rhs) {
+        return !(lhs == rhs);
     }
 };
 
