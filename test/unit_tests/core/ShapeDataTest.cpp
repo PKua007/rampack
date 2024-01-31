@@ -12,6 +12,7 @@ namespace {
     void check_that_contains_unmanaged_data(const ShapeData &shapeData, const T &theData) {
         CHECK_FALSE(shapeData.isManaged());
         CHECK(shapeData.getSize() == sizeof(T));
+        CHECK(!shapeData.isEmpty());
         CHECK(shapeData.raw() == reinterpret_cast<const std::byte *>(&theData));
         CHECK(shapeData.as<T>() == theData);
     }
@@ -20,6 +21,7 @@ namespace {
     void check_that_contains_managed_data(const ShapeData &shapeData, const T &theData) {
         CHECK(shapeData.isManaged());
         CHECK(shapeData.getSize() == sizeof(T));
+        CHECK(!shapeData.isEmpty());
         CHECK(shapeData.raw() != reinterpret_cast<const std::byte *>(&theData));
         CHECK(shapeData.as<T>() == theData);
     }
@@ -27,6 +29,7 @@ namespace {
     void check_that_is_empty(const ShapeData &shapeData) {
         CHECK_FALSE(shapeData.isManaged());
         CHECK(shapeData.getSize() == 0);
+        CHECK(shapeData.isEmpty());
         CHECK(shapeData.raw() == nullptr);
     }
 }
