@@ -9,6 +9,8 @@
 #include <cstddef>
 #include <algorithm>
 #include <utility>
+#include <ostream>
+#include <iomanip>
 
 #include "utils/Exceptions.h"
 
@@ -28,6 +30,22 @@ private:
     }
 
 public:
+    template<typename T>
+    static const T &as(const std::byte *data) {
+        using NoRefT = std::remove_reference_t<T>;
+        static_assert(std::is_trivially_copyable_v<NoRefT>, "Type must be trivially copyable");
+
+        return *reinterpret_cast<const NoRefT*>(data);
+    }
+
+    template<typename T>
+    static T &as(std::byte *data) {
+        using NoRefT = std::remove_reference_t<T>;
+        static_assert(std::is_trivially_copyable_v<NoRefT>, "Type must be trivially copyable");
+
+        return *reinterpret_cast<NoRefT*>(data);
+    }
+
     ShapeData() = default;
 
     ShapeData(const ShapeData &other) {
@@ -134,18 +152,16 @@ public:
         return *this;
     }
 
-    template<typename T,
-             typename DecayedT = std::decay_t<T>,
-             typename = std::enable_if_t<!std::is_same_v<ShapeData, DecayedT>>>
+    template<typename T>
     const T &as() const {
-        static_assert(std::is_trivially_copyable_v<DecayedT>, "Type must be trivially copyable");
         ExpectsMsg(sizeof(T) <= this->size, "ShapeData::as(): extracting too large type");
 
-        return *reinterpret_cast<const DecayedT*>(this->data);
+        return ShapeData::as<T>(this->data);
     }
 
     [[nodiscard]] bool isManaged() const { return this->managed; }
     [[nodiscard]] std::size_t getSize() const { return this->size; }
+    [[nodiscard]] bool isEmpty() const { return this->size == 0; }
     [[nodiscard]] const std::byte *raw() const { return this->data; }
 
     friend bool operator==(const ShapeData &lhs, const ShapeData &rhs) {
@@ -154,6 +170,20 @@ public:
 
     friend bool operator!=(const ShapeData &lhs, const ShapeData &rhs) {
         return !(lhs == rhs);
+    }
+
+    friend std::ostream &operator<<(std::ostream &out, const ShapeData &shapeData) {
+        if (shapeData.isEmpty())
+            return out << "empty";
+
+        auto savedFlags = out.flags();
+        out << std::hex << std::setfill('0');
+        for (std::size_t i{}; i < shapeData.size; i++)
+            out << std::setw(2) << static_cast<unsigned>(shapeData.data[i]) << " ";
+        out << "(" << shapeData.size << " bytes)";
+        out.setf(savedFlags);
+
+        return out;
     }
 };
 

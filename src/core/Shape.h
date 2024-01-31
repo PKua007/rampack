@@ -40,8 +40,9 @@ public:
      */
     Shape(const Vector<3> &position, const Matrix<3, 3> &orientation) : position{position}, orientation{orientation} { }
 
-    Shape(const Vector<3> &position, const Matrix<3, 3> &orientation, ShapeData data)
-            : position{position}, orientation{orientation}, data{std::move(data)} { }
+    template<typename T>
+    Shape(const Vector<3> &position, const Matrix<3, 3> &orientation, T &&data)
+            : position{position}, orientation{orientation}, data{std::forward<T>(data)} { }
 
     /**
      * @brief Translates the shape by @a translation vector respecting the boundary conditions @a bc.
@@ -67,7 +68,8 @@ public:
 
     void setOrientation(const Matrix<3, 3> &orientation_);
 
-    void setData(ShapeData data_) { this->data = std::move(data_); }
+    template<typename T>
+    void setData(T &&data_) { this->data = std::forward<T>(data_); }
 
     /**
      * @brief Applies boundary conditions @a bc translation to @a other shape moving it near this shape.

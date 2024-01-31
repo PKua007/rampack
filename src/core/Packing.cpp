@@ -1060,8 +1060,10 @@ void Packing::resetCounters() {
 }
 
 std::ostream &operator<<(std::ostream &out, const Packing &packing) {
+    const auto &box = packing.box.getSides();
+
     out << "Packing {" << std::endl;
-    out << "  box: {" << packing.box.getDimensions() << "}," << std::endl;
+    out << "  box: {v1: " << box[0] << ", v2: " << box[1] << ", v3: " << box[2] << "}" << std::endl;
     out << "  particles (" << packing.size() << "): {" << std::endl;
     for (const auto &shape : packing)
         out << "    " << shape << std::endl;
