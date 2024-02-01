@@ -18,7 +18,7 @@
     ALLOW_CALL(name, isConvex()).RETURN(false); \
     ALLOW_CALL(name, getRangeRadius()).RETURN(0); \
     ALLOW_CALL(name, getTotalRangeRadius()).RETURN(0); \
-    ALLOW_CALL(name, getInteractionCentres()).RETURN(std::vector<Vector<3>>{})
+    ALLOW_CALL(name, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{})
 
 #define MAKE_SOFT_MOCK(name) \
     MockInteraction name; \
@@ -28,7 +28,7 @@
     ALLOW_CALL(name, isConvex()).RETURN(false); \
     ALLOW_CALL(name, getRangeRadius()).RETURN(0); \
     ALLOW_CALL(name, getTotalRangeRadius()).RETURN(0); \
-    ALLOW_CALL(name, getInteractionCentres()).RETURN(std::vector<Vector<3>>{})
+    ALLOW_CALL(name, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{})
 
 #define MAKE_WALL_MOCK(name) \
     MockInteraction name; \
@@ -38,7 +38,7 @@
     ALLOW_CALL(name, isConvex()).RETURN(false); \
     ALLOW_CALL(name, getRangeRadius()).RETURN(0); \
     ALLOW_CALL(name, getTotalRangeRadius()).RETURN(0); \
-    ALLOW_CALL(name, getInteractionCentres()).RETURN(std::vector<Vector<3>>{})
+    ALLOW_CALL(name, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{})
 
 
 using trompeloeil::_;
@@ -62,20 +62,20 @@ TEST_CASE("CompoundInteraction") {
 
     SECTION("interaction centres") {
         SECTION("0 centres") {
-            ALLOW_CALL(hard, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
-            ALLOW_CALL(soft, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
+            ALLOW_CALL(hard, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
+            ALLOW_CALL(soft, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
             CompoundInteraction compound(hard, soft);
 
-            CHECK(compound.getInteractionCentres().empty());
+            CHECK(compound.getInteractionCentres(nullptr).empty());
         }
 
         SECTION("2 centres") {
             std::vector<Vector<3>> centres{{1, 2, 3}, {4, 5, 6}};
-            ALLOW_CALL(hard, getInteractionCentres()).RETURN(centres);
-            ALLOW_CALL(soft, getInteractionCentres()).RETURN(centres);
+            ALLOW_CALL(hard, getInteractionCentres(_)).RETURN(centres);
+            ALLOW_CALL(soft, getInteractionCentres(_)).RETURN(centres);
             CompoundInteraction compound(hard, soft);
 
-            CHECK(compound.getInteractionCentres() == centres);
+            CHECK(compound.getInteractionCentres(nullptr) == centres);
         }
 
         SECTION("incompatible") {
@@ -84,15 +84,15 @@ TEST_CASE("CompoundInteraction") {
             std::vector<Vector<3>> emptyCentres{};
 
             SECTION("different number") {
-                ALLOW_CALL(hard, getInteractionCentres()).RETURN(centres1);
-                ALLOW_CALL(soft, getInteractionCentres()).RETURN(emptyCentres);
+                ALLOW_CALL(hard, getInteractionCentres(_)).RETURN(centres1);
+                ALLOW_CALL(soft, getInteractionCentres(_)).RETURN(emptyCentres);
 
                 CHECK_THROWS(CompoundInteraction(soft, hard));
             }
 
             SECTION("same number buf unequal") {
-                ALLOW_CALL(hard, getInteractionCentres()).RETURN(centres1);
-                ALLOW_CALL(soft, getInteractionCentres()).RETURN(centres2);
+                ALLOW_CALL(hard, getInteractionCentres(_)).RETURN(centres1);
+                ALLOW_CALL(soft, getInteractionCentres(_)).RETURN(centres2);
 
                 CHECK_THROWS(CompoundInteraction(soft, hard));
             }

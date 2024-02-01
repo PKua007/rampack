@@ -67,7 +67,10 @@ namespace {
             return shapeModels.at(idx);
         }
 
-        [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return this->interactionCentres; }
+        [[nodiscard]] std::vector<Vector<3>>
+        getInteractionCentres([[maybe_unused]] const std::byte *data) const override {
+            return this->interactionCentres;
+        }
     };
 }
 

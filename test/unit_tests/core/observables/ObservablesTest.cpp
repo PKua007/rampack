@@ -29,7 +29,7 @@ TEST_CASE("Observables") {
     ALLOW_CALL(mockShapeTraits, hasHardPart()).RETURN(false);
     ALLOW_CALL(mockShapeTraits, calculateEnergyBetween(_, _, _, _, _, _, _, _, _)).RETURN((_1 - _5).norm());
     ALLOW_CALL(mockShapeTraits, getRangeRadius()).RETURN(std::numeric_limits<double>::infinity());
-    ALLOW_CALL(mockShapeTraits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
+    ALLOW_CALL(mockShapeTraits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(mockShapeTraits, getTotalRangeRadius()).RETURN(std::numeric_limits<double>::infinity());
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     Shape s1({1, 1, 1}, Matrix<3, 3>::rotation(M_PI/4, 0, 0));

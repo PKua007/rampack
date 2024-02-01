@@ -21,7 +21,7 @@ TEST_CASE("ObservablesCollector") {
 
     MockShapeTraits mockShapeTraits;
     ALLOW_CALL(mockShapeTraits, getRangeRadius()).RETURN(std::numeric_limits<double>::infinity());
-    ALLOW_CALL(mockShapeTraits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
+    ALLOW_CALL(mockShapeTraits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(mockShapeTraits, getTotalRangeRadius()).RETURN(std::numeric_limits<double>::infinity());
     ALLOW_CALL(mockShapeTraits, hasSoftPart()).RETURN(true);
     ALLOW_CALL(mockShapeTraits, hasHardPart()).RETURN(false);

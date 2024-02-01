@@ -100,7 +100,7 @@ TEST_CASE("PolysphereTraits: soft interactions") {
     PolysphereTraits traits(std::move(geometry), std::make_unique<DummyInteraction>());
     const auto &interaction = dynamic_cast<const CentralInteraction &>(traits.getInteraction());
 
-    CHECK(interaction.getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}, {3, 0, 0}});
+    CHECK(interaction.getInteractionCentres(nullptr) == std::vector<Vector<3>>{{0, 0, 0}, {3, 0, 0}});
 }
 
 TEST_CASE("PolysphereTraits: mass centre normalization") {

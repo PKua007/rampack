@@ -39,7 +39,9 @@ public:
     [[nodiscard]] bool hasWallPart() const override { return this->hasWallPart1 || this->hasWallPart2; }
     [[nodiscard]] bool isConvex() const override { return this->isThisConvex; }
     [[nodiscard]] double getRangeRadius() const override { return this->rangeRadius; }
-    [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return this->interactionCentres; }
+    [[nodiscard]] std::vector<Vector<3>> getInteractionCentres([[maybe_unused]] const std::byte *data) const override {
+        return this->interactionCentres;
+    }
     [[nodiscard]] double getTotalRangeRadius() const override { return this->totalRangeRadius; }
 
     [[nodiscard]] double calculateEnergyBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1,

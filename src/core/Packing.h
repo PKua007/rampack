@@ -39,16 +39,23 @@ private:
     std::vector<Matrix<3, 3>> shapeOrientations;
     std::vector<std::byte> shapeDatas;
 
+    // Maximal number of interaction centers
+    std::size_t maxInteractionCentres{};
+    // Number of interaction centers for individual particles (for temp shapes - this->maxInteractionCentres)
+    std::vector<std::size_t> numInteractionCentres{};
+    // Offsets (indices) of interaction centers
+    std::vector<std::size_t> interactionCentresOffsets;
     // Positions of interaction centers with respect to shape centers (coherent with particle orientations)
     std::vector<Vector<3>> interactionCentres;
     // Absolute positions of interaction centers (shapesPositions[i] + interactionCentres[i] + bc correction)
     std::vector<Vector<3>> absoluteInteractionCentres;
+    // Translation of interaction center indices to corresponding particle indices
+    std::vector<std::size_t> interactionCentresParticleIndices;
 
     TriclinicBox box;
     std::unique_ptr<BoundaryConditions> bc;
     std::optional<NeighbourGrid> neighbourGrid;
     double interactionRange{};
-    std::size_t numInteractionCentres{};
     std::size_t shapeDataSize{};
 
     std::size_t moveThreads{};
@@ -73,9 +80,10 @@ private:
 
 
     void copyShape(std::size_t fromIdx, std::size_t toIdx);
-    const std::byte *getShapeDataPtr(std::size_t particleIdx) const;
+    [[nodiscard]] const std::byte *getShapeDataPtr(std::size_t particleIdx) const;
     void translateShapeWithoutInteractionCenters(std::size_t idx, const Vector<3> &translation);
     void rotateShapeWithoutInteractionCenters(std::size_t idx, const Matrix<3, 3> &rotation);
+    [[nodiscard]] bool areInteractionCentresConsistent(const Interaction &interaction) const;
 
     static bool areShapesWithinBox(const std::vector<Shape> &shapes, const TriclinicBox &box);
     static bool isBoxUpscaled(const TriclinicBox &oldBox, const TriclinicBox &newBox);
@@ -91,6 +99,7 @@ private:
 
     void recalculateAbsoluteInteractionCentres();
     void recalculateAbsoluteInteractionCentres(std::size_t particleIdx);
+    void recalculateAbsoluteInteractionCentres(std::size_t particleIdx, std::size_t tempParticleIdx);
 
     void prepareTempInteractionCentres(std::size_t particleIdx);
     void rotateTempInteractionCentres(const Matrix<3, 3> &rotation);
@@ -107,7 +116,8 @@ private:
     [[nodiscard]] std::size_t countParticleOverlaps(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
                                                     const Interaction &interaction, bool earlyExit) const;
     // Helper method for the overlap check without neighbour grid - exhaustive checks for all interaction centers
-    [[nodiscard]] std::size_t countOverlapsBetweenParticlesWithoutNG(std::size_t tempParticleIdx,
+    [[nodiscard]] std::size_t countOverlapsBetweenParticlesWithoutNG(std::size_t originalParticleIdx,
+                                                                     std::size_t tempParticleIdx,
                                                                      std::size_t anotherParticleIdx,
                                                                      const Interaction &interaction,
                                                                      bool earlyExit) const;
@@ -126,7 +136,8 @@ private:
     // Analogous helper methods as for overlaps but for energy
     [[nodiscard]] double calculateParticleEnergy(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
                                                  const Interaction &interaction) const;
-    [[nodiscard]] double calculateEnergyBetweenParticlesWithoutNG(std::size_t tempParticleIdx,
+    [[nodiscard]] double calculateEnergyBetweenParticlesWithoutNG(std::size_t originalParticleIdx,
+                                                                  std::size_t tempParticleIdx,
                                                                   std::size_t anotherParticleIdx,
                                                                   const Interaction &interaction) const;
     [[nodiscard]] double calculateInteractionCentreEnergyWithNG(std::size_t originalParticleIdx,
@@ -468,6 +479,8 @@ public:
      * @return an auxiliary key, value map which was stored together with a packing
      */
     std::map<std::string, std::string> restore(std::istream &in, const Interaction &interaction);
+
+    [[nodiscard]] std::size_t getNumberOfInteractionCentres() const;
 
     /**
      * @brief Returns the number of neighbour grid complete rebuilds since the last reset.

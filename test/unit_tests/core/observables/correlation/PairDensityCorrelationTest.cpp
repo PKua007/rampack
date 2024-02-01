@@ -19,7 +19,7 @@ TEST_CASE("PairDensityCorrelation") {
     ALLOW_CALL(*enumerator, getSignatureName()).RETURN("aaa");
 
     MockShapeTraits traits;
-    ALLOW_CALL(traits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
+    ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(traits, getRangeRadius()).RETURN(1);
     ALLOW_CALL(traits, getTotalRangeRadius()).RETURN(1);
 

@@ -24,7 +24,7 @@ TEST_CASE("RadialEnumerator") {
     // (0, 0), (1, 1), (2, 2) => 0
     std::vector<Shape> shapes{Shape{{1, 1, 1}}, Shape{{1, 3, 1}}, Shape{{9, 9, 9}}};
     MockShapeTraits traits;
-    ALLOW_CALL(traits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
+    ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(traits, getRangeRadius()).RETURN(1);
     ALLOW_CALL(traits, getTotalRangeRadius()).RETURN(1);
     ALLOW_CALL(traits, getGeometricOrigin(_)).RETURN(_1.getPosition());

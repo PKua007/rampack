@@ -67,7 +67,7 @@ TEST_CASE("SmoothWedge: collide geometry") {
         const auto &collideGeometry0 = traits.getCollideGeometry(0);
         const auto &collideGeometry1 = traits.getCollideGeometry(1);
         const auto &collideGeometry2 = traits.getCollideGeometry(2);
-        const auto &centers = traits.getInteractionCentres();
+        const auto &centers = traits.getInteractionCentres(nullptr);
 
         CHECK_THAT(collideGeometry0.getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
         CHECK_THAT(collideGeometry1.getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));

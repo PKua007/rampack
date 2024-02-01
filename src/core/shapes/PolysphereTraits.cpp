@@ -75,7 +75,7 @@ std::shared_ptr<ShapePrinter> PolysphereTraits::createObjPrinter(std::size_t sub
         geometries.push_back(&xcSpheres.back());
     }
 
-    auto interactionCentres = this->interaction->getInteractionCentres();
+    auto interactionCentres = this->interaction->getInteractionCentres(nullptr);
 
     return std::make_shared<XCObjShapePrinter>(geometries, interactionCentres, subdivisions);
 }
@@ -107,11 +107,13 @@ bool PolysphereTraits::HardInteraction::overlapBetween(const Vector<3> &pos1,
     return bc.getDistance2(pos1, pos2) < r * r;
 }
 
-std::vector<Vector<3>> PolysphereTraits::HardInteraction::getInteractionCentres() const {
+std::vector<Vector<3>>
+PolysphereTraits::HardInteraction::getInteractionCentres([[maybe_unused]] const std::byte *data) const
+{
     std::vector<Vector<3>> centres;
     centres.reserve(this->sphereData.size());
-    for (const auto &data : this->sphereData)
-        centres.push_back(data.position);
+    for (const auto &sData : this->sphereData)
+        centres.push_back(sData.position);
     return centres;
 }
 

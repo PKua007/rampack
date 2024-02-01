@@ -44,7 +44,7 @@ TEST_CASE("PolyspherocylinderTraits") {
             CHECK(interaction.getRangeRadius() == Approx(4));
             std::vector<Vector<3>> expectedCentres = {{0, 0, 0},
                                                       {0, 0, 2}};
-            CHECK_THAT(interaction.getInteractionCentres(), Catch::UnorderedEquals(expectedCentres));
+            CHECK_THAT(interaction.getInteractionCentres(nullptr), Catch::UnorderedEquals(expectedCentres));
         }
 
         SECTION("overlap") {

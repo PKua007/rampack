@@ -9,8 +9,9 @@
 CompoundInteraction::CompoundInteraction(const Interaction &interaction1, const Interaction &interaction2)
         : interaction1{interaction1}, interaction2{interaction2}
 {
-    auto centres1 = this->interaction1.getInteractionCentres();
-    auto centres2 = this->interaction2.getInteractionCentres();
+    // TODO: fix nullptr
+    auto centres1 = this->interaction1.getInteractionCentres(nullptr);
+    auto centres2 = this->interaction2.getInteractionCentres(nullptr);
     Expects(centres1 == centres2);
 
     this->interactionCentres = centres1;

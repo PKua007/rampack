@@ -68,7 +68,9 @@ public:
         return this->calculateEnergyForDistance2(bc.getDistance2(pos1, pos2));
     }
 
-    [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const final { return this->potentialCentres; }
+    [[nodiscard]] std::vector<Vector<3>> getInteractionCentres([[maybe_unused]] const std::byte *data) const final {
+        return this->potentialCentres;
+    }
 };
 
 

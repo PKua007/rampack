@@ -125,7 +125,9 @@ public:
      * orientation.
      * @details An empty list means there is a single interaction centre in the origin.
      */
-    [[nodiscard]] virtual std::vector<Vector<3>> getInteractionCentres() const { return {}; }
+    [[nodiscard]] virtual std::vector<Vector<3>> getInteractionCentres([[maybe_unused]] const std::byte *data) const {
+        return {};
+    }
 
     [[nodiscard]] virtual std::size_t getShapeDataSize() const { return 0; }
 

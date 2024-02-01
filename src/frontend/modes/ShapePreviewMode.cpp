@@ -131,7 +131,8 @@ void ShapePreviewMode::printInteractionInfo(const Interaction &interaction) {
     this->logger << "Interaction center range : " << interaction.getRangeRadius() << std::endl;
     this->logger << "Total range              : " << interaction.getTotalRangeRadius() << std::endl;
     this->logger << "Interaction centers      :" << std::endl;
-    auto interactionCentres = interaction.getInteractionCentres();
+    // TODO: fix
+    auto interactionCentres = interaction.getInteractionCentres(nullptr);
     if (interactionCentres.empty())
         interactionCentres.emplace_back();
     for (std::size_t i{}; i < interactionCentres.size(); i++)

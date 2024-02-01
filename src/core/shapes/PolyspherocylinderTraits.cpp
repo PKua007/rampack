@@ -133,12 +133,12 @@ bool PolyspherocylinderTraits::overlapBetween(const Vector<3> &pos1, const Matri
            < insphereR2;
 }
 
-std::vector<Vector<3>> PolyspherocylinderTraits::getInteractionCentres() const {
+std::vector<Vector<3>> PolyspherocylinderTraits::getInteractionCentres([[maybe_unused]] const std::byte *data) const {
     std::vector<Vector<3>> centres;
     const auto &spherocylinderData = this->getSpherocylinderData();
     centres.reserve(spherocylinderData.size());
-    for (const auto &data : spherocylinderData)
-        centres.push_back(data.position);
+    for (const auto &scData : spherocylinderData)
+        centres.push_back(scData.position);
     return centres;
 }
 
@@ -208,7 +208,7 @@ std::shared_ptr<ShapePrinter> PolyspherocylinderTraits::createObjPrinter(std::si
         geometries.push_back(xcSpherocylinders.back().get());
     }
 
-    auto interactionCentres = this->getInteractionCentres();
+    auto interactionCentres = this->getInteractionCentres(nullptr);
 
     return std::make_shared<XCObjShapePrinter>(geometries, interactionCentres, subdivisions);
 }
