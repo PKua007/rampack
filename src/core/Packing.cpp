@@ -1070,12 +1070,13 @@ void Packing::setupForInteraction(const Interaction &interaction) {
 
             this->numInteractionCentres.push_back(centres.size());
             this->maxInteractionCentres = std::max(centres.size(), this->maxInteractionCentres);
-            this->interactionCentresOffsets.push_back(this->numInteractionCentres.size());
 
             for (const auto &centre: centres) {
                 this->interactionCentres.push_back(rot * centre);
                 this->interactionCentresParticleIndices.push_back(particleIdx);
             }
+
+            this->interactionCentresOffsets.push_back(this->interactionCentres.size());
         }
 
         // Fill in for temp shapes
@@ -1377,7 +1378,8 @@ void Packing::fixRotationMatrix(Matrix<3, 3> &rotation) {
 }
 
 void Packing::tryOrientationFix(std::size_t particleIdx, const std::vector<Vector<3>> &centres) {
-    Assert(centres.size() == this->numInteractionCentres[particleIdx]);
+    if (this->maxInteractionCentres != 0)
+        Assert(centres.size() == this->numInteractionCentres[particleIdx]);
 
     // threadId should be 0 (master), but fetch explicitly if somehow this function is run from a different thread
     auto threadId = OMP_THREAD_ID;
