@@ -590,8 +590,6 @@ TEST_CASE("Packing: multiple interaction center overlap counting") {
     }
 }
 
-#include <iostream>
-
 TEST_CASE("Packing: single interaction centre wall overlap") {
     auto scalingThreads = GENERATE(1, 2);
 
@@ -637,21 +635,18 @@ TEST_CASE("Packing: single interaction centre wall overlap") {
             packing.acceptTranslation();
             CHECK(packing.getCachedNumberOfOverlaps() == 2);
             CHECK(packing.countTotalOverlaps(hardCore, false) == 2);
-            std::cout << packing << std::endl;
 
             // Move molecule 0 into a corner to collide with only 1 wall (new pos: {0.7, 1, 0.5}, overlaps: 1)
             CHECK(packing.tryTranslation(0, {0.2, 0, 0}, hardCore) == -INF);
             packing.acceptTranslation();
             CHECK(packing.getCachedNumberOfOverlaps() == 1);
             CHECK(packing.countTotalOverlaps(hardCore, false) == 1);
-            std::cout << packing << std::endl;
 
             // Move molecule 0 out of walls into molecule 1 (new pos: {2.5, 2.5, 1.5}, overlaps: 1)
             CHECK(packing.tryTranslation(0, {1.8, 1.5, 1.0}, hardCore) == 0);
             packing.acceptTranslation();
             CHECK(packing.getCachedNumberOfOverlaps() == 1);
             CHECK(packing.countTotalOverlaps(hardCore, false) == 1);
-            std::cout << packing << std::endl;
         }
     }
 }
