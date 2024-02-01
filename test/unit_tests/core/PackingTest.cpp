@@ -148,14 +148,20 @@ namespace {
 
     class DimerDistanceInteraction : public SphereDistanceInteraction {
     public:
-        [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return {{0, 0, 0}, {1, 0, 0}}; }
+        [[nodiscard]] std::vector<Vector<3>>
+        getInteractionCentres([[maybe_unused]] const std::byte *data) const override {
+            return {{0, 0, 0}, {1, 0, 0}};
+        }
     };
 
     class DimerHardCoreInteraction : public SphereHardCoreInteraction {
     public:
         explicit DimerHardCoreInteraction(double radius) : SphereHardCoreInteraction(radius) { }
 
-        [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return {{0, 0, 0}, {1, 0, 0}}; }
+        [[nodiscard]] std::vector<Vector<3>>
+        getInteractionCentres([[maybe_unused]] const std::byte *data) const override {
+            return {{0, 0, 0}, {1, 0, 0}};
+        }
     };
 
     class PolysphereGeometry : public ShapeGeometry {

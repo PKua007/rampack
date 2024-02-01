@@ -29,7 +29,7 @@ TEST_CASE("CentralInteraction: point installation") {
 
         interaction.installOnCentres({{0, 0, 0}, {2, 0, 0}});
 
-        REQUIRE(interaction.getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}, {2, 0, 0}});
+        REQUIRE(interaction.getInteractionCentres(nullptr) == std::vector<Vector<3>>{{0, 0, 0}, {2, 0, 0}});
     }
 
     SECTION("installOnSphere") {
@@ -37,7 +37,7 @@ TEST_CASE("CentralInteraction: point installation") {
 
         interaction.installOnSphere();
 
-        REQUIRE(interaction.getInteractionCentres().empty());
+        REQUIRE(interaction.getInteractionCentres(nullptr).empty());
     }
 }
 

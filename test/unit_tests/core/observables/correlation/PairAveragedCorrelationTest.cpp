@@ -15,16 +15,17 @@
 
 
 TEST_CASE("PairAveragedCorrelation") {
+    using trompeloeil::_;
+
     Shape s0({1, 1, 1}), s1({2, 2, 2}), s2({3, 3, 3});
     std::vector<Shape> shapes{s0, s1, s2};
     auto binDividers = std::vector<double>{0, 2, 4};
     TriclinicBox box(10);
 
     MockShapeTraits traits;
-    ALLOW_CALL(traits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
+    ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(traits, getRangeRadius()).RETURN(1);
     ALLOW_CALL(traits, getTotalRangeRadius()).RETURN(1);
-    using trompeloeil::_;
 
     auto function = std::make_unique<MockCorrelationFunction>();
     ALLOW_CALL(*function, getSignatureName()).RETURN("func");

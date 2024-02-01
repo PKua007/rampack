@@ -28,7 +28,7 @@ TEST_CASE("LinearEnumerator") {
     TriclinicBox box(std::array<Vector<3>, 3>{{{5, 0, 0}, {5, 5, 0}, {0, 0, 10}}});
     std::vector<Shape> shapes{Shape{{1.5, 0.5, 5}}, Shape{{3.5, 1.5, 5}}, Shape{{4.5, 1.5, 5}}, Shape{{6.5, 3.5, 5}}};
     MockShapeTraits traits;
-    ALLOW_CALL(traits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
+    ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(traits, getRangeRadius()).RETURN(1);
     ALLOW_CALL(traits, getTotalRangeRadius()).RETURN(1);
     ALLOW_CALL(traits, getGeometricOrigin(_)).RETURN(_1.getPosition());

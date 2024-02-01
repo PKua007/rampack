@@ -17,7 +17,7 @@ TEST_CASE("NematicOrder") {
     ALLOW_CALL(mockShapeTraits, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{1, 0, 0});
     ALLOW_CALL(mockShapeTraits, getSecondaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{0, 1, 0});
     ALLOW_CALL(mockShapeTraits, getRangeRadius()).RETURN(std::numeric_limits<double>::infinity());
-    ALLOW_CALL(mockShapeTraits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
+    ALLOW_CALL(mockShapeTraits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
 
     SECTION("positive order with Q-tensor dump") {

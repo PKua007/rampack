@@ -88,4 +88,12 @@ std::string demangle(const char *abiName);
 template <class... T>
 constexpr bool always_false = false;
 
+inline bool logical_xor(bool p1, bool p2) {
+    return p1 != p2;
+}
+
+inline bool logical_xnor(bool p1, bool p2) {
+    return p1 == p2;
+}
+
 #endif //RAMPACK_UTILS_H

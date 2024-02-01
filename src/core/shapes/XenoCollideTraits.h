@@ -55,7 +55,8 @@ private:
 
     template<typename Printer>
     std::shared_ptr<Printer> createPrinter(std::size_t meshSubdivisions) const {
-        auto centers = this->getInteractionCentres();
+        // TODO: fix nullptr
+        auto centers = this->getInteractionCentres(nullptr);
         if (centers.empty())
             centers.push_back({0, 0, 0});
 
@@ -191,7 +192,8 @@ public:
         if (this->rangeRadius.has_value())
             return *this->rangeRadius;
 
-        std::size_t numCenters = std::max(this->getInteractionCentres().size(), std::size_t{1});
+        // TODO: fix nullptr
+        std::size_t numCenters = std::max(this->getInteractionCentres(nullptr).size(), std::size_t{1});
         const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
         double maxRadius{};
         for (std::size_t i{}; i < numCenters; i++) {

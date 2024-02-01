@@ -163,7 +163,7 @@ public:
                                        std::size_t idx, const Vector<3> &wallOrigin,
                                        const Vector<3> &wallVector) const override;
 
-    [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override;
+    [[nodiscard]] std::vector<Vector<3>> getInteractionCentres(const std::byte *data) const override;
     [[nodiscard]] double getRangeRadius() const override;
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }

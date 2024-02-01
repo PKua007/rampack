@@ -43,11 +43,11 @@ TEST_CASE("FlipSampler") {
     MockShapeTraits traits;
     ALLOW_CALL(traits, hasHardPart()).RETURN(true);
     ALLOW_CALL(traits, hasSoftPart()).RETURN(false);
-    ALLOW_CALL(traits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
+    ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(traits, getRangeRadius()).RETURN(1);
     ALLOW_CALL(traits, getTotalRangeRadius()).RETURN(1);
     ALLOW_CALL(traits, overlapBetween(_, _, _, _, _, _, _, _, _)).RETURN(_9.getDistance2(_1, _5) < 1);
-    ALLOW_CALL(traits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
+    ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
 
     SECTION("primary + secondary + nonzero origin") {
         ALLOW_CALL(traits, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{0, 1, 0});

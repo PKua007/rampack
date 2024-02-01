@@ -26,7 +26,7 @@ TEST_CASE("LayerwiseRadialEnumerator") {
     std::vector<Shape> shapes{Shape{{2, 1, 5}}, Shape{{5, 1, 5}}, Shape{{6, 4, 5}}, Shape{{13, 4, 5}},
                               Shape{{4, 6, 5}}};
     MockShapeTraits traits;
-    ALLOW_CALL(traits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
+    ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(traits, getRangeRadius()).RETURN(1);
     ALLOW_CALL(traits, getTotalRangeRadius()).RETURN(1);
     ALLOW_CALL(traits, getGeometricOrigin(_)).RETURN(_1.getPosition());
