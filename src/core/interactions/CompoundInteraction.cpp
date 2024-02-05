@@ -85,7 +85,7 @@ bool CompoundInteraction::overlapWithWall(const Vector<3> &pos, const Matrix<3, 
 std::vector<Vector<3>> CompoundInteraction::getInteractionCentres(const std::byte *data) const {
     auto centres1 = this->interaction1.getInteractionCentres(data);
     auto centres2 = this->interaction2.getInteractionCentres(data);
-    Assert(centres1 == centres2);
+    AssertMsg(centres1 == centres2, "Non identical centres for given data");
 
     return centres1;
 }
