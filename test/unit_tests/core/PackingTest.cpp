@@ -127,11 +127,11 @@ namespace {
         [[nodiscard]] std::size_t getShapeDataSize() const override { return sizeof(Charge); }
 
         [[nodiscard]] double calculateEnergyBetween(const Vector<3> &pos1,
-                                                    [[maybe_unused]] const Matrix<3, 3> &orientaton1,
+                                                    [[maybe_unused]] const Matrix<3, 3> &orientation1,
                                                     const std::byte *data1,
                                                     [[maybe_unused]] std::size_t idx1,
                                                     const Vector<3> &pos2,
-                                                    [[maybe_unused]] const Matrix<3, 3> &orientaton2,
+                                                    [[maybe_unused]] const Matrix<3, 3> &orientation2,
                                                     const std::byte *data2,
                                                     [[maybe_unused]] std::size_t idx2,
                                                     const BoundaryConditions &bc) const override
@@ -162,6 +162,144 @@ namespace {
         }
     };
 
+    class PolydispersePolymerHardCoreInteraction : public Interaction {
+    public:
+        struct PolymerData {
+            std::vector<Vector<3>> pos{};
+            std::vector<double> r{};
+        };
+
+        enum class Tag : std::size_t {
+            DIMER = 0,
+            TRIMER
+        };
+
+
+        static const PolymerData POLYMER_DATA[2];
+
+        [[nodiscard]] bool hasHardPart() const override { return true; }
+        [[nodiscard]] bool hasSoftPart() const override { return false; }
+        [[nodiscard]] bool hasWallPart() const override { return true; }
+        [[nodiscard]] bool isConvex() const override { return false; }
+        [[nodiscard]] std::size_t getShapeDataSize() const override { return sizeof(Tag); }
+
+        [[nodiscard]] bool overlapBetween(const Vector<3> &pos1,
+                                          [[maybe_unused]] const Matrix<3, 3> &orientaton1,
+                                          const std::byte *data1,
+                                          std::size_t idx1,
+                                          const Vector<3> &pos2,
+                                          [[maybe_unused]] const Matrix<3, 3> &orientaton2,
+                                          const std::byte *data2,
+                                          std::size_t idx2,
+                                          const BoundaryConditions &bc) const override
+        {
+            auto tag1 = ShapeData::as<std::underlying_type_t<Tag>>(data1);
+            auto tag2 = ShapeData::as<std::underlying_type_t<Tag>>(data2);
+            double radius1 = POLYMER_DATA[tag1].r[idx1];
+            double radius2 = POLYMER_DATA[tag2].r[idx2];
+
+            return bc.getDistance2(pos1, pos2) < std::pow(radius1 + radius2, 2);
+        }
+
+        [[nodiscard]] bool overlapWithWall(const Vector<3> &pos, [[maybe_unused]] const Matrix<3, 3> &orientation,
+                                           [[maybe_unused]] const std::byte *data, std::size_t idx,
+                                           const Vector<3> &wallOrigin, const Vector<3> &wallVector) const override
+        {
+            auto tag = ShapeData::as<std::underlying_type_t<Tag>>(data);
+            double radius = POLYMER_DATA[tag].r[idx];
+
+            double dotProduct = wallVector * (pos - wallOrigin);
+            return dotProduct < radius;
+        }
+
+        [[nodiscard]] double getRangeRadius(const std::byte *data) const override {
+            auto tag = ShapeData::as<std::underlying_type_t<Tag>>(data);
+            const auto &radii = POLYMER_DATA[tag].r;
+            double maxRadius = *std::max_element(radii.begin(), radii.end());
+
+            return 2 * maxRadius;
+        }
+
+        [[nodiscard]] std::vector<Vector<3>> getInteractionCentres(const std::byte *data) const override {
+            auto tag = ShapeData::as<std::underlying_type_t<Tag>>(data);
+            return POLYMER_DATA[tag].pos;
+        }
+    };
+
+    const PolydispersePolymerHardCoreInteraction::PolymerData
+    PolydispersePolymerHardCoreInteraction::POLYMER_DATA[2] = {
+        // Dimer with radii 0.4, 0.6
+        {
+            {{-1, 0, 0}, {0, 0, 0}},
+            {0.4, 0.6}
+        },
+        // Trimer with radii 3 x 0.25
+        {
+            {{0, 0, 0}, {0.5, 0, 0}, {1, 0, 0}},
+            {0.3, 0.3, 0.3}
+        },
+    };
+
+    class PolydispersePolymerElectrostaticInteraction : public Interaction {
+    public:
+        struct PolymerData {
+            std::vector<Vector<3>> pos{};
+            std::vector<double> charge{};
+        };
+
+        enum class Tag : std::size_t {
+            DIMER = 0,
+            TRIMER
+        };
+
+
+        static const PolymerData POLYMER_DATA[2];
+
+        [[nodiscard]] bool hasHardPart() const override { return false; }
+        [[nodiscard]] bool hasSoftPart() const override { return true; }
+        [[nodiscard]] bool hasWallPart() const override { return false; }
+        [[nodiscard]] bool isConvex() const override { return false; }
+        [[nodiscard]] std::size_t getShapeDataSize() const override { return sizeof(Tag); }
+
+        [[nodiscard]] double calculateEnergyBetween(const Vector<3> &pos1,
+                                                    [[maybe_unused]] const Matrix<3, 3> &orientation1,
+                                                    const std::byte *data1,
+                                                    std::size_t idx1,
+                                                    const Vector<3> &pos2,
+                                                    [[maybe_unused]] const Matrix<3, 3> &orientation2,
+                                                    const std::byte *data2,
+                                                    std::size_t idx2,
+                                                    const BoundaryConditions &bc) const override
+        {
+            auto tag1 = ShapeData::as<std::underlying_type_t<Tag>>(data1);
+            auto tag2 = ShapeData::as<std::underlying_type_t<Tag>>(data2);
+            double q1 = POLYMER_DATA[tag1].charge[idx1];
+            double q2 = POLYMER_DATA[tag2].charge[idx2];
+            double r = std::sqrt(bc.getDistance2(pos1, pos2));
+
+            return -q1*q2/r;
+        }
+
+        [[nodiscard]] std::vector<Vector<3>> getInteractionCentres(const std::byte *data) const override {
+            auto tag = ShapeData::as<std::underlying_type_t<Tag>>(data);
+            return POLYMER_DATA[tag].pos;
+        }
+    };
+
+    const PolydispersePolymerElectrostaticInteraction::PolymerData
+    PolydispersePolymerElectrostaticInteraction::POLYMER_DATA[2] = {
+        // Dimer with charges 1, 2
+        {
+            {{-1, 0, 0}, {0, 0, 0}},
+            {1, 2}
+        },
+        // Trimer with charges 3, 4, 5
+        {
+            {{0, 0, 0}, {0.5, 0, 0}, {1, 0, 0}},
+            {3, 4, 5}
+        },
+    };
+
     class PolysphereGeometry : public ShapeGeometry {
     public:
         [[nodiscard]] double getVolume([[maybe_unused]] const Shape &shape) const override {
@@ -174,7 +312,6 @@ namespace {
 
 TEST_CASE("Packing: hard single interaction center") {
     using Radius = PolydisperseSphereHardCoreInteraction::Radius;
-    Radius maxRadius = 0.3;
     PolydisperseSphereHardCoreInteraction hardCore;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     std::vector<Shape> shapes;
@@ -270,6 +407,7 @@ TEST_CASE("Packing: soft single interaction center") {
     Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), electrostaticInteraction);
 
     SECTION("scaling") {
+        // Distances in relative coordinates (for a 1x1x1 box)
         // 1 <-> 2: d = 2/10
         // 1 <-> 3: d = sqrt(0.4^2 + 0.4^2 + 0.3^2) = sqrt(41)/10
         // 2 <-> 3: d = sqrt(0.4^2 + 0.4^2 + 0.3^2) = sqrt(41)/10
@@ -282,7 +420,7 @@ TEST_CASE("Packing: soft single interaction center") {
     }
 
     SECTION("translating") {
-        // first particle moved to {0.1, 0.1, 0.8}, so after the move:
+        // first particle moved to relative coordinates {0.1, 0.1, 0.8}, so after the move:
         // 1 <-> 2: d = sqrt(0.2^2 + 0.3^2) = sqrt(13)/10
         // 1 <-> 3: d = sqrt(0.4^2 + 0.4^2) = sqrt(32)/10
         // 2 <-> 3: d = sqrt(0.4^2 + 0.4^2 + 0.3^2) = sqrt(41)/10
@@ -320,99 +458,137 @@ TEST_CASE("Packing: soft single interaction center") {
     }*/
 }
 
-TEST_CASE("Packing: multiple interaction center moves") {
-    // Packing has linear scale of 5, so all coordinates in translate are multiplied by 3 (before scaling of course)
-    double radius = 0.5;
-    DimerHardCoreInteraction hardCore(radius);
-    // DimerDistanceInteraction distanceInteraction{};
+TEST_CASE("Packing: hard multiple interaction centres") {
+    using Tag = PolydispersePolymerHardCoreInteraction::Tag;
+    PolydispersePolymerHardCoreInteraction hardCore;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     std::vector<Shape> shapes;
-    shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5});
-    shapes.emplace_back(Vector<3>{0.5, 3.5, 0.5});
+    auto noRot = Matrix<3, 3>::identity();
+    // Balls: {pos={0.5, 0.5, 2.5}, r=0.4}, {pos={1.5, 0.5, 2.5}, r=0.6}
+    shapes.emplace_back(Vector<3>{1.5, 0.5, 2.5}, noRot, Tag::DIMER);
+    // Balls: r=0.3, pos={{1.5, 3.7, 2.5}, {2.0, 3.7, 2.5}, {2.5, 3.7, 2.5}}
+    shapes.emplace_back(Vector<3>{1.5, 3.7, 2.5}, noRot, Tag::TRIMER);
     Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
 
     constexpr double inf = std::numeric_limits<double>::infinity();
 
     SECTION ("scaling") {
         SECTION("hard core without overlapping") {
-            // For scale 0.5 dimers 0 and 1 are touching (through pbc). So a bit more should prevent any overlaps
+            // For scale 0.5 polymers are touching through pbc on the y-axis (2nd and 1st ball, respectively).
+            // So a bit more should prevent any overlaps.
             CHECK(packing.tryScaling(0.51, hardCore) == 0);
-            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.255, 0.255, 0.255}, {0.255, 1.785, 0.255}}, 1e-9));
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.765, 0.255, 1.275}, {0.765, 1.887, 1.275}}, 1e-9));
         }
 
         SECTION("hard core downward with overlapping") {
-            // Same as above, but a little bit more gives an overlap
+            // Same as above, but a little bit less gives an overlap
             REQUIRE(packing.tryScaling(0.49, hardCore) == inf);
 
             SECTION("reverting the move") {
                 packing.revertScaling();
-                CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {0.5, 3.5, 0.5}}, 1e-9));
+                CHECK_THAT(packing, HasParticlesWithApproxPositions({{1.5, 0.5, 2.5}, {1.5, 3.7, 2.5}}, 1e-9));
             }
         }
-
-//        SECTION("distance interaction") {
-//            packing.setupForInteraction(distanceInteraction);
-//            // interaction: particle1.center1 <-> particle2.center2
-//            // before scaling:
-//            // 0.0 <-> 1.0: d = 2
-//            // 0.0 <-> 1.1: d = sqrt(2^2 + 1^2) = sqrt(5)
-//            // 1.0 <-> 1.0: d = sqrt(2^2 + 1^2) = sqrt(5)
-//            // 1.0 <-> 1.1: d = 2
-//            // after scaling:
-//            // 0.0 <-> 1.0: d = 1
-//            // 0.0 <-> 1.1: d = sqrt(1^2 + 1^2) = sqrt(2)
-//            // 1.0 <-> 1.0: d = sqrt(1^2 + 1^2) = sqrt(2)
-//            // 1.0 <-> 1.1: d = 1
-//            // We scale downward from 5 to 2.5
-//            double scale1E = (4 + 2*std::sqrt(5));
-//            double scale05E = (2 + 2*std::sqrt(2));
-//            double dE = scale05E - scale1E;
-//            CHECK(packing.tryScaling(0.5, distanceInteraction) == Approx(dE));
-//        }
     }
 
     SECTION("translating") {
+        // For tanslation {0, 0.9, 0}:
+        // 0: shape{pos=1.5, 0.5, 2.5}, balls: {pos={0.5, 0.5, 2.5}, r=0.4}, {pos={1.5, 0.5, 2.5}, r=0.6}
+        // 1: shape{pos=1.5, 4.6, 2.5}, balls: r=0.3, pos={{1.5, 4.6, 2.5}, {2.0, 4.6, 2.5}, {2.5, 4.6, 2.5}}
+        // 2nd ball of shape 0 and 1st ball of shape 1 are touching
+
         SECTION("non-overlapping") {
-            // Translation {0, 1, 0} places particle 1 at {0.5, 4.5, 0.5}, while particle 1 is at
-            // {0.5, 0.5, 0.5} - they touch through pbc on y coordinate. Do a little bit less prevents overlap
-            CHECK(packing.tryTranslation(1, {0, 0.9, 0}, hardCore) == 0);
-            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {0.5, 3.5, 0.5}}, 1e-9));
+            // Do a bit less than 0.9 to prevent overlap
+            CHECK(packing.tryTranslation(1, {0, 0.8, 0}, hardCore) == 0);
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{1.5, 0.5, 2.5}, {1.5, 3.7, 2.5}}, 1e-9));
             SECTION("accepting the move") {
                 packing.acceptTranslation();
-                CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {0.5, 4.4, 0.5}}, 1e-9));
+                CHECK_THAT(packing, HasParticlesWithApproxPositions({{1.5, 0.5, 2.5}, {1.5, 4.5, 2.5}}, 1e-9));
             }
         }
 
         SECTION("overlapping") {
-            // Same as above, but we do more instead of less
-            CHECK(packing.tryTranslation(1, {0, 1.1, 0}, hardCore) == inf);
-            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.5, 0.5, 0.5}, {0.5, 3.5, 0.5}}, 1e-9));
+            // Do a bit more than 0.9 to force overlap
+            CHECK(packing.tryTranslation(1, {0, 1.0, 0}, hardCore) == inf);
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{1.5, 0.5, 2.5}, {1.5, 3.7, 2.5}}, 1e-9));
         }
+    }
+}
 
-//        SECTION("distance interaction") {
-//            packing.setupForInteraction(distanceInteraction);
-//            // interaction: particle1.center1 <-> particle2.center2
-//            // before translation:
-//            // 0.0 <-> 1.0: d = 2
-//            // 0.0 <-> 1.1: d = sqrt(2^2 + 1^2) = sqrt(5)
-//            // 1.0 <-> 1.0: d = sqrt(2^2 + 1^2) = sqrt(5)
-//            // 1.0 <-> 1.1: d = 2
-//            // after translation:
-//            // 0.0 <-> 1.0: d = 1
-//            // 0.0 <-> 1.1: d = sqrt(1^2 + 1^2) = sqrt(2)
-//            // 1.0 <-> 1.0: d = sqrt(1^2 + 1^2) = sqrt(2)
-//            // 1.0 <-> 1.1: d = 1
-//            double E0 = (4 + 2*std::sqrt(5));
-//            double E1 = (2 + 2*std::sqrt(2));
-//            double dE = E1 - E0;
-//            CHECK(packing.tryTranslation(1, {0, 1, 0}, distanceInteraction) == Approx(dE));
-//
-//            SECTION("correct energy before and after accepted move") {
-//                CHECK(packing.getTotalEnergy(distanceInteraction) == Approx(E0));
-//                packing.acceptTranslation();
-//                CHECK(packing.getTotalEnergy(distanceInteraction) == Approx(E1));
-//            }
-//        }
+TEST_CASE("Packing: soft multiple interaction centres") {
+    using Tag = PolydispersePolymerElectrostaticInteraction::Tag;
+    PolydispersePolymerElectrostaticInteraction electrostaticInteraction;
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    std::vector<Shape> shapes;
+    auto noRot = Matrix<3, 3>::identity();
+    shapes.emplace_back(Vector<3>{1.5, 0.5, 2.5}, noRot, Tag::DIMER);
+    shapes.emplace_back(Vector<3>{1.5, 3.5, 2.5}, noRot, Tag::TRIMER);
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), electrostaticInteraction);
+
+    // Before modifications:
+    // 0: shape{pos=1.5, 0.5, 2.5}, balls: {pos={0.5, 0.5, 2.5}, q=1}, {pos={1.5, 0.5, 2.5}, q=2}
+    // 1: shape{pos=1.5, 3.5, 2.5}, balls: {pos={1.5, 3.5, 2.5}, q=3}, {pos={2.0, 3.5, 2.5}, q=4}, {pos={2.5, 3.5, 2.5}, q=5}
+    // Distances (particle1.center1 <-> particle2.center2):
+    // 0.0 <-> 1.0: d = sqrt(1^2 + 2^2) = sqrt(5)
+    // 0.0 <-> 1.1: d = sqrt(1.5^2 + 2^2) = sqrt(6.25)
+    // 0.0 <-> 1.2: d = sqrt(2^2 + 2^2) = sqrt(8)
+    // 0.1 <-> 1.0: d = sqrt(0 + 2^2) = sqrt(4)
+    // 0.1 <-> 1.1: d = sqrt(0.5^2 + 2^2) = sqrt(4.25)
+    // 0.1 <-> 1.2: d = sqrt(1^2 + 2^2) = sqrt(5)
+
+    double E0 = -(1.*3)/std::sqrt(5) + -(1.*4)/std::sqrt(6.25) + -(1.*5)/std::sqrt(8)
+              + -(2.*3)/std::sqrt(4) + -(2.*4)/std::sqrt(4.25) + -(2.*5)/std::sqrt(5);
+
+    REQUIRE(packing.getTotalEnergy(electrostaticInteraction) == Approx(E0));
+
+    SECTION("scaling") {
+        // After scaling:
+        // 0: shape{pos=3.0, 1.0, 5.0}, balls: {pos={2.0, 1.0, 5.0}, r=0.4}, {pos={3.0, 1.0, 5.0}, r=0.6}
+        // 1: shape{pos=3.0, 7.0, 5.0}, balls: r=0.3, pos={{3.0, 7.0, 5.0}, {3.5, 7.0, 5.0}, {4.0, 7.0, 5.0}}
+        // Distances:
+        // 0.0 <-> 1.0: d = sqrt(1^2 + 4^2) = sqrt(17)
+        // 0.0 <-> 1.1: d = sqrt(1.5^2 + 4^2) = sqrt(18.25)
+        // 0.0 <-> 1.2: d = sqrt(2^2 + 4^2) = sqrt(20)
+        // 0.1 <-> 1.0: d = sqrt(0 + 4^2) = sqrt(16)
+        // 0.1 <-> 1.1: d = sqrt(0.5^2 + 4^2) = sqrt(16.25)
+        // 0.1 <-> 1.2: d = sqrt(1^2 + 4^2) = sqrt(17)
+
+        // We scale upward from 5 to 10
+        double E1 = -(1.*3)/std::sqrt(17) + -(1.*4)/std::sqrt(18.25) + -(1.*5)/std::sqrt(20)
+                  + -(2.*3)/std::sqrt(16) + -(2.*4)/std::sqrt(16.25) + -(2.*5)/std::sqrt(17);
+        double dE = E1 - E0;
+        CHECK(packing.tryScaling(2, electrostaticInteraction) == Approx(dE));
+        CHECK(packing.getTotalEnergy(electrostaticInteraction) == Approx(E1));
+
+        SECTION("reverting") {
+            packing.revertScaling();
+
+            CHECK(packing.getTotalEnergy(electrostaticInteraction) == Approx(E0));
+        }
+    }
+
+    SECTION("translating") {
+        // After translation:
+        // 0: shape{pos=1.5, 0.5, 2.5}, balls: {pos={0.5, 0.5, 2.5}, q=1}, {pos={1.5, 0.5, 2.5}, q=2}
+        // 1: shape{pos=1.5, 1.5, 2.5}, balls: {pos={1.5, 1.5, 2.5}, q=3}, {pos={2.0, 1.5, 2.5}, q=4}, {pos={2.5, 1.5, 2.5}, q=5}
+        // Distances:
+        // 0.0 <-> 1.0: d = sqrt(1^2 + 1^2) = sqrt(2)
+        // 0.0 <-> 1.1: d = sqrt(1.5^2 + 1^2) = sqrt(3.25)
+        // 0.0 <-> 1.2: d = sqrt(2^2 + 1^2) = sqrt(5)
+        // 0.1 <-> 1.0: d = sqrt(0 + 1^2) = sqrt(1)
+        // 0.1 <-> 1.1: d = sqrt(0.5^2 + 1^2) = sqrt(1.25)
+        // 0.1 <-> 1.2: d = sqrt(1^2 + 1^2) = sqrt(2)
+
+        double E1 = -(1.*3)/std::sqrt(2) + -(1.*4)/std::sqrt(3.25) + -(1.*5)/std::sqrt(5)
+                  + -(2.*3)/std::sqrt(1) + -(2.*4)/std::sqrt(1.25) + -(2.*5)/std::sqrt(2);
+        double dE = E1 - E0;
+        CHECK(packing.tryTranslation(1, {0, -2, 0}, electrostaticInteraction) == Approx(dE));
+
+        SECTION("correct energy before and after accepted move") {
+            CHECK(packing.getTotalEnergy(electrostaticInteraction) == Approx(E0));
+            packing.acceptTranslation();
+            CHECK(packing.getTotalEnergy(electrostaticInteraction) == Approx(E1));
+        }
     }
 }
 
