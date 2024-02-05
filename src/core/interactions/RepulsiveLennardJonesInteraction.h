@@ -23,7 +23,9 @@ protected:
 public:
     RepulsiveLennardJonesInteraction(double epsilon, double sigma);
 
-    [[nodiscard]] double getRangeRadius() const override { return this->sigmaTimesTwoToOneSixth; }
+    [[nodiscard]] double getRangeRadius([[maybe_unused]] const std::byte *data) const override {
+        return this->sigmaTimesTwoToOneSixth;
+    }
 };
 
 

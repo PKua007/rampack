@@ -40,7 +40,7 @@ MoveSampler::MoveData FlipSampler::sampleMove(const Packing &packing, const std:
     return moveData;
 }
 
-void FlipSampler::setupForShapeTraits(const ShapeTraits &shapeTraits) {
+void FlipSampler::setup([[maybe_unused]] const Packing &packing, const ShapeTraits &shapeTraits) {
     const auto &geometry = shapeTraits.getGeometry();
     Expects(geometry.hasPrimaryAxis());
 

@@ -55,7 +55,8 @@ private:
     TriclinicBox box;
     std::unique_ptr<BoundaryConditions> bc;
     std::optional<NeighbourGrid> neighbourGrid;
-    double interactionRange{};
+    double interactionRange = std::numeric_limits<double>::infinity();
+    double totalInteractionRange = std::numeric_limits<double>::infinity();
     std::size_t shapeDataSize{};
 
     std::size_t moveThreads{};
@@ -78,6 +79,9 @@ private:
     std::size_t neighbourGridResizes{};
     double neighbourGridRebuildMicroseconds{};
 
+
+    [[nodiscard]] double computeMaxInteractionRange(const Interaction &interaction) const;
+    [[nodiscard]] double computeMaxTotalInteractionRange(const Interaction &interaction) const;
 
     void copyShape(std::size_t fromIdx, std::size_t toIdx);
     [[nodiscard]] const std::byte *getShapeDataPtr(std::size_t particleIdx) const;
@@ -529,6 +533,9 @@ public:
      */
     [[nodiscard]] std::vector<Vector<3>> dumpNamedPoints(const ShapeGeometry &geometry,
                                                          const std::string &pointName) const;
+
+    [[nodiscard]] double getTotalRangeRadius() const;
+    [[nodiscard]] double getRangeRadius() const;
 };
 
 

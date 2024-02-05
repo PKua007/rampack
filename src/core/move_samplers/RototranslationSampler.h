@@ -44,7 +44,7 @@ public:
     bool decreaseStepSize() override;
     [[nodiscard]] std::vector<std::pair<std::string, double>> getStepSizes() const override;
     void setStepSize(const std::string &stepName, double stepSize) override;
-    void setupForShapeTraits(const ShapeTraits &shapeTraits) override;
+    void setup(const Packing &packing, const ShapeTraits &shapeTraits) override;
 };
 
 

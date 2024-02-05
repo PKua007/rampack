@@ -20,14 +20,13 @@ std::string TooNarrowDomainException::makeWhat(std::size_t coord, double wholeDo
     return out.str();
 }
 
-DomainDecomposition::DomainDecomposition(const Packing &packing, const Interaction &interaction,
-                                         const std::array<std::size_t, 3> &domainDivisions,
+DomainDecomposition::DomainDecomposition(const Packing &packing, const std::array<std::size_t, 3> &domainDivisions,
                                          const std::array<std::size_t, 3> &neighbourGridDivisions,
                                          const Vector<3> &origin)
         : box{packing.getBox()}, domainDivisions{domainDivisions}
 {
-    double range = interaction.getRangeRadius();
-    double totalRange = interaction.getTotalRangeRadius();
+    double range = packing.getRangeRadius();
+    double totalRange = packing.getTotalRangeRadius();
 
     this->prepareDomains(neighbourGridDivisions, range, totalRange, origin);
     this->populateDomains(packing, origin);

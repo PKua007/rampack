@@ -110,7 +110,7 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
     Expects(this->environment.isComplete());
 
     for (auto &moveSampler : this->environment.getMoveSamplers())
-        moveSampler->setupForShapeTraits(shapeTraits);
+        moveSampler->setup(*this->packing, shapeTraits);
 
     this->observablesCollector = std::move(observablesCollector_);
     this->reset();
@@ -232,7 +232,7 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
     Expects(this->environment.isComplete());
 
     for (auto &moveSampler : this->environment.getMoveSamplers())
-        moveSampler->setupForShapeTraits(shapeTraits);
+        moveSampler->setup(*this->packing, shapeTraits);
 
     this->observablesCollector = std::move(observablesCollector_);
     this->reset();
@@ -396,7 +396,6 @@ void Simulation::performMovesWithoutDomainDivision(const ShapeTraits &shapeTrait
 void Simulation::performMovesWithDomainDivision(const ShapeTraits &shapeTraits) {
     const auto &packingBox = this->packing->getBox();
     auto &mt = this->mts[OMP_THREAD_ID];
-    const auto &interaction = shapeTraits.getInteraction();
 
     Vector<3> randomOrigin{this->unitIntervalDistribution(mt),
                            this->unitIntervalDistribution(mt),
@@ -407,8 +406,8 @@ void Simulation::performMovesWithDomainDivision(const ShapeTraits &shapeTraits) 
 
     using namespace std::chrono;
     auto start = high_resolution_clock::now();
-    DomainDecomposition domainDecomposition(*this->packing, interaction, this->domainDivisions,
-                                            neighbourGridCellDivisions, randomOrigin);
+    DomainDecomposition domainDecomposition(*this->packing, this->domainDivisions,neighbourGridCellDivisions,
+                                            randomOrigin);
     auto end = high_resolution_clock::now();
     this->domainDecompositionMicroseconds += duration<double, std::micro>(end - start).count();
 

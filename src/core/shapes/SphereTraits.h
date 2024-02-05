@@ -33,7 +33,9 @@ private:
         [[nodiscard]] bool overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation, const std::byte *data,
                                            std::size_t idx, const Vector<3> &wallOrigin,
                                            const Vector<3> &wallVector) const override;
-        [[nodiscard]] double getRangeRadius() const override { return 2 * this->radius; }
+        [[nodiscard]] double getRangeRadius([[maybe_unused]] const std::byte *data) const override {
+            return 2 * this->radius;
+        }
     };
 
     class WolframPrinter : public ShapePrinter {

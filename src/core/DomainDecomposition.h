@@ -67,7 +67,6 @@ public:
     /**
      * @brief It constructs the domain decomposition.
      * @param packing the packing for which the decomposition should be done
-     * @param interaction the interaction between particles; it is used to calculate ghost layer width
      * @param domainDivisions an array of number of divisions in each direction: x, y and z
      * @param neighbourGridDivisions a number of neighbour grid cells (the real ones, without ghost cells) in each
      * direction
@@ -77,8 +76,7 @@ public:
      * cell
      * @throws PreconditionException in all other cases, when the arguments that were past yield malformed domains
      */
-    DomainDecomposition(const Packing &packing, const Interaction &interaction,
-                        const std::array<std::size_t, 3> &domainDivisions,
+    DomainDecomposition(const Packing &packing, const std::array<std::size_t, 3> &domainDivisions,
                         const std::array<std::size_t, 3> &neighbourGridDivisions, const Vector<3> &origin);
 
     [[nodiscard]] const std::vector<std::size_t> &getParticlesInRegion(const std::array<std::size_t, 3> &coord) const {

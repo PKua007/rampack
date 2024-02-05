@@ -64,10 +64,9 @@ Vector<3> Interaction::getCentrePositionForShape(const Shape &shape, const Vecto
     return shape.getPosition() + shape.getOrientation() * centre;
 }
 
-double Interaction::getTotalRangeRadius() const {
-    // TODO: fix nullptr
+double Interaction::getTotalRangeRadius(const std::byte *data) const {
     auto centres = this->getInteractionCentres(nullptr);
-    double range = this->getRangeRadius();
+    double range = this->getRangeRadius(data);
 
     if (centres.empty())
         return range;

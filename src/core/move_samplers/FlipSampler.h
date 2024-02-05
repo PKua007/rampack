@@ -40,7 +40,7 @@ public:
 
     void setStepSize(const std::string &, double) override { }
 
-    void setupForShapeTraits(const ShapeTraits &shapeTraits) override;
+    void setup(const Packing &packing, const ShapeTraits &shapeTraits) override;
 };
 
 

@@ -25,8 +25,8 @@ TEST_CASE("RadialEnumerator") {
     std::vector<Shape> shapes{Shape{{1, 1, 1}}, Shape{{1, 3, 1}}, Shape{{9, 9, 9}}};
     MockShapeTraits traits;
     ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
-    ALLOW_CALL(traits, getRangeRadius()).RETURN(1);
-    ALLOW_CALL(traits, getTotalRangeRadius()).RETURN(1);
+    ALLOW_CALL(traits, getRangeRadius(_)).RETURN(1);
+    ALLOW_CALL(traits, getTotalRangeRadius(_)).RETURN(1);
     ALLOW_CALL(traits, getGeometricOrigin(_)).RETURN(_1.getPosition());
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     Packing packing(box, shapes, std::move(bc), traits.getInteraction());

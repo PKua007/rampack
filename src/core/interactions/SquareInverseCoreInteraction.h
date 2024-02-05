@@ -19,7 +19,9 @@ protected:
 public:
     SquareInverseCoreInteraction(double epsilon, double sigma);
 
-    [[nodiscard]] double getRangeRadius() const override { return this->sigma; }
+    [[nodiscard]] double getRangeRadius([[maybe_unused]] const std::byte *data) const override {
+        return this->sigma;
+    }
 };
 
 

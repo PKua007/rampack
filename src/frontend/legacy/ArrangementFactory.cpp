@@ -114,7 +114,8 @@ namespace {
                                                  const std::string &axisOrderString,
                                                  const OrthorhombicArrangingModel &model)
     {
-        double rangeRadius = interaction.getTotalRangeRadius();
+        // TODO: fix nullptr
+        double rangeRadius = interaction.getTotalRangeRadius(nullptr);
         constexpr double EPSILON = 1e-12;
 
         std::array<double, 3> testPackingCellDim{};

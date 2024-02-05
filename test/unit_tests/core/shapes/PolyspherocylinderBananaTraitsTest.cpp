@@ -51,8 +51,8 @@ TEST_CASE("PolyspherocylinderBananaTraits: points") {
 
             SECTION("interaction") {
                 const auto &interaction = traits.getInteraction();
-                CHECK(interaction.getRangeRadius() == Approx(4));
-                CHECK(interaction.getTotalRangeRadius() == Approx(6));
+                CHECK(interaction.getRangeRadius(nullptr) == Approx(4));
+                CHECK(interaction.getTotalRangeRadius(nullptr) == Approx(6));
             }
 
             SECTION("geometry") {

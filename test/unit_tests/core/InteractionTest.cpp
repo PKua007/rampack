@@ -7,18 +7,27 @@
 
 #include "core/Interaction.h"
 
+
 namespace {
     class DummyInteraction : public Interaction {
+    public:
+        using Radius = double;
+
     private:
-        double rangeRadius{};
         std::vector<Vector<3>> interactionCentres;
 
     public:
-        DummyInteraction(double rangeRadius, std::vector<Vector<3>> interactionCentres)
-                : rangeRadius{rangeRadius}, interactionCentres{std::move(interactionCentres)}
+        DummyInteraction(std::vector<Vector<3>> interactionCentres)
+                : interactionCentres{std::move(interactionCentres)}
         { }
 
-        [[nodiscard]] double getRangeRadius() const override { return this->rangeRadius; }
+        [[nodiscard]] std::size_t getShapeDataSize() const override {
+            return sizeof(Radius);
+        }
+
+        [[nodiscard]] double getRangeRadius([[maybe_unused]] const std::byte *data) const override {
+            return ShapeData::as<Radius>(data);
+        }
 
         [[nodiscard]] std::vector<Vector<3>>
         getInteractionCentres([[maybe_unused]] const std::byte *data) const override {
@@ -34,9 +43,9 @@ namespace {
 
 TEST_CASE("Interaction: totalRangeRadius") {
     // One interaction centre is distant by 5 from the origin, the second by a smaller value (sqrt(6) or what not)
-    DummyInteraction dummyInteraction(3, {{0, 3, 4}, {1, -1, 2}});
+    DummyInteraction dummyInteraction({{0, 3, 4}, {1, -1, 2}});
 
-    double totalRangeRadius = dummyInteraction.getTotalRangeRadius();
+    double totalRangeRadius = dummyInteraction.getTotalRangeRadius(ShapeData::raw(DummyInteraction::Radius{3}));
 
     CHECK(totalRangeRadius == Approx(13));  // 5 + 5 + 3
 }

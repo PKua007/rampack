@@ -46,6 +46,23 @@ public:
         return *reinterpret_cast<NoRefT*>(data);
     }
 
+    template<typename T>
+    static const std::byte *raw(const T &data) {
+        using NoRefT = std::remove_reference_t<T>;
+        static_assert(std::is_trivially_copyable_v<NoRefT>, "Type must be trivially copyable");
+
+        return reinterpret_cast<const std::byte*>(&data);
+    }
+
+    template<typename T>
+    static std::byte *raw(T &data) {
+        using NoRefT = std::remove_reference_t<T>;
+        static_assert(std::is_trivially_copyable_v<NoRefT>, "Type must be trivially copyable");
+
+        return reinterpret_cast<std::byte*>(&data);
+    }
+
+
     ShapeData() = default;
 
     ShapeData(const ShapeData &other) {

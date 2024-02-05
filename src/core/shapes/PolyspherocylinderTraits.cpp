@@ -142,7 +142,7 @@ std::vector<Vector<3>> PolyspherocylinderTraits::getInteractionCentres([[maybe_u
     return centres;
 }
 
-double PolyspherocylinderTraits::getRangeRadius() const {
+double PolyspherocylinderTraits::getRangeRadius([[maybe_unused]] const std::byte *data) const {
     auto comparator = [](const SpherocylinderData &sd1, const SpherocylinderData &sd2) {
         return sd1.circumsphereRadius < sd2.circumsphereRadius;
     };

@@ -259,8 +259,8 @@ TEST_CASE("XenoCollide: spherocylinder basic features") {
 
     SECTION("range radius") {
         double expectedRange = l + 2*r;
-        CHECK(traits.getInteraction().getRangeRadius() == expectedRange);
-        CHECK(traits.getInteraction().getTotalRangeRadius() == expectedRange);
+        CHECK(traits.getInteraction().getRangeRadius(nullptr) == expectedRange);
+        CHECK(traits.getInteraction().getTotalRangeRadius(nullptr) == expectedRange);
     }
 
     SECTION("named points") {
@@ -294,6 +294,6 @@ TEST_CASE("XenoCollide: dimer ranges") {
     XenoCollideDimerTraits traits(0.5, 1, 3);
     const Interaction &interaction = traits.getInteraction();
 
-    CHECK(interaction.getRangeRadius() == 2);
-    CHECK(interaction.getTotalRangeRadius() == 8);
+    CHECK(interaction.getRangeRadius(nullptr) == 2);
+    CHECK(interaction.getTotalRangeRadius(nullptr) == 8);
 }
