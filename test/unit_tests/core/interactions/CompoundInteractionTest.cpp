@@ -44,61 +44,65 @@
 using trompeloeil::_;
 
 
-// TODO: test CompoundInteraction with shape data
-
 TEST_CASE("CompoundInteraction") {
     MAKE_HARD_MOCK(hard);
     MAKE_SOFT_MOCK(soft);
     MAKE_WALL_MOCK(wall);
 
+    std::byte dummyMemoryLocation1{}, dummyMemoryLocation2{};
+    const std::byte *dummyPtr1 = &dummyMemoryLocation1;
+    const std::byte *dummyPtr2 = &dummyMemoryLocation2;
+
     SECTION("range radius") {
-        ALLOW_CALL(hard, getRangeRadius(_)).RETURN(1);
-        ALLOW_CALL(soft, getRangeRadius(_)).RETURN(2);
-        ALLOW_CALL(hard, getTotalRangeRadius(_)).RETURN(3);
-        ALLOW_CALL(soft, getTotalRangeRadius(_)).RETURN(4);
+        REQUIRE_CALL(hard, getRangeRadius(dummyPtr1)).RETURN(1);
+        REQUIRE_CALL(soft, getRangeRadius(dummyPtr1)).RETURN(2);
+        REQUIRE_CALL(hard, getTotalRangeRadius(dummyPtr1)).RETURN(3);
+        REQUIRE_CALL(soft, getTotalRangeRadius(dummyPtr1)).RETURN(4);
         CompoundInteraction compound(hard, soft);
 
-        CHECK(compound.getRangeRadius(nullptr) == 2);
-        CHECK(compound.getTotalRangeRadius(nullptr) == 4);
+        CHECK(compound.getRangeRadius(dummyPtr1) == 2);
+        CHECK(compound.getTotalRangeRadius(dummyPtr1) == 4);
     }
 
     SECTION("interaction centres") {
         SECTION("0 centres") {
-            ALLOW_CALL(hard, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
-            ALLOW_CALL(soft, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
+            REQUIRE_CALL(hard, getInteractionCentres(dummyPtr1)).RETURN(std::vector<Vector<3>>{});
+            REQUIRE_CALL(soft, getInteractionCentres(dummyPtr1)).RETURN(std::vector<Vector<3>>{});
             CompoundInteraction compound(hard, soft);
 
-            CHECK(compound.getInteractionCentres(nullptr).empty());
+            CHECK(compound.getInteractionCentres(dummyPtr1).empty());
         }
 
         SECTION("2 centres") {
             std::vector<Vector<3>> centres{{1, 2, 3}, {4, 5, 6}};
-            ALLOW_CALL(hard, getInteractionCentres(_)).RETURN(centres);
-            ALLOW_CALL(soft, getInteractionCentres(_)).RETURN(centres);
+            REQUIRE_CALL(hard, getInteractionCentres(dummyPtr1)).RETURN(centres);
+            REQUIRE_CALL(soft, getInteractionCentres(dummyPtr1)).RETURN(centres);
             CompoundInteraction compound(hard, soft);
 
-            CHECK(compound.getInteractionCentres(nullptr) == centres);
+            CHECK(compound.getInteractionCentres(dummyPtr1) == centres);
         }
 
-        /*SECTION("incompatible") {
+        SECTION("incompatible") {
             std::vector<Vector<3>> centres1{{1, 2, 3}, {4, 5, 6}};
             std::vector<Vector<3>> centres2{{7, 8, 9}, {10, 11, 12}};
             std::vector<Vector<3>> emptyCentres{};
 
             SECTION("different number") {
-                ALLOW_CALL(hard, getInteractionCentres(_)).RETURN(centres1);
-                ALLOW_CALL(soft, getInteractionCentres(_)).RETURN(emptyCentres);
+                REQUIRE_CALL(hard, getInteractionCentres(dummyPtr1)).RETURN(centres1);
+                REQUIRE_CALL(soft, getInteractionCentres(dummyPtr1)).RETURN(emptyCentres);
+                CompoundInteraction compound(hard, soft);
 
-                CHECK_THROWS(CompoundInteraction(soft, hard));
+                CHECK_THROWS_WITH(compound.getInteractionCentres(dummyPtr1), Catch::Contains("Non identical"));
             }
 
             SECTION("same number buf unequal") {
-                ALLOW_CALL(hard, getInteractionCentres(_)).RETURN(centres1);
-                ALLOW_CALL(soft, getInteractionCentres(_)).RETURN(centres2);
+                REQUIRE_CALL(hard, getInteractionCentres(dummyPtr1)).RETURN(centres1);
+                REQUIRE_CALL(soft, getInteractionCentres(dummyPtr1)).RETURN(centres2);
+                CompoundInteraction compound(hard, soft);
 
-                CHECK_THROWS(CompoundInteraction(soft, hard));
+                CHECK_THROWS_WITH(compound.getInteractionCentres(dummyPtr1), Catch::Contains("Non identical"));
             }
-        }*/
+        }
     }
 
     SECTION("has...Part") {
@@ -148,12 +152,13 @@ TEST_CASE("CompoundInteraction") {
     bool ov1{}, ov2{}, result{};
 
     SECTION("hard + soft overlap and energy") {
-        REQUIRE_CALL(hard, overlapBetween(pos1, rot1, _, idx1, pos2, rot2, _, idx2, _)).RETURN(true);
-        REQUIRE_CALL(soft, calculateEnergyBetween(pos1, rot1, _, idx1, pos2, rot2, _, idx2, _)).RETURN(2);
+        REQUIRE_CALL(hard, overlapBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, _)).RETURN(true);
+        REQUIRE_CALL(soft, calculateEnergyBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, _))
+            .RETURN(2);
         CompoundInteraction compound(hard, soft);
 
-        CHECK(compound.overlapBetween(pos1, rot1, nullptr, idx1, pos2, rot2, nullptr, idx2, bc));
-        CHECK(compound.calculateEnergyBetween(pos1, rot1, nullptr, idx1, pos2, rot2, nullptr, idx2, bc) == 2);
+        CHECK(compound.overlapBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, bc));
+        CHECK(compound.calculateEnergyBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, bc) == 2);
     }
 
     SECTION("hard + hard overlap") {
@@ -165,11 +170,11 @@ TEST_CASE("CompoundInteraction") {
                                               std::make_tuple(true, true, true));
 
         DYNAMIC_SECTION(std::boolalpha << ov1 << " and " << ov2 << " give " << result) {
-            ALLOW_CALL(hard, overlapBetween(pos1, rot1, _, idx1, pos2, rot2, _, idx2, _)).RETURN(ov1);
-            ALLOW_CALL(hard2, overlapBetween(pos1, rot1, _, idx1, pos2, rot2, _, idx2, _)).RETURN(ov2);
+            ALLOW_CALL(hard, overlapBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, _)).RETURN(ov1);
+            ALLOW_CALL(hard2, overlapBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, _)).RETURN(ov2);
             CompoundInteraction compound(hard, hard2);
 
-            CHECK(compound.overlapBetween(pos1, rot1, nullptr, idx1, pos2, rot2, nullptr, idx2, bc) == result);
+            CHECK(compound.overlapBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, bc) == result);
         }
     }
 
@@ -182,21 +187,23 @@ TEST_CASE("CompoundInteraction") {
                                               std::make_tuple(true, true, true));
 
         DYNAMIC_SECTION(std::boolalpha << ov1 << " and " << ov2 << " give " << result) {
-            ALLOW_CALL(wall, overlapWithWall(pos1, rot1, _, idx1, wallOrigin, wallVector)).RETURN(ov1);
-            ALLOW_CALL(wall2, overlapWithWall(pos1, rot1, _, idx1, wallOrigin, wallVector)).RETURN(ov2);
+            ALLOW_CALL(wall, overlapWithWall(pos1, rot1, dummyPtr1, idx1, wallOrigin, wallVector)).RETURN(ov1);
+            ALLOW_CALL(wall2, overlapWithWall(pos1, rot1, dummyPtr1, idx1, wallOrigin, wallVector)).RETURN(ov2);
             CompoundInteraction compound(wall, wall2);
 
-            CHECK(compound.overlapWithWall(pos1, rot1, nullptr, idx1, wallOrigin, wallVector) == result);
+            CHECK(compound.overlapWithWall(pos1, rot1, dummyPtr1, idx1, wallOrigin, wallVector) == result);
         }
     }
 
     SECTION("soft + soft energy") {
         MAKE_SOFT_MOCK(soft2);
 
-        REQUIRE_CALL(soft, calculateEnergyBetween(pos1, rot1, _, idx1, pos2, rot2, _, idx2, _)).RETURN(1);
-        REQUIRE_CALL(soft2, calculateEnergyBetween(pos1, rot1, _, idx1, pos2, rot2, _, idx2, _)).RETURN(2);
+        REQUIRE_CALL(soft, calculateEnergyBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, _))
+            .RETURN(1);
+        REQUIRE_CALL(soft2, calculateEnergyBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, _))
+            .RETURN(2);
         CompoundInteraction compound(soft, soft2);
 
-        CHECK(compound.calculateEnergyBetween(pos1, rot1, nullptr, idx1, pos2, rot2, nullptr, idx2, bc) == 3);
+        CHECK(compound.calculateEnergyBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, bc) == 3);
     }
 }
