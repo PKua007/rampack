@@ -163,19 +163,20 @@ namespace {
     };
 
     class PolydispersePolymerHardCoreInteraction : public Interaction {
-    public:
+    private:
         struct PolymerData {
             std::vector<Vector<3>> pos{};
             std::vector<double> r{};
         };
 
+        static const PolymerData POLYMER_DATA[3];
+
+    public:
         enum class Tag : std::size_t {
-            DIMER = 0,
-            TRIMER
+            ASYMMETRIC_DIMER = 0,
+            ASYMMETRIC_TRIMER,
+            SYMMETRIC_DIMER
         };
-
-
-        static const PolymerData POLYMER_DATA[2];
 
         [[nodiscard]] bool hasHardPart() const override { return true; }
         [[nodiscard]] bool hasSoftPart() const override { return false; }
@@ -227,33 +228,38 @@ namespace {
     };
 
     const PolydispersePolymerHardCoreInteraction::PolymerData
-    PolydispersePolymerHardCoreInteraction::POLYMER_DATA[2] = {
-        // Dimer with radii 0.4, 0.6
+    PolydispersePolymerHardCoreInteraction::POLYMER_DATA[3] = {
+        // Tag::ASYMMETRIC_DIMER, radii 0.4, 0.6
         {
             {{-1, 0, 0}, {0, 0, 0}},
             {0.4, 0.6}
         },
-        // Trimer with radii 3 x 0.25
+        // Tag::ASYMMETRIC_TRIMER, radii 0.25, 0.25, 0.25
         {
             {{0, 0, 0}, {0.5, 0, 0}, {1, 0, 0}},
             {0.3, 0.3, 0.3}
         },
+        // Tag::SYMMETRIC_DIMER: radii 0.5, 0.5
+        {
+            {{0, 0, 0}, {1, 0, 0}},
+            {0.5, 0.5}
+        }
     };
 
     class PolydispersePolymerElectrostaticInteraction : public Interaction {
-    public:
+    private:
         struct PolymerData {
             std::vector<Vector<3>> pos{};
             std::vector<double> charge{};
         };
 
+        static const PolymerData POLYMER_DATA[2];
+
+    public:
         enum class Tag : std::size_t {
             DIMER = 0,
             TRIMER
         };
-
-
-        static const PolymerData POLYMER_DATA[2];
 
         [[nodiscard]] bool hasHardPart() const override { return false; }
         [[nodiscard]] bool hasSoftPart() const override { return true; }
@@ -288,19 +294,19 @@ namespace {
 
     const PolydispersePolymerElectrostaticInteraction::PolymerData
     PolydispersePolymerElectrostaticInteraction::POLYMER_DATA[2] = {
-        // Dimer with charges 1, 2
+        // Tag::DIMER: charges 1, 2
         {
             {{-1, 0, 0}, {0, 0, 0}},
             {1, 2}
         },
-        // Trimer with charges 3, 4, 5
+        // Tag::TRIMER: charges 3, 4, 5
         {
             {{0, 0, 0}, {0.5, 0, 0}, {1, 0, 0}},
             {3, 4, 5}
         },
     };
 
-    class PolysphereGeometry : public ShapeGeometry {
+    class PolydisperseSphereGeometry : public ShapeGeometry {
     public:
         [[nodiscard]] double getVolume([[maybe_unused]] const Shape &shape) const override {
             auto radius = shape.getData().as<double>();
@@ -310,7 +316,7 @@ namespace {
 }
 
 
-TEST_CASE("Packing: hard single interaction center") {
+TEST_CASE("Packing: hard polydisperse single interaction center") {
     using Radius = PolydisperseSphereHardCoreInteraction::Radius;
     PolydisperseSphereHardCoreInteraction hardCore;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
@@ -383,7 +389,7 @@ TEST_CASE("Packing: hard single interaction center") {
     }
 
     SECTION("packing fraction") {
-        PolysphereGeometry geometry;
+        PolydisperseSphereGeometry geometry;
 
         double spheresVolume = 4./3*M_PI*(0.2*0.2*0.2 + 0.3*0.3*0.3 + 0.3*0.3*0.3);
         double boxVolume = 5*5*5;
@@ -395,7 +401,7 @@ TEST_CASE("Packing: hard single interaction center") {
     }
 }
 
-TEST_CASE("Packing: soft single interaction center") {
+TEST_CASE("Packing: soft polydisperse single interaction center") {
     using Charge = PolydisperseElectrostaticInteraction::Charge;
     PolydisperseElectrostaticInteraction electrostaticInteraction;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
@@ -458,16 +464,16 @@ TEST_CASE("Packing: soft single interaction center") {
     }*/
 }
 
-TEST_CASE("Packing: hard multiple interaction centres") {
+TEST_CASE("Packing: hard polydisperse multiple interaction centres") {
     using Tag = PolydispersePolymerHardCoreInteraction::Tag;
     PolydispersePolymerHardCoreInteraction hardCore;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     std::vector<Shape> shapes;
     auto noRot = Matrix<3, 3>::identity();
     // Balls: {pos={0.5, 0.5, 2.5}, r=0.4}, {pos={1.5, 0.5, 2.5}, r=0.6}
-    shapes.emplace_back(Vector<3>{1.5, 0.5, 2.5}, noRot, Tag::DIMER);
+    shapes.emplace_back(Vector<3>{1.5, 0.5, 2.5}, noRot, Tag::ASYMMETRIC_DIMER);
     // Balls: r=0.3, pos={{1.5, 3.7, 2.5}, {2.0, 3.7, 2.5}, {2.5, 3.7, 2.5}}
-    shapes.emplace_back(Vector<3>{1.5, 3.7, 2.5}, noRot, Tag::TRIMER);
+    shapes.emplace_back(Vector<3>{1.5, 3.7, 2.5}, noRot, Tag::ASYMMETRIC_TRIMER);
     Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
 
     constexpr double inf = std::numeric_limits<double>::infinity();
@@ -515,7 +521,7 @@ TEST_CASE("Packing: hard multiple interaction centres") {
     }
 }
 
-TEST_CASE("Packing: soft multiple interaction centres") {
+TEST_CASE("Packing: soft polydisperse multiple interaction centres") {
     using Tag = PolydispersePolymerElectrostaticInteraction::Tag;
     PolydispersePolymerElectrostaticInteraction electrostaticInteraction;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
@@ -592,7 +598,7 @@ TEST_CASE("Packing: soft multiple interaction centres") {
     }
 }
 
-TEST_CASE("Packing: hard single interaction center overlap counting") {
+TEST_CASE("Packing: hard monodisperse single interaction center overlap counting") {
     using Radius = PolydisperseSphereHardCoreInteraction::Radius;
     Radius radius = 0.5;
     PolydisperseSphereHardCoreInteraction hardCore;
@@ -679,13 +685,14 @@ TEST_CASE("Packing: hard single interaction center overlap counting") {
     }
 }
 
-TEST_CASE("Packing: multiple interaction center overlap counting") {
-    double radius = 0.5;
-    DimerHardCoreInteraction hardCore(radius);
+TEST_CASE("Packing: hard monodisperse multiple interaction center overlap counting") {
+    using Tag = PolydispersePolymerHardCoreInteraction::Tag;
+    PolydispersePolymerHardCoreInteraction hardCore;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     std::vector<Shape> shapes;
-    shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5});
-    shapes.emplace_back(Vector<3>{1.5, 1, 0.5});
+    auto noRot = Matrix<3, 3>::identity();
+    shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5}, noRot, Tag::SYMMETRIC_DIMER);
+    shapes.emplace_back(Vector<3>{1.5, 1, 0.5}, noRot, Tag::SYMMETRIC_DIMER);
     Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
 
     packing.toggleOverlapCounting(true, hardCore);
@@ -764,7 +771,7 @@ TEST_CASE("Packing: multiple interaction center overlap counting") {
     }
 }
 
-TEST_CASE("Packing: single interaction centre wall overlap") {
+TEST_CASE("Packing: polydisperse single interaction centre wall overlap") {
     auto scalingThreads = GENERATE(1, 2);
 
     DYNAMIC_SECTION("scaling threads: " << scalingThreads) {
