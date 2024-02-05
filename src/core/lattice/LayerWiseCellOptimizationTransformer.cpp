@@ -116,7 +116,7 @@ auto LayerWiseCellOptimizationTransformer::rescaleCell(const TriclinicBox &oldBo
 void LayerWiseCellOptimizationTransformer::optimizeCell(Lattice &lattice, Packing &testPacking,
                                                         const Interaction &interaction) const
 {
-    double range = interaction.getTotalRangeRadius();
+    double range = testPacking.getTotalRangeRadius();       // testPacking already contains shapes, so this is working
     std::size_t axisIdx = LatticeTraits::axisToIndex(this->layerAxis);
     auto &cellBox = lattice.modifyCellBox();
     auto &cellShapes = lattice.modifyUnitCellMolecules();

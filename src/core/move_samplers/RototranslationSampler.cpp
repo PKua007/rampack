@@ -92,13 +92,13 @@ bool RototranslationSampler::increaseTranslationStepSize() {
     return true;
 }
 
-void RototranslationSampler::setupForShapeTraits(const ShapeTraits &shapeTraits) {
+void RototranslationSampler::setup(const Packing &packing, [[maybe_unused]] const ShapeTraits &shapeTraits) {
     if (this->rotationStepSize.has_value())
         return;
 
-    const auto &interaction = shapeTraits.getInteraction();
-    Expects(interaction.getTotalRangeRadius() > 0);
-    Expects(interaction.getTotalRangeRadius() < std::numeric_limits<double>::infinity());
+    double totalRangeRadius = packing.getTotalRangeRadius();
+    Expects(totalRangeRadius > 0);
+    Expects(totalRangeRadius < std::numeric_limits<double>::infinity());
 
     // Optimal rotation step size can be computed automatically based on translationStepSize and total interaction
     // radius. It was done by the following heuristic procedure:
@@ -108,7 +108,7 @@ void RototranslationSampler::setupForShapeTraits(const ShapeTraits &shapeTraits)
     // translational and rotational moves were separate and both step sizes were optimized individually. We then
     // fit the best quadratic function to rotationStepSize(translationStepSize/totalRangeRadius) dependence.
 
-    double ratio = this->translationStepSize / interaction.getTotalRangeRadius();
+    double ratio = this->translationStepSize / totalRangeRadius;
     this->rotationStepSize = 0.133183 - 1.18634*ratio + 264.37*ratio*ratio;
     Assert(this->rotationStepSize > 0);
 }

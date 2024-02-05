@@ -20,9 +20,9 @@ TEST_CASE("ObservablesCollector") {
     using trompeloeil::_;
 
     MockShapeTraits mockShapeTraits;
-    ALLOW_CALL(mockShapeTraits, getRangeRadius()).RETURN(std::numeric_limits<double>::infinity());
+    ALLOW_CALL(mockShapeTraits, getRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
     ALLOW_CALL(mockShapeTraits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
-    ALLOW_CALL(mockShapeTraits, getTotalRangeRadius()).RETURN(std::numeric_limits<double>::infinity());
+    ALLOW_CALL(mockShapeTraits, getTotalRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
     ALLOW_CALL(mockShapeTraits, hasSoftPart()).RETURN(true);
     ALLOW_CALL(mockShapeTraits, hasHardPart()).RETURN(false);
     ALLOW_CALL(mockShapeTraits, calculateEnergyBetween(_, _, _, _, _, _, _, _, _)).RETURN(0);

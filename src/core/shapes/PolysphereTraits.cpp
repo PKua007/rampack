@@ -117,7 +117,7 @@ PolysphereTraits::HardInteraction::getInteractionCentres([[maybe_unused]] const 
     return centres;
 }
 
-double PolysphereTraits::HardInteraction::getRangeRadius() const {
+double PolysphereTraits::HardInteraction::getRangeRadius([[maybe_unused]] const std::byte *data) const {
     auto comparator = [](const SphereData &sd1, const SphereData &sd2) {
         return sd1.radius < sd2.radius;
     };

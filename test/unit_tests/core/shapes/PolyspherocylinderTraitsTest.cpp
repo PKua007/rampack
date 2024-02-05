@@ -41,7 +41,7 @@ TEST_CASE("PolyspherocylinderTraits") {
         SECTION("meta info") {
             CHECK_FALSE(interaction.hasSoftPart());
             CHECK(interaction.hasHardPart());
-            CHECK(interaction.getRangeRadius() == Approx(4));
+            CHECK(interaction.getRangeRadius(nullptr) == Approx(4));
             std::vector<Vector<3>> expectedCentres = {{0, 0, 0},
                                                       {0, 0, 2}};
             CHECK_THAT(interaction.getInteractionCentres(nullptr), Catch::UnorderedEquals(expectedCentres));

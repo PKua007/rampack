@@ -68,12 +68,10 @@ Packing::Packing(std::unique_ptr<BoundaryConditions> bc, std::size_t moveThreads
 
 void Packing::reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, const Interaction &newInteraction) {
     Expects(newBox.getVolume() != 0);
-    Expects(newInteraction.getRangeRadius() > 0);
     Expects(!newShapes.empty());
     Expects(Packing::areShapesWithinBox(newShapes, newBox));
 
     this->box = newBox;
-    this->interactionRange = newInteraction.getRangeRadius();
     this->shapeDataSize = newInteraction.getShapeDataSize();
 
     std::vector<Vector<3>> newPositions(newShapes.size() + this->moveThreads);
@@ -106,7 +104,6 @@ double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, c
                                std::optional<ActiveDomain> boundaries)
 {
     Expects(particleIdx < this->size());
-    Expects(interaction.getRangeRadius() <= this->interactionRange);
 
     std::size_t tempParticleIdx = this->size() + OMP_THREAD_ID;
     this->lastAlteredParticleIdx[OMP_THREAD_ID] = particleIdx;
@@ -133,7 +130,6 @@ double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, c
 
 double Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction) {
     Expects(particleIdx < this->size());
-    Expects(interaction.getRangeRadius() <= this->interactionRange);
 
     std::size_t tempParticleIdx = this->size() + OMP_THREAD_ID;
     this->lastAlteredParticleIdx[OMP_THREAD_ID] = particleIdx;
@@ -159,7 +155,6 @@ double Packing::tryMove(std::size_t particleIdx, const Vector<3> &translation, c
                         const Interaction &interaction, std::optional<ActiveDomain> boundaries)
 {
     Expects(particleIdx < this->size());
-    Expects(interaction.getRangeRadius() <= this->interactionRange);
 
     std::size_t tempParticleIdx = this->size() + OMP_THREAD_ID;
     this->lastAlteredParticleIdx[OMP_THREAD_ID] = particleIdx;
@@ -194,7 +189,6 @@ double Packing::tryScaling(const std::array<double, 3> &scaleFactor, const Inter
 
 double Packing::tryScaling(const TriclinicBox &newBox, const Interaction &interaction) {
     Expects(newBox.getVolume() != 0);
-    Expects(interaction.getRangeRadius() <= this->interactionRange);
     this->lastBox = this->box;
     this->lastShapePositions = this->shapePositions;
 
@@ -1044,7 +1038,8 @@ void Packing::setupForInteraction(const Interaction &interaction) {
     Expects(interaction.getShapeDataSize() == this->shapeDataSize);
     Expects(this->areInteractionCentresConsistent(interaction));
 
-    this->interactionRange = interaction.getRangeRadius();
+    this->interactionRange = this->computeMaxInteractionRange(interaction);
+    this->totalInteractionRange = this->computeMaxTotalInteractionRange(interaction);
 
     this->interactionCentres.clear();
     this->absoluteInteractionCentres.clear();
@@ -1248,7 +1243,7 @@ std::size_t Packing::countParticleWallOverlaps(std::size_t particleIdx, const In
     const auto &boxSides = this->box.getSides();
     Vector<3> boxOrigin{};
     Vector<3> furtherBoxOrigin = std::accumulate(boxSides.begin(), boxSides.end(), boxOrigin);
-    double halfTotalRangeRadius = interaction.getTotalRangeRadius() / 2;
+    double halfTotalRangeRadius = this->totalInteractionRange / 2;
 
     for (std::size_t i{}; i < 3; i++) {
         if (!this->hasWall[i])
@@ -1442,5 +1437,37 @@ std::size_t Packing::getNumberOfInteractionCentres() const {
         return 0;
     else
         return this->interactionCentresOffsets[this->size()];
+}
+
+double Packing::computeMaxInteractionRange(const Interaction &interaction) const {
+    double maxRange{};
+    for (std::size_t particleIdx{}; particleIdx < this->size(); particleIdx++) {
+        const auto *data = this->getShapeDataPtr(particleIdx);
+        double range = interaction.getRangeRadius(data);
+        Assert(range > 0);
+        maxRange = std::max(range, maxRange);
+    }
+
+    return maxRange;
+}
+
+double Packing::computeMaxTotalInteractionRange(const Interaction &interaction) const {
+    double maxRange{};
+    for (std::size_t particleIdx{}; particleIdx < this->size(); particleIdx++) {
+        const auto *data = this->getShapeDataPtr(particleIdx);
+        double range = interaction.getTotalRangeRadius(data);
+        Assert(range > 0);
+        maxRange = std::max(range, maxRange);
+    }
+
+    return maxRange;
+}
+
+double Packing::getRangeRadius() const {
+    return this->interactionRange;
+}
+
+double Packing::getTotalRangeRadius() const {
+    return this->totalInteractionRange;
 }
 

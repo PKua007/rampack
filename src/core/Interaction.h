@@ -118,7 +118,9 @@ public:
      * @brief Returns the distance at which either pair of interaction centres ceases to interact (the cut-off
      * distance).
      */
-    [[nodiscard]] virtual double getRangeRadius() const { return std::numeric_limits<double>::infinity(); }
+    [[nodiscard]] virtual double getRangeRadius([[maybe_unused]] const std::byte *data) const {
+        return std::numeric_limits<double>::infinity();
+    }
 
     /**
      * @brief Returns a list of positions of interaction centers for a molecule placed in the origin and with a default
@@ -136,7 +138,7 @@ public:
      * applies to a single pair of interaction centers).
      * @details The distance is calculated between molecules centers.
      */
-    [[nodiscard]] virtual double getTotalRangeRadius() const;
+    [[nodiscard]] virtual double getTotalRangeRadius(const std::byte *data) const;
 
     /**
      * @brief A helper function, which calculates the energy between two whole molecules - it uses

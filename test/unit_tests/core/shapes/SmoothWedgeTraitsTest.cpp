@@ -22,7 +22,7 @@ TEST_CASE("SmoothWedge: geometry") {
     CHECK_THAT(geometry.getNamedPointForShape("o", shape), IsApproxEqual({1, 2, 3}, 1e-12));
     CHECK_THAT(geometry.getNamedPointForShape("beg", shape), IsApproxEqual({-1.0, 2, 3}, 1e-12));
     CHECK_THAT(geometry.getNamedPointForShape("end", shape), IsApproxEqual({4.0, 2, 3}, 1e-12));
-    CHECK(interaction.getRangeRadius() == 8);
+    CHECK(interaction.getRangeRadius(nullptr) == 8);
 }
 
 TEST_CASE("SmoothWedge: collide geometry") {

@@ -100,9 +100,10 @@ int CasinoMode::main(int argc, char **argv) {
     auto &baseParams = rampackParams.baseParameters;
     const auto &shapeTraits = baseParams.shapeTraits;
 
+    // TODO: fix info
     this->logger << "--------------------------------------------------------------------" << std::endl;
-    this->logger << "Interaction centre range : " << shapeTraits->getInteraction().getRangeRadius() << std::endl;
-    this->logger << "Total interaction range  : " << shapeTraits->getInteraction().getTotalRangeRadius() << std::endl;
+    //this->logger << "Interaction centre range : " << shapeTraits->getInteraction().getRangeRadius() << std::endl;
+    //this->logger << "Total interaction range  : " << shapeTraits->getInteraction().getTotalRangeRadius() << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
 #ifdef _OPENMP

@@ -141,7 +141,7 @@ private:
 
         [[nodiscard]] std::vector<Vector<3>> getInteractionCentres(const std::byte *data) const override;
 
-        [[nodiscard]] double getRangeRadius() const override;
+        [[nodiscard]] double getRangeRadius([[maybe_unused]] const std::byte *data) const override;
     };
 
     class WolframPrinter : public ShapePrinter {

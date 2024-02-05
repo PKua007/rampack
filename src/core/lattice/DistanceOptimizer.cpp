@@ -60,7 +60,7 @@ void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &inter
     TransformerValidateMsg(interaction.hasHardPart(),
                            "Interaction must have a hard component to perform distance optimization");
 
-    const double range = interaction.getTotalRangeRadius();
+    const double range = packing.getTotalRangeRadius();
     const auto &initialHeights = packing.getBox().getHeights();
     constexpr double FACTOR_EPSILON = 1 + 1e-12;
 

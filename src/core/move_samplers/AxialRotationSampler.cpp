@@ -105,3 +105,7 @@ std::string AxialRotationSampler::getName() const {
         AssertThrow("std::variant::valueless_by_exception");
     }
 }
+
+void AxialRotationSampler::setup([[maybe_unused]] const Packing &packing, const ShapeTraits &shapeTraits) {
+    this->geometry = &shapeTraits.getGeometry();
+}

@@ -18,10 +18,10 @@ namespace {
     void test_axis_rotation_move(AxialRotationSampler &rotationSampler, const ShapeTraits &traits,
                                  const Vector<3> &invariantAxis)
     {
-        rotationSampler.setupForShapeTraits(traits);
         Lattice lattice(UnitCell(TriclinicBox(2), {Shape({0.5, 0.5, 0.5})}), {2, 2, 2});
         auto pbc = std::make_unique<PeriodicBoundaryConditions>();
         Packing packing(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), traits.getInteraction());
+        rotationSampler.setup(packing, traits);
         std::vector<std::size_t> particleIdxs(packing.size());
         std::iota(particleIdxs.begin(), particleIdxs.end(), 0);
         std::mt19937 mt(1234); // NOLINT(*-msc51-cpp)
@@ -41,10 +41,10 @@ TEST_CASE("AxisRotationSampler") {
     MockShapeTraits sphereWithAxis;
     ALLOW_CALL(sphereWithAxis, hasHardPart()).RETURN(true);
     ALLOW_CALL(sphereWithAxis, hasSoftPart()).RETURN(false);
-    ALLOW_CALL(sphereWithAxis, getRangeRadius()).RETURN(1);
-    ALLOW_CALL(sphereWithAxis, getTotalRangeRadius()).RETURN(1);
+    ALLOW_CALL(sphereWithAxis, getRangeRadius(_)).RETURN(1);
+    ALLOW_CALL(sphereWithAxis, getTotalRangeRadius(_)).RETURN(1);
     ALLOW_CALL(sphereWithAxis, overlapBetween(_, _, _, _, _, _, _, _, _)).RETURN(_9.getDistance2(_1, _5) < 1);
-    ALLOW_CALL(sphereWithAxis, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
+    ALLOW_CALL(sphereWithAxis, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(sphereWithAxis, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{1, 0, 0});
 
     SECTION("performing moves") {

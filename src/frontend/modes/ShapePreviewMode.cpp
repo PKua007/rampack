@@ -128,8 +128,9 @@ void ShapePreviewMode::printInteractionInfo(const Interaction &interaction) {
     this->logger << "Has hard part            : " << displayBool(interaction.hasHardPart()) << std::endl;
     this->logger << "Has soft part            : " << displayBool(interaction.hasSoftPart()) << std::endl;
     this->logger << "Has wall part            : " << displayBool(interaction.hasWallPart()) << std::endl;
-    this->logger << "Interaction center range : " << interaction.getRangeRadius() << std::endl;
-    this->logger << "Total range              : " << interaction.getTotalRangeRadius() << std::endl;
+    // TODO: fix
+    //this->logger << "Interaction center range : " << interaction.getRangeRadius() << std::endl;
+    //this->logger << "Total range              : " << interaction.getTotalRangeRadius() << std::endl;
     this->logger << "Interaction centers      :" << std::endl;
     // TODO: fix
     auto interactionCentres = interaction.getInteractionCentres(nullptr);

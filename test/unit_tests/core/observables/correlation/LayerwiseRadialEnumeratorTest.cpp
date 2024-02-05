@@ -27,8 +27,8 @@ TEST_CASE("LayerwiseRadialEnumerator") {
                               Shape{{4, 6, 5}}};
     MockShapeTraits traits;
     ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
-    ALLOW_CALL(traits, getRangeRadius()).RETURN(1);
-    ALLOW_CALL(traits, getTotalRangeRadius()).RETURN(1);
+    ALLOW_CALL(traits, getRangeRadius(_)).RETURN(1);
+    ALLOW_CALL(traits, getTotalRangeRadius(_)).RETURN(1);
     ALLOW_CALL(traits, getGeometricOrigin(_)).RETURN(_1.getPosition());
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     Packing packing(box, shapes, std::move(bc), traits.getInteraction());

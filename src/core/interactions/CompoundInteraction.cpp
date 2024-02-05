@@ -9,12 +9,6 @@
 CompoundInteraction::CompoundInteraction(const Interaction &interaction1, const Interaction &interaction2)
         : interaction1{interaction1}, interaction2{interaction2}
 {
-    // TODO: fix nullptr
-    auto centres1 = this->interaction1.getInteractionCentres(nullptr);
-    auto centres2 = this->interaction2.getInteractionCentres(nullptr);
-    Expects(centres1 == centres2);
-
-    this->interactionCentres = centres1;
     this->hasHardPart1 = this->interaction1.hasHardPart();
     this->hasHardPart2 = this->interaction2.hasHardPart();
     this->hasSoftPart1 = this->interaction1.hasSoftPart();
@@ -30,10 +24,6 @@ CompoundInteraction::CompoundInteraction(const Interaction &interaction1, const 
         this->isThisConvex = true;
     else
         this->isThisConvex = false;
-
-    this->rangeRadius = std::max(this->interaction1.getRangeRadius(), this->interaction2.getRangeRadius());
-    this->totalRangeRadius = std::max(this->interaction1.getTotalRangeRadius(),
-                                      this->interaction2.getTotalRangeRadius());
 }
 
 double CompoundInteraction::calculateEnergyBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1,
@@ -90,4 +80,12 @@ bool CompoundInteraction::overlapWithWall(const Vector<3> &pos, const Matrix<3, 
         return true;
     }
     return false;
+}
+
+std::vector<Vector<3>> CompoundInteraction::getInteractionCentres(const std::byte *data) const {
+    auto centres1 = this->interaction1.getInteractionCentres(data);
+    auto centres2 = this->interaction2.getInteractionCentres(data);
+    Assert(centres1 == centres2);
+
+    return centres1;
 }

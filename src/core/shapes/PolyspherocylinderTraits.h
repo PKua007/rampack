@@ -164,7 +164,7 @@ public:
                                        const Vector<3> &wallVector) const override;
 
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentres(const std::byte *data) const override;
-    [[nodiscard]] double getRangeRadius() const override;
+    [[nodiscard]] double getRangeRadius([[maybe_unused]] const std::byte *data) const override;
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->geometry; }

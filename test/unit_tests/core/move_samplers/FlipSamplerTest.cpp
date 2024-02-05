@@ -14,6 +14,7 @@
 #include "core/lattice/Lattice.h"
 #include "core/PeriodicBoundaryConditions.h"
 
+
 namespace {
     void test_flip_move(const ShapeTraits &traits, MoveSampler::MoveType expectedMoveType,
                         const Matrix<3, 3> &expectedRotation, const Vector<3> &expectedTranslation)
@@ -22,7 +23,7 @@ namespace {
         auto pbc = std::make_unique<PeriodicBoundaryConditions>();
         Packing packing(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), traits.getInteraction());
         FlipSampler flipSampler(1);
-        flipSampler.setupForShapeTraits(traits);
+        flipSampler.setup(packing, traits);
         std::vector<std::size_t> particleIdxs(packing.size());
         std::iota(particleIdxs.begin(), particleIdxs.end(), 0);
         std::mt19937 mt(1234);
@@ -44,8 +45,8 @@ TEST_CASE("FlipSampler") {
     ALLOW_CALL(traits, hasHardPart()).RETURN(true);
     ALLOW_CALL(traits, hasSoftPart()).RETURN(false);
     ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
-    ALLOW_CALL(traits, getRangeRadius()).RETURN(1);
-    ALLOW_CALL(traits, getTotalRangeRadius()).RETURN(1);
+    ALLOW_CALL(traits, getRangeRadius(_)).RETURN(1);
+    ALLOW_CALL(traits, getTotalRangeRadius(_)).RETURN(1);
     ALLOW_CALL(traits, overlapBetween(_, _, _, _, _, _, _, _, _)).RETURN(_9.getDistance2(_1, _5) < 1);
     ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
 

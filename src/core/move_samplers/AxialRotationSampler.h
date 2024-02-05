@@ -49,9 +49,7 @@ public:
     bool decreaseStepSize() override;
     [[nodiscard]] std::vector<std::pair<std::string, double>> getStepSizes() const override;
     void setStepSize(const std::string &stepName, double stepSize) override;
-    void setupForShapeTraits(const ShapeTraits &shapeTraits) override {
-        this->geometry = &shapeTraits.getGeometry();
-    }
+    void setup(const Packing &packing, const ShapeTraits &shapeTraits) override;
 };
 
 #endif //RAMPACK_AXIALROTATIONSAMPLER_H

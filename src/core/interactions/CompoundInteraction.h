@@ -16,9 +16,6 @@ private:
     const Interaction &interaction1;
     const Interaction &interaction2;
 
-    std::vector<Vector<3>> interactionCentres;
-    double rangeRadius{};
-    double totalRangeRadius{};
     bool hasSoftPart1{};
     bool hasSoftPart2{};
     bool hasHardPart1{};
@@ -38,11 +35,17 @@ public:
     [[nodiscard]] bool hasSoftPart() const override { return this->hasSoftPart1 || this->hasSoftPart2; }
     [[nodiscard]] bool hasWallPart() const override { return this->hasWallPart1 || this->hasWallPart2; }
     [[nodiscard]] bool isConvex() const override { return this->isThisConvex; }
-    [[nodiscard]] double getRangeRadius() const override { return this->rangeRadius; }
-    [[nodiscard]] std::vector<Vector<3>> getInteractionCentres([[maybe_unused]] const std::byte *data) const override {
-        return this->interactionCentres;
+
+    [[nodiscard]] double getRangeRadius(const std::byte *data) const override {
+        return std::max(this->interaction1.getRangeRadius(data), this->interaction2.getRangeRadius(data));
     }
-    [[nodiscard]] double getTotalRangeRadius() const override { return this->totalRangeRadius; }
+
+    [[nodiscard]] std::vector<Vector<3>> getInteractionCentres(const std::byte *data) const override;
+
+    [[nodiscard]] double getTotalRangeRadius(const std::byte *data) const override {
+        return std::max(this->interaction1.getTotalRangeRadius(data),
+                        this->interaction2.getTotalRangeRadius(data));
+    }
 
     [[nodiscard]] double calculateEnergyBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1,
                                                 const std::byte *data1, std::size_t idx1, const Vector<3> &pos2,

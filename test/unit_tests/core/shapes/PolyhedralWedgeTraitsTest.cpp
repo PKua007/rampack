@@ -23,7 +23,7 @@ TEST_CASE("PolyhedralWedgeTraits: geometry") {
     CHECK(geometry.getVolume({}) == Approx(36));
     CHECK(geometry.getNamedPoint("beg") == Vector<3>{0, 0, -3});
     CHECK(geometry.getNamedPoint("end") == Vector<3>{0, 0, 3});
-    CHECK(interaction.getRangeRadius() == Approx(2*std::sqrt(14)));
+    CHECK(interaction.getRangeRadius(nullptr) == Approx(2*std::sqrt(14)));
 }
 
 TEST_CASE("PolyhedralWedgeTraits: overlap") {

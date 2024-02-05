@@ -95,7 +95,7 @@ public:
      */
     virtual void setStepSize(const std::string &stepName, double stepSize) = 0;
 
-    virtual void setupForShapeTraits([[maybe_unused]] const ShapeTraits &shapeTraits) {
+    virtual void setup([[maybe_unused]] const Packing &packing, [[maybe_unused]] const ShapeTraits &shapeTraits) {
         // Do nothing by default
     }
 };

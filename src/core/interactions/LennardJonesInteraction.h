@@ -22,7 +22,9 @@ protected:
 public:
     LennardJonesInteraction(double epsilon, double sigma);
 
-    [[nodiscard]] double getRangeRadius() const override { return 3 * this->sigma; }
+    [[nodiscard]] double getRangeRadius([[maybe_unused]] const std::byte *data) const override {
+        return 3 * this->sigma;
+    }
 };
 
 

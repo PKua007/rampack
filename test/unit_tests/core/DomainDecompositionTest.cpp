@@ -38,7 +38,7 @@ TEST_CASE("DomainDecomposition") {
                     std::move(pbc),
                     dimer.getInteraction());
 
-    DomainDecomposition domainDecomposition(packing, dimer.getInteraction(), {1, 2, 1}, {4, 7, 2}, {6, 17, 3});
+    DomainDecomposition domainDecomposition(packing, {1, 2, 1}, {4, 7, 2}, {6, 17, 3});
 
     SECTION("particles in correct domains") {
         CHECK(domainDecomposition.getParticlesInRegion({0, 0, 0}) == std::vector<std::size_t>{3, 7, 8, 9});

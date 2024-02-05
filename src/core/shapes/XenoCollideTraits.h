@@ -188,7 +188,7 @@ public:
         return true;
     }
 
-    [[nodiscard]] double getRangeRadius() const override {
+    [[nodiscard]] double getRangeRadius([[maybe_unused]] const std::byte *data) const override {
         if (this->rangeRadius.has_value())
             return *this->rangeRadius;
 
