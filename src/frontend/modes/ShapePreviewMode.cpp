@@ -110,16 +110,16 @@ void ShapePreviewMode::printGeometryInfo(const ShapeGeometry &geometry) {
         this->logger << "Auxiliary axis   : UNSPECIFIED" << std::endl;
     }
 
-    // Named points
+    // TODO: Named points
     this->logger << "Named points     :" << std::endl;
-    auto points = geometry.getNamedPoints();
+    /*auto points = geometry.getNamedPoints();
     std::size_t maxLength = std::max_element(points.begin(), points.end(), [](const auto &p1, const auto &p2) {
         return p1.first.length() < p2.first.length();
     })->first.length();
 
     for (const auto &[name, point] : points) {
         this->logger << "    " << std::left << std::setw(maxLength) << name << " = " << point << std::endl;
-    }
+    }*/
 }
 
 void ShapePreviewMode::printInteractionInfo(const Interaction &interaction) {

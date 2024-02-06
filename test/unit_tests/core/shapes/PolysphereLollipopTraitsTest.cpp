@@ -34,11 +34,11 @@ TEST_CASE("PolysphereLollipopTraits: basics") {
         CHECK_THAT(geometry.getGeometricOrigin({}), IsApproxEqual({0, 0, 0}, 1e-12));
         CHECK_THAT(geometry.getPrimaryAxis({}), IsApproxEqual({0, 0, 1}, 1e-12));
         CHECK(geometry.getVolume({}) == Approx(1217*M_PI/12));      // Mathematica value
-        CHECK_THAT(geometry.getNamedPoint("s0"), IsApproxEqual({0, 0, -4.5}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("ss"), IsApproxEqual({0, 0, -4.5}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("s2"), IsApproxEqual({0, 0, 2.5}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("st"), IsApproxEqual({0, 0, 2.5}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("o"), IsApproxEqual({0, 0, 0}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("s0").forStatic(), IsApproxEqual({0, 0, -4.5}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("ss").forStatic(), IsApproxEqual({0, 0, -4.5}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("s2").forStatic(), IsApproxEqual({0, 0, 2.5}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("st").forStatic(), IsApproxEqual({0, 0, 2.5}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("o").forShape({}), IsApproxEqual({0, 0, 0}, 1e-12));
         // Named point "cm" has its own test
     }
 }
@@ -47,7 +47,7 @@ TEST_CASE("PolysphereLollipopTraits: mass centre") {
     SECTION("existing") {
         PolysphereLollipopTraits traits(3, 1, 2, 0, 0);
 
-        CHECK_THAT(traits.getGeometry().getNamedPoint("cm"), IsApproxEqual({0, 0, 1.2}, 1e-12));
+        CHECK_THAT(traits.getGeometry().getNamedPoint("cm").forStatic(), IsApproxEqual({0, 0, 1.2}, 1e-12));
     }
 
     SECTION("not existing") {

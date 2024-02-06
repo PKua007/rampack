@@ -27,8 +27,8 @@ TEST_CASE("PolysphereBananaTraits: basics") {
             const auto &geom = traits.getGeometry();
             CHECK_THAT(geom.getPrimaryAxis({}), IsApproxEqual({0, 0, 1}, 1e-12));
             CHECK_THAT(geom.getSecondaryAxis({}), IsApproxEqual({-1, 0, 0}, 1e-12));
-            CHECK_THAT(geom.getNamedPoint("beg"), IsApproxEqual({0, 0, -std::sqrt(3)}, 1e-12));
-            CHECK_THAT(geom.getNamedPoint("end"), IsApproxEqual({0, 0, +std::sqrt(3)}, 1e-12));
+            CHECK_THAT(geom.getNamedPoint("beg").forStatic(), IsApproxEqual({0, 0, -std::sqrt(3)}, 1e-12));
+            CHECK_THAT(geom.getNamedPoint("end").forStatic(), IsApproxEqual({0, 0, +std::sqrt(3)}, 1e-12));
             // "cm" named point has a separate test
         }
     }
@@ -50,7 +50,7 @@ TEST_CASE("PolysphereBananaTraits: mass centre") {
     SECTION("existing") {
         PolysphereBananaTraits traits(3, M_PI, 3, 0.5);
 
-        CHECK_THAT(traits.getGeometry().getNamedPoint("cm"), IsApproxEqual({-1, 0, 0}, 1e-12));
+        CHECK_THAT(traits.getGeometry().getNamedPoint("cm").forStatic(), IsApproxEqual({-1, 0, 0}, 1e-12));
     }
 
     SECTION("not existing") {

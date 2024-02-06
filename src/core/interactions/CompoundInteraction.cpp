@@ -9,6 +9,8 @@
 CompoundInteraction::CompoundInteraction(const Interaction &interaction1, const Interaction &interaction2)
         : interaction1{interaction1}, interaction2{interaction2}
 {
+    // TODO: shape data compatibility?
+
     this->hasHardPart1 = this->interaction1.hasHardPart();
     this->hasHardPart2 = this->interaction2.hasHardPart();
     this->hasSoftPart1 = this->interaction1.hasSoftPart();

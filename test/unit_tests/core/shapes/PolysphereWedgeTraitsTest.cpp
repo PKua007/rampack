@@ -33,11 +33,11 @@ TEST_CASE("PolysphereWedgeTraits") {
         CHECK_THAT(geometry.getGeometricOrigin({}), IsApproxEqual({0, 0, 0}, 1e-12));
         CHECK_THAT(geometry.getPrimaryAxis({}), IsApproxEqual({0, 0, 1}, 1e-12));
         CHECK(geometry.getVolume({}) == Approx(6205*M_PI/48));     // Mathematica value
-        CHECK_THAT(geometry.getNamedPoint("s0"), IsApproxEqual({0, 0, -4}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("beg"), IsApproxEqual({0, 0, -4}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("s2"), IsApproxEqual({0, 0, 6}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("end"), IsApproxEqual({0, 0, 6}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("o"), IsApproxEqual({0, 0, 0}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("s0").forStatic(), IsApproxEqual({0, 0, -4}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("beg").forStatic(), IsApproxEqual({0, 0, -4}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("s2").forStatic(), IsApproxEqual({0, 0, 6}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("end").forStatic(), IsApproxEqual({0, 0, 6}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("o").forShape({}), IsApproxEqual({0, 0, 0}, 1e-12));
         // Named point "cm" has its own test
     }
 }
@@ -46,7 +46,7 @@ TEST_CASE("PolysphereWedgeTraits: mass centre") {
     SECTION("existing") {
         PolysphereWedgeTraits traits(3, 1, 2, 0);
 
-        CHECK_THAT(traits.getGeometry().getNamedPoint("cm"), IsApproxEqual({0, 0, 35./33}, 1e-12));
+        CHECK_THAT(traits.getGeometry().getNamedPoint("cm").forStatic(), IsApproxEqual({0, 0, 35./33}, 1e-12));
     }
 
     SECTION("not existing") {

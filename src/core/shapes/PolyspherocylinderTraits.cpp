@@ -26,7 +26,7 @@ double PolyspherocylinderTraits::PolyspherocylinderGeometry::calculateVolume() c
 PolyspherocylinderTraits::PolyspherocylinderGeometry
     ::PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, OptionalAxis primaryAxis,
                                  OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin,
-                                 std::optional<double> volume, const ShapeGeometry::NamedPoints &customNamedPoints)
+                                 std::optional<double> volume, const ShapeGeometry::StaticNamedPoints &customNamedPoints)
         : spherocylinderData{std::move(spherocylinderData)}, primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis},
           geometricOrigin{geometricOrigin}
 {
