@@ -75,7 +75,7 @@ public:
                                     OptionalAxis secondaryAxis = std::nullopt,
                                     const Vector<3> &geometricOrigin = {0, 0, 0},
                                     std::optional<double> volume = std::nullopt,
-                                    const ShapeGeometry::NamedPoints &customNamedPoints = {});
+                                    const ShapeGeometry::StaticNamedPoints &customNamedPoints = {});
 
         [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override {
             if (!this->primaryAxis.has_value())
@@ -112,7 +112,7 @@ public:
 
         void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
 
-        void addCustomNamedPoints(const ShapeGeometry::NamedPoints &namedPoints) {
+        void addCustomNamedPoints(const ShapeGeometry::StaticNamedPoints &namedPoints) {
             this->registerNamedPoints(namedPoints);
         }
 

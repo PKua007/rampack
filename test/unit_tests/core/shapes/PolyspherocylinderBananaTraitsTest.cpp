@@ -59,8 +59,8 @@ TEST_CASE("PolyspherocylinderBananaTraits: points") {
                 const auto &geom = traits.getGeometry();
                 CHECK_THAT(geom.getPrimaryAxis({}), IsApproxEqual({0, 0, 1}, 1e-12));
                 CHECK_THAT(geom.getSecondaryAxis({}), IsApproxEqual({-1, 0, 0}, 1e-12));
-                CHECK_THAT(geom.getNamedPoint("beg"), IsApproxEqual({0, 0, -std::sqrt(3)}, 1e-12));
-                CHECK_THAT(geom.getNamedPoint("end"), IsApproxEqual({0, 0, +std::sqrt(3)}, 1e-12));
+                CHECK_THAT(geom.getNamedPoint("beg").forStatic(), IsApproxEqual({0, 0, -std::sqrt(3)}, 1e-12));
+                CHECK_THAT(geom.getNamedPoint("end").forStatic(), IsApproxEqual({0, 0, +std::sqrt(3)}, 1e-12));
             }
         }
 

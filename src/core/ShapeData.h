@@ -65,15 +65,7 @@ public:
 
     ShapeData() = default;
 
-    ShapeData(const ShapeData &other) {
-        if (other.size == 0) {
-            this->managed = false;
-            this->size = 0;
-            this->data = nullptr;
-        } else {
-            this->copyManagedData(other.data, other.size);
-        }
-    }
+    ShapeData(const ShapeData &other) : ShapeData(other.data, other.size, true) { }
 
     ShapeData(ShapeData &&other) noexcept {
         this->data = other.data;
@@ -180,6 +172,22 @@ public:
     [[nodiscard]] std::size_t getSize() const { return this->size; }
     [[nodiscard]] bool isEmpty() const { return this->size == 0; }
     [[nodiscard]] const std::byte *raw() const { return this->data; }
+
+    // TODO: write tests
+    [[nodiscard]] ShapeData unmanagedCopy() const {
+        return ShapeData(this->data, this->size, false);
+    }
+
+    [[nodiscard]] ShapeData managedCopy() const {
+        return ShapeData(this->data, this->size, true);
+    }
+
+    [[nodiscard]] ShapeData relayedManagementCopy() const {
+        if (this->managed)
+            return this->managedCopy();
+        else
+            return this->unmanagedCopy();
+    }
 
     friend bool operator==(const ShapeData &lhs, const ShapeData &rhs) {
         return std::equal(lhs.data, lhs.data + lhs.size, rhs.data, rhs.data + rhs.size);

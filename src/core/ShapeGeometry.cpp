@@ -9,14 +9,31 @@
 #include "utils/Exceptions.h"
 
 
-Vector<3> ShapeGeometry::getNamedPointForShape(const std::string &pointName, const Shape &shape) const {
-    return shape.getPosition() + shape.getOrientation() * this->getNamedPoint(pointName);
+ShapeGeometry::ShapeGeometry() {
+    this->resetOriginPoint();
 }
 
-Vector<3> ShapeGeometry::getNamedPoint(const std::string &pointName) const {
-    if (pointName == "o")
-        return this->getGeometricOrigin({});
+ShapeGeometry::ShapeGeometry(const ShapeGeometry &other) : namedPoints{other.namedPoints} {
+    this->resetOriginPoint();
+}
 
+ShapeGeometry::ShapeGeometry(ShapeGeometry &&other) noexcept : namedPoints{std::move(other.namedPoints)} {
+    this->resetOriginPoint();
+}
+
+ShapeGeometry &ShapeGeometry::operator=(const ShapeGeometry &other) {
+    this->namedPoints = other.namedPoints;
+    this->resetOriginPoint();
+    return *this;
+}
+
+ShapeGeometry &ShapeGeometry::operator=(ShapeGeometry &&other) noexcept {
+    this->namedPoints = std::move(other.namedPoints);
+    this->resetOriginPoint();
+    return *this;
+}
+
+const ShapeGeometry::NamedPoint &ShapeGeometry::getNamedPoint(const std::string &pointName) const {
     auto point = this->namedPoints.find(pointName);
     if (point == this->namedPoints.end())
         ExpectsThrow("ShapeGeometry::getNamedPoint : unknown point name '" + pointName + "'");
@@ -25,15 +42,15 @@ Vector<3> ShapeGeometry::getNamedPoint(const std::string &pointName) const {
 
 void ShapeGeometry::registerNamedPoint(const std::string &pointName, const Vector<3> &point) {
     Expects(this->namedPoints.find(pointName) == this->namedPoints.end());
-    this->namedPoints[pointName] = point;
-    this->namedPointsOrdered.emplace_back(pointName, point);
+    this->namedPoints[pointName] = NamedPoint(pointName, point);
 }
 
-ShapeGeometry::NamedPoints ShapeGeometry::getNamedPoints() const {
-    NamedPoints namedPoints_;
-    namedPoints_.emplace_back("o", this->getGeometricOrigin({}));
-    namedPoints_.insert(namedPoints_.end(), this->namedPointsOrdered.begin(), this->namedPointsOrdered.end());
-    return namedPoints_;
+std::vector<ShapeGeometry::NamedPoint> ShapeGeometry::getNamedPoints() const {
+    std::vector<NamedPoint> namedPointsVec;
+    namedPointsVec.reserve(this->namedPoints.size());
+    for (const auto &[name, point] : this->namedPoints)
+        namedPointsVec.push_back(point);
+    return namedPointsVec;
 }
 
 void ShapeGeometry::registerNamedPoints(const std::vector<std::pair<std::string, Vector<3>>> &namedPoints_) {
@@ -42,10 +59,12 @@ void ShapeGeometry::registerNamedPoints(const std::vector<std::pair<std::string,
 }
 
 void ShapeGeometry::moveNamedPoints(const Vector<3> &translation) {
-    for (auto &[name, point] : this->namedPoints)
-        point += translation;
-    for (auto &[name, point] : this->namedPointsOrdered)
-        point += translation;
+    for (auto &[name, point] : this->namedPoints) {
+        if (!point.isStatic())
+            continue;
+
+        point = NamedPoint(point.getName(), point.forShape({}) + translation);
+    }
 }
 
 bool ShapeGeometry::hasNamedPoint(const std::string &pointName) const {
@@ -112,4 +131,21 @@ Vector<3> ShapeGeometry::getAxis(const Shape &shape, ShapeGeometry::Axis axis) c
         default:
             AssertThrow("axis");
     }
+}
+
+void ShapeGeometry::resetOriginPoint() {
+    this->namedPoints["o"] = NamedPoint("o", [this](const ShapeData &data) -> Vector<3> {
+        Shape trialShape{};
+        trialShape.setData(data.unmanagedCopy());       // Prevent copying data
+        return this->getGeometricOrigin(trialShape);
+    });
+}
+
+Vector<3> ShapeGeometry::NamedPoint::forShape(const Shape &shape) const {
+    return shape.getPosition() + shape.getOrientation() * this->forShapeData(shape.getData());
+}
+
+Vector<3> ShapeGeometry::NamedPoint::forStatic() const {
+    Expects(this->isStatic());
+    return this->pointFunctor.target<StaticPoint>()->point;
 }

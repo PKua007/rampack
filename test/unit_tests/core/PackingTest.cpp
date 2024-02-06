@@ -151,20 +151,20 @@ namespace {
 
     const PolydispersePolymerHardCoreInteraction::PolymerData
     PolydispersePolymerHardCoreInteraction::POLYMER_DATA[3] = {
-        // Tag::ASYMMETRIC_DIMER, radii 0.4, 0.6
+        // Tag::ASYMMETRIC_DIMER
         {
-            {{-1, 0, 0}, {0, 0, 0}},
-            {0.4, 0.6}
+            {{-1, 0, 0}, {0, 0, 0}},                // pos
+            {0.4, 0.6}                              // radii
         },
-        // Tag::ASYMMETRIC_TRIMER, radii 0.25, 0.25, 0.25
+        // Tag::SYMMETRIC_TRIMER
         {
-            {{0, 0, 0}, {0.5, 0, 0}, {1, 0, 0}},
-            {0.3, 0.3, 0.3}
+            {{0, 0, 0}, {0.5, 0, 0}, {1, 0, 0}},    // pos
+            {0.3, 0.3, 0.3}                         // radii
         },
-        // Tag::SYMMETRIC_DIMER: radii 0.5, 0.5
+        // Tag::SYMMETRIC_DIMER
         {
-            {{0, 0, 0}, {1, 0, 0}},
-            {0.5, 0.5}
+            {{0, 0, 0}, {1, 0, 0}},                 // pos
+            {0.5, 0.5}                              // radii
         }
     };
 
@@ -216,15 +216,15 @@ namespace {
 
     const PolydispersePolymerElectrostaticInteraction::PolymerData
     PolydispersePolymerElectrostaticInteraction::POLYMER_DATA[2] = {
-        // Tag::DIMER: charges 1, 2
+        // Tag::DIMER
         {
-            {{-1, 0, 0}, {0, 0, 0}},
-            {1, 2}
+            {{-1, 0, 0}, {0, 0, 0}},                // pos
+            {1, 2}                                  // charges
         },
-        // Tag::TRIMER: charges 3, 4, 5
+        // Tag::TRIMER
         {
-            {{0, 0, 0}, {0.5, 0, 0}, {1, 0, 0}},
-            {3, 4, 5}
+            {{0, 0, 0}, {0.5, 0, 0}, {1, 0, 0}},    // pos
+            {3, 4, 5}                               // charges
         },
     };
 
@@ -386,7 +386,7 @@ TEST_CASE("Packing: soft polydisperse single interaction center") {
     }*/
 }
 
-TEST_CASE("Packing: hard polydisperse multiple interaction centres") {
+TEST_CASE("Packing: hard polydisperse multiple interaction centers") {
     using Tag = PolydispersePolymerHardCoreInteraction::Tag;
     PolydispersePolymerHardCoreInteraction hardCore;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
@@ -443,7 +443,7 @@ TEST_CASE("Packing: hard polydisperse multiple interaction centres") {
     }
 }
 
-TEST_CASE("Packing: soft polydisperse multiple interaction centres") {
+TEST_CASE("Packing: soft polydisperse multiple interaction centers") {
     using Tag = PolydispersePolymerElectrostaticInteraction::Tag;
     PolydispersePolymerElectrostaticInteraction electrostaticInteraction;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
@@ -693,7 +693,7 @@ TEST_CASE("Packing: hard monodisperse multiple interaction center overlap counti
     }
 }
 
-TEST_CASE("Packing: polydisperse single interaction centre wall overlap") {
+TEST_CASE("Packing: polydisperse single interaction center wall overlap") {
     auto scalingThreads = GENERATE(1, 2);
 
     DYNAMIC_SECTION("scaling threads: " << scalingThreads) {
@@ -754,7 +754,7 @@ TEST_CASE("Packing: polydisperse single interaction centre wall overlap") {
     }
 }
 
-TEST_CASE("Packing: multiple interaction centres wall overlap") {
+TEST_CASE("Packing: polydisperse multiple interaction centers wall overlap") {
     using Tag = PolydispersePolymerHardCoreInteraction::Tag;
     PolydispersePolymerHardCoreInteraction hardCore;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();

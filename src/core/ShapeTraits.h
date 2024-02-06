@@ -21,6 +21,8 @@ class ShapeTraits {
 public:
     virtual ~ShapeTraits() = default;
 
+    // TODO: shape data validation
+
     /**
      * @brief Returns the Interaction object describing the interaction of the shape.
      */

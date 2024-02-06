@@ -69,7 +69,7 @@ namespace {
     auto namedPoints = MatcherDictionary{}.valuesMatch(vector)
         .mapTo([](const DictionaryData &dict) {
             auto map = dict.asStdMap<Vector<3>>();
-            ShapeGeometry::NamedPoints points(map.begin(), map.end());
+            ShapeGeometry::StaticNamedPoints points(map.begin(), map.end());
             return points;
         });
 
@@ -329,7 +329,7 @@ namespace {
                 std::optional<Vector<3>> secondaryAxis;
                 if (!polysphere["secondary_axis"].isEmpty())
                     secondaryAxis = polysphere["secondary_axis"].as<Vector<3>>();
-                auto namedPoints = polysphere["named_points"].as<ShapeGeometry::NamedPoints>();
+                auto namedPoints = polysphere["named_points"].as<ShapeGeometry::StaticNamedPoints>();
                 auto interaction = polysphere["interaction"].as<std::shared_ptr<CentralInteraction>>();
 
                 PolysphereTraits::PolysphereGeometry geometry(
@@ -398,7 +398,7 @@ namespace {
                 std::optional<Vector<3>> secondaryAxis;
                 if (!polysc["secondary_axis"].isEmpty())
                     secondaryAxis = polysc["secondary_axis"].as<Vector<3>>();
-                auto namedPoints = polysc["named_points"].as<ShapeGeometry::NamedPoints>();
+                auto namedPoints = polysc["named_points"].as<ShapeGeometry::StaticNamedPoints>();
 
                 PolyspherocylinderTraits::PolyspherocylinderGeometry geometry(
                     std::move(sc), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
@@ -428,7 +428,7 @@ namespace {
                 std::optional<Vector<3>> secondaryAxis;
                 if (!convex["secondary_axis"].isEmpty())
                     secondaryAxis = convex["secondary_axis"].as<Vector<3>>();
-                auto namedPoints = convex["named_points"].as<ShapeGeometry::NamedPoints>();
+                auto namedPoints = convex["named_points"].as<ShapeGeometry::StaticNamedPoints>();
 
                 XCBodyBuilder builder;
                 script(builder);

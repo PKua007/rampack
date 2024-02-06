@@ -7,6 +7,8 @@
 
 #include <map>
 #include <string>
+#include <variant>
+#include <functional>
 
 #include "geometry/Vector.h"
 #include "Shape.h"
@@ -29,11 +31,40 @@ public:
         AUXILIARY
     };
 
-    using NamedPoints = std::vector<std::pair<std::string, Vector<3>>>;
+    class NamedPoint {
+    private:
+        struct StaticPoint {
+            Vector<3> point;
+
+            Vector<3> operator()(const ShapeData &) const { return this->point; }
+        };
+
+        std::string name;
+        std::function<Vector<3>(const ShapeData &)> pointFunctor;
+
+    public:
+        NamedPoint() : name{}, pointFunctor{StaticPoint{}} { }
+
+        NamedPoint(std::string name, const Vector<3> &staticPoint)
+                : name{std::move(name)}, pointFunctor{StaticPoint{staticPoint}}
+        { }
+
+        NamedPoint(std::string name, std::function<Vector<3>(const ShapeData &)> dynamicPoint)
+                : name{std::move(name)}, pointFunctor{std::move(dynamicPoint)}
+        { }
+
+        [[nodiscard]] bool isStatic() const { return this->pointFunctor.target_type() == typeid(StaticPoint); }
+        [[nodiscard]] bool isDynamic() const { return !this->isStatic(); }
+        [[nodiscard]] Vector<3> forShape(const Shape &shape) const;
+        [[nodiscard]] Vector<3> forShapeData(const ShapeData &data) const { return this->pointFunctor(data); }
+        [[nodiscard]] Vector<3> forStatic() const;
+        [[nodiscard]] const std::string &getName() const { return this->name; }
+    };
 
 private:
-    std::map<std::string, Vector<3>> namedPoints;
-    std::vector<std::pair<std::string, Vector<3>>> namedPointsOrdered;
+    std::map<std::string, NamedPoint> namedPoints;
+
+    void resetOriginPoint();
 
 protected:
     /**
@@ -54,6 +85,15 @@ protected:
     void moveNamedPoints(const Vector<3> &translation);
 
 public:
+    using StaticNamedPoints = std::vector<std::pair<std::string, Vector<3>>>;
+
+    ShapeGeometry();
+    ShapeGeometry(const ShapeGeometry &other);
+    ShapeGeometry(ShapeGeometry &&other) noexcept;
+    ShapeGeometry &operator=(const ShapeGeometry &other);
+    ShapeGeometry &operator=(ShapeGeometry &&other) noexcept;
+    // Surprisingly, the default destructor is okay (the rule of five does not apply here)
+
     /**
      * @brief Returns the volume of the shape.
      */
@@ -101,18 +141,24 @@ public:
      * @param pointName name of the point
      * @return a special, named point
      */
-    [[nodiscard]] Vector<3> getNamedPoint(const std::string &pointName) const;
+    [[nodiscard]] const NamedPoint &getNamedPoint(const std::string &pointName) const;
 
     /**
      * @brief Returns a named point with name @a pointName (see getNamedPoint()) on a specifically positioned and
      * oriented @a shape.
      */
-    [[nodiscard]] Vector<3> getNamedPointForShape(const std::string &pointName, const Shape &shape) const;
+    [[nodiscard]] Vector<3> getNamedPointForShape(const std::string &pointName, const Shape &shape) const {
+        return this->getNamedPoint(pointName).forShape(shape);
+    }
+
+    [[nodiscard]] Vector<3> getNamedPointForData(const std::string &pointName, const ShapeData &shapeData) const {
+        return this->getNamedPoint(pointName).forShapeData(shapeData);
+    }
 
     /**
      * @brief Returns a list of all named points (see getNamedPoint()).
      */
-    [[nodiscard]] NamedPoints getNamedPoints() const;
+    [[nodiscard]] std::vector<NamedPoint> getNamedPoints() const;
 
     /**
      * @brief Returns @a true if named point @a namedPoint exists.
@@ -142,6 +188,7 @@ public:
      * @throws PreconditionException if the primary axis does not exists.
      */
     [[nodiscard]] Vector<3> findFlipAxis(const Shape &shape) const;
+
 };
 
 
