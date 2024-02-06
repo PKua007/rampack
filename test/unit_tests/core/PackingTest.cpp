@@ -16,45 +16,6 @@
 #include "core/Interaction.h"
 
 namespace {
-    class SphereHardCoreInteraction : public Interaction {
-    private:
-        double radius;
-
-    public:
-        explicit SphereHardCoreInteraction(double radius) : radius(radius) { }
-
-        [[nodiscard]] bool hasHardPart() const override { return true; }
-        [[nodiscard]] bool hasSoftPart() const override { return false; }
-        [[nodiscard]] bool hasWallPart() const override { return true; }
-        // Claim it is not convex to force full overlap check on upscaling moves
-        [[nodiscard]] bool isConvex() const override { return false; }
-
-        [[nodiscard]] bool overlapBetween(const Vector<3> &pos1,
-                                          [[maybe_unused]] const Matrix<3, 3> &orientaton1,
-                                          [[maybe_unused]] const std::byte *data1,
-                                          [[maybe_unused]] std::size_t idx1,
-                                          const Vector<3> &pos2,
-                                          [[maybe_unused]] const Matrix<3, 3> &orientaton2,
-                                          [[maybe_unused]] const std::byte *data2,
-                                          [[maybe_unused]] std::size_t idx2,
-                                          const BoundaryConditions &bc) const override
-        {
-            return bc.getDistance2(pos1, pos2) < std::pow(2*this->radius, 2);
-        }
-
-        [[nodiscard]] bool overlapWithWall(const Vector<3> &pos, [[maybe_unused]] const Matrix<3, 3> &orientation,
-                                           [[maybe_unused]] const std::byte *data, [[maybe_unused]] std::size_t idx,
-                                           const Vector<3> &wallOrigin, const Vector<3> &wallVector) const override
-        {
-            double dotProduct = wallVector * (pos - wallOrigin);
-            return dotProduct < this->radius;
-        }
-
-        [[nodiscard]] double getRangeRadius([[maybe_unused]] const std::byte *data) const override {
-            return 2*this->radius;
-        }
-    };
-
     class PolydisperseSphereHardCoreInteraction : public Interaction {
     public:
         using Radius = double;
@@ -67,11 +28,11 @@ namespace {
         [[nodiscard]] std::size_t getShapeDataSize() const override { return sizeof(Radius); }
 
         [[nodiscard]] bool overlapBetween(const Vector<3> &pos1,
-                                          [[maybe_unused]] const Matrix<3, 3> &orientaton1,
+                                          [[maybe_unused]] const Matrix<3, 3> &orientation1,
                                           const std::byte *data1,
                                           [[maybe_unused]] std::size_t idx1,
                                           const Vector<3> &pos2,
-                                          [[maybe_unused]] const Matrix<3, 3> &orientaton2,
+                                          [[maybe_unused]] const Matrix<3, 3> &orientation2,
                                           const std::byte *data2,
                                           [[maybe_unused]] std::size_t idx2,
                                           const BoundaryConditions &bc) const override
@@ -92,27 +53,6 @@ namespace {
 
         [[nodiscard]] double getRangeRadius(const std::byte *data) const override {
             return 2 * ShapeData::as<Radius>(data);
-        }
-    };
-
-    class SphereDistanceInteraction : public Interaction {
-    public:
-        [[nodiscard]] bool hasHardPart() const override { return false; }
-        [[nodiscard]] bool hasSoftPart() const override { return true; }
-        [[nodiscard]] bool hasWallPart() const override { return false; }
-        [[nodiscard]] bool isConvex() const override { return false; }
-
-        [[nodiscard]] double calculateEnergyBetween(const Vector<3> &pos1,
-                                                    [[maybe_unused]] const Matrix<3, 3> &orientaton1,
-                                                    [[maybe_unused]] const std::byte *data1,
-                                                    [[maybe_unused]] std::size_t idx1,
-                                                    const Vector<3> &pos2,
-                                                    [[maybe_unused]] const Matrix<3, 3> &orientaton2,
-                                                    [[maybe_unused]] const std::byte *data2,
-                                                    [[maybe_unused]] std::size_t idx2,
-                                                    const BoundaryConditions &bc) const override
-        {
-            return std::sqrt(bc.getDistance2(pos1, pos2));
         }
     };
 
@@ -144,24 +84,6 @@ namespace {
         }
     };
 
-    class DimerDistanceInteraction : public SphereDistanceInteraction {
-    public:
-        [[nodiscard]] std::vector<Vector<3>>
-        getInteractionCentres([[maybe_unused]] const std::byte *data) const override {
-            return {{0, 0, 0}, {1, 0, 0}};
-        }
-    };
-
-    class DimerHardCoreInteraction : public SphereHardCoreInteraction {
-    public:
-        explicit DimerHardCoreInteraction(double radius) : SphereHardCoreInteraction(radius) { }
-
-        [[nodiscard]] std::vector<Vector<3>>
-        getInteractionCentres([[maybe_unused]] const std::byte *data) const override {
-            return {{0, 0, 0}, {1, 0, 0}};
-        }
-    };
-
     class PolydispersePolymerHardCoreInteraction : public Interaction {
     private:
         struct PolymerData {
@@ -174,7 +96,7 @@ namespace {
     public:
         enum class Tag : std::size_t {
             ASYMMETRIC_DIMER = 0,
-            ASYMMETRIC_TRIMER,
+            SYMMETRIC_TRIMER,
             SYMMETRIC_DIMER
         };
 
@@ -185,11 +107,11 @@ namespace {
         [[nodiscard]] std::size_t getShapeDataSize() const override { return sizeof(Tag); }
 
         [[nodiscard]] bool overlapBetween(const Vector<3> &pos1,
-                                          [[maybe_unused]] const Matrix<3, 3> &orientaton1,
+                                          [[maybe_unused]] const Matrix<3, 3> &orientation1,
                                           const std::byte *data1,
                                           std::size_t idx1,
                                           const Vector<3> &pos2,
-                                          [[maybe_unused]] const Matrix<3, 3> &orientaton2,
+                                          [[maybe_unused]] const Matrix<3, 3> &orientation2,
                                           const std::byte *data2,
                                           std::size_t idx2,
                                           const BoundaryConditions &bc) const override
@@ -473,7 +395,7 @@ TEST_CASE("Packing: hard polydisperse multiple interaction centres") {
     // Balls: {pos={0.5, 0.5, 2.5}, r=0.4}, {pos={1.5, 0.5, 2.5}, r=0.6}
     shapes.emplace_back(Vector<3>{1.5, 0.5, 2.5}, noRot, Tag::ASYMMETRIC_DIMER);
     // Balls: r=0.3, pos={{1.5, 3.7, 2.5}, {2.0, 3.7, 2.5}, {2.5, 3.7, 2.5}}
-    shapes.emplace_back(Vector<3>{1.5, 3.7, 2.5}, noRot, Tag::ASYMMETRIC_TRIMER);
+    shapes.emplace_back(Vector<3>{1.5, 3.7, 2.5}, noRot, Tag::SYMMETRIC_TRIMER);
     Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
 
     constexpr double inf = std::numeric_limits<double>::infinity();
@@ -498,7 +420,7 @@ TEST_CASE("Packing: hard polydisperse multiple interaction centres") {
     }
 
     SECTION("translating") {
-        // For tanslation {0, 0.9, 0}:
+        // For translation {0, 0.9, 0}:
         // 0: shape{pos=1.5, 0.5, 2.5}, balls: {pos={0.5, 0.5, 2.5}, r=0.4}, {pos={1.5, 0.5, 2.5}, r=0.6}
         // 1: shape{pos=1.5, 4.6, 2.5}, balls: r=0.3, pos={{1.5, 4.6, 2.5}, {2.0, 4.6, 2.5}, {2.5, 4.6, 2.5}}
         // 2nd ball of shape 0 and 1st ball of shape 1 are touching
@@ -833,12 +755,13 @@ TEST_CASE("Packing: polydisperse single interaction centre wall overlap") {
 }
 
 TEST_CASE("Packing: multiple interaction centres wall overlap") {
-    double radius = 0.5;
-    DimerHardCoreInteraction hardCore(radius);
+    using Tag = PolydispersePolymerHardCoreInteraction::Tag;
+    PolydispersePolymerHardCoreInteraction hardCore;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     std::vector<Shape> shapes;
-    shapes.emplace_back(Vector<3>{1, 1, 1});
-    shapes.emplace_back(Vector<3>{3, 3, 3});
+    auto noRot = Matrix<3, 3>::identity();
+    shapes.emplace_back(Vector<3>{1, 1, 1}, noRot, Tag::SYMMETRIC_DIMER);
+    shapes.emplace_back(Vector<3>{3, 3, 3}, noRot, Tag::SYMMETRIC_TRIMER);
     Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
     packing.toggleWall(0, true);
     packing.toggleWall(2, true);
@@ -848,8 +771,8 @@ TEST_CASE("Packing: multiple interaction centres wall overlap") {
     SECTION("without overlaps counting") {
         CHECK(packing.tryTranslation(0, {-0.4, 0, 0}, hardCore) == 0);
         CHECK(packing.tryTranslation(0, {-0.6, 0, 0}, hardCore) == INF);
-        CHECK(packing.tryTranslation(1, {0.4, 0, 0}, hardCore) == 0);
-        CHECK(packing.tryTranslation(1, {0.6, 0, 0}, hardCore) == INF);
+        CHECK(packing.tryTranslation(1, {0.65, 0, 0}, hardCore) == 0);
+        CHECK(packing.tryTranslation(1, {0.85, 0, 0}, hardCore) == INF);
     }
 
     SECTION("with overlaps counting") {
@@ -865,8 +788,8 @@ TEST_CASE("Packing: multiple interaction centres wall overlap") {
         packing.acceptTranslation();
         CHECK(packing.getCachedNumberOfOverlaps() == 1);
         CHECK(packing.countTotalOverlaps(hardCore, false) == 1);
-        // Move molecule out of walls into another molecule (new pos: {1.5, 3, 3}, overlaps: 2)
-        CHECK(packing.tryTranslation(0, {3.1, 2, 2}, hardCore) == 0);
+        // Move molecule out of walls into another molecule (new pos: {2, 2.3, 3}, overlaps: 1)
+        CHECK(packing.tryTranslation(0, {-1.6, 1.3, 2}, hardCore) == 0);
         packing.acceptTranslation();
         CHECK(packing.getCachedNumberOfOverlaps() == 1);
         CHECK(packing.countTotalOverlaps(hardCore, false) == 1);
@@ -874,28 +797,33 @@ TEST_CASE("Packing: multiple interaction centres wall overlap") {
 }
 
 TEST_CASE("Packing: too big NG cell bug") {
-    // Previous behaviour:
+    // Previous behavior:
     // 100 x 100 x 1.1 packing forced too big NG cell - volume=11000, so the cell size set to give "at most 5^3 cells
-    // per molecule" was more than the box height resulting in NG throwing exception that the cell is too big.
+    // per molecule" was more than the box height, resulting in NG throwing exception that the cell is too big.
     //
-    // New, correct behaviour:
-    // If that happens, neighbour grid is prevented from being created.
+    // New, correct behavior:
+    // If that happens, neighbor grid is prevented from being created.
 
-    double radius = 0.5;
-    SphereHardCoreInteraction hardCore(radius);
+    using Radius = PolydisperseSphereHardCoreInteraction::Radius;
+    Radius radius = 0.5;
+    PolydisperseSphereHardCoreInteraction hardCore;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     std::vector<Shape> shapes;
-    shapes.emplace_back(Vector<3>{0.5, 25, 25});
-    shapes.emplace_back(Vector<3>{0.5, 75, 75});
+    auto noRot = Matrix<3, 3>::identity();
+    shapes.emplace_back(Vector<3>{0.5, 25, 25}, noRot, radius);
+    shapes.emplace_back(Vector<3>{0.5, 75, 75}, noRot, radius);
 
     REQUIRE_NOTHROW(Packing({1.1, 100, 100}, std::move(shapes), std::move(pbc), hardCore));
 }
 
 TEST_CASE("Packing: named points dumping") {
-    double radius = 0.5;
-    SphereHardCoreInteraction hardCore(radius);
+    using Radius = PolydisperseSphereHardCoreInteraction::Radius;
+    Radius radius = 0.5;
+    PolydisperseSphereHardCoreInteraction hardCore;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    std::vector<Shape> shapes{Shape{{0.5, 0.5, 0.5}}, Shape{{0.5, 3.5, 0.5}, Matrix<3, 3>::rotation(0, 0, M_PI/2)}};
+    std::vector<Shape> shapes;
+    shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5}, Matrix<3, 3>::identity(), radius);
+    shapes.emplace_back(Vector<3>{0.5, 3.5, 0.5}, Matrix<3, 3>::rotation(0, 0, M_PI/2), radius);
     Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
     using trompeloeil::_;
     MockShapeGeometry geometry;
