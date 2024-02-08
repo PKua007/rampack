@@ -1037,9 +1037,8 @@ void Packing::addInteractionCentresToNeighbourGrid() {
 
 void Packing::setupForInteraction(const Interaction &interaction, const ShapeDataManager &dataManager) {
     Expects(!this->empty());
-    // TODO: better handling of shape data
-    Expects(dataManager.getShapeDataSize() == this->shapeDataSize);
     Expects(this->areInteractionCentresConsistent(interaction));
+    this->validateShapeData(dataManager);
 
     this->interactionRange = this->computeMaxInteractionRange(interaction);
     this->totalInteractionRange = this->computeMaxTotalInteractionRange(interaction);
@@ -1476,5 +1475,19 @@ double Packing::getRangeRadius() const {
 
 double Packing::getTotalRangeRadius() const {
     return this->totalInteractionRange;
+}
+
+void Packing::validateShapeData(const ShapeDataManager &manager) const {
+    Expects(manager.getShapeDataSize() == this->shapeDataSize);
+
+    std::size_t particleIdx{};
+    try {
+        for (const auto &shape: *this) {
+            manager.validateShapeData(shape.getData());
+            particleIdx++;
+        }
+    } catch (const ShapeDataFormatException &e) {
+        ExpectsThrow("Particle " + std::to_string(particleIdx) + ": " + e.what());
+    }
 }
 
