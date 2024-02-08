@@ -11,13 +11,18 @@
 #include "core/Interaction.h"
 
 
-class MockShapeTraits : public ShapeTraits, public Interaction, public ShapeGeometry {
+class MockShapeTraits : public ShapeTraits, public Interaction, public ShapeGeometry, public ShapeDataManager {
 public:
+    // ShapeTraits methods
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; };
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; };
+    [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this; }
+
     MAKE_CONST_MOCK2(getPrinter, std::shared_ptr<const ShapePrinter>(const std::string &,
-                                                                     const std::map<std::string, std::string> &),
+        const std::map<std::string, std::string> &),
                      override);
+
+    // Interaction methods
     MAKE_CONST_MOCK0(hasHardPart, bool(), override);
     MAKE_CONST_MOCK0(hasSoftPart, bool(), override);
     MAKE_CONST_MOCK0(hasWallPart, bool(), override);
@@ -38,10 +43,15 @@ public:
     MAKE_CONST_MOCK1(getInteractionCentres, std::vector<Vector<3>>(const std::byte *), override);
     MAKE_CONST_MOCK1(getTotalRangeRadius, double(const std::byte *), override);
 
+    // ShapeGeometry methods
     MAKE_CONST_MOCK1(getVolume, double(const Shape &), override);
     MAKE_CONST_MOCK1(getPrimaryAxis, Vector<3>(const Shape &), override);
     MAKE_CONST_MOCK1(getSecondaryAxis, Vector<3>(const Shape &), override);
     MAKE_CONST_MOCK1(getGeometricOrigin, Vector<3>(const Shape &), override);
+
+    // ShapeDataManager methods
+    MAKE_CONST_MOCK0(getShapeDataSize, std::size_t(), override);
+    MAKE_CONST_MOCK1(validateShapeData, void(const ShapeData &), override);
 };
 
 #endif //RAMPACK_MOCKSHAPETRAITS_H

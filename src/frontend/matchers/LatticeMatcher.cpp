@@ -75,7 +75,8 @@ namespace {
 
             auto shapes = this->populator->populateLattice(this->lattice, this->numShapes);
             return std::make_unique<Packing>(this->lattice.getLatticeBox(), std::move(shapes), std::move(bc),
-                                             shapeTraits.getInteraction(), moveThreads, scalingThreads);
+                                             shapeTraits.getInteraction(), shapeTraits.getDataManager(), moveThreads,
+                                             scalingThreads);
         }
     };
 

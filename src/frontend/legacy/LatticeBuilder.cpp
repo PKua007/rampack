@@ -397,7 +397,8 @@ namespace legacy {
         auto latticeBox = lattice.getLatticeBox();
 
         return std::make_unique<Packing>(
-            latticeBox, shapes, std::move(bc), shapeTraits.getInteraction(), moveThreads, scalingThreads
+            latticeBox, shapes, std::move(bc), shapeTraits.getInteraction(), shapeTraits.getDataManager(), moveThreads,
+            scalingThreads
         );
     }
 }

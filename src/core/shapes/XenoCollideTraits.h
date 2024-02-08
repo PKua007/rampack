@@ -44,7 +44,7 @@
  * @endcode
  */
 template<typename ConcreteCollideTraits>
-class XenoCollideTraits : public ShapeTraits, public Interaction, public ShapeGeometry {
+class XenoCollideTraits : public ShapeTraits, public Interaction, public ShapeGeometry, public ShapeDataManager {
 private:
     std::optional<Vector<3>> primaryAxis;
     std::optional<Vector<3>> secondaryAxis;
@@ -97,6 +97,7 @@ public:
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
+    [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this; }
 
     /**
      * @brief Returns ShapePrinter for a given @a format.

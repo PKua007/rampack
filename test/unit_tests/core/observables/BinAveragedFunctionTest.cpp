@@ -31,7 +31,7 @@ TEST_CASE("BinAveragedFunction") {
 
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     SphereTraits traits(0.5);
-    Packing packing(box, std::move(shapes), std::move(pbc), traits.getInteraction());
+    Packing packing(box, std::move(shapes), std::move(pbc), traits.getInteraction(), traits.getDataManager());
 
     using trompeloeil::_;
     auto mockShapeFunction = std::make_unique<MockShapeFunction>();

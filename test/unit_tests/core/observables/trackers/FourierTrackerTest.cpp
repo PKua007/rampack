@@ -55,7 +55,7 @@ TEST_CASE("FourierTracker") {
 
     SphereTraits traits(0.5);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    Packing packing(box, std::move(shapes), std::move(pbc), traits.getInteraction());
+    Packing packing(box, std::move(shapes), std::move(pbc), traits.getInteraction(), traits.getDataManager());
 
     SECTION("1D") {
         Vector<3> origin{0, 3.5, 0};

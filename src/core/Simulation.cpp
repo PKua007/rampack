@@ -120,11 +120,12 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
     this->updateThermodynamicParameters();
 
     const Interaction &interaction = shapeTraits.getInteraction();
+    const ShapeDataManager &dataManager = shapeTraits.getDataManager();
     LoggerAdditionalTextAppender loggerAdditionalTextAppender(logger);
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    this->packing->setupForInteraction(interaction);
+    this->packing->setupForInteraction(interaction, dataManager);
     this->packing->toggleOverlapCounting(false, interaction);
     this->areOverlapsCounted = false;
 
@@ -142,7 +143,7 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
             this->updateThermodynamicParameters();
 
             if (this->totalCycles % params.rotationMatrixFixEvery == 0)
-                this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
+                this->fixRotationMatrices(shapeTraits.getInteraction(), shapeTraits.getDataManager(), logger);
             if (this->totalCycles % params.snapshotEvery == 0) {
                 this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
                 if (!simulationRecorders.empty())
@@ -171,7 +172,7 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
             this->performCycle(logger, shapeTraits);
 
             if (this->totalCycles % params.rotationMatrixFixEvery == 0)
-                this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
+                this->fixRotationMatrices(shapeTraits.getInteraction(), shapeTraits.getDataManager(), logger);
             if (this->totalCycles % params.snapshotEvery == 0) {
                 this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
                 if (!simulationRecorders.empty())
@@ -242,11 +243,12 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
     this->updateThermodynamicParameters();
 
     const Interaction &interaction = shapeTraits.getInteraction();
+    const ShapeDataManager &dataManager = shapeTraits.getDataManager();
     LoggerAdditionalTextAppender loggerAdditionalTextAppender(logger);
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    this->packing->setupForInteraction(interaction);
+    this->packing->setupForInteraction(interaction, dataManager);
     this->packing->toggleOverlapCounting(true, interaction);
     this->areOverlapsCounted = true;
 
@@ -258,7 +260,7 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
         this->updateThermodynamicParameters();
 
         if (this->totalCycles % params.rotationMatrixFixEvery == 0)
-            this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
+            this->fixRotationMatrices(shapeTraits.getInteraction(), shapeTraits.getDataManager(), logger);
         if (this->totalCycles % params.snapshotEvery == 0) {
             this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
             if (!simulationRecorders.empty())
@@ -746,11 +748,13 @@ std::vector<Simulation::MoveStatistics> Simulation::getMovesStatistics() const {
     return moveGroupsStatistics;
 }
 
-void Simulation::fixRotationMatrices(const Interaction &interaction, Logger &logger) {
+void Simulation::fixRotationMatrices(const Interaction &interaction, const ShapeDataManager &dataManager,
+                                     Logger &logger)
+{
     if (this->areOverlapsCounted) {
-        this->packing->renormalizeOrientations(interaction, true);
+        this->packing->renormalizeOrientations(interaction, dataManager, true);
     } else {
-        std::size_t rejected = this->packing->renormalizeOrientations(interaction, false);
+        std::size_t rejected = this->packing->renormalizeOrientations(interaction, dataManager, false);
         if (rejected > 0) {
             logger.warn() << "After orientation renormalization " << rejected << " molecules reported overlaps; ";
             logger << "those were skipped this time" << std::endl;

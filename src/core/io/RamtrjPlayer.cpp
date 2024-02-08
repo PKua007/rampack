@@ -50,7 +50,7 @@ bool RamtrjPlayer::hasNext() const {
     return this->currentSnapshot < this->header.numSnapshots;
 }
 
-void RamtrjPlayer::nextSnapshot(Packing &packing, const Interaction &interaction) {
+void RamtrjPlayer::nextSnapshot(Packing &packing, const Interaction &interaction, const ShapeDataManager &dataManager) {
     Expects(this->hasNext());
     Expects(packing.size() == this->header.numParticles);
 
@@ -60,16 +60,18 @@ void RamtrjPlayer::nextSnapshot(Packing &packing, const Interaction &interaction
     for (std::size_t i{}; i < packing.size(); i++)
         newShapes.push_back(RamtrjIO::readShape(*this->in));
 
-    packing.reset(std::move(newShapes), newBox, interaction);
+    packing.reset(std::move(newShapes), newBox, interaction, dataManager);
 
     this->currentSnapshot++;
 }
 
-void RamtrjPlayer::lastSnapshot(Packing &packing, const Interaction &interaction) {
-    this->jumpToSnapshot(packing, interaction, this->header.numSnapshots * this->header.cycleStep);
+void RamtrjPlayer::lastSnapshot(Packing &packing, const Interaction &interaction, const ShapeDataManager &dataManager) {
+    this->jumpToSnapshot(packing, interaction, dataManager, this->header.numSnapshots * this->header.cycleStep);
 }
 
-void RamtrjPlayer::jumpToSnapshot(Packing &packing, const Interaction &interaction, std::size_t cycleNumber) {
+void RamtrjPlayer::jumpToSnapshot(Packing &packing, const Interaction &interaction, const ShapeDataManager &dataManager,
+                                  std::size_t cycleNumber)
+{
     Expects(this->in != nullptr);
     Expects(this->header.numSnapshots > 0);
     Expects(cycleNumber % this->header.cycleStep == 0);
@@ -81,7 +83,7 @@ void RamtrjPlayer::jumpToSnapshot(Packing &packing, const Interaction &interacti
     this->currentSnapshot = snapshotNumber - 1;
     auto offset = RamtrjIO::streamoffForSnapshot(this->header, this->currentSnapshot);
     this->in->seekg(offset);
-    this->nextSnapshot(packing, interaction);
+    this->nextSnapshot(packing, interaction, dataManager);
 }
 
 std::size_t RamtrjPlayer::getCurrentSnapshotCycles() const {

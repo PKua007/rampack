@@ -110,6 +110,7 @@ namespace {
     }
 
     std::array<double, 3> find_minimal_distances(std::size_t numOfParticles, const Interaction &interaction,
+                                                 const ShapeDataManager &dataManager,
                                                  std::array<std::size_t, 3> &particlesInLine,
                                                  const std::string &axisOrderString,
                                                  const OrthorhombicArrangingModel &model)
@@ -125,9 +126,9 @@ namespace {
                        initialTestPackingDim.begin(), [](double dim, std::size_t num) { return dim*num; });
         auto pbc = std::make_unique<PeriodicBoundaryConditions>();
         auto testShapes = model.arrange(numOfParticles, particlesInLine, testPackingCellDim, initialTestPackingDim);
-        Packing testPacking(initialTestPackingDim, testShapes, std::move(pbc), interaction);
+        Packing testPacking(initialTestPackingDim, testShapes, std::move(pbc), interaction, dataManager);
 
-        DistanceOptimizer::shrinkPacking(testPacking, interaction, axisOrderString);
+        DistanceOptimizer::shrinkPacking(testPacking, interaction, dataManager, axisOrderString);
         std::array<double, 3> minDistances{};
         std::array<double, 3> finalTestPackingDim = testPacking.getBox().getHeights();
         std::transform(finalTestPackingDim.begin(), finalTestPackingDim.end(), particlesInLine.begin(),
@@ -137,7 +138,7 @@ namespace {
 
     std::vector<Shape> parse_spacing(std::istringstream &arrangementStream, std::size_t numOfParticles,
                                      std::array<double, 3> &boxDimensions, const Interaction &interaction,
-                                     const OrthorhombicArrangingModel &model)
+                                     const ShapeDataManager &dataManager, const OrthorhombicArrangingModel &model)
     {
         std::string spacingStr;
         double spacing;
@@ -150,8 +151,8 @@ namespace {
         ValidateMsg(std::accumulate(particlesInLine.begin(), particlesInLine.end(), 1., std::multiplies<>{})
                     >= numOfParticles, "Lattice is not big enough for a given number of particles");
 
-        std::array<double, 3> distances = find_minimal_distances(numOfParticles, interaction, particlesInLine,
-                                                                 axisOrderString, model);
+        std::array<double, 3> distances = find_minimal_distances(numOfParticles, interaction, dataManager,
+                                                                 particlesInLine, axisOrderString, model);
         std::array<double, 3> cellDimensions{};
         std::transform(distances.begin(), distances.end(), cellDimensions.begin(),
                        [spacing](double distance) { return distance + spacing; });
@@ -200,7 +201,7 @@ namespace {
     }
 
     std::vector<Shape> arrange_orthorhombic_shapes(std::size_t numOfParticles, std::array<double, 3> &boxDimensions,
-                                                   const Interaction &interaction,
+                                                   const Interaction &interaction, const ShapeDataManager &dataManager,
                                                    std::istringstream &arrangementStream)
     {
         auto [clinicity, tiltAxis, tiltAngle] = parse_tilt(arrangementStream);
@@ -218,7 +219,7 @@ namespace {
         if (arrangementStream.str().find(" default") != std::string::npos)
             return parse_default(arrangementStream, numOfParticles, boxDimensions, model);
         else if (arrangementStream.str().find(" spacing ") != std::string::npos)
-            return parse_spacing(arrangementStream, numOfParticles, boxDimensions, interaction, model);
+            return parse_spacing(arrangementStream, numOfParticles, boxDimensions, interaction, dataManager, model);
         else
             return parse_explicit_sizes(arrangementStream, numOfParticles, boxDimensions, model);
     }
@@ -234,6 +235,7 @@ namespace legacy {
                                                                 std::size_t scalingThreads)
     {
         const auto &interaction = shapeTraits.getInteraction();
+        const auto &dataManager = shapeTraits.getDataManager();
 
         std::istringstream arrangementStream(arrangementString);
         std::string type;
@@ -242,9 +244,10 @@ namespace legacy {
                                        "(type dependent parameters)");
         if (type == "orthorhombic" || type == "lattice") {
             auto boxDimensions = parse_box_dimensions(boxString);
-            auto shapes = arrange_orthorhombic_shapes(numOfParticles, boxDimensions, interaction, arrangementStream);
-            return std::make_unique<Packing>(boxDimensions, std::move(shapes), std::move(bc), interaction, moveThreads,
-                                             scalingThreads);
+            auto shapes = arrange_orthorhombic_shapes(numOfParticles, boxDimensions, interaction, dataManager,
+                                                      arrangementStream);
+            return std::make_unique<Packing>(boxDimensions, std::move(shapes), std::move(bc), interaction, dataManager,
+                                             moveThreads, scalingThreads);
         } else if (type == "presimulated") {
             std::string filename;
             arrangementStream >> filename;
@@ -254,7 +257,7 @@ namespace legacy {
             ValidateOpenedDesc(packingFile, filename, "to load initial configuration");
 
             auto packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
-            packing->restore(packingFile, interaction);
+            packing->restore(packingFile, interaction, dataManager);
             return packing;
         } else {
             const auto &supportedTypes = LatticeBuilder::getSupportedCellTypes();

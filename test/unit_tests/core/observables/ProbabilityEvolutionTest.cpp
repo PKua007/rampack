@@ -29,7 +29,7 @@ TEST_CASE("ProbabilityEvolution") {
 
     SphereTraits traits(0.5);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    Packing packing(TriclinicBox(5), shapes, std::move(pbc), traits.getInteraction());
+    Packing packing(TriclinicBox(5), shapes, std::move(pbc), traits.getInteraction(), traits.getDataManager());
 
     // Now we basically hard code the following histogram:
     // val=[1,2]    count=1 *  count=0

@@ -28,8 +28,9 @@ TEST_CASE("RadialEnumerator") {
     ALLOW_CALL(traits, getRangeRadius(_)).RETURN(1);
     ALLOW_CALL(traits, getTotalRangeRadius(_)).RETURN(1);
     ALLOW_CALL(traits, getGeometricOrigin(_)).RETURN(_1.getPosition());
+    ALLOW_CALL(traits, getShapeDataSize()).RETURN(0);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
-    Packing packing(box, shapes, std::move(bc), traits.getInteraction());
+    Packing packing(box, shapes, std::move(bc), traits.getInteraction(), traits.getDataManager());
     RadialEnumerator enumerator;
 
     SECTION("pair enumerating") {

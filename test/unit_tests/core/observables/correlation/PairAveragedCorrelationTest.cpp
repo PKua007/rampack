@@ -26,6 +26,7 @@ TEST_CASE("PairAveragedCorrelation") {
     ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(traits, getRangeRadius(_)).RETURN(1);
     ALLOW_CALL(traits, getTotalRangeRadius(_)).RETURN(1);
+    ALLOW_CALL(traits, getShapeDataSize()).RETURN(0);
 
     auto function = std::make_unique<MockCorrelationFunction>();
     ALLOW_CALL(*function, getSignatureName()).RETURN("func");
@@ -40,7 +41,7 @@ TEST_CASE("PairAveragedCorrelation") {
     ALLOW_CALL(*enumerator, getSignatureName()).RETURN("enum");
     // Snapshot 1 - expected bins: {1 + 2, 0}
     auto bc1 = std::make_unique<PeriodicBoundaryConditions>();
-    Packing packing1(box, shapes, std::move(bc1), traits.getInteraction());
+    Packing packing1(box, shapes, std::move(bc1), traits.getInteraction(), traits.getDataManager());
     REQUIRE_CALL(*enumerator, enumeratePairs(_, _, _))
         .LR_WITH(&_1 == &packing1 && &_2 == &traits)
         .SIDE_EFFECT (
@@ -50,7 +51,7 @@ TEST_CASE("PairAveragedCorrelation") {
         );
     // Snapshot 2 - expected bins: {3, 4}
     auto bc2 = std::make_unique<PeriodicBoundaryConditions>();
-    Packing packing2(box, shapes, std::move(bc2), traits.getInteraction());
+    Packing packing2(box, shapes, std::move(bc2), traits.getInteraction(), traits.getDataManager());
     REQUIRE_CALL(*enumerator, enumeratePairs(_, _, _))
         .LR_WITH(&_1 == &packing2 && &_2 == &traits)
         .SIDE_EFFECT (

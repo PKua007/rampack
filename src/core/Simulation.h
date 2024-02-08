@@ -254,7 +254,7 @@ private:
     void reset();
     void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger, bool displayOverlaps);
     [[nodiscard]] std::vector<std::size_t> calculateMoveTypeAccumulations(std::size_t numParticles) const;
-    void fixRotationMatrices(const Interaction &interaction, Logger &logger);
+    void fixRotationMatrices(const Interaction &interaction, const ShapeDataManager &dataManager, Logger &logger);
     static double getRotationMatrixDeviation(const Matrix<3, 3> &rotation);
 
     [[nodiscard]] MoveStatistics getScalingStatistics() const;

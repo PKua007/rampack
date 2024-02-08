@@ -21,10 +21,6 @@ namespace {
                 : interactionCentres{std::move(interactionCentres)}
         { }
 
-        [[nodiscard]] std::size_t getShapeDataSize() const override {
-            return sizeof(Radius);
-        }
-
         [[nodiscard]] double getRangeRadius([[maybe_unused]] const std::byte *data) const override {
             return ShapeData::as<Radius>(data);
         }

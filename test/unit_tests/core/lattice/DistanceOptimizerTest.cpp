@@ -41,9 +41,10 @@ TEST_CASE("DistanceOptimizer: shrink packing - layer orthorhombic") {
     auto shapes = lattice.generateMolecules();
     SpherocylinderTraits scTraits(1, 0.5);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    Packing packing(lattice.getLatticeBox(), shapes, std::move(pbc), scTraits.getInteraction());
+    Packing packing(lattice.getLatticeBox(), shapes, std::move(pbc), scTraits.getInteraction(),
+                    scTraits.getDataManager());
 
-    DistanceOptimizer::shrinkPacking(packing, scTraits, "xyz");
+    DistanceOptimizer::shrinkPacking(packing, scTraits.getInteraction(), scTraits.getDataManager(), "xyz");
 
     double Lx = 4;
     double Ly = 4;
@@ -60,9 +61,10 @@ TEST_CASE("DistanceOptimizer: shrink packing - hexagonal") {
     auto shapes = lattice.generateMolecules();
     SphereTraits sphereTraits(0.5);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    Packing packing(lattice.getLatticeBox(), shapes, std::move(pbc), sphereTraits.getInteraction());
+    Packing packing(lattice.getLatticeBox(), shapes, std::move(pbc), sphereTraits.getInteraction(),
+                    sphereTraits.getDataManager());
 
-    DistanceOptimizer::shrinkPacking(packing, sphereTraits.getInteraction(), "xyz");
+    DistanceOptimizer::shrinkPacking(packing, sphereTraits.getInteraction(), sphereTraits.getDataManager(), "xyz");
 
     CHECK_THAT(packing.getBox().getDimensions(), IsApproxEqual(4. * unitCellBox, 1e-12));
 }

@@ -38,6 +38,7 @@ TEST_CASE("Simulation IO: storing and restoring")
 {
     KMerTraits traits(2, 0.5, 1);
     const auto &interaction = traits.getInteraction();
+    const auto &dataManager = traits.getDataManager();
     OrthorhombicArrangingModel arrangingModel;
     auto shapes = arrangingModel.arrange(64, {10, 10, 10});
     TriclinicBox box(10);
@@ -47,11 +48,11 @@ TEST_CASE("Simulation IO: storing and restoring")
 
     // Player packing
     auto pbc1 = std::make_unique<PeriodicBoundaryConditions>();
-    Packing packing1(box, shapes, std::move(pbc1), interaction, 1, 1);
+    Packing packing1(box, shapes, std::move(pbc1), interaction, dataManager, 1, 1);
 
     // Simulation and recorder packing
     auto pbc2 = std::make_unique<PeriodicBoundaryConditions>();
-    auto packing2 = std::make_unique<Packing>(box, shapes, std::move(pbc2), interaction, 1, 1);
+    auto packing2 = std::make_unique<Packing>(box, shapes, std::move(pbc2), interaction, dataManager, 1, 1);
     std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
     moveSamplers.push_back(std::make_unique<RototranslationSampler>(0.5, 0.1));
     auto scaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>(), 1);
@@ -76,21 +77,21 @@ TEST_CASE("Simulation IO: storing and restoring")
 
         SECTION("whole replay") {
             while (player.hasNext())
-                player.nextSnapshot(packing1, interaction);
+                player.nextSnapshot(packing1, interaction, dataManager);
             player.close();
 
             assert_equal(packing1, simulation.getPacking());
         }
 
         SECTION("only last") {
-            player.lastSnapshot(packing1, interaction);
+            player.lastSnapshot(packing1, interaction, dataManager);
             player.close();
 
             assert_equal(packing1, simulation.getPacking());
         }
 
         SECTION("only last, but using explicit cycle number") {
-            player.jumpToSnapshot(packing1, interaction, 2000);
+            player.jumpToSnapshot(packing1, interaction, dataManager, 2000);
             player.close();
 
             assert_equal(packing1, simulation.getPacking());
@@ -121,7 +122,7 @@ TEST_CASE("Simulation IO: storing and restoring")
         CHECK(player.getTotalCycles() == 2000);
         CHECK(player.getCycleStep() == 100);
         while (player.hasNext())
-            player.nextSnapshot(packing1, interaction);
+            player.nextSnapshot(packing1, interaction, dataManager);
         player.close();
 
         assert_equal(packing1, simulation.getPacking());
@@ -148,7 +149,7 @@ TEST_CASE("Simulation IO: storing and restoring")
         CHECK(player.getTotalCycles() == 1000);
         CHECK(player.getCycleStep() == 100);
         while (player.hasNext())
-            player.nextSnapshot(packing1, interaction);
+            player.nextSnapshot(packing1, interaction, dataManager);
         player.close();
 
         assert_equal(packing1, simulation.getPacking());
@@ -181,7 +182,7 @@ TEST_CASE("Simulation IO: storing and restoring")
         CHECK(player.getCycleStep() == 100);
 
         while (player.hasNext())
-            player.nextSnapshot(packing1, interaction);
+            player.nextSnapshot(packing1, interaction, dataManager);
         player.close();
 
         assert_equal(packing1, simulation.getPacking());

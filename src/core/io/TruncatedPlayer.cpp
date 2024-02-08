@@ -22,22 +22,28 @@ bool TruncatedPlayer::hasNext() const {
     return this->getCurrentSnapshotCycles() < this->totalCycles;
 }
 
-void TruncatedPlayer::nextSnapshot(Packing &packing, const Interaction &interaction) {
+void TruncatedPlayer::nextSnapshot(Packing &packing, const Interaction &interaction,
+                                   const ShapeDataManager &dataManager)
+{
     if (this->getCurrentSnapshotCycles() >= this->totalCycles)
         throw std::runtime_error("TruncatedPlayer::nextSnapshot: the end already reached");
 
-    this->player->nextSnapshot(packing, interaction);
+    this->player->nextSnapshot(packing, interaction, dataManager);
 }
 
-void TruncatedPlayer::lastSnapshot(Packing &packing, const Interaction &interaction) {
-    this->player->jumpToSnapshot(packing, interaction, this->totalCycles);
+void TruncatedPlayer::lastSnapshot(Packing &packing, const Interaction &interaction,
+                                   const ShapeDataManager &dataManager)
+{
+    this->player->jumpToSnapshot(packing, interaction, dataManager, this->totalCycles);
 }
 
-void TruncatedPlayer::jumpToSnapshot(Packing &packing, const Interaction &interaction, std::size_t cycleNumber) {
+void TruncatedPlayer::jumpToSnapshot(Packing &packing, const Interaction &interaction,
+                                     const ShapeDataManager &dataManager, std::size_t cycleNumber)
+{
     if (cycleNumber > this->totalCycles)
         throw std::runtime_error("TruncatedPlayer::jumpToSnapshot: jumping above the limit");
 
-    this->player->jumpToSnapshot(packing, interaction, cycleNumber);
+    this->player->jumpToSnapshot(packing, interaction, dataManager, cycleNumber);
 }
 
 std::size_t TruncatedPlayer::getTotalCycles() const {

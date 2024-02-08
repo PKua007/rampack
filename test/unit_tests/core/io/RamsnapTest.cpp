@@ -17,7 +17,7 @@ TEST_CASE("RamsnapReader and RamsnapWriter") {
     shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5});
     shapes.emplace_back(Vector<3>{4.5, 0.5, 0.5});
     shapes.emplace_back(Vector<3>{2.5, 2.5, 4.0});
-    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), traits.getInteraction());
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), traits.getInteraction(), traits.getDataManager());
 
     std::stringstream inOut;
     auto pbc2 = std::make_unique<PeriodicBoundaryConditions>();

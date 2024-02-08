@@ -16,7 +16,9 @@
 #include "core/Interaction.h"
 
 namespace {
-    class PolydisperseSphereHardCoreInteraction : public Interaction {
+    class InteractionAndDataManager : public Interaction, public ShapeDataManager { };
+
+    class PolydisperseSphereHardCoreInteraction : public InteractionAndDataManager {
     public:
         using Radius = double;
 
@@ -56,7 +58,7 @@ namespace {
         }
     };
 
-    class PolydisperseElectrostaticInteraction : public Interaction {
+    class PolydisperseElectrostaticInteraction : public InteractionAndDataManager {
     public:
         using Charge = double;
 
@@ -84,7 +86,7 @@ namespace {
         }
     };
 
-    class PolydispersePolymerHardCoreInteraction : public Interaction {
+    class PolydispersePolymerHardCoreInteraction : public InteractionAndDataManager {
     private:
         struct PolymerData {
             std::vector<Vector<3>> pos{};
@@ -168,7 +170,7 @@ namespace {
         }
     };
 
-    class PolydispersePolymerElectrostaticInteraction : public Interaction {
+    class PolydispersePolymerElectrostaticInteraction : public InteractionAndDataManager {
     private:
         struct PolymerData {
             std::vector<Vector<3>> pos{};
@@ -247,7 +249,7 @@ TEST_CASE("Packing: hard polydisperse single interaction center") {
     shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5}, noRot, Radius{0.3});
     shapes.emplace_back(Vector<3>{4.5, 0.5, 0.5}, noRot, Radius{0.2});
     shapes.emplace_back(Vector<3>{2.5, 2.5, 4.0}, noRot, Radius{0.3});
-    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore, hardCore);
 
     REQUIRE(packing.getBox().getHeights() == std::array<double, 3>{5, 5, 5});
 
@@ -332,7 +334,7 @@ TEST_CASE("Packing: soft polydisperse single interaction center") {
     shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5}, noRot, Charge{1});
     shapes.emplace_back(Vector<3>{4.5, 0.5, 0.5}, noRot, Charge{2});
     shapes.emplace_back(Vector<3>{2.5, 2.5, 4.0}, noRot, Charge{3});
-    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), electrostaticInteraction);
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), electrostaticInteraction, electrostaticInteraction);
 
     SECTION("scaling") {
         // Distances in relative coordinates (for a 1x1x1 box)
@@ -396,7 +398,7 @@ TEST_CASE("Packing: hard polydisperse multiple interaction centers") {
     shapes.emplace_back(Vector<3>{1.5, 0.5, 2.5}, noRot, Tag::ASYMMETRIC_DIMER);
     // Balls: r=0.3, pos={{1.5, 3.7, 2.5}, {2.0, 3.7, 2.5}, {2.5, 3.7, 2.5}}
     shapes.emplace_back(Vector<3>{1.5, 3.7, 2.5}, noRot, Tag::SYMMETRIC_TRIMER);
-    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore, hardCore);
 
     constexpr double inf = std::numeric_limits<double>::infinity();
 
@@ -451,7 +453,7 @@ TEST_CASE("Packing: soft polydisperse multiple interaction centers") {
     auto noRot = Matrix<3, 3>::identity();
     shapes.emplace_back(Vector<3>{1.5, 0.5, 2.5}, noRot, Tag::DIMER);
     shapes.emplace_back(Vector<3>{1.5, 3.5, 2.5}, noRot, Tag::TRIMER);
-    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), electrostaticInteraction);
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), electrostaticInteraction, electrostaticInteraction);
 
     // Before modifications:
     // 0: shape{pos=1.5, 0.5, 2.5}, balls: {pos={0.5, 0.5, 2.5}, q=1}, {pos={1.5, 0.5, 2.5}, q=2}
@@ -530,7 +532,7 @@ TEST_CASE("Packing: hard monodisperse single interaction center overlap counting
     shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5}, noRot, radius);
     shapes.emplace_back(Vector<3>{0.5, 0.5, 1.0}, noRot, radius);
     shapes.emplace_back(Vector<3>{0.5, 0.5, 2.25}, noRot, radius);
-    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore, hardCore);
     packing.toggleOverlapCounting(true, hardCore);
 
     REQUIRE(packing.getCachedNumberOfOverlaps() == 1);
@@ -615,7 +617,7 @@ TEST_CASE("Packing: hard monodisperse multiple interaction center overlap counti
     auto noRot = Matrix<3, 3>::identity();
     shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5}, noRot, Tag::SYMMETRIC_DIMER);
     shapes.emplace_back(Vector<3>{1.5, 1, 0.5}, noRot, Tag::SYMMETRIC_DIMER);
-    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore, hardCore);
 
     packing.toggleOverlapCounting(true, hardCore);
 
@@ -705,7 +707,7 @@ TEST_CASE("Packing: polydisperse single interaction center wall overlap") {
         shapes.emplace_back(Vector<3>{1, 1, 1}, noRot, Radius{0.6});
         shapes.emplace_back(Vector<3>{2.5, 2.5, 2.5}, noRot, Radius{0.5});
         shapes.emplace_back(Vector<3>{4, 4, 4}, noRot, Radius{0.4});
-        Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore, 1, scalingThreads);
+        Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore, hardCore, 1, scalingThreads);
         packing.toggleWall(0, true);
         packing.toggleWall(1, false);
         packing.toggleWall(2, true);
@@ -762,7 +764,7 @@ TEST_CASE("Packing: polydisperse multiple interaction centers wall overlap") {
     auto noRot = Matrix<3, 3>::identity();
     shapes.emplace_back(Vector<3>{1, 1, 1}, noRot, Tag::SYMMETRIC_DIMER);
     shapes.emplace_back(Vector<3>{3, 3, 3}, noRot, Tag::SYMMETRIC_TRIMER);
-    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore, hardCore);
     packing.toggleWall(0, true);
     packing.toggleWall(2, true);
 
@@ -813,7 +815,7 @@ TEST_CASE("Packing: too big NG cell bug") {
     shapes.emplace_back(Vector<3>{0.5, 25, 25}, noRot, radius);
     shapes.emplace_back(Vector<3>{0.5, 75, 75}, noRot, radius);
 
-    REQUIRE_NOTHROW(Packing({1.1, 100, 100}, std::move(shapes), std::move(pbc), hardCore));
+    REQUIRE_NOTHROW(Packing({1.1, 100, 100}, std::move(shapes), std::move(pbc), hardCore, hardCore));
 }
 
 TEST_CASE("Packing: named points dumping") {
@@ -824,7 +826,7 @@ TEST_CASE("Packing: named points dumping") {
     std::vector<Shape> shapes;
     shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5}, Matrix<3, 3>::identity(), radius);
     shapes.emplace_back(Vector<3>{0.5, 3.5, 0.5}, Matrix<3, 3>::rotation(0, 0, M_PI/2), radius);
-    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore);
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore, hardCore);
     using trompeloeil::_;
     MockShapeGeometry geometry;
     geometry.addNamedPoints({{"point", {1, 0, 0}}});

@@ -13,7 +13,7 @@
 /**
  * @brief Spherical molecules with hard of soft interactions.
  */
-class SphereTraits : public ShapeTraits, public ShapeGeometry {
+class SphereTraits : public ShapeTraits, public ShapeGeometry, public ShapeDataManager {
 private:
     class HardInteraction : public Interaction {
     private:
@@ -83,6 +83,8 @@ public:
 
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
     [[nodiscard]] double getVolume(const Shape &shape) const override;
+
+    [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this; }
 
     [[nodiscard]] double getRadius() const { return this->radius; }
 };

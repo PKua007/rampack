@@ -56,7 +56,9 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
     auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
     SphereTraits sphereTraits(0.05);
-    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
+    auto packing = std::make_unique<Packing>(
+        dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction(), sphereTraits.getDataManager()
+    );
     auto volumeScaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>(), 1);
     Simulation simulation(std::move(packing), 1, 0.1, 1234, std::move(volumeScaler));
     auto collector = std::make_unique<ObservablesCollector>();
@@ -82,7 +84,9 @@ TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
     auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
     SphereTraits sphereTraits(0.5);
-    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
+    auto packing = std::make_unique<Packing>(
+        dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction(), sphereTraits.getDataManager()
+    );
     auto volumeScaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>(), 1);
     Simulation simulation(std::move(packing), 1, 0.1, 1234, std::move(volumeScaler));
     auto collector = std::make_unique<ObservablesCollector>();
@@ -106,7 +110,10 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
     std::array<double, 3> dimensions = {10, 10, 10};
     auto shapes = OrthorhombicArrangingModel{}.arrange(50, {5, 5, 2}, {2, 2, 5}, dimensions);
     SpherocylinderTraits spherocylinderTraits(3, 0.5);
-    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), spherocylinderTraits.getInteraction());
+    auto packing = std::make_unique<Packing>(
+        dimensions, std::move(shapes), std::move(pbc), spherocylinderTraits.getInteraction(),
+        spherocylinderTraits.getDataManager()
+    );
     auto volumeScaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>(), 10);
     auto collector = std::make_unique<ObservablesCollector>();
     collector->addObservable(std::make_unique<NumberDensity>(), ObservablesCollector::AVERAGING);
@@ -157,7 +164,9 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
     auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
     SphereTraits sphereTraits(0.5, std::make_unique<LennardJonesInteraction>(1, 0.5));
-    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
+    auto packing = std::make_unique<Packing>(
+        dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction(), sphereTraits.getDataManager()
+    );
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
     auto volumeScaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>(), 1);
     Simulation simulation(std::move(packing), 1, 0.1, 1234, std::move(volumeScaler));
@@ -186,7 +195,9 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
     auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
     KMerTraits kmerTraits(2, 0.5, 1);
-    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), kmerTraits.getInteraction());
+    auto packing = std::make_unique<Packing>(
+        dimensions, std::move(shapes), std::move(pbc), kmerTraits.getInteraction(), kmerTraits.getDataManager()
+    );
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
     auto volumeScaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>(), 10);
     Simulation simulation(std::move(packing), 10, 1, 1234, std::move(volumeScaler));
@@ -217,7 +228,9 @@ TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
         shape.rotate(Matrix<3, 3>::rotation(0, M_PI/2, 0));
     auto interaction = std::make_unique<RepulsiveLennardJonesInteraction>(1, 1);
     KMerTraits kmerTraits(2, 0.5, 1, std::move(interaction));
-    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc), kmerTraits.getInteraction());
+    auto packing = std::make_unique<Packing>(
+        dimensions, std::move(shapes), std::move(pbc), kmerTraits.getInteraction(), kmerTraits.getDataManager()
+    );
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
     auto volumeScaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>(), 15);
     Simulation simulation(std::move(packing), 0.5, 0.15, 1234, std::move(volumeScaler));
@@ -251,8 +264,9 @@ TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
     auto shapes = OrthorhombicArrangingModel{}.arrange(200, dimensions);
     SphereTraits sphereTraits(0.5);
-    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc),
-                                             sphereTraits.getInteraction(), 4, 4);
+    auto packing = std::make_unique<Packing>(
+        dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction(), sphereTraits.getDataManager(), 4, 4
+    );
     auto volumeScaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>(), 1);
     Simulation simulation(std::move(packing), 1, 0.1, 1234, std::move(volumeScaler), {2, 2, 1});
     auto collector = std::make_unique<ObservablesCollector>();
@@ -277,8 +291,10 @@ TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
 
     auto shapes2 = OrthorhombicArrangingModel{}.arrange(200, dimensions);
     auto pbc2 = std::make_unique<PeriodicBoundaryConditions>();
-    auto packing2 = std::make_unique<Packing>(dimensions, std::move(shapes2), std::move(pbc2),
-                                             sphereTraits.getInteraction(), 4, 4);
+    auto packing2 = std::make_unique<Packing>(
+        dimensions, std::move(shapes2), std::move(pbc2), sphereTraits.getInteraction(), sphereTraits.getDataManager(),
+        4, 4
+    );
     auto volumeScaler2 = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>(), 1);
     Simulation simulation2(std::move(packing2), 1, 0.1, 1234, std::move(volumeScaler2), {2, 2, 1});
     auto collector2 = std::make_unique<ObservablesCollector>();
@@ -299,8 +315,9 @@ TEST_CASE("Simulation: domain number auto-reduction", "[medium]") {
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
     auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
     SphereTraits sphereTraits(0.5);
-    auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc),
-                                             sphereTraits.getInteraction(), 4, 4);
+    auto packing = std::make_unique<Packing>(
+        dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction(), sphereTraits.getDataManager(), 4, 4
+    );
     auto volumeScaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>(), 1);
     Simulation simulation(std::move(packing), 1, 0.1, 1234, std::move(volumeScaler), {4, 1, 1});
     auto collector = std::make_unique<ObservablesCollector>();
@@ -335,8 +352,10 @@ TEST_CASE("Simulation: overlap reduction for hard sphere liquid", "[medium]") {
         auto helperSphereTraits = std::make_unique<SphereTraits>(0.5, std::move(squareInverseCore));
         CompoundShapeTraits compoundSphere(std::move(sphereTraits), std::move(helperSphereTraits));
 
-        auto packing = std::make_unique<Packing>(dimensions, std::move(shapes), std::move(pbc),
-                                                 compoundSphere.getInteraction(), numDomains, numDomains);
+        auto packing = std::make_unique<Packing>(
+            dimensions, std::move(shapes), std::move(pbc), compoundSphere.getInteraction(),
+            compoundSphere.getDataManager(), numDomains, numDomains
+        );
         auto volumeScaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>(), 1);
         Simulation simulation(std::move(packing), 0.1, 0.1, 1234, std::move(volumeScaler), domainDivisions);
         auto collector = std::make_unique<ObservablesCollector>();
@@ -366,7 +385,9 @@ TEST_CASE("Simulation: upscaling skip stress test", "[short]") {
     auto shapes = lattice.generateMolecules();
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     SphereTraits sphereTraits(0.5);
-    auto packing = std::make_unique<Packing>(box, std::move(shapes), std::move(pbc), sphereTraits.getInteraction());
+    auto packing = std::make_unique<Packing>(
+        box, std::move(shapes), std::move(pbc), sphereTraits.getInteraction(), sphereTraits.getDataManager()
+    );
     auto volumeScaler = std::make_unique<TriclinicDeltaScaler>(0.0005, true);
     std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
     moveSamplers.push_back(std::make_unique<TranslationSampler>(0.001));
@@ -385,7 +406,10 @@ TEST_CASE("Simulation: hard dumbbell NVT relaxation", "[short]") {
     Lattice lattice(UnitCellFactory::createScCell({7.2/6, 7.2/6, 7.2/3}), {6, 6, 3});
     auto shapes = lattice.generateMolecules();
     KMerTraits kmerTraits(2, 0.5, 1);
-    auto packing = std::make_unique<Packing>(lattice.getLatticeBox(), std::move(shapes), std::move(pbc), kmerTraits.getInteraction());
+    auto packing = std::make_unique<Packing>(
+        lattice.getLatticeBox(), std::move(shapes), std::move(pbc), kmerTraits.getInteraction(),
+        kmerTraits.getDataManager()
+    );
     // More frequent averaging here to preserve short simulation times (particle displacement are large anyway)
     Simulation simulation(std::move(packing), 0.3, 0.3, 1234, nullptr);
     std::ostringstream loggerStream;

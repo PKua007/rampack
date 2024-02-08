@@ -22,6 +22,7 @@ TEST_CASE("PackingLoader") {
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     SphereTraits sphereTraits(0.5);
     const auto &interaction = sphereTraits.getInteraction();
+    const auto &dataManager = sphereTraits.getDataManager();
 
     SECTION("finished + finished") {
         IntegrationRun run1;
@@ -39,7 +40,7 @@ TEST_CASE("PackingLoader") {
         SECTION("start from scratch") {
             PackingLoader loader(logger, std::nullopt, std::nullopt, runs);
 
-            loader.loadPacking(std::move(bc), interaction, 1, 1);
+            loader.loadPacking(std::move(bc), interaction, dataManager, 1, 1);
 
             CHECK_FALSE(loader.isContinuation());
             CHECK_FALSE(loader.isAllFinished());
@@ -51,7 +52,7 @@ TEST_CASE("PackingLoader") {
         SECTION("start from second") {
             PackingLoader loader(logger, "run2", std::nullopt, runs);
 
-            loader.loadPacking(std::move(bc), interaction, 1, 1);
+            loader.loadPacking(std::move(bc), interaction, dataManager, 1, 1);
 
             CHECK_FALSE(loader.isContinuation());
             CHECK_FALSE(loader.isAllFinished());
@@ -63,7 +64,7 @@ TEST_CASE("PackingLoader") {
         SECTION("continue first") {
             PackingLoader loader(logger, std::nullopt, 30000, runs);
 
-            loader.loadPacking(std::move(bc), interaction, 1, 1);
+            loader.loadPacking(std::move(bc), interaction, dataManager, 1, 1);
 
             CHECK(loader.isContinuation());
             CHECK_FALSE(loader.isAllFinished());
@@ -75,7 +76,7 @@ TEST_CASE("PackingLoader") {
         SECTION("continue second") {
             PackingLoader loader(logger, "run2", 30000, runs);
 
-            loader.loadPacking(std::move(bc), interaction, 1, 1);
+            loader.loadPacking(std::move(bc), interaction, dataManager, 1, 1);
 
             CHECK(loader.isContinuation());
             CHECK_FALSE(loader.isAllFinished());
@@ -89,7 +90,7 @@ TEST_CASE("PackingLoader") {
             runs = {run1, run2};
             PackingLoader loader(logger, std::nullopt, 20000, runs);
 
-            loader.loadPacking(std::move(bc), interaction, 1, 1);
+            loader.loadPacking(std::move(bc), interaction, dataManager, 1, 1);
 
             CHECK_FALSE(loader.isContinuation());
             CHECK_FALSE(loader.isAllFinished());
@@ -103,7 +104,7 @@ TEST_CASE("PackingLoader") {
             runs = {run1, run2};
             PackingLoader loader(logger, "run2", 20000, runs);
 
-            loader.loadPacking(std::move(bc), interaction, 1, 1);
+            loader.loadPacking(std::move(bc), interaction, dataManager, 1, 1);
 
             CHECK_FALSE(loader.isContinuation());
             CHECK(loader.isAllFinished());
@@ -115,7 +116,7 @@ TEST_CASE("PackingLoader") {
         SECTION(".auto - all finished") {
             PackingLoader loader(logger, ".auto", std::nullopt, runs);
 
-            loader.loadPacking(std::move(bc), interaction, 1, 1);
+            loader.loadPacking(std::move(bc), interaction, dataManager, 1, 1);
 
             CHECK_FALSE(loader.isContinuation());
             CHECK(loader.isAllFinished());
@@ -141,7 +142,7 @@ TEST_CASE("PackingLoader") {
         SECTION(".auto - continue second") {
             PackingLoader loader(logger, ".auto", std::nullopt, runs);
 
-            loader.loadPacking(std::move(bc), interaction, 1, 1);
+            loader.loadPacking(std::move(bc), interaction, dataManager, 1, 1);
 
             CHECK(loader.isContinuation());
             CHECK_FALSE(loader.isAllFinished());
@@ -173,7 +174,8 @@ TEST_CASE("PackingLoader") {
             PackingLoader loader(logger, ".auto", std::nullopt, runs);
 
             CHECK_THROWS_WITH(
-                loader.loadPacking(std::move(bc), interaction, 1, 1), Catch::Contains("detected already performed run")
+                loader.loadPacking(std::move(bc), interaction, dataManager, 1, 1),
+                Catch::Contains("detected already performed run")
             );
         }
     }
@@ -194,7 +196,7 @@ TEST_CASE("PackingLoader") {
         SECTION(".auto - start second from scratch") {
             PackingLoader loader(logger, ".auto", std::nullopt, runs);
 
-            loader.loadPacking(std::move(bc), interaction, 1, 1);
+            loader.loadPacking(std::move(bc), interaction, dataManager, 1, 1);
 
             CHECK_FALSE(loader.isContinuation());
             CHECK_FALSE(loader.isAllFinished());
