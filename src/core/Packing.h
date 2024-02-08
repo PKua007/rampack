@@ -22,6 +22,7 @@
 #include "utils/OMPMacros.h"
 #include "TriclinicBox.h"
 
+
 /**
  * @brief A class representing the packing of molecules, eligible for Monte Carlo perturbations.
  * @details The class contains the boundary conditions and neighbour grid acceleration structure, however neither
@@ -89,6 +90,7 @@ private:
     void translateShapeWithoutInteractionCenters(std::size_t idx, const Vector<3> &translation);
     void rotateShapeWithoutInteractionCenters(std::size_t idx, const Matrix<3, 3> &rotation);
     [[nodiscard]] bool areInteractionCentresConsistent(const Interaction &interaction) const;
+    void validateShapeData(const ShapeDataManager &manager) const;
 
     static bool areShapesWithinBox(const std::vector<Shape> &shapes, const TriclinicBox &box);
     static bool isBoxUpscaled(const TriclinicBox &oldBox, const TriclinicBox &newBox);
