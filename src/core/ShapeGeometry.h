@@ -31,6 +31,8 @@ public:
         AUXILIARY
     };
 
+    // TODO: tests need rewriting
+
     class NamedPoint {
     private:
         struct StaticPoint {
