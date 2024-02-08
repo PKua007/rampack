@@ -13,12 +13,13 @@
 
 
 std::map<std::string, std::string> RamsnapReader::read(std::istream &in, Packing &packing,
-                                                       const Interaction &interaction) const
+                                                       const Interaction &interaction,
+                                                       const ShapeDataManager &dataManager) const
 {
     auto auxInfo = RamsnapReader::restoreAuxInfo(in);
     TriclinicBox box = RamsnapReader::restoreBox(in);
     std::vector<Shape> shapes = RamsnapReader::restoreShapes(in);
-    packing.reset(std::move(shapes), box, interaction);
+    packing.reset(std::move(shapes), box, interaction, dataManager);
     return auxInfo;
 }
 

@@ -131,8 +131,6 @@ public:
         return {};
     }
 
-    [[nodiscard]] virtual std::size_t getShapeDataSize() const { return 0; }
-
     /**
      * @brief Returns a distance at which two molecules cease to interact (opposed to Interaction::getRangeRadius which
      * applies to a single pair of interaction centers).

@@ -55,7 +55,7 @@ std::array<double, 3> DistanceOptimizer::minimizeForAxes(const Shape &shape1, co
 }
 
 void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &interaction,
-                                      const std::string &axisOrderString)
+                                      const ShapeDataManager &dataManager, const std::string &axisOrderString)
 {
     TransformerValidateMsg(interaction.hasHardPart(),
                            "Interaction must have a hard component to perform distance optimization");
@@ -92,7 +92,7 @@ void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &inter
         auto endShapes = DistanceOptimizer::generateAbsoluteShapes(relShapes, endBox);
         auto begShapes = DistanceOptimizer::generateAbsoluteShapes(relShapes, begBox);
 
-        packing.reset(begShapes, TriclinicBox(begBox), interaction);
+        packing.reset(begShapes, TriclinicBox(begBox), interaction, dataManager);
 
         TransformerValidateMsg(packing.countTotalOverlaps(interaction),
                                "Maximally shrunk packing (avoiding self overlaps) is not overlapping - cell number on "
@@ -102,7 +102,7 @@ void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &inter
             double factorMid = (begFactor + endFactor) / 2;
             auto midBox = (begBox + endBox) / 2.;
             auto midShapes = DistanceOptimizer::generateAbsoluteShapes(relShapes, midBox);
-            packing.reset(midShapes, TriclinicBox(midBox), interaction);
+            packing.reset(midShapes, TriclinicBox(midBox), interaction, dataManager);
             if (packing.countTotalOverlaps(interaction)) {
                 begFactor = factorMid;
                 begBox = midBox;
@@ -121,7 +121,7 @@ void DistanceOptimizer::shrinkPacking(Packing &packing, const Interaction &inter
             endBox(i, axisNum) *= FACTOR_EPSILON;
 
         // Finally, apply the factor found
-        packing.reset(endShapes, TriclinicBox(endBox), interaction);
+        packing.reset(endShapes, TriclinicBox(endBox), interaction, dataManager);
         Assert(!packing.countTotalOverlaps(interaction));
     }
 }

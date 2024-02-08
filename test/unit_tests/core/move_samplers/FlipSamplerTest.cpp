@@ -21,7 +21,8 @@ namespace {
     {
         Lattice lattice(UnitCell(TriclinicBox(2), {Shape({0.5, 0.5, 0.5})}), {2, 2, 2});
         auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-        Packing packing(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), traits.getInteraction());
+        Packing packing(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), traits.getInteraction(),
+                        traits.getDataManager());
         FlipSampler flipSampler(1);
         flipSampler.setup(packing, traits);
         std::vector<std::size_t> particleIdxs(packing.size());
@@ -49,6 +50,7 @@ TEST_CASE("FlipSampler") {
     ALLOW_CALL(traits, getTotalRangeRadius(_)).RETURN(1);
     ALLOW_CALL(traits, overlapBetween(_, _, _, _, _, _, _, _, _)).RETURN(_9.getDistance2(_1, _5) < 1);
     ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
+    ALLOW_CALL(traits, getShapeDataSize()).RETURN(0);
 
     SECTION("primary + secondary + nonzero origin") {
         ALLOW_CALL(traits, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{0, 1, 0});

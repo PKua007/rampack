@@ -13,7 +13,7 @@
  * standard named points (see ShapeGeometry::getNamedPoint()) defines points "beg" and "end" representing, respectively,
  * beginning cap center and end cap center of the spherocylinder.
  */
-class SpherocylinderTraits : public ShapeTraits, public Interaction, public ShapeGeometry {
+class SpherocylinderTraits : public ShapeTraits, public Interaction, public ShapeGeometry, public ShapeDataManager {
 private:
     class WolframPrinter : public ShapePrinter {
     private:
@@ -52,6 +52,7 @@ public:
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
+    [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this; }
 
     /**
      * @brief Returns ShapePrinter for a given @a format.

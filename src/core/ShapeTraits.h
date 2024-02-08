@@ -12,7 +12,9 @@
 #include "Interaction.h"
 #include "ShapePrinter.h"
 #include "ShapeGeometry.h"
+#include "ShapeDataManager.h"
 #include "geometry/Vector.h"
+
 
 /**
  * @brief An interface describing a concrete shape.
@@ -21,7 +23,7 @@ class ShapeTraits {
 public:
     virtual ~ShapeTraits() = default;
 
-    // TODO: shape data validation
+    [[nodiscard]] virtual const ShapeDataManager &getDataManager() const = 0;
 
     /**
      * @brief Returns the Interaction object describing the interaction of the shape.

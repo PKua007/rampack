@@ -47,11 +47,14 @@ private:
     [[nodiscard]] bool allRunsHaveDatOutput() const;
     void warnIfOverlapRelaxation() const;
     void restorePacking(const Run &startingPackingRun, std::unique_ptr<BoundaryConditions> bc,
-                        const Interaction &interaction, std::size_t moveThreads, std::size_t scalingThreads);
+                        const Interaction &interaction, const ShapeDataManager &dataManager, std::size_t moveThreads,
+                        std::size_t scalingThreads);
     void loadPackingContinuation(std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction,
-                                 std::size_t moveThreads, std::size_t scalingThreads);
+                                 const ShapeDataManager &dataManager, std::size_t moveThreads,
+                                 std::size_t scalingThreads);
     void loadPackingNoContinuation(std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction,
-                                   std::size_t moveThreads, std::size_t scalingThreads);
+                                   const ShapeDataManager &dataManager, std::size_t moveThreads,
+                                   std::size_t scalingThreads);
     [[nodiscard]] bool isStartingFromScratch() const;
 
 public:
@@ -65,8 +68,8 @@ public:
               runsParameters{runsParameters}
     { }
 
-    void loadPacking(std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction, std::size_t moveThreads,
-                     std::size_t scalingThreads);
+    void loadPacking(std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction,
+                     const ShapeDataManager &dataManager, std::size_t moveThreads, std::size_t scalingThreads);
 
     [[nodiscard]] std::size_t getStartRunIndex() const { return this->startRunIndex; }
     [[nodiscard]] std::size_t getCycleOffset() const { return this->cycleOffset; }

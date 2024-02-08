@@ -22,6 +22,7 @@ TEST_CASE("PairDensityCorrelation") {
     ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(traits, getRangeRadius(_)).RETURN(1);
     ALLOW_CALL(traits, getTotalRangeRadius(_)).RETURN(1);
+    ALLOW_CALL(traits, getShapeDataSize()).RETURN(0);
 
     TriclinicBox box(10);
     auto binDividers = std::vector<double>{0, 2, 4};
@@ -30,7 +31,7 @@ TEST_CASE("PairDensityCorrelation") {
     // Formula for each bin value: (num points) / (expected molecules) / (N/2)
     // Snapshot 1 - expected bins: {0/1/2, 2/2/2} = {0, 0.5}
     auto bc1 = std::make_unique<PeriodicBoundaryConditions>();
-    Packing packing1(box, shapes, std::move(bc1), traits.getInteraction());
+    Packing packing1(box, shapes, std::move(bc1), traits.getInteraction(), traits.getDataManager());
     REQUIRE_CALL(*enumerator, enumeratePairs(_, _, _))
         .LR_WITH(&_1 == &packing1 && &_2 == &traits)
         .SIDE_EFFECT (
@@ -45,7 +46,7 @@ TEST_CASE("PairDensityCorrelation") {
 
     // Snapshot 2 - expected bins: {1/0.5/2, 1/0.25/2} = {1, 2}
     auto bc2 = std::make_unique<PeriodicBoundaryConditions>();
-    Packing packing2(box, shapes, std::move(bc2), traits.getInteraction());
+    Packing packing2(box, shapes, std::move(bc2), traits.getInteraction(), traits.getDataManager());
     REQUIRE_CALL(*enumerator, enumeratePairs(_, _, _))
         .LR_WITH(&_1 == &packing2 && &_2 == &traits)
         .SIDE_EFFECT (

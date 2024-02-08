@@ -20,7 +20,8 @@ namespace {
     {
         Lattice lattice(UnitCell(TriclinicBox(2), {Shape({0.5, 0.5, 0.5})}), {2, 2, 2});
         auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-        Packing packing(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), traits.getInteraction());
+        Packing packing(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), traits.getInteraction(),
+                        traits.getDataManager());
         rotationSampler.setup(packing, traits);
         std::vector<std::size_t> particleIdxs(packing.size());
         std::iota(particleIdxs.begin(), particleIdxs.end(), 0);
@@ -46,6 +47,7 @@ TEST_CASE("AxisRotationSampler") {
     ALLOW_CALL(sphereWithAxis, overlapBetween(_, _, _, _, _, _, _, _, _)).RETURN(_9.getDistance2(_1, _5) < 1);
     ALLOW_CALL(sphereWithAxis, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(sphereWithAxis, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{1, 0, 0});
+    ALLOW_CALL(sphereWithAxis, getShapeDataSize()).RETURN(0);
 
     SECTION("performing moves") {
         SECTION("global axis") {

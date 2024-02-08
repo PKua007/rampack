@@ -33,7 +33,7 @@ TEST_CASE("SmecticOrder: with vector dump") {
         auto fbc = std::make_unique<FreeBoundaryConditions>();
         for (auto &shape: shapes)
             shape.translate({0, unif(mt), unif(mt)}, *fbc);
-        Packing packing({30, 30, 30}, shapes, std::move(fbc), traits.getInteraction());
+        Packing packing({30, 30, 30}, shapes, std::move(fbc), traits.getInteraction(), traits.getDataManager());
 
         smecticOrder.calculate(packing, 1, 1, traits);
         auto intervalValues = smecticOrder.getIntervalValues();
@@ -61,7 +61,7 @@ TEST_CASE("SmecticOrder: non-standard focal point") {
                                  {{2, 2, 5.5}, notRotated}, {{2, 5, 6.5}, rotated},
                                  {{5, 5, 5.5}, notRotated}, {{5, 2, 6.5}, rotated}};
     auto fbc = std::make_unique<FreeBoundaryConditions>();
-    Packing packing({8, 8, 8}, shapes, std::move(fbc), traits.getInteraction());
+    Packing packing({8, 8, 8}, shapes, std::move(fbc), traits.getInteraction(), traits.getDataManager());
 
     smecticOrder.calculate(packing, 1, 1, traits);
     auto intervalValues = smecticOrder.getIntervalValues();
@@ -84,7 +84,7 @@ TEST_CASE("SmecticOrder: with function") {
     auto notRotated = Matrix<3, 3>::identity();
     std::vector<Shape> shapes = {{{2, 2, 1}, notRotated}, {{2, 2, 3}, rotated}};
     auto fbc = std::make_unique<FreeBoundaryConditions>();
-    Packing packing({4, 4, 4}, shapes, std::move(fbc), traits.getInteraction());
+    Packing packing({4, 4, 4}, shapes, std::move(fbc), traits.getInteraction(), traits.getDataManager());
 
     smecticOrder.calculate(packing, 1, 1, traits);
     auto intervalValues = smecticOrder.getIntervalValues();

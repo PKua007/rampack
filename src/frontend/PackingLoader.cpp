@@ -10,7 +10,8 @@
 
 
 void PackingLoader::loadPacking(std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction,
-                                std::size_t moveThreads, std::size_t scalingThreads)
+                                const ShapeDataManager &dataManager, std::size_t moveThreads,
+                                std::size_t scalingThreads)
 {
     this->reset();
 
@@ -22,9 +23,9 @@ void PackingLoader::loadPacking(std::unique_ptr<BoundaryConditions> bc, const In
         return;
 
     if (this->continuationCycles.has_value())
-        this->loadPackingContinuation(std::move(bc), interaction, moveThreads, scalingThreads);
+        this->loadPackingContinuation(std::move(bc), interaction, dataManager, moveThreads, scalingThreads);
     else
-        this->loadPackingNoContinuation(std::move(bc), interaction, moveThreads, scalingThreads);
+        this->loadPackingNoContinuation(std::move(bc), interaction, dataManager, moveThreads, scalingThreads);
 }
 
 bool PackingLoader::isStartingFromScratch() const {
@@ -32,8 +33,8 @@ bool PackingLoader::isStartingFromScratch() const {
 }
 
 void PackingLoader::restorePacking(const Run &startingPackingRun, std::unique_ptr<BoundaryConditions> bc,
-                                   const Interaction &interaction, std::size_t moveThreads,
-                                   std::size_t scalingThreads)
+                                   const Interaction &interaction, const ShapeDataManager &dataManager,
+                                   std::size_t moveThreads, std::size_t scalingThreads)
 {
     auto packingFilenameGetter = [](auto &&run) { return *run.ramsnapOut; };
     std::string startingPackingFilename = std::visit(packingFilenameGetter, startingPackingRun);
@@ -41,7 +42,7 @@ void PackingLoader::restorePacking(const Run &startingPackingRun, std::unique_pt
     ValidateOpenedDesc(packingFile, startingPackingFilename, "to load initial packing");
 
     this->packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
-    this->auxInfo = this->packing->restore(packingFile, interaction);
+    this->auxInfo = this->packing->restore(packingFile, interaction, dataManager);
     this->isRestored_ = true;
 
     auto runNameGetter = [](auto &&run) { return run.runName; };
@@ -215,10 +216,11 @@ std::size_t PackingLoader::findStartRunIndex(const std::string &runName, const s
 }
 
 void PackingLoader::loadPackingContinuation(std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction,
-                                            std::size_t moveThreads, std::size_t scalingThreads)
+                                            const ShapeDataManager &dataManager, std::size_t moveThreads,
+                                            std::size_t scalingThreads)
 {
     auto &startRun = this->runsParameters[this->startRunIndex];
-    this->restorePacking(startRun, std::move(bc), interaction, moveThreads, scalingThreads);
+    this->restorePacking(startRun, std::move(bc), interaction, dataManager, moveThreads, scalingThreads);
 
     this->cycleOffset = std::stoul(this->auxInfo.at("cycles"));
     this->isContinuation_ = true;
@@ -259,8 +261,9 @@ void PackingLoader::loadPackingContinuation(std::unique_ptr<BoundaryConditions> 
 }
 
 void PackingLoader::loadPackingNoContinuation(std::unique_ptr<BoundaryConditions> bc, const Interaction &interaction,
-                                              std::size_t moveThreads, std::size_t scalingThreads)
+                                              const ShapeDataManager &dataManager, std::size_t moveThreads,
+                                              std::size_t scalingThreads)
 {
     auto &startingPackingRun = this->runsParameters[this->startRunIndex - 1];
-    this->restorePacking(startingPackingRun, std::move(bc), interaction, moveThreads, scalingThreads);
+    this->restorePacking(startingPackingRun, std::move(bc), interaction, dataManager, moveThreads, scalingThreads);
 }

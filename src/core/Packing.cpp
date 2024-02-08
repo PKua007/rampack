@@ -44,13 +44,14 @@ namespace {
 }
 
 Packing::Packing(const TriclinicBox &box, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
-                 const Interaction &interaction, std::size_t moveThreads, std::size_t scalingThreads)
+                 const Interaction &interaction, const ShapeDataManager &dataManager, std::size_t moveThreads,
+                 std::size_t scalingThreads)
         : bc{std::move(bc)}
 {
     this->moveThreads = (moveThreads == 0 ? OMP_MAXTHREADS : moveThreads);
     this->scalingThreads = (scalingThreads == 0 ? OMP_MAXTHREADS : scalingThreads);
 
-    this->reset(std::move(shapes), box, interaction);
+    this->reset(std::move(shapes), box, interaction, dataManager);
 }
 
 Packing::Packing(std::unique_ptr<BoundaryConditions> bc, std::size_t moveThreads, std::size_t scalingThreads)
@@ -66,13 +67,15 @@ Packing::Packing(std::unique_ptr<BoundaryConditions> bc, std::size_t moveThreads
     this->lastMoveOverlapDeltas.resize(this->moveThreads, 0);
 }
 
-void Packing::reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, const Interaction &newInteraction) {
+void Packing::reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, const Interaction &newInteraction,
+                    const ShapeDataManager &newDataManager)
+{
     Expects(newBox.getVolume() != 0);
     Expects(!newShapes.empty());
     Expects(Packing::areShapesWithinBox(newShapes, newBox));
 
     this->box = newBox;
-    this->shapeDataSize = newInteraction.getShapeDataSize();
+    this->shapeDataSize = newDataManager.getShapeDataSize();
 
     std::vector<Vector<3>> newPositions(newShapes.size() + this->moveThreads);
     std::vector<Matrix<3, 3>> newOrientations(newShapes.size() + this->moveThreads);
@@ -97,7 +100,7 @@ void Packing::reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, co
     this->lastAlteredParticleIdx.resize(this->moveThreads, 0);
     this->lastMoveOverlapDeltas.resize(this->moveThreads, 0);
     this->bc->setBox(this->box);
-    this->setupForInteraction(newInteraction);
+    this->setupForInteraction(newInteraction, newDataManager);
 }
 
 double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction,
@@ -1032,10 +1035,10 @@ void Packing::addInteractionCentresToNeighbourGrid() {
     }
 }
 
-void Packing::setupForInteraction(const Interaction &interaction) {
+void Packing::setupForInteraction(const Interaction &interaction, const ShapeDataManager &dataManager) {
     Expects(!this->empty());
     // TODO: better handling of shape data
-    Expects(interaction.getShapeDataSize() == this->shapeDataSize);
+    Expects(dataManager.getShapeDataSize() == this->shapeDataSize);
     Expects(this->areInteractionCentresConsistent(interaction));
 
     this->interactionRange = this->computeMaxInteractionRange(interaction);
@@ -1101,9 +1104,11 @@ void Packing::store(std::ostream &out, const std::map<std::string, std::string> 
     writer.write(out, *this, auxInfo);
 }
 
-std::map<std::string, std::string> Packing::restore(std::istream &in, const Interaction &interaction) {
+std::map<std::string, std::string> Packing::restore(std::istream &in, const Interaction &interaction,
+                                                    const ShapeDataManager &dataManager)
+{
     RamsnapReader reader;
-    return reader.read(in, *this, interaction);
+    return reader.read(in, *this, interaction, dataManager);
 }
 
 void Packing::resetCounters() {
@@ -1333,13 +1338,15 @@ bool Packing::isBoxUpscaled(const TriclinicBox &oldBox, const TriclinicBox &newB
     return true;
 }
 
-std::size_t Packing::renormalizeOrientations(const Interaction &interaction, bool allowOverlaps) {
+std::size_t Packing::renormalizeOrientations(const Interaction &interaction, const ShapeDataManager &dataManager,
+                                             bool allowOverlaps)
+{
     if (allowOverlaps) {
         auto newShapes = std::vector<Shape>(this->begin(), this->end());
         #pragma omp parallel for shared(newShapes) default(none) num_threads(this->scalingThreads)
         for (std::size_t i = 0; i < this->size(); i++)
             Packing::fixRotationMatrix(this->shapeOrientations[i]);
-        this->reset(std::move(newShapes), this->box, interaction);
+        this->reset(std::move(newShapes), this->box, interaction, dataManager);
         return 0;
     }
 

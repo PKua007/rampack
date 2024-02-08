@@ -15,7 +15,8 @@ TEST_CASE("WolframWriter") {
     std::vector<Shape> shapes;
     shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5});
     shapes.emplace_back(Vector<3>{2.5, 2.5, 4.0});
-    Packing packing(TriclinicBox(5), std::move(shapes), std::move(pbc), traits.getInteraction());
+    Packing packing(TriclinicBox(5), std::move(shapes), std::move(pbc), traits.getInteraction(),
+                    traits.getDataManager());
     std::ostringstream out;
     out.precision(1);
     out << std::fixed;

@@ -32,15 +32,15 @@ public:
     std::map<std::string, std::string> read(std::istream &in, Packing &packing,
                                             const ShapeTraits &traits) const override
     {
-        return this->read(in, packing, traits.getInteraction());
+        return this->read(in, packing, traits.getInteraction(), traits.getDataManager());
     }
 
     /**
      * @brief Convenient wrapper over read(std::istream&, Packing&, const ShapeTraits&) const function without
      * Interaction instead of the whole ShapeTraits on the arguments list
      */
-    std::map<std::string, std::string> read(std::istream &in, Packing &packing,
-                                            const Interaction &interaction) const;
+    std::map<std::string, std::string> read(std::istream &in, Packing &packing, const Interaction &interaction,
+                                            const ShapeDataManager &dataManager) const;
 };
 
 

@@ -53,7 +53,8 @@ public:
      * @param axisOrderString in which order the axes should be shrunk - for eaxmple @a "xzy" means that x axis will
      * be optimized first, then y and z at the end
      */
-    static void shrinkPacking(Packing &packing, const Interaction &interaction, const std::string &axisOrderString);
+    static void shrinkPacking(Packing &packing, const Interaction &interaction, const ShapeDataManager &dataManager,
+                              const std::string &axisOrderString);
 };
 
 

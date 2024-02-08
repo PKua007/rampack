@@ -27,7 +27,7 @@ TEST_CASE("DensityHistogram") {
     shapes.emplace_back(Vector<3>{6.5, 5, 7.5});
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     SphereTraits traits(0.5);
-    Packing packing(box, std::move(shapes), std::move(pbc), traits.getInteraction());
+    Packing packing(box, std::move(shapes), std::move(pbc), traits.getInteraction(), traits.getDataManager());
     auto densityFunction = std::make_shared<ConstantShapeFunction>();
     auto tracker = std::make_unique<FourierTracker>(std::array<std::size_t, 3>{1, 0, 0}, densityFunction);
 

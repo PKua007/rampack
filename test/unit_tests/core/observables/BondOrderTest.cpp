@@ -63,7 +63,7 @@ TEST_CASE("BondOrder: hexatic") {
     // Finally, create the packing
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     SphereTraits sphereTraits(0.5);
-    Packing packing(box, shapes1, std::move(pbc), sphereTraits.getInteraction(), 1, 1);
+    Packing packing(box, shapes1, std::move(pbc), sphereTraits.getInteraction(), sphereTraits.getDataManager(), 1, 1);
 
     // ... tilt it to create triclinic box
     packing.tryScaling(TriclinicBox({boxVector1, boxVector2, 2.*shift}), sphereTraits.getInteraction());
@@ -96,7 +96,7 @@ TEST_CASE("BondOrder: distance within layer") {
     SphereTraits sphereTraits(0.1);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     TriclinicBox box(std::array<double, 3>{6, 6, 1});
-    Packing packing(box, shapes, std::move(pbc), sphereTraits.getInteraction(), 1, 1);
+    Packing packing(box, shapes, std::move(pbc), sphereTraits.getInteraction(), sphereTraits.getDataManager(), 1, 1);
     BondOrder bondOrder(4, {0, 0, 2});
 
     bondOrder.calculate(packing, 1, 1, sphereTraits);
@@ -137,7 +137,8 @@ TEST_CASE("BondOrder: non-standard layering and bond order points") {
         }
     }
 
-    Packing packing(box, shapes, std::move(pbc), spherocylinderTraits.getInteraction(), 1, 1);
+    Packing packing(box, shapes, std::move(pbc), spherocylinderTraits.getInteraction(),
+                    spherocylinderTraits.getDataManager(), 1, 1);
     BondOrder bondOrder(4, {0, 0, 2}, "cm", "end");
 
     bondOrder.calculate(packing, 1, 1, spherocylinderTraits);
@@ -155,7 +156,7 @@ TEST_CASE("BondOrder: local vs global") {
 
     SphereTraits sphereTraits(0.5);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    Packing packing(box, shapes, std::move(pbc), sphereTraits.getInteraction(), 1, 1);
+    Packing packing(box, shapes, std::move(pbc), sphereTraits.getInteraction(), sphereTraits.getDataManager(),  1, 1);
 
     SECTION("local bond order") {
         BondOrder bondOrder(4, {0, 0, 2}, "o", "o", true);

@@ -18,7 +18,7 @@
 /**
  * @brief A polymer consisting of identical or different hard of soft-interacting spheres.
  */
-class PolysphereTraits : public ShapeTraits {
+class PolysphereTraits : public ShapeTraits, public ShapeDataManager {
 public:
     /**
      * @brief A helper class describing a single spherical bead.
@@ -178,6 +178,7 @@ public:
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->geometry; }
+    [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this; }
 
     /**
      * @brief Returns ShapePrinter for a given @a format.

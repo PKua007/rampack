@@ -28,7 +28,7 @@ namespace {
             ValidateOpenedDesc(packingFile, this->filename, "to load initial configuration");
 
             auto packing = std::make_unique<Packing>(std::move(bc), moveThreads, scalingThreads);
-            packing->restore(packingFile, shapeTraits.getInteraction());
+            packing->restore(packingFile, shapeTraits.getInteraction(), shapeTraits.getDataManager());
             return packing;
         }
     };

@@ -346,7 +346,7 @@ std::unique_ptr<Packing> CasinoMode::recreatePacking(PackingLoader &loader, cons
                                                      const ShapeTraits &traits, std::size_t maxThreads)
 {
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
-    loader.loadPacking(std::move(bc), traits.getInteraction(), maxThreads, maxThreads);
+    loader.loadPacking(std::move(bc), traits.getInteraction(), traits.getDataManager(), maxThreads, maxThreads);
 
     if (loader.isAllFinished())
         return nullptr;

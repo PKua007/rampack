@@ -18,7 +18,7 @@ TEST_CASE("XYZRecorder") {
     shapes.emplace_back(Vector<3>{4.5, 0.5, 0.5});
     shapes.emplace_back(Vector<3>{2.5, 2.5, 4.0});
     TriclinicBox box(std::array<Vector<3>, 3>{{{5, 0, 0.1}, {0, 5, 0}, {0, 0, 5}}});
-    Packing packing(box, std::move(shapes), std::move(pbc), traits.getInteraction());
+    Packing packing(box, std::move(shapes), std::move(pbc), traits.getInteraction(), traits.getDataManager());
     std::stringbuf outBuf;
 
     {

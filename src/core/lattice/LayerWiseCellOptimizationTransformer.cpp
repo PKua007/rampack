@@ -17,6 +17,7 @@ LayerWiseCellOptimizationTransformer::LayerWiseCellOptimizationTransformer(Latti
 
 void LayerWiseCellOptimizationTransformer::transform(Lattice &lattice, const ShapeTraits &shapeTraits) const {
     const auto &interaction = shapeTraits.getInteraction();
+    const auto &dataManager = shapeTraits.getDataManager();
 
     TransformerValidateMsg(interaction.hasHardPart(),
                            "Interaction must have hard component to perform layerwise optimization");
@@ -29,12 +30,12 @@ void LayerWiseCellOptimizationTransformer::transform(Lattice &lattice, const Sha
     TransformerValidateMsg(!layerAssociation.empty(), "Lattice is empty; cannot perform layerwise optimization");
 
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    Packing testPacking(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), interaction);
+    Packing testPacking(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), interaction, dataManager);
     TransformerValidateMsg(!testPacking.countTotalOverlaps(interaction),
                            "Overlaps are present at the beginning of layerwise optimization");
 
-    this->optimizeLayers(lattice, layerAssociation, testPacking, interaction);
-    this->optimizeCell(lattice, testPacking, interaction);
+    this->optimizeLayers(lattice, layerAssociation, testPacking, interaction, dataManager);
+    this->optimizeCell(lattice, testPacking, interaction, dataManager);
     this->introduceSpacing(lattice, layerAssociation);
     this->centerShapesInCell(lattice.modifyUnitCellMolecules());
 
@@ -45,17 +46,19 @@ bool LayerWiseCellOptimizationTransformer::areShapesOverlapping(const TriclinicB
                                                                 const std::vector<Shape> &shapes,
                                                                 const std::array<std::size_t, 3> &latticeDim,
                                                                 Packing &testPacking,
-                                                                const Interaction &interaction) const
+                                                                const Interaction &interaction,
+                                                                const ShapeDataManager &dataManager) const
 {
     Lattice testLattice(UnitCell(box, shapes), latticeDim);
     testLattice.normalize();
-    testPacking.reset(testLattice.generateMolecules(), testLattice.getLatticeBox(), interaction);
+    testPacking.reset(testLattice.generateMolecules(), testLattice.getLatticeBox(), interaction, dataManager);
     return testPacking.countTotalOverlaps(interaction);
 }
 
 void LayerWiseCellOptimizationTransformer::optimizeLayers(Lattice &lattice,
                                                           const LatticeTraits::LayerAssociation &layerAssociation,
-                                                          Packing &testPacking, const Interaction &interaction) const
+                                                          Packing &testPacking, const Interaction &interaction,
+                                                          const ShapeDataManager &dataManager) const
 {
     const auto &cellBox = lattice.getCellBox();
     auto &cellShapes = lattice.modifyUnitCellMolecules();
@@ -78,9 +81,12 @@ void LayerWiseCellOptimizationTransformer::optimizeLayers(Lattice &lattice,
                 shape.setPosition(pos);
             }
 
-            if (this->areShapesOverlapping(cellBox, midShapes, lattice.getDimensions(), testPacking, interaction)) {
+            if (this->areShapesOverlapping(cellBox, midShapes, lattice.getDimensions(), testPacking, interaction,
+                                           dataManager))
+            {
                 begLayerCoord = midLayerCoord;
-            } else {
+            }
+            else {
                 endLayerCoord = midLayerCoord;
                 cellShapes = std::move(midShapes);
             }
@@ -114,7 +120,8 @@ auto LayerWiseCellOptimizationTransformer::rescaleCell(const TriclinicBox &oldBo
 }
 
 void LayerWiseCellOptimizationTransformer::optimizeCell(Lattice &lattice, Packing &testPacking,
-                                                        const Interaction &interaction) const
+                                                        const Interaction &interaction,
+                                                        const ShapeDataManager &dataManager) const
 {
     double range = testPacking.getTotalRangeRadius();       // testPacking already contains shapes, so this is working
     std::size_t axisIdx = LatticeTraits::axisToIndex(this->layerAxis);
@@ -138,7 +145,7 @@ void LayerWiseCellOptimizationTransformer::optimizeCell(Lattice &lattice, Packin
     double endFactor = 1;
     auto [begBox, begShapes] = this->rescaleCell(initialCellBox, initialShapes, begFactor);
     TransformerValidateMsg(this->areShapesOverlapping(begBox, begShapes, lattice.getDimensions(), testPacking,
-                                                      interaction),
+                                                      interaction, dataManager),
                            "Layerwise optimization: maximally shrunk cell (without PBC image self-overlaps) is not "
                            "overlapping. Use more lattice cells.");
 
@@ -147,9 +154,12 @@ void LayerWiseCellOptimizationTransformer::optimizeCell(Lattice &lattice, Packin
         double midFactor = (begFactor + endFactor) / 2;
         auto [midBox, midShapes] = this->rescaleCell(initialCellBox, initialShapes, midFactor);
 
-        if (this->areShapesOverlapping(midBox, midShapes, lattice.getDimensions(), testPacking, interaction)) {
+        if (this->areShapesOverlapping(midBox, midShapes, lattice.getDimensions(), testPacking, interaction,
+                                       dataManager))
+        {
             begFactor = midFactor;
-        } else {
+        }
+        else {
             endFactor = midFactor;
             cellShapes = std::move(midShapes);
             cellBox = midBox;

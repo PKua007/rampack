@@ -16,6 +16,7 @@
 #include "Interaction.h"
 #include "ShapePrinter.h"
 #include "ShapeGeometry.h"
+#include "ShapeDataManager.h"
 #include "NeighbourGrid.h"
 #include "ActiveDomain.h"
 #include "utils/OMPMacros.h"
@@ -219,7 +220,8 @@ public:
      * @param scalingThreads number of threads used for volume moves. If 0, all OpenMP threads will be used
      */
     Packing(const TriclinicBox &box, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
-            const Interaction &interaction, std::size_t moveThreads = 1, std::size_t scalingThreads = 1);
+            const Interaction &interaction, const ShapeDataManager &dataManager, std::size_t moveThreads = 1,
+            std::size_t scalingThreads = 1);
 
     /**
      * @brief Creates a packing from shape vector (dimensions array version).
@@ -231,12 +233,14 @@ public:
      * @param scalingThreads number of threads used for volume moves. If 0, all OpenMP threads will be used
      */
     Packing(const std::array<double, 3> &dimensions, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
-            const Interaction &interaction, std::size_t moveThreads = 1, std::size_t scalingThreads = 1)
-            : Packing(TriclinicBox(dimensions), std::move(shapes), std::move(bc), interaction, moveThreads,
+            const Interaction &interaction, const ShapeDataManager &dataManager, std::size_t moveThreads = 1,
+            std::size_t scalingThreads = 1)
+            : Packing(TriclinicBox(dimensions), std::move(shapes), std::move(bc), interaction, dataManager, moveThreads,
                       scalingThreads)
     { }
 
-    void reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, const Interaction &newInteraction);
+    void reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, const Interaction &newInteraction,
+               const ShapeDataManager &newDataManager);
 
     /**
      * @brief Performs renormalization of rotation matrices.
@@ -245,7 +249,8 @@ public:
      * - it is rejected if overlaps are introduces.
      * @returns Number of particles, which were not normalized.
      */
-    std::size_t renormalizeOrientations(const Interaction &interaction, bool allowOverlaps);
+    std::size_t renormalizeOrientations(const Interaction &interaction, const ShapeDataManager &dataManager,
+                                        bool allowOverlaps);
 
     /**
      * @brief Return the number of shapes in the packing.
@@ -461,7 +466,7 @@ public:
      * @details Old molecule positions and rotations are used, but interaction centers are recalculated and neighbour
      * grid is rebuilt.
      */
-    void setupForInteraction(const Interaction &interaction);
+    void setupForInteraction(const Interaction &interaction, const ShapeDataManager &dataManager);
 
     /**
      * @brief Resets all counters (neighbour grid rebuilds, etc.).
@@ -482,7 +487,8 @@ public:
      * @param interaction the interaction between the molecules used to setup the packing
      * @return an auxiliary key, value map which was stored together with a packing
      */
-    std::map<std::string, std::string> restore(std::istream &in, const Interaction &interaction);
+    std::map<std::string, std::string> restore(std::istream &in, const Interaction &interaction,
+                                               const ShapeDataManager &dataManager);
 
     [[nodiscard]] std::size_t getNumberOfInteractionCentres() const;
 

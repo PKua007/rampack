@@ -31,11 +31,13 @@ TEST_CASE("Observables") {
     ALLOW_CALL(mockShapeTraits, getRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
     ALLOW_CALL(mockShapeTraits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(mockShapeTraits, getTotalRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
+    ALLOW_CALL(mockShapeTraits, getShapeDataSize()).RETURN(0);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     Shape s1({1, 1, 1}, Matrix<3, 3>::rotation(M_PI/4, 0, 0));
     Shape s2({2, 3, 3}, Matrix<3, 3>::rotation(0, M_PI/4, 0));
     Shape s3({2.5, 3, 1}, Matrix<3, 3>::rotation(0, 0, M_PI/4));
-    Packing packing({3, 4, 5}, {s1, s2, s3}, std::move(pbc), mockShapeTraits.getInteraction(), 1, 1);
+    Packing packing({3, 4, 5}, {s1, s2, s3}, std::move(pbc), mockShapeTraits.getInteraction(),
+                    mockShapeTraits.getDataManager(), 1, 1);
 
     SECTION("BoxDimensions") {
         BoxDimensions boxDimensions;

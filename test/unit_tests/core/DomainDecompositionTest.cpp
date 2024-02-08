@@ -36,7 +36,8 @@ TEST_CASE("DomainDecomposition") {
                      {{ 4, 14.1, 3}, id},
                      {{10,  9.9, 3}, id}},
                     std::move(pbc),
-                    dimer.getInteraction());
+                    dimer.getInteraction(),
+                    dimer.getDataManager());
 
     DomainDecomposition domainDecomposition(packing, {1, 2, 1}, {4, 7, 2}, {6, 17, 3});
 

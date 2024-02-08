@@ -17,7 +17,7 @@
 /**
  * @brief A class analogous to PolysphereTraits, but for hard spherocylinders.
  */
-class PolyspherocylinderTraits : public ShapeTraits, public Interaction {
+class PolyspherocylinderTraits : public ShapeTraits, public Interaction, public ShapeDataManager {
 public:
     /**
      * @brief A single building spherocylinder data.
@@ -168,6 +168,7 @@ public:
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->geometry; }
+    [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this; }
 
     /**
      * @brief Returns ShapePrinter for a given @a format.

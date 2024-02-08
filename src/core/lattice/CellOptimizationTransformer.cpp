@@ -14,6 +14,7 @@
 
 void CellOptimizationTransformer::transform(Lattice &lattice, const ShapeTraits &shapeTraits) const {
     const auto &interaction = shapeTraits.getInteraction();
+    const auto &dataManager = shapeTraits.getDataManager();
 
     TransformerValidateMsg(interaction.hasHardPart(),
                            "Interaction must have a hard component to perform distance optimization");
@@ -22,10 +23,10 @@ void CellOptimizationTransformer::transform(Lattice &lattice, const ShapeTraits 
                            "optimization");
 
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    Packing testPacking(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), interaction);
+    Packing testPacking(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), interaction, dataManager);
 
     auto oldBox = testPacking.getBox();
-    DistanceOptimizer::shrinkPacking(testPacking, interaction, this->axisOrderString);
+    DistanceOptimizer::shrinkPacking(testPacking, interaction, dataManager, this->axisOrderString);
     auto newBox = testPacking.getBox();
 
     const auto &newHeights = newBox.getHeights();

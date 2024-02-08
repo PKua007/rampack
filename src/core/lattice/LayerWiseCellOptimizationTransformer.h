@@ -22,12 +22,14 @@ private:
 
     [[nodiscard]] bool areShapesOverlapping(const TriclinicBox &box, const std::vector<Shape> &shapes,
                                             const std::array<std::size_t, 3> &latticeDim, Packing &testPacking,
-                                            const Interaction &interaction) const;
+                                            const Interaction &interaction, const ShapeDataManager &dataManager) const;
     void optimizeLayers(Lattice &lattice, const LatticeTraits::LayerAssociation &layerAssociation,
-                        Packing &testPacking, const Interaction &interaction) const;
+                        Packing &testPacking, const Interaction &interaction,
+                        const ShapeDataManager &dataManager) const;
     [[nodiscard]] auto rescaleCell(const TriclinicBox &oldBox, const std::vector<Shape> &oldShapes,
                                    double factor) const;
-    void optimizeCell(Lattice &lattice, Packing &testPacking, const Interaction &interaction) const;
+    void optimizeCell(Lattice &lattice, Packing &testPacking, const Interaction &interaction,
+                      const ShapeDataManager &dataManager) const;
     void introduceSpacing(Lattice &lattice, const LatticeTraits::LayerAssociation &layerAssociation) const;
     void centerShapesInCell(std::vector<Shape> &cellShapes) const;
 
