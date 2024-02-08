@@ -110,6 +110,13 @@ TEST_CASE("ShapeData: unmanaged construction") {
             shapeData = newData;
             check_that_contains_managed_data(shapeData, double{8});
         }
+
+        SECTION("forced copy") {
+            const auto &storedData = shapeData.as<double>();
+            check_that_contains_managed_data(shapeData.managedCopy(),storedData);
+            check_that_contains_unmanaged_data(shapeData.unmanagedCopy(), storedData);
+            check_that_contains_unmanaged_data(shapeData.relayedManagementCopy(), storedData);
+        }
     }
 }
 
@@ -181,6 +188,13 @@ TEST_CASE("ShapeData: managed construction") {
             double newData = 8;
             shapeData = newData;
             check_that_contains_managed_data(shapeData, double{8});
+        }
+
+        SECTION("forced copy") {
+            const auto &storedData = shapeData.as<double>();
+            check_that_contains_managed_data(shapeData.managedCopy(), storedData);
+            check_that_contains_unmanaged_data(shapeData.unmanagedCopy(), storedData);
+            check_that_contains_managed_data(shapeData.relayedManagementCopy(), storedData);
         }
     }
 }

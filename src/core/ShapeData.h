@@ -173,7 +173,6 @@ public:
     [[nodiscard]] bool isEmpty() const { return this->size == 0; }
     [[nodiscard]] const std::byte *raw() const { return this->data; }
 
-    // TODO: write tests
     [[nodiscard]] ShapeData unmanagedCopy() const {
         return ShapeData(this->data, this->size, false);
     }
