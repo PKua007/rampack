@@ -27,6 +27,7 @@ TEST_CASE("ObservablesCollector") {
     ALLOW_CALL(mockShapeTraits, hasHardPart()).RETURN(false);
     ALLOW_CALL(mockShapeTraits, calculateEnergyBetween(_, _, _, _, _, _, _, _, _)).RETURN(0);
     ALLOW_CALL(mockShapeTraits, getShapeDataSize()).RETURN(0);
+    ALLOW_CALL(mockShapeTraits, validateShapeData(_));
 
     std::array<double, 3> boxSize{0, 0, 0};
     auto dimFormatter = [&boxSize]() {

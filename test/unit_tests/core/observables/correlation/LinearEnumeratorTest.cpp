@@ -33,6 +33,7 @@ TEST_CASE("LinearEnumerator") {
     ALLOW_CALL(traits, getTotalRangeRadius(_)).RETURN(1);
     ALLOW_CALL(traits, getGeometricOrigin(_)).RETURN(_1.getPosition());
     ALLOW_CALL(traits, getShapeDataSize()).RETURN(0);
+    ALLOW_CALL(traits, validateShapeData(_));
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     Packing packing(box, shapes, std::move(bc), traits.getInteraction(), traits.getDataManager());
     LinearEnumerator enumerator(LinearEnumerator::Axis::Y);

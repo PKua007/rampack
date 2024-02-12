@@ -32,6 +32,7 @@ TEST_CASE("Observables") {
     ALLOW_CALL(mockShapeTraits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(mockShapeTraits, getTotalRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
     ALLOW_CALL(mockShapeTraits, getShapeDataSize()).RETURN(0);
+    ALLOW_CALL(mockShapeTraits, validateShapeData(_));
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     Shape s1({1, 1, 1}, Matrix<3, 3>::rotation(M_PI/4, 0, 0));
     Shape s2({2, 3, 3}, Matrix<3, 3>::rotation(0, M_PI/4, 0));

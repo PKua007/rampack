@@ -20,6 +20,7 @@ TEST_CASE("NematicOrder") {
     ALLOW_CALL(mockShapeTraits, getTotalRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
     ALLOW_CALL(mockShapeTraits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(mockShapeTraits, getShapeDataSize()).RETURN(0);
+    ALLOW_CALL(mockShapeTraits, validateShapeData(_));
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
 
     SECTION("positive order with Q-tensor dump") {

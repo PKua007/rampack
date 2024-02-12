@@ -27,6 +27,7 @@ TEST_CASE("PairAveragedCorrelation") {
     ALLOW_CALL(traits, getRangeRadius(_)).RETURN(1);
     ALLOW_CALL(traits, getTotalRangeRadius(_)).RETURN(1);
     ALLOW_CALL(traits, getShapeDataSize()).RETURN(0);
+    ALLOW_CALL(traits, validateShapeData(_));
 
     auto function = std::make_unique<MockCorrelationFunction>();
     ALLOW_CALL(*function, getSignatureName()).RETURN("func");
