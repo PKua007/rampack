@@ -52,6 +52,8 @@ public:
     // ShapeDataManager methods
     MAKE_CONST_MOCK0(getShapeDataSize, std::size_t(), override);
     MAKE_CONST_MOCK1(validateShapeData, void(const ShapeData &), override);
+    MAKE_CONST_MOCK1(serialize, TextualShapeData (const ShapeData &), override);
+    MAKE_CONST_MOCK1(deserialize, ShapeData(const TextualShapeData &), override);
 };
 
 #endif //RAMPACK_MOCKSHAPETRAITS_H

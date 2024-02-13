@@ -204,6 +204,7 @@ public:
         out << std::hex << std::setfill('0');
         for (std::size_t i{}; i < shapeData.size; i++)
             out << std::setw(2) << static_cast<unsigned>(shapeData.data[i]) << " ";
+        out << std::dec;
         out << "(" << shapeData.size << " bytes)";
         out.setf(savedFlags);
 

@@ -11,12 +11,16 @@
 #include "utils/Exceptions.h"
 
 
-class ShapeDataFormatException : public ValidationException {
+class ShapeDataException : public ValidationException {
     using ValidationException::ValidationException;
 };
 
-class ShapeDataSerializationException : public ValidationException {
-    using ValidationException::ValidationException;
+class ShapeDataFormatException : public ShapeDataException {
+    using ShapeDataException::ShapeDataException;
+};
+
+class ShapeDataSerializationException : public ShapeDataException {
+    using ShapeDataException::ShapeDataException;
 };
 
 using TextualShapeData = std::map<std::string, std::string>;
