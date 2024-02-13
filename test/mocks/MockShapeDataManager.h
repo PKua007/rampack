@@ -14,6 +14,8 @@ class MockShapeDataManager : public trompeloeil::mock_interface<ShapeDataManager
 public:
     IMPLEMENT_CONST_MOCK0(getShapeDataSize);
     IMPLEMENT_CONST_MOCK1(validateShapeData);
+    IMPLEMENT_CONST_MOCK1(serialize);
+    IMPLEMENT_CONST_MOCK1(deserialize);
 };
 
 

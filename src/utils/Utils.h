@@ -46,6 +46,8 @@ std::string implode(const Container &container, const std::string &delim = ", ")
 }
 
 bool isMultiline(const std::string &str);
+bool containsWhitespace(const std::string &str);
+bool containsOnlyWhitespace(const std::string &str);
 
 bool endsWith(const std::string& str, const std::string& suffix);
 bool startsWith(const std::string& str, const std::string& prefix);

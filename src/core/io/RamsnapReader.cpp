@@ -4,6 +4,7 @@
 
 #include "RamsnapReader.h"
 #include "utils/ParseUtils.h"
+#include "utils/Utils.h"
 
 
 #define RamsnapValidateMsg(cond, msg) EXCEPTIONS_BLOCK(                                                             \
@@ -14,32 +15,67 @@
 
 std::map<std::string, std::string> RamsnapReader::read(std::istream &in, Packing &packing,
                                                        const Interaction &interaction,
-                                                       const ShapeDataManager &dataManager) const
+                                                       const ShapeDataManager &manager) const
 {
     auto auxInfo = RamsnapReader::restoreAuxInfo(in);
     TriclinicBox box = RamsnapReader::restoreBox(in);
-    std::vector<Shape> shapes = RamsnapReader::restoreShapes(in);
-    packing.reset(std::move(shapes), box, interaction, dataManager);
+    std::vector<Shape> shapes = RamsnapReader::restoreShapes(in, manager);
+    packing.reset(std::move(shapes), box, interaction, manager);
     return auxInfo;
 }
 
-std::vector<Shape> RamsnapReader::restoreShapes(std::istream &in) {
+std::vector<Shape> RamsnapReader::restoreShapes(std::istream &in, const ShapeDataManager &manager) {
     std::size_t size{};
     in >> size;
-    RamsnapValidateMsg(in, "Broken RAMSNAP file: size");
+    RamsnapValidateMsg(in, "Broken RAMSNAP file: number of shapes");
 
     std::vector<Shape> shapes;
     shapes.reserve(size);
-    for (std::size_t i{}; i < size; i++) {
+    auto generateBrokenShapeMsg = [&shapes, size](const std::string &details = "") -> std::string {
+        std::ostringstream msgOut;
+        msgOut << "Broken RAMSNAP file: shape " << shapes.size() << "/" << size;
+        if (!details.empty())
+            msgOut << ": " << details;
+        return msgOut.str();
+    };
+    for (std::size_t shapeI{}; shapeI < size; shapeI++) {
+        std::string line;
+        RamsnapReader::getNonEmptyLine(in, line);
+        RamsnapValidateMsg(in, generateBrokenShapeMsg());
+        std::istringstream shapeIn(line);
+
         Vector<3> position;
         Matrix<3, 3> orientation;
-        in >> position[0] >> position[1] >> position[2];
-        in >> orientation(0, 0) >> orientation(0, 1) >> orientation(0, 2);
-        in >> orientation(1, 0) >> orientation(1, 1) >> orientation(1, 2);
-        in >> orientation(2, 0) >> orientation(2, 1) >> orientation(2, 2);
-        RamsnapValidateMsg(in, "Broken RAMSNAP file: shape " + std::to_string(shapes.size()) + "/"
-                               + std::to_string(size));
-        shapes.emplace_back(position, orientation);
+        shapeIn >> position[0] >> position[1] >> position[2];
+        shapeIn >> orientation(0, 0) >> orientation(0, 1) >> orientation(0, 2);
+        shapeIn >> orientation(1, 0) >> orientation(1, 1) >> orientation(1, 2);
+        shapeIn >> orientation(2, 0) >> orientation(2, 1) >> orientation(2, 2);
+        RamsnapValidateMsg(shapeIn, generateBrokenShapeMsg("position/orientation"));
+
+        std::size_t numParams{};
+        if (ParseUtils::isAnythingLeft(shapeIn)) {
+            shapeIn >> numParams;
+            RamsnapValidateMsg(shapeIn, generateBrokenShapeMsg("shape data"));
+        }
+        TextualShapeData textData;
+        for (std::size_t paramI{}; paramI < numParams; paramI++) {
+            std::string key, value;
+            shapeIn >> key >> value;
+            RamsnapValidateMsg(shapeIn, generateBrokenShapeMsg("shape data"));
+            auto containsQuotes = [](const std::string &str) { return str.find('"') != std::string::npos; };
+            RamsnapValidateMsg(!containsQuotes(key), generateBrokenShapeMsg("shape data: quotes forbidden"));
+            RamsnapValidateMsg(!containsQuotes(value), generateBrokenShapeMsg("shape data: quotes forbidden"));
+            textData[key] = value;
+        }
+
+        ShapeData data;
+        try {
+            data = manager.deserialize(textData);
+        } catch (const ShapeDataException &e) {
+            throw RamsnapException(generateBrokenShapeMsg(std::string("shape data: ") + e.what()));
+        }
+
+        shapes.emplace_back(position, orientation, data);
     }
     return shapes;
 }
@@ -63,7 +99,7 @@ std::map<std::string, std::string> RamsnapReader::restoreAuxInfo(std::istream &i
 
 TriclinicBox RamsnapReader::restoreBox(std::istream &in) {
     std::string line;
-    std::getline(in, line);
+    RamsnapReader::getNonEmptyLine(in, line);
     RamsnapValidateMsg(in, "Broken RAMSNAP file: dimensions");
 
     // We support both new and old format: in the old box was cuboidal, so only 3 numbers were stored. Now we store
@@ -91,4 +127,11 @@ TriclinicBox RamsnapReader::restoreBox(std::istream &in) {
     TriclinicBox box(dimensions);
     RamsnapValidateMsg(box.getVolume() != 0, "Broken RAMSNAP file: zero box volume");
     return box;
+}
+
+bool RamsnapReader::getNonEmptyLine(std::istream &in, std::string &line) {
+    while (std::getline(in, line))
+        if (!containsOnlyWhitespace(line))
+            return true;
+    return false;
 }

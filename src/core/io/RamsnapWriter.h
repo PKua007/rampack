@@ -36,21 +36,24 @@ class RamsnapWriter : public SnapshotWriter {
 private:
     static void storeAuxInfo(std::ostream &out, const std::map<std::string, std::string> &auxInfo);
     static void storeBox(std::ostream &out, const TriclinicBox &box);
-    static void storeShapes(std::ostream &out, const Packing &packing);
+    static void storeShapes(std::ostream &out, const Packing &packing, const ShapeDataManager &manager);
+    static void storeShapeData(std::ostream &out, const ShapeData &data, const ShapeDataManager &manager);
+    static std::string quoteIfNecessary(const std::string &str);
 
 public:
     void write(std::ostream &out, const Packing &packing, [[maybe_unused]] const ShapeTraits &traits,
                const std::map<std::string, std::string> &auxInfo) const override
     {
-        this->write(out, packing, auxInfo);
+        this->write(out, packing, auxInfo, traits.getDataManager());
     }
 
     /**
      * @brief Convenient wrapper over
      * write(std::ostream&, const Packing&, const ShapeTraits&, const std::map<std::string, std::string>&) const
-     * function without unused ShapeTraits on the argument list.
+     * function only with ShapeDataManager part of ShapeTraits on the argument list.
      */
-    void write(std::ostream &out, const Packing &packing, const std::map<std::string, std::string> &auxInfo) const;
+    void write(std::ostream &out, const Packing &packing, const std::map<std::string, std::string> &auxInfo,
+               const ShapeDataManager &manager) const;
 };
 
 

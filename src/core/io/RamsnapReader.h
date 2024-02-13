@@ -21,7 +21,8 @@ public:
 class RamsnapReader : public SnapshotReader {
 private:
     static TriclinicBox restoreBox(std::istream &in);
-    static std::vector<Shape> restoreShapes(std::istream &in);
+    static std::vector<Shape> restoreShapes(std::istream &in, const ShapeDataManager &manager);
+    static bool getNonEmptyLine(std::istream &in, std::string &line);
 
 public:
     /**
@@ -36,11 +37,11 @@ public:
     }
 
     /**
-     * @brief Convenient wrapper over read(std::istream&, Packing&, const ShapeTraits&) const function without
-     * Interaction instead of the whole ShapeTraits on the arguments list
+     * @brief Convenient wrapper over read(std::istream&, Packing&, const ShapeTraits&) const function with
+     * Interaction and ShapeManager instead of the whole ShapeTraits on the arguments list
      */
     std::map<std::string, std::string> read(std::istream &in, Packing &packing, const Interaction &interaction,
-                                            const ShapeDataManager &dataManager) const;
+                                            const ShapeDataManager &manager) const;
 };
 
 

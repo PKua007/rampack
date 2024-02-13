@@ -1098,9 +1098,11 @@ double Packing::getVolume() const {
     return std::abs(this->box.getVolume());
 }
 
-void Packing::store(std::ostream &out, const std::map<std::string, std::string> &auxInfo) const {
+void Packing::store(std::ostream &out, const std::map<std::string, std::string> &auxInfo,
+                    const ShapeDataManager &dataManager) const
+{
     RamsnapWriter writer;
-    writer.write(out, *this, auxInfo);
+    writer.write(out, *this, auxInfo, dataManager);
 }
 
 std::map<std::string, std::string> Packing::restore(std::istream &in, const Interaction &interaction,

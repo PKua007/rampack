@@ -480,7 +480,8 @@ public:
      * @param out the output stream to store a packing
      * @param auxInfo auxiliary key, value map which can store arbitrary metadata
      */
-    void store(std::ostream &out, const std::map<std::string, std::string> &auxInfo) const;
+    void store(std::ostream &out, const std::map<std::string, std::string> &auxInfo,
+               const ShapeDataManager &dataManager) const;
 
     /**
      * @brief Clears the current packing (if not empty) and loads it from an internal representation format from @a in
