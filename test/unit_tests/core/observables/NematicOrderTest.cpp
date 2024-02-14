@@ -13,14 +13,15 @@
 TEST_CASE("NematicOrder") {
     using trompeloeil::_;
 
-    MockShapeTraits mockShapeTraits;
-    ALLOW_CALL(mockShapeTraits, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{1, 0, 0});
-    ALLOW_CALL(mockShapeTraits, getSecondaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{0, 1, 0});
-    ALLOW_CALL(mockShapeTraits, getRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
-    ALLOW_CALL(mockShapeTraits, getTotalRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
-    ALLOW_CALL(mockShapeTraits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
-    ALLOW_CALL(mockShapeTraits, getShapeDataSize()).RETURN(0);
-    ALLOW_CALL(mockShapeTraits, validateShapeData(_));
+    MockShapeTraits traits;
+    ALLOW_CALL(traits, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{1, 0, 0});
+    ALLOW_CALL(traits, getSecondaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{0, 1, 0});
+    ALLOW_CALL(traits, getRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
+    ALLOW_CALL(traits, getTotalRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
+    ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
+    ALLOW_CALL(traits, getShapeDataSize()).RETURN(0);
+    ALLOW_CALL(traits, validateShapeData(_));
+    ALLOW_CALL(traits, getComparator()).RETURN(ShapeData::Comparator{});
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
 
     SECTION("positive order with Q-tensor dump") {
@@ -28,10 +29,10 @@ TEST_CASE("NematicOrder") {
         Shape s1({1, 1, 1}, Matrix<3, 3>::rotation(M_PI/4, 0, 0));
         Shape s2({2, 3, 3}, Matrix<3, 3>::rotation(0, M_PI/4, 0));
         Shape s3({2.5, 3, 1}, Matrix<3, 3>::rotation(0, 0, M_PI/4));
-        Packing packing({3, 4, 5}, {s1, s2, s3}, std::move(pbc), mockShapeTraits.getInteraction(),
-                        mockShapeTraits.getDataManager(), 1, 1);
+        Packing packing({3, 4, 5}, {s1, s2, s3}, std::move(pbc), traits.getInteraction(),
+                        traits.getDataManager(), 1, 1);
 
-        nematicOrder.calculate(packing, 1, 1, mockShapeTraits);
+        nematicOrder.calculate(packing, 1, 1, traits);
 
         REQUIRE(nematicOrder.getIntervalValues().size() == 7);
         CHECK(nematicOrder.getIntervalValues()[0] == Approx(0.6403882032022076)); // Mathematica
@@ -49,11 +50,11 @@ TEST_CASE("NematicOrder") {
         Shape s1({1, 1, 1});
         Shape s2({2, 3, 3}, Matrix<3, 3>::rotation(M_PI/2, 0, 0));
         auto pbc2 = std::make_unique<PeriodicBoundaryConditions>();
-        Packing packing({3, 4, 5}, {s1, s2}, std::move(pbc2), mockShapeTraits.getInteraction(),
-                        mockShapeTraits.getDataManager(), 1, 1);
+        Packing packing({3, 4, 5}, {s1, s2}, std::move(pbc2), traits.getInteraction(),
+                        traits.getDataManager(), 1, 1);
 
-        nematicOrderPrimary.calculate(packing, 1, 1, mockShapeTraits);
-        nematicOrderSecondary.calculate(packing, 1, 1, mockShapeTraits);
+        nematicOrderPrimary.calculate(packing, 1, 1, traits);
+        nematicOrderSecondary.calculate(packing, 1, 1, traits);
 
         REQUIRE(nematicOrderPrimary.getIntervalValues().size() == 1);
         CHECK(nematicOrderPrimary.getIntervalValues()[0] == Approx(1));

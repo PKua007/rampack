@@ -36,6 +36,8 @@ namespace {
 
 
 TEST_CASE("ShapeData: unmanaged construction") {
+    auto comparator = ShapeData::Comparator::forType<double>();
+
     SECTION("empty") {
         ShapeData shapeData;
 
@@ -45,7 +47,7 @@ TEST_CASE("ShapeData: unmanaged construction") {
     SECTION("from bytes") {
         double data = 5;
 
-        ShapeData shapeData(reinterpret_cast<const std::byte *>(&data), sizeof(data));
+        ShapeData shapeData(ShapeData::raw(data), sizeof(data), comparator);
 
         check_that_contains_unmanaged_data(shapeData, data);
     }
@@ -60,7 +62,7 @@ TEST_CASE("ShapeData: unmanaged construction") {
 
     SECTION("operations") {
         double data = 5;
-        ShapeData shapeData(reinterpret_cast<const std::byte *>(&data), sizeof(data));
+        ShapeData shapeData(ShapeData::raw(data), sizeof(data), comparator);
 
         SECTION("prone to modification") {
             data = 7;
@@ -121,10 +123,12 @@ TEST_CASE("ShapeData: unmanaged construction") {
 }
 
 TEST_CASE("ShapeData: managed construction") {
+    auto comparator = ShapeData::Comparator::forType<double>();
+
     SECTION("from bytes") {
         double data = 5;
 
-        ShapeData shapeData(reinterpret_cast<const std::byte *>(&data), sizeof(data), true);
+        ShapeData shapeData(ShapeData::raw(data), sizeof(data), comparator, true);
 
         check_that_contains_managed_data(shapeData, data);
     }
@@ -203,13 +207,30 @@ TEST_CASE("ShapeData: equality") {
     double data1 = 5;
     int data2 = 5;
     ShapeData firstEqual(data1, true);
-    ShapeData secondEqual(data1, false);
+    ShapeData secondEqual(ShapeData::raw(data1), sizeof(data1), ShapeData::Comparator::forType<double>(), false);
     ShapeData notEqual(data2);
 
     CHECK(firstEqual == secondEqual);
     CHECK_FALSE(firstEqual != secondEqual);
     CHECK_FALSE(firstEqual == notEqual);
     CHECK(firstEqual != notEqual);
+}
+
+TEST_CASE("ShapeData: stores") {
+    SECTION("void") {
+        ShapeData data;
+
+        CHECK(data.stores<void>());
+        CHECK_FALSE(data.stores<double>());
+    }
+
+    SECTION("non-void") {
+        ShapeData data(double{5});
+
+        CHECK(data.stores<double>());
+        CHECK_FALSE(data.stores<void>());
+        CHECK_FALSE(data.stores<int>());
+    }
 }
 
 TEST_CASE("ShapeData: exceptions") {

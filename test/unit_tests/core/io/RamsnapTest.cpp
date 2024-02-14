@@ -19,6 +19,10 @@ namespace {
     struct TheData {
         int i;
         double d;
+
+        friend bool operator==(const TheData &lhs, const TheData &rhs) {
+            return std::tie(lhs.i, lhs.d) == std::tie(rhs.i, rhs.d);
+        }
     };
 
     TextualShapeData do_serialize(const ShapeData &data) {
@@ -43,6 +47,7 @@ namespace {
         auto lifetimeGuard1 = NAMED_ALLOW_CALL(traits, serialize(_)).RETURN(TextualShapeData{});
         auto lifetimeGuard2 = NAMED_ALLOW_CALL(traits, deserialize(_)).RETURN(ShapeData{});
         auto lifetimeGuard3 = NAMED_ALLOW_CALL(traits, getShapeDataSize()).RETURN(0);
+        auto lifetimeGuard4 = NAMED_ALLOW_CALL(traits, getComparator()).RETURN(ShapeData::Comparator{});
 
         std::vector<Shape> shapes(packing.begin(), packing.end());
         for (auto &shape: shapes)
@@ -51,7 +56,9 @@ namespace {
         packing.reset(std::move(shapes), packing.getBox(), traits.getInteraction(), traits.getDataManager());
 
         // Return expectation lifetime guards to extend expectations lifetime outside the function
-        return std::make_tuple(std::move(lifetimeGuard1), std::move(lifetimeGuard2), std::move(lifetimeGuard3));
+        return std::make_tuple(
+            std::move(lifetimeGuard1), std::move(lifetimeGuard2), std::move(lifetimeGuard3), std::move(lifetimeGuard4)
+        );
     }
 }
 
@@ -70,6 +77,7 @@ TEST_CASE("RamsnapReader and RamsnapWriter") {
     ALLOW_CALL(traits, getTotalRangeRadius(_)).RETURN(1);
     ALLOW_CALL(traits, serialize(_)).RETURN(do_serialize(_1));
     ALLOW_CALL(traits, deserialize(_)).RETURN(do_deserialize(_1));
+    ALLOW_CALL(traits, getComparator()).RETURN(ShapeData::Comparator::forType<TheData>());
 
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     std::vector<Shape> shapes;

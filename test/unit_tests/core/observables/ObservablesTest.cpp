@@ -22,28 +22,29 @@
 TEST_CASE("Observables") {
     using trompeloeil::_;
 
-    MockShapeTraits mockShapeTraits;
-    ALLOW_CALL(mockShapeTraits, getVolume(_)).RETURN(2);
-    ALLOW_CALL(mockShapeTraits, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{1, 0, 0});
-    ALLOW_CALL(mockShapeTraits, hasSoftPart()).RETURN(true);
-    ALLOW_CALL(mockShapeTraits, hasHardPart()).RETURN(false);
-    ALLOW_CALL(mockShapeTraits, calculateEnergyBetween(_, _, _, _, _, _, _, _, _)).RETURN((_1 - _5).norm());
-    ALLOW_CALL(mockShapeTraits, getRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
-    ALLOW_CALL(mockShapeTraits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
-    ALLOW_CALL(mockShapeTraits, getTotalRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
-    ALLOW_CALL(mockShapeTraits, getShapeDataSize()).RETURN(0);
-    ALLOW_CALL(mockShapeTraits, validateShapeData(_));
+    MockShapeTraits traits;
+    ALLOW_CALL(traits, getVolume(_)).RETURN(2);
+    ALLOW_CALL(traits, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{1, 0, 0});
+    ALLOW_CALL(traits, hasSoftPart()).RETURN(true);
+    ALLOW_CALL(traits, hasHardPart()).RETURN(false);
+    ALLOW_CALL(traits, calculateEnergyBetween(_, _, _, _, _, _, _, _, _)).RETURN((_1 - _5).norm());
+    ALLOW_CALL(traits, getRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
+    ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
+    ALLOW_CALL(traits, getTotalRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
+    ALLOW_CALL(traits, getShapeDataSize()).RETURN(0);
+    ALLOW_CALL(traits, validateShapeData(_));
+    ALLOW_CALL(traits, getComparator()).RETURN(ShapeData::Comparator{});
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     Shape s1({1, 1, 1}, Matrix<3, 3>::rotation(M_PI/4, 0, 0));
     Shape s2({2, 3, 3}, Matrix<3, 3>::rotation(0, M_PI/4, 0));
     Shape s3({2.5, 3, 1}, Matrix<3, 3>::rotation(0, 0, M_PI/4));
-    Packing packing({3, 4, 5}, {s1, s2, s3}, std::move(pbc), mockShapeTraits.getInteraction(),
-                    mockShapeTraits.getDataManager(), 1, 1);
+    Packing packing({3, 4, 5}, {s1, s2, s3}, std::move(pbc), traits.getInteraction(),
+                    traits.getDataManager(), 1, 1);
 
     SECTION("BoxDimensions") {
         BoxDimensions boxDimensions;
 
-        boxDimensions.calculate(packing, 1, 1, mockShapeTraits);
+        boxDimensions.calculate(packing, 1, 1, traits);
 
         CHECK(boxDimensions.getIntervalHeader() == std::vector<std::string>{"L_X", "L_Y", "L_Z"});
         CHECK(boxDimensions.getName() == "box dimensions");
@@ -53,7 +54,7 @@ TEST_CASE("Observables") {
     SECTION("CompressibilityFactor") {
         CompressibilityFactor compressibilityFactor;
 
-        compressibilityFactor.calculate(packing, 4, 2, mockShapeTraits);
+        compressibilityFactor.calculate(packing, 4, 2, traits);
 
         CHECK(compressibilityFactor.getIntervalHeader() == std::vector<std::string>{"Z"});
         CHECK(compressibilityFactor.getName() == "compressibility factor");
@@ -63,31 +64,31 @@ TEST_CASE("Observables") {
     SECTION("EnergyFluctuationsPerParticle") {
         EnergyFluctuationsPerParticle energyFluctuationsPerParticle;
 
-        energyFluctuationsPerParticle.calculate(packing, 1, 1, mockShapeTraits);
+        energyFluctuationsPerParticle.calculate(packing, 1, 1, traits);
 
         CHECK(energyFluctuationsPerParticle.getIntervalHeader() == std::vector<std::string>{"varE"});
         CHECK(energyFluctuationsPerParticle.getName() == "energy fluctuations per particle");
         // It is already tested in the Packing test
         CHECK(energyFluctuationsPerParticle.getIntervalValues()
-              == std::vector<double>{packing.getParticleEnergyFluctuations(mockShapeTraits.getInteraction())});
+              == std::vector<double>{packing.getParticleEnergyFluctuations(traits.getInteraction())});
     }
 
     SECTION("EnergyPerParticle") {
         EnergyPerParticle energyPerParticle;
 
-        energyPerParticle.calculate(packing, 1, 1, mockShapeTraits);
+        energyPerParticle.calculate(packing, 1, 1, traits);
 
         CHECK(energyPerParticle.getIntervalHeader() == std::vector<std::string>{"E"});
         CHECK(energyPerParticle.getName() == "energy per particle");
         // It is already tested in the Packing test
         CHECK(energyPerParticle.getIntervalValues()
-              == std::vector<double>{packing.getTotalEnergy(mockShapeTraits.getInteraction()) / 3});
+              == std::vector<double>{packing.getTotalEnergy(traits.getInteraction()) / 3});
     }
 
     SECTION("NumberDensity") {
         NumberDensity numberDensity;
 
-        numberDensity.calculate(packing, 1, 1, mockShapeTraits);
+        numberDensity.calculate(packing, 1, 1, traits);
 
         CHECK(numberDensity.getIntervalHeader() == std::vector<std::string>{"rho"});
         CHECK(numberDensity.getName() == "number density");
@@ -98,7 +99,7 @@ TEST_CASE("Observables") {
     SECTION("PackingFraction") {
         PackingFraction packingFraction;
 
-        packingFraction.calculate(packing, 1, 1, mockShapeTraits);
+        packingFraction.calculate(packing, 1, 1, traits);
 
         CHECK(packingFraction.getIntervalHeader() == std::vector<std::string>{"theta"});
         CHECK(packingFraction.getName() == "packing fraction");
@@ -109,7 +110,7 @@ TEST_CASE("Observables") {
     SECTION("Temperature") {
         Temperature temperature;
 
-        temperature.calculate(packing, 2, 3, mockShapeTraits);
+        temperature.calculate(packing, 2, 3, traits);
 
         CHECK(temperature.getIntervalHeader() == std::vector<std::string>{"T"});
         CHECK(temperature.getName() == "temperature");
@@ -119,7 +120,7 @@ TEST_CASE("Observables") {
     SECTION("Pressure") {
         Pressure pressure;
 
-        pressure.calculate(packing, 2, 3, mockShapeTraits);
+        pressure.calculate(packing, 2, 3, traits);
 
         CHECK(pressure.getIntervalHeader() == std::vector<std::string>{"p"});
         CHECK(pressure.getName() == "pressure");
