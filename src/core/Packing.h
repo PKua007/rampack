@@ -60,6 +60,7 @@ private:
     double interactionRange = std::numeric_limits<double>::infinity();
     double totalInteractionRange = std::numeric_limits<double>::infinity();
     std::size_t shapeDataSize{};
+    ShapeData::Comparator comparator{};
 
     std::size_t moveThreads{};
     std::size_t scalingThreads{};
@@ -160,7 +161,7 @@ private:
 
         std::size_t dataSize = this->shapeDataSize;
         const std::byte *data = this->shapeDatas.data() + (idx * dataSize);
-        ShapeData shapeData(data, dataSize, false);
+        ShapeData shapeData(data, dataSize, this->comparator, false);
 
         return Shape(pos, rot, std::move(shapeData));
     }

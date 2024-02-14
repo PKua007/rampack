@@ -32,6 +32,7 @@ TEST_CASE("LayerwiseRadialEnumerator") {
     ALLOW_CALL(traits, getGeometricOrigin(_)).RETURN(_1.getPosition());
     ALLOW_CALL(traits, getShapeDataSize()).RETURN(0);
     ALLOW_CALL(traits, validateShapeData(_));
+    ALLOW_CALL(traits, getComparator()).RETURN(ShapeData::Comparator{});
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     Packing packing(box, shapes, std::move(bc), traits.getInteraction(), traits.getDataManager());
     // For this Miller indices: 2 skew layers joining via pbc.

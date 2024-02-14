@@ -24,6 +24,7 @@ TEST_CASE("PairDensityCorrelation") {
     ALLOW_CALL(traits, getTotalRangeRadius(_)).RETURN(1);
     ALLOW_CALL(traits, getShapeDataSize()).RETURN(0);
     ALLOW_CALL(traits, validateShapeData(_));
+    ALLOW_CALL(traits, getComparator()).RETURN(ShapeData::Comparator{});
 
     TriclinicBox box(10);
     auto binDividers = std::vector<double>{0, 2, 4};

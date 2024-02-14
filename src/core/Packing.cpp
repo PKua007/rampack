@@ -1040,6 +1040,8 @@ void Packing::setupForInteraction(const Interaction &interaction, const ShapeDat
     Expects(this->areInteractionCentresConsistent(interaction));
     this->validateShapeData(dataManager);
 
+    this->comparator = dataManager.getComparator();
+
     this->interactionRange = this->computeMaxInteractionRange(interaction);
     this->totalInteractionRange = this->computeMaxTotalInteractionRange(interaction);
 

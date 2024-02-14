@@ -19,15 +19,16 @@
 TEST_CASE("ObservablesCollector") {
     using trompeloeil::_;
 
-    MockShapeTraits mockShapeTraits;
-    ALLOW_CALL(mockShapeTraits, getRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
-    ALLOW_CALL(mockShapeTraits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
-    ALLOW_CALL(mockShapeTraits, getTotalRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
-    ALLOW_CALL(mockShapeTraits, hasSoftPart()).RETURN(true);
-    ALLOW_CALL(mockShapeTraits, hasHardPart()).RETURN(false);
-    ALLOW_CALL(mockShapeTraits, calculateEnergyBetween(_, _, _, _, _, _, _, _, _)).RETURN(0);
-    ALLOW_CALL(mockShapeTraits, getShapeDataSize()).RETURN(0);
-    ALLOW_CALL(mockShapeTraits, validateShapeData(_));
+    MockShapeTraits traits;
+    ALLOW_CALL(traits, getRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
+    ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
+    ALLOW_CALL(traits, getTotalRangeRadius(_)).RETURN(std::numeric_limits<double>::infinity());
+    ALLOW_CALL(traits, hasSoftPart()).RETURN(true);
+    ALLOW_CALL(traits, hasHardPart()).RETURN(false);
+    ALLOW_CALL(traits, calculateEnergyBetween(_, _, _, _, _, _, _, _, _)).RETURN(0);
+    ALLOW_CALL(traits, getShapeDataSize()).RETURN(0);
+    ALLOW_CALL(traits, validateShapeData(_));
+    ALLOW_CALL(traits, getComparator()).RETURN(ShapeData::Comparator{});
 
     std::array<double, 3> boxSize{0, 0, 0};
     auto dimFormatter = [&boxSize]() {
@@ -37,7 +38,7 @@ TEST_CASE("ObservablesCollector") {
     };
     auto mockObservable = std::make_unique<MockObservable>();
     ALLOW_CALL(*mockObservable, calculate(_, 4, 2, _))
-        .LR_WITH(&_4 == &mockShapeTraits)
+        .LR_WITH(&_4 == &traits)
         .LR_SIDE_EFFECT(boxSize = _1.getBox().getHeights());
     ALLOW_CALL(*mockObservable, getIntervalHeader()).RETURN(std::vector<std::string>{"L_X", "L_Y", "L_Z"});
     ALLOW_CALL(*mockObservable, getIntervalValues()).LR_RETURN(std::vector<double>(boxSize.begin(), boxSize.end()));
@@ -48,7 +49,7 @@ TEST_CASE("ObservablesCollector") {
     auto mockBulkObservable = std::make_unique<MockBulkObservable>();
     std::vector<double> volumes;
     ALLOW_CALL(*mockBulkObservable, addSnapshot(_, 4, 2, _))
-        .LR_WITH(&_4 == &mockShapeTraits)
+        .LR_WITH(&_4 == &traits)
         .LR_SIDE_EFFECT(volumes.push_back(_1.getVolume()));
     ALLOW_CALL(*mockBulkObservable, clear()).LR_SIDE_EFFECT(volumes.clear());
     ALLOW_CALL(*mockBulkObservable, getSignatureName()).RETURN("vol_history");
@@ -61,8 +62,8 @@ TEST_CASE("ObservablesCollector") {
     Shape s1({1, 1, 1});
     Shape s2({2, 3, 3});
     Shape s3({2.5, 3, 1});
-    Packing packing({3, 4, 5}, {s1, s2, s3}, std::move(pbc), mockShapeTraits.getInteraction(),
-                    mockShapeTraits.getDataManager(), 1, 1);
+    Packing packing({3, 4, 5}, {s1, s2, s3}, std::move(pbc), traits.getInteraction(),
+                    traits.getDataManager(), 1, 1);
 
     ObservablesCollector collector;
     using OC = ObservablesCollector;
@@ -78,9 +79,9 @@ TEST_CASE("ObservablesCollector") {
                                           "200 6 8 10 6x8x10 80 0.0062500000000000003 \n";
 
         SECTION("printing snapshots") {
-            collector.addSnapshot(packing, 100, mockShapeTraits);
-            packing.tryScaling(2, mockShapeTraits.getInteraction());
-            collector.addSnapshot(packing, 200, mockShapeTraits);
+            collector.addSnapshot(packing, 100, traits);
+            packing.tryScaling(2, traits.getInteraction());
+            collector.addSnapshot(packing, 200, traits);
             std::ostringstream out;
 
             collector.printSnapshots(out);
@@ -102,17 +103,17 @@ TEST_CASE("ObservablesCollector") {
 
             auto out1 = std::make_unique<std::iostream>(&buf);
             collector.attachOnTheFlyOutput(std::move(out1));
-            collector.addSnapshot(packing, 100, mockShapeTraits);
-            packing.tryScaling(2, mockShapeTraits.getInteraction());
+            collector.addSnapshot(packing, 100, traits);
+            packing.tryScaling(2, traits.getInteraction());
             auto out2 = std::make_unique<std::iostream>(&buf);
             collector.attachOnTheFlyOutput(std::move(out2));
-            collector.addSnapshot(packing, 200, mockShapeTraits);
+            collector.addSnapshot(packing, 200, traits);
 
             CHECK(buf.str() == expectedSnapshotOut);
 
             SECTION("detaching") {
                 collector.detachOnTheFlyOutput();
-                collector.addSnapshot(packing, 300, mockShapeTraits);
+                collector.addSnapshot(packing, 300, traits);
 
                 CHECK(buf.str() == expectedSnapshotOut);
             }
@@ -120,9 +121,9 @@ TEST_CASE("ObservablesCollector") {
     }
 
     SECTION("average values") {
-        collector.addAveragingValues(packing, mockShapeTraits);
-        packing.tryScaling(2, mockShapeTraits.getInteraction());
-        collector.addAveragingValues(packing, mockShapeTraits);
+        collector.addAveragingValues(packing, traits);
+        packing.tryScaling(2, traits.getInteraction());
+        collector.addAveragingValues(packing, traits);
 
         SECTION("flattened") {
             auto values = collector.getFlattenedAverageValues();
@@ -193,7 +194,7 @@ TEST_CASE("ObservablesCollector") {
     }
 
     SECTION("inline string") {
-        std::string inlineString = collector.generateInlineObservablesString(packing, mockShapeTraits);
+        std::string inlineString = collector.generateInlineObservablesString(packing, traits);
 
         CHECK(inlineString == "L_X: 3, L_Y: 4, L_Z: 5, dim: 3x4x5, rho: 0.05");
     }

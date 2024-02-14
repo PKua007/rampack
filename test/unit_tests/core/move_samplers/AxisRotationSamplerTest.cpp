@@ -49,6 +49,7 @@ TEST_CASE("AxisRotationSampler") {
     ALLOW_CALL(sphereWithAxis, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{1, 0, 0});
     ALLOW_CALL(sphereWithAxis, getShapeDataSize()).RETURN(0);
     ALLOW_CALL(sphereWithAxis, validateShapeData(_));
+    ALLOW_CALL(sphereWithAxis, getComparator()).RETURN(ShapeData::Comparator{});
 
     SECTION("performing moves") {
         SECTION("global axis") {

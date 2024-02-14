@@ -52,6 +52,7 @@ TEST_CASE("FlipSampler") {
     ALLOW_CALL(traits, getInteractionCentres(_)).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(traits, getShapeDataSize()).RETURN(0);
     ALLOW_CALL(traits, validateShapeData(_));
+    ALLOW_CALL(traits, getComparator()).RETURN(ShapeData::Comparator{});
 
     SECTION("primary + secondary + nonzero origin") {
         ALLOW_CALL(traits, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{0, 1, 0});

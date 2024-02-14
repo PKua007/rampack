@@ -7,11 +7,52 @@
 
 #include <charconv>
 #include <algorithm>
+#include <cstdlib>
 
 #include "core/ShapeDataManager.h"
 #include "geometry/Vector.h"
 #include "utils/ParseUtils.h"
 #include "utils/Utils.h"
+
+
+namespace detail {
+#ifdef __clang__
+    // Clang (or rather libc++) for whatever reason forgot to implement from_chars for floating point types
+
+    // Floating point custom version
+    template<typename T, typename DecayT = std::decay_t<T>, std::enable_if_t<std::is_floating_point_v<DecayT>, int> = 0>
+    std::from_chars_result from_chars(const char *beg, const char *end, T &result) {
+        using ConversionFunction = DecayT(*)(const char *, char **);
+
+        ConversionFunction strtoT;
+        if constexpr (std::is_same_v<DecayT, float>)
+            strtoT = std::strtof;
+        else if constexpr (std::is_same_v<DecayT, double>)
+            strtoT = std::strtod;
+        else if constexpr (std::is_same_v<DecayT, long double>)
+            strtoT = std::strtold;
+        else
+            static_assert(always_false<T>, "Implementation error");
+
+        errno = 0;
+        result = strtoT(beg, const_cast<char**>(&end));
+        if (beg == end)
+            return {end, std::errc::invalid_argument};
+        else if (errno == ERANGE)
+            return {end, std::errc::result_out_of_range};
+        else
+            return {end, std::errc{}};
+    }
+
+    // Integral types fall back to std:: implementation
+    template<typename T, typename DecayT = std::decay_t<T>, std::enable_if_t<!std::is_floating_point_v<DecayT>, int> = 0>
+    std::from_chars_result from_chars(const char *beg, const char *end, T &result) {
+        return std::from_chars(beg, end, result);
+    }
+#else
+    using std::from_chars;
+#endif
+}
 
 
 class ShapeDataDeserializer {
@@ -30,7 +71,7 @@ private:
         T parsed;
         auto begPtr = paramValue.data();
         auto endPtr = begPtr + paramValue.size();
-        auto [parsePtr, errorCode] = std::from_chars(begPtr, endPtr, parsed);
+        auto [parsePtr, errorCode] = detail::from_chars(begPtr, endPtr, parsed);
 
         if (errorCode == std::errc{}) {
             if (endPtr != parsePtr)
@@ -98,7 +139,7 @@ public:
         else if constexpr (std::is_same_v<Vector<3>, DecayT>)
             return ShapeDataDeserializer::asVector(paramKey, paramValue);
         else
-            static_assert(false, "Only integral, floating point, Vector<3> and std::string types are supported");
+            static_assert(always_false<T>, "Only integral, floating point, Vector<3> and std::string types are supported");
     }
 
     void throwIfNotAccessed() const;
