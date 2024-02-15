@@ -242,7 +242,7 @@ namespace {
     }
 
     MatcherDataclass create_overlap_relaxation() {
-        auto shapeNone = MatcherNone{}.mapTo<std::shared_ptr<ShapeTraits>>();
+        auto shapeNone = MatcherNone{}.mapTo<DefaultedShapeTraits>();
         auto helperShape = ShapeMatcher::create() | shapeNone;
 
         // TODO: optional snapshot_every (when no observables are stored)
@@ -269,7 +269,9 @@ namespace {
                 run.snapshotEvery = overlaps["snapshot_every"].as<std::size_t>();
                 run.inlineInfoEvery = overlaps["inline_info_every"].as<std::size_t>();
                 run.orientationFixEvery = overlaps["orientation_fix_every"].as<std::size_t>();
-                run.helperShapeTraits = overlaps["helper_shape"].as<std::shared_ptr<ShapeTraits>>();
+                auto defaultedShapeTraits = overlaps["helper_shape"].as<DefaultedShapeTraits>();
+                run.helperShapeTraits = defaultedShapeTraits.traits;
+                run.defaultHelperShapeData = defaultedShapeTraits.defaultShapeData;
                 run.lastSnapshotWriters = overlaps["output_last_snapshot"].as<std::vector<FileSnapshotWriter>>();
                 run.ramsnapOut = fetch_ramsnap_out(run.lastSnapshotWriters);
                 run.simulationRecorders
@@ -363,7 +365,9 @@ namespace {
 
         baseParams.version = rampack["version"].as<Version>();
         baseParams.packingFactory = rampack["arrangement"].as<std::shared_ptr<PackingFactory>>();
-        baseParams.shapeTraits = rampack["shape"].as<std::shared_ptr<ShapeTraits>>();
+        auto defaultedShapeTraits = rampack["shape"].as<DefaultedShapeTraits>();
+        baseParams.shapeTraits = defaultedShapeTraits.traits;
+        baseParams.defaultShapeData = defaultedShapeTraits.defaultShapeData;
         baseParams.seed = rampack["seed"].as<std::size_t>();
         baseParams.baseEnvironment = create_environment(rampack);
         baseParams.walls = rampack["walls"].as<std::array<bool, 3>>();
