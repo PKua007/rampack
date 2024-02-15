@@ -11,11 +11,15 @@
 #include "core/ShapeTraits.h"
 
 
-class ShapeMatcher {
+struct DefaultedShapeTraits {
+    std::shared_ptr<ShapeTraits> traits{};
+    TextualShapeData defaultShapeData{};
+};
 
+class ShapeMatcher {
 public:
     static pyon::matcher::MatcherAlternative create();
-    static std::shared_ptr<ShapeTraits> match(const std::string &expression);
+    static DefaultedShapeTraits match(const std::string &expression);
 };
 
 

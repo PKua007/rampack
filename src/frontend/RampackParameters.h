@@ -27,6 +27,7 @@ struct BaseParameters {
     Simulation::Environment baseEnvironment;
     std::size_t seed{};
     std::shared_ptr<ShapeTraits> shapeTraits;
+    TextualShapeData defaultShapeData;
     std::array<bool, 3> walls{};
     std::size_t scalingThreads{};
     std::array<std::size_t, 3> domainDivisions{};
@@ -59,6 +60,7 @@ struct OverlapRelaxationRun  {
     std::size_t inlineInfoEvery{};
     std::size_t orientationFixEvery{};
     std::shared_ptr<ShapeTraits> helperShapeTraits;
+    TextualShapeData defaultHelperShapeData;
     std::vector<FileSnapshotWriter> lastSnapshotWriters;
     std::optional<std::string> ramsnapOut;
     std::vector<std::shared_ptr<SimulationRecorderFactory>> simulationRecorders;
