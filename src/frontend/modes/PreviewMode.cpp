@@ -70,15 +70,16 @@ int PreviewMode::main(int argc, char **argv) {
     }
 
     const auto &baseParams = params.baseParameters;
-    auto shapeTraits = baseParams.shapeTraits;
-    auto packingFactory = baseParams.packingFactory;
+    const auto &shapeTraits = *baseParams.shapeTraits;
+    const auto &packingFactory = *baseParams.packingFactory;
+    const auto &defaultData = baseParams.defaultShapeData;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    auto packing = packingFactory->createPacking(std::move(pbc), *shapeTraits, 1, 1);
+    auto packing = packingFactory.createPacking(std::move(pbc), shapeTraits, defaultData, 1, 1);
     packing->toggleWalls(baseParams.walls);
 
     for (const auto &output : outputs) {
         auto writer = FileSnapshotWriterMatcher::match(output);
-        writer.generateSnapshot(*packing, *shapeTraits, 0, this->logger);
+        writer.generateSnapshot(*packing, shapeTraits, 0, this->logger);
     }
 
     return EXIT_SUCCESS;

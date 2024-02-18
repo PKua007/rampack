@@ -357,7 +357,8 @@ std::unique_ptr<Packing> CasinoMode::recreatePacking(PackingLoader &loader, cons
     } else {
         // Same number of scaling and domain threads
         auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-        packing = params.packingFactory->createPacking(std::move(pbc), traits, maxThreads, maxThreads);
+        const auto &defaultData = params.defaultShapeData;
+        packing = params.packingFactory->createPacking(std::move(pbc), traits, defaultData, maxThreads, maxThreads);
     }
 
     packing->toggleWalls(params.walls);

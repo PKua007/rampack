@@ -21,9 +21,16 @@ namespace {
     public:
         explicit PresimulatedPackingFactory(std::string filename) : filename{std::move(filename)} { }
 
-        std::unique_ptr<Packing> createPacking(std::unique_ptr<BoundaryConditions> bc, const ShapeTraits &shapeTraits,
-                                               std::size_t moveThreads, std::size_t scalingThreads) override
+        [[nodiscard]] std::unique_ptr<Packing> createPacking(std::unique_ptr<BoundaryConditions> bc,
+                                                             const ShapeTraits &shapeTraits,
+                                                             const TextualShapeData &defaultData,
+                                                             std::size_t moveThreads,
+                                                             std::size_t scalingThreads) const override
         {
+            ValidateMsg(defaultData.empty(),
+                        "Presimulated arrangement forbids defaults values of shape parameters. "
+                        "The parameters are restored from the RAMSNAP file.");
+
             std::ifstream packingFile(this->filename);
             ValidateOpenedDesc(packingFile, this->filename, "to load initial configuration");
 

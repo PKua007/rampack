@@ -43,12 +43,15 @@ namespace {
                   arrangementString{std::move(arrangementString)}
         { }
 
-        std::unique_ptr<Packing> createPacking(std::unique_ptr<BoundaryConditions> bc, const ShapeTraits &shapeTraits,
-                                               std::size_t moveThreads, std::size_t scalingThreads) override
+        [[nodiscard]] std::unique_ptr<Packing> createPacking(std::unique_ptr<BoundaryConditions> bc,
+                                                             const ShapeTraits &shapeTraits,
+                                                             [[maybe_unused]] const TextualShapeData &defaultData,
+                                                             std::size_t moveThreads,
+                                                             std::size_t scalingThreads) const override
         {
             return legacy::ArrangementFactory::arrangePacking(this->numOfParticles, this->boxString,
-                                                              this->arrangementString, std::move(bc),
-                                                              shapeTraits, moveThreads, scalingThreads);
+                                                              this->arrangementString, std::move(bc), shapeTraits,
+                                                              moveThreads, scalingThreads);
         }
     };
 

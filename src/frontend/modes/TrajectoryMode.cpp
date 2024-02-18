@@ -175,10 +175,11 @@ int TrajectoryMode::main(int argc, char **argv) {
 
     // Prepare initial packing
     const auto &baseParams = rampackParams.baseParameters;
-    auto shapeTraits = baseParams.shapeTraits;
-    auto packingFactory = baseParams.packingFactory;
+    const auto &shapeTraits = *baseParams.shapeTraits;
+    const auto &packingFactory = *baseParams.packingFactory;
+    const auto &defaultData = baseParams.defaultShapeData;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    auto packing = packingFactory->createPacking(std::move(pbc), *shapeTraits, maxThreads, maxThreads);
+    auto packing = packingFactory.createPacking(std::move(pbc), shapeTraits, defaultData, maxThreads, maxThreads);
     packing->toggleWalls(baseParams.walls);
 
     // Recreate environment
@@ -227,7 +228,7 @@ int TrajectoryMode::main(int argc, char **argv) {
         using namespace std::chrono;
         auto start = high_resolution_clock::now();
         while (player->hasNext()) {
-            player->nextSnapshot(*packing, shapeTraits->getInteraction(), shapeTraits->getDataManager());
+            player->nextSnapshot(*packing, shapeTraits.getInteraction(), shapeTraits.getDataManager());
             recorder->recordSnapshot(*packing, player->getCurrentSnapshotCycles());
             this->logger.info() << "Replayed cycle " << player->getCurrentSnapshotCycles() << "; " << std::endl;
         }
@@ -258,7 +259,7 @@ int TrajectoryMode::main(int argc, char **argv) {
         using namespace std::chrono;
         auto start = high_resolution_clock::now();
         while (player->hasNext()) {
-            player->nextSnapshot(*packing, shapeTraits->getInteraction(), shapeTraits->getDataManager());
+            player->nextSnapshot(*packing, shapeTraits.getInteraction(), shapeTraits.getDataManager());
             std::size_t cycles = player->getCurrentSnapshotCycles();
             std::size_t totalCycles = player->getTotalCycles();
             double temperature = environment.getTemperature().getValueForCycle(cycles, totalCycles);
@@ -266,9 +267,9 @@ int TrajectoryMode::main(int argc, char **argv) {
             if (environment.isBoxScalingEnabled())
                 pressure = environment.getPressure().getValueForCycle(cycles, totalCycles);
             collector.setThermodynamicParameters(temperature, pressure);
-            collector.addSnapshot(*packing, player->getCurrentSnapshotCycles(), *shapeTraits);
+            collector.addSnapshot(*packing, player->getCurrentSnapshotCycles(), shapeTraits);
             this->logger.info() << "Replayed cycle " << player->getCurrentSnapshotCycles() << "; ";
-            this->logger << collector.generateInlineObservablesString(*packing, *shapeTraits);
+            this->logger << collector.generateInlineObservablesString(*packing, shapeTraits);
             this->logger << std::endl;
         }
         auto end = high_resolution_clock::now();
@@ -316,12 +317,12 @@ int TrajectoryMode::main(int argc, char **argv) {
         else
             startingCycle = (averagingStart / cycleStep + 1) * cycleStep;
 
-        player->jumpToSnapshot(*packing, shapeTraits->getInteraction(), shapeTraits->getDataManager(), startingCycle);
-        collector.addAveragingValues(*packing, *shapeTraits);
+        player->jumpToSnapshot(*packing, shapeTraits.getInteraction(), shapeTraits.getDataManager(), startingCycle);
+        collector.addAveragingValues(*packing, shapeTraits);
         this->logger.info() << "Replayed cycle " << player->getCurrentSnapshotCycles() << "; " << std::endl;
         while (player->hasNext()) {
-            player->nextSnapshot(*packing, shapeTraits->getInteraction(), shapeTraits->getDataManager());
-            collector.addAveragingValues(*packing, *shapeTraits);
+            player->nextSnapshot(*packing, shapeTraits.getInteraction(), shapeTraits.getDataManager());
+            collector.addAveragingValues(*packing, shapeTraits);
             this->logger.info() << "Replayed cycle " << player->getCurrentSnapshotCycles() << "; " << std::endl;
         }
         auto end = high_resolution_clock::now();
@@ -335,7 +336,7 @@ int TrajectoryMode::main(int argc, char **argv) {
     // Recreate RAMSNAP/XYZ/Wolfram file from the last snapshot (if desired)
     if (!snapshotOutputs.empty()) {
         this->logger.info() << "Reading last snapshot... " << std::flush;
-        player->lastSnapshot(*packing, shapeTraits->getInteraction(), shapeTraits->getDataManager());
+        player->lastSnapshot(*packing, shapeTraits.getInteraction(), shapeTraits.getDataManager());
         this->logger.info() << "cycles: " << player->getCurrentSnapshotCycles() << std::endl;
 
         for (const auto &snapshotOutput: snapshotOutputs) {
@@ -345,7 +346,7 @@ int TrajectoryMode::main(int argc, char **argv) {
                                           + "' cannot be used as an output!");
             }
 
-            writer.generateSnapshot(*packing, *shapeTraits, player->getCurrentSnapshotCycles(), this->logger);
+            writer.generateSnapshot(*packing, shapeTraits, player->getCurrentSnapshotCycles(), this->logger);
         }
     }
 

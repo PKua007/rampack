@@ -13,6 +13,8 @@ ShapeDataDeserializer::ShapeDataDeserializer(const TextualShapeData &data) {
 }
 
 Vector<3> ShapeDataDeserializer::asVector(const std::string &paramKey, const std::string &paramValue) {
+    // TODO: make exception messages PYON friendly
+
     std::vector<std::string> exploded = explode(paramValue, ',');
     if (exploded.size() != 3) {
         throw ShapeDataSerializationException("Param " + paramKey

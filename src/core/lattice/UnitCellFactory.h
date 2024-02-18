@@ -13,22 +13,25 @@
  * @brief A class to conveniently create most common unit cell types.
  */
 class UnitCellFactory {
+private:
+    static Shape createShape(const Vector<3> &pos, const ShapeData &data);
+
 public:
-    static UnitCell createScCell(const TriclinicBox &box);
+    static UnitCell createScCell(const TriclinicBox &box, const ShapeData &data = {});
 
     /**
      * @brief Creates a simple cubic cell with a single particle in the middle, however of a possible cuboidal shape
      * with dimensions @a linearSize.
      */
-    static UnitCell createScCell(const std::array<double, 3> &linearSize);
+    static UnitCell createScCell(const std::array<double, 3> &linearSize, const ShapeData &data = {});
 
     /**
      * @brief Creates a simple cubic cell with a single particle in the middle, with a cube side length @a linearSize.
      */
-    static UnitCell createScCell(double linearSize);
+    static UnitCell createScCell(double linearSize, const ShapeData &data = {});
 
 
-    static UnitCell createBccCell(const TriclinicBox &box);
+    static UnitCell createBccCell(const TriclinicBox &box, const ShapeData &data = {});
 
     /**
      * @brief Creates a body centered cubic cell with two particles, however of a possible cuboidal shape with
@@ -36,7 +39,7 @@ public:
      * @details Particles are centered in the box (their cell vector coordinates are {0.25, 0.25, 0.25} and
      * {0.75, 0.75, 0.75}).
      */
-    static UnitCell createBccCell(const std::array<double, 3> &linearSize);
+    static UnitCell createBccCell(const std::array<double, 3> &linearSize, const ShapeData &data = {});
 
     /**
      * @brief Creates a body centered cubic cell with two particles, with such a cube side length that the distance
@@ -44,9 +47,9 @@ public:
      * @details Particles are centered in the box (their cell vector coordinates are {0.25, 0.25, 0.25} and
      * {0.75, 0.75, 0.75}).
      */
-    static UnitCell createBccCell(double ballDiameter);
+    static UnitCell createBccCell(double ballDiameter, const ShapeData &data = {});
 
-    static UnitCell createFccCell(const TriclinicBox &box);
+    static UnitCell createFccCell(const TriclinicBox &box, const ShapeData &data = {});
 
     /**
      * @brief Creates a face centered cubic cell with four particles, however of a possible cuboidal shape with
@@ -54,7 +57,7 @@ public:
      * @details Particles are centered in the box (their cell vector coordinates are {0.25, 0.25, 0.25},
      * {0.25, 0.75, 0.75}, {0.75, 0.25, 0.75} and {0.75, 0.75, 0.25}).
      */
-    static UnitCell createFccCell(const std::array<double, 3> &linearSize);
+    static UnitCell createFccCell(const std::array<double, 3> &linearSize, const ShapeData &data = {});
 
     /**
      * @brief Creates a face centered cubic cell with four particles, with such a cube side length that the distance
@@ -62,10 +65,11 @@ public:
      * @details Particles are centered in the box (their cell vector coordinates are {0.25, 0.25, 0.25},
      * {0.25, 0.75, 0.75}, {0.75, 0.25, 0.75} and {0.75, 0.75, 0.25}).
      */
-    static UnitCell createFccCell(double ballDiameter);
+    static UnitCell createFccCell(double ballDiameter, const ShapeData &data = {});
 
 
-    static UnitCell createHcpCell(const TriclinicBox &box, LatticeTraits::Axis axis = LatticeTraits::Axis::Z);
+    static UnitCell createHcpCell(const TriclinicBox &box, LatticeTraits::Axis axis = LatticeTraits::Axis::Z,
+                                  const ShapeData &data = {});
 
     /**
      * @brief Creates a hexagonal close packed unit cell with four molecules within a cuboid of side lengths
@@ -78,7 +82,7 @@ public:
      * LatticeTraits::Axis::X, XYZ becomes ZXY.
      */
     static UnitCell createHcpCell(const std::array<double, 3> &cuboidalCellSize,
-                                  LatticeTraits::Axis axis = LatticeTraits::Axis::Z);
+                                  LatticeTraits::Axis axis = LatticeTraits::Axis::Z, const ShapeData &data = {});
 
     /**
      * @brief Creates a hexagonal close packed unit cell with four molecules in cuboidal cell with such side lengths,
@@ -86,10 +90,12 @@ public:
      * @details Relative coordinates of molecules and @a axis parameter are the same as for
      * createHcpCell(const std::array<double, 3>&, LatticeTraits::Axis).
      */
-    static UnitCell createHcpCell(double ballDiameter, LatticeTraits::Axis axis = LatticeTraits::Axis::Z);
+    static UnitCell createHcpCell(double ballDiameter, LatticeTraits::Axis axis = LatticeTraits::Axis::Z,
+                                  const ShapeData &data = {});
 
 
-    static UnitCell createHexagonalCell(const TriclinicBox &box, LatticeTraits::Axis axis = LatticeTraits::Axis::Z);
+    static UnitCell createHexagonalCell(const TriclinicBox &box, LatticeTraits::Axis axis = LatticeTraits::Axis::Z,
+                                        const ShapeData &data = {});
 
     /**
      * @brief Creates a hexagonal cell giving stacked honeycombs, but not alternating as for hcp lattice.
@@ -98,7 +104,7 @@ public:
      * cell coordinates of the molecules are {0.5, 0.25, 0.25} and {0.5, 0.75, 0.75}.
      */
     static UnitCell createHexagonalCell(const std::array<double, 3> &cuboidalCellSize,
-                                        LatticeTraits::Axis axis = LatticeTraits::Axis::Z);
+                                        LatticeTraits::Axis axis = LatticeTraits::Axis::Z, const ShapeData &data = {});
 
     /**
      * @brief Creates a hexagonal cell giving stacked honeycombs in cuboidal cell with such side lengths, that the
@@ -106,7 +112,8 @@ public:
      * @details Relative coordinates of molecules and @a axis parameter are the same as for
      * createHexagonalCell(const std::array<double, 3> &, LatticeTraits::Axis).
      */
-    static UnitCell createHexagonalCell(double ballDiameter, LatticeTraits::Axis axis = LatticeTraits::Axis::Z);
+    static UnitCell createHexagonalCell(double ballDiameter, LatticeTraits::Axis axis = LatticeTraits::Axis::Z,
+                                        const ShapeData &data = {});
 };
 
 
