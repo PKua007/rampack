@@ -32,20 +32,66 @@ using namespace pyon::matcher;
 namespace {
     using CellDimensions = std::variant<double, std::array<double, 3>, TriclinicBox>;
 
+    struct PartialShape {
+        Vector<3> position{};
+        Matrix<3, 3> orientation{};
+        TextualShapeData partialShapeData{};
+    };
+
     class CellCreator {
     private:
-        std::function<UnitCell(double)> doubleCreator;
-        std::function<UnitCell(const std::array<double, 3>&)> arrayCreator;
-        std::function<UnitCell(const TriclinicBox&)> boxCreator;
+        std::function<TriclinicBox(const CellDimensions &)> cellBoxResolver;
+        std::vector<PartialShape> partialShapes;
+
+        CellCreator() = default;
 
     public:
-        template<typename Function>
-        CellCreator(Function &&overloaded) : doubleCreator{overloaded}, arrayCreator{overloaded}, boxCreator{overloaded}
-        { }
+        template<typename UnitCellFactoryCreator>
+        static CellCreator forUnitCellFactory(UnitCellFactoryCreator &&ucfCreator) {
+            CellCreator creator;
 
-        UnitCell operator()(double a) const { return this->doubleCreator(a); }
-        UnitCell operator()(const std::array<double, 3> &array) const { return this->arrayCreator(array); }
-        UnitCell operator()(const TriclinicBox &box) const { return this->boxCreator(box); }
+            creator.cellBoxResolver = [ucfCreator](const CellDimensions &dim) {
+                return std::visit(ucfCreator, dim).getBox();
+            };
+
+            double dummyDim = 1;
+            std::vector<Shape> shapes = ucfCreator(dummyDim).getMolecules();
+            creator.partialShapes.reserve(shapes.size());
+            for (const auto &shape : shapes)
+                creator.partialShapes.push_back(PartialShape{shape.getPosition(), shape.getOrientation()});
+
+            return creator;
+        }
+
+        static CellCreator forCustomShapes(std::vector<PartialShape> partialShapes) {
+            CellCreator creator;
+            creator.cellBoxResolver = [](const CellDimensions &dim) {
+                return std::visit([](auto &&dim_) -> TriclinicBox { return TriclinicBox(dim_); }, dim);
+            };
+            creator.partialShapes = std::move(partialShapes);
+            return creator;
+        }
+
+        [[nodiscard]] UnitCell create(const CellDimensions &dimensions, const TextualShapeData &defaultShapeData,
+                                      const ShapeDataManager &dataManager) const
+        {
+            auto cellBox = this->cellBoxResolver(dimensions);
+
+            std::vector<Shape> shapes;
+            shapes.reserve(this->partialShapes.size());
+            for (const auto &partialShape : this->partialShapes) {
+                TextualShapeData fullShapeData = partialShape.partialShapeData;
+                auto defaultShapeDataCopy = defaultShapeData;
+                fullShapeData.merge(std::move(defaultShapeDataCopy));
+
+                ShapeData shapeData = dataManager.deserialize(fullShapeData);
+                shapes.emplace_back(partialShape.position, partialShape.orientation, std::move(shapeData));
+            }
+
+            return {cellBox, shapes};
+        }
+
+        [[nodiscard]] std::size_t size() const { return this->partialShapes.size(); }
     };
 
     struct PopulatorData {
@@ -53,28 +99,40 @@ namespace {
         std::size_t numShapes{};
     };
 
+    struct LatticeData {
+        CellCreator cellCreator;
+        CellDimensions cellDimensions;
+        std::array<std::size_t, 3> numCells;
+        std::vector<std::shared_ptr<LatticeTransformer>> transformers;
+        PopulatorData populatorData;
+    };
+
     class LatticePackingFactory : public PackingFactory {
     private:
-        Lattice lattice;
-        std::vector<std::shared_ptr<LatticeTransformer>> transformers;
-        std::shared_ptr<LatticePopulator> populator;
-        std::size_t numShapes{};
+        LatticeData latticeData;
 
     public:
-        LatticePackingFactory(Lattice lattice, std::vector<std::shared_ptr<LatticeTransformer>> transformers,
-                              PopulatorData populatorData)
-                : lattice{std::move(lattice)}, transformers{std::move(transformers)},
-                  populator{std::move(populatorData.populator)}, numShapes{populatorData.numShapes}
-        { }
+        explicit LatticePackingFactory(LatticeData latticeData) : latticeData{std::move(latticeData)} { }
 
-        std::unique_ptr<Packing> createPacking(std::unique_ptr<BoundaryConditions> bc, const ShapeTraits &shapeTraits,
-                                               std::size_t moveThreads, std::size_t scalingThreads) override
+        [[nodiscard]] std::unique_ptr<Packing> createPacking(std::unique_ptr<BoundaryConditions> bc,
+                                                             const ShapeTraits &shapeTraits,
+                                                             const TextualShapeData &defaultData,
+                                                             std::size_t moveThreads,
+                                                             std::size_t scalingThreads) const override
         {
-            for (const auto &transformer : this->transformers)
-                transformer->transform(this->lattice, shapeTraits);
+            const auto &dataManager = shapeTraits.getDataManager();
+            const auto &cellCreator = this->latticeData.cellCreator;
+            const auto &cellDimensions = this->latticeData.cellDimensions;
+            UnitCell cell = cellCreator.create(cellDimensions, defaultData, dataManager);
 
-            auto shapes = this->populator->populateLattice(this->lattice, this->numShapes);
-            return std::make_unique<Packing>(this->lattice.getLatticeBox(), std::move(shapes), std::move(bc),
+            Lattice lattice(cell, this->latticeData.numCells);
+
+            for (const auto &transformer : this->latticeData.transformers)
+                transformer->transform(lattice, shapeTraits);
+
+            const auto &populatorData = this->latticeData.populatorData;
+            auto shapes = populatorData.populator->populateLattice(lattice, populatorData.numShapes);
+            return std::make_unique<Packing>(lattice.getLatticeBox(), std::move(shapes), std::move(bc),
                                              shapeTraits.getInteraction(), shapeTraits.getDataManager(), moveThreads,
                                              scalingThreads);
         }
@@ -122,6 +180,7 @@ namespace {
     MatcherDataclass create_hexagonal();
     MatcherDataclass create_custom();
 
+    MatcherDataclass create_shape();
     MatcherAlternative create_cell_dim();
     MatcherArray create_transformations();
     MatcherAlternative create_fill_partially();
@@ -185,13 +244,13 @@ namespace {
                 const auto &kwargs = lattice.getVariadicKeywordArguments();
                 auto cellDim = kwargs["cell_dim"].as<CellDimensions>();
                 auto nCells = kwargs["n_cells"].as<std::array<std::size_t, 3>>();
-
-                UnitCell cell = std::visit(cellCreator, cellDim);
-                Lattice theLattice(cell, nCells);
-
                 auto transformations = do_create_transformations(kwargs);
                 auto populatorData = do_create_populator(kwargs);
-                return std::make_shared<LatticePackingFactory>(theLattice, transformations, populatorData);
+
+                LatticeData latticeData{
+                    std::move(cellCreator), cellDim, nCells, std::move(transformations), std::move(populatorData)
+                };
+                return std::make_shared<LatticePackingFactory>(std::move(latticeData));
             });
     }
 
@@ -213,18 +272,18 @@ namespace {
                 auto nShapes = kwargs["n_shapes"].as<std::size_t>();
 
                 auto box = std::visit([](auto &&args) { return TriclinicBox(args); }, boxDim);
-
-                std::size_t cellSize = cellCreator(1.).size();
-                auto latticeDim = LatticeDimensionsOptimizer::optimize(nShapes, cellSize, box);
+                auto latticeDim = LatticeDimensionsOptimizer::optimize(nShapes, cellCreator.size(), box);
 
                 auto sides = box.getSides();
                 std::transform(sides.begin(), sides.end(), latticeDim.begin(), sides.begin(), std::divides<>{});
-                UnitCell cell = cellCreator(TriclinicBox(sides));
-                Lattice theLattice(cell, latticeDim);
+                TriclinicBox cellBox(sides);
 
                 auto transformations = do_create_transformations(kwargs);
                 PopulatorData fullPopulator{std::make_shared<FullPopulator>(), 0};
-                return std::make_shared<LatticePackingFactory>(theLattice, transformations, fullPopulator);
+
+                LatticeData latticeData{std::move(cellCreator), cellBox, latticeDim, std::move(transformations),
+                                        std::move(fullPopulator)};
+                return std::make_shared<LatticePackingFactory>(latticeData);
             });
     }
 
@@ -250,12 +309,15 @@ namespace {
                 auto sides = box.getSides();
                 std::transform(sides.begin(), sides.end(), nCells.begin(), sides.begin(), std::divides<>{});
 
-                UnitCell cell = cellCreator(TriclinicBox(sides));
-                Lattice theLattice(cell, nCells);
+                TriclinicBox cellBox(sides);
 
                 auto transformations = do_create_transformations(kwargs);
                 auto populatorData = do_create_populator(kwargs);
-                return std::make_shared<LatticePackingFactory>(theLattice, transformations, populatorData);
+
+                LatticeData latticeData{
+                    std::move(cellCreator), cellBox, nCells, std::move(transformations), std::move(populatorData)
+                };
+                return std::make_shared<LatticePackingFactory>(std::move(latticeData));
             });
     }
 
@@ -266,21 +328,21 @@ namespace {
     MatcherDataclass create_sc() {
         return MatcherDataclass("sc")
             .mapTo([](const DataclassData &) -> CellCreator {
-                return [](auto &&arg) { return UnitCellFactory::createScCell(arg); };
+                return CellCreator::forUnitCellFactory([](auto &&dim) { return UnitCellFactory::createScCell(dim); });
             });
     }
 
     MatcherDataclass create_bcc() {
         return MatcherDataclass("bcc")
             .mapTo([](const DataclassData &) -> CellCreator {
-                return [](auto &&arg) { return UnitCellFactory::createBccCell(arg); };
+                return CellCreator::forUnitCellFactory([](auto &&dim) { return UnitCellFactory::createBccCell(dim); });
             });
     }
 
     MatcherDataclass create_fcc() {
         return MatcherDataclass("fcc")
             .mapTo([](const DataclassData &) -> CellCreator {
-                return [](auto &&arg) { return UnitCellFactory::createFccCell(arg); };
+                return CellCreator::forUnitCellFactory([](auto &&dim) { return UnitCellFactory::createFccCell(dim); });
             });
     }
 
@@ -289,7 +351,9 @@ namespace {
             .arguments({{"axis", axis}})
             .mapTo([](const DataclassData &hcp) -> CellCreator {
                 auto axis = hcp["axis"].as<LatticeTraits::Axis>();
-                return [axis](auto &&arg) { return UnitCellFactory::createHcpCell(arg, axis); };
+                return CellCreator::forUnitCellFactory([axis](auto &&dim) {
+                    return UnitCellFactory::createHcpCell(dim, axis);
+                });
             });
     }
 
@@ -298,27 +362,14 @@ namespace {
             .arguments({{"axis", axis}})
             .mapTo([](const DataclassData &hexagonal) -> CellCreator {
                 auto axis = hexagonal["axis"].as<LatticeTraits::Axis>();
-                return [axis](auto &&arg) { return UnitCellFactory::createHexagonalCell(arg, axis); };
+                return CellCreator::forUnitCellFactory([axis](auto &&dim) {
+                    return UnitCellFactory::createHexagonalCell(dim, axis);
+                });
             });
     }
 
     MatcherDataclass create_custom() {
-        auto pos = MatcherArray(MatcherFloat{}.mapTo<double>(), 3).mapToVector<3>();
-        auto rot = MatcherArray(MatcherFloat{}.mapTo<double>(), 3)
-            .mapTo([](const ArrayData &array) -> Matrix<3, 3> {
-                auto angles = array.asStdArray<double, 3>();
-                double factor = M_PI/180;
-                return Matrix<3, 3>::rotation(factor*angles[0], factor*angles[1], factor*angles[2]);
-            });
-
-        auto shape = MatcherDataclass("shape")
-            .arguments({{"pos", pos},
-                        {"rot", rot, "[0, 0, 0]"}})
-            .mapTo([](const DataclassData &shape) -> Shape {
-                auto pos = shape["pos"].as<Vector<3>>();
-                auto rot = shape["rot"].as<Matrix<3, 3>>();
-                return {pos, rot};
-            });
+        auto shape = create_shape();
 
         auto shapes = MatcherArray{}
             .elementsMatch(shape)
@@ -328,8 +379,54 @@ namespace {
         return MatcherDataclass("custom")
             .arguments({{"shapes", shapes}})
             .mapTo([](const DataclassData &custom) -> CellCreator {
-                auto shapes = custom["shapes"].as<std::vector<Shape>>();
-                return [shapes](auto &&args) { return UnitCell(TriclinicBox(args), shapes); };
+                auto shapes = custom["shapes"].as<std::vector<PartialShape>>();
+                return CellCreator::forCustomShapes(std::move(shapes));
+            });
+    }
+
+    MatcherDataclass create_shape() {
+        auto pos = MatcherArray(MatcherFloat{}.mapTo<double>(), 3).mapToVector<3>();
+        auto rot = MatcherArray(MatcherFloat{}.mapTo<double>(), 3)
+            .mapTo([](const ArrayData &array) -> Matrix<3, 3> {
+                auto angles = array.asStdArray<double, 3>();
+                double factor = M_PI/180;
+                return Matrix<3, 3>::rotation(factor*angles[0], factor*angles[1], factor*angles[2]);
+            });
+
+        auto longMatcher = MatcherInt{}.mapTo([](long i) -> std::string {
+            return std::to_string(i);
+        });
+        auto doubleMatcher = MatcherFloat{}.mapTo([](double d) -> std::string {
+            std::ostringstream out;
+            out << std::setprecision(std::numeric_limits<double>::max_digits10) << d;
+            return out.str();
+        });
+        auto stringMatcher = MatcherString{}
+            .filter([](const std::string &str) {
+                return std::none_of(str.begin(), str.end(), [](char c) { return std::isspace(c) || c == '"'; });
+            })
+            .describe("not containing whitespace or quotation marks (\")");
+        auto vectorMatcher = MatcherArray(MatcherFloat{}, 3)
+            .mapTo([](const ArrayData &arrayData) -> std::string {
+                auto vec = arrayData.asVector<3>();
+                std::ostringstream out;
+                out << std::setprecision(std::numeric_limits<double>::max_digits10);
+                std::copy(vec.begin(), vec.end(), std::ostream_iterator<double>(out, ","));
+                return out.str();
+            });
+        auto shapeParams = MatcherDictionary{}
+            .valuesMatch(longMatcher | doubleMatcher | stringMatcher | vectorMatcher);
+
+        return MatcherDataclass("shape")
+            .arguments({{"pos", pos},
+                        {"rot", rot, "[0, 0, 0]"}})
+            .variadicKeywordArguments(shapeParams)
+            .mapTo([](const DataclassData &shape) -> PartialShape {
+                PartialShape partialShape;
+                auto pos = shape["pos"].as<Vector<3>>();
+                auto rot = shape["rot"].as<Matrix<3, 3>>();
+                TextualShapeData partialShapeData = shape.getVariadicKeywordArguments().asStdMap<std::string>();
+                return {pos, rot, partialShapeData};
             });
     }
 
