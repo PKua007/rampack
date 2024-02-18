@@ -6,6 +6,7 @@
 #define RAMPACK_SHAPEDATAMANAGER_H
 
 #include <map>
+#include <utility>
 
 #include "ShapeData.h"
 #include "utils/Exceptions.h"
@@ -26,7 +27,17 @@ class ShapeDataSerializationException : public ShapeDataException {
 using TextualShapeData = std::map<std::string, std::string>;
 
 class ShapeDataManager {
+private:
+    TextualShapeData defaultData;
+
+protected:
+    explicit ShapeDataManager(TextualShapeData defaultData) : defaultData{std::move(defaultData)} { }
+
+    void setDefaultShapeData(TextualShapeData defaultData_) { this->defaultData = std::move(defaultData_); }
+
 public:
+    ShapeDataManager() = default;
+
     virtual ~ShapeDataManager() = default;
 
     [[nodiscard]] virtual std::size_t getShapeDataSize() const { return 0; }
@@ -34,6 +45,11 @@ public:
     [[nodiscard]] virtual ShapeData::Comparator getComparator() const { return {}; }
     [[nodiscard]] virtual TextualShapeData serialize([[maybe_unused]] const ShapeData &data) const { return {}; }
     [[nodiscard]] virtual ShapeData deserialize([[maybe_unused]] const TextualShapeData &data) const { return {}; }
+
+    [[nodiscard]] const TextualShapeData &getDefaultShapeData() const { return this->defaultData; }
+    [[nodiscard]] TextualShapeData defaultSerialize([[maybe_unused]] const ShapeData &data) const;
+    [[nodiscard]] ShapeData defaultDeserialize([[maybe_unused]] const TextualShapeData &data) const;
+
 };
 
 

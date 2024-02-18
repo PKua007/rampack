@@ -12,6 +12,8 @@
 
 class MockShapeDataManager : public trompeloeil::mock_interface<ShapeDataManager>  {
 public:
+    explicit MockShapeDataManager(TextualShapeData defaultData = {}) : mock_interface(std::move(defaultData)) { }
+
     IMPLEMENT_CONST_MOCK0(getShapeDataSize);
     IMPLEMENT_CONST_MOCK1(validateShapeData);
     IMPLEMENT_CONST_MOCK0(getComparator);
