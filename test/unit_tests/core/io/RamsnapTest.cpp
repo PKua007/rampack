@@ -44,10 +44,11 @@ namespace {
         using trompeloeil::_;
 
         // Use NAMED_ALLOW_CALL to extend expectations lifetime
-        auto lifetimeGuard1 = NAMED_ALLOW_CALL(traits, serialize(_)).RETURN(TextualShapeData{});
-        auto lifetimeGuard2 = NAMED_ALLOW_CALL(traits, deserialize(_)).RETURN(ShapeData{});
-        auto lifetimeGuard3 = NAMED_ALLOW_CALL(traits, getShapeDataSize()).RETURN(0);
-        auto lifetimeGuard4 = NAMED_ALLOW_CALL(traits, getComparator()).RETURN(ShapeData::Comparator{});
+        std::vector<std::unique_ptr<trompeloeil::expectation>> extendedLifetime;
+        extendedLifetime.emplace_back() = NAMED_ALLOW_CALL(traits, serialize(_)).RETURN(TextualShapeData{});
+        extendedLifetime.emplace_back() = NAMED_ALLOW_CALL(traits, deserialize(_)).RETURN(ShapeData{});
+        extendedLifetime.emplace_back() = NAMED_ALLOW_CALL(traits, getShapeDataSize()).RETURN(0);
+        extendedLifetime.emplace_back() = NAMED_ALLOW_CALL(traits, getComparator()).RETURN(ShapeData::Comparator{});
 
         std::vector<Shape> shapes(packing.begin(), packing.end());
         for (auto &shape: shapes)
@@ -56,14 +57,12 @@ namespace {
         packing.reset(std::move(shapes), packing.getBox(), traits.getInteraction(), traits.getDataManager());
 
         // Return expectation lifetime guards to extend expectations lifetime outside the function
-        return std::make_tuple(
-            std::move(lifetimeGuard1), std::move(lifetimeGuard2), std::move(lifetimeGuard3), std::move(lifetimeGuard4)
-        );
+        return extendedLifetime;
     }
 }
 
 #define GET_RID_OF_SHAPE_DATA(traits, packing) \
-    [[maybe_unused]] auto lifetimeGuard = get_rid_of_shape_data(traits, packing)
+    [[maybe_unused]] auto extendedLifetime = get_rid_of_shape_data(traits, packing)
 
 
 TEST_CASE("RamsnapReader and RamsnapWriter") {

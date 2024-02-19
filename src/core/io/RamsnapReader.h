@@ -22,7 +22,11 @@ class RamsnapReader : public SnapshotReader {
 private:
     static TriclinicBox restoreBox(std::istream &in);
     static std::vector<Shape> restoreShapes(std::istream &in, const ShapeDataManager &manager);
+    static ShapeData restoreShapeData(std::istringstream &shapeIn, size_t shapeIdx, size_t shapeTotal,
+                                      const ShapeDataManager &manager);
     static bool getNonEmptyLine(std::istream &in, std::string &line);
+    static std::string generateBrokenShapeMsg(std::size_t shapeIdx, std::size_t shapeTotal,
+                                              const std::string &details = "");
 
 public:
     /**
