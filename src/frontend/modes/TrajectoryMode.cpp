@@ -177,9 +177,8 @@ int TrajectoryMode::main(int argc, char **argv) {
     const auto &baseParams = rampackParams.baseParameters;
     const auto &shapeTraits = *baseParams.shapeTraits;
     const auto &packingFactory = *baseParams.packingFactory;
-    const auto &defaultData = baseParams.defaultShapeData;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
-    auto packing = packingFactory.createPacking(std::move(pbc), shapeTraits, defaultData, maxThreads, maxThreads);
+    auto packing = packingFactory.createPacking(std::move(pbc), shapeTraits, maxThreads, maxThreads);
     packing->toggleWalls(baseParams.walls);
 
     // Recreate environment

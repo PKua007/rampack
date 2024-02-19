@@ -72,21 +72,19 @@ namespace {
             return creator;
         }
 
-        [[nodiscard]] UnitCell create(const CellDimensions &dimensions, const TextualShapeData &defaultShapeData,
-                                      const ShapeDataManager &dataManager) const
-        {
+        [[nodiscard]] UnitCell create(const CellDimensions &dimensions, const ShapeDataManager &dataManager) const {
             auto cellBox = this->cellBoxResolver(dimensions);
 
             std::vector<Shape> shapes;
             shapes.reserve(this->partialShapes.size());
-            for (const auto &partialShape : this->partialShapes) {
-                TextualShapeData fullShapeData = partialShape.partialShapeData;
-                auto defaultShapeDataCopy = defaultShapeData;
-                fullShapeData.merge(std::move(defaultShapeDataCopy));
-
-                ShapeData shapeData = dataManager.deserialize(fullShapeData);
-                shapes.emplace_back(partialShape.position, partialShape.orientation, std::move(shapeData));
-            }
+            std::transform(this->partialShapes.begin(), this->partialShapes.end(), std::back_inserter(shapes),
+                           [&dataManager](const PartialShape &partialShape) -> Shape {
+                               return {
+                                   partialShape.position,
+                                   partialShape.orientation,
+                                   dataManager.defaultDeserialize(partialShape.partialShapeData)
+                               };
+                           });
 
             return {cellBox, shapes};
         }
@@ -115,15 +113,13 @@ namespace {
         explicit LatticePackingFactory(LatticeData latticeData) : latticeData{std::move(latticeData)} { }
 
         [[nodiscard]] std::unique_ptr<Packing> createPacking(std::unique_ptr<BoundaryConditions> bc,
-                                                             const ShapeTraits &shapeTraits,
-                                                             const TextualShapeData &defaultData,
-                                                             std::size_t moveThreads,
+                                                             const ShapeTraits &shapeTraits, std::size_t moveThreads,
                                                              std::size_t scalingThreads) const override
         {
             const auto &dataManager = shapeTraits.getDataManager();
             const auto &cellCreator = this->latticeData.cellCreator;
             const auto &cellDimensions = this->latticeData.cellDimensions;
-            UnitCell cell = cellCreator.create(cellDimensions, defaultData, dataManager);
+            UnitCell cell = cellCreator.create(cellDimensions, dataManager);
 
             Lattice lattice(cell, this->latticeData.numCells);
 

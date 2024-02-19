@@ -16,7 +16,6 @@ public:
     virtual ~PackingFactory() = default;
     [[nodiscard]] virtual std::unique_ptr<Packing> createPacking(std::unique_ptr<BoundaryConditions> bc,
                                                                  const ShapeTraits &shapeTraits,
-                                                                 const TextualShapeData &defaultData,
                                                                  std::size_t moveThreads,
                                                                  std::size_t scalingThreads) const = 0;
 };
