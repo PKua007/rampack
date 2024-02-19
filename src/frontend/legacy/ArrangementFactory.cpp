@@ -234,6 +234,8 @@ namespace legacy {
                                                                 const ShapeTraits &shapeTraits, std::size_t moveThreads,
                                                                 std::size_t scalingThreads)
     {
+        // TODO: fix for ShapaData
+
         const auto &interaction = shapeTraits.getInteraction();
         const auto &dataManager = shapeTraits.getDataManager();
 
