@@ -13,60 +13,150 @@
 
 
 namespace {
+    struct TheData {
+        Vector<3> point;
+
+        friend bool operator==(const TheData &lhs, const TheData &rhs) { return lhs.point == rhs.point; }
+    };
+
     class HelperShapeGeometry : public ShapeGeometry {
     public:
         [[nodiscard]] double getVolume([[maybe_unused]] const Shape &) const override { return 0; }
 
         [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const override {
-            return shape.getOrientation() * Vector<3>{1, 0, 0};
+            return shape.getOrientation() * shape.getData().as<TheData>().point;
         }
 
-        void publicRegisterNamedPoint(const std::string &name, const Vector<3> &point) {
-            this->registerNamedPoint(name, point);
+        void publicRegisterStaticNamedPoint(const std::string &name, const Vector<3> &point) {
+            this->registerStaticNamedPoint(name, point);
         }
-        void publicRegisterNamedPoints(const StaticNamedPoints &points) { this->registerNamedPoints(points); }
-        void publicMoveNamedPoints(const Vector<3> &translation) { this->moveNamedPoints(translation); }
+
+        void publicRegisterStaticNamedPoints(const StaticNamedPoints &points) {
+            this->registerStaticNamedPoints(points);
+        }
+
+        void publicRegisterNamedPoint(NamedPoint point) { this->registerNamedPoint(std::move(point)); }
+        void publicRegisterNamedPoints(const std::vector<NamedPoint> &points) { this->registerNamedPoints(points); }
+        void publicMoveStaticNamedPoints(const Vector<3> &translation) { this->moveStaticNamedPoints(translation); }
     };
 }
 
 
+TEST_CASE("ShapeGeometry::NamedPoint") {
+    Shape shape({1, 1, 1}, Matrix<3, 3>::rotation(0, 0, M_PI/2), TheData{{1, 0, 0}});
+
+    SECTION("empty") {
+        ShapeGeometry::NamedPoint point;
+
+        CHECK(point.getName().empty());
+        CHECK(point.isStatic());
+        CHECK_FALSE(point.isDynamic());
+        CHECK(point.forStatic() == Vector<3>{0, 0, 0});
+        CHECK(point.forShape(shape) == Vector<3>{1, 1, 1});
+        CHECK(point.forShapeData(shape.getData()) == Vector<3>{0, 0, 0});
+    }
+
+    SECTION("static") {
+        ShapeGeometry::NamedPoint point("point", Vector<3>{1, 0, 0});
+
+        CHECK(point.getName() == "point");
+        CHECK(point.isStatic());
+        CHECK_FALSE(point.isDynamic());
+        CHECK(point.forStatic() == Vector<3>{1, 0, 0});
+        CHECK(point.forShape(shape) == Vector<3>{1, 2, 1});
+        CHECK(point.forShapeData(shape.getData()) == Vector<3>{1, 0, 0});
+    }
+
+    SECTION("dynamic") {
+        ShapeGeometry::NamedPoint point("point", [](const ShapeData &data) {
+            return data.as<TheData>().point;
+        });
+
+        CHECK(point.getName() == "point");
+        CHECK_FALSE(point.isStatic());
+        CHECK(point.isDynamic());
+        CHECK_THROWS(point.forStatic());
+        CHECK(point.forShape(shape) == Vector<3>{1, 2, 1});
+        CHECK(point.forShapeData(shape.getData()) == Vector<3>{1, 0, 0});
+    }
+}
+
+
 TEST_CASE("ShapeGeometry: named points") {
+    // We have 3 points:
+    // static  "a" -> {2, 0, 0}
+    // static  "b" -> {3, 0, 0}
+    // dynamic "c" -> TheData::point
+    // Static points are registered in 4 ways
+
+    using NamedPoint = ShapeGeometry::NamedPoint;
+    using NameRegistrarPair = std::pair<std::string, std::function<void(HelperShapeGeometry&)>>;
+    auto [staticRegisteringMethod, registerStaticPoints] = GENERATE(
+        NameRegistrarPair("registerStaticNamedPoint", [](HelperShapeGeometry &geometry) {
+            geometry.publicRegisterStaticNamedPoint("a", {2, 0, 0});
+            geometry.publicRegisterStaticNamedPoint("b", {3, 0, 0});
+        }),
+        NameRegistrarPair("registerStaticNamedPoints", [](HelperShapeGeometry &geometry) {
+            geometry.publicRegisterStaticNamedPoints({{"a", {2, 0, 0}}, {"b", {3, 0, 0}}});
+        }),
+        NameRegistrarPair("registerNamedPoint", [](HelperShapeGeometry &geometry) {
+            geometry.publicRegisterNamedPoint(NamedPoint("a", Vector<3>{2, 0, 0}));
+            geometry.publicRegisterNamedPoint(NamedPoint("b", Vector<3>{3, 0, 0}));
+        }),
+        NameRegistrarPair("registerNamedPoints", [](HelperShapeGeometry &geometry) {
+            geometry.publicRegisterNamedPoints(
+                {NamedPoint("a", Vector<3>{2, 0, 0}), NamedPoint("b", Vector<3>{3, 0, 0})
+            });
+        })
+    );
+
     HelperShapeGeometry geometry;
+    registerStaticPoints(geometry);
+    geometry.publicRegisterNamedPoint(NamedPoint("c", [](const ShapeData &data){
+        return data.as<TheData>().point;
+    }));
 
-    geometry.publicRegisterNamedPoint("z", {0, 1, 0});
-    geometry.publicRegisterNamedPoints({{"c", {0, 2, 0}}, {"t", {0, 3, 0}}});
-
-    SECTION("getNamedPoint(s)") {
-        ShapeGeometry::StaticNamedPoints expected{{"c", {0, 2, 0}}, {"o", {1, 0, 0}}, {"t", {0, 3, 0}},
-                                                  {"z", {0, 1, 0}}};
-        CHECK_THAT(geometry.getNamedPoint("c").forStatic(), IsApproxEqual(expected[0].second, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("o").forShape({}), IsApproxEqual(expected[1].second, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("t").forStatic(), IsApproxEqual(expected[2].second, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("z").forStatic(), IsApproxEqual(expected[3].second, 1e-12));
-        CHECK_THROWS(geometry.getNamedPoint("nonexistent"));
-        auto actual = geometry.getNamedPoints();
-        REQUIRE(actual.size() == 4);
-        for (const auto &[actualItem, expectedItem]: Zip(actual, expected)) {
-            CHECK(actualItem.getName() == expectedItem.first);
-            CHECK_THAT(actualItem.forShape({}), IsApproxEqual(expectedItem.second, 1e-12));
+    DYNAMIC_SECTION("static registration: " << staticRegisteringMethod) {
+        SECTION("getNamedPoint") {
+            CHECK(geometry.getNamedPoint("a").getName() == "a");
+            CHECK(geometry.getNamedPoint("b").getName() == "b");
+            CHECK(geometry.getNamedPoint("c").getName() == "c");
+            CHECK(geometry.getNamedPoint("o").getName() == "o");
         }
-    }
 
-    SECTION("getNamedPointForShape") {
-        Shape shape({0, 1, 0}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/2));
-        CHECK_THAT(geometry.getNamedPointForShape("o", shape), IsApproxEqual({0, 2, 0}, 1e-12));
-    }
+        SECTION("hasNamedPoint") {
+            CHECK(geometry.hasNamedPoint("a"));
+            CHECK(geometry.hasNamedPoint("o"));
+            CHECK_FALSE(geometry.hasNamedPoint("I'm just a poor boy, nobody loves me"));
+        }
 
-    SECTION("moveNamedPoint") {
-        geometry.publicMoveNamedPoints({1, 0, 0});
-        CHECK_THAT(geometry.getNamedPoint("o").forShape({}), IsApproxEqual({1, 0, 0}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("z").forStatic(), IsApproxEqual({1, 1, 0}, 1e-12));
-    }
+        SECTION("getNamedPointForStatic") {
+            CHECK_THAT(geometry.getNamedPointForStatic("a"), IsApproxEqual(Vector<3>{2, 0, 0}, 1e-12));
+            CHECK_THROWS(geometry.getNamedPointForStatic("c"));
+        }
 
-    SECTION("hasNamedPoint") {
-        CHECK(geometry.hasNamedPoint("o"));
-        CHECK(geometry.hasNamedPoint("z"));
-        CHECK_FALSE(geometry.hasNamedPoint("I'm just a poor boy, nobody loves me"));
+        SECTION("getNamedPointForShape") {
+            Shape shape({1, 1, 1}, Matrix<3, 3>::rotation(0, 0, M_PI/2), ShapeData(TheData{{1, 0, 0}}));
+
+            CHECK_THAT(geometry.getNamedPointForShape("a", shape), IsApproxEqual(Vector<3>{1, 3, 1}, 1e-12));
+            CHECK_THAT(geometry.getNamedPointForShape("c", shape), IsApproxEqual(Vector<3>{1, 2, 1}, 1e-12));
+            CHECK_THAT(geometry.getNamedPointForShape("o", shape), IsApproxEqual(Vector<3>{1, 2, 1}, 1e-12));
+        }
+
+        SECTION("getNamedPointForData") {
+            ShapeData data(TheData{{1, 0, 0}});
+
+            CHECK_THAT(geometry.getNamedPointForData("a", data), IsApproxEqual(Vector<3>{2, 0, 0}, 1e-12));
+            CHECK_THAT(geometry.getNamedPointForData("c", data), IsApproxEqual(Vector<3>{1, 0, 0}, 1e-12));
+            CHECK_THAT(geometry.getNamedPointForData("o", data), IsApproxEqual(Vector<3>{1, 0, 0}, 1e-12));
+        }
+
+        SECTION("moveStaticNamedPoints") {
+            geometry.publicMoveStaticNamedPoints({1, 0, 0});
+
+            CHECK_THAT(geometry.getNamedPointForStatic("a"), IsApproxEqual(Vector<3>{3, 0, 0}, 1e-12));
+            CHECK_THAT(geometry.getNamedPointForStatic("b"), IsApproxEqual(Vector<3>{4, 0, 0}, 1e-12));
+        }
     }
 }
 

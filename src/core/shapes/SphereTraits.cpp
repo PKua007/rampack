@@ -16,7 +16,7 @@ SphereTraits::SphereTraits(double radius)
           wolframPrinter{std::make_shared<WolframPrinter>(radius)}
 {
     Expects(radius > 0);
-    this->registerNamedPoint("cm", {0, 0, 0});
+    this->registerStaticNamedPoint("cm", {0, 0, 0});
 }
 
 SphereTraits::SphereTraits(double radius, std::shared_ptr<CentralInteraction> centralInteraction)
@@ -25,7 +25,7 @@ SphereTraits::SphereTraits(double radius, std::shared_ptr<CentralInteraction> ce
     Expects(radius > 0);
     centralInteraction->installOnSphere();
     this->interaction = std::move(centralInteraction);
-    this->registerNamedPoint("cm", {0, 0, 0});
+    this->registerStaticNamedPoint("cm", {0, 0, 0});
 }
 
 double SphereTraits::getVolume([[maybe_unused]] const Shape &shape) const {

@@ -269,6 +269,7 @@ namespace {
                 run.snapshotEvery = overlaps["snapshot_every"].as<std::size_t>();
                 run.inlineInfoEvery = overlaps["inline_info_every"].as<std::size_t>();
                 run.orientationFixEvery = overlaps["orientation_fix_every"].as<std::size_t>();
+                // Fix helper shape for ShapeData
                 run.helperShapeTraits = overlaps["helper_shape"].as<std::shared_ptr<ShapeTraits>>();
                 run.lastSnapshotWriters = overlaps["output_last_snapshot"].as<std::vector<FileSnapshotWriter>>();
                 run.ramsnapOut = fetch_ramsnap_out(run.lastSnapshotWriters);
