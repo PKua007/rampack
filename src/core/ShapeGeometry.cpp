@@ -40,8 +40,8 @@ const ShapeGeometry::NamedPoint &ShapeGeometry::getNamedPoint(const std::string 
     return point->second;
 }
 
-void ShapeGeometry::registerNamedPoint(const std::string &pointName, const Vector<3> &point) {
-    Expects(this->namedPoints.find(pointName) == this->namedPoints.end());
+void ShapeGeometry::registerStaticNamedPoint(const std::string &pointName, const Vector<3> &point) {
+    Expects(!this->hasNamedPoint(pointName));
     this->namedPoints[pointName] = NamedPoint(pointName, point);
 }
 
@@ -53,12 +53,22 @@ std::vector<ShapeGeometry::NamedPoint> ShapeGeometry::getNamedPoints() const {
     return namedPointsVec;
 }
 
-void ShapeGeometry::registerNamedPoints(const std::vector<std::pair<std::string, Vector<3>>> &namedPoints_) {
+void ShapeGeometry::registerStaticNamedPoints(const std::vector<std::pair<std::string, Vector<3>>> &namedPoints_) {
     for (const auto &[name, point] : namedPoints_)
-        this->registerNamedPoint(name, point);
+        this->registerStaticNamedPoint(name, point);
 }
 
-void ShapeGeometry::moveNamedPoints(const Vector<3> &translation) {
+void ShapeGeometry::registerNamedPoint(ShapeGeometry::NamedPoint namedPoint) {
+    Expects(!this->hasNamedPoint(namedPoint.getName()));
+    this->namedPoints[namedPoint.getName()] = std::move(namedPoint);
+}
+
+void ShapeGeometry::registerNamedPoints(const std::vector<NamedPoint> &namedPoints_) {
+    for (const auto &namedPoint : namedPoints_)
+        this->registerNamedPoint(namedPoint);
+}
+
+void ShapeGeometry::moveStaticNamedPoints(const Vector<3> &translation) {
     for (auto &[name, point] : this->namedPoints) {
         if (!point.isStatic())
             continue;

@@ -164,7 +164,7 @@ void PolysphereTraits::PolysphereGeometry::normalizeMassCentre() {
 
     this->sphereData = std::move(newSphereData);
     this->geometricOrigin -= massCentre;
-    this->moveNamedPoints(-massCentre);
+    this->moveStaticNamedPoints(-massCentre);
 }
 
 PolysphereTraits::PolysphereGeometry::PolysphereGeometry(std::vector<SphereData> sphereData, OptionalAxis primaryAxis,
@@ -189,10 +189,10 @@ PolysphereTraits::PolysphereGeometry::PolysphereGeometry(std::vector<SphereData>
 
     for (std::size_t i{}; i < this->sphereData.size(); i++) {
         const auto &ssData = this->sphereData[i];
-        this->registerNamedPoint("s" + std::to_string(i), ssData.position);
+        this->registerStaticNamedPoint("s" + std::to_string(i), ssData.position);
     }
 
-    this->registerNamedPoints(customNamedPoints);
+    this->registerStaticNamedPoints(customNamedPoints);
 }
 
 Vector<3> PolysphereTraits::PolysphereGeometry::calculateMassCentre() const {

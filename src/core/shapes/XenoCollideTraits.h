@@ -92,7 +92,7 @@ public:
                       double volume, const ShapeGeometry::StaticNamedPoints &customNamedPoints = {})
             : primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}, geometricOrigin{geometricOrigin}, volume{volume}
     {
-        this->registerNamedPoints(customNamedPoints);
+        this->registerStaticNamedPoints(customNamedPoints);
     }
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }

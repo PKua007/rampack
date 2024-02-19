@@ -31,8 +31,6 @@ public:
         AUXILIARY
     };
 
-    // TODO: tests need rewriting
-
     class NamedPoint {
     private:
         struct StaticPoint {
@@ -71,20 +69,24 @@ private:
 protected:
     /**
      * @brief Registers a new named point @a point with name @a pointName (see getNamedPoint()).
-     * @details The order of points registered using this method or registerNamedPoints() is remembered.
+     * @details The order of points registered using this method or registerStaticNamedPoints() is remembered.
      */
-    void registerNamedPoint(const std::string &pointName, const Vector<3> &point);
+    void registerStaticNamedPoint(const std::string &pointName, const Vector<3> &point);
 
     /**
      * @brief Registers all named points from @a namedPoints_.
-     * @details The order of points registered using this method or registerNamedPoint() is remembered.
+     * @details The order of points registered using this method or registerStaticNamedPoint() is remembered.
      */
-    void registerNamedPoints(const std::vector<std::pair<std::string, Vector<3>>> &namedPoints_);
+    void registerStaticNamedPoints(const std::vector<std::pair<std::string, Vector<3>>> &namedPoints_);
+
+    void registerNamedPoint(NamedPoint namedPoint);
+
+    void registerNamedPoints(const std::vector<NamedPoint> &namedPoints_);
 
     /**
      * @brief Translates all named points, except for "o" by a given @a translation.
      */
-    void moveNamedPoints(const Vector<3> &translation);
+    void moveStaticNamedPoints(const Vector<3> &translation);
 
 public:
     using StaticNamedPoints = std::vector<std::pair<std::string, Vector<3>>>;
@@ -139,7 +141,7 @@ public:
     /**
      * @brief Returns a special, named point lying somewhere on a shape with default position and orientation.
      * @details Geometric origin ("o") is a default point. Deriving classes can supplement their own special points
-     * using registerNamedPoint() and registerNamedPoints() methods.
+     * using registerStaticNamedPoint() and registerStaticNamedPoints() methods.
      * @param pointName name of the point
      * @return a special, named point
      */
@@ -155,6 +157,10 @@ public:
 
     [[nodiscard]] Vector<3> getNamedPointForData(const std::string &pointName, const ShapeData &shapeData) const {
         return this->getNamedPoint(pointName).forShapeData(shapeData);
+    }
+
+    [[nodiscard]] Vector<3> getNamedPointForStatic(const std::string &pointName) const {
+        return this->getNamedPoint(pointName).forStatic();
     }
 
     /**

@@ -15,9 +15,9 @@ SpherocylinderTraits::SpherocylinderTraits(double length, double radius)
     Expects(length >= 0);
     Expects(radius > 0);
 
-    this->registerNamedPoint("cm", {0, 0, 0});
-    this->registerNamedPoint("beg", this->getCapCentre(-1, {}));
-    this->registerNamedPoint("end", this->getCapCentre(1, {}));
+    this->registerStaticNamedPoint("cm", {0, 0, 0});
+    this->registerStaticNamedPoint("beg", this->getCapCentre(-1, {}));
+    this->registerStaticNamedPoint("end", this->getCapCentre(1, {}));
 
 }
 

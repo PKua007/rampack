@@ -46,12 +46,12 @@ PolyspherocylinderTraits::PolyspherocylinderGeometry
     for (std::size_t i{}; i < this->spherocylinderData.size(); i++) {
         const auto &scData = this->spherocylinderData[i];
         std::string iStr = std::to_string(i);
-        this->registerNamedPoint("o" + iStr, scData.position);
-        this->registerNamedPoint("b" + iStr, scData.position - scData.halfAxis);
-        this->registerNamedPoint("e" + iStr, scData.position + scData.halfAxis);
+        this->registerStaticNamedPoint("o" + iStr, scData.position);
+        this->registerStaticNamedPoint("b" + iStr, scData.position - scData.halfAxis);
+        this->registerStaticNamedPoint("e" + iStr, scData.position + scData.halfAxis);
     }
 
-    this->registerNamedPoints(customNamedPoints);
+    this->registerStaticNamedPoints(customNamedPoints);
 }
 
 bool PolyspherocylinderTraits::PolyspherocylinderGeometry::spherocylindersOverlap() const {

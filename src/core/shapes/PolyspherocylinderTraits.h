@@ -118,7 +118,7 @@ public:
         void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
 
         void addCustomNamedPoints(const ShapeGeometry::StaticNamedPoints &namedPoints) {
-            this->registerNamedPoints(namedPoints);
+            this->registerStaticNamedPoints(namedPoints);
         }
     };
 
