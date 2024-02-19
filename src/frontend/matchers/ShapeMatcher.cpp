@@ -111,13 +111,13 @@ namespace {
         return MatcherDataclass("sphere")
             .arguments({{"r", MatcherFloat{}.positive()},
                         {"interaction", sphereInteraction, "hard"}})
-            .mapTo([](const DataclassData &sphere) -> DefaultedShapeTraits {
+            .mapTo([](const DataclassData &sphere) -> std::shared_ptr<ShapeTraits> {
                 auto r = sphere["r"].as<double>();
                 auto interaction = sphere["interaction"].as<std::shared_ptr<CentralInteraction>>();
                 if (interaction == nullptr)
-                    return {std::make_shared<SphereTraits>(r)};
+                    return std::make_shared<SphereTraits>(r);
                 else
-                    return {std::make_shared<SphereTraits>(r, interaction)};
+                    return std::make_shared<SphereTraits>(r, interaction);
             });
     }
 
@@ -127,15 +127,15 @@ namespace {
                         {"r", MatcherFloat{}.positive()},
                         {"distance", MatcherFloat{}.positive()},
                         {"interaction", sphereInteraction, "hard"}})
-            .mapTo([](const DataclassData &kmer) -> DefaultedShapeTraits {
+            .mapTo([](const DataclassData &kmer) -> std::shared_ptr<ShapeTraits> {
                 auto k = kmer["k"].as<std::size_t>();
                 auto r = kmer["r"].as<double>();
                 auto distance = kmer["distance"].as<double>();
                 auto interaction = kmer["interaction"].as<std::shared_ptr<CentralInteraction>>();
                 if (interaction == nullptr)
-                    return {std::make_shared<KMerTraits>(k, r, distance)};
+                    return std::make_shared<KMerTraits>(k, r, distance);
                 else
-                    return {std::make_shared<KMerTraits>(k, r, distance, interaction)};
+                    return std::make_shared<KMerTraits>(k, r, distance, interaction);
             });
     }
 
@@ -146,16 +146,16 @@ namespace {
                         {"arc_r", MatcherFloat{}.positive()},
                         {"arc_angle", MatcherFloat{}.greaterEquals(0).less(2*M_PI)},
                         {"interaction", sphereInteraction, "hard"}})
-            .mapTo([](const DataclassData &banana) -> DefaultedShapeTraits {
+            .mapTo([](const DataclassData &banana) -> std::shared_ptr<ShapeTraits> {
                 auto sphereN = banana["sphere_n"].as<std::size_t>();
                 auto sphereR = banana["sphere_r"].as<double>();
                 auto arcR = banana["arc_r"].as<double>();
                 auto argAngle = banana["arc_angle"].as<double>();
                 auto interaction = banana["interaction"].as<std::shared_ptr<CentralInteraction>>();
                 if (interaction == nullptr)
-                    return {std::make_shared<PolysphereBananaTraits>(arcR, argAngle, sphereN, sphereR)};
+                    return std::make_shared<PolysphereBananaTraits>(arcR, argAngle, sphereN, sphereR);
                 else
-                    return {std::make_shared<PolysphereBananaTraits>(arcR, argAngle, sphereN, sphereR, interaction)};
+                    return std::make_shared<PolysphereBananaTraits>(arcR, argAngle, sphereN, sphereR, interaction);
             });
     }
 
@@ -175,15 +175,15 @@ namespace {
                 return lollipop["tip_penetration"].as<double>() < 2 * smallerR;
             })
             .describe("tip_penetration < 2 * min(stick_r, tip_r)")
-            .mapTo([](const DataclassData &lollipop) -> DefaultedShapeTraits {
+            .mapTo([](const DataclassData &lollipop) -> std::shared_ptr<ShapeTraits> {
                 auto sphereN = lollipop["sphere_n"].as<std::size_t>();
                 auto stickR = lollipop["stick_r"].as<double>();
                 auto tipR = lollipop["tip_r"].as<double>();
                 auto stickPenetration = lollipop["stick_penetration"].as<double>();
                 auto tipPenetration = lollipop["tip_penetration"].as<double>();
-                return {
-                    std::make_shared<PolysphereLollipopTraits>(sphereN, stickR, tipR, stickPenetration, tipPenetration)
-                };
+                return std::make_shared<PolysphereLollipopTraits>(
+                    sphereN, stickR, tipR, stickPenetration, tipPenetration
+                );
             });
     }
 
@@ -198,12 +198,12 @@ namespace {
                 return wedge["penetration"].as<double>() < 2 * smallerR;
             })
             .describe("penetration < 2 * min(bottom_r, top_r)")
-            .mapTo([](const DataclassData &wedge) -> DefaultedShapeTraits {
+            .mapTo([](const DataclassData &wedge) -> std::shared_ptr<ShapeTraits> {
                 auto sphereN = wedge["sphere_n"].as<std::size_t>();
                 auto bottomR = wedge["bottom_r"].as<double>();
                 auto topR = wedge["top_r"].as<double>();
                 auto penetration = wedge["penetration"].as<double>();
-                return {std::make_shared<PolysphereWedgeTraits>(sphereN, bottomR, topR, penetration)};
+                return std::make_shared<PolysphereWedgeTraits>(sphereN, bottomR, topR, penetration);
             });
     }
 
@@ -241,17 +241,15 @@ namespace {
                 return PolyspherocylinderBananaTraits::isArcOriginOutside(arcR, argAngle, segmentN, spherocylinderR);
             })
             .describe("for segment_n >= 3, arc origin must lies outside of the shape")
-            .mapTo([](const DataclassData &banana) -> DefaultedShapeTraits {
+            .mapTo([](const DataclassData &banana) -> std::shared_ptr<ShapeTraits> {
                 auto segmentN = banana["segment_n"].as<std::size_t>();
                 auto spherocylinderR = banana["sc_r"].as<double>();
                 auto arcR = banana["arc_r"].as<double>();
                 auto argAngle = banana["arc_angle"].as<double>();
                 auto subdivisions = banana["subdivisions"].as<std::size_t>();
-                return {
-                    std::make_shared<PolyspherocylinderBananaTraits>(
-                        arcR, argAngle, segmentN, spherocylinderR, subdivisions
-                    )
-                };
+                return std::make_shared<PolyspherocylinderBananaTraits>(
+                    arcR, argAngle, segmentN, spherocylinderR, subdivisions
+                );
             });
     }
 
@@ -266,12 +264,12 @@ namespace {
                 return wedge["l"].as<double>() >= rDiff;
             })
             .describe("l >= |bottom_r - top_r|")
-            .mapTo([](const DataclassData &wedge) -> DefaultedShapeTraits {
+            .mapTo([](const DataclassData &wedge) -> std::shared_ptr<ShapeTraits> {
                 auto length = wedge["l"].as<double>();
                 auto bottomR = wedge["bottom_r"].as<double>();
                 auto topR = wedge["top_r"].as<double>();
                 auto subdivisions = wedge["subdivisions"].as<std::size_t>();
-                return {std::make_shared<SmoothWedgeTraits>(bottomR, topR, length, subdivisions)};
+                return std::make_shared<SmoothWedgeTraits>(bottomR, topR, length, subdivisions);
             });
     }
 
@@ -321,7 +319,7 @@ namespace {
                         {"interaction", sphereInteraction, "hard"}})
             .filter(validate_axes)
             .describe("primary_axis and secondary_axis must be orthogonal")
-            .mapTo([](const DataclassData &polysphere) -> DefaultedShapeTraits {
+            .mapTo([](const DataclassData &polysphere) -> std::shared_ptr<ShapeTraits> {
                 auto spheres = polysphere["spheres"].as<std::vector<PolysphereTraits::SphereData>>();
                 auto volume = polysphere["volume"].as<double>();
                 auto geometricOrigin = polysphere["geometric_center"].as<Vector<3>>();
@@ -339,9 +337,9 @@ namespace {
                 );
 
                 if (interaction == nullptr)
-                    return {std::make_shared<PolysphereTraits>(std::move(geometry))};
+                    return std::make_shared<PolysphereTraits>(std::move(geometry));
                 else
-                    return {std::make_shared<PolysphereTraits>(std::move(geometry), interaction)};
+                    return std::make_shared<PolysphereTraits>(std::move(geometry), interaction);
             });
     }
 
@@ -389,7 +387,7 @@ namespace {
                         {"named_points", namedPoints, "{}"}})
             .filter(validate_axes)
             .describe("primary_axis and secondary_axis must be orthogonal")
-            .mapTo([](const DataclassData &polysc) -> DefaultedShapeTraits {
+            .mapTo([](const DataclassData &polysc) -> std::shared_ptr<ShapeTraits> {
                 using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
                 auto sc = polysc["scs"].as<std::vector<SpherocylinderData>>();
                 auto volume = polysc["volume"].as<double>();
@@ -406,7 +404,7 @@ namespace {
                     std::move(sc), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
                 );
 
-                return {std::make_shared<PolyspherocylinderTraits>(std::move(geometry))};
+                return std::make_shared<PolyspherocylinderTraits>(std::move(geometry));
             });
     }
 
@@ -436,11 +434,9 @@ namespace {
                 script(builder);
                 auto geometry = builder.releaseCollideGeometry();
 
-                return {
-                    std::make_shared<GenericXenoCollideTraits>(
-                        geometry, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
-                    )
-                };
+                return std::make_shared<GenericXenoCollideTraits>(
+                    geometry, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
+                );
             });
     }
 
@@ -460,17 +456,15 @@ namespace {
                 return (topRx != 0 && bottomRy != 0) || (topRy != 0 && bottomRx != 0);
             })
             .describe("with at least one pair of non-zero orthogonal a-s, one at the top, one at the bottom")
-            .mapTo([](const DataclassData &wedge) -> DefaultedShapeTraits {
-                return {
-                    std::make_shared<PolyhedralWedgeTraits>(
-                        wedge["bottom_ax"].as<double>(),
-                        wedge["bottom_ay"].as<double>(),
-                        wedge["top_ax"].as<double>(),
-                        wedge["top_ay"].as<double>(),
-                        wedge["l"].as<double>(),
-                        wedge["subdivisions"].as<std::size_t>()
-                    )
-                };
+            .mapTo([](const DataclassData &wedge) -> std::shared_ptr<ShapeTraits> {
+                return std::make_shared<PolyhedralWedgeTraits>(
+                    wedge["bottom_ax"].as<double>(),
+                    wedge["bottom_ay"].as<double>(),
+                    wedge["top_ax"].as<double>(),
+                    wedge["top_ay"].as<double>(),
+                    wedge["l"].as<double>(),
+                    wedge["subdivisions"].as<std::size_t>()
+                );
             });
     }
 
@@ -488,7 +482,7 @@ namespace {
 }
 
 
-DefaultedShapeTraits ShapeMatcher::match(const std::string &expression) {
+std::shared_ptr<ShapeTraits> ShapeMatcher::match(const std::string &expression) {
     Any shapeTraits;
     auto shapeAST = pyon::Parser::parse(expression);
     auto shapeMatcher = ShapeMatcher::create();
@@ -496,7 +490,7 @@ DefaultedShapeTraits ShapeMatcher::match(const std::string &expression) {
     if (!matchReport)
         throw ValidationException(matchReport.getReason());
 
-    return shapeTraits.as<DefaultedShapeTraits>();
+    return shapeTraits.as<std::shared_ptr<ShapeTraits>>();
 }
 
 pyon::matcher::MatcherAlternative ShapeMatcher::create() {

@@ -44,9 +44,7 @@ namespace {
         { }
 
         [[nodiscard]] std::unique_ptr<Packing> createPacking(std::unique_ptr<BoundaryConditions> bc,
-                                                             const ShapeTraits &shapeTraits,
-                                                             [[maybe_unused]] const TextualShapeData &defaultData,
-                                                             std::size_t moveThreads,
+                                                             const ShapeTraits &shapeTraits, std::size_t moveThreads,
                                                              std::size_t scalingThreads) const override
         {
             return legacy::ArrangementFactory::arrangePacking(this->numOfParticles, this->boxString,

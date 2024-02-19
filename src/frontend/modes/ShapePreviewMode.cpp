@@ -60,7 +60,7 @@ int ShapePreviewMode::main(int argc, char **argv) {
                                       "manually using -S (--shape)");
         }
 
-        traits = ShapeMatcher::match(shape).traits;
+        traits = ShapeMatcher::match(shape);
     }
 
     if (!parsedOptions.count("log-info") && outputs.empty())
