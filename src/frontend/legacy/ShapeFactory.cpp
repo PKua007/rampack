@@ -132,8 +132,8 @@ namespace {
         return axis.normalized();
     }
 
-    ShapeGeometry::StaticNamedPoints parse_named_points(const std::string &pointsStr) {
-        ShapeGeometry::StaticNamedPoints namedPoints;
+    std::vector<ShapeGeometry::NamedPoint> parse_named_points(const std::string &pointsStr) {
+        std::vector<ShapeGeometry::NamedPoint> namedPoints;
         std::istringstream pointsStream(pointsStr);
         while (pointsStream.good()) {
             std::string name;
@@ -164,7 +164,7 @@ namespace {
         Vector<3> geometricOrigin = parse_vector(fieldsMap.at("geometricOrigin"));
         double volume = std::stod(fieldsMap.at("volume"));
         ValidateMsg(volume > 0, "Volume should be positive");
-        ShapeGeometry::StaticNamedPoints namedPoints;
+        std::vector<ShapeGeometry::NamedPoint> namedPoints;
         if (fieldsMap.find("namedPoints") != fieldsMap.end())
             namedPoints = parse_named_points(fieldsMap.at("namedPoints"));
 

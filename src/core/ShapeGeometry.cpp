@@ -53,9 +53,11 @@ std::vector<ShapeGeometry::NamedPoint> ShapeGeometry::getNamedPoints() const {
     return namedPointsVec;
 }
 
-void ShapeGeometry::registerStaticNamedPoints(const std::vector<std::pair<std::string, Vector<3>>> &namedPoints_) {
-    for (const auto &[name, point] : namedPoints_)
-        this->registerStaticNamedPoint(name, point);
+void ShapeGeometry::registerDynamicNamedPoint(const std::string &pointName,
+                                              const std::function<Vector<3>(const ShapeData &)> &point)
+{
+    Expects(!this->hasNamedPoint(pointName));
+    this->namedPoints[pointName] = NamedPoint(pointName, point);
 }
 
 void ShapeGeometry::registerNamedPoint(ShapeGeometry::NamedPoint namedPoint) {
