@@ -89,7 +89,7 @@ public:
         PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, OptionalAxis primaryAxis,
                                    OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin = {0, 0, 0},
                                    std::optional<double> volume = 0,
-                                   const ShapeGeometry::StaticNamedPoints& customNamedPoints = {});
+                                   const std::vector<NamedPoint> &customNamedPoints = {});
 
         [[nodiscard]] double getVolume([[maybe_unused]] const Shape &shape) const override { return this->volume; }
 
@@ -117,8 +117,8 @@ public:
 
         void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
 
-        void addCustomNamedPoints(const ShapeGeometry::StaticNamedPoints &namedPoints) {
-            this->registerStaticNamedPoints(namedPoints);
+        void addCustomNamedPoints(const std::vector<ShapeGeometry::NamedPoint> &namedPoints) {
+            this->registerNamedPoints(namedPoints);
         }
     };
 

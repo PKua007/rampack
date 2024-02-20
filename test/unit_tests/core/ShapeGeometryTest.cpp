@@ -18,27 +18,6 @@ namespace {
 
         friend bool operator==(const TheData &lhs, const TheData &rhs) { return lhs.point == rhs.point; }
     };
-
-    class HelperShapeGeometry : public ShapeGeometry {
-    public:
-        [[nodiscard]] double getVolume([[maybe_unused]] const Shape &) const override { return 0; }
-
-        [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const override {
-            return shape.getOrientation() * shape.getData().as<TheData>().point;
-        }
-
-        void publicRegisterStaticNamedPoint(const std::string &name, const Vector<3> &point) {
-            this->registerStaticNamedPoint(name, point);
-        }
-
-        void publicRegisterStaticNamedPoints(const StaticNamedPoints &points) {
-            this->registerStaticNamedPoints(points);
-        }
-
-        void publicRegisterNamedPoint(NamedPoint point) { this->registerNamedPoint(std::move(point)); }
-        void publicRegisterNamedPoints(const std::vector<NamedPoint> &points) { this->registerNamedPoints(points); }
-        void publicMoveStaticNamedPoints(const Vector<3> &translation) { this->moveStaticNamedPoints(translation); }
-    };
 }
 
 
@@ -83,38 +62,38 @@ TEST_CASE("ShapeGeometry::NamedPoint") {
 
 
 TEST_CASE("ShapeGeometry: named points") {
+    using trompeloeil::_;
+
     // We have 3 points:
     // static  "a" -> {2, 0, 0}
     // static  "b" -> {3, 0, 0}
     // dynamic "c" -> TheData::point
-    // Static points are registered in 4 ways
+    // Static points are registered in 3 ways
 
     using NamedPoint = ShapeGeometry::NamedPoint;
-    using NameRegistrarPair = std::pair<std::string, std::function<void(HelperShapeGeometry&)>>;
+    using NameRegistrarPair = std::pair<std::string, std::function<void(MockShapeGeometry&)>>;
     auto [staticRegisteringMethod, registerStaticPoints] = GENERATE(
-        NameRegistrarPair("registerStaticNamedPoint", [](HelperShapeGeometry &geometry) {
+        NameRegistrarPair("registerStaticNamedPoint", [](MockShapeGeometry &geometry) {
             geometry.publicRegisterStaticNamedPoint("a", {2, 0, 0});
             geometry.publicRegisterStaticNamedPoint("b", {3, 0, 0});
         }),
-        NameRegistrarPair("registerStaticNamedPoints", [](HelperShapeGeometry &geometry) {
-            geometry.publicRegisterStaticNamedPoints({{"a", {2, 0, 0}}, {"b", {3, 0, 0}}});
-        }),
-        NameRegistrarPair("registerNamedPoint", [](HelperShapeGeometry &geometry) {
+        NameRegistrarPair("registerNamedPoint", [](MockShapeGeometry &geometry) {
             geometry.publicRegisterNamedPoint(NamedPoint("a", Vector<3>{2, 0, 0}));
             geometry.publicRegisterNamedPoint(NamedPoint("b", Vector<3>{3, 0, 0}));
         }),
-        NameRegistrarPair("registerNamedPoints", [](HelperShapeGeometry &geometry) {
+        NameRegistrarPair("registerNamedPoints", [](MockShapeGeometry &geometry) {
             geometry.publicRegisterNamedPoints(
-                {NamedPoint("a", Vector<3>{2, 0, 0}), NamedPoint("b", Vector<3>{3, 0, 0})
+                {{"a", Vector<3>{2, 0, 0}}, {"b", Vector<3>{3, 0, 0}}
             });
         })
     );
 
-    HelperShapeGeometry geometry;
+    MockShapeGeometry geometry;
     registerStaticPoints(geometry);
     geometry.publicRegisterNamedPoint(NamedPoint("c", [](const ShapeData &data){
         return data.as<TheData>().point;
     }));
+    ALLOW_CALL(geometry, getGeometricOrigin(_)).RETURN(_1.getOrientation() * _1.getData().template as<TheData>().point);
 
     DYNAMIC_SECTION("static registration: " << staticRegisteringMethod) {
         SECTION("getNamedPoint") {

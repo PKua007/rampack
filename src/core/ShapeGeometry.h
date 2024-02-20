@@ -73,11 +73,8 @@ protected:
      */
     void registerStaticNamedPoint(const std::string &pointName, const Vector<3> &point);
 
-    /**
-     * @brief Registers all named points from @a namedPoints_.
-     * @details The order of points registered using this method or registerStaticNamedPoint() is remembered.
-     */
-    void registerStaticNamedPoints(const std::vector<std::pair<std::string, Vector<3>>> &namedPoints_);
+    void registerDynamicNamedPoint(const std::string &pointName,
+                                   const std::function<Vector<3>(const ShapeData &)> &point);
 
     void registerNamedPoint(NamedPoint namedPoint);
 
