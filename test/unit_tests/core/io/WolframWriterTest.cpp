@@ -48,4 +48,6 @@ Sphere[{0, 0, 0},0.5],AffineTransform@#]& /@ {
 )";
         CHECK(out.str() == expectedOut);
     }
+
+    // TODO: write test for polidisperse AFFINE_TRANSFORM
 }

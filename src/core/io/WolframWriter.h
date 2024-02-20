@@ -35,11 +35,15 @@ public:
     };
 
 private:
+    using ShapeGroup = std::pair<ShapeData, std::vector<Shape>>;
+
     WolframStyle style{};
     std::map<std::string, std::string> params{};
 
     static void storeStandard(std::ostream &out, const Packing &packing, const ShapePrinter &shapePrinter);
     static void storeAffineTransform(std::ostream &out, const Packing &packing, const ShapePrinter &shapePrinter);
+    static std::vector<ShapeGroup> groupShapesByData(const Packing &packing);
+    static void printShapeGroup(std::ostream &out, const ShapeGroup &shapeGroup, const ShapePrinter &shapePrinter);
 
 public:
     /**
