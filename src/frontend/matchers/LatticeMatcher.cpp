@@ -370,7 +370,7 @@ namespace {
         auto shapes = MatcherArray{}
             .elementsMatch(shape)
             .nonEmpty()
-            .mapToStdVector<Shape>();
+            .mapToStdVector<PartialShape>();
 
         return MatcherDataclass("custom")
             .arguments({{"shapes", shapes}})
