@@ -318,6 +318,7 @@ namespace {
     }
 
     MatcherAlternative create_cell() {
+        // TODO: custom orientations and data in standard cells
         return create_sc() | create_bcc() | create_fcc() | create_hcp() | create_hexagonal() | create_custom();
     }
 

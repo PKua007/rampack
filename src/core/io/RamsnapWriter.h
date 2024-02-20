@@ -34,11 +34,11 @@
  */
 class RamsnapWriter : public SnapshotWriter {
 private:
+    static void storeMagicAndVersion(std::ostream &out);
     static void storeAuxInfo(std::ostream &out, const std::map<std::string, std::string> &auxInfo);
     static void storeBox(std::ostream &out, const TriclinicBox &box);
     static void storeShapes(std::ostream &out, const Packing &packing, const ShapeDataManager &manager);
     static void storeShapeData(std::ostream &out, const ShapeData &data, const ShapeDataManager &manager);
-    static std::string quoteIfNecessary(const std::string &str);
 
 public:
     void write(std::ostream &out, const Packing &packing, [[maybe_unused]] const ShapeTraits &traits,

@@ -3,6 +3,7 @@
 //
 
 #include "RamsnapWriter.h"
+#include "RamsnapIO.h"
 #include "utils/Utils.h"
 
 
@@ -11,9 +12,15 @@ void RamsnapWriter::write(std::ostream &out, const Packing &packing, const std::
 {
     out.precision(std::numeric_limits<double>::max_digits10);
     out << std::defaultfloat;
+    RamsnapWriter::storeMagicAndVersion(out);
     RamsnapWriter::storeAuxInfo(out, auxInfo);
     RamsnapWriter::storeBox(out, packing.getBox());
     RamsnapWriter::storeShapes(out, packing, manager);
+}
+
+void RamsnapWriter::storeMagicAndVersion(std::ostream &out) {
+    out << "RAMSNAP " << RamsnapIO::CURRENT_VERSION.getMajor() << " " << RamsnapIO::CURRENT_VERSION.getMinor();
+    out << std::endl;
 }
 
 void RamsnapWriter::storeAuxInfo(std::ostream &out, const std::map<std::string, std::string> &auxInfo) {
