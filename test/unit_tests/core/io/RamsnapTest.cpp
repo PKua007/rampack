@@ -90,7 +90,7 @@ TEST_CASE("RamsnapReader and RamsnapWriter") {
     auto pbc2 = std::make_unique<PeriodicBoundaryConditions>();
     Packing restoredPacking(std::move(pbc2));
 
-    SECTION("[curr format] RamsnapWriter -> RamsnapReader") {
+    SECTION("[curr] v1.1: RamsnapWriter -> RamsnapReader") {
         std::stringstream inOut;
         RamsnapWriter writer;
         RamsnapReader reader;
@@ -102,7 +102,7 @@ TEST_CASE("RamsnapReader and RamsnapWriter") {
         CHECK_THAT(restoredPacking, IsApproxEqual(expectedPacking, 1e-12));
     }
 
-    SECTION("[old format] orthorhombic box -> RamsnapReader") {
+    SECTION("v1.0: orthorhombic box -> RamsnapReader") {
         GET_RID_OF_SHAPE_DATA(traits, expectedPacking);
         RamsnapReader reader;
         std::istringstream in(R"(2
@@ -120,7 +120,7 @@ key2 value 2
         CHECK_THAT(restoredPacking, IsApproxEqual(expectedPacking, 1e-12));
     }
 
-    SECTION("[old format] triclinic box -> RamsnapReader") {
+    SECTION("v1.0: triclinic box -> RamsnapReader") {
         GET_RID_OF_SHAPE_DATA(traits, expectedPacking);
         RamsnapReader reader;
         std::istringstream in(R"(2
