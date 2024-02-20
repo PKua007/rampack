@@ -11,10 +11,17 @@
 
 
 TEST_CASE("RandomPopulator") {
-    Lattice lattice(UnitCell(TriclinicBox(1), {Shape({0.5, 0.5, 0.5}), Shape({0.5, 0.5, 0.25})}), {2, 2, 2});
+    Matrix<3, 3> rot = Matrix<3, 3>::rotation(M_PI, 0, 0);
+    int data = 3;
+    UnitCell cell(TriclinicBox(1), {Shape({0.5, 0.5, 0.5}, rot, data), Shape({0.5, 0.5, 0.25}, rot, data)});
+    Lattice lattice(cell, {2, 2, 2});
     RandomPopulator randomPopulator(1234);
 
     auto shapes = randomPopulator.populateLattice(lattice, 8);
+    for (const auto &shape : shapes) {
+        CHECK(shape.getOrientation() == rot);
+        CHECK(shape.getData() == ShapeData(data));
+    }
 
     CHECK(shapes.size() == 8);
     auto allShapes = lattice.generateMolecules();

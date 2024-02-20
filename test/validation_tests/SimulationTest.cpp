@@ -109,7 +109,9 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     std::array<double, 3> dimensions = {10, 10, 10};
     auto shapes = OrthorhombicArrangingModel{}.arrange(50, {5, 5, 2}, {2, 2, 5}, dimensions);
-    SpherocylinderTraits spherocylinderTraits(3, 0.5);
+    SpherocylinderTraits spherocylinderTraits;
+    for (auto &shape : shapes)
+        shape.setData(SpherocylinderTraits::Data{3, 0.5});
     auto packing = std::make_unique<Packing>(
         dimensions, std::move(shapes), std::move(pbc), spherocylinderTraits.getInteraction(),
         spherocylinderTraits.getDataManager()

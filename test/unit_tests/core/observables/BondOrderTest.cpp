@@ -108,7 +108,8 @@ TEST_CASE("BondOrder: non-standard layering and bond order points") {
     // Bond order points, which are spherocylinder caps' origins, create a perfect tetragonal order in two layers,
     // however spherocylinders are randomly rotated. Still, the order should be perfect. Box is very long to make sure
     // That layers are identified correctly
-    SpherocylinderTraits spherocylinderTraits(2, 0.1);
+    SpherocylinderTraits spherocylinderTraits;
+    SpherocylinderTraits::Data data{2, 0.1};
     std::vector<Shape> shapes;
 
     std::mt19937 mt(1234ul); // NOLINT(cert-msc51-cpp)
@@ -126,14 +127,14 @@ TEST_CASE("BondOrder: non-standard layering and bond order points") {
             auto rot1 = randomRotation();
             auto pos1 = posLayer1 - rot1 * scAxis;
             pos1 += pbc->getCorrection(pos1);
-            shapes.emplace_back(pos1, rot1);
+            shapes.emplace_back(pos1, rot1, data);
 
             Vector<3> posLayer2 = posLayer1;
             posLayer2[2] = 10.1;
             auto rot2 = randomRotation();
             auto pos2 = posLayer2 - rot2 * scAxis;
             pos2 += pbc->getCorrection(pos2);
-            shapes.emplace_back(pos2, rot2);
+            shapes.emplace_back(pos2, rot2, data);
         }
     }
 
