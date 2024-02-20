@@ -211,12 +211,18 @@ namespace {
     }
 
     MatcherDataclass create_spherocylinder_matcher() {
+        auto optionalDouble =
+            MatcherNone{}.mapTo<std::optional<double>>() | MatcherFloat{}.positive().mapTo<std::optional<double>>();
+
         return MatcherDataclass("spherocylinder")
-                .arguments({{"l", MatcherFloat{}.positive()},
-                            {"r", MatcherFloat{}.positive()}})
-                .mapTo([](const DataclassData &sc) -> std::shared_ptr<ShapeTraits> {
-                    return std::make_shared<SpherocylinderTraits>(sc["l"].as<double>(), sc["r"].as<double>());
-                });
+            .arguments({{"l", optionalDouble, "None"},
+                        {"r", optionalDouble, "None"}})
+            .mapTo([](const DataclassData &sc) -> std::shared_ptr<ShapeTraits> {
+                return std::make_shared<SpherocylinderTraits>(
+                    sc["l"].as<std::optional<double>>(),
+                    sc["r"].as<std::optional<double>>()
+                );
+            });
     }
 
     MatcherDataclass create_polyspherocylinder_banana_matcher() {

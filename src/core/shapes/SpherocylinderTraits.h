@@ -25,7 +25,6 @@ private:
 
     std::optional<double> defaultLength{};
     std::optional<double> defaultRadius{};
-    TextualShapeData defaultData;
     std::shared_ptr<WolframPrinter> wolframPrinter;
 
     static std::unique_ptr<ShapePrinter> createObjPrinter(double length, double radius, std::size_t subdivisions);

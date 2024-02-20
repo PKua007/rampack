@@ -22,10 +22,10 @@ SpherocylinderTraits::SpherocylinderTraits(std::optional<double> defaultLength, 
 
     ShapeDataSerializer serializer;
     if (this->defaultLength)
-        serializer["length"] = *this->defaultLength;
+        serializer["l"] = *this->defaultLength;
     if (this->defaultRadius)
-        serializer["radius"] = *this->defaultRadius;
-    this->defaultData = serializer.toTextualShapeData();
+        serializer["r"] = *this->defaultRadius;
+    this->setDefaultShapeData(serializer.toTextualShapeData());
 
     this->registerStaticNamedPoint("cm", {0, 0, 0});
     this->registerDynamicNamedPoint("beg", [](const ShapeData &data) {
@@ -143,16 +143,16 @@ void SpherocylinderTraits::validateShapeData(const ShapeData &data) const {
 TextualShapeData SpherocylinderTraits::serialize(const ShapeData &data) const {
     const auto &scData = data.as<Data>();
     ShapeDataSerializer serializer;
-    serializer["radius"] = scData.radius;
-    serializer["length"] = scData.length;
+    serializer["r"] = scData.radius;
+    serializer["l"] = scData.length;
     return serializer.toTextualShapeData();
 }
 
 ShapeData SpherocylinderTraits::deserialize(const TextualShapeData &data) const {
     ShapeDataDeserializer deserializer(data);
     Data scData;
-    scData.radius = deserializer.as<double>("radius");
-    scData.length = deserializer.as<double>("length");
+    scData.radius = deserializer.as<double>("r");
+    scData.length = deserializer.as<double>("l");
     deserializer.throwIfNotAccessed();
 
     ShapeData shapeData(scData);

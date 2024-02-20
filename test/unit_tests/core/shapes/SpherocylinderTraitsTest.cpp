@@ -221,12 +221,29 @@ TEST_CASE("Spherocylinder: geometric origin") {
 
 TEST_CASE("Spherocylinder: named points") {
     SpherocylinderTraits traits;
-    SpherocylinderTraits::Data data{3, 2};
-    Shape sc;
-    sc.setData(data);
+    ShapeData data(SpherocylinderTraits::Data{3, 2});
 
-    CHECK(traits.getGeometry().getNamedPointForShape("beg", sc) == Vector<3>{0, 0, -1.5});
-    CHECK(traits.getGeometry().getNamedPointForShape("end", sc) == Vector<3>{0, 0, 1.5});
-    CHECK(traits.getGeometry().getNamedPointForShape("cm", sc) == Vector<3>{0, 0, 0});
-    CHECK(traits.getGeometry().getNamedPointForShape("o", sc) == Vector<3>{0, 0, 0});
+    CHECK(traits.getGeometry().getNamedPointForData("beg", data) == Vector<3>{0, 0, -1.5});
+    CHECK(traits.getGeometry().getNamedPointForData("end", data) == Vector<3>{0, 0, 1.5});
+    CHECK(traits.getGeometry().getNamedPointForData("cm", data) == Vector<3>{0, 0, 0});
+    CHECK(traits.getGeometry().getNamedPointForData("o", data) == Vector<3>{0, 0, 0});
+}
+
+TEST_CASE("Spherocylinder: serialization") {
+    SECTION("default data") {
+        SpherocylinderTraits traits(5, 3);
+
+        SpherocylinderTraits::Data expected{5, 3};
+        CHECK(traits.getDataManager().defaultDeserialize({}) == ShapeData(expected));
+    }
+
+    SECTION("serialization -> deserialization") {
+        SpherocylinderTraits traits;
+        ShapeData data(SpherocylinderTraits::Data{5, 3});
+        const auto &manager = traits.getDataManager();
+
+        auto serialized = manager.serialize(data);
+        auto deserialized = manager.deserialize(serialized);
+        CHECK(deserialized == data);
+    }
 }
