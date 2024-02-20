@@ -5,7 +5,10 @@
 #ifndef RAMPACK_SPHEROCYLINDERTRAITS_H
 #define RAMPACK_SPHEROCYLINDERTRAITS_H
 
+#include <optional>
+
 #include "core/ShapeTraits.h"
+
 
 /**
  * @brief Hard spherocylinder spanned on Z axis.
@@ -16,39 +19,43 @@
 class SpherocylinderTraits : public ShapeTraits, public Interaction, public ShapeGeometry, public ShapeDataManager {
 private:
     class WolframPrinter : public ShapePrinter {
-    private:
-        const SpherocylinderTraits &traits;
-
     public:
-        explicit WolframPrinter(const SpherocylinderTraits &traits) : traits{traits} { }
         [[nodiscard]] std::string print(const Shape &shape) const override;
     };
 
-    double length{};    // distance between two spherical caps centres
-    double radius{};    // radius of spherical caps
+    std::optional<double> defaultLength{};
+    std::optional<double> defaultRadius{};
+    TextualShapeData defaultData;
     std::shared_ptr<WolframPrinter> wolframPrinter;
 
     static std::unique_ptr<ShapePrinter> createObjPrinter(double length, double radius, std::size_t subdivisions);
 
-    [[nodiscard]] Vector<3> getCapCentre(short beginOrEnd, const Shape &shape) const;
+    static Vector<3> getCapCentre(short beginOrEnd, const Matrix<3, 3> &rot, double length);
+    static Vector<3> getCapCentre(short beginOrEnd, const Shape &shape);
+    static Vector<3> getCapCentre(short beginOrEnd, const ShapeData &data);
 
     friend WolframPrinter;
 
 public:
+    struct Data {
+        double length{};
+        double radius{};
+
+        [[nodiscard]] friend bool operator==(const Data &lhs, const Data &rhs) {
+            return std::tie(lhs.length, lhs.radius) == std::tie(rhs.length, rhs.radius);
+        }
+    };
+
     /** @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::XCPrinter
      * @a subdivision parameter) */
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
 
     /**
-     * @brief Creates a spherocylinder spanned on x axis with a unit distance between cap centers and a unit radius.
-     */
-    SpherocylinderTraits() : SpherocylinderTraits(1, 1) { }
-
-    /**
      * @brief Creates a spherocylinder spanned on x axis with @a length distance between cap centers and @a radius
      * radius.
      */
-    SpherocylinderTraits(double length, double radius);
+    explicit SpherocylinderTraits(std::optional<double> defaultLength = std::nullopt,
+                                  std::optional<double> defaultRadius = std::nullopt);
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
@@ -81,9 +88,21 @@ public:
                                        std::size_t idx, const Vector<3> &wallOrigin,
                                        const Vector<3> &wallVector) const override;
 
-    [[nodiscard]] double getRangeRadius([[maybe_unused]] const std::byte *data) const override {
-        return 2*this->radius + this->length;
+    [[nodiscard]] double getRangeRadius(const std::byte *data) const override {
+        const auto &scData = ShapeData::as<Data>(data);
+        return 2*scData.radius + scData.length;
     }
+
+    [[nodiscard]] std::size_t getShapeDataSize() const override { return sizeof(Data); }
+
+    void validateShapeData(const ShapeData &data) const override;
+
+    [[nodiscard]] ShapeData::Comparator getComparator() const override {
+        return ShapeData::Comparator::forType<Data>();
+    }
+
+    [[nodiscard]] TextualShapeData serialize(const ShapeData &data) const override;
+    [[nodiscard]] ShapeData deserialize(const TextualShapeData &data) const override;
 };
 
 

@@ -11,10 +11,13 @@
 #include "matchers/VectorApproxMatcher.h"
 
 
-TEST_CASE("Spherocylinder: overlap") {
+TEST_CASE("Spherocylinder: overlap (monodisperse)") {
     FreeBoundaryConditions fbc;
-    SpherocylinderTraits traits(3, 2);
+    SpherocylinderTraits traits;
+    SpherocylinderTraits::Data data{3, 2};
     Shape sc1{}, sc2{};
+    sc1.setData(data);
+    sc2.setData(data);
 
     // Correcting rotation from shape consistency update - configurations were found before the update
     auto correctingRot = Matrix<3, 3>::rotation(0, M_PI/2, 0);
@@ -122,33 +125,76 @@ TEST_CASE("Spherocylinder: overlap") {
     }
 }
 
+TEST_CASE("Spherocylinder: overlap (polydisperse)") {
+    using Data = SpherocylinderTraits::Data;
+    SpherocylinderTraits traits;
+    FreeBoundaryConditions fbc;
+
+    // All touching
+    auto [caseName, sc1, sc2] = GENERATE(
+        std::make_tuple("sphere-cylinder",
+            Shape({0, 0, 0}, Matrix<3, 3>::identity(), Data{3, 2}),
+            Shape({4, 0, 0}, Matrix<3, 3>::rotation(0, M_PI/2, 0), Data{2, 1})
+        ),
+        std::make_tuple("cylinder-cylinder",
+            Shape({0, 0, 0}, Matrix<3, 3>::identity(), Data{3, 2}),
+            Shape({3, 0, 0}, Matrix<3, 3>::identity(), Data{2, 1})
+        ),
+        std::make_tuple("sphere-sphere",
+            Shape({0, 0, 0}, Matrix<3, 3>::rotation(0, M_PI/2, 0), Data{3, 2}),
+            Shape({5.5, 0, 0}, Matrix<3, 3>::rotation(0, M_PI/2, 0), Data{2, 1})
+        )
+    );
+
+    DYNAMIC_SECTION(caseName) {
+        SECTION("overlapping") {
+            sc2.translate({-0.1, 0, 0}, fbc);   // move into
+
+            CHECK(traits.overlapBetweenShapes(sc1, sc2, fbc));
+            CHECK(traits.overlapBetweenShapes(sc2, sc1, fbc));
+        }
+
+        SECTION("non-overlapping") {
+            sc2.translate({0.1, 0, 0}, fbc);    // move away
+
+            CHECK_FALSE(traits.overlapBetweenShapes(sc1, sc2, fbc));
+            CHECK_FALSE(traits.overlapBetweenShapes(sc2, sc1, fbc));
+        }
+    }
+}
+
 TEST_CASE("Spherocylinder: wall overlap") {
-    SpherocylinderTraits traits(1, 0.5);
+    SpherocylinderTraits traits;
+    SpherocylinderTraits::Data data{1, 0.5};
     const Interaction &interaction = traits.getInteraction();
 
     CHECK(interaction.hasWallPart());
 
     SECTION("overlapping") {
-        Shape sc({1.1, 5, 1.1}, Matrix<3, 3>::rotation({0, 1, 0}, M_PI/4));
+        Shape sc({1.1, 5, 1.1}, Matrix<3, 3>::rotation({0, 1, 0}, M_PI/4), data);
         CHECK(interaction.overlapWithWallForShape(sc, {1.5 + M_SQRT2/4, 0, 0}, {-1, 0, 0}));
     }
 
     SECTION("non-overlapping") {
-        Shape sc({0.9, 5, 0.9}, Matrix<3, 3>::rotation({0, 1, 0}, M_PI/4));
+        Shape sc({0.9, 5, 0.9}, Matrix<3, 3>::rotation({0, 1, 0}, M_PI/4), data);
         CHECK_FALSE(interaction.overlapWithWallForShape(sc, {1.5 + M_SQRT2/4, 0, 0}, {-1, 0, 0}));
     }
 }
 
 TEST_CASE("Spherocylinder: getVolume") {
-    SpherocylinderTraits traits(3, 2);
+    SpherocylinderTraits traits;
+    SpherocylinderTraits::Data data{3, 2};
+    Shape sc;
+    sc.setData(data);
 
-    CHECK(traits.getVolume({}) == Approx(68 * M_PI / 3));
+    CHECK(traits.getVolume(sc) == Approx(68 * M_PI / 3));
 }
 
 TEST_CASE("Spherocylinder: toWolfram") {
     FreeBoundaryConditions fbc;
-    SpherocylinderTraits traits(3, 2);
-    Shape shape({2, 4, 6}, Matrix<3, 3>::rotation(0, M_PI/2, 0));    // spherocylinder parallel to x axis
+    SpherocylinderTraits traits;
+    SpherocylinderTraits::Data data{3, 2};
+    Shape shape({2, 4, 6}, Matrix<3, 3>::rotation(0, M_PI/2, 0), data);    // spherocylinder parallel to x axis
 
     auto printer = traits.getPrinter("wolfram", {});
     CHECK(printer->print(shape) == "CapsuleShape[{{0.500000, 4.000000, 6.000000},"
@@ -156,24 +202,31 @@ TEST_CASE("Spherocylinder: toWolfram") {
 }
 
 TEST_CASE("Spherocylinder: primary axis") {
-    SpherocylinderTraits traits(3, 2);
+    SpherocylinderTraits traits;
+    SpherocylinderTraits::Data data{3, 2};
 
     // primary axis Z rotated 90 deg around Y axis => primary axis is X
-    Shape shape({}, Matrix<3, 3>::rotation(0, M_PI_2, 0));
+    Shape shape({}, Matrix<3, 3>::rotation(0, M_PI_2, 0), data);
     CHECK_THAT(traits.getPrimaryAxis(shape), IsApproxEqual({1, 0, 0}, 1e-12));
 }
 
 TEST_CASE("Spherocylinder: geometric origin") {
-    SpherocylinderTraits traits(3, 2);
+    SpherocylinderTraits traits;
+    SpherocylinderTraits::Data data{3, 2};
+    Shape sc;
+    sc.setData(data);
 
-    CHECK(traits.getGeometry().getGeometricOrigin({}) == Vector<3>{0, 0, 0});
+    CHECK(traits.getGeometry().getGeometricOrigin(sc) == Vector<3>{0, 0, 0});
 }
 
 TEST_CASE("Spherocylinder: named points") {
-    SpherocylinderTraits traits(3, 2);
+    SpherocylinderTraits traits;
+    SpherocylinderTraits::Data data{3, 2};
+    Shape sc;
+    sc.setData(data);
 
-    CHECK(traits.getGeometry().getNamedPointForShape("beg", {}) == Vector<3>{0, 0, -1.5});
-    CHECK(traits.getGeometry().getNamedPointForShape("end", {}) == Vector<3>{0, 0, 1.5});
-    CHECK(traits.getGeometry().getNamedPointForShape("cm", {}) == Vector<3>{0, 0, 0});
-    CHECK(traits.getGeometry().getNamedPointForShape("o", {}) == Vector<3>{0, 0, 0});
+    CHECK(traits.getGeometry().getNamedPointForShape("beg", sc) == Vector<3>{0, 0, -1.5});
+    CHECK(traits.getGeometry().getNamedPointForShape("end", sc) == Vector<3>{0, 0, 1.5});
+    CHECK(traits.getGeometry().getNamedPointForShape("cm", sc) == Vector<3>{0, 0, 0});
+    CHECK(traits.getGeometry().getNamedPointForShape("o", sc) == Vector<3>{0, 0, 0});
 }

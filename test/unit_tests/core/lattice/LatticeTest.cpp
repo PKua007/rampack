@@ -10,9 +10,14 @@
 
 #include "core/lattice/Lattice.h"
 
+
 TEST_CASE("Lattice: operations") {
     TriclinicBox cellBox(std::array<double, 3>{1, 2, 3});
-    std::vector<Shape> molecules{Shape({0, 0.25, 0.5}), Shape({0.25, 0.5, 0.75})};
+    Matrix<3, 3> rot1 = Matrix<3, 3>::identity();
+    Matrix<3, 3> rot2 = Matrix<3, 3>::rotation(M_PI, 0, 0);
+    ShapeData data1(double{1});
+    ShapeData data2(double{2});
+    std::vector<Shape> molecules{Shape({0, 0.25, 0.5}, rot1, data1), Shape({0.25, 0.5, 0.75}, rot2, data2)};
     UnitCell unitCell(cellBox, molecules);
     Lattice lattice(unitCell, {2, 3, 1});
 
@@ -36,17 +41,16 @@ TEST_CASE("Lattice: operations") {
 
     SECTION("generating shapes") {
         auto shapes = lattice.generateMolecules();
-        std::vector<Vector<3>> pos;
-        std::transform(shapes.begin(), shapes.end(), std::back_inserter(pos), [](const auto &shape) {
-            return shape.getPosition();
-        });
 
-        auto shouldContain = std::vector<Vector<3>>{
-                {0, 0.5, 1.5}, {0.25, 1.0, 2.25}, {1, 0.5, 1.5}, {1.25, 1.0, 2.25},
-                {0, 2.5, 1.5}, {0.25, 3.0, 2.25}, {1, 2.5, 1.5}, {1.25, 3.0, 2.25},
-                {0, 4.5, 1.5}, {0.25, 5.0, 2.25}, {1, 4.5, 1.5}, {1.25, 5.0, 2.25},
+        auto expectedShapes = std::vector<Shape>{
+            Shape({0, 0.5, 1.5}, rot1, data1), Shape({0.25, 1.0, 2.25}, rot2, data2),
+            Shape({1, 0.5, 1.5}, rot1, data1), Shape({1.25, 1.0, 2.25}, rot2, data2),
+            Shape({0, 2.5, 1.5}, rot1, data1), Shape({0.25, 3.0, 2.25}, rot2, data2),
+            Shape({1, 2.5, 1.5}, rot1, data1), Shape({1.25, 3.0, 2.25}, rot2, data2),
+            Shape({0, 4.5, 1.5}, rot1, data1), Shape({0.25, 5.0, 2.25}, rot2, data2),
+            Shape({1, 4.5, 1.5}, rot1, data1), Shape({1.25, 5.0, 2.25}, rot2, data2)
         };
-        CHECK_THAT(pos, Catch::Matchers::UnorderedEquals(shouldContain));
+        CHECK_THAT(shapes, Catch::Matchers::UnorderedEquals(expectedShapes));
     }
 
     SECTION("modifying unit cell dimensions") {

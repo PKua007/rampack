@@ -49,17 +49,18 @@ TEST_CASE("SmecticOrder: with vector dump") {
 }
 
 TEST_CASE("SmecticOrder: non-standard focal point") {
-    SpherocylinderTraits traits(1, 0.5);
+    SpherocylinderTraits traits;
+    SpherocylinderTraits::Data data{1, 0.5};
     SmecticOrder smecticOrder({3, 3, 3}, false, "end");
 
     // Two layers along z, where second (positive) spherocylinders' caps perfectly meet on z coordinate. x and y
     // coordinates have worse order
     auto rotated = Matrix<3, 3>::rotation(M_PI, 0, 0);
     auto notRotated = Matrix<3, 3>::identity();
-    std::vector<Shape> shapes = {{{2, 2, 1.5}, notRotated}, {{2, 5, 2.5}, rotated},
-                                 {{5, 5, 1.5}, notRotated}, {{5, 2, 2.5}, rotated},
-                                 {{2, 2, 5.5}, notRotated}, {{2, 5, 6.5}, rotated},
-                                 {{5, 5, 5.5}, notRotated}, {{5, 2, 6.5}, rotated}};
+    std::vector<Shape> shapes = {{{2, 2, 1.5}, notRotated, data}, {{2, 5, 2.5}, rotated, data},
+                                 {{5, 5, 1.5}, notRotated, data}, {{5, 2, 2.5}, rotated, data},
+                                 {{2, 2, 5.5}, notRotated, data}, {{2, 5, 6.5}, rotated, data},
+                                 {{5, 5, 5.5}, notRotated, data}, {{5, 2, 6.5}, rotated, data}};
     auto fbc = std::make_unique<FreeBoundaryConditions>();
     Packing packing({8, 8, 8}, shapes, std::move(fbc), traits.getInteraction(), traits.getDataManager());
 
@@ -72,7 +73,8 @@ TEST_CASE("SmecticOrder: non-standard focal point") {
 }
 
 TEST_CASE("SmecticOrder: with function") {
-    SpherocylinderTraits traits(1, 0.5);
+    SpherocylinderTraits traits;
+    SpherocylinderTraits::Data data{1, 0.5};
     auto axis = ShapeGeometry::Axis::PRIMARY;
     auto shapeAxisCoordinate = std::make_shared<ShapeAxisCoordinate>(axis, 2);
     SmecticOrder smecticOrder({0, 0, 3}, false, "o", shapeAxisCoordinate);
@@ -82,7 +84,7 @@ TEST_CASE("SmecticOrder: with function") {
     // polarization z coordinate, so it is 1 for hkl = 001.
     auto rotated = Matrix<3, 3>::rotation(M_PI, 0, 0);
     auto notRotated = Matrix<3, 3>::identity();
-    std::vector<Shape> shapes = {{{2, 2, 1}, notRotated}, {{2, 2, 3}, rotated}};
+    std::vector<Shape> shapes = {{{2, 2, 1}, notRotated, data}, {{2, 2, 3}, rotated, data}};
     auto fbc = std::make_unique<FreeBoundaryConditions>();
     Packing packing({4, 4, 4}, shapes, std::move(fbc), traits.getInteraction(), traits.getDataManager());
 

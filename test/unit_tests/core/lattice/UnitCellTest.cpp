@@ -9,8 +9,8 @@
 
 TEST_CASE("UnitCell") {
     TriclinicBox box(std::array<double, 3>{1, 2, 4});
-    Shape shape0({0.25, 0.5, 0.75});
-    Shape shape1({0, 0.5, 0.5});
+    Shape shape0({0.25, 0.5, 0.75}, Matrix<3, 3>::rotation(M_PI, 0, 0), double{3});
+    Shape shape1({0, 0.5, 0.5}, Matrix<3, 3>::rotation(0, M_PI, 0), double{3});
     UnitCell unitCell(box, {shape0, shape1});
 
     SECTION("read-only access") {
@@ -21,16 +21,7 @@ TEST_CASE("UnitCell") {
         CHECK(unitCell.getBox() == box);
         CHECK(unitCell.getMolecules() == std::vector<Shape>({shape0, shape1}));
         CHECK(unitCell.isNormalized());
-        std::size_t i{};
-        for (const auto &shape: unitCell) {
-            if (i == 0)
-                CHECK(shape == shape0);
-            else if (i == 1)
-                CHECK(shape == shape1);
-            else
-                FAIL("i > 1");
-            i++;
-        }
+        CHECK(std::vector<Shape>(unitCell.begin(), unitCell.end()) == std::vector<Shape>{shape0, shape1});
     }
 
     SECTION("operator[] modification") {

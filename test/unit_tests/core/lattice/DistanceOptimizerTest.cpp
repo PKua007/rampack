@@ -15,9 +15,10 @@
 
 
 TEST_CASE("DiscanceOptimizer: axis optimization") {
-    SpherocylinderTraits scTraits(2, 1);
-    Shape sc1, sc2;
-    sc2.setOrientation(Matrix<3, 3>::rotation(0, M_PI/2, 0));
+    SpherocylinderTraits scTraits;
+    SpherocylinderTraits::Data data{2, 1};
+    Shape sc1({}, Matrix<3, 3>::identity(), data);
+    Shape sc2({}, Matrix<3, 3>::rotation(0, M_PI/2, 0), data);
 
     SECTION("minimizeForDirection: x") {
         double distance = DistanceOptimizer::minimizeForDirection(sc1, sc2, {1, 0, 0}, scTraits.getInteraction());
@@ -36,10 +37,14 @@ TEST_CASE("DiscanceOptimizer: axis optimization") {
 
 TEST_CASE("DistanceOptimizer: shrink packing - layer orthorhombic") {
     // BCC spherocylinders
-    UnitCell unitCell(TriclinicBox(5), {Shape({0.25, 0.25, 0.25}), Shape({0.75, 0.75, 0.75})});
+    SpherocylinderTraits::Data data{1, 0.5};
+    UnitCell unitCell(TriclinicBox(5), {
+        Shape({0.25, 0.25, 0.25}, Matrix<3, 3>::identity(), data),
+        Shape({0.75, 0.75, 0.75}, Matrix<3, 3>::identity(), data)
+    });
     Lattice lattice(unitCell, {4, 4, 2});
     auto shapes = lattice.generateMolecules();
-    SpherocylinderTraits scTraits(1, 0.5);
+    SpherocylinderTraits scTraits;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     Packing packing(lattice.getLatticeBox(), shapes, std::move(pbc), scTraits.getInteraction(),
                     scTraits.getDataManager());

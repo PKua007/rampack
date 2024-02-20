@@ -71,7 +71,7 @@ std::vector<Shape> Lattice::generateMolecules() const {
                 for (const auto &shape : cell) {
                     Vector<3> pos = Vector<3>{static_cast<double>(i), static_cast<double>(j), static_cast<double>(k)};
                     pos += shape.getPosition();
-                    shapes.emplace_back(cell.getBox().relativeToAbsolute(pos), shape.getOrientation());
+                    shapes.emplace_back(cell.getBox().relativeToAbsolute(pos), shape.getOrientation(), shape.getData());
                 }
             }
         }
