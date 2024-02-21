@@ -5,23 +5,40 @@
 #ifndef RAMPACK_SPHERETRAITS_H
 #define RAMPACK_SPHERETRAITS_H
 
-#include <variant>
+#include <optional>
 
 #include "core/ShapeTraits.h"
 #include "core/interactions/CentralInteraction.h"
 
+
 /**
- * @brief Spherical molecules with hard of soft interactions.
+ * @brief Spherical molecules with hard or soft interactions.
  */
-class SphereTraits : public ShapeTraits, public ShapeGeometry, public ShapeDataManager {
-private:
-    class HardInteraction : public Interaction {
-    private:
+class SphereTraits : public ShapeTraits, public ShapeGeometry {
+public:
+    struct HardData {
         double radius{};
 
-    public:
-        explicit HardInteraction(double radius) : radius(radius) { }
+        friend bool operator==(HardData lhs, HardData rhs) { return lhs.radius == rhs.radius; }
+    };
 
+private:
+    class HardDataManager : public ShapeDataManager {
+    public:
+        explicit HardDataManager(std::optional<double> defaultRadius);
+
+        [[nodiscard]] size_t getShapeDataSize() const override { return sizeof(HardData); }
+        void validateShapeData(const ShapeData &data) const override;
+        [[nodiscard]] TextualShapeData serialize(const ShapeData &data) const override;
+        [[nodiscard]] ShapeData deserialize(const TextualShapeData &data) const override;
+
+        [[nodiscard]] ShapeData::Comparator getComparator() const override {
+            return ShapeData::Comparator::forType<HardData>();
+        }
+    };
+
+    class HardInteraction : public Interaction {
+    public:
         [[nodiscard]] bool hasHardPart() const override { return true; }
         [[nodiscard]] bool hasSoftPart() const override { return false; }
         [[nodiscard]] bool hasWallPart() const override { return true; }
@@ -33,24 +50,24 @@ private:
         [[nodiscard]] bool overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation, const std::byte *data,
                                            std::size_t idx, const Vector<3> &wallOrigin,
                                            const Vector<3> &wallVector) const override;
-        [[nodiscard]] double getRangeRadius([[maybe_unused]] const std::byte *data) const override {
-            return 2 * this->radius;
-        }
+        [[nodiscard]] double getRangeRadius([[maybe_unused]] const std::byte *data) const override;
     };
 
     class WolframPrinter : public ShapePrinter {
     private:
-        double radius{};
+        std::optional<double> fixedRadius{};
 
     public:
-        explicit WolframPrinter(double radius) : radius{radius} { }
+        explicit WolframPrinter() = default;
+        explicit WolframPrinter(double fixedRadius);
         [[nodiscard]] std::string print(const Shape &shape) const override;
     };
 
     static std::shared_ptr<ShapePrinter> createObjPrinter(double radius, std::size_t subdivisions);
 
-    double radius{};
-    std::shared_ptr<Interaction> interaction{};
+    std::optional<double> fixedRadius{};
+    std::shared_ptr<Interaction> interaction;
+    std::shared_ptr<ShapeDataManager> dataManager;
     std::shared_ptr<WolframPrinter> wolframPrinter;
 
 public:
@@ -61,12 +78,12 @@ public:
     /**
      * @brief Creates a hard sphere.
      */
-    explicit SphereTraits(double radius = 1);
+    explicit SphereTraits(std::optional<double> defaultRadius = std::nullopt);
 
     /**
      * @brief Creates a sphere interacting via @a centralInteraction soft potential.
      */
-    SphereTraits(double radius, std::shared_ptr<CentralInteraction> centralInteraction);
+    SphereTraits(double fixedRadius, std::shared_ptr<CentralInteraction> centralInteraction);
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; };
 
@@ -84,9 +101,7 @@ public:
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
     [[nodiscard]] double getVolume(const Shape &shape) const override;
 
-    [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this; }
-
-    [[nodiscard]] double getRadius() const { return this->radius; }
+    [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this->dataManager; }
 };
 
 
