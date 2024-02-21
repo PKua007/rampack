@@ -18,6 +18,7 @@
 #include "core/ObservablesCollector.h"
 #include "core/observables/NumberDensity.h"
 #include "core/observables/NematicOrder.h"
+#include "core/observables/PackingFraction.h"
 #include "core/shapes/CompoundShapeTraits.h"
 #include "core/interactions/SquareInverseCoreInteraction.h"
 #include "core/move_samplers/RototranslationSampler.h"
@@ -424,4 +425,41 @@ TEST_CASE("Simulation: hard dumbbell NVT relaxation", "[short]") {
     Quantity P2 = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     CHECK(std::abs(P2.value) < 0.05);
     CHECK(simulation.getPacking().getNumberDensity() == Approx(108/7.2/7.2/7.2));
+}
+
+TEST_CASE("Simulation: binary hard sphere gas", "[medium]") {
+    OMP_SET_NUM_THREADS(1);
+
+    // 125 spheres, out of which 8 have radius 0.5 and the rest - 0.1
+    using SphereData = SphereTraits::HardData;
+    ShapeData smallSphere(SphereData{0.1});
+    ShapeData largeSphere(SphereData{0.5});
+    Lattice lattice(UnitCellFactory::createScCell(1.1, smallSphere), {5, 5, 5});
+    for (std::size_t i : {1, 3})
+        for (std::size_t j : {1, 3})
+            for (std::size_t k : {1, 3})
+                lattice.modifySpecificCellMolecules(i, j, k)[0].setData(largeSphere);
+    auto shapes = lattice.generateMolecules();
+    auto box = lattice.getLatticeBox();
+
+    SphereTraits sphereTraits(0.5);
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    auto packing = std::make_unique<Packing>(
+        box, std::move(shapes), std::move(pbc), sphereTraits.getInteraction(), sphereTraits.getDataManager()
+    );
+    auto volumeScaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>(), 1);
+    Simulation simulation(std::move(packing), 1, 0.1, 1234, std::move(volumeScaler));
+    auto collector = std::make_unique<ObservablesCollector>();
+    collector->addObservable(std::make_unique<PackingFraction>(), ObservablesCollector::AVERAGING);
+    std::ostringstream loggerStream;
+    Logger logger(loggerStream);
+
+    simulation.integrate(1, 7, 3000, 7000, 200, 200, sphereTraits, std::move(collector), {}, logger);
+
+    Quantity actual = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
+    double expected = 0.17294;  // Enciso et al. (1997). Mol. Phys., 92(2), 173-176
+    INFO("Enciso eta  : " << expected);
+    INFO("RAMPACK eta : " << actual);
+    CHECK(actual.value == Approx(expected).margin(actual.error * 3)); // 3 sigma tolerance
+    CHECK(actual.error / actual.value < 0.03); // up to 3%
 }
