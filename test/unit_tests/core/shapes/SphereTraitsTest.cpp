@@ -65,7 +65,7 @@ TEST_CASE("Sphere: toWolfram") {
         Shape sphere({2, 4, 6}, Matrix<3, 3>::identity(), SphereTraits::HardData{2});
 
         CHECK(sphereTraits.getPrinter("wolfram", {})->print(sphere)
-              == "Sphere[{2.000000, 4.000000, 6.000000},2.000000]");
+              == "Sphere[{2, 4, 6},2]");
     }
 
     SECTION("soft interaction") {
@@ -73,7 +73,7 @@ TEST_CASE("Sphere: toWolfram") {
         Shape sphere({2, 4, 6});
 
         CHECK(sphereTraits.getPrinter("wolfram", {})->print(sphere)
-              == "Sphere[{2.000000, 4.000000, 6.000000},2.000000]");
+              == "Sphere[{2, 4, 6},2]");
     }
 }
 

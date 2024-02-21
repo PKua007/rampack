@@ -10,44 +10,77 @@
 
 
 TEST_CASE("WolframWriter") {
-    SphereTraits traits(0.5);
-    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    using SphereData = SphereTraits::HardData;
+    const auto NO_ROT = Matrix<3, 3>::identity();
+
+    SphereTraits traits;
     std::vector<Shape> shapes;
-    shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5});
-    shapes.emplace_back(Vector<3>{2.5, 2.5, 4.0});
-    Packing packing(TriclinicBox(5), std::move(shapes), std::move(pbc), traits.getInteraction(),
-                    traits.getDataManager());
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+
     std::ostringstream out;
     out.precision(1);
     out << std::fixed;
 
-    std::map<std::string, std::string> auxInfo = {{"key1", "value 1"}, {"key2", "value2"}};
+    SECTION("monodisperse") {
+        shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5}, NO_ROT, SphereData{0.5});
+        shapes.emplace_back(Vector<3>{2.5, 2.5, 4.0}, NO_ROT, SphereData{0.5});
+        Packing packing(TriclinicBox(5), std::move(shapes), std::move(pbc), traits.getInteraction(),
+                        traits.getDataManager());
 
-    SECTION("WolframStyle::STANDARD") {
-        WolframWriter writer(WolframWriter::WolframStyle::STANDARD);
-        writer.write(out, packing, traits, auxInfo);
+        SECTION("WolframStyle::STANDARD") {
+            WolframWriter writer(WolframWriter::WolframStyle::STANDARD);
+            writer.write(out, packing, traits, {});
 
-        auto expectedOut =
+            auto expectedOut =
 R"(Graphics3D[{
 Sphere[{0.5, 0.5, 0.5},0.5],
 Sphere[{2.5, 2.5, 4},0.5]}]
 )";
-        CHECK(out.str() == expectedOut);
-    }
+            CHECK(out.str() == expectedOut);
+        }
 
-    SECTION("WolframStyle::AFFINE_TRANSFORM") {
-        WolframWriter writer(WolframWriter::WolframStyle::AFFINE_TRANSFORM);
-        writer.write(out, packing, traits, auxInfo);
+        SECTION("WolframStyle::AFFINE_TRANSFORM") {
+            WolframWriter writer(WolframWriter::WolframStyle::AFFINE_TRANSFORM);
+            writer.write(out, packing, traits, {});
 
-        auto expectedOut =
+            auto expectedOut =
 R"(Graphics3D[GeometricTransformation[
 Sphere[{0, 0, 0},0.5],AffineTransform@#]& /@ {
 {{{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}, {0.5, 0.5, 0.5}},
 {{{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}, {2.5, 2.5, 4.0}}
 }]
 )";
-        CHECK(out.str() == expectedOut);
+            CHECK(out.str() == expectedOut);
+        }
     }
 
-    // TODO: write test for polidisperse AFFINE_TRANSFORM
+    SECTION("polidysperse") {
+        shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5}, NO_ROT, SphereData{0.5});
+        shapes.emplace_back(Vector<3>{1.5, 1.5, 0.5}, NO_ROT, SphereData{0.5});
+        shapes.emplace_back(Vector<3>{2.5, 2.5, 4.0}, NO_ROT, SphereData{0.25});
+        shapes.emplace_back(Vector<3>{3.5, 3.5, 4.0}, NO_ROT, SphereData{0.25});
+        Packing packing(TriclinicBox(5), std::move(shapes), std::move(pbc), traits.getInteraction(),
+                        traits.getDataManager());
+
+        SECTION("WolframStyle::AFFINE_TRANSFORM") {
+            WolframWriter writer(WolframWriter::WolframStyle::AFFINE_TRANSFORM);
+            writer.write(out, packing, traits, {});
+
+            auto expectedOut =
+R"(Graphics3D[{
+GeometricTransformation[
+Sphere[{0, 0, 0},0.5],AffineTransform@#]& /@ {
+{{{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}, {0.5, 0.5, 0.5}},
+{{{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}, {1.5, 1.5, 0.5}}
+},
+GeometricTransformation[
+Sphere[{0, 0, 0},0.25],AffineTransform@#]& /@ {
+{{{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}, {2.5, 2.5, 4.0}},
+{{{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}, {3.5, 3.5, 4.0}}
+}
+}]
+)";
+            CHECK(out.str() == expectedOut);
+        }
+    }
 }

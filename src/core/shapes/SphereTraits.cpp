@@ -135,7 +135,6 @@ std::string SphereTraits::WolframPrinter::print(const Shape &shape) const {
                     : shape.getData().as<HardData>().radius;
 
     std::ostringstream out;
-    out << std::fixed;
     out << "Sphere[" << (shape.getPosition()) << "," << radius << "]";
     return out.str();
 }

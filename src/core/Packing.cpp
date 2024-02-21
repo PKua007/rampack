@@ -77,6 +77,10 @@ void Packing::reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, co
     this->box = newBox;
     this->shapeDataSize = newDataManager.getShapeDataSize();
 
+    std::size_t inferredShapeDataSize = Packing::inferShapeDataSize(newShapes);
+    if (inferredShapeDataSize == 0 && this->shapeDataSize != 0)
+        Packing::imbueDefaultShapeData(newShapes, newDataManager);
+
     std::vector<Vector<3>> newPositions(newShapes.size() + this->moveThreads);
     std::vector<Matrix<3, 3>> newOrientations(newShapes.size() + this->moveThreads);
     std::vector<std::byte> newDatas((newShapes.size() + this->moveThreads) * this->shapeDataSize);
@@ -1492,6 +1496,27 @@ void Packing::validateShapeData(const ShapeDataManager &manager) const {
         }
     } catch (const ShapeDataFormatException &e) {
         ExpectsThrow("Particle " + std::to_string(particleIdx) + ": " + e.what());
+    }
+}
+
+std::size_t Packing::inferShapeDataSize(const std::vector<Shape> &shapes) {
+    if (shapes.empty())
+        return 0;
+
+    std::size_t size = shapes.front().getData().getSize();
+    auto hasEqualDataSize = [size](const Shape &shape) { return shape.getData().getSize() == size; };
+    Expects(std::all_of(shapes.begin(), shapes.end(), hasEqualDataSize));
+
+    return size;
+}
+
+void Packing::imbueDefaultShapeData(std::vector<Shape> &shapes, const ShapeDataManager &manager) {
+    try {
+        ShapeData defaultShapeData = manager.defaultDeserialize({});
+        for (auto &shape : shapes)
+            shape.setData(defaultShapeData);
+    } catch (const ShapeDataSerializationException &e) {
+        ExpectsThrow(std::string("Shapes have empty ShapeData and default recreation failed: ") + e.what());
     }
 }
 
