@@ -10,7 +10,7 @@
 #include "core/FreeBoundaryConditions.h"
 #include "core/PeriodicBoundaryConditions.h"
 
-using Data = PolyspherocylinderTraits::SpherocylinderData;
+using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
 
 TEST_CASE("PolyspherocylinderTraits") {
     // It looks like this (one bigger and one smaller sticking from its top - radius 1 and radius 0.5)
@@ -29,8 +29,8 @@ TEST_CASE("PolyspherocylinderTraits") {
     // X - common cap of both spherocylinders
 
     double volume = 1;  // Arbitrary value, it is not important here
-    PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({Data{{0, 0, 0}, {0, 0, 1}, 1},
-                                                                   Data{{0, 0, 2}, {0, 0, 1}, 0.5}},
+    PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({SpherocylinderData{{0, 0, 0}, {0, 0, 1}, 1},
+                                                                   SpherocylinderData{{0, 0, 2}, {0, 0, 1}, 0.5}},
                                                                   {0, 0, 1}, {1, 0, 0}, {0, 1, 0}, volume,
                                                                   {{"point1", {0, 1, 0}}});
     PolyspherocylinderTraits traits(geometry);
@@ -91,8 +91,8 @@ TEST_CASE("PolyspherocylinderTraits") {
 
 TEST_CASE("PolyspherocylinderTraits: wall overlap") {
     // It is V-shaped molecule with center at a common cap and rotated 45 degrees
-    PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({Data{{0.5, 0.5, 0}, {0.5, 0.5, 0}, 0.5},
-                                                                   Data{{0.5, -0.5, 0}, {0.5, -0.5, 0}, 0.5}},
+    PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({SpherocylinderData{{0.5, 0.5, 0}, {0.5, 0.5, 0}, 0.5},
+                                                                   SpherocylinderData{{0.5, -0.5, 0}, {0.5, -0.5, 0}, 0.5}},
                                                                   {0, 1, 0}, {1, 0, 0}, {0, 0, 0});
     PolyspherocylinderTraits traits(std::move(geometry));
     const Interaction &interaction = traits.getInteraction();
@@ -115,7 +115,7 @@ TEST_CASE("PolyspherocylinderTraits: tests from SpherocylinderTraits") {
     // the intersection criterion
 
     FreeBoundaryConditions fbc;
-    PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({Data{{0, 0, 0}, {1.5, 0, 0}, 2}},
+    PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({SpherocylinderData{{0, 0, 0}, {1.5, 0, 0}, 2}},
                                                                   {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
     PolyspherocylinderTraits traits(std::move(geometry));
     Shape sc1{}, sc2{};

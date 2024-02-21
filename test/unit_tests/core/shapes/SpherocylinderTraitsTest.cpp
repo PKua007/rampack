@@ -11,10 +11,14 @@
 #include "matchers/VectorApproxMatcher.h"
 
 
+namespace {
+    using SpherocylinderData = SpherocylinderTraits::Data;
+}
+
 TEST_CASE("Spherocylinder: overlap (monodisperse)") {
     FreeBoundaryConditions fbc;
     SpherocylinderTraits traits;
-    SpherocylinderTraits::Data data{3, 2};
+    SpherocylinderData data{3, 2};
     Shape sc1{}, sc2{};
     sc1.setData(data);
     sc2.setData(data);
@@ -126,23 +130,22 @@ TEST_CASE("Spherocylinder: overlap (monodisperse)") {
 }
 
 TEST_CASE("Spherocylinder: overlap (polydisperse)") {
-    using Data = SpherocylinderTraits::Data;
     SpherocylinderTraits traits;
     FreeBoundaryConditions fbc;
 
     // All touching
     auto [caseName, sc1, sc2] = GENERATE(
         std::make_tuple("sphere-cylinder",
-            Shape({0, 0, 0}, Matrix<3, 3>::identity(), Data{3, 2}),
-            Shape({4, 0, 0}, Matrix<3, 3>::rotation(0, M_PI/2, 0), Data{2, 1})
+            Shape({0, 0, 0}, Matrix<3, 3>::identity(), SpherocylinderData{3, 2}),
+            Shape({4, 0, 0}, Matrix<3, 3>::rotation(0, M_PI/2, 0), SpherocylinderData{2, 1})
         ),
         std::make_tuple("cylinder-cylinder",
-            Shape({0, 0, 0}, Matrix<3, 3>::identity(), Data{3, 2}),
-            Shape({3, 0, 0}, Matrix<3, 3>::identity(), Data{2, 1})
+            Shape({0, 0, 0}, Matrix<3, 3>::identity(), SpherocylinderData{3, 2}),
+            Shape({3, 0, 0}, Matrix<3, 3>::identity(), SpherocylinderData{2, 1})
         ),
         std::make_tuple("sphere-sphere",
-            Shape({0, 0, 0}, Matrix<3, 3>::rotation(0, M_PI/2, 0), Data{3, 2}),
-            Shape({5.5, 0, 0}, Matrix<3, 3>::rotation(0, M_PI/2, 0), Data{2, 1})
+            Shape({0, 0, 0}, Matrix<3, 3>::rotation(0, M_PI/2, 0), SpherocylinderData{3, 2}),
+            Shape({5.5, 0, 0}, Matrix<3, 3>::rotation(0, M_PI/2, 0), SpherocylinderData{2, 1})
         )
     );
 
@@ -165,7 +168,7 @@ TEST_CASE("Spherocylinder: overlap (polydisperse)") {
 
 TEST_CASE("Spherocylinder: wall overlap") {
     SpherocylinderTraits traits;
-    SpherocylinderTraits::Data data{1, 0.5};
+    SpherocylinderData data{1, 0.5};
     const Interaction &interaction = traits.getInteraction();
 
     CHECK(interaction.hasWallPart());
@@ -183,7 +186,7 @@ TEST_CASE("Spherocylinder: wall overlap") {
 
 TEST_CASE("Spherocylinder: getVolume") {
     SpherocylinderTraits traits;
-    SpherocylinderTraits::Data data{3, 2};
+    SpherocylinderData data{3, 2};
     Shape sc;
     sc.setData(data);
 
@@ -193,7 +196,7 @@ TEST_CASE("Spherocylinder: getVolume") {
 TEST_CASE("Spherocylinder: toWolfram") {
     FreeBoundaryConditions fbc;
     SpherocylinderTraits traits;
-    SpherocylinderTraits::Data data{3, 2};
+    SpherocylinderData data{3, 2};
     Shape shape({2, 4, 6}, Matrix<3, 3>::rotation(0, M_PI/2, 0), data);    // spherocylinder parallel to x axis
 
     auto printer = traits.getPrinter("wolfram", {});
@@ -203,7 +206,7 @@ TEST_CASE("Spherocylinder: toWolfram") {
 
 TEST_CASE("Spherocylinder: primary axis") {
     SpherocylinderTraits traits;
-    SpherocylinderTraits::Data data{3, 2};
+    SpherocylinderData data{3, 2};
 
     // primary axis Z rotated 90 deg around Y axis => primary axis is X
     Shape shape({}, Matrix<3, 3>::rotation(0, M_PI_2, 0), data);
@@ -212,7 +215,7 @@ TEST_CASE("Spherocylinder: primary axis") {
 
 TEST_CASE("Spherocylinder: geometric origin") {
     SpherocylinderTraits traits;
-    SpherocylinderTraits::Data data{3, 2};
+    SpherocylinderData data{3, 2};
     Shape sc;
     sc.setData(data);
 
@@ -221,7 +224,7 @@ TEST_CASE("Spherocylinder: geometric origin") {
 
 TEST_CASE("Spherocylinder: named points") {
     SpherocylinderTraits traits;
-    ShapeData data(SpherocylinderTraits::Data{3, 2});
+    ShapeData data(SpherocylinderData{3, 2});
 
     CHECK(traits.getGeometry().getNamedPointForData("beg", data) == Vector<3>{0, 0, -1.5});
     CHECK(traits.getGeometry().getNamedPointForData("end", data) == Vector<3>{0, 0, 1.5});
@@ -233,17 +236,17 @@ TEST_CASE("Spherocylinder: serialization") {
     SECTION("default data") {
         SpherocylinderTraits traits(5, 3);
 
-        SpherocylinderTraits::Data expected{5, 3};
+        SpherocylinderData expected{5, 3};
         CHECK(traits.getDataManager().defaultDeserialize({}) == ShapeData(expected));
     }
 
-    SECTION("serialization -> deserialization") {
+    SECTION("serialization & deserialization") {
         SpherocylinderTraits traits;
-        ShapeData data(SpherocylinderTraits::Data{5, 3});
         const auto &manager = traits.getDataManager();
 
-        auto serialized = manager.serialize(data);
-        auto deserialized = manager.deserialize(serialized);
-        CHECK(deserialized == data);
+        TextualShapeData textualData{{"l", "5.5"}, {"r", "1.5"}};
+        ShapeData shapeData(SpherocylinderData{5.5, 1.5});
+        CHECK(manager.serialize(shapeData) == textualData);
+        CHECK(manager.deserialize(textualData) == shapeData);
     }
 }

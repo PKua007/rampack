@@ -136,8 +136,8 @@ std::unique_ptr<ShapePrinter> SpherocylinderTraits::createObjPrinter(double leng
 
 void SpherocylinderTraits::validateShapeData(const ShapeData &data) const {
     const auto &scData = data.as<Data>();
-    ValidateMsg(scData.radius > 0, "spherocylinder's radius must be > 0");
-    ValidateMsg(scData.length >= 0, "spherocylinder's length must be >= 0");
+    ShapeDataValidateMsg(scData.radius > 0, "spherocylinder's radius must be > 0");
+    ShapeDataValidateMsg(scData.length >= 0, "spherocylinder's length must be >= 0");
 }
 
 TextualShapeData SpherocylinderTraits::serialize(const ShapeData &data) const {
