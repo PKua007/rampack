@@ -25,9 +25,10 @@ TEST_CASE("ProbabilityEvolution") {
     for (std::size_t i{}; i < 4; i++) {
         auto posDouble = static_cast<double>(i) + 0.5;
         shapes.push_back(Shape({posDouble, posDouble, posDouble}));
+        shapes.back().setData(SphereTraits::HardData{0.5});
     }
 
-    SphereTraits traits(0.5);
+    SphereTraits traits;
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     Packing packing(TriclinicBox(5), shapes, std::move(pbc), traits.getInteraction(), traits.getDataManager());
 

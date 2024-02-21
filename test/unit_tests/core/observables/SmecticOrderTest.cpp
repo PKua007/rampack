@@ -15,7 +15,7 @@
 
 
 TEST_CASE("SmecticOrder: with vector dump") {
-    SphereTraits traits;
+    SphereTraits traits(1);
     using A = std::array<std::size_t, 3>;
     // One ntauRanges without zeros and one with zeros (the one with zero was buggy)
     // Both include the actual best k vector with Miller indices 3.0.0

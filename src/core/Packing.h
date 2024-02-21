@@ -96,6 +96,8 @@ private:
     static bool areShapesWithinBox(const std::vector<Shape> &shapes, const TriclinicBox &box);
     static bool isBoxUpscaled(const TriclinicBox &oldBox, const TriclinicBox &newBox);
     static void fixRotationMatrix(Matrix<3, 3> &rotation);
+    static std::size_t inferShapeDataSize(const std::vector<Shape> &shapes);
+    static void imbueDefaultShapeData(std::vector<Shape> &shapes, const ShapeDataManager &manager);
 
     void rebuildNeighbourGrid();
 
