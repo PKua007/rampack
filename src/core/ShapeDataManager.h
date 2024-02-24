@@ -54,7 +54,6 @@ public:
     [[nodiscard]] const TextualShapeData &getDefaultShapeData() const { return this->defaultData; }
     [[nodiscard]] TextualShapeData defaultSerialize([[maybe_unused]] const ShapeData &data) const;
     [[nodiscard]] ShapeData defaultDeserialize([[maybe_unused]] const TextualShapeData &data) const;
-
 };
 
 

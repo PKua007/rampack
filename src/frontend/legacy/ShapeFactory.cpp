@@ -132,15 +132,15 @@ namespace {
         return axis.normalized();
     }
 
-    std::vector<ShapeGeometry::NamedPoint> parse_named_points(const std::string &pointsStr) {
-        std::vector<ShapeGeometry::NamedPoint> namedPoints;
+    std::map<std::string, Vector<3>> parse_named_points(const std::string &pointsStr) {
+        std::map<std::string, Vector<3>> namedPoints;
         std::istringstream pointsStream(pointsStr);
         while (pointsStream.good()) {
             std::string name;
             Vector<3> pos;
             pointsStream >> name >> pos[0] >> pos[1] >> pos[2];
             ValidateMsg(pointsStream, "Malformed named point");
-            namedPoints.emplace_back(name, pos);
+            namedPoints.emplace(name, pos);
             if (pointsStream.good())
                 pointsStream >> std::ws;
         }
@@ -164,7 +164,7 @@ namespace {
         Vector<3> geometricOrigin = parse_vector(fieldsMap.at("geometricOrigin"));
         double volume = std::stod(fieldsMap.at("volume"));
         ValidateMsg(volume > 0, "Volume should be positive");
-        std::vector<ShapeGeometry::NamedPoint> namedPoints;
+        std::map<std::string, Vector<3>> namedPoints;
         if (fieldsMap.find("namedPoints") != fieldsMap.end())
             namedPoints = parse_named_points(fieldsMap.at("namedPoints"));
 
@@ -182,12 +182,15 @@ namespace {
             builder.processCommand(command);
 
         auto collideGeometry = builder.releaseCollideGeometry();
+        std::vector<NamedPoint> properNamedPoints;
+        for (const auto &[pointName, point] : namedPoints)
+            properNamedPoints.emplace_back(pointName, point);
         return std::make_shared<GenericXenoCollideTraits>(
-            std::move(collideGeometry), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
+            std::move(collideGeometry), primaryAxis, secondaryAxis, geometricOrigin, volume, properNamedPoints
         );
     }
 
-    PolysphereTraits::PolysphereGeometry parse_polysphere_geometry(std::istream &in) {
+    PolysphereTraits::PolysphereShape parse_polysphere_geometry(std::istream &in) {
         auto [fieldsMap, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints]
             = parse_generic_shape_traits(in, GENERIC_POLYSPHERE_USAGE, {"spheres"});
 
@@ -200,7 +203,7 @@ namespace {
             ValidateMsg(r > 0, "Radius of sphere " + std::to_string(i/4) + " is <= 0");
             sphereData.emplace_back(pos, r);
         }
-        return PolysphereTraits::PolysphereGeometry(
+        return PolysphereTraits::PolysphereShape(
             std::move(sphereData), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
         );
     }
@@ -252,8 +255,11 @@ namespace {
             parse_spherocylinders(fieldsMap.at("spherocylinders"), spherocylinderData);
         ValidateMsg(!spherocylinderData.empty(), GENERIC_POLYSPHEROCYLINDER_USAGE);
 
+        std::vector<NamedPoint> properNamedPoints;
+        for (const auto &[pointName, point] : namedPoints)
+            properNamedPoints.emplace_back(pointName, point);
         PolyspherocylinderTraits::PolyspherocylinderGeometry geometry(
-            std::move(spherocylinderData), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
+            std::move(spherocylinderData), primaryAxis, secondaryAxis, geometricOrigin, volume, properNamedPoints
         );
         return std::make_unique<PolyspherocylinderTraits>(std::move(geometry));
     }

@@ -8,9 +8,9 @@
 
 
 namespace legacy {
-    PolysphereWedgeTraits::PolysphereGeometry
-    PolysphereWedgeTraits::generateGeometry(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
-                                            double spherePenetration)
+    PolysphereTraits::PolysphereShape
+    PolysphereWedgeTraits::generateShape(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
+                                         double spherePenetration)
     {
         Expects(sphereNum >= 2);
         Expects(smallSphereRadius > 0);
@@ -29,22 +29,22 @@ namespace legacy {
             currentRadius += radiusDelta;
         }
 
-        PolysphereGeometry geometry(std::move(data), {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
-        geometry.normalizeMassCentre();
-        double end1 = geometry.getSphereData().front().position[0];
-        double end2 = geometry.getSphereData().back().position[0];
-        geometry.setGeometricOrigin({(end2 + largeSphereRadius + end1 - smallSphereRadius)/2, 0, 0});
-        geometry.addCustomNamedPoints({{"cm", {0, 0, 0}},
-                                       {"ss", geometry.getSphereData().front().position},
-                                       {"sl", geometry.getSphereData().back().position}});
-        return geometry;
+        PolysphereShape shape(std::move(data), {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
+        shape.normalizeMassCentre();
+        double end1 = shape.getSphereData().front().position[0];
+        double end2 = shape.getSphereData().back().position[0];
+        shape.setGeometricOrigin({(end2 + largeSphereRadius + end1 - smallSphereRadius) / 2, 0, 0});
+        shape.addCustomNamedPoints({{"cm", {0, 0, 0}},
+                                    {"ss", shape.getSphereData().front().position},
+                                    {"sl", shape.getSphereData().back().position}});
+        return shape;
     }
 }
 
 
-PolysphereWedgeTraits::PolysphereGeometry
-PolysphereWedgeTraits::generateGeometry(std::size_t sphereNum, double bottomSphereRadius, double topSphereRadius,
-                                        double spherePenetration)
+PolysphereTraits::PolysphereShape
+PolysphereWedgeTraits::generateShape(std::size_t sphereNum, double bottomSphereRadius, double topSphereRadius,
+                                     double spherePenetration)
 {
     Expects(sphereNum >= 2);
     Expects(topSphereRadius > 0);
@@ -75,11 +75,11 @@ PolysphereWedgeTraits::generateGeometry(std::size_t sphereNum, double bottomSphe
     }
 
     double volume = PolysphereWedgeTraits::calculateVolume(data, spherePenetration);
-    PolysphereGeometry geometry(data, {0, 0, 1}, std::nullopt, {0, 0, 0}, volume);
-    geometry.addCustomNamedPoints({{"beg", data.front().position}, {"end", data.back().position}});
+    PolysphereShape shape(data, {0, 0, 1}, std::nullopt, {0, 0, 0}, volume);
+    shape.addCustomNamedPoints({{"beg", data.front().position}, {"end", data.back().position}});
     if (spherePenetration == 0)
-        geometry.addCustomNamedPoints({{"cm", geometry.calculateMassCentre()}});
-    return geometry;
+        shape.addCustomNamedPoints({{"cm", shape.calculateMassCentre()}});
+    return shape;
 }
 
 double PolysphereWedgeTraits::calculateVolume(const std::vector<SphereData> &sphereData, double spherePenetration) {

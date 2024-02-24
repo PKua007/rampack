@@ -9,6 +9,10 @@
 #include "core/shapes/PolysphereLollipopTraits.h"
 
 
+namespace {
+    const Shape defaultShape({}, Matrix<3, 3>::identity(), PolysphereTraits::Data{0});
+}
+
 TEST_CASE("PolysphereLollipopTraits: basics") {
     std::size_t sphereNum = 3;
     double stickSphereRadius = 2;
@@ -19,7 +23,7 @@ TEST_CASE("PolysphereLollipopTraits: basics") {
                                     tipSpherePenetration);
 
     SECTION("sphere data") {
-        const auto &data = traits.getSphereData();
+        const auto &data = traits.getDefaultPolysphereShape().getSphereData();
         REQUIRE(data.size() == 3);
         CHECK(data[0].radius == 2);
         CHECK(data[1].radius == 2);
@@ -31,14 +35,14 @@ TEST_CASE("PolysphereLollipopTraits: basics") {
 
     SECTION("geometry") {
         const auto &geometry = traits.getGeometry();
-        CHECK_THAT(geometry.getGeometricOrigin({}), IsApproxEqual({0, 0, 0}, 1e-12));
-        CHECK_THAT(geometry.getPrimaryAxis({}), IsApproxEqual({0, 0, 1}, 1e-12));
-        CHECK(geometry.getVolume({}) == Approx(1217*M_PI/12));      // Mathematica value
-        CHECK_THAT(geometry.getNamedPoint("s0").forStatic(), IsApproxEqual({0, 0, -4.5}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("ss").forStatic(), IsApproxEqual({0, 0, -4.5}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("s2").forStatic(), IsApproxEqual({0, 0, 2.5}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("st").forStatic(), IsApproxEqual({0, 0, 2.5}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("o").forShape({}), IsApproxEqual({0, 0, 0}, 1e-12));
+        CHECK_THAT(geometry.getGeometricOrigin(defaultShape), IsApproxEqual({0, 0, 0}, 1e-12));
+        CHECK_THAT(geometry.getPrimaryAxis(defaultShape), IsApproxEqual({0, 0, 1}, 1e-12));
+        CHECK(geometry.getVolume(defaultShape) == Approx(1217*M_PI/12));      // Mathematica value
+        CHECK_THAT(geometry.getNamedPoint("s0").forShape(defaultShape), IsApproxEqual({0, 0, -4.5}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("ss").forShape(defaultShape), IsApproxEqual({0, 0, -4.5}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("s2").forShape(defaultShape), IsApproxEqual({0, 0, 2.5}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("st").forShape(defaultShape), IsApproxEqual({0, 0, 2.5}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("o").forShape(defaultShape), IsApproxEqual({0, 0, 0}, 1e-12));
         // Named point "cm" has its own test
     }
 }
@@ -47,7 +51,7 @@ TEST_CASE("PolysphereLollipopTraits: mass centre") {
     SECTION("existing") {
         PolysphereLollipopTraits traits(3, 1, 2, 0, 0);
 
-        CHECK_THAT(traits.getGeometry().getNamedPoint("cm").forStatic(), IsApproxEqual({0, 0, 1.2}, 1e-12));
+        CHECK_THAT(traits.getGeometry().getNamedPoint("cm").forShape(defaultShape), IsApproxEqual({0, 0, 1.2}, 1e-12));
     }
 
     SECTION("not existing") {

@@ -7,8 +7,10 @@
 
 #include <utility>
 #include <vector>
+#include <functional>
 
 #include "core/Interaction.h"
+
 
 /**
  * @brief A class representing the central interaction, where the energy depends only on the distance between
@@ -16,8 +18,11 @@
  * @details Concrete potentials are programmed by implementing CentralInteraction::calculateEnergyForDistance2 method.
  */
 class CentralInteraction : public Interaction {
+public:
+    using CentresProvider = std::function<std::vector<Vector<3>>(const std::byte *)>;
+
 private:
-    std::vector<Vector<3>> potentialCentres;
+    CentresProvider centresProvider;
 
 protected:
     /**
@@ -31,24 +36,38 @@ public:
      * @brief Constructs the interaction with a single interaction centre in the origin (an empty interaction centres
      * list)
      */
-    CentralInteraction() = default;
+    CentralInteraction() { this->installOnSphere(); }
 
     /**
      * @brief Constructs the interaction with a concrete list of interaction centres @a potentialCentres.
      */
-    explicit CentralInteraction(std::vector<Vector<3>> potentialCentres)
-            : potentialCentres{std::move(potentialCentres)}
-    { }
+    explicit CentralInteraction(const std::vector<Vector<3>> &potentialCentres) {
+        this->installOnCentres(potentialCentres);
+    }
+
+    explicit CentralInteraction(CentresProvider centresProvider) : centresProvider{std::move(centresProvider)} { }
 
     /**
      * @brief Installs the interaction on sphere (empties the list of interaction centres).
      */
-    void installOnSphere() { this->potentialCentres = {}; };
+    void installOnSphere() {
+        this->centresProvider = [](const std::byte *) -> std::vector<Vector<3>> { return {}; };
+    }
 
     /**
      * @brief Install the interaction on concrete interaction centres.
      */
-    void installOnCentres(const std::vector<Vector<3>> &centres) { this->potentialCentres = centres; }
+    void installOnCentres(const std::vector<Vector<3>> &centres) {
+        this->centresProvider = [centres](const std::byte *) { return centres; };
+    }
+
+    void installCentresProvider(CentresProvider centresProvider_) {
+        this->centresProvider = std::move(centresProvider_);
+    }
+
+    void detach() {
+        this->installOnSphere();
+    }
 
     [[nodiscard]] bool hasHardPart() const final { return false; }
     [[nodiscard]] bool hasWallPart() const final { return false; }
@@ -68,8 +87,8 @@ public:
         return this->calculateEnergyForDistance2(bc.getDistance2(pos1, pos2));
     }
 
-    [[nodiscard]] std::vector<Vector<3>> getInteractionCentres([[maybe_unused]] const std::byte *data) const final {
-        return this->potentialCentres;
+    [[nodiscard]] std::vector<Vector<3>> getInteractionCentres(const std::byte *data) const final {
+        return this->centresProvider(data);
     }
 };
 

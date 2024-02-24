@@ -25,7 +25,7 @@ TEST_CASE("ShapeGeometry::NamedPoint") {
     Shape shape({1, 1, 1}, Matrix<3, 3>::rotation(0, 0, M_PI/2), TheData{{1, 0, 0}});
 
     SECTION("empty") {
-        ShapeGeometry::NamedPoint point;
+        NamedPoint point;
 
         CHECK(point.getName().empty());
         CHECK(point.isStatic());
@@ -36,7 +36,7 @@ TEST_CASE("ShapeGeometry::NamedPoint") {
     }
 
     SECTION("static") {
-        ShapeGeometry::NamedPoint point("point", Vector<3>{1, 0, 0});
+        NamedPoint point("point", Vector<3>{1, 0, 0});
 
         CHECK(point.getName() == "point");
         CHECK(point.isStatic());
@@ -47,7 +47,7 @@ TEST_CASE("ShapeGeometry::NamedPoint") {
     }
 
     SECTION("dynamic") {
-        ShapeGeometry::NamedPoint point("point", [](const ShapeData &data) {
+        NamedPoint point("point", [](const ShapeData &data) {
             return data.as<TheData>().point;
         });
 
@@ -70,7 +70,6 @@ TEST_CASE("ShapeGeometry: named points") {
     // dynamic "c" -> TheData::point
     // Static points are registered in 3 ways
 
-    using NamedPoint = ShapeGeometry::NamedPoint;
     using NameRegistrarPair = std::pair<std::string, std::function<void(MockShapeGeometry&)>>;
     auto [staticRegisteringMethod, registerStaticPoints] = GENERATE(
         NameRegistrarPair("registerStaticNamedPoint", [](MockShapeGeometry &geometry) {

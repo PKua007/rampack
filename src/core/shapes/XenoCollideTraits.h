@@ -89,7 +89,7 @@ public:
      * @param customNamedPoints optional list of named points (see ShapeGeometry::getNamedPoint())
      */
     XenoCollideTraits(OptionalAxis primaryAxis, OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin,
-                      double volume, const std::vector<ShapeGeometry::NamedPoint> &customNamedPoints = {})
+                      double volume, const std::vector<NamedPoint> &customNamedPoints = {})
             : primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}, geometricOrigin{geometricOrigin}, volume{volume}
     {
         this->registerNamedPoints(customNamedPoints);

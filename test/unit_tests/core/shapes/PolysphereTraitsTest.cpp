@@ -9,17 +9,21 @@
 
 #include "matchers/VectorApproxMatcher.h"
 
+
 namespace {
     class DummyInteraction : public CentralInteraction {
     protected:
         [[nodiscard]] double calculateEnergyForDistance2([[maybe_unused]] double distance) const override { return 0; }
     };
+
+    const ShapeData defaultData(PolysphereTraits::Data{0});
+    const Shape defaultShape({}, Matrix<3, 3>::identity(), defaultData);
 }
 
 TEST_CASE("PolysphereTraits: hard interactions") {
-    PolysphereTraits::PolysphereGeometry geometry({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}},
-                                                  {1, 0, 0}, {0, 1, 0}, {0.5, 0, 0});
-    PolysphereTraits traits(std::move(geometry));
+    PolysphereTraits::PolysphereShape polysphereShape({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}},
+                                                      {1, 0, 0}, {0, 1, 0}, {0.5, 0, 0});
+    PolysphereTraits traits(polysphereShape);
 
     SECTION("hard interactions") {
         // Particles look and are placed like this (x - central particle, o - second one):
@@ -37,14 +41,14 @@ TEST_CASE("PolysphereTraits: hard interactions") {
         CHECK_FALSE(interaction.hasSoftPart());
 
         SECTION("overlap") {
-            Shape shape1({1.01, 5, 5}, Matrix<3, 3>::identity());
-            Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0));
+            Shape shape1({1.01, 5, 5}, Matrix<3, 3>::identity(), defaultData);
+            Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0), defaultData);
             CHECK(interaction.overlapBetweenShapes(shape1, shape2, pbc));
         }
 
         SECTION("no overlap") {
-            Shape shape1({0.99, 5, 5}, Matrix<3, 3>::identity());
-            Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0));
+            Shape shape1({0.99, 5, 5}, Matrix<3, 3>::identity(), defaultData);
+            Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0), defaultData);
             CHECK_FALSE(interaction.overlapBetweenShapes(shape1, shape2, pbc));
         }
     }
@@ -55,18 +59,18 @@ TEST_CASE("PolysphereTraits: hard interactions") {
         CHECK(interaction.hasWallPart());
 
         SECTION("overlapping") {
-            Shape shape({1.1, 1.1, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/2));
+            Shape shape({1.1, 1.1, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/2), defaultData);
             CHECK(interaction.overlapWithWallForShape(shape, {0, 5, 0}, {0, -1, 0}));
         }
 
         SECTION("non-overlapping") {
-            Shape shape({0.9, 0.9, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/2));
+            Shape shape({0.9, 0.9, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/2), defaultData);
             CHECK_FALSE(interaction.overlapWithWallForShape(shape, {0, 5, 0}, {0, -1, 0}));
         }
     }
 
     SECTION("toWolfram") {
-        Shape shape({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0));
+        Shape shape({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0), defaultData);
 
         std::string expected = "{Sphere[{9.000000, 5.000000, 5.000000},0.500000],"
                                "Sphere[{6.000000, 5.000000, 5.000000},1.000000]}";
@@ -74,56 +78,57 @@ TEST_CASE("PolysphereTraits: hard interactions") {
     }
 
     SECTION("getVolume") {
-        CHECK(traits.getGeometry().getVolume({}) == Approx(4.71238898038469));
+        CHECK(traits.getGeometry().getVolume(defaultShape) == Approx(4.71238898038469));
     }
 
     SECTION("primary axis") {
         // primary axis X rotated 90 deg around z axis => primary axis is Y
-        Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2));
+        Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2), defaultData);
         CHECK_THAT(traits.getGeometry().getPrimaryAxis(shape), IsApproxEqual({0, 1, 0}, 1e-8));
     }
 
     SECTION("secondary axis") {
         // secondary axis Y rotated 90 deg around z axis => secondary axis is -X
-        Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2));
+        Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2), defaultData);
         CHECK_THAT(traits.getGeometry().getSecondaryAxis(shape), IsApproxEqual({-1, 0, 0}, 1e-8));
     }
 
     SECTION("geometric origin") {
-        Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2));
+        Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2), defaultData);
         CHECK_THAT(traits.getGeometry().getGeometricOrigin(shape), IsApproxEqual({0, 0.5, 0}, 1e-8));
     }
 }
 
 TEST_CASE("PolysphereTraits: soft interactions") {
-    PolysphereTraits::PolysphereGeometry geometry({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}}, {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
-    PolysphereTraits traits(std::move(geometry), std::make_unique<DummyInteraction>());
+    PolysphereTraits::PolysphereShape shape({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}}, {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
+    PolysphereTraits traits(shape, std::make_unique<DummyInteraction>());
     const auto &interaction = dynamic_cast<const CentralInteraction &>(traits.getInteraction());
 
-    CHECK(interaction.getInteractionCentres(nullptr) == std::vector<Vector<3>>{{0, 0, 0}, {3, 0, 0}});
+    CHECK(interaction.getInteractionCentres(defaultData.raw()) == std::vector<Vector<3>>{{0, 0, 0}, {3, 0, 0}});
 }
 
 TEST_CASE("PolysphereTraits: mass centre normalization") {
     double volume = 1;     // Volume is not important here, we are lazy and choose an arbitrary number
-    PolysphereTraits::PolysphereGeometry geometry({{{0, 0, 0}, 1}, {{1, 0, 0}, std::cbrt(3)}},
-                                                  {1, 0, 0}, {0, 1, 0}, {1, 0, 0}, volume,
-                                                  {{"point1", {1, 0, 0}}});
-    geometry.normalizeMassCentre();
-    PolysphereTraits traits(geometry);
+    PolysphereTraits::PolysphereShape shape({{{0, 0, 0}, 1}, {{1, 0, 0}, std::cbrt(3)}},
+                                            {1, 0, 0}, {0, 1, 0}, {1, 0, 0}, volume, {{"point1", {1, 0, 0}}});
+    shape.normalizeMassCentre();
+    PolysphereTraits traits(shape);
 
-    const auto &sphereData = traits.getSphereData();
+    const auto &sphereData = traits.getDefaultPolysphereShape().getSphereData();
     CHECK(sphereData == std::vector<PolysphereTraits::SphereData>{{{-0.75, 0, 0}, 1}, {{0.25, 0, 0}, std::cbrt(3)}});
-    CHECK_THAT(geometry.getGeometricOrigin({}), IsApproxEqual(Vector<3>{0.25, 0, 0}, 1e-12));
-    CHECK_THAT(geometry.getNamedPointForShape("point1", {}), IsApproxEqual(Vector<3>{0.25, 0, 0}, 1e-12));
+    const auto &geometry = traits.getGeometry();
+    CHECK_THAT(geometry.getGeometricOrigin(defaultShape), IsApproxEqual(Vector<3>{0.25, 0, 0}, 1e-12));
+    CHECK_THAT(geometry.getNamedPointForShape("point1", defaultShape), IsApproxEqual(Vector<3>{0.25, 0, 0}, 1e-12));
 }
 
 TEST_CASE("PolysphereTraits: named points") {
     double volume = 1;     // Volume is not important here, we are lazy and choose an arbitrary number
-    PolysphereTraits::PolysphereGeometry geometry({{{0, 0, 0}, 1}, {{1, 0, 0}, 1}},
-                                                  {1, 0, 0}, {0, 1, 0}, {1, 0, 0}, volume,
-                                                  {{"named1", {0, 2, 0}}});
+    PolysphereTraits::PolysphereShape polysphereShape({{{0, 0, 0}, 1}, {{1, 0, 0}, 1}},
+                                                      {1, 0, 0}, {0, 1, 0}, {1, 0, 0}, volume,{{"named1", {0, 2, 0}}});
+    PolysphereTraits traits(polysphereShape);
+    const auto &geometry = traits.getGeometry();
 
-    Shape shape({1, 2, 3}, Matrix<3, 3>::rotation(0, 0, M_PI/2));
+    Shape shape({1, 2, 3}, Matrix<3, 3>::rotation(0, 0, M_PI/2), defaultData);
     CHECK_THAT(geometry.getNamedPointForShape("s0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-12));
     CHECK_THAT(geometry.getNamedPointForShape("s1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-12));
     CHECK_THAT(geometry.getNamedPointForShape("named1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{-2, 0, 0}, 1e-12));

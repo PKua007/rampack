@@ -9,10 +9,9 @@
 
 
 namespace legacy {
-    PolysphereLollipopTraits::PolysphereGeometry
-    PolysphereLollipopTraits::generateGeometry(std::size_t sphereNum, double smallSphereRadius,
-                                               double largeSphereRadius, double smallSpherePenetration,
-                                               double largeSpherePenetration)
+    PolysphereTraits::PolysphereShape
+    PolysphereLollipopTraits::generateShape(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
+                                            double smallSpherePenetration, double largeSpherePenetration)
     {
         Expects(sphereNum >= 2);
         Expects(smallSphereRadius > 0);
@@ -32,24 +31,23 @@ namespace legacy {
         centrePos += smallSphereRadius + largeSphereRadius - largeSpherePenetration;
         data.emplace_back(Vector<3>{centrePos, 0, 0}, largeSphereRadius);
 
-        PolysphereGeometry geometry(std::move(data), {1, 0, 0}, {0, 1, 0});
-        geometry.normalizeMassCentre();
-        double end1 = geometry.getSphereData().front().position[0];
-        double end2 = geometry.getSphereData().back().position[0];
-        geometry.setGeometricOrigin({(end2 + largeSphereRadius + end1 - smallSphereRadius)/2, 0, 0});
-        const auto &newSphereData = geometry.getSphereData();
-        geometry.addCustomNamedPoints({{"cm", {0, 0, 0}},
-                                       {"ss", newSphereData.front().position},
-                                       {"sl", newSphereData.back().position}});
-        return geometry;
+        PolysphereShape shape(std::move(data), {1, 0, 0}, {0, 1, 0});
+        shape.normalizeMassCentre();
+        double end1 = shape.getSphereData().front().position[0];
+        double end2 = shape.getSphereData().back().position[0];
+        shape.setGeometricOrigin({(end2 + largeSphereRadius + end1 - smallSphereRadius) / 2, 0, 0});
+        const auto &newSphereData = shape.getSphereData();
+        shape.addCustomNamedPoints({{"cm", {0, 0, 0}},
+                                    {"ss", newSphereData.front().position},
+                                    {"sl", newSphereData.back().position}});
+        return shape;
     }
 }
 
 
-PolysphereLollipopTraits::PolysphereGeometry
-PolysphereLollipopTraits::generateGeometry(std::size_t sphereNum, double stickSphereRadius,
-                                           double tipSphereRadius, double stickSpherePenetration,
-                                           double tipSpherePenetration)
+PolysphereTraits::PolysphereShape
+PolysphereLollipopTraits::generateShape(std::size_t sphereNum, double stickSphereRadius, double tipSphereRadius,
+                                        double stickSpherePenetration, double tipSpherePenetration)
 {
     Expects(sphereNum >= 2);
     Expects(stickSphereRadius > 0);
@@ -82,11 +80,11 @@ PolysphereLollipopTraits::generateGeometry(std::size_t sphereNum, double stickSp
     }
 
     double volume = PolysphereLollipopTraits::calculateVolume(data, stickSpherePenetration, tipSpherePenetration);
-    PolysphereGeometry geometry(data, {0, 0, 1}, std::nullopt, {0, 0, 0}, volume);
-    geometry.addCustomNamedPoints({{"ss", data.front().position}, {"st", data.back().position}});
+    PolysphereShape shape(data, {0, 0, 1}, std::nullopt, {0, 0, 0}, volume);
+    shape.addCustomNamedPoints({{"ss", data.front().position}, {"st", data.back().position}});
     if (stickSpherePenetration == 0 && tipSpherePenetration == 0)
-        geometry.addCustomNamedPoints({{"cm", geometry.calculateMassCentre()}});
-    return geometry;
+        shape.addCustomNamedPoints({{"cm", shape.calculateMassCentre()}});
+    return shape;
 }
 
 double PolysphereLollipopTraits::calculateVolume(const std::vector<SphereData> &sphereData,
