@@ -15,9 +15,9 @@ TEST_CASE("DomainDecomposition") {
     // 0th: (14, 19), 1st: (5, 10), which makes the domains as 0th: (19, 5) - through pbc, 1st: (10, 14)
 
     double volume = 1; // volume is not important, we are laze and pick arbitrary number
-    PolysphereTraits::PolysphereGeometry geometry({{{0, 0, 0}, 1}, {{1, 0, 0}, 1}},
-                                                  {1, 0, 0}, {0, 1, 0}, {0, 0, 0}, volume);
-    PolysphereTraits dimer(std::move(geometry));
+    PolysphereTraits::PolysphereShape shape({{{0, 0, 0}, 1}, {{1, 0, 0}, 1}},
+                                            {1, 0, 0}, {0, 1, 0}, {0, 0, 0}, volume);
+    PolysphereTraits dimer(shape);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
 
     Matrix<3, 3> id = Matrix<3, 3>::identity();

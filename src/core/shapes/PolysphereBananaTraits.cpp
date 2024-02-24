@@ -8,9 +8,8 @@
 
 
 namespace legacy {
-    PolysphereBananaTraits::PolysphereGeometry
-    PolysphereBananaTraits::generateGeometry(double arcRadius, double arcAngle, std::size_t sphereNum,
-                                             double sphereRadius)
+    PolysphereTraits::PolysphereShape
+    PolysphereBananaTraits::generateShape(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius)
     {
         Expects(arcRadius > 0);
         Expects(arcAngle > 0);
@@ -30,21 +29,20 @@ namespace legacy {
 
         // Calculate volume disregarding sphere overlaps - behaviour consistent with simulations pre version 0.2
         double volume = static_cast<double>(sphereNum) * 4./3*M_PI * std::pow(sphereRadius, 3);
-        PolysphereGeometry geometry(std::move(sphereData), {0, 1, 0}, {-1, 0, 0}, {0, 0, 0}, volume);
-        geometry.normalizeMassCentre();
-        geometry.setGeometricOrigin({0, 0, 0});
-        const auto &newSphereData = geometry.getSphereData();
-        geometry.addCustomNamedPoints({{"cm", {0, 0, 0}},
-                                       {"beg", newSphereData.front().position},
-                                       {"end", newSphereData.back().position}});
-        return geometry;
+        PolysphereShape shape(std::move(sphereData), {0, 1, 0}, {-1, 0, 0}, {0, 0, 0}, volume);
+        shape.normalizeMassCentre();
+        shape.setGeometricOrigin({0, 0, 0});
+        const auto &newSphereData = shape.getSphereData();
+        shape.addCustomNamedPoints({{"cm",  {0, 0, 0}},
+                                    {"beg", newSphereData.front().position},
+                                    {"end", newSphereData.back().position}});
+        return shape;
     }
 }
 
 
-PolysphereBananaTraits::PolysphereGeometry
-PolysphereBananaTraits::generateGeometry(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius)
-{
+PolysphereTraits::PolysphereShape
+PolysphereBananaTraits::generateShape(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius) {
     Expects(arcRadius > 0);
     Expects(arcAngle > 0);
     Expects(arcAngle < 2*M_PI);
@@ -75,21 +73,21 @@ PolysphereBananaTraits::generateGeometry(double arcRadius, double arcAngle, std:
         sphereData.emplace_back(pos, sphereRadius);
 
     double volume = PolysphereBananaTraits::calculateVolume(sphereData, arcAngle);
-    PolysphereGeometry geometry(std::move(sphereData), {0, 0, 1}, {-1, 0, 0}, {0, 0, 0}, volume);
-    geometry.addCustomNamedPoints({{"beg", spherePos.front()}, {"end", spherePos.back()}});
-    PolysphereBananaTraits::addMassCentre(geometry);
-    return geometry;
+    PolysphereShape shape(std::move(sphereData), {0, 0, 1}, {-1, 0, 0}, {0, 0, 0}, volume);
+    shape.addCustomNamedPoints({{"beg", spherePos.front()}, {"end", spherePos.back()}});
+    PolysphereBananaTraits::addMassCentre(shape);
+    return shape;
 }
 
-void PolysphereBananaTraits::addMassCentre(PolysphereTraits::PolysphereGeometry &geometry) {
-    const auto &sphereData = geometry.getSphereData();
+void PolysphereBananaTraits::addMassCentre(PolysphereTraits::PolysphereShape &shape) {
+    const auto &sphereData = shape.getSphereData();
     const auto &p1 = sphereData[0].position;
     const auto &p2 = sphereData[1].position;
     double r = sphereData[0].radius;
     double dist2 = (p2 - p1).norm2();
     constexpr double EPSILON = 1e-12;
     if (dist2 + EPSILON*EPSILON >= r*r)
-        geometry.addCustomNamedPoints({{"cm", geometry.calculateMassCentre()}});
+        shape.addCustomNamedPoints({{"cm", shape.calculateMassCentre()}});
 }
 
 double PolysphereBananaTraits::calculateVolume(const std::vector<SphereData> &sphereData, double arcAngle) {

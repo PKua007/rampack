@@ -21,9 +21,8 @@ namespace legacy {
      */
     class PolysphereLollipopTraits : public PolysphereTraits {
     private:
-        static PolysphereGeometry generateGeometry(std::size_t sphereNum, double smallSphereRadius,
-                                                   double largeSphereRadius, double smallSpherePenetration,
-                                                   double largeSpherePenetration);
+        static PolysphereShape generateShape(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
+                                             double smallSpherePenetration, double largeSpherePenetration);
 
     public:
         /**
@@ -36,8 +35,8 @@ namespace legacy {
          */
         PolysphereLollipopTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
                                  double smallSpherePenetration, double largeSpherePenetration)
-                : PolysphereTraits(generateGeometry(sphereNum, smallSphereRadius, largeSphereRadius,
-                                                    smallSpherePenetration, largeSpherePenetration))
+                : PolysphereTraits(generateShape(sphereNum, smallSphereRadius, largeSphereRadius,
+                                                 smallSpherePenetration, largeSpherePenetration))
         { }
 
         /**
@@ -47,10 +46,10 @@ namespace legacy {
          */
         PolysphereLollipopTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
                                  double smallSpherePenetration, double largeSpherePenetration,
-                                 std::unique_ptr<CentralInteraction> centralInteraction)
-                : PolysphereTraits(generateGeometry(sphereNum, smallSphereRadius, largeSphereRadius,
-                                                    smallSpherePenetration, largeSpherePenetration),
-                                   std::move(centralInteraction))
+                                 const std::shared_ptr<CentralInteraction> &centralInteraction)
+                : PolysphereTraits(generateShape(sphereNum, smallSphereRadius, largeSphereRadius,
+                                                 smallSpherePenetration, largeSpherePenetration),
+                                   centralInteraction)
         { }
     };
 }
@@ -71,11 +70,12 @@ private:
     static double calculateVolume(const std::vector<SphereData> &sphereData, double stickSpherePenetration,
                                   double tipSpherePenetration);
 
-    static PolysphereGeometry generateGeometry(std::size_t sphereNum, double stickSphereRadius,
-                                               double tipSphereRadius, double stickSpherePenetration,
-                                               double tipSpherePenetration);
-
 public:
+    static PolysphereShape generateShape(std::size_t sphereNum, double stickSphereRadius, double tipSphereRadius,
+                                         double stickSpherePenetration, double tipSpherePenetration);
+
+    PolysphereLollipopTraits() = default;
+
     /**
      * @brief Constructs the class for hard interactions.
      * @param sphereNum number of all spheres - there is @a sphereNum - 1 small spheres and a single large one
@@ -86,8 +86,12 @@ public:
      */
     PolysphereLollipopTraits(std::size_t sphereNum, double stickSphereRadius, double tipSphereRadius,
                              double stickSpherePenetration, double tipSpherePenetration)
-            : PolysphereTraits(generateGeometry(sphereNum, stickSphereRadius, tipSphereRadius,
-                                                stickSpherePenetration, tipSpherePenetration))
+            : PolysphereTraits(generateShape(sphereNum, stickSphereRadius, tipSphereRadius,
+                                             stickSpherePenetration, tipSpherePenetration))
+    { }
+
+    explicit PolysphereLollipopTraits(const std::shared_ptr<CentralInteraction> &centralInteraction)
+            : PolysphereTraits(centralInteraction)
     { }
 
     /**
@@ -97,11 +101,19 @@ public:
      */
     PolysphereLollipopTraits(std::size_t sphereNum, double stickSphereRadius, double tipSphereRadius,
                              double stickSpherePenetration, double tipSpherePenetration,
-                             std::shared_ptr<CentralInteraction> centralInteraction)
-            : PolysphereTraits(generateGeometry(sphereNum, stickSphereRadius, tipSphereRadius,
-                                                stickSpherePenetration, tipSpherePenetration),
-                               std::move(centralInteraction))
+                             const std::shared_ptr<CentralInteraction> &centralInteraction)
+            : PolysphereTraits(generateShape(sphereNum, stickSphereRadius, tipSphereRadius,
+                                             stickSpherePenetration, tipSpherePenetration),
+                               centralInteraction)
     { }
+
+    void addLollipopShape(const std::string &shapeName, std::size_t sphereNum, double stickSphereRadius,
+                          double tipSphereRadius, double stickSpherePenetration, double tipSpherePenetration)
+    {
+        auto shape = PolysphereLollipopTraits::generateShape(sphereNum, stickSphereRadius, tipSphereRadius,
+                                                             stickSpherePenetration, tipSpherePenetration);
+        this->addPolysphereShape(shapeName, shape);
+    }
 };
 
 

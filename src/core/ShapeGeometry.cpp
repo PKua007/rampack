@@ -33,7 +33,7 @@ ShapeGeometry &ShapeGeometry::operator=(ShapeGeometry &&other) noexcept {
     return *this;
 }
 
-const ShapeGeometry::NamedPoint &ShapeGeometry::getNamedPoint(const std::string &pointName) const {
+const NamedPoint &ShapeGeometry::getNamedPoint(const std::string &pointName) const {
     auto point = this->namedPoints.find(pointName);
     if (point == this->namedPoints.end())
         ExpectsThrow("ShapeGeometry::getNamedPoint : unknown point name '" + pointName + "'");
@@ -45,7 +45,7 @@ void ShapeGeometry::registerStaticNamedPoint(const std::string &pointName, const
     this->namedPoints[pointName] = NamedPoint(pointName, point);
 }
 
-std::vector<ShapeGeometry::NamedPoint> ShapeGeometry::getNamedPoints() const {
+std::vector<NamedPoint> ShapeGeometry::getNamedPoints() const {
     std::vector<NamedPoint> namedPointsVec;
     namedPointsVec.reserve(this->namedPoints.size());
     for (const auto &[name, point] : this->namedPoints)
@@ -60,7 +60,7 @@ void ShapeGeometry::registerDynamicNamedPoint(const std::string &pointName,
     this->namedPoints[pointName] = NamedPoint(pointName, point);
 }
 
-void ShapeGeometry::registerNamedPoint(ShapeGeometry::NamedPoint namedPoint) {
+void ShapeGeometry::registerNamedPoint(NamedPoint namedPoint) {
     Expects(!this->hasNamedPoint(namedPoint.getName()));
     this->namedPoints[namedPoint.getName()] = std::move(namedPoint);
 }
@@ -84,6 +84,14 @@ bool ShapeGeometry::hasNamedPoint(const std::string &pointName) const {
         return true;
     else
         return this->namedPoints.find(pointName) != this->namedPoints.end();
+}
+
+bool ShapeGeometry::hasNamedPointForShape(const std::string &pointName, const Shape &shape) const {
+    return this->hasNamedPoint(pointName) && this->getNamedPoint(pointName).isValidForShapeData(shape.getData());
+}
+
+bool ShapeGeometry::hasNamedPointForShapeData(const std::string &pointName, const ShapeData &shapeData) const {
+    return this->hasNamedPoint(pointName) && this->getNamedPoint(pointName).isValidForShapeData(shapeData);
 }
 
 bool ShapeGeometry::hasPrimaryAxis() const {
@@ -153,11 +161,21 @@ void ShapeGeometry::resetOriginPoint() {
     });
 }
 
-Vector<3> ShapeGeometry::NamedPoint::forShape(const Shape &shape) const {
+Vector<3> NamedPoint::forShape(const Shape &shape) const {
     return shape.getPosition() + shape.getOrientation() * this->forShapeData(shape.getData());
 }
 
-Vector<3> ShapeGeometry::NamedPoint::forStatic() const {
+Vector<3> NamedPoint::forStatic() const {
     Expects(this->isStatic());
     return this->pointFunctor.target<StaticPoint>()->point;
+}
+
+bool NamedPoint::isValidForShapeData(const ShapeData &data) const {
+    try {
+        static_cast<void>(this->forShapeData(data));
+    } catch (const NoSuchNamedPointForShapeException &) {
+        return false;
+    }
+
+    return true;
 }

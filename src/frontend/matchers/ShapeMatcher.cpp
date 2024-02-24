@@ -66,15 +66,7 @@ namespace {
             return data.asVector<3>().normalized();
         });
 
-    auto namedPoints = MatcherDictionary{}.valuesMatch(vector)
-        .mapTo([](const DictionaryData &dict) {
-            auto map = dict.asStdMap<Vector<3>>();
-            std::vector<ShapeGeometry::NamedPoint> points;
-            points.reserve(map.size());
-            for (const auto &[name, point] : map)
-                points.emplace_back(name, point);
-            return points;
-        });
+    auto namedPoints = MatcherDictionary{}.valuesMatch(vector).mapToStdMap<Vector<3>>();
 
 
     MatcherDataclass create_lj_matcher() {
@@ -338,17 +330,17 @@ namespace {
                 std::optional<Vector<3>> secondaryAxis;
                 if (!polysphere["secondary_axis"].isEmpty())
                     secondaryAxis = polysphere["secondary_axis"].as<Vector<3>>();
-                auto namedPoints = polysphere["named_points"].as<std::vector<ShapeGeometry::NamedPoint>>();
+                auto namedPoints = polysphere["named_points"].as<std::map<std::string, Vector<3>>>();
                 auto interaction = polysphere["interaction"].as<std::shared_ptr<CentralInteraction>>();
 
-                PolysphereTraits::PolysphereGeometry geometry(
+                PolysphereTraits::PolysphereShape shape(
                     std::move(spheres), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
                 );
 
                 if (interaction == nullptr)
-                    return std::make_shared<PolysphereTraits>(std::move(geometry));
+                    return std::make_shared<PolysphereTraits>(shape);
                 else
-                    return std::make_shared<PolysphereTraits>(std::move(geometry), interaction);
+                    return std::make_shared<PolysphereTraits>(shape, interaction);
             });
     }
 
@@ -407,10 +399,15 @@ namespace {
                 std::optional<Vector<3>> secondaryAxis;
                 if (!polysc["secondary_axis"].isEmpty())
                     secondaryAxis = polysc["secondary_axis"].as<Vector<3>>();
-                auto namedPoints = polysc["named_points"].as<std::vector<ShapeGeometry::NamedPoint>>();
+                auto namedPoints = polysc["named_points"].as<std::map<std::string, Vector<3>>>();
+
+                std::vector<NamedPoint> properNamedPoints;
+                properNamedPoints.reserve(namedPoints.size());
+                for (const auto &[pointName, point] : namedPoints)
+                    properNamedPoints.emplace_back(pointName, point);
 
                 PolyspherocylinderTraits::PolyspherocylinderGeometry geometry(
-                    std::move(sc), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
+                    std::move(sc), primaryAxis, secondaryAxis, geometricOrigin, volume, properNamedPoints
                 );
 
                 return std::make_shared<PolyspherocylinderTraits>(std::move(geometry));
@@ -437,14 +434,19 @@ namespace {
                 std::optional<Vector<3>> secondaryAxis;
                 if (!convex["secondary_axis"].isEmpty())
                     secondaryAxis = convex["secondary_axis"].as<Vector<3>>();
-                auto namedPoints = convex["named_points"].as<std::vector<ShapeGeometry::NamedPoint>>();
+                auto namedPoints = convex["named_points"].as<std::map<std::string, Vector<3>>>();
+
+                std::vector<NamedPoint> properNamedPoints;
+                properNamedPoints.reserve(namedPoints.size());
+                for (const auto &[pointName, point] : namedPoints)
+                    properNamedPoints.emplace_back(pointName, point);
 
                 XCBodyBuilder builder;
                 script(builder);
                 auto geometry = builder.releaseCollideGeometry();
 
                 return std::make_shared<GenericXenoCollideTraits>(
-                    geometry, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
+                    geometry, primaryAxis, secondaryAxis, geometricOrigin, volume, properNamedPoints
                 );
             });
     }

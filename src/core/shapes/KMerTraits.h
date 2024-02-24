@@ -7,6 +7,7 @@
 
 #include "PolysphereTraits.h"
 
+
 /**
  * @brief A class representing linear k-polymer.
  * @details The polymer lies on Z axis (which consequently is its primary axis). Secondary axis is X axis - formally
@@ -17,9 +18,12 @@
 class KMerTraits : public PolysphereTraits {
 private:
     static double caluclateVolume(std::size_t sphereNum, double sphereRadius, double distance);
-    static PolysphereGeometry generateGeometry(std::size_t sphereNum, double sphereRadius, double distance);
 
 public:
+    static PolysphereShape generateShape(std::size_t sphereNum, double sphereRadius, double distance);
+
+    KMerTraits() = default;
+
     /**
      * @brief A hard polymer of identical spheres.
      * @param sphereNum number of monomers
@@ -27,7 +31,11 @@ public:
      * @param distance the distance between adjacent spheres' centres
      */
     KMerTraits(std::size_t sphereNum, double sphereRadius, double distance)
-            : PolysphereTraits(generateGeometry(sphereNum, sphereRadius, distance))
+            : PolysphereTraits(generateShape(sphereNum, sphereRadius, distance))
+    { }
+
+    explicit KMerTraits(const std::shared_ptr<CentralInteraction> &centralInteraction)
+            : PolysphereTraits(centralInteraction)
     { }
 
     /**
@@ -35,9 +43,13 @@ public:
      * @a centralInteraction.
      */
     KMerTraits(std::size_t sphereNum, double sphereRadius, double distance,
-               std::shared_ptr<CentralInteraction> centralInteraction)
-            : PolysphereTraits(generateGeometry(sphereNum, sphereRadius, distance), std::move(centralInteraction))
+               const std::shared_ptr<CentralInteraction> &centralInteraction)
+            : PolysphereTraits(generateShape(sphereNum, sphereRadius, distance), centralInteraction)
     { }
+
+    void addKMerShape(const std::string &shapeName, std::size_t sphereNum, double sphereRadius, double distance) {
+        this->addPolysphereShape(shapeName, KMerTraits::generateShape(sphereNum, sphereRadius, distance));
+    }
 };
 
 

@@ -14,6 +14,42 @@
 #include "Shape.h"
 
 
+struct NoSuchNamedPointForShapeException : public RuntimeException {
+    using RuntimeException::RuntimeException;
+};
+
+class NamedPoint {
+private:
+    struct StaticPoint {
+        Vector<3> point;
+
+        Vector<3> operator()(const ShapeData &) const { return this->point; }
+    };
+
+    std::string name;
+    std::function<Vector<3>(const ShapeData &)> pointFunctor;
+
+public:
+    NamedPoint() : name{}, pointFunctor{StaticPoint{}} { }
+
+    NamedPoint(std::string name, const Vector<3> &staticPoint)
+            : name{std::move(name)}, pointFunctor{StaticPoint{staticPoint}}
+    { }
+
+    NamedPoint(std::string name, std::function<Vector<3>(const ShapeData &)> dynamicPoint)
+            : name{std::move(name)}, pointFunctor{std::move(dynamicPoint)}
+    { }
+
+    [[nodiscard]] bool isStatic() const { return this->pointFunctor.target_type() == typeid(StaticPoint); }
+    [[nodiscard]] bool isDynamic() const { return !this->isStatic(); }
+    [[nodiscard]] bool isValidForShapeData(const ShapeData &data) const;
+    [[nodiscard]] Vector<3> forShape(const Shape &shape) const;
+    [[nodiscard]] Vector<3> forShapeData(const ShapeData &data) const { return this->pointFunctor(data); }
+    [[nodiscard]] Vector<3> forStatic() const;
+    [[nodiscard]] const std::string &getName() const { return this->name; }
+};
+
+
 /**
  * @brief An interface describing geometric properties of the shape.
  */
@@ -29,36 +65,6 @@ public:
         SECONDARY,
         /** @brief Auxiliary (third) molecular axis. */
         AUXILIARY
-    };
-
-    class NamedPoint {
-    private:
-        struct StaticPoint {
-            Vector<3> point;
-
-            Vector<3> operator()(const ShapeData &) const { return this->point; }
-        };
-
-        std::string name;
-        std::function<Vector<3>(const ShapeData &)> pointFunctor;
-
-    public:
-        NamedPoint() : name{}, pointFunctor{StaticPoint{}} { }
-
-        NamedPoint(std::string name, const Vector<3> &staticPoint)
-                : name{std::move(name)}, pointFunctor{StaticPoint{staticPoint}}
-        { }
-
-        NamedPoint(std::string name, std::function<Vector<3>(const ShapeData &)> dynamicPoint)
-                : name{std::move(name)}, pointFunctor{std::move(dynamicPoint)}
-        { }
-
-        [[nodiscard]] bool isStatic() const { return this->pointFunctor.target_type() == typeid(StaticPoint); }
-        [[nodiscard]] bool isDynamic() const { return !this->isStatic(); }
-        [[nodiscard]] Vector<3> forShape(const Shape &shape) const;
-        [[nodiscard]] Vector<3> forShapeData(const ShapeData &data) const { return this->pointFunctor(data); }
-        [[nodiscard]] Vector<3> forStatic() const;
-        [[nodiscard]] const std::string &getName() const { return this->name; }
     };
 
 private:
@@ -169,6 +175,9 @@ public:
      * @brief Returns @a true if named point @a namedPoint exists.
      */
     [[nodiscard]] bool hasNamedPoint(const std::string &pointName) const;
+
+    [[nodiscard]] bool hasNamedPointForShape(const std::string &pointName, const Shape &shape) const;
+    [[nodiscard]] bool hasNamedPointForShapeData(const std::string &pointName, const ShapeData &shapeData) const;
 
     /**
      * @brief Returns @a true if the primary axis exists.

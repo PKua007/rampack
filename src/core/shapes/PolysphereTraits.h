@@ -18,7 +18,7 @@
 /**
  * @brief A polymer consisting of identical or different hard of soft-interacting spheres.
  */
-class PolysphereTraits : public ShapeTraits, public ShapeDataManager {
+class PolysphereTraits : public ShapeTraits, public ShapeGeometry, public ShapeDataManager {
 public:
     /**
      * @brief A helper class describing a single spherical bead.
@@ -41,61 +41,49 @@ public:
         }
     };
 
-    /**
-     * @brief A helper class defining a whole particle.
-     * @details The class, apart from standard named points (see ShapeGeometry::getNamedPoint()) and
-     * @a customNamedPoints from the constructor, defines points "sx" representing constituent spheres, where "x" is
-     * sphere's index starting from 0.
-     */
-    class PolysphereGeometry : public ShapeGeometry {
+    struct Data {
+        std::size_t shapeIdx{};
+
+        friend bool operator==(Data lhs, Data rhs) { return lhs.shapeIdx == rhs.shapeIdx; }
+    };
+
+    class PolysphereShape {
     private:
-        std::vector<SphereData> sphereData;
+        std::vector<SphereData> sphereData{};
         std::optional<Vector<3>> primaryAxis;
         std::optional<Vector<3>> secondaryAxis;
         Vector<3> geometricOrigin;
         double volume{};
+        std::map<std::string, Vector<3>> customNamedPoints;
 
         [[nodiscard]] double calculateVolume() const;
 
     public:
-        /**
-         * @brief Constructs the object.
-         * @param sphereData sphere data describing all constituent monomers
-         * @param primaryAxis the primary axis of the polymer
-         * @param secondaryAxis the secondary axis of the polymer (should be orthogonal to the primary one)
-         * @param geometricOrigin geometric origin of the molecule which can be different that the mass centre
-         * @param volume volume of the polymer; if not specified, it is calculated automatically, but only for
-         * non-overlapping spheres
-         *
-         *
-         * @param customNamedPoints custom named points in addition to default ones (see
-         * PolysphereGeometry::getNamedPoint)
-         */
-        explicit PolysphereGeometry(std::vector<SphereData> sphereData, OptionalAxis primaryAxis = std::nullopt,
-                                    OptionalAxis secondaryAxis = std::nullopt,
-                                    const Vector<3> &geometricOrigin = {0, 0, 0},
-                                    std::optional<double> volume = std::nullopt,
-                                    const std::vector<NamedPoint> &customNamedPoints = {});
+        explicit PolysphereShape(std::vector<SphereData> sphereData, OptionalAxis primaryAxis = std::nullopt,
+                                 OptionalAxis secondaryAxis = std::nullopt,
+                                 const Vector<3> &geometricOrigin = {0, 0, 0},
+                                 std::optional<double> volume = std::nullopt,
+                                 const std::map<std::string, Vector<3>> &customNamedPoints = {});
 
-        [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override {
+        [[nodiscard]] Vector<3> getPrimaryAxis() const {
             if (!this->primaryAxis.has_value())
-                throw std::runtime_error("PolysphereGeometry::getPrimaryAxis: primary axis not defined");
-            return shape.getOrientation() * this->primaryAxis.value();
+                throw std::runtime_error("PolysphereShape::getPrimaryAxis: primary axis not defined");
+            return this->primaryAxis.value();
         }
 
-        [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override {
+        [[nodiscard]] Vector<3> getSecondaryAxis() const {
             if (!this->secondaryAxis.has_value())
-                throw std::runtime_error("PolysphereGeometry::getSecondaryAxis: secondary axis not defined");
-            return shape.getOrientation() * this->secondaryAxis.value();
+                throw std::runtime_error("PolysphereShape::getSecondaryAxis: secondary axis not defined");
+            return this->secondaryAxis.value();
         }
 
-        [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const override {
-            return shape.getOrientation() * this->geometricOrigin;
+        [[nodiscard]] Vector<3> getGeometricOrigin() const {
+            return this->geometricOrigin;
         }
 
-        [[nodiscard]] double getVolume([[maybe_unused]] const Shape &shape) const override { return this->volume; }
-
+        [[nodiscard]] double getVolume([[maybe_unused]] const Shape &shape) const { return this->volume; }
         [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->sphereData; }
+        [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const;
 
         /**
          * @brief Calculates mass centre and moves it to {0, 0, 0} (geometric origin and named points are moved
@@ -111,21 +99,20 @@ public:
         [[nodiscard]] Vector<3> calculateMassCentre() const;
 
         void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
-
-        void addCustomNamedPoints(const std::vector<ShapeGeometry::NamedPoint> &namedPoints) {
-            this->registerNamedPoints(namedPoints);
+        void addCustomNamedPoints(std::map<std::string, Vector<3>> namedPoints);
+        [[nodiscard]] const std::map<std::string, Vector<3>> &getCustomNamedPoints() const {
+            return this->customNamedPoints;
         }
-
         [[nodiscard]] bool spheresOverlap() const;
     };
 
 private:
     class HardInteraction : public Interaction {
     private:
-        std::vector<SphereData> sphereData;
+        const PolysphereTraits &traits;
 
     public:
-        explicit HardInteraction(std::vector<SphereData> sphereData);
+        explicit HardInteraction(const PolysphereTraits &traits) : traits{traits} { }
 
         [[nodiscard]] bool hasHardPart() const override { return true; }
         [[nodiscard]] bool hasSoftPart() const override { return false; }
@@ -149,35 +136,60 @@ private:
         const PolysphereTraits &traits;
 
     public:
-        explicit WolframPrinter( const PolysphereTraits &traits) : traits{traits} { }
+        explicit WolframPrinter(const PolysphereTraits &traits) : traits{traits} { }
+
         [[nodiscard]] std::string print(const Shape &shape) const override;
     };
 
-    [[nodiscard]] std::shared_ptr<ShapePrinter> createObjPrinter(std::size_t subdivisions) const;
+    // [[nodiscard]] std::shared_ptr<ShapePrinter> createObjPrinter(std::size_t subdivisions) const;
 
-    PolysphereGeometry geometry;
-    std::shared_ptr<Interaction> interaction{};
+    std::map<std::string, std::size_t> shapeNameMap;
+    std::vector<PolysphereShape> shapes;
+    std::shared_ptr<Interaction> interaction;
+    std::shared_ptr<CentralInteraction> centralInteraction;
     std::shared_ptr<WolframPrinter> wolframPrinter;
+
+    friend HardInteraction;
+    friend WolframPrinter;
+
+    [[nodiscard]] const PolysphereShape &polysphereShapeFor(const Shape &shape) const {
+        return this->polysphereShapeFor(shape.getData());
+    }
+    [[nodiscard]] const PolysphereShape &polysphereShapeFor(const ShapeData &data) const;
+    [[nodiscard]] const PolysphereShape &polysphereShapeFor(const std::byte *data) const;
+    void registerCustomNamedPoint(const std::string &pointName);
+    void registerSphereNamedPoint(std::size_t sphereIdx);
 
 public:
     /** @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::XCPrinter
      * @a subdivision parameter) */
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
 
+
+    PolysphereTraits();
+
     /**
      * @brief Construct the polymer from the specified @a sphereData.
      * @param geometry PolysphereGeometry describing the molecule.
      */
-    explicit PolysphereTraits(PolysphereGeometry geometry);
+    explicit PolysphereTraits(const PolysphereShape &polysphereShape);
+
+    explicit PolysphereTraits(const std::shared_ptr<CentralInteraction> &centralInteraction);
 
     /**
      * @brief Similar as PolysphereTraits::PolysphereTraits(const std::vector<SphereData> &, const Vector<3> &, bool),
      * but for soft central interaction given by @a centralInteraction.
      */
-    PolysphereTraits(PolysphereGeometry geometry, std::shared_ptr<CentralInteraction> centralInteraction);
+    PolysphereTraits(const PolysphereShape &polysphereShape,
+                     const std::shared_ptr<CentralInteraction> &centralInteraction);
+
+    PolysphereTraits(const PolysphereTraits &) = delete;
+    PolysphereTraits &operator=(const PolysphereTraits &) = delete;
+    ~PolysphereTraits() override;
+
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; }
-    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->geometry; }
+    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
     [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this; }
 
     /**
@@ -191,7 +203,30 @@ public:
     [[nodiscard]] std::shared_ptr<const ShapePrinter>
     getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;
 
-    [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->geometry.getSphereData(); }
+    [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
+    [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override;
+    [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const override;
+    [[nodiscard]] double getVolume(const Shape &shape) const override;
+
+    [[nodiscard]] std::size_t getShapeDataSize() const override { return sizeof(Data); }
+    void validateShapeData(const ShapeData &data) const override;
+    [[nodiscard]] ShapeData::Comparator getComparator() const override {
+        return ShapeData::Comparator::forType<Data>();
+    }
+    [[nodiscard]] TextualShapeData serialize(const ShapeData &data) const override;
+    [[nodiscard]] ShapeData deserialize(const TextualShapeData &data) const override;
+
+    void addPolysphereShape(const std::string &shapeName, const PolysphereShape &shape);
+    [[nodiscard]] const PolysphereShape &getDefaultPolysphereShape() const;
+    void setDefaultShape(const std::string &shapeName);
+
+    [[nodiscard]] const PolysphereShape &getPolysphereShape(const std::string &shapeName) const;
+    [[nodiscard]] bool hasPolysphereShape(const std::string &shapeName) const;
+    [[nodiscard]] ShapeData shapeDataFor(const std::string &shapeName) const;
+    [[nodiscard]] std::size_t getPolysphereShapeIdx(const std::string &shapeName) const;
+
+    [[nodiscard]] const PolysphereShape &getPolysphereShape(std::size_t shapeIdx) const;
+    [[nodiscard]] const std::string &getPolysphereShapeName(std::size_t shapeIdx) const;
 };
 
 

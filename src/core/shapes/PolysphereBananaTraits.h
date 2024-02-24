@@ -20,8 +20,8 @@ namespace legacy {
      */
     class PolysphereBananaTraits : public PolysphereTraits {
     private:
-        static PolysphereGeometry generateGeometry(double arcRadius, double arcAngle, std::size_t sphereNum,
-                                                   double sphereRadius);
+        static PolysphereShape generateShape(double arcRadius, double arcAngle, std::size_t sphereNum,
+                                             double sphereRadius);
 
     public:
         /**
@@ -33,7 +33,7 @@ namespace legacy {
          * @param sphereRadius the radius of each sphere
          */
         PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius)
-                : PolysphereTraits(generateGeometry(arcRadius, arcAngle, sphereNum, sphereRadius))
+                : PolysphereTraits(generateShape(arcRadius, arcAngle, sphereNum, sphereRadius))
         { }
 
         /**
@@ -41,9 +41,8 @@ namespace legacy {
          * for soft central interactions given by @a centralInteraction.
          */
         PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
-                               std::shared_ptr<CentralInteraction> centralInteraction)
-                : PolysphereTraits(generateGeometry(arcRadius, arcAngle, sphereNum, sphereRadius),
-                                   std::move(centralInteraction))
+                               const std::shared_ptr<CentralInteraction> &centralInteraction)
+                : PolysphereTraits(generateShape(arcRadius, arcAngle, sphereNum, sphereRadius), centralInteraction)
         { }
     };
 }
@@ -63,11 +62,13 @@ namespace legacy {
 class PolysphereBananaTraits : public PolysphereTraits {
 private:
     static double calculateVolume(const std::vector<SphereData> &sphereData, double arcAngle);
-    static PolysphereGeometry generateGeometry(double arcRadius, double arcAngle, std::size_t sphereNum,
-                                               double sphereRadius);
-    static void addMassCentre(PolysphereGeometry &geometry);
+    static void addMassCentre(PolysphereShape &shape);
 
 public:
+    static PolysphereShape generateShape(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius);
+
+    PolysphereBananaTraits() = default;
+
     /**
      * @brief Constructs the shape.
      * @param arcRadius the radius of the arc
@@ -77,7 +78,11 @@ public:
      * @param sphereRadius the radius of each sphere
      */
     PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius)
-            : PolysphereTraits(generateGeometry(arcRadius, arcAngle, sphereNum, sphereRadius))
+            : PolysphereTraits(generateShape(arcRadius, arcAngle, sphereNum, sphereRadius))
+    { }
+
+    explicit PolysphereBananaTraits(const std::shared_ptr<CentralInteraction> &centralInteraction)
+            : PolysphereTraits(centralInteraction)
     { }
 
     /**
@@ -85,10 +90,17 @@ public:
      * soft central interactions given by @a centralInteraction.
      */
     PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
-                           std::shared_ptr<CentralInteraction> centralInteraction)
-            : PolysphereTraits(generateGeometry(arcRadius, arcAngle, sphereNum, sphereRadius),
-                               std::move(centralInteraction))
+                           const std::shared_ptr<CentralInteraction> &centralInteraction)
+            : PolysphereTraits(generateShape(arcRadius, arcAngle, sphereNum, sphereRadius), centralInteraction)
     { }
+
+    void addBananaShape(const std::string &shapeName, double arcRadius, double arcAngle, std::size_t sphereNum,
+                        double sphereRadius)
+    {
+        this->addPolysphereShape(
+            shapeName, PolysphereBananaTraits::generateShape(arcRadius, arcAngle, sphereNum, sphereRadius)
+        );
+    }
 };
 
 

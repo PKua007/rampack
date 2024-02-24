@@ -7,7 +7,8 @@
 #include "geometry/VolumeCalculator.h"
 
 
-KMerTraits::PolysphereGeometry KMerTraits::generateGeometry(std::size_t sphereNum, double sphereRadius, double distance)
+PolysphereTraits::PolysphereShape KMerTraits::generateShape(std::size_t sphereNum, double sphereRadius,
+                                                            double distance)
 {
     Expects(sphereNum >= 2);
     Expects(sphereRadius > 0);
@@ -21,14 +22,15 @@ KMerTraits::PolysphereGeometry KMerTraits::generateGeometry(std::size_t sphereNu
         sphereZ += distance;
     }
     double volume = KMerTraits::caluclateVolume(sphereNum, sphereRadius, distance);
-    PolysphereGeometry geometry(std::move(data), {0, 0, 1}, {1, 0, 0}, {0, 0, 0}, volume);
-    geometry.normalizeMassCentre();
-    geometry.setGeometricOrigin({0, 0, 0});
-    const auto &newSphereData = geometry.getSphereData();
-    geometry.addCustomNamedPoints({{"cm", {0, 0, 0}},
-                                   {"beg", newSphereData.front().position},
-                                   {"end", newSphereData.back().position}});
-    return geometry;
+
+    PolysphereShape shape(std::move(data), {0, 0, 1}, {1, 0, 0}, {0, 0, 0}, volume);
+    shape.normalizeMassCentre();
+    shape.setGeometricOrigin({0, 0, 0});
+    const auto &newSphereData = shape.getSphereData();
+    shape.addCustomNamedPoints({{"cm",  {0, 0, 0}},
+                                {"beg", newSphereData.front().position},
+                                {"end", newSphereData.back().position}});
+    return shape;
 }
 
 double KMerTraits::caluclateVolume(std::size_t sphereNum, double sphereRadius, double distance) {
