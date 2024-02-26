@@ -8,8 +8,8 @@
 
 
 namespace legacy {
-    PolysphereTraits::PolysphereShape
-    PolysphereBananaTraits::generateShape(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius)
+    PolysphereShape PolysphereBananaTraits::generateShape(double arcRadius, double arcAngle, std::size_t sphereNum,
+                                                          double sphereRadius)
     {
         Expects(arcRadius > 0);
         Expects(arcAngle > 0);
@@ -41,8 +41,9 @@ namespace legacy {
 }
 
 
-PolysphereTraits::PolysphereShape
-PolysphereBananaTraits::generateShape(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius) {
+PolysphereShape PolysphereBananaTraits::generateShape(double arcRadius, double arcAngle, std::size_t sphereNum,
+                                                      double sphereRadius)
+{
     Expects(arcRadius > 0);
     Expects(arcAngle > 0);
     Expects(arcAngle < 2*M_PI);
@@ -79,7 +80,7 @@ PolysphereBananaTraits::generateShape(double arcRadius, double arcAngle, std::si
     return shape;
 }
 
-void PolysphereBananaTraits::addMassCentre(PolysphereTraits::PolysphereShape &shape) {
+void PolysphereBananaTraits::addMassCentre(PolysphereShape &shape) {
     const auto &sphereData = shape.getSphereData();
     const auto &p1 = sphereData[0].position;
     const auto &p2 = sphereData[1].position;

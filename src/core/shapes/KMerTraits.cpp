@@ -7,9 +7,7 @@
 #include "geometry/VolumeCalculator.h"
 
 
-PolysphereTraits::PolysphereShape KMerTraits::generateShape(std::size_t sphereNum, double sphereRadius,
-                                                            double distance)
-{
+PolysphereShape KMerTraits::generateShape(std::size_t sphereNum, double sphereRadius, double distance) {
     Expects(sphereNum >= 2);
     Expects(sphereRadius > 0);
     Expects(distance > 0);

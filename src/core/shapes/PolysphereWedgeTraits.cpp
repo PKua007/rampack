@@ -8,9 +8,8 @@
 
 
 namespace legacy {
-    PolysphereTraits::PolysphereShape
-    PolysphereWedgeTraits::generateShape(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
-                                         double spherePenetration)
+    PolysphereShape PolysphereWedgeTraits::generateShape(std::size_t sphereNum, double smallSphereRadius,
+                                                         double largeSphereRadius, double spherePenetration)
     {
         Expects(sphereNum >= 2);
         Expects(smallSphereRadius > 0);
@@ -42,9 +41,8 @@ namespace legacy {
 }
 
 
-PolysphereTraits::PolysphereShape
-PolysphereWedgeTraits::generateShape(std::size_t sphereNum, double bottomSphereRadius, double topSphereRadius,
-                                     double spherePenetration)
+PolysphereShape PolysphereWedgeTraits::generateShape(std::size_t sphereNum, double bottomSphereRadius,
+                                                     double topSphereRadius, double spherePenetration)
 {
     Expects(sphereNum >= 2);
     Expects(topSphereRadius > 0);

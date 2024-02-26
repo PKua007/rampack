@@ -333,7 +333,7 @@ namespace {
                 auto namedPoints = polysphere["named_points"].as<std::map<std::string, Vector<3>>>();
                 auto interaction = polysphere["interaction"].as<std::shared_ptr<CentralInteraction>>();
 
-                PolysphereTraits::PolysphereShape shape(
+                PolysphereShape shape(
                     std::move(spheres), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
                 );
 
