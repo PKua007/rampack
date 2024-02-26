@@ -463,3 +463,42 @@ TEST_CASE("Simulation: binary hard sphere gas", "[medium]") {
     CHECK(actual.value == Approx(expected).margin(actual.error * 3)); // 3 sigma tolerance
     CHECK(actual.error / actual.value < 0.03); // up to 3%
 }
+
+TEST_CASE("Simulation: sphere-dumbbell binary mixture", "[medium]") {
+    OMP_SET_NUM_THREADS(1);
+
+    PolysphereShape sphere({{{0, 0, 0}, 0.5}});
+    PolysphereShape dumbbell({{{0, 0, -0.5}, 0.5}, {{0, 0, 0.5}, 0.5}});
+    PolysphereTraits polysphereTraits;
+    auto sphereData = polysphereTraits.addPolysphereShape("sphere", sphere);
+    auto dimerData = polysphereTraits.addPolysphereShape("dumbbell", dumbbell);
+
+    const auto NO_ROT = Matrix<3, 3>::identity();
+    UnitCell cell(TriclinicBox(2.1), {
+        Shape({0.25, 0.5, 0.5}, NO_ROT, sphereData),
+        Shape({0.75, 0.5, 0.5}, NO_ROT, dimerData)
+    });
+    Lattice lattice(cell, {4, 4, 4});
+    auto shapes = lattice.generateMolecules();
+    auto box = lattice.getLatticeBox();
+
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    auto packing = std::make_unique<Packing>(
+        box, std::move(shapes), std::move(pbc), polysphereTraits.getInteraction(), polysphereTraits.getDataManager()
+    );
+    auto volumeScaler = std::make_unique<TriclinicAdapter>(std::make_unique<DeltaVolumeScaler>(), 1);
+    Simulation simulation(std::move(packing), 1, 0.1, 1234, std::move(volumeScaler));
+    auto collector = std::make_unique<ObservablesCollector>();
+    collector->addObservable(std::make_unique<PackingFraction>(), ObservablesCollector::AVERAGING);
+    std::ostringstream loggerStream;
+    Logger logger(loggerStream);
+
+    simulation.integrate(1, 0.71119, 10000, 10000, 1000, 100, polysphereTraits, std::move(collector), {}, logger);
+
+    Quantity actual = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
+    double expected = 0.2;
+    INFO("Barrio eta  : " << expected);     // Barrio, C. et al. (1999). J. Chem. Phys., 111(10), 4640–4649.
+    INFO("RAMPACK eta : " << actual);
+    CHECK(actual.value == Approx(expected).margin(actual.error * 3)); // 3 sigma tolerance
+    CHECK(actual.error / actual.value < 0.03); // up to 3%
+}
