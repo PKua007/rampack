@@ -190,7 +190,7 @@ namespace {
         );
     }
 
-    PolysphereTraits::PolysphereShape parse_polysphere_geometry(std::istream &in) {
+    PolysphereShape parse_polysphere_geometry(std::istream &in) {
         auto [fieldsMap, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints]
             = parse_generic_shape_traits(in, GENERIC_POLYSPHERE_USAGE, {"spheres"});
 
@@ -203,9 +203,7 @@ namespace {
             ValidateMsg(r > 0, "Radius of sphere " + std::to_string(i/4) + " is <= 0");
             sphereData.emplace_back(pos, r);
         }
-        return PolysphereTraits::PolysphereShape(
-            std::move(sphereData), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
-        );
+        return PolysphereShape(std::move(sphereData), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints);
     }
 
     void parse_chain(const std::string &chainStr, std::vector<SpherocylinderData> &spherocylinderData) {

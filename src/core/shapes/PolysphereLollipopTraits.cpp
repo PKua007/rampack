@@ -9,9 +9,9 @@
 
 
 namespace legacy {
-    PolysphereTraits::PolysphereShape
-    PolysphereLollipopTraits::generateShape(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
-                                            double smallSpherePenetration, double largeSpherePenetration)
+    PolysphereShape PolysphereLollipopTraits::generateShape(std::size_t sphereNum, double smallSphereRadius,
+                                                            double largeSphereRadius, double smallSpherePenetration,
+                                                            double largeSpherePenetration)
     {
         Expects(sphereNum >= 2);
         Expects(smallSphereRadius > 0);
@@ -45,9 +45,9 @@ namespace legacy {
 }
 
 
-PolysphereTraits::PolysphereShape
-PolysphereLollipopTraits::generateShape(std::size_t sphereNum, double stickSphereRadius, double tipSphereRadius,
-                                        double stickSpherePenetration, double tipSpherePenetration)
+PolysphereShape PolysphereLollipopTraits::generateShape(std::size_t sphereNum, double stickSphereRadius,
+                                                        double tipSphereRadius, double stickSpherePenetration,
+                                                        double tipSpherePenetration)
 {
     Expects(sphereNum >= 2);
     Expects(stickSphereRadius > 0);

@@ -17,29 +17,29 @@
 #include "utils/Utils.h"
 
 
-// PolysphereTraits::SphereData ########################################################################################
+// PolysphereShape::SphereData #########################################################################################
 
-PolysphereTraits::SphereData::SphereData(const Vector<3> &position, double radius)
+PolysphereShape::SphereData::SphereData(const Vector<3> &position, double radius)
         : position{position}, radius{radius}
 {
     Expects(radius > 0);
 }
 
-void PolysphereTraits::SphereData::toWolfram(std::ostream &out, const Shape &shape) const {
+void PolysphereShape::SphereData::toWolfram(std::ostream &out, const Shape &shape) const {
     out << "Sphere[" << this->centreForShape(shape) << "," << this->radius << "]";
 }
 
-Vector<3> PolysphereTraits::SphereData::centreForShape(const Shape &shape) const {
+Vector<3> PolysphereShape::SphereData::centreForShape(const Shape &shape) const {
     return shape.getPosition() + shape.getOrientation() * this->position;
 }
 
 
-// PolysphereTraits::PolysphereShape ###################################################################################
+// PolysphereShape #####################################################################################################
 
-PolysphereTraits::PolysphereShape::PolysphereShape(std::vector<SphereData> sphereData, OptionalAxis primaryAxis,
-                                                   OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin,
-                                                   std::optional<double> volume,
-                                                   const std::map<std::string, Vector<3>> &customNamedPoints)
+PolysphereShape::PolysphereShape(std::vector<SphereData> sphereData, OptionalAxis primaryAxis,
+                                 OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin,
+                                 std::optional<double> volume,
+                                 const std::map<std::string, Vector<3>> &customNamedPoints)
         : sphereData{std::move(sphereData)}, primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis},
           geometricOrigin{geometricOrigin}, customNamedPoints{customNamedPoints}
 {
@@ -57,7 +57,7 @@ PolysphereTraits::PolysphereShape::PolysphereShape(std::vector<SphereData> spher
         this->volume = this->calculateVolume();
 }
 
-std::vector<Vector<3>> PolysphereTraits::PolysphereShape::getInteractionCentres() const {
+std::vector<Vector<3>> PolysphereShape::getInteractionCentres() const {
     std::vector<Vector<3>> centres;
     centres.reserve(this->sphereData.size());
     std::transform(this->sphereData.begin(), this->sphereData.end(), std::back_inserter(centres),
@@ -65,9 +65,9 @@ std::vector<Vector<3>> PolysphereTraits::PolysphereShape::getInteractionCentres(
     return centres;
 }
 
-double PolysphereTraits::PolysphereShape::calculateVolume() const {
-    ExpectsMsg(!this->spheresOverlap(), "PolysphereTraits::PolysphereShape::calculateVolume: automatic volume not "
-                                        "supported for overlapping spheres");
+double PolysphereShape::calculateVolume() const {
+    ExpectsMsg(!this->spheresOverlap(),
+               "PolysphereShape::calculateVolume: automatic volume not supported for overlapping spheres");
 
     auto volumeAccumulator = [](double volume_, const SphereData &data) {
         return volume_ + 4 * M_PI / 3 * data.radius * data.radius * data.radius;
@@ -75,7 +75,7 @@ double PolysphereTraits::PolysphereShape::calculateVolume() const {
     return std::accumulate(this->sphereData.begin(), this->sphereData.end(), 0., volumeAccumulator);
 }
 
-void PolysphereTraits::PolysphereShape::normalizeMassCentre() {
+void PolysphereShape::normalizeMassCentre() {
     Vector<3> massCentre = this->calculateMassCentre();
 
     auto massCentreShifter = [massCentre](const SphereData &data) {
@@ -94,7 +94,7 @@ void PolysphereTraits::PolysphereShape::normalizeMassCentre() {
         point -= massCentre;
 }
 
-Vector<3> PolysphereTraits::PolysphereShape::calculateMassCentre() const {
+Vector<3> PolysphereShape::calculateMassCentre() const {
     auto massCentreAccumulator = [](const Vector<3> &sum, const SphereData &data) {
         double r = data.radius;
         return sum + (r*r*r) * data.position;
@@ -112,7 +112,7 @@ Vector<3> PolysphereTraits::PolysphereShape::calculateMassCentre() const {
     return massCentre;
 }
 
-bool PolysphereTraits::PolysphereShape::spheresOverlap() const {
+bool PolysphereShape::spheresOverlap() const {
     for (std::size_t i{}; i < this->sphereData.size(); i++) {
         for (std::size_t j = i + 1; j < this->sphereData.size(); j++) {
             const auto &data1 = this->sphereData[i];
@@ -129,7 +129,7 @@ bool PolysphereTraits::PolysphereShape::spheresOverlap() const {
     return false;
 }
 
-void PolysphereTraits::PolysphereShape::addCustomNamedPoints(std::map<std::string, Vector<3>> namedPoints) {
+void PolysphereShape::addCustomNamedPoints(std::map<std::string, Vector<3>> namedPoints) {
     namedPoints.merge(std::move(this->customNamedPoints));
     this->customNamedPoints = std::move(namedPoints);
 }
@@ -199,49 +199,6 @@ bool PolysphereTraits::HardInteraction::overlapWithWall(const Vector<3> &pos,
 
 // PolysphereTraits ####################################################################################################
 
-PolysphereTraits::PolysphereTraits()
-        : interaction{std::make_shared<HardInteraction>(*this)}, centralInteraction{nullptr},
-          wolframPrinter{std::make_shared<WolframPrinter>(*this)}
-{ }
-
-PolysphereTraits::PolysphereTraits(const PolysphereTraits::PolysphereShape &polysphereShape) : PolysphereTraits() {
-    this->addPolysphereShape("A", polysphereShape);
-    this->setDefaultShapeData({{"type", "A"}});
-}
-
-PolysphereTraits::PolysphereTraits(const std::shared_ptr<CentralInteraction> &centralInteraction)
-        : interaction{centralInteraction}, centralInteraction{centralInteraction},
-          wolframPrinter{std::make_shared<WolframPrinter>(*this)}
-{
-    this->centralInteraction->installCentresProvider([this](const std::byte *data) {
-        return this->polysphereShapeFor(data).getInteractionCentres();
-    });
-}
-
-PolysphereTraits::PolysphereTraits(const PolysphereTraits::PolysphereShape &polysphereShape,
-                                   const std::shared_ptr<CentralInteraction> &centralInteraction)
-        : PolysphereTraits(centralInteraction)
-{
-    this->addPolysphereShape("A", polysphereShape);
-    this->setDefaultShapeData({{"type", "A"}});
-}
-
-PolysphereTraits::~PolysphereTraits() {
-    if (this->centralInteraction)
-        this->centralInteraction->detach();
-}
-
-inline const PolysphereTraits::PolysphereShape &PolysphereTraits::polysphereShapeFor(const ShapeData &data) const {
-    std::size_t shapeIdx = data.as<Data>().shapeIdx;
-    Expects(shapeIdx < this->shapes.size());
-    return this->shapes[shapeIdx];
-}
-
-inline const PolysphereTraits::PolysphereShape &PolysphereTraits::polysphereShapeFor(const std::byte *data) const {
-    std::size_t shapeIdx = ShapeData::as<Data>(data).shapeIdx;
-    return this->shapes[shapeIdx];
-}
-
 void PolysphereTraits::registerCustomNamedPoint(const std::string &pointName) {
     if (this->hasNamedPoint(pointName))
         return;
@@ -251,12 +208,8 @@ void PolysphereTraits::registerCustomNamedPoint(const std::string &pointName) {
         const auto &namedPoints = this->getPolysphereShape(shapeIdx).getCustomNamedPoints();
 
         auto it = namedPoints.find(pointName);
-        if (it == namedPoints.end()) {
-            const std::string &shapeName = this->getPolysphereShapeName(shapeIdx);
-            std::ostringstream msg;
-            msg << "Named point " << pointName << " is not available for shape " << shapeName;
-            throw NoSuchNamedPointForShapeException(msg.str());
-        }
+        if (it == namedPoints.end())
+            this->throwUnavailableNamedPoint(shapeIdx, pointName);
 
         return it->second;
     });
@@ -270,15 +223,56 @@ void PolysphereTraits::registerSphereNamedPoint(std::size_t sphereIdx) {
     this->registerDynamicNamedPoint(pointName, [this, sphereIdx, pointName](const ShapeData &data) -> Vector<3> {
         std::size_t shapeIdx = data.as<Data>().shapeIdx;
         const auto &sphereData = this->getPolysphereShape(shapeIdx).getSphereData();
-        if (sphereIdx >= sphereData.size()) {
-            const std::string &shapeName = this->getPolysphereShapeName(shapeIdx);
-            std::ostringstream msg;
-            msg << "Named point " << pointName << " is not available for shape " << shapeName;
-            throw NoSuchNamedPointForShapeException(msg.str());
-        }
+        if (sphereIdx >= sphereData.size())
+            this->throwUnavailableNamedPoint(shapeIdx, pointName);
 
         return sphereData[sphereIdx].position;
     });
+}
+
+void PolysphereTraits::throwUnavailableNamedPoint(std::size_t shapeIdx, const std::string &pointName) const {
+    const std::string &shapeName = this->getPolysphereShapeName(shapeIdx);
+    std::ostringstream msg;
+    msg << "Named point " << pointName << " is not available for shape " << shapeName;
+    throw NoSuchNamedPointForShapeException(msg.str());
+}
+
+PolysphereTraits::PolysphereTraits()
+        : interaction{std::make_shared<HardInteraction>(*this)}, centralInteraction{nullptr},
+          wolframPrinter{std::make_shared<WolframPrinter>(*this)}
+{ }
+
+PolysphereTraits::PolysphereTraits(const PolysphereShape &polysphereShape) : PolysphereTraits() {
+    this->addPolysphereShape("A", polysphereShape);
+    this->setDefaultShapeData({{"type", "A"}});
+}
+
+PolysphereTraits::PolysphereTraits(const std::shared_ptr<CentralInteraction> &centralInteraction)
+        : interaction{centralInteraction}, centralInteraction{centralInteraction},
+          wolframPrinter{std::make_shared<WolframPrinter>(*this)}
+{
+    this->centralInteraction->installCentresProvider([this](const std::byte *data) {
+        return this->polysphereShapeFor(data).getInteractionCentres();
+    });
+}
+
+PolysphereTraits::PolysphereTraits(const PolysphereShape &polysphereShape,
+                                   const std::shared_ptr<CentralInteraction> &centralInteraction)
+        : PolysphereTraits(centralInteraction)
+{
+    this->addPolysphereShape("A", polysphereShape);
+    this->setDefaultShapeData({{"type", "A"}});
+}
+
+PolysphereTraits::~PolysphereTraits() {
+    if (this->centralInteraction)
+        this->centralInteraction->detach();
+}
+
+inline const PolysphereShape &PolysphereTraits::polysphereShapeFor(const ShapeData &data) const {
+    std::size_t shapeIdx = data.as<Data>().shapeIdx;
+    Expects(shapeIdx < this->shapes.size());
+    return this->shapes[shapeIdx];
 }
 
 std::shared_ptr<const ShapePrinter>
@@ -358,15 +352,13 @@ ShapeData PolysphereTraits::deserialize(const TextualShapeData &data) const {
     return std::make_shared<XCObjShapePrinter>(geometries, interactionCentres, subdivisions);
 }*/
 
-void PolysphereTraits::addPolysphereShape(const std::string &shapeName,
-                                          const PolysphereTraits::PolysphereShape &shape)
-{
+void PolysphereTraits::addPolysphereShape(const std::string &shapeName, const PolysphereShape &shape) {
     auto containsQuotes = [](const std::string &str) { return str.find('"') != std::string::npos; };
     Expects(!containsWhitespace(shapeName) && !containsQuotes(shapeName));
     Expects(!this->hasPolysphereShape(shapeName));
 
     this->shapes.push_back(shape);
-    this->shapeNameMap.emplace(shapeName, this->shapes.size() - 1);
+    this->shapeNameIdxMap.emplace(shapeName, this->shapes.size() - 1);
 
     for (const auto &namedPoint : shape.getCustomNamedPoints()) {
         const auto &pointName = namedPoint.first;
@@ -377,34 +369,34 @@ void PolysphereTraits::addPolysphereShape(const std::string &shapeName,
         this->registerSphereNamedPoint(sphereIdx);
 }
 
-const PolysphereTraits::PolysphereShape &PolysphereTraits::getPolysphereShape(const std::string &shapeName) const {
+const PolysphereShape &PolysphereTraits::getPolysphereShape(const std::string &shapeName) const {
     return this->shapes[this->getPolysphereShapeIdx(shapeName)];
 }
 
-const PolysphereTraits::PolysphereShape &PolysphereTraits::getPolysphereShape(std::size_t shapeIdx) const {
+const PolysphereShape &PolysphereTraits::getPolysphereShape(std::size_t shapeIdx) const {
     Expects(shapeIdx < this->shapes.size());
     return this->shapes[shapeIdx];
 }
 
-const PolysphereTraits::PolysphereShape &PolysphereTraits::getDefaultPolysphereShape() const {
+const PolysphereShape &PolysphereTraits::getDefaultPolysphereShape() const {
     const auto &defaultShapeData = this->getDefaultShapeData();
     ExpectsMsg(!defaultShapeData.empty(), "Default shape is not defined");
     return this->getPolysphereShape(this->getDefaultShapeData().at("type"));
 }
 
 std::size_t PolysphereTraits::getPolysphereShapeIdx(const std::string &shapeName) const {
-    auto it = this->shapeNameMap.find(shapeName);
-    ExpectsMsg(it != this->shapeNameMap.end(), "Shape " + shapeName + " not found");
+    auto it = this->shapeNameIdxMap.find(shapeName);
+    ExpectsMsg(it != this->shapeNameIdxMap.end(), "Shape " + shapeName + " not found");
     return it->second;
 }
 
 bool PolysphereTraits::hasPolysphereShape(const std::string &shapeName) const {
-    return this->shapeNameMap.find(shapeName) != this->shapeNameMap.end();
+    return this->shapeNameIdxMap.find(shapeName) != this->shapeNameIdxMap.end();
 }
 
 const std::string &PolysphereTraits::getPolysphereShapeName(std::size_t shapeIdx) const {
     Expects(shapeIdx < this->shapes.size());
-    for (const auto &[name, idx] : this->shapeNameMap)
+    for (const auto &[name, idx] : this->shapeNameIdxMap)
         if (idx == shapeIdx)
             return name;
     AssertThrow("Unreachable");
@@ -414,7 +406,7 @@ ShapeData PolysphereTraits::shapeDataFor(const std::string &shapeName) const {
     return ShapeData(Data{this->getPolysphereShapeIdx(shapeName)});
 }
 
-void PolysphereTraits::setDefaultShape(const std::string &shapeName) {
+void PolysphereTraits::setDefaultPolysphereShape(const std::string &shapeName) {
     Expects(this->hasPolysphereShape(shapeName));
     this->setDefaultShapeData({{"type", shapeName}});
 }
