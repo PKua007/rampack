@@ -4,10 +4,12 @@
 
 #include <catch2/catch.hpp>
 
+#include "matchers/VectorApproxMatcher.h"
+
+#include "mocks/MockCentralInteraction.h"
+
 #include "core/shapes/PolysphereTraits.h"
 #include "core/PeriodicBoundaryConditions.h"
-
-#include "matchers/VectorApproxMatcher.h"
 
 
 namespace {
@@ -18,20 +20,25 @@ namespace {
 
     const ShapeData defaultData(PolysphereTraits::Data{0});
     const Shape defaultShape({}, Matrix<3, 3>::identity(), defaultData);
+
+    const PolysphereShape dimer({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}},
+                                {1, 0, 0}, {0, 1, 0}, {0.5, 0, 0});
+    const PolysphereShape trimer({{{0, 0, 0}, 0.5}, {{1.5, 0, 0}, 0.5}, {{3, 0, 0}, 1}},
+                                 {-1, 0, 0}, {0, -1, 0}, {-0.5, 0, 0});
 }
 
-TEST_CASE("PolysphereTraits: hard interactions") {
-    PolysphereShape polysphereShape({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}}, {1, 0, 0}, {0, 1, 0}, {0.5, 0, 0});
-    PolysphereTraits traits(polysphereShape);
+TEST_CASE("PolysphereTraits: basic") {
+    PolysphereTraits traits;
+    auto dimerData = traits.addPolysphereShape("dimer", dimer);
+    auto trimerData = traits.addPolysphereShape("trimer", trimer);
 
     SECTION("hard interactions") {
-        // Particles look and are placed like this (x - central particle, o - second one):
+        // Particles look and are placed like this [x - first sphere (center), o - last sphere]:
         //
         //       1   4   6   9
         //   ||  x-->o   o<--x  ||
         //
-        // 4, 6 should be tangent on scale 10. Each particle should be reflected separately! If all are reflected
-        // simultaneously, than they are no longer tangent
+        // 4, 6 are tangent
 
         const Interaction &interaction = traits.getInteraction();
         PeriodicBoundaryConditions pbc(10);
@@ -40,14 +47,14 @@ TEST_CASE("PolysphereTraits: hard interactions") {
         CHECK_FALSE(interaction.hasSoftPart());
 
         SECTION("overlap") {
-            Shape shape1({1.01, 5, 5}, Matrix<3, 3>::identity(), defaultData);
-            Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0), defaultData);
+            Shape shape1({1.01, 5, 5}, Matrix<3, 3>::identity(), dimerData);
+            Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0), trimerData);
             CHECK(interaction.overlapBetweenShapes(shape1, shape2, pbc));
         }
 
         SECTION("no overlap") {
-            Shape shape1({0.99, 5, 5}, Matrix<3, 3>::identity(), defaultData);
-            Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0), defaultData);
+            Shape shape1({0.99, 5, 5}, Matrix<3, 3>::identity(), dimerData);
+            Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0), trimerData);
             CHECK_FALSE(interaction.overlapBetweenShapes(shape1, shape2, pbc));
         }
     }
@@ -58,43 +65,83 @@ TEST_CASE("PolysphereTraits: hard interactions") {
         CHECK(interaction.hasWallPart());
 
         SECTION("overlapping") {
-            Shape shape({1.1, 1.1, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/2), defaultData);
+            Shape shape({1.1, 1.1, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/2), dimerData);
             CHECK(interaction.overlapWithWallForShape(shape, {0, 5, 0}, {0, -1, 0}));
         }
 
         SECTION("non-overlapping") {
-            Shape shape({0.9, 0.9, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/2), defaultData);
+            Shape shape({0.9, 0.9, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/2), dimerData);
             CHECK_FALSE(interaction.overlapWithWallForShape(shape, {0, 5, 0}, {0, -1, 0}));
         }
     }
 
     SECTION("toWolfram") {
-        Shape shape({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0), defaultData);
+        Shape dimerShape({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0), dimerData);
+        Shape trimerShape({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0), trimerData);
+        auto printer = traits.getPrinter("wolfram", {});
 
-        std::string expected = "{Sphere[{9.000000, 5.000000, 5.000000},0.500000],"
-                               "Sphere[{6.000000, 5.000000, 5.000000},1.000000]}";
-        CHECK(traits.getPrinter("wolfram", {})->print(shape) == expected);
+        CHECK(printer->print(dimerShape) == "{Sphere[{9.000000, 5.000000, 5.000000},0.500000],"
+                                            "Sphere[{6.000000, 5.000000, 5.000000},1.000000]}");
+        CHECK(printer->print(trimerShape) == "{Sphere[{9.000000, 5.000000, 5.000000},0.500000],"
+                                             "Sphere[{7.500000, 5.000000, 5.000000},0.500000],"
+                                             "Sphere[{6.000000, 5.000000, 5.000000},1.000000]}");
     }
 
-    SECTION("getVolume") {
-        CHECK(traits.getGeometry().getVolume(defaultShape) == Approx(4.71238898038469));
+    SECTION("geometry") {
+        const auto &geometry = traits.getGeometry();
+        Shape dimerShape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2), dimerData);
+        Shape trimerShape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2), trimerData);
+
+        SECTION("getVolume") {
+            CHECK(geometry.getVolume(dimerShape) == Approx(4.71238898038469));
+            CHECK(geometry.getVolume(trimerShape) == Approx(5.235987755982988));
+        }
+
+        SECTION("primary axis") {
+            // primary axis X rotated 90 deg around z axis => primary axis is Y (for dimer, -(...) for trimer)
+            CHECK_THAT(geometry.getPrimaryAxis(dimerShape), IsApproxEqual({0, 1, 0}, 1e-8));
+            CHECK_THAT(geometry.getPrimaryAxis(trimerShape), IsApproxEqual({0, -1, 0}, 1e-8));
+        }
+
+        SECTION("secondary axis") {
+            // secondary axis Y rotated 90 deg around z axis => secondary axis is -X (for dimer, -(...) for trimer)
+            CHECK_THAT(geometry.getSecondaryAxis(dimerShape), IsApproxEqual({-1, 0, 0}, 1e-8));
+            CHECK_THAT(geometry.getSecondaryAxis(trimerShape), IsApproxEqual({1, 0, 0}, 1e-8));
+        }
+
+        SECTION("geometric origin") {
+            CHECK_THAT(geometry.getGeometricOrigin(dimerShape), IsApproxEqual({0, 0.5, 0}, 1e-8));
+            CHECK_THAT(geometry.getGeometricOrigin(trimerShape), IsApproxEqual({0, -0.5, 0}, 1e-8));
+        }
     }
 
-    SECTION("primary axis") {
-        // primary axis X rotated 90 deg around z axis => primary axis is Y
-        Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2), defaultData);
-        CHECK_THAT(traits.getGeometry().getPrimaryAxis(shape), IsApproxEqual({0, 1, 0}, 1e-8));
+    SECTION("PolysphereShape query") {
+        CHECK(traits.getPolysphereShape(0) == dimer);
+        CHECK(traits.getPolysphereShape(1) == trimer);
+
+        CHECK(traits.getPolysphereShape("dimer") == dimer);
+        CHECK(traits.getPolysphereShape("trimer") == trimer);
+
+        CHECK(traits.getPolysphereShapeName(0) == "dimer");
+        CHECK(traits.getPolysphereShapeName(1) == "trimer");
+
+        CHECK(traits.getPolysphereShapeIdx("dimer") == 0);
+        CHECK(traits.getPolysphereShapeIdx("trimer") == 1);
+
+        CHECK(traits.hasPolysphereShape("dimer"));
+        CHECK(traits.hasPolysphereShape("trimer"));
+        CHECK_FALSE(traits.hasPolysphereShape("tetramer"));
+
+        CHECK(traits.shapeDataFor("dimer") == dimerData);
+        CHECK(traits.shapeDataFor("trimer") == trimerData);
     }
 
-    SECTION("secondary axis") {
-        // secondary axis Y rotated 90 deg around z axis => secondary axis is -X
-        Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2), defaultData);
-        CHECK_THAT(traits.getGeometry().getSecondaryAxis(shape), IsApproxEqual({-1, 0, 0}, 1e-8));
-    }
+    SECTION("default shape") {
+        CHECK_THROWS_WITH(traits.getDefaultPolysphereShape(), Catch::Contains("not defined"));
 
-    SECTION("geometric origin") {
-        Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2), defaultData);
-        CHECK_THAT(traits.getGeometry().getGeometricOrigin(shape), IsApproxEqual({0, 0.5, 0}, 1e-8));
+        traits.setDefaultPolysphereShape("trimer");
+
+        CHECK(traits.getDefaultPolysphereShape() == trimer);
     }
 }
 
@@ -132,4 +179,25 @@ TEST_CASE("PolysphereTraits: named points") {
     CHECK_THAT(geometry.getNamedPointForShape("s1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-12));
     CHECK_THAT(geometry.getNamedPointForShape("named1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{-2, 0, 0}, 1e-12));
     CHECK_THAT(geometry.getNamedPointForShape("o", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-12));
+}
+
+TEST_CASE("PolysphereTraits: serialization") {
+    SECTION("default data") {
+        PolysphereTraits traits(dimer);
+        const auto &manager = traits.getDataManager();
+
+        CHECK(manager.defaultDeserialize({}) == defaultData);
+        CHECK(manager.getDefaultShapeData() == std::map<std::string, std::string>{{"type", "A"}});
+    }
+
+    SECTION("serialization & deserialization") {
+        PolysphereTraits traits;
+        traits.addPolysphereShape("dimer", dimer);
+        auto trimerData = traits.addPolysphereShape("trimer", trimer);
+        const auto &manager = traits.getDataManager();
+
+        TextualShapeData textualData{{"type", "trimer"}};
+        CHECK(manager.serialize(trimerData) == textualData);
+        CHECK(manager.deserialize(textualData) == trimerData);
+    }
 }

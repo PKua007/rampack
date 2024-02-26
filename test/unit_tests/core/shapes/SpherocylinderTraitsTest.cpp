@@ -15,7 +15,7 @@ namespace {
     using SpherocylinderData = SpherocylinderTraits::Data;
 }
 
-TEST_CASE("Spherocylinder: overlap (monodisperse)") {
+TEST_CASE("SpherocylinderTraits: overlap (monodisperse)") {
     FreeBoundaryConditions fbc;
     SpherocylinderTraits traits;
     SpherocylinderData data{3, 2};
@@ -129,7 +129,7 @@ TEST_CASE("Spherocylinder: overlap (monodisperse)") {
     }
 }
 
-TEST_CASE("Spherocylinder: overlap (polydisperse)") {
+TEST_CASE("SpherocylinderTraits: overlap (polydisperse)") {
     SpherocylinderTraits traits;
     FreeBoundaryConditions fbc;
 
@@ -166,7 +166,7 @@ TEST_CASE("Spherocylinder: overlap (polydisperse)") {
     }
 }
 
-TEST_CASE("Spherocylinder: wall overlap") {
+TEST_CASE("SpherocylinderTraits: wall overlap") {
     SpherocylinderTraits traits;
     SpherocylinderData data{1, 0.5};
     const Interaction &interaction = traits.getInteraction();
@@ -184,7 +184,7 @@ TEST_CASE("Spherocylinder: wall overlap") {
     }
 }
 
-TEST_CASE("Spherocylinder: getVolume") {
+TEST_CASE("SpherocylinderTraits: getVolume") {
     SpherocylinderTraits traits;
     SpherocylinderData data{3, 2};
     Shape sc;
@@ -193,7 +193,7 @@ TEST_CASE("Spherocylinder: getVolume") {
     CHECK(traits.getVolume(sc) == Approx(68 * M_PI / 3));
 }
 
-TEST_CASE("Spherocylinder: toWolfram") {
+TEST_CASE("SpherocylinderTraits: toWolfram") {
     FreeBoundaryConditions fbc;
     SpherocylinderTraits traits;
     SpherocylinderData data{3, 2};
@@ -204,7 +204,7 @@ TEST_CASE("Spherocylinder: toWolfram") {
                                   "{3.500000, 4.000000, 6.000000}},2.000000]");
 }
 
-TEST_CASE("Spherocylinder: primary axis") {
+TEST_CASE("SpherocylinderTraits: primary axis") {
     SpherocylinderTraits traits;
     SpherocylinderData data{3, 2};
 
@@ -213,7 +213,7 @@ TEST_CASE("Spherocylinder: primary axis") {
     CHECK_THAT(traits.getPrimaryAxis(shape), IsApproxEqual({1, 0, 0}, 1e-12));
 }
 
-TEST_CASE("Spherocylinder: geometric origin") {
+TEST_CASE("SpherocylinderTraits: geometric origin") {
     SpherocylinderTraits traits;
     SpherocylinderData data{3, 2};
     Shape sc;
@@ -222,7 +222,7 @@ TEST_CASE("Spherocylinder: geometric origin") {
     CHECK(traits.getGeometry().getGeometricOrigin(sc) == Vector<3>{0, 0, 0});
 }
 
-TEST_CASE("Spherocylinder: named points") {
+TEST_CASE("SpherocylinderTraits: named points") {
     SpherocylinderTraits traits;
     ShapeData data(SpherocylinderData{3, 2});
 
@@ -232,7 +232,7 @@ TEST_CASE("Spherocylinder: named points") {
     CHECK(traits.getGeometry().getNamedPointForData("o", data) == Vector<3>{0, 0, 0});
 }
 
-TEST_CASE("Spherocylinder: serialization") {
+TEST_CASE("SpherocylinderTraits: serialization") {
     SECTION("default data") {
         SpherocylinderTraits traits(5, 3);
 

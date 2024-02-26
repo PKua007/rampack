@@ -134,6 +134,14 @@ void PolysphereShape::addCustomNamedPoints(std::map<std::string, Vector<3>> name
     this->customNamedPoints = std::move(namedPoints);
 }
 
+bool operator==(const PolysphereShape &lhs, const PolysphereShape &rhs) {
+    return std::tie(
+        lhs.sphereData, lhs.primaryAxis, lhs.secondaryAxis, lhs.geometricOrigin, lhs.volume, lhs.customNamedPoints
+    ) == std::tie(
+        rhs.sphereData, rhs.primaryAxis, rhs.secondaryAxis, rhs.geometricOrigin, rhs.volume, rhs.customNamedPoints
+    );
+}
+
 
 // PolysphereTraits::WolframPrinter ####################################################################################
 
@@ -352,7 +360,7 @@ ShapeData PolysphereTraits::deserialize(const TextualShapeData &data) const {
     return std::make_shared<XCObjShapePrinter>(geometries, interactionCentres, subdivisions);
 }*/
 
-void PolysphereTraits::addPolysphereShape(const std::string &shapeName, const PolysphereShape &shape) {
+ShapeData PolysphereTraits::addPolysphereShape(const std::string &shapeName, const PolysphereShape &shape) {
     auto containsQuotes = [](const std::string &str) { return str.find('"') != std::string::npos; };
     Expects(!containsWhitespace(shapeName) && !containsQuotes(shapeName));
     Expects(!this->hasPolysphereShape(shapeName));
@@ -367,6 +375,8 @@ void PolysphereTraits::addPolysphereShape(const std::string &shapeName, const Po
 
     for (std::size_t sphereIdx{}; sphereIdx < shape.getSphereData().size(); sphereIdx++)
         this->registerSphereNamedPoint(sphereIdx);
+
+    return ShapeData(Data{this->shapes.size() - 1});
 }
 
 const PolysphereShape &PolysphereTraits::getPolysphereShape(const std::string &shapeName) const {
