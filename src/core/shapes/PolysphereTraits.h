@@ -94,6 +94,8 @@ public:
         return this->customNamedPoints;
     }
     [[nodiscard]] bool spheresOverlap() const;
+
+    friend bool operator==(const PolysphereShape &lhs, const PolysphereShape &rhs);
 };
 
 
@@ -227,7 +229,7 @@ public:
     [[nodiscard]] TextualShapeData serialize(const ShapeData &data) const override;
     [[nodiscard]] ShapeData deserialize(const TextualShapeData &data) const override;
 
-    void addPolysphereShape(const std::string &shapeName, const PolysphereShape &shape);
+    ShapeData addPolysphereShape(const std::string &shapeName, const PolysphereShape &shape);
     [[nodiscard]] const PolysphereShape &getDefaultPolysphereShape() const;
     void setDefaultPolysphereShape(const std::string &shapeName);
 

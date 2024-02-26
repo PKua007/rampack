@@ -14,7 +14,7 @@ namespace {
     using SphereData = SphereTraits::HardData;
 }
 
-TEST_CASE("Sphere: overlap") {
+TEST_CASE("SphereTraits: overlap") {
     // Shapes positions create Pythagorean triangle 3, 4, 5 (through y-axis pbc) on z = 10 plane and are exactly
     // touching in scale 1
     SphereTraits sphereTraits;
@@ -39,7 +39,7 @@ TEST_CASE("Sphere: overlap") {
     }
 }
 
-TEST_CASE("Sphere: wall overlap") {
+TEST_CASE("SphereTraits: wall overlap") {
     SphereTraits sphereTraits;
     const Interaction &interaction = sphereTraits.getInteraction();
     auto noRot = Matrix<3, 3>::identity();
@@ -57,7 +57,7 @@ TEST_CASE("Sphere: wall overlap") {
     }
 }
 
-TEST_CASE("Sphere: toWolfram") {
+TEST_CASE("SphereTraits: toWolfram") {
     PeriodicBoundaryConditions pbc(10);
 
     SECTION("hard interaction") {
@@ -77,7 +77,7 @@ TEST_CASE("Sphere: toWolfram") {
     }
 }
 
-TEST_CASE("Sphere: geometry") {
+TEST_CASE("SphereTraits: geometry") {
     SECTION("hard interaction") {
         SphereTraits sphereTraits;
         const auto &geometry = sphereTraits.getGeometry();
@@ -97,7 +97,7 @@ TEST_CASE("Sphere: geometry") {
     }
 }
 
-TEST_CASE("Sphere: serialization") {
+TEST_CASE("SphereTraits: serialization") {
     SECTION("hard interaction") {
         SECTION("default data") {
             SphereTraits traits(2);
