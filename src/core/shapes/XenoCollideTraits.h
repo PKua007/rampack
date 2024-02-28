@@ -44,16 +44,9 @@
  * @endcode
  */
 template<typename ConcreteCollideTraits>
-class XenoCollideTraits : public ShapeTraits, public Interaction, public ShapeGeometry, public ShapeDataManager {
+class XenoCollideTraits : public ShapeTraits, public Interaction {
 private:
-    std::optional<Vector<3>> primaryAxis;
-    std::optional<Vector<3>> secondaryAxis;
-    Vector<3> geometricOrigin;
-    double volume{};
-
-    mutable std::optional<double> rangeRadius;
-
-    template<typename Printer>
+    /*template<typename Printer>
     std::shared_ptr<Printer> createPrinter(std::size_t meshSubdivisions) const {
         // TODO: fix nullptr
         auto centers = this->getInteractionCentres(nullptr);
@@ -73,31 +66,14 @@ private:
         }
 
         return std::make_shared<Printer>(geometryPointers, centers, meshSubdivisions);
-    }
+    }*/
 
 public:
     /** @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::XCPrinter
      * @a subdivision parameter) */
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
 
-    /**
-     * @brief Programmes the shape with given parameters.
-     * @param primaryAxis primary axis of the shape (see ShapeGeometry::getPrimaryAxis())
-     * @param secondaryAxis secondary axis of the shape (see ShapeGeometry::getSecondaryAxis())
-     * @param geometricOrigin geometric origin of the shape (see ShapeGeometry::getGeometricOrigin())
-     * @param volume volume of the shape (it has to be computed manually, since there is no exact general method)
-     * @param customNamedPoints optional list of named points (see ShapeGeometry::getNamedPoint())
-     */
-    XenoCollideTraits(OptionalAxis primaryAxis, OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin,
-                      double volume, const std::vector<NamedPoint> &customNamedPoints = {})
-            : primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}, geometricOrigin{geometricOrigin}, volume{volume}
-    {
-        this->registerNamedPoints(customNamedPoints);
-    }
-
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
-    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
-    [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this; }
 
     /**
      * @brief Returns ShapePrinter for a given @a format.
@@ -115,46 +91,29 @@ public:
             Expects(meshSubdivisions >= 1);
         }
 
-        if (format == "wolfram")
+        /*if (format == "wolfram")
             return this->template createPrinter<XCWolframShapePrinter>(meshSubdivisions);
         else if (format == "obj")
             return this->template createPrinter<XCObjShapePrinter>(meshSubdivisions);
-        else
+        else*/
             throw NoSuchShapePrinterException("XenoCollideTraits: unknown printer format: " + format);
     }
-
-    [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const final {
-        if (!this->primaryAxis.has_value())
-            throw std::runtime_error("XenoCollideTraits::getPrimaryAxis: primary axis not defined");
-        return shape.getOrientation() * this->primaryAxis.value();
-    }
-
-    [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const final {
-        if (!this->secondaryAxis.has_value())
-            throw std::runtime_error("XenoCollideTraits::getSecondaryAxis: secondary axis not defined");
-        return shape.getOrientation() * this->secondaryAxis.value();
-    }
-
-    [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const final {
-        return shape.getOrientation() * this->geometricOrigin;
-    }
-
-    [[nodiscard]] double getVolume([[maybe_unused]] const Shape &shape) const final { return this->volume; }
 
     [[nodiscard]] bool hasHardPart() const override { return true; }
     [[nodiscard]] bool hasWallPart() const override { return true; }
     [[nodiscard]] bool hasSoftPart() const override { return false; }
+    // TODO: fix isConvex
     [[nodiscard]] bool isConvex() const override { return true; }
 
     [[nodiscard]] bool overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1,
-                                      [[maybe_unused]] const std::byte *data1, std::size_t idx1,
+                                      const std::byte *data1, std::size_t idx1,
                                       const Vector<3> &pos2, const Matrix<3, 3> &orientation2,
-                                      [[maybe_unused]] const std::byte *data2, std::size_t idx2,
+                                      const std::byte *data2, std::size_t idx2,
                                       const BoundaryConditions &bc) const override
     {
         const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
-        const auto &collideGeometry1 = thisConcreteTraits.getCollideGeometry(idx1);
-        const auto &collideGeometry2 = thisConcreteTraits.getCollideGeometry(idx2);
+        const auto &collideGeometry1 = thisConcreteTraits.getCollideGeometry(data1, idx1);
+        const auto &collideGeometry2 = thisConcreteTraits.getCollideGeometry(data2, idx2);
         using XCGeometry = decltype(collideGeometry1);
         double rCircumsphere = collideGeometry1.getCircumsphereRadius() + collideGeometry2.getCircumsphereRadius();
         double rInsphere = collideGeometry1.getInsphereRadius() + collideGeometry2.getInsphereRadius();
@@ -171,12 +130,12 @@ public:
                                                   1.0e-12);
     }
 
-    [[nodiscard]] bool overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation,
-                                       [[maybe_unused]] const std::byte *data, std::size_t idx,
-                                       const Vector<3> &wallOrigin, const Vector<3> &wallVector) const override
+    [[nodiscard]] bool overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation, const std::byte *data,
+                                       std::size_t idx, const Vector<3> &wallOrigin,
+                                       const Vector<3> &wallVector) const override
     {
         const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
-        const auto &collideGeometry = thisConcreteTraits.getCollideGeometry(idx);
+        const auto &collideGeometry = thisConcreteTraits.getCollideGeometry(data, idx);
 
         Vector<3> normalVector = (orientation.transpose())*(wallVector);
         Vector<3> supportPoint = collideGeometry.getSupportPoint(-normalVector);
@@ -189,21 +148,16 @@ public:
         return true;
     }
 
-    [[nodiscard]] double getRangeRadius([[maybe_unused]] const std::byte *data) const override {
-        if (this->rangeRadius.has_value())
-            return *this->rangeRadius;
-
-        // TODO: fix nullptr
-        std::size_t numCenters = std::max(this->getInteractionCentres(nullptr).size(), std::size_t{1});
+    [[nodiscard]] double getRangeRadius(const std::byte *data) const override {
+        std::size_t numCenters = std::max(this->getInteractionCentres(data).size(), std::size_t{1});
         const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
         double maxRadius{};
         for (std::size_t i{}; i < numCenters; i++) {
-            double newRadius = thisConcreteTraits.getCollideGeometry(i).getCircumsphereRadius();
+            double newRadius = thisConcreteTraits.getCollideGeometry(data, i).getCircumsphereRadius();
             if (newRadius > maxRadius)
                 maxRadius = newRadius;
         }
-        this->rangeRadius = 2*maxRadius;
-        return *this->rangeRadius;
+        return 2*maxRadius;
     }
 };
 

@@ -13,7 +13,7 @@
 #include "core/ShapeTraits.h"
 #include "core/interactions/CentralInteraction.h"
 #include "OptionalAxis.h"
-#include "GenericShapeTraits.h"
+#include "GenericShapeRegistry.h"
 
 
 class PolysphereShape {
@@ -56,22 +56,11 @@ public:
                              std::optional<double> volume = std::nullopt,
                              const std::map<std::string, Vector<3>> &customNamedPoints = {});
 
-    [[nodiscard]] Vector<3> getPrimaryAxis() const {
-        if (!this->primaryAxis.has_value())
-            throw std::runtime_error("PolysphereShape::getPrimaryAxis: primary axis not defined");
-        return this->primaryAxis.value();
-    }
-
-    [[nodiscard]] Vector<3> getSecondaryAxis() const {
-        if (!this->secondaryAxis.has_value())
-            throw std::runtime_error("PolysphereShape::getSecondaryAxis: secondary axis not defined");
-        return this->secondaryAxis.value();
-    }
-
+    [[nodiscard]] Vector<3> getPrimaryAxis() const;
+    [[nodiscard]] Vector<3> getSecondaryAxis() const;
     [[nodiscard]] Vector<3> getGeometricOrigin() const {
         return this->geometricOrigin;
     }
-
     [[nodiscard]] double getVolume([[maybe_unused]] const Shape &shape) const { return this->volume; }
     [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->sphereData; }
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const;
@@ -103,7 +92,7 @@ public:
 /**
  * @brief A polymer consisting of identical or different hard of soft-interacting spheres.
  */
-class PolysphereTraits : public GenericShapeTraits<PolysphereShape> {
+class PolysphereTraits : public ShapeTraits, public GenericShapeRegistry<PolysphereShape> {
 private:
     class HardInteraction : public Interaction {
     private:
@@ -180,6 +169,8 @@ public:
     ~PolysphereTraits() override;
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; }
+    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
+    [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this; }
 
     /**
      * @brief Returns ShapePrinter for a given @a format.

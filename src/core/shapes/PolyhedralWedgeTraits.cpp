@@ -12,7 +12,7 @@ double PolyhedralWedgeTraits::getVolume(double axBottom, double ayBottom, double
     return v;
 }
 
-PolyhedralWedgeTraits::PolyhedralWedgeTraits(double axBottom, double ayBottom, double axTop, double ayTop,
+/*PolyhedralWedgeTraits::PolyhedralWedgeTraits(double axBottom, double ayBottom, double axTop, double ayTop,
                                              double length,
                                              std::size_t subdivisions)
         : XenoCollideTraits({0, 0, 1}, {1, 0, 0}, {0, 0, 0},
@@ -43,9 +43,9 @@ PolyhedralWedgeTraits::PolyhedralWedgeTraits(double axBottom, double ayBottom, d
         this->shapeModels.emplace_back(subAxBottom, subAyBottom, subAxTop, subAyTop, dl);
         this->interactionCentres.push_back({0, 0, length / 2.0 - (static_cast<double>(i) + 0.5) * dl});
     }
-}
+}*/
 
-std::shared_ptr<const ShapePrinter>
+/*std::shared_ptr<const ShapePrinter>
 PolyhedralWedgeTraits::getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const {
     // We override the function from XenoCollideTraits not to redundantly print subdivisions
 
@@ -61,7 +61,7 @@ PolyhedralWedgeTraits::getPrinter(const std::string &format, const std::map<std:
         return this->createPrinter<XCObjShapePrinter>(meshSubdivisions);
     else
         throw NoSuchShapePrinterException("XenoCollideTraits: unknown printer format: " + format);
-}
+}*/
 
 PolyhedralWedgeTraits::CollideGeometry::CollideGeometry(double axBottom, double ayBottom, double axTop, double ayTop,
                                                         double length)

@@ -182,11 +182,8 @@ namespace {
             builder.processCommand(command);
 
         auto collideGeometry = builder.releaseCollideGeometry();
-        std::vector<NamedPoint> properNamedPoints;
-        for (const auto &[pointName, point] : namedPoints)
-            properNamedPoints.emplace_back(pointName, point);
         return std::make_shared<GenericXenoCollideTraits>(
-            std::move(collideGeometry), primaryAxis, secondaryAxis, geometricOrigin, volume, properNamedPoints
+            std::move(collideGeometry), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
         );
     }
 

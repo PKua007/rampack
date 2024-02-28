@@ -55,6 +55,18 @@ PolysphereShape::PolysphereShape(std::vector<SphereData> sphereData, OptionalAxi
         this->volume = this->calculateVolume();
 }
 
+Vector<3> PolysphereShape::getPrimaryAxis() const {
+    if (!this->primaryAxis.has_value())
+        throw std::runtime_error("PolysphereShape::getPrimaryAxis: primary axis not defined");
+    return this->primaryAxis.value();
+}
+
+Vector<3> PolysphereShape::getSecondaryAxis() const {
+    if (!this->secondaryAxis.has_value())
+        throw std::runtime_error("PolysphereShape::getSecondaryAxis: secondary axis not defined");
+    return this->secondaryAxis.value();
+}
+
 std::vector<Vector<3>> PolysphereShape::getInteractionCentres() const {
     std::vector<Vector<3>> centres;
     centres.reserve(this->sphereData.size());
@@ -273,7 +285,7 @@ ShapeData PolysphereTraits::addShape(const std::string &shapeName, const Polysph
     for (std::size_t sphereIdx{}; sphereIdx < shape.getSphereData().size(); sphereIdx++)
         this->registerSphereNamedPoint(sphereIdx);
 
-    return GenericShapeTraits::addShape(shapeName, shape);
+    return GenericShapeRegistry::addShape(shapeName, shape);
 }
 
 /*std::shared_ptr<ShapePrinter> PolysphereTraits::createObjPrinter(std::size_t subdivisions) const {
