@@ -12,8 +12,6 @@
 #include "utils/Exceptions.h"
 #include "XCObjShapePrinter.h"
 #include "geometry/xenocollide/XCPrimitives.h"
-#include "core/io/ShapeDataSerializer.h"
-#include "core/io/ShapeDataDeserializer.h"
 #include "utils/Utils.h"
 
 
@@ -207,22 +205,6 @@ bool PolysphereTraits::HardInteraction::overlapWithWall(const Vector<3> &pos,
 
 // PolysphereTraits ####################################################################################################
 
-void PolysphereTraits::registerCustomNamedPoint(const std::string &pointName) {
-    if (this->hasNamedPoint(pointName))
-        return;
-
-    this->registerDynamicNamedPoint(pointName, [this, pointName](const ShapeData &data) -> Vector<3> {
-        std::size_t shapeIdx = data.as<Data>().shapeIdx;
-        const auto &namedPoints = this->getShape(shapeIdx).getCustomNamedPoints();
-
-        auto it = namedPoints.find(pointName);
-        if (it == namedPoints.end())
-            this->throwUnavailableNamedPoint(shapeIdx, pointName);
-
-        return it->second;
-    });
-}
-
 void PolysphereTraits::registerSphereNamedPoint(std::size_t sphereIdx) {
     std::string pointName = "s" + std::to_string(sphereIdx);
     if (this->hasNamedPoint(pointName))
@@ -236,13 +218,6 @@ void PolysphereTraits::registerSphereNamedPoint(std::size_t sphereIdx) {
 
         return sphereData[sphereIdx].position;
     });
-}
-
-void PolysphereTraits::throwUnavailableNamedPoint(std::size_t shapeIdx, const std::string &pointName) const {
-    const std::string &shapeName = this->getShapeName(shapeIdx);
-    std::ostringstream msg;
-    msg << "Named point " << pointName << " is not available for shape " << shapeName;
-    throw NoSuchNamedPointForShapeException(msg.str());
 }
 
 PolysphereTraits::PolysphereTraits()
@@ -277,12 +252,6 @@ PolysphereTraits::~PolysphereTraits() {
         this->centralInteraction->detach();
 }
 
-inline const PolysphereShape &PolysphereTraits::shapeFor(const ShapeData &data) const {
-    std::size_t shapeIdx = data.as<Data>().shapeIdx;
-    Expects(shapeIdx < this->shapes.size());
-    return this->shapes[shapeIdx];
-}
-
 std::shared_ptr<const ShapePrinter>
 PolysphereTraits::getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const {
     std::size_t meshSubdivisions = DEFAULT_MESH_SUBDIVISIONS;
@@ -300,47 +269,11 @@ PolysphereTraits::getPrinter(const std::string &format, const std::map<std::stri
         throw NoSuchShapePrinterException("PolysphereTraits: unknown printer format: " + format);
 }
 
-Vector<3> PolysphereTraits::getPrimaryAxis(const Shape &shape) const {
-    const auto &polysphereShape = this->shapeFor(shape);
-    return shape.getOrientation() * polysphereShape.getPrimaryAxis();
-}
+ShapeData PolysphereTraits::addShape(const std::string &shapeName, const PolysphereShape &shape) {
+    for (std::size_t sphereIdx{}; sphereIdx < shape.getSphereData().size(); sphereIdx++)
+        this->registerSphereNamedPoint(sphereIdx);
 
-Vector<3> PolysphereTraits::getSecondaryAxis(const Shape &shape) const {
-    const auto &polysphereShape = this->shapeFor(shape);
-    return shape.getOrientation() * polysphereShape.getSecondaryAxis();
-}
-
-Vector<3> PolysphereTraits::getGeometricOrigin(const Shape &shape) const {
-    const auto &polysphereShape = this->shapeFor(shape);
-    return shape.getOrientation() * polysphereShape.getGeometricOrigin();
-}
-
-double PolysphereTraits::getVolume(const Shape &shape) const {
-    return this->shapeFor(shape).getVolume(shape);
-}
-
-void PolysphereTraits::validateShapeData(const ShapeData &data) const {
-    const auto &polysphereData = data.as<Data>();
-    ShapeDataValidateMsg(polysphereData.shapeIdx < this->shapes.size(), "Shape index out of range");
-}
-
-TextualShapeData PolysphereTraits::serialize(const ShapeData &data) const {
-    std::size_t shapeIdx = data.as<Data>().shapeIdx;
-    const std::string &shapeName = this->getShapeName(shapeIdx);
-
-    ShapeDataSerializer serializer;
-    serializer["type"] = shapeName;
-    return serializer.toTextualShapeData();
-}
-
-ShapeData PolysphereTraits::deserialize(const TextualShapeData &data) const {
-    ShapeDataDeserializer deserializer(data);
-    auto shapeName = deserializer.as<std::string>("type");
-    deserializer.throwIfNotAccessed();
-
-    if (!this->hasShape(shapeName))
-        throw ShapeDataSerializationException("Unknown shape type: " + shapeName);
-    return ShapeData(Data{this->getShapeIdx(shapeName)});
+    return GenericShapeTraits::addShape(shapeName, shape);
 }
 
 /*std::shared_ptr<ShapePrinter> PolysphereTraits::createObjPrinter(std::size_t subdivisions) const {
@@ -359,64 +292,3 @@ ShapeData PolysphereTraits::deserialize(const TextualShapeData &data) const {
 
     return std::make_shared<XCObjShapePrinter>(geometries, interactionCentres, subdivisions);
 }*/
-
-ShapeData PolysphereTraits::addShape(const std::string &shapeName, const PolysphereShape &shape) {
-    auto containsQuotes = [](const std::string &str) { return str.find('"') != std::string::npos; };
-    Expects(!containsWhitespace(shapeName) && !containsQuotes(shapeName));
-    Expects(!this->hasShape(shapeName));
-
-    this->shapes.push_back(shape);
-    this->shapeNameIdxMap.emplace(shapeName, this->shapes.size() - 1);
-
-    for (const auto &namedPoint : shape.getCustomNamedPoints()) {
-        const auto &pointName = namedPoint.first;
-        this->registerCustomNamedPoint(pointName);
-    }
-
-    for (std::size_t sphereIdx{}; sphereIdx < shape.getSphereData().size(); sphereIdx++)
-        this->registerSphereNamedPoint(sphereIdx);
-
-    return ShapeData(Data{this->shapes.size() - 1});
-}
-
-const PolysphereShape &PolysphereTraits::getShape(const std::string &shapeName) const {
-    return this->shapes[this->getShapeIdx(shapeName)];
-}
-
-const PolysphereShape &PolysphereTraits::getShape(std::size_t shapeIdx) const {
-    Expects(shapeIdx < this->shapes.size());
-    return this->shapes[shapeIdx];
-}
-
-const PolysphereShape &PolysphereTraits::getDefaultShape() const {
-    const auto &defaultShapeData = this->getDefaultShapeData();
-    ExpectsMsg(!defaultShapeData.empty(), "Default shape is not defined");
-    return this->getShape(this->getDefaultShapeData().at("type"));
-}
-
-std::size_t PolysphereTraits::getShapeIdx(const std::string &shapeName) const {
-    auto it = this->shapeNameIdxMap.find(shapeName);
-    ExpectsMsg(it != this->shapeNameIdxMap.end(), "Shape " + shapeName + " not found");
-    return it->second;
-}
-
-bool PolysphereTraits::hasShape(const std::string &shapeName) const {
-    return this->shapeNameIdxMap.find(shapeName) != this->shapeNameIdxMap.end();
-}
-
-const std::string &PolysphereTraits::getShapeName(std::size_t shapeIdx) const {
-    Expects(shapeIdx < this->shapes.size());
-    for (const auto &[name, idx] : this->shapeNameIdxMap)
-        if (idx == shapeIdx)
-            return name;
-    AssertThrow("Unreachable");
-}
-
-ShapeData PolysphereTraits::shapeDataFor(const std::string &shapeName) const {
-    return ShapeData(Data{this->getShapeIdx(shapeName)});
-}
-
-void PolysphereTraits::setDefaultShape(const std::string &shapeName) {
-    Expects(this->hasShape(shapeName));
-    this->setDefaultShapeData({{"type", shapeName}});
-}
