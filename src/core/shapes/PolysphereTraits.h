@@ -13,6 +13,7 @@
 #include "core/ShapeTraits.h"
 #include "core/interactions/CentralInteraction.h"
 #include "OptionalAxis.h"
+#include "GenericShapeTraits.h"
 
 
 class PolysphereShape {
@@ -102,16 +103,7 @@ public:
 /**
  * @brief A polymer consisting of identical or different hard of soft-interacting spheres.
  */
-class PolysphereTraits : public ShapeTraits, public ShapeGeometry, public ShapeDataManager {
-public:
-    struct Data {
-        std::size_t shapeIdx{};
-
-        friend bool operator==(Data lhs, Data rhs) { return lhs.shapeIdx == rhs.shapeIdx; }
-    };
-
-    using SphereData = PolysphereShape::SphereData;
-
+class PolysphereTraits : public GenericShapeTraits<PolysphereShape> {
 private:
     class HardInteraction : public Interaction {
     private:
@@ -149,8 +141,6 @@ private:
 
     // [[nodiscard]] std::shared_ptr<ShapePrinter> createObjPrinter(std::size_t subdivisions) const;
 
-    std::map<std::string, std::size_t> shapeNameIdxMap;
-    std::vector<PolysphereShape> shapes;
     std::shared_ptr<Interaction> interaction;
     std::shared_ptr<CentralInteraction> centralInteraction;
     std::shared_ptr<WolframPrinter> wolframPrinter;
@@ -158,22 +148,11 @@ private:
     friend HardInteraction;
     friend WolframPrinter;
 
-    [[nodiscard]] const PolysphereShape &shapeFor(const Shape &shape) const {
-        return this->shapeFor(shape.getData());
-    }
-
-    [[nodiscard]] const PolysphereShape &shapeFor(const ShapeData &data) const;
-
-    [[nodiscard]] const PolysphereShape &shapeFor(const std::byte *data) const {
-        std::size_t shapeIdx = ShapeData::as<Data>(data).shapeIdx;
-        return this->shapes[shapeIdx];
-    }
-
-    void registerCustomNamedPoint(const std::string &pointName);
     void registerSphereNamedPoint(std::size_t sphereIdx);
-    void throwUnavailableNamedPoint(std::size_t shapeIdx, const std::string &pointName) const;
 
 public:
+    using SphereData = PolysphereShape::SphereData;
+
     /** @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::XCPrinter
      * @a subdivision parameter) */
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
@@ -200,10 +179,7 @@ public:
     PolysphereTraits &operator=(const PolysphereTraits &) = delete;
     ~PolysphereTraits() override;
 
-
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; }
-    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
-    [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this; }
 
     /**
      * @brief Returns ShapePrinter for a given @a format.
@@ -216,30 +192,7 @@ public:
     [[nodiscard]] std::shared_ptr<const ShapePrinter>
     getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;
 
-    [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override;
-    [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override;
-    [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const override;
-    [[nodiscard]] double getVolume(const Shape &shape) const override;
-
-    [[nodiscard]] std::size_t getShapeDataSize() const override { return sizeof(Data); }
-    void validateShapeData(const ShapeData &data) const override;
-    [[nodiscard]] ShapeData::Comparator getComparator() const override {
-        return ShapeData::Comparator::forType<Data>();
-    }
-    [[nodiscard]] TextualShapeData serialize(const ShapeData &data) const override;
-    [[nodiscard]] ShapeData deserialize(const TextualShapeData &data) const override;
-
-    ShapeData addShape(const std::string &shapeName, const PolysphereShape &shape);
-    [[nodiscard]] const PolysphereShape &getDefaultShape() const;
-    void setDefaultShape(const std::string &shapeName);
-
-    [[nodiscard]] bool hasShape(const std::string &shapeName) const;
-    [[nodiscard]] const PolysphereShape &getShape(const std::string &shapeName) const;
-    [[nodiscard]] const PolysphereShape &getShape(std::size_t shapeIdx) const;
-    [[nodiscard]] ShapeData shapeDataFor(const std::string &shapeName) const;
-
-    [[nodiscard]] std::size_t getShapeIdx(const std::string &shapeName) const;
-    [[nodiscard]] const std::string &getShapeName(std::size_t shapeIdx) const;
+    ShapeData addShape(const std::string &shapeName, const PolysphereShape &shape) final;
 };
 
 
