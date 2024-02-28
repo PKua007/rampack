@@ -158,13 +158,13 @@ private:
     friend HardInteraction;
     friend WolframPrinter;
 
-    [[nodiscard]] const PolysphereShape &polysphereShapeFor(const Shape &shape) const {
-        return this->polysphereShapeFor(shape.getData());
+    [[nodiscard]] const PolysphereShape &shapeFor(const Shape &shape) const {
+        return this->shapeFor(shape.getData());
     }
 
-    [[nodiscard]] const PolysphereShape &polysphereShapeFor(const ShapeData &data) const;
+    [[nodiscard]] const PolysphereShape &shapeFor(const ShapeData &data) const;
 
-    [[nodiscard]] const PolysphereShape &polysphereShapeFor(const std::byte *data) const {
+    [[nodiscard]] const PolysphereShape &shapeFor(const std::byte *data) const {
         std::size_t shapeIdx = ShapeData::as<Data>(data).shapeIdx;
         return this->shapes[shapeIdx];
     }
@@ -229,17 +229,17 @@ public:
     [[nodiscard]] TextualShapeData serialize(const ShapeData &data) const override;
     [[nodiscard]] ShapeData deserialize(const TextualShapeData &data) const override;
 
-    ShapeData addPolysphereShape(const std::string &shapeName, const PolysphereShape &shape);
-    [[nodiscard]] const PolysphereShape &getDefaultPolysphereShape() const;
-    void setDefaultPolysphereShape(const std::string &shapeName);
+    ShapeData addShape(const std::string &shapeName, const PolysphereShape &shape);
+    [[nodiscard]] const PolysphereShape &getDefaultShape() const;
+    void setDefaultShape(const std::string &shapeName);
 
-    [[nodiscard]] bool hasPolysphereShape(const std::string &shapeName) const;
-    [[nodiscard]] const PolysphereShape &getPolysphereShape(const std::string &shapeName) const;
-    [[nodiscard]] const PolysphereShape &getPolysphereShape(std::size_t shapeIdx) const;
+    [[nodiscard]] bool hasShape(const std::string &shapeName) const;
+    [[nodiscard]] const PolysphereShape &getShape(const std::string &shapeName) const;
+    [[nodiscard]] const PolysphereShape &getShape(std::size_t shapeIdx) const;
     [[nodiscard]] ShapeData shapeDataFor(const std::string &shapeName) const;
 
-    [[nodiscard]] std::size_t getPolysphereShapeIdx(const std::string &shapeName) const;
-    [[nodiscard]] const std::string &getPolysphereShapeName(std::size_t shapeIdx) const;
+    [[nodiscard]] std::size_t getShapeIdx(const std::string &shapeName) const;
+    [[nodiscard]] const std::string &getShapeName(std::size_t shapeIdx) const;
 };
 
 
