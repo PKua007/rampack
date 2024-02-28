@@ -310,6 +310,7 @@ namespace {
                 return allSphereDatas;
             });
 
+        // TODO: polydispersity
         return MatcherDataclass("polysphere")
             .arguments({{"spheres", sphere | sphereArray},
                         {"volume", MatcherFloat{}.positive()},
@@ -436,23 +437,19 @@ namespace {
                     secondaryAxis = convex["secondary_axis"].as<Vector<3>>();
                 auto namedPoints = convex["named_points"].as<std::map<std::string, Vector<3>>>();
 
-                std::vector<NamedPoint> properNamedPoints;
-                properNamedPoints.reserve(namedPoints.size());
-                for (const auto &[pointName, point] : namedPoints)
-                    properNamedPoints.emplace_back(pointName, point);
-
                 XCBodyBuilder builder;
                 script(builder);
                 auto geometry = builder.releaseCollideGeometry();
 
                 return std::make_shared<GenericXenoCollideTraits>(
-                    geometry, primaryAxis, secondaryAxis, geometricOrigin, volume, properNamedPoints
+                    geometry, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
                 );
             });
     }
 
     MatcherDataclass create_polyhedral_wedge_matcher() {
-        return MatcherDataclass("polyhedral_wedge")
+        // TODO don't forget about it
+        /*return MatcherDataclass("polyhedral_wedge")
             .arguments({{"bottom_ax", MatcherFloat{}.nonNegative()},
                         {"bottom_ay", MatcherFloat{}.nonNegative()},
                         {"top_ax", MatcherFloat{}.nonNegative()},
@@ -476,7 +473,8 @@ namespace {
                     wedge["l"].as<double>(),
                     wedge["subdivisions"].as<std::size_t>()
                 );
-            });
+            });*/
+        return MatcherDataclass("polyhedral_wedge");
     }
 
     bool validate_axes(const DataclassData &dataclass) {

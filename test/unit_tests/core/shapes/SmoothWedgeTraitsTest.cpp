@@ -10,19 +10,20 @@
 
 
 TEST_CASE("SmoothWedge: geometry") {
-    SmoothWedgeTraits traits(2, 1, 5);
+    SmoothWedgeTraits traits;
+    ShapeData data = traits.shapeDataFor(2, 1, 5);
     const auto &geometry = traits.getGeometry();
     const auto &interaction = traits.getInteraction();
 
-    Shape shape({1, 2, 3}, Matrix<3, 3>::rotation(0, M_PI/2, 0));
+    Shape shape({1, 2, 3}, Matrix<3, 3>::rotation(0, M_PI/2, 0), data);
     CHECK_THAT(geometry.getPrimaryAxis(shape), IsApproxEqual({1, 0, 0}, 1e-12));
     CHECK_THAT(geometry.getGeometricOrigin(shape), IsApproxEqual({0, 0, 0}, 1e-12));
     // Calculated in Mathematica using the analytic formula, cross-checked with numerical convex hull volume
-    CHECK(geometry.getVolume({}) == Approx(272*M_PI/15));
+    CHECK(geometry.getVolume(shape) == Approx(272*M_PI/15));
     CHECK_THAT(geometry.getNamedPointForShape("o", shape), IsApproxEqual({1, 2, 3}, 1e-12));
     CHECK_THAT(geometry.getNamedPointForShape("beg", shape), IsApproxEqual({-1.0, 2, 3}, 1e-12));
     CHECK_THAT(geometry.getNamedPointForShape("end", shape), IsApproxEqual({4.0, 2, 3}, 1e-12));
-    CHECK(interaction.getRangeRadius(nullptr) == 8);
+    CHECK(interaction.getRangeRadius(data.raw()) == 8);
 }
 
 TEST_CASE("SmoothWedge: collide geometry") {
@@ -33,16 +34,18 @@ TEST_CASE("SmoothWedge: collide geometry") {
 
     SECTION("spheres") {
         SECTION("original case") {
-            SmoothWedgeTraits traits(2, 1, 5);
-            const auto &collideGeometry = traits.getCollideGeometry();
+            SmoothWedgeTraits traits;
+            ShapeData data = traits.shapeDataFor(2, 1, 5);
+            const auto &collideGeometry = traits.getCollideGeometry(data.raw());
 
             CHECK(collideGeometry.getInsphereRadius() == Approx(1.6));
             CHECK(collideGeometry.getCircumsphereRadius() == Approx(4));
         }
 
         SECTION("case detecting bug") {
-            SmoothWedgeTraits traits(3, 1, 5);
-            const auto &collideGeometry = traits.getCollideGeometry();
+            SmoothWedgeTraits traits;
+            ShapeData data = traits.shapeDataFor(3, 1, 5);
+            const auto &collideGeometry = traits.getCollideGeometry(data.raw());
 
             CHECK(collideGeometry.getInsphereRadius() == Approx(2.4));
             CHECK(collideGeometry.getCircumsphereRadius() == Approx(4.5));
@@ -50,8 +53,9 @@ TEST_CASE("SmoothWedge: collide geometry") {
     }
 
     SECTION("no subdivisions") {
-        SmoothWedgeTraits traits(2, 1, 5);
-        const auto &collideGeometry = traits.getCollideGeometry();
+        SmoothWedgeTraits traits;
+        ShapeData data = traits.shapeDataFor(2, 1, 5);
+        const auto &collideGeometry = traits.getCollideGeometry(data.raw());
 
         CHECK_THAT(collideGeometry.getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
 
@@ -63,11 +67,12 @@ TEST_CASE("SmoothWedge: collide geometry") {
     }
 
     SECTION("3 subdivisions") {
-        SmoothWedgeTraits traits(2, 1, 5, 3);
-        const auto &collideGeometry0 = traits.getCollideGeometry(0);
-        const auto &collideGeometry1 = traits.getCollideGeometry(1);
-        const auto &collideGeometry2 = traits.getCollideGeometry(2);
-        const auto &centers = traits.getInteractionCentres(nullptr);
+        SmoothWedgeTraits traits;
+        ShapeData data = traits.shapeDataFor(2, 1, 5, 3);
+        const auto &collideGeometry0 = traits.getCollideGeometry(data.raw(), 0);
+        const auto &collideGeometry1 = traits.getCollideGeometry(data.raw(), 1);
+        const auto &collideGeometry2 = traits.getCollideGeometry(data.raw(), 2);
+        const auto &centers = traits.getInteractionCentres(data.raw());
 
         CHECK_THAT(collideGeometry0.getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
         CHECK_THAT(collideGeometry1.getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));

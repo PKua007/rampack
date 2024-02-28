@@ -2,8 +2,8 @@
 // Created by Piotr Kubala on 28/02/2024.
 //
 
-#ifndef RAMPACK_GENERICSHAPETRAITS_H
-#define RAMPACK_GENERICSHAPETRAITS_H
+#ifndef RAMPACK_GENERICSHAPEREGISTRY_H
+#define RAMPACK_GENERICSHAPEREGISTRY_H
 
 #include <map>
 #include <string>
@@ -16,7 +16,7 @@
 
 
 template <typename ShapeClass>
-class GenericShapeTraits : public ShapeTraits, public ShapeGeometry, public ShapeDataManager {
+class GenericShapeRegistry : public ShapeGeometry, public ShapeDataManager {
 private:
     std::map<std::string, std::size_t> shapeNameIdxMap;
     std::vector<ShapeClass> shapes;
@@ -66,15 +66,6 @@ public:
 
         friend bool operator==(Data lhs, Data rhs) { return lhs.shapeIdx == rhs.shapeIdx; }
     };
-
-
-    [[nodiscard]] const ShapeGeometry &getGeometry() const final {
-        return *this;
-    }
-
-    [[nodiscard]] const ShapeDataManager &getDataManager() const final {
-        return *this;
-    }
 
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const final {
         const auto &polysphereShape = this->shapeFor(shape);
@@ -188,4 +179,4 @@ public:
 };
 
 
-#endif //RAMPACK_GENERICSHAPETRAITS_H
+#endif //RAMPACK_GENERICSHAPEREGISTRY_H

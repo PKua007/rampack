@@ -11,7 +11,7 @@
 /**
  * @brief Class representing a wedge build by taking a convex hull of two axis-oriented rectangles.
  */
-class PolyhedralWedgeTraits : public XenoCollideTraits<PolyhedralWedgeTraits> {
+class PolyhedralWedgeTraits /*: public XenoCollideTraits<PolyhedralWedgeTraits>*/ {
 public:
     /**
      * @brief Class representing the geometry of the polyhedral wedge (see template parameter of XenoCollide)
@@ -87,8 +87,8 @@ public:
      * @details If @a subdivision is at least two, the wedge is divided into that many parts along the length to lower
      * the number of neighbours in the neighbour grid.
      */
-    PolyhedralWedgeTraits(double axBottom, double ayBottom, double axTop, double ayTop, double length,
-                          std::size_t subdivisions = 0);
+    /*PolyhedralWedgeTraits(double axBottom, double ayBottom, double axTop, double ayTop, double length,
+                          std::size_t subdivisions = 0);*/
 
     /**
      * @brief Returns CollideGeometry object for the interaction center with index @a idx (see XenoCollideTraits).
@@ -97,9 +97,9 @@ public:
         return this->shapeModels[idx];
     }
 
-    [[nodiscard]] std::vector<Vector<3>> getInteractionCentres([[maybe_unused]] const std::byte *data) const override {
+    /*[[nodiscard]] std::vector<Vector<3>> getInteractionCentres([[maybe_unused]] const std::byte *data) const override {
         return this->interactionCentres;
-    }
+    }*/
 
     /**
      * @brief Returns ShapePrinter for a given @a format.
@@ -109,8 +109,8 @@ public:
      *     <li> `obj` - Wavefront OBJ triangle mesh (it accepts @a mesh_divisions parameter, default: 4)
      * </ol>
      */
-    [[nodiscard]] std::shared_ptr<const ShapePrinter>
-    getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;
+    /*[[nodiscard]] std::shared_ptr<const ShapePrinter>
+    getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;*/
 };
 
 
