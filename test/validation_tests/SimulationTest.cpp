@@ -470,8 +470,8 @@ TEST_CASE("Simulation: sphere-dumbbell binary mixture", "[medium]") {
     PolysphereShape sphere({{{0, 0, 0}, 0.5}});
     PolysphereShape dumbbell({{{0, 0, -0.5}, 0.5}, {{0, 0, 0.5}, 0.5}});
     PolysphereTraits polysphereTraits;
-    auto sphereData = polysphereTraits.addPolysphereShape("sphere", sphere);
-    auto dimerData = polysphereTraits.addPolysphereShape("dumbbell", dumbbell);
+    auto sphereData = polysphereTraits.addShape("sphere", sphere);
+    auto dimerData = polysphereTraits.addShape("dumbbell", dumbbell);
 
     const auto NO_ROT = Matrix<3, 3>::identity();
     UnitCell cell(TriclinicBox(2.1), {

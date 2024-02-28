@@ -18,7 +18,7 @@ TEST_CASE("PolysphereBananaTraits: basics") {
         PolysphereBananaTraits traits(2, 2*M_PI/3, 3, 1);
 
         SECTION("spehre data") {
-            const auto &sphereData = traits.getDefaultPolysphereShape().getSphereData();
+            const auto &sphereData = traits.getDefaultShape().getSphereData();
             REQUIRE(sphereData.size() == 3);
             CHECK_THAT(sphereData[0].position, IsApproxEqual({0, 0, -std::sqrt(3)}, 1e-12));
             CHECK_THAT(sphereData[1].position, IsApproxEqual({-1, 0, 0}, 1e-12));
@@ -40,7 +40,7 @@ TEST_CASE("PolysphereBananaTraits: basics") {
     SECTION("above half-angle") {
         PolysphereBananaTraits traits(2, 4*M_PI/3, 3, 1);
 
-        const auto &sphereData = traits.getDefaultPolysphereShape().getSphereData();
+        const auto &sphereData = traits.getDefaultShape().getSphereData();
         REQUIRE(sphereData.size() == 3);
         CHECK_THAT(sphereData[0].position, IsApproxEqual({1, 0, -std::sqrt(3)}, 1e-12));
         CHECK_THAT(sphereData[1].position, IsApproxEqual({-2, 0, 0}, 1e-12));
