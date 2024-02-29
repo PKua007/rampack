@@ -18,7 +18,7 @@ PolydisperseXCShapePrinter::buildPolyhedronComplex(const std::vector<GeometryDat
 std::string PolydisperseXCShapePrinter::print(const Shape &shape) const {
     const auto &shapeData = shape.getData();
     const auto &polyhedronComplex = this->findPolyhedronComplex(shapeData);
-    return this->doPrint(polyhedronComplex);
+    return this->doPrint(shape, polyhedronComplex);
 }
 
 const PolydisperseXCShapePrinter::PolyhedronComplex &PolydisperseXCShapePrinter::findPolyhedronComplex(const ShapeData &data) const {
@@ -26,6 +26,6 @@ const PolydisperseXCShapePrinter::PolyhedronComplex &PolydisperseXCShapePrinter:
         if (shapeData == data)
             return polyhedronComplex;
 
-    PolyhedronComplex polyhedronComplex = this->buildPolyhedronComplex(this->geometryProvider(data));
+    PolyhedronComplex polyhedronComplex = this->buildPolyhedronComplex(this->geometryComplexProvider(data));
     this->polyhedronCache.emplace_back(data, std::move(polyhedronComplex));
 }

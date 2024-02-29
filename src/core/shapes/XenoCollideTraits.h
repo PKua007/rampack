@@ -13,8 +13,8 @@
 #include "core/ShapeTraits.h"
 #include "geometry/xenocollide/AbstractXCGeometry.h"
 #include "geometry/xenocollide/XenoCollide.h"
-#include "XCWolframShapePrinter.h"
-#include "XCObjShapePrinter.h"
+#include "PolydisperseXCObjShapePrinter.h"
+#include "PolydisperseXCWolframShapePrinter.h"
 #include "geometry/Polyhedron.h"
 #include "utils/Exceptions.h"
 #include "OptionalAxis.h"
@@ -46,32 +46,43 @@
 template<typename ConcreteCollideTraits>
 class XenoCollideTraits : public ShapeTraits, public Interaction {
 private:
-    /*template<typename Printer>
+    template<typename Printer>
     std::shared_ptr<Printer> createPrinter(std::size_t meshSubdivisions) const {
-        // TODO: fix nullptr
-        auto centers = this->getInteractionCentres(nullptr);
-        if (centers.empty())
-            centers.push_back({0, 0, 0});
+        using GeometryComplex = PolydisperseXCShapePrinter::GeometryComplex;
+        using GeometryComplexProvider = PolydisperseXCShapePrinter::GeometryComplexProvider;
 
-        const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
-        using Geometry = decltype(thisConcreteTraits.getCollideGeometry(0));
+        GeometryComplexProvider provider = [this](const ShapeData &data) {
+            auto centers = this->getInteractionCentres(data.raw());
+            if (centers.empty())
+                centers.push_back({0, 0, 0});
 
-        std::vector<PolymorphicXCAdapter<Geometry>> geometries;
-        std::vector<const AbstractXCGeometry *> geometryPointers;
-        geometries.reserve(centers.size());
-        geometryPointers.reserve(centers.size());
-        for (std::size_t i{}; i < centers.size(); i++) {
-            geometries.emplace_back(thisConcreteTraits.getCollideGeometry(i));
-            geometryPointers.push_back(&geometries.back());
-        }
+            const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
 
-        return std::make_shared<Printer>(geometryPointers, centers, meshSubdivisions);
-    }*/
+            GeometryComplex geometryComplex;
+            geometryComplex.reserve(centers.size());
+
+            using Geometry = decltype(thisConcreteTraits.getCollideGeometry(nullptr, 0));
+            for (std::size_t i{}; i < centers.size(); i++) {
+                const auto &center = centers[i];
+                const auto &geometry = thisConcreteTraits.getCollideGeometry(data.raw(), i);
+                auto polymorphicGeometry = std::make_shared<PolymorphicXCAdapter<Geometry>>(geometry);
+                geometryComplex.emplace_back(center, std::move(polymorphicGeometry));
+            }
+
+            return geometryComplex;
+        };
+
+        return std::make_shared<Printer>(std::move(provider), meshSubdivisions);
+    }
 
 public:
     /** @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::XCPrinter
      * @a subdivision parameter) */
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
+
+    XenoCollideTraits() = default;
+    XenoCollideTraits(const XenoCollideTraits &) = delete;
+    XenoCollideTraits &operator=(const XenoCollideTraits &) = delete;
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
 
@@ -91,11 +102,11 @@ public:
             Expects(meshSubdivisions >= 1);
         }
 
-        /*if (format == "wolfram")
-            return this->template createPrinter<XCWolframShapePrinter>(meshSubdivisions);
+        if (format == "wolfram")
+            return this->template createPrinter<PolydisperseXCWolframShapePrinter>(meshSubdivisions);
         else if (format == "obj")
-            return this->template createPrinter<XCObjShapePrinter>(meshSubdivisions);
-        else*/
+            return this->template createPrinter<PolydisperseXCObjShapePrinter>(meshSubdivisions);
+        else
             throw NoSuchShapePrinterException("XenoCollideTraits: unknown printer format: " + format);
     }
 
