@@ -163,6 +163,13 @@ public:
         return ShapeData(Data{this->getShapeIdx(shapeName)});
     }
 
+    [[nodiscard]] ShapeData shapeDataForDefault() const {
+        const auto &defaultShapeData = this->getDefaultShapeData();
+        ExpectsMsg(!defaultShapeData.empty(), "Default shape is not defined");
+        std::size_t shapeIdx = this->getShapeIdx(this->getDefaultShapeData().at("type"));
+        return ShapeData(Data{shapeIdx});
+    }
+
     [[nodiscard]] std::size_t getShapeIdx(const std::string &shapeName) const {
         auto it = this->shapeNameIdxMap.find(shapeName);
         ExpectsMsg(it != this->shapeNameIdxMap.end(), "Shape " + shapeName + " not found");

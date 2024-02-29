@@ -53,8 +53,8 @@ private:
 
     [[nodiscard]] std::vector<double> calculateRelativeSpherePositions() const;
 
-    double topR{};
     double bottomR{};
+    double topR{};
     double l{};
     std::size_t subdivisions{};
     double volume{};
@@ -64,10 +64,10 @@ private:
     std::vector<Vector<3>> interactionCentres;
 
 public:
-    SmoothWedgeShape(double R, double r, double l, std::size_t subdivisions = 0);
+    SmoothWedgeShape(double bottomR, double topR, double l, std::size_t subdivisions = 0);
 
-    [[nodiscard]] double getTopR() const { return this->topR; }
     [[nodiscard]] double getBottomR() const { return this->bottomR; }
+    [[nodiscard]] double getTopR() const { return this->topR; }
     [[nodiscard]] double getL() const { return this->l; }
     [[nodiscard]] std::size_t getSubdivisions() const { return this->subdivisions; }
     [[nodiscard]] const std::vector<CollideGeometry> &getShapeParts() const { return this->shapeParts; }
@@ -75,7 +75,7 @@ public:
     [[nodiscard]] double getVolume() const { return this->volume; }
     [[nodiscard]] const Vector<3> &getBegNamedPoint() const { return this->begNamedPoint; }
     [[nodiscard]] const Vector<3> &getEndNamedPoint() const { return this->endNamedPoint; }
-    [[nodiscard]] bool equal(double R_, double r_, double l_, std::size_t subdivisions_) const;
+    [[nodiscard]] bool equal(double bottomR_, double topR_, double l_, std::size_t subdivisions_) const;
 };
 
 
@@ -84,6 +84,14 @@ public:
  */
 class SmoothWedgeTraits : public XenoCollideTraits<SmoothWedgeTraits>, public ShapeGeometry, public ShapeDataManager {
 private:
+    struct Data {
+        std::size_t shapeIdx{};
+
+        friend bool operator==(Data lhs, Data rhs) {
+            return lhs.shapeIdx == rhs.shapeIdx;
+        }
+    };
+
     /*template<typename Printer>
     std::shared_ptr<Printer> createPrinter(std::size_t meshSubdivisions) const {
         CollideGeometry geometry(this->R, this->r, this->l);
@@ -102,22 +110,14 @@ private:
         return this->shapeFor(shape.getData());
     }
 
-    std::optional<double> defaultTopR{};
     std::optional<double> defaultBottomR{};
+    std::optional<double> defaultTopR{};
     std::optional<double> defaultL{};
     std::size_t defaultSubdivisions = 1;
     mutable std::vector<SmoothWedgeShape> shapes;
 
 public:
     using CollideGeometry = SmoothWedgeShape::CollideGeometry;
-
-    struct Data {
-        std::size_t shapeIdx{};
-
-        friend bool operator==(Data lhs, Data rhs) {
-            return lhs.shapeIdx == rhs.shapeIdx;
-        }
-    };
 
     /** @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::XCPrinter
      * @a subdivision parameter) */
@@ -128,8 +128,8 @@ public:
      * @details If @a subdivision is at least two, the wedge is divided into that many parts (with equal circumscribed
      * spheres' radii) to lower the number of neighbours in the neighbour grid.
      */
-    explicit SmoothWedgeTraits(std::optional<double> defaultTopR = std::nullopt,
-                               std::optional<double> defaultBottomR = std::nullopt,
+    explicit SmoothWedgeTraits(std::optional<double> defaultBottomR = std::nullopt,
+                               std::optional<double> defaultTopR = std::nullopt,
                                std::optional<double> defaultL = std::nullopt, std::size_t defaultSubdivisions = 0);
 
     SmoothWedgeTraits(const SmoothWedgeTraits &) = delete;
@@ -170,7 +170,7 @@ public:
     [[nodiscard]] std::shared_ptr<const ShapePrinter>
     getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;
 
-    ShapeData shapeDataFor(double topR, double bottomR, double l, std::size_t subdivisions = 0) const;
+    ShapeData shapeDataFor(double bottomR, double topR, double l, std::size_t subdivisions = 0) const;
 };
 
 
