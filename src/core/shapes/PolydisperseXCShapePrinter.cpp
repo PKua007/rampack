@@ -28,4 +28,5 @@ const PolydisperseXCShapePrinter::PolyhedronComplex &PolydisperseXCShapePrinter:
 
     PolyhedronComplex polyhedronComplex = this->buildPolyhedronComplex(this->geometryComplexProvider(data));
     this->polyhedronCache.emplace_back(data, std::move(polyhedronComplex));
+    return this->polyhedronCache.back().second;
 }

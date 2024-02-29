@@ -92,12 +92,15 @@ private:
         }
     };
 
-    /*template<typename Printer>
+    template<typename Printer>
     std::shared_ptr<Printer> createPrinter(std::size_t meshSubdivisions) const {
-        CollideGeometry geometry(this->R, this->r, this->l);
-        PolymorphicXCAdapter<CollideGeometry> geometryAdapter(geometry);
-        return std::make_shared<Printer>(geometryAdapter, meshSubdivisions);
-    }*/
+        PolydisperseXCShapePrinter::GeometryProvider provider = [this](const ShapeData &data) {
+            const auto &shape = this->shapeFor(data);
+            CollideGeometry geometry(shape.getBottomR(), shape.getBottomR(), shape.getL());
+            return std::make_shared<PolymorphicXCAdapter<CollideGeometry>>(geometry);
+        };
+        return std::make_shared<Printer>(std::move(provider), meshSubdivisions);
+    }
 
     [[nodiscard]] const SmoothWedgeShape &shapeFor(const std::byte *data) const {
         std::size_t shapeIdx = ShapeData::as<Data>(data).shapeIdx;
