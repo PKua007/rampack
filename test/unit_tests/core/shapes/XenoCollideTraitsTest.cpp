@@ -4,7 +4,7 @@
 
 #include <catch2/catch.hpp>
 
-#include "core/shapes/XenoCollideTraits.h"
+#include "core/shapes/GenericXenoCollideTraits.h"
 #include "core/FreeBoundaryConditions.h"
 #include "core/PeriodicBoundaryConditions.h"
 
@@ -14,10 +14,9 @@
 #include "geometry/xenocollide/XCBodyBuilder.h"
 #include "geometry/xenocollide/XCPrimitives.h"
 
-// TODO: remember about it
 
-/*namespace {
-    class XenoCollideSpherocylinderTraits : public XenoCollideTraits<XenoCollideSpherocylinderTraits> {
+namespace {
+    class XenoCollideSpherocylinderTraits : public GenericXenoCollideTraits {
     private:
         static double getStaticVolume(double l, double r) {
             return M_PI * r * r * (4.0 / 3.0 * r + l);
@@ -36,42 +35,24 @@
             return bb.releaseCollideGeometry();
         }
 
-        std::shared_ptr<AbstractXCGeometry> shapeModel;
-
     public:
         XenoCollideSpherocylinderTraits(double l, double r)
-                : XenoCollideTraits({1, 0, 0}, {0, 0, 1}, {0, 0, 0}, getStaticVolume(l, r),
-                                    {{"beg", {-l / 2, 0, 0}},
-                                     {"end", {l / 2,  0, 0}}}),
-                  shapeModel{XenoCollideSpherocylinderTraits::createShapeModel(l, r)}
+                : GenericXenoCollideTraits(XenoCollideSpherocylinderTraits::createShapeModel(l, r),
+                                           {1, 0, 0}, {0, 0, 1}, {0, 0, 0}, getStaticVolume(l, r),
+                                           {{"beg", {-l / 2, 0, 0}}, {"end", {l / 2,  0, 0}}})
         { }
-
-        [[nodiscard]] const AbstractXCGeometry &getCollideGeometry([[maybe_unused]] std::size_t idx = 0) const {
-            return *this->shapeModel;
-        }
     };
 
-    class XenoCollideDimerTraits : public XenoCollideTraits<XenoCollideDimerTraits> {
+    class XenoCollideDimerTraits : public GenericXenoCollideTraits {
     private:
         static double getStaticVolume(double r1, double r2) {  return 4*M_PI/3 * (r1*r1*r1 + r1*r2*r2); }
 
-        std::vector<XCSphere> shapeModels;
-        std::vector<Vector<3>> interactionCentres;
-
     public:
         XenoCollideDimerTraits(double r1, double r2, double x2)
-                : XenoCollideTraits({1, 0, 0}, {0, 0, 1}, {0, 0, 0}, getStaticVolume(r1, r2)),
-                  shapeModels{XCSphere(r1), XCSphere(r2)}, interactionCentres{{0, 0, 0}, {x2, 0, 0}}
+                : GenericXenoCollideTraits({{std::make_shared<XCSphere>(r1), {0, 0, 0}},
+                                            {std::make_shared<XCSphere>(r2), {x2, 0, 0}}},
+                                           {1, 0, 0}, {0, 0, 1}, {0, 0, 0}, getStaticVolume(r1, r2))
         { }
-
-        [[nodiscard]] const AbstractXCGeometry &getCollideGeometry(std::size_t idx) const {
-            return shapeModels.at(idx);
-        }
-
-        [[nodiscard]] std::vector<Vector<3>>
-        getInteractionCentres([[maybe_unused]] const std::byte *data) const override {
-            return this->interactionCentres;
-        }
     };
 }
 
@@ -79,9 +60,12 @@ TEST_CASE("XenoCollide: spherocylinder overlap") {
     FreeBoundaryConditions fbc;
     double l = 3, r = 2;
     XenoCollideSpherocylinderTraits traits(l, r);
+    ShapeData defaultData = traits.shapeDataFor("A");
 
     Shape sc1{};
+    sc1.setData(defaultData);
     Shape sc2{};
+    sc2.setData(defaultData);
 
     // Cases are found visually using Mathematica. See wolfram/spheroc_test.nb
     SECTION("sphere-sphere") {
@@ -183,49 +167,50 @@ TEST_CASE("XenoCollide: spherocylinder overlap") {
 TEST_CASE("XenoColllide: spherocylinder wall overlap") {
     double l = 1.0, r = 0.5;
     XenoCollideSpherocylinderTraits traits(l, r);
+    ShapeData defaultData = traits.shapeDataFor("A");
     const Interaction &interaction = traits.getInteraction();
 
     CHECK(interaction.hasWallPart());
 
     SECTION("overlapping") {
         SECTION("without translation and rotation, near") {
-            Shape sc({0, 0, 0}, Matrix<3, 3>::identity());
+            Shape sc({0, 0, 0}, Matrix<3, 3>::identity(), defaultData);
             CHECK(interaction.overlapWithWallForShape(sc, {l/2, 0, 0}, {-1, 0, 0}));
         }
 
         SECTION("without translation and rotation, far") {
-            Shape sc({0, 0, 0}, Matrix<3, 3>::identity());
+            Shape sc({0, 0, 0}, Matrix<3, 3>::identity(), defaultData);
             CHECK(interaction.overlapWithWallForShape(sc, {-10*l, 0, 0}, {-1, 0, 0}));
         }
 
         SECTION("near") {
-            Shape sc({1.1, 1.1, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI / 4));
+            Shape sc({1.1, 1.1, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI / 4), defaultData);
             CHECK(interaction.overlapWithWallForShape(sc, {0, 1.5 + M_SQRT2 / 4, 0}, {0, -1, 0}));
         }
 
         SECTION("far") {
-            Shape sc({100, 100, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI / 4));
+            Shape sc({100, 100, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI / 4), defaultData);
             CHECK(interaction.overlapWithWallForShape(sc, {0, 1.5 + M_SQRT2 / 4, 0}, {0, -1, 0}));
         }
     }
 
     SECTION("non-overlapping") {
         SECTION("without translation and rotation, near") {
-            Shape sc({0, 0, 0}, Matrix<3, 3>::identity());
+            Shape sc({0, 0, 0}, Matrix<3, 3>::identity(), defaultData);
             CHECK_FALSE(interaction.overlapWithWallForShape(sc, {l+r, 0, 0}, {-1, 0, 0}));
         }
 
         SECTION("without translation and rotation, far") {
-            Shape sc({0, 0, 0}, Matrix<3, 3>::identity());
+            Shape sc({0, 0, 0}, Matrix<3, 3>::identity(), defaultData);
             CHECK_FALSE(interaction.overlapWithWallForShape(sc, {10*l+r, 0, 0}, {-1, 0, 0}));
         }
         SECTION("near") {
-            Shape sc({0.9, 0.9, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI / 4));
+            Shape sc({0.9, 0.9, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI / 4), defaultData);
             CHECK_FALSE(interaction.overlapWithWallForShape(sc, {0, 1.5 + M_SQRT2 / 4, 0}, {0, -1, 0}));
         }
 
         SECTION("far") {
-            Shape sc({-100, -100, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI / 4));
+            Shape sc({-100, -100, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI / 4), defaultData);
             CHECK_FALSE(interaction.overlapWithWallForShape(sc, {0, 1.5 + M_SQRT2 / 4, 0}, {0, -1, 0}));
         }
     }
@@ -235,57 +220,61 @@ TEST_CASE("XenoColllide: spherocylinder wall overlap") {
 TEST_CASE("XenoCollide: spherocylinder basic features") {
     double l = 3, r = 2;
     XenoCollideSpherocylinderTraits traits(l, r);
+    ShapeData defaultData = traits.shapeDataFor("A");
+    Shape defaultShape;
+    defaultShape.setData(defaultData);
 
     SECTION("volume") {
-        CHECK(traits.getVolume({}) == Approx(68 * M_PI / 3));
+        CHECK(traits.getVolume(defaultShape) == Approx(68 * M_PI / 3));
     }
 
     SECTION("primary axis") {
         // primary axis X rotated 90 deg around z axis => primary axis is Y
-        Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2));
+        Shape shape({}, Matrix<3, 3>::rotation(0, 0, M_PI_2), defaultData);
 
         CHECK_THAT(traits.getPrimaryAxis(shape), IsApproxEqual({0, 1, 0}, 1e-8));
     }
 
     SECTION("secondary axis") {
         // secondary axis Z rotated 90 deg around y axis => primary axis is X
-        Shape shape({}, Matrix<3, 3>::rotation(0, M_PI_2, 0));
+        Shape shape({}, Matrix<3, 3>::rotation(0, M_PI_2, 0), defaultData);
 
         CHECK_THAT(traits.getSecondaryAxis(shape), IsApproxEqual({1, 0, 0}, 1e-8));
     }
 
     SECTION("geometric origin") {
-        CHECK(traits.getGeometry().getGeometricOrigin({}) == Vector<3>{0, 0, 0});
+        CHECK(traits.getGeometry().getGeometricOrigin(defaultShape) == Vector<3>{0, 0, 0});
     }
 
     SECTION("range radius") {
         double expectedRange = l + 2*r;
-        CHECK(traits.getInteraction().getRangeRadius(nullptr) == expectedRange);
-        CHECK(traits.getInteraction().getTotalRangeRadius(nullptr) == expectedRange);
+        CHECK(traits.getInteraction().getRangeRadius(defaultData.raw()) == expectedRange);
+        CHECK(traits.getInteraction().getTotalRangeRadius(defaultData.raw()) == expectedRange);
     }
 
     SECTION("named points") {
-        CHECK(traits.getGeometry().getNamedPointForShape("beg", {}) == Vector<3>{-1.5, 0, 0});
-        CHECK(traits.getGeometry().getNamedPointForShape("end", {}) == Vector<3>{1.5, 0, 0});
-        CHECK(traits.getGeometry().getNamedPointForShape("o", {}) == Vector<3>{0, 0, 0});
+        CHECK(traits.getGeometry().getNamedPointForShape("beg", defaultShape) == Vector<3>{-1.5, 0, 0});
+        CHECK(traits.getGeometry().getNamedPointForShape("end", defaultShape) == Vector<3>{1.5, 0, 0});
+        CHECK(traits.getGeometry().getNamedPointForShape("o", defaultShape) == Vector<3>{0, 0, 0});
     }
 }
 
 TEST_CASE("XenoCollide: dimer overlap") {
     // The same test as for PolysphereTraits
     XenoCollideDimerTraits traits(0.5, 1, 3);
+    ShapeData defaultData = traits.shapeDataFor("A");
     const Interaction &interaction = traits.getInteraction();
     PeriodicBoundaryConditions pbc(10);
 
     SECTION("overlap") {
-        Shape shape1({1.01, 5, 5}, Matrix<3, 3>::identity());
-        Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0));
+        Shape shape1({1.01, 5, 5}, Matrix<3, 3>::identity(), defaultData);
+        Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0), defaultData);
         CHECK(interaction.overlapBetweenShapes(shape1, shape2, pbc));
     }
 
     SECTION("no overlap") {
-        Shape shape1({0.99, 5, 5}, Matrix<3, 3>::identity());
-        Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0));
+        Shape shape1({0.99, 5, 5}, Matrix<3, 3>::identity(), defaultData);
+        Shape shape2({9, 5, 5}, Matrix<3, 3>::rotation(0, M_PI, 0), defaultData);
         CHECK_FALSE(interaction.overlapBetweenShapes(shape1, shape2, pbc));
     }
 }
@@ -293,8 +282,9 @@ TEST_CASE("XenoCollide: dimer overlap") {
 TEST_CASE("XenoCollide: dimer ranges") {
     // The same test as for PolysphereTraits
     XenoCollideDimerTraits traits(0.5, 1, 3);
+    ShapeData defaultData = traits.shapeDataFor("A");
     const Interaction &interaction = traits.getInteraction();
 
-    CHECK(interaction.getRangeRadius(nullptr) == 2);
-    CHECK(interaction.getTotalRangeRadius(nullptr) == 8);
-}*/
+    CHECK(interaction.getRangeRadius(defaultData.raw()) == 2);
+    CHECK(interaction.getTotalRangeRadius(defaultData.raw()) == 8);
+}
