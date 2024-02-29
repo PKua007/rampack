@@ -254,26 +254,6 @@ namespace {
             });
     }
 
-    MatcherDataclass create_smooth_wedge_matcher() {
-        return MatcherDataclass("smooth_wedge")
-            .arguments({{"l", MatcherFloat{}.positive()},
-                        {"bottom_r", MatcherFloat{}.positive()},
-                        {"top_r", MatcherFloat{}.positive()},
-                        {"subdivisions", MatcherInt{}.positive().mapTo<std::size_t>(), "1"}})
-            .filter([](const DataclassData &wedge){
-                double rDiff = std::abs(wedge["bottom_r"].as<double>() - wedge["top_r"].as<double>());
-                return wedge["l"].as<double>() >= rDiff;
-            })
-            .describe("l >= |bottom_r - top_r|")
-            .mapTo([](const DataclassData &wedge) -> std::shared_ptr<ShapeTraits> {
-                auto length = wedge["l"].as<double>();
-                auto bottomR = wedge["bottom_r"].as<double>();
-                auto topR = wedge["top_r"].as<double>();
-                auto subdivisions = wedge["subdivisions"].as<std::size_t>();
-                return std::make_shared<SmoothWedgeTraits>(bottomR, topR, length, subdivisions);
-            });
-    }
-
     MatcherDataclass create_polysphere_matcher() {
         auto singleSpherePos = vector.copy()
             .mapTo([](const ArrayData &array) {
@@ -444,6 +424,34 @@ namespace {
                 return std::make_shared<GenericXenoCollideTraits>(
                     geometry, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
                 );
+            });
+    }
+
+    MatcherDataclass create_smooth_wedge_matcher() {
+        auto positiveDouble = MatcherFloat{}.positive().mapTo<std::optional<double>>();
+        auto noneDouble = MatcherNone{}.mapTo<std::optional<double>>();
+        auto optionalPositiveDouble = noneDouble | positiveDouble;
+
+        return MatcherDataclass("smooth_wedge")
+            .arguments({{"l", optionalPositiveDouble, "None"},
+                        {"bottom_r", optionalPositiveDouble, "None"},
+                        {"top_r", optionalPositiveDouble, "None"},
+                        {"subdivisions", MatcherInt{}.positive().mapTo<std::size_t>(), "1"}})
+            .filter([](const DataclassData &wedge){
+                auto length = wedge["l"].as<std::optional<double>>();
+                auto bottomR = wedge["bottom_r"].as<std::optional<double>>();
+                auto topR = wedge["top_r"].as<std::optional<double>>();
+                if (!length || !bottomR || !topR)
+                    return true;
+                return *length >= std::abs(*bottomR - *topR);
+            })
+            .describe("l >= |bottom_r - top_r|")
+            .mapTo([](const DataclassData &wedge) -> std::shared_ptr<ShapeTraits> {
+                auto length = wedge["l"].as<std::optional<double>>();
+                auto bottomR = wedge["bottom_r"].as<std::optional<double>>();
+                auto topR = wedge["top_r"].as<std::optional<double>>();
+                auto subdivisions = wedge["subdivisions"].as<std::size_t>();
+                return std::make_shared<SmoothWedgeTraits>(bottomR, topR, length, subdivisions);
             });
     }
 
