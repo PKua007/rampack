@@ -103,11 +103,11 @@ SmoothWedgeTraits::getPrinter(const std::string &format, const std::map<std::str
         Expects(meshSubdivisions >= 1);
     }
 
-    /*if (format == "wolfram")
-        return this->createPrinter<XCWolframShapePrinter>(meshSubdivisions);
+    if (format == "wolfram")
+        return this->createPrinter<PolydisperseXCWolframShapePrinter>(meshSubdivisions);
     else if (format == "obj")
-        return this->createPrinter<XCObjShapePrinter>(meshSubdivisions);
-    else*/
+        return this->createPrinter<PolydisperseXCObjShapePrinter>(meshSubdivisions);
+    else
         throw NoSuchShapePrinterException("XenoCollideTraits: unknown printer format: " + format);
 }
 
