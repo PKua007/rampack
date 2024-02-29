@@ -63,7 +63,7 @@ private:
         [[nodiscard]] std::string print(const Shape &shape) const override;
     };
 
-    static std::shared_ptr<ShapePrinter> createObjPrinter(double radius, std::size_t subdivisions);
+    [[nodiscard]] std::shared_ptr<ShapePrinter> createObjPrinter(std::size_t subdivisions) const;
 
     std::optional<double> fixedRadius{};
     std::shared_ptr<Interaction> interaction;

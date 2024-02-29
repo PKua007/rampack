@@ -7,7 +7,7 @@
 
 #include "SphereTraits.h"
 #include "utils/Exceptions.h"
-#include "XCObjShapePrinter.h"
+#include "PolydisperseXCObjShapePrinter.h"
 #include "geometry/xenocollide/XCPrimitives.h"
 #include "core/io/ShapeDataSerializer.h"
 #include "core/io/ShapeDataDeserializer.h"
@@ -87,15 +87,27 @@ std::shared_ptr<const ShapePrinter> SphereTraits::getPrinter(const std::string &
 
     if (format == "wolfram")
         return this->wolframPrinter;
-    // TODO: printer for OBJ
-    // else if (format == "obj")
-    //    return createObjPrinter(this->radius, meshSubdivisions);
+    else if (format == "obj")
+        return createObjPrinter(meshSubdivisions);
     else
         throw NoSuchShapePrinterException("SphereTraits: unknown printer format: " + format);
 }
 
-std::shared_ptr<ShapePrinter> SphereTraits::createObjPrinter(double radius, std::size_t subdivisions) {
-    return std::make_unique<XCObjShapePrinter>(XCSphere{radius}, subdivisions);
+std::shared_ptr<ShapePrinter> SphereTraits::createObjPrinter(std::size_t subdivisions) const {
+    PolydisperseXCShapePrinter::GeometryProvider geometryProvider;
+    if (this->fixedRadius) {
+        double fixedRadius_ = *this->fixedRadius;
+        geometryProvider = [fixedRadius_]([[maybe_unused]] const ShapeData &data) {
+            return std::make_shared<PolymorphicXCAdapter<XCSphere>>(XCSphere(fixedRadius_));
+        };
+    } else {
+        geometryProvider = [](const ShapeData &data) {
+            double radius = data.as<HardData>().radius;
+            return std::make_shared<PolymorphicXCAdapter<XCSphere>>(XCSphere(radius));
+        };
+    }
+
+    return std::make_shared<PolydisperseXCObjShapePrinter>(std::move(geometryProvider), subdivisions);
 }
 
 bool SphereTraits::HardInteraction::overlapBetween(const Vector<3> &pos1,

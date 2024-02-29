@@ -18,9 +18,15 @@ public:
     struct GeometryData {
         Vector<3> center;
         std::shared_ptr<const AbstractXCGeometry> geometry;
+
+        GeometryData(const Vector<3> &center, std::shared_ptr<const AbstractXCGeometry> geometry)
+             : center{center}, geometry{std::move(geometry)}
+        { }
     };
 
-    using GeometryProvider = std::function<std::vector<GeometryData>(const ShapeData &)>;
+    using GeometryProvider = std::function<std::shared_ptr<const AbstractXCGeometry>(const ShapeData &)>;
+    using GeometryComplex = std::vector<GeometryData>;
+    using GeometryComplexProvider = std::function<GeometryComplex(const ShapeData &)>;
 
 protected:
     struct PolyhedronData {
@@ -40,14 +46,21 @@ private:
     [[nodiscard]] PolyhedronComplex buildPolyhedronComplex(const std::vector<GeometryData> &geometries) const;
     [[nodiscard]] const PolyhedronComplex &findPolyhedronComplex(const ShapeData &data) const;
 
-    GeometryProvider geometryProvider;
+    GeometryComplexProvider geometryComplexProvider;
     std::size_t subdivisions{};
     mutable std::vector<std::pair<ShapeData, PolyhedronComplex>> polyhedronCache;
 
 
 public:
-    PolydisperseXCShapePrinter(GeometryProvider geometryProvider, std::size_t subdivisions)
-            : geometryProvider{std::move(geometryProvider)}, subdivisions{subdivisions}
+    PolydisperseXCShapePrinter(GeometryComplexProvider geometryComplexProvider, std::size_t subdivisions)
+            : geometryComplexProvider{std::move(geometryComplexProvider)}, subdivisions{subdivisions}
+    { }
+
+    PolydisperseXCShapePrinter(const GeometryProvider &geometryProvider, std::size_t subdivisions)
+            : geometryComplexProvider{[geometryProvider](const ShapeData &data) -> GeometryComplex{
+                  return {GeometryData{{0, 0, 0}, geometryProvider(data)}};
+              }},
+              subdivisions{subdivisions}
     { }
 
     [[nodiscard]] std::string print(const Shape &shape) const final;

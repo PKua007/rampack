@@ -6,7 +6,7 @@
 #include "utils/Exceptions.h"
 #include "geometry/SegmentDistanceCalculator.h"
 #include "geometry/xenocollide/XCBodyBuilder.h"
-#include "XCObjShapePrinter.h"
+#include "PolydisperseXCObjShapePrinter.h"
 #include "core/io/ShapeDataSerializer.h"
 #include "core/io/ShapeDataDeserializer.h"
 
@@ -114,24 +114,27 @@ SpherocylinderTraits::getPrinter(const std::string &format, const std::map<std::
 
     if (format == "wolfram")
         return this->wolframPrinter;
-    // TODO: obj printer
-    // else if (format == "obj")
-    //    return createObjPrinter(this->length, this->radius, meshSubdivisions);
+    else if (format == "obj")
+        return SpherocylinderTraits::createObjPrinter( meshSubdivisions);
     else
         throw NoSuchShapePrinterException("SphereTraits: unknown printer format: " + format);
 }
 
-std::unique_ptr<ShapePrinter> SpherocylinderTraits::createObjPrinter(double length, double radius,
-                                                                     std::size_t subdivisions)
-{
-    XCBodyBuilder builder;
-    builder.sphere(radius);
-    builder.move(0, 0, -length/2);
-    builder.sphere(radius);
-    builder.move(0, 0, length/2);
-    builder.wrap();
+std::unique_ptr<ShapePrinter> SpherocylinderTraits::createObjPrinter(std::size_t subdivisions) {
+    PolydisperseXCShapePrinter::GeometryProvider geometryProvider = [](const ShapeData &data) {
+        const auto &scData = data.as<Data>();
 
-    return std::make_unique<XCObjShapePrinter>(*builder.releaseCollideGeometry(), subdivisions);
+        XCBodyBuilder builder;
+        builder.sphere(scData.radius);
+        builder.move(0, 0, -scData.length/2);
+        builder.sphere(scData.radius);
+        builder.move(0, 0, scData.length/2);
+        builder.wrap();
+
+        return builder.releaseCollideGeometry();
+    };
+
+    return std::make_unique<PolydisperseXCObjShapePrinter>(std::move(geometryProvider), subdivisions);
 }
 
 void SpherocylinderTraits::validateShapeData(const ShapeData &data) const {

@@ -10,9 +10,8 @@
 
 #include "PolysphereTraits.h"
 #include "utils/Exceptions.h"
-#include "XCObjShapePrinter.h"
+#include "PolydisperseXCObjShapePrinter.h"
 #include "geometry/xenocollide/XCPrimitives.h"
-#include "utils/Utils.h"
 
 
 // PolysphereShape::SphereData #########################################################################################
@@ -274,9 +273,8 @@ PolysphereTraits::getPrinter(const std::string &format, const std::map<std::stri
 
     if (format == "wolfram")
         return this->wolframPrinter;
-    // TODO: obj printer
-    /*else if (format == "obj")
-        return this->createObjPrinter(meshSubdivisions);*/
+    else if (format == "obj")
+        return this->createObjPrinter(meshSubdivisions);
     else
         throw NoSuchShapePrinterException("PolysphereTraits: unknown printer format: " + format);
 }
@@ -288,19 +286,20 @@ ShapeData PolysphereTraits::addShape(const std::string &shapeName, const Polysph
     return GenericShapeRegistry::addShape(shapeName, shape);
 }
 
-/*std::shared_ptr<ShapePrinter> PolysphereTraits::createObjPrinter(std::size_t subdivisions) const {
-    const auto &sphereData = this->getSphereData();
+std::shared_ptr<ShapePrinter> PolysphereTraits::createObjPrinter(std::size_t subdivisions) const {
+    PolydisperseXCShapePrinter::GeometryComplexProvider provider = [this](const ShapeData &data) {
+        const auto &sphereData = this->shapeFor(data).getSphereData();
 
-    std::vector<XCSphere> xcSpheres;
-    std::vector<const AbstractXCGeometry *> geometries;
-    xcSpheres.reserve(sphereData.size());
-    geometries.reserve(sphereData.size());
-    for (const auto &sphereDataEntry : sphereData) {
-        xcSpheres.emplace_back(sphereDataEntry.radius);
-        geometries.push_back(&xcSpheres.back());
-    }
+        PolydisperseXCShapePrinter::GeometryComplex xcSpheres;
+        xcSpheres.reserve(sphereData.size());
+        for (const auto &sphereDataEntry : sphereData) {
+            double radius = sphereDataEntry.radius;
+            auto polymorphicSphere = std::make_shared<PolymorphicXCAdapter<XCSphere>>(XCSphere(radius));
+            xcSpheres.emplace_back(sphereDataEntry.position, std::move(polymorphicSphere));
+        }
 
-    auto interactionCentres = this->interaction->getInteractionCentres(nullptr);
+        return xcSpheres;
+    };
 
-    return std::make_shared<XCObjShapePrinter>(geometries, interactionCentres, subdivisions);
-}*/
+    return std::make_shared<PolydisperseXCObjShapePrinter>(std::move(provider), subdivisions);
+}

@@ -27,8 +27,7 @@ private:
     std::optional<double> defaultRadius{};
     std::shared_ptr<WolframPrinter> wolframPrinter;
 
-    static std::unique_ptr<ShapePrinter> createObjPrinter(double length, double radius, std::size_t subdivisions);
-
+    static std::unique_ptr<ShapePrinter> createObjPrinter(std::size_t subdivisions);
     static Vector<3> getCapCentre(short beginOrEnd, const Matrix<3, 3> &rot, double length);
     static Vector<3> getCapCentre(short beginOrEnd, const Shape &shape);
     static Vector<3> getCapCentre(short beginOrEnd, const ShapeData &data);

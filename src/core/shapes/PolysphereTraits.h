@@ -115,7 +115,7 @@ private:
 
         [[nodiscard]] std::vector<Vector<3>> getInteractionCentres(const std::byte *data) const override;
 
-        [[nodiscard]] double getRangeRadius([[maybe_unused]] const std::byte *data) const override;
+        [[nodiscard]] double getRangeRadius(const std::byte *data) const override;
     };
 
     class WolframPrinter : public ShapePrinter {
@@ -128,7 +128,7 @@ private:
         [[nodiscard]] std::string print(const Shape &shape) const override;
     };
 
-    // [[nodiscard]] std::shared_ptr<ShapePrinter> createObjPrinter(std::size_t subdivisions) const;
+    [[nodiscard]] std::shared_ptr<ShapePrinter> createObjPrinter(std::size_t subdivisions) const;
 
     std::shared_ptr<Interaction> interaction;
     std::shared_ptr<CentralInteraction> centralInteraction;

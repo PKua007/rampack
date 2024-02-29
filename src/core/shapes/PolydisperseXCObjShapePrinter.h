@@ -8,7 +8,7 @@
 #include "PolydisperseXCShapePrinter.h"
 
 
-class PolydisperseXCObjShapePrinter : public PolydisperseXCShapePrinter{
+class PolydisperseXCObjShapePrinter : public PolydisperseXCShapePrinter {
 protected:
     std::string doPrint(const Shape &shape, const PolyhedronComplex &polyhedronComplex) const override;
 
