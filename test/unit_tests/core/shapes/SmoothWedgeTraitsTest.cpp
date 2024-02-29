@@ -89,3 +89,37 @@ TEST_CASE("SmoothWedge: collide geometry") {
         CHECK(sideNormal * (collideGeometry2.getSupportPoint(sideNormal) - tangentPoint + centers[2]) == approx0);
     }
 }
+
+TEST_CASE("SmoothWedgeTraits: serialization") {
+    SECTION("default data") {
+        SmoothWedgeTraits traits(1, 2, 3, 4);
+
+        ShapeData expected = traits.shapeDataFor(1, 2, 3, 4);
+        CHECK(traits.getDataManager().defaultDeserialize({}) == expected);
+    }
+
+    SECTION("serialization & deserialization") {
+        SmoothWedgeTraits traits;
+        const auto &manager = traits.getDataManager();
+
+        TextualShapeData textualData{{"bottom_r", "1"}, {"top_r", "2"}, {"l", "3"}, {"subdivisions", "4"}};
+        ShapeData shapeData = traits.shapeDataFor(1, 2, 3, 4);
+        CHECK(manager.serialize(shapeData) == textualData);
+        CHECK(manager.deserialize(textualData) == shapeData);
+    }
+}
+
+TEST_CASE("SmoothWedgeTraits: shape data consistency") {
+    SmoothWedgeTraits traits(1, 2, 3, 4);
+
+    ShapeData data = traits.shapeDataFor(1, 2, 3, 4);
+    ShapeData differentData = traits.shapeDataFor(5, 6, 7, 8);
+    ShapeData defaultDeserializedData = traits.defaultDeserialize({});
+    ShapeData deserializedData = traits.deserialize(
+        {{"bottom_r", "1"}, {"top_r", "2"}, {"l", "3"}, {"subdivisions", "4"}}
+    );
+
+    CHECK_FALSE(data == differentData);
+    CHECK(data == defaultDeserializedData);
+    CHECK(data == deserializedData);
+}

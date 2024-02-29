@@ -75,6 +75,6 @@ TEST_CASE("ShapeDataDeserializer: errors") {
 
     SECTION("no key") {
         ShapeDataDeserializer deserializer({{"key", "value"}});
-        CHECK_THROWS_WITH(deserializer.as<int>("no_key"), Contains("unknown", CaseSensitive::No));
+        CHECK_THROWS_WITH(deserializer.as<int>("no_key"), Contains("missing parameter", CaseSensitive::No));
     }
 }

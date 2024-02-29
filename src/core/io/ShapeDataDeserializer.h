@@ -122,7 +122,7 @@ public:
     T as(const std::string &paramKey) {
         auto it = this->textualShapeData.find(paramKey);
         if (it == this->textualShapeData.end())
-            throw ShapeDataSerializationException("Unknown parameter: " + paramKey);
+            throw ShapeDataSerializationException("Missing parameter: " + paramKey);
 
         GuardedEntry &entry = it->second;
         entry.wasAccessed = true;

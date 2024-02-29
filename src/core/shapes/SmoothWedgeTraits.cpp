@@ -38,10 +38,10 @@ double SmoothWedgeShape::computeVolume(double R, double r, double l) {
 std::vector<double> SmoothWedgeShape::calculateRelativeSpherePositions() const {
     double A{};
     // Prevent nan if R == r and l == 0
-    if (this->topR == this->bottomR)
+    if (this->bottomR == this->topR)
         A = 1;
     else
-        A = (this->l - this->bottomR + this->topR) / (this->l + this->bottomR - this->topR);
+        A = (this->l - this->topR + this->bottomR) / (this->l + this->topR - this->bottomR);
 
     std::vector<double> alphas;
     alphas.reserve(this->subdivisions + 1);
@@ -53,34 +53,32 @@ std::vector<double> SmoothWedgeShape::calculateRelativeSpherePositions() const {
     return alphas;
 }
 
-SmoothWedgeShape::SmoothWedgeShape(double R, double r, double l, std::size_t subdivisions)
-        : topR{R}, bottomR{r}, l{l}, subdivisions{subdivisions}, volume{SmoothWedgeShape::computeVolume(R, r, l)},
-          begNamedPoint{0, 0, (-l + R - r)/2}, endNamedPoint{0, 0, (l + R - r)/2}
+SmoothWedgeShape::SmoothWedgeShape(double bottomR, double topR, double l, std::size_t subdivisions)
+        : bottomR{bottomR}, topR{topR}, l{l}, volume{SmoothWedgeShape::computeVolume(bottomR, topR, l)},
+          begNamedPoint{0, 0, (-l + bottomR - topR)/2}, endNamedPoint{0, 0, (l + bottomR - topR)/2}
 {
-    Expects(r > 0);
-    Expects(R > 0);
-    Expects(l >= std::abs(R - r));
+    Expects(bottomR > 0);
+    Expects(topR > 0);
+    Expects(l >= std::abs(bottomR - topR));
 
-    if (this->subdivisions == 0)
-        this->subdivisions = 1;
-
+    this->subdivisions = subdivisions == 0 ? 1 : subdivisions;
     if (this->subdivisions == 1) {
         this->interactionCentres = {};
-        this->shapeParts.emplace_back(R, r, l);
+        this->shapeParts.emplace_back(bottomR, topR, l);
         return;
     }
 
     std::vector<double> alphas = this->calculateRelativeSpherePositions();
 
-    double begZ = (-this->l + this->topR - this->bottomR) / 2;
+    double begZ = (-this->l + this->bottomR - this->topR) / 2;
     this->shapeParts.reserve(subdivisions);
     this->interactionCentres.reserve(subdivisions);
     for (std::size_t i{}; i < subdivisions; i++) {
         double alpha0 = alphas[i];
         double alpha1 = alphas[i + 1];
 
-        double r0 = alpha0*this->bottomR + (1 - alpha0) * this->topR;
-        double r1 = alpha1*this->bottomR + (1 - alpha1) * this->topR;
+        double r0 = alpha0*this->topR + (1 - alpha0) * this->bottomR;
+        double r1 = alpha1*this->topR + (1 - alpha1) * this->bottomR;
         double l01 = (alpha1 - alpha0)*this->l;
 
         this->shapeParts.emplace_back(r0, r1, l01);
@@ -90,8 +88,9 @@ SmoothWedgeShape::SmoothWedgeShape(double R, double r, double l, std::size_t sub
     }
 }
 
-bool SmoothWedgeShape::equal(double R_, double r_, double l_, std::size_t subdivisions_) const {
-    return std::tie(this->topR, this->bottomR, this->l, this->subdivisions) == std::tie(R_, r_, l_, subdivisions_);
+bool SmoothWedgeShape::equal(double bottomR_, double topR_, double l_, std::size_t subdivisions_) const {
+    return std::tie(this->bottomR, this->topR, this->l, this->subdivisions)
+           == std::tie(bottomR_, topR_, l_, subdivisions_);
 }
 
 std::shared_ptr<const ShapePrinter>
@@ -126,8 +125,8 @@ void SmoothWedgeTraits::validateShapeData(const ShapeData &data) const {
 TextualShapeData SmoothWedgeTraits::serialize(const ShapeData &data) const {
     const auto &shape = shapeFor(data);
     ShapeDataSerializer serializer;
-    serializer["top_r"] = shape.getTopR();
     serializer["bottom_r"] = shape.getBottomR();
+    serializer["top_r"] = shape.getTopR();
     serializer["l"] = shape.getL();
     serializer["subdivisions"] = shape.getSubdivisions();
     return serializer.toTextualShapeData();
@@ -135,39 +134,40 @@ TextualShapeData SmoothWedgeTraits::serialize(const ShapeData &data) const {
 
 ShapeData SmoothWedgeTraits::deserialize(const TextualShapeData &data) const {
     ShapeDataDeserializer deserializer(data);
-    auto topR = deserializer.as<double>("top_r");
     auto bottomR = deserializer.as<double>("bottom_r");
+    auto topR = deserializer.as<double>("top_r");
     auto l = deserializer.as<double>("l");
     auto subdivisions = deserializer.as<std::size_t>("subdivisions");
     deserializer.throwIfNotAccessed();
 
-    ShapeDataValidateMsg(topR > 0, "Top sphere radius must be > 0");
     ShapeDataValidateMsg(bottomR > 0, "Bottom sphere radius must be > 0");
+    ShapeDataValidateMsg(topR > 0, "Top sphere radius must be > 0");
     ShapeDataValidateMsg(l > std::abs(topR - bottomR),
                          "Length must be > than the difference between top and bottom sphere radii");
     if (subdivisions == 0)
         subdivisions = 1;
-    return this->shapeDataFor(topR, bottomR, l, subdivisions);
+    return this->shapeDataFor(bottomR, topR, l, subdivisions);
 }
 
-SmoothWedgeTraits::SmoothWedgeTraits(std::optional<double> defaultTopR, std::optional<double> defaultBottomR,
+SmoothWedgeTraits::SmoothWedgeTraits(std::optional<double> defaultBottomR, std::optional<double> defaultTopR,
                                      std::optional<double> defaultL, std::size_t defaultSubdivisions)
-         : defaultTopR{defaultTopR}, defaultBottomR{defaultBottomR}, defaultL{defaultL}, defaultSubdivisions{defaultSubdivisions}
+         : defaultBottomR{defaultBottomR}, defaultTopR{defaultTopR}, defaultL{defaultL},
+           defaultSubdivisions{defaultSubdivisions}
 {
-    if (this->defaultTopR)
-        Expects(*this->defaultTopR >= 0);
     if (this->defaultBottomR)
         Expects(*this->defaultBottomR > 0);
+    if (this->defaultTopR)
+        Expects(*this->defaultTopR >= 0);
     if (this->defaultL)
         Expects(*this->defaultL > 0);
     if (this->defaultTopR && this->defaultBottomR && this->defaultL)
         Expects(*this->defaultL >= std::abs(*this->defaultTopR - *this->defaultBottomR));
 
     ShapeDataSerializer serializer;
-    if (this->defaultTopR)
-        serializer["bottom_r"] = *this->defaultTopR;
     if (this->defaultBottomR)
-        serializer["top_r"] = *this->defaultBottomR;
+        serializer["bottom_r"] = *this->defaultBottomR;
+    if (this->defaultTopR)
+        serializer["top_r"] = *this->defaultTopR;
     if (this->defaultL)
         serializer["l"] = *this->defaultL;
     serializer["subdivisions"] = this->defaultSubdivisions;
@@ -181,16 +181,16 @@ SmoothWedgeTraits::SmoothWedgeTraits(std::optional<double> defaultTopR, std::opt
     });
 }
 
-ShapeData SmoothWedgeTraits::shapeDataFor(double topR, double bottomR, double l, std::size_t subdivisions) const {
+ShapeData SmoothWedgeTraits::shapeDataFor(double bottomR, double topR, double l, std::size_t subdivisions) const {
     if (subdivisions == 0)
         subdivisions = 1;
 
     for (std::size_t i{}; i < this->shapes.size(); i++) {
         const auto &shape = this->shapes[i];
-        if (shape.equal(topR, bottomR, l, subdivisions))
+        if (shape.equal(bottomR, topR, l, subdivisions))
             return ShapeData(Data{i});
     }
 
-    this->shapes.emplace_back(topR, bottomR, l, subdivisions);
+    this->shapes.emplace_back(bottomR, topR, l, subdivisions);
     return ShapeData(Data{this->shapes.size() - 1});
 }

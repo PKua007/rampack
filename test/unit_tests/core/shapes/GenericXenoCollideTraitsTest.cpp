@@ -52,15 +52,19 @@ namespace {
                 : GenericXenoCollideTraits({{std::make_shared<XCSphere>(r1), {0, 0, 0}},
                                             {std::make_shared<XCSphere>(r2), {x2, 0, 0}}},
                                            {1, 0, 0}, {0, 0, 1}, {0, 0, 0}, getStaticVolume(r1, r2))
-        { }
+        {
+            Expects(r1 > 0);
+            Expects(r2 > 0);
+            Expects(x2 > 0);
+        }
     };
 }
 
-TEST_CASE("XenoCollide: spherocylinder overlap") {
+TEST_CASE("GenericXenoCollideTraits: spherocylinder overlap") {
     FreeBoundaryConditions fbc;
     double l = 3, r = 2;
     XenoCollideSpherocylinderTraits traits(l, r);
-    ShapeData defaultData = traits.shapeDataFor("A");
+    ShapeData defaultData = traits.shapeDataForDefault();
 
     Shape sc1{};
     sc1.setData(defaultData);
@@ -164,10 +168,10 @@ TEST_CASE("XenoCollide: spherocylinder overlap") {
     }
 }
 
-TEST_CASE("XenoColllide: spherocylinder wall overlap") {
+TEST_CASE("GenericXenoCollideTraits: spherocylinder wall overlap") {
     double l = 1.0, r = 0.5;
     XenoCollideSpherocylinderTraits traits(l, r);
-    ShapeData defaultData = traits.shapeDataFor("A");
+    ShapeData defaultData = traits.shapeDataForDefault();
     const Interaction &interaction = traits.getInteraction();
 
     CHECK(interaction.hasWallPart());
@@ -217,10 +221,10 @@ TEST_CASE("XenoColllide: spherocylinder wall overlap") {
 }
 
 
-TEST_CASE("XenoCollide: spherocylinder basic features") {
+TEST_CASE("GenericXenoCollideTraits: spherocylinder basic features") {
     double l = 3, r = 2;
     XenoCollideSpherocylinderTraits traits(l, r);
-    ShapeData defaultData = traits.shapeDataFor("A");
+    ShapeData defaultData = traits.shapeDataForDefault();
     Shape defaultShape;
     defaultShape.setData(defaultData);
 
@@ -259,10 +263,10 @@ TEST_CASE("XenoCollide: spherocylinder basic features") {
     }
 }
 
-TEST_CASE("XenoCollide: dimer overlap") {
+TEST_CASE("GenericXenoCollideTraits: dimer overlap") {
     // The same test as for PolysphereTraits
     XenoCollideDimerTraits traits(0.5, 1, 3);
-    ShapeData defaultData = traits.shapeDataFor("A");
+    ShapeData defaultData = traits.shapeDataForDefault();
     const Interaction &interaction = traits.getInteraction();
     PeriodicBoundaryConditions pbc(10);
 
@@ -279,10 +283,10 @@ TEST_CASE("XenoCollide: dimer overlap") {
     }
 }
 
-TEST_CASE("XenoCollide: dimer ranges") {
+TEST_CASE("GenericXenoCollideTraits: dimer ranges") {
     // The same test as for PolysphereTraits
     XenoCollideDimerTraits traits(0.5, 1, 3);
-    ShapeData defaultData = traits.shapeDataFor("A");
+    ShapeData defaultData = traits.shapeDataForDefault();
     const Interaction &interaction = traits.getInteraction();
 
     CHECK(interaction.getRangeRadius(defaultData.raw()) == 2);
