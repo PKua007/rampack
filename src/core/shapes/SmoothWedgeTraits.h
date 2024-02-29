@@ -96,7 +96,7 @@ private:
     std::shared_ptr<Printer> createPrinter(std::size_t meshSubdivisions) const {
         PolydisperseXCShapePrinter::GeometryProvider provider = [this](const ShapeData &data) {
             const auto &shape = this->shapeFor(data);
-            CollideGeometry geometry(shape.getBottomR(), shape.getBottomR(), shape.getL());
+            CollideGeometry geometry(shape.getBottomR(), shape.getTopR(), shape.getL());
             return std::make_shared<PolymorphicXCAdapter<CollideGeometry>>(geometry);
         };
         return std::make_shared<Printer>(std::move(provider), meshSubdivisions);
