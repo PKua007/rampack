@@ -6,6 +6,7 @@
 #define RAMPACK_SMOOTHWEDGETRAITS_H
 
 #include "XenoCollideTraits.h"
+#include "DynamicShapeCache.h"
 
 
 class SmoothWedgeShape {
@@ -64,7 +65,9 @@ private:
     std::vector<Vector<3>> interactionCentres;
 
 public:
-    SmoothWedgeShape(double bottomR, double topR, double l, std::size_t subdivisions = 0);
+    SmoothWedgeShape(double bottomR, double topR, double l, std::size_t subdivisions = 0) /* override */;
+
+    [[nodiscard]] bool equal(double bottomR_, double topR_, double l_, std::size_t subdivisions_) const /* override */;
 
     [[nodiscard]] double getBottomR() const { return this->bottomR; }
     [[nodiscard]] double getTopR() const { return this->topR; }
@@ -75,23 +78,16 @@ public:
     [[nodiscard]] double getVolume() const { return this->volume; }
     [[nodiscard]] const Vector<3> &getBegNamedPoint() const { return this->begNamedPoint; }
     [[nodiscard]] const Vector<3> &getEndNamedPoint() const { return this->endNamedPoint; }
-    [[nodiscard]] bool equal(double bottomR_, double topR_, double l_, std::size_t subdivisions_) const;
 };
 
 
 /**
  * @brief Class representing a smooth wedge - a convex hull of two spheres with different radii.
  */
-class SmoothWedgeTraits : public XenoCollideTraits<SmoothWedgeTraits>, public ShapeGeometry, public ShapeDataManager {
+class SmoothWedgeTraits
+        : public XenoCollideTraits<SmoothWedgeTraits>, public DynamicShapeCache<SmoothWedgeShape>, public ShapeGeometry
+{
 private:
-    struct Data {
-        std::size_t speciesIdx{};
-
-        friend bool operator==(Data lhs, Data rhs) {
-            return lhs.speciesIdx == rhs.speciesIdx;
-        }
-    };
-
     template<typename Printer>
     std::shared_ptr<Printer> createPrinter(std::size_t meshSubdivisions) const {
         PolydisperseXCShapePrinter::GeometryProvider provider = [this](const ShapeData &data) {
@@ -102,22 +98,7 @@ private:
         return std::make_shared<Printer>(std::move(provider), meshSubdivisions);
     }
 
-    [[nodiscard]] const SmoothWedgeShape &speciesFor(const std::byte *data) const {
-        std::size_t shapeIdx = ShapeData::as<Data>(data).speciesIdx;
-        return this->species[shapeIdx];
-    }
-
-    [[nodiscard]] const SmoothWedgeShape &speciesFor(const ShapeData &data) const;
-
-    [[nodiscard]] const SmoothWedgeShape &speciesFor(const Shape &shape) const {
-        return this->speciesFor(shape.getData());
-    }
-
-    std::optional<double> defaultBottomR{};
-    std::optional<double> defaultTopR{};
-    std::optional<double> defaultL{};
-    std::size_t defaultSubdivisions = 1;
-    mutable std::vector<SmoothWedgeShape> species;
+    mutable DynamicShapeCache<SmoothWedgeShape> shapeCache;
 
 public:
     using CollideGeometry = SmoothWedgeShape::CollideGeometry;
@@ -147,9 +128,6 @@ public:
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override { return shape.getOrientation().column(2); }
     [[nodiscard]] Vector<3> getGeometricOrigin([[maybe_unused]] const Shape &shape) const override { return {0, 0, 0}; }
 
-    [[nodiscard]] std::size_t getShapeDataSize() const override { return sizeof(Data); }
-    void validateShapeData(const ShapeData &data) const override;
-    [[nodiscard]] ShapeData::Comparator getComparator() const override { return ShapeData::Comparator::forType<Data>(); }
     [[nodiscard]] TextualShapeData serialize(const ShapeData &data) const override;
     [[nodiscard]] ShapeData deserialize(const TextualShapeData &data) const override;
 

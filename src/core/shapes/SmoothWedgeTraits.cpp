@@ -111,17 +111,6 @@ SmoothWedgeTraits::getPrinter(const std::string &format, const std::map<std::str
         throw NoSuchShapePrinterException("XenoCollideTraits: unknown printer format: " + format);
 }
 
-const SmoothWedgeShape &SmoothWedgeTraits::speciesFor(const ShapeData &data) const {
-    std::size_t speciesIdx = data.as<Data>().speciesIdx;
-    Expects(speciesIdx < this->species.size());
-    return this->species[speciesIdx];
-}
-
-void SmoothWedgeTraits::validateShapeData(const ShapeData &data) const {
-    const auto &wedgeData = data.as<Data>();
-    ShapeDataValidateMsg(wedgeData.speciesIdx < this->species.size(), "Shape index out of range");
-}
-
 TextualShapeData SmoothWedgeTraits::serialize(const ShapeData &data) const {
     const auto &shape = speciesFor(data);
     ShapeDataSerializer serializer;
@@ -151,26 +140,24 @@ ShapeData SmoothWedgeTraits::deserialize(const TextualShapeData &data) const {
 
 SmoothWedgeTraits::SmoothWedgeTraits(std::optional<double> defaultBottomR, std::optional<double> defaultTopR,
                                      std::optional<double> defaultL, std::size_t defaultSubdivisions)
-         : defaultBottomR{defaultBottomR}, defaultTopR{defaultTopR}, defaultL{defaultL},
-           defaultSubdivisions{defaultSubdivisions}
 {
-    if (this->defaultBottomR)
-        Expects(*this->defaultBottomR > 0);
-    if (this->defaultTopR)
-        Expects(*this->defaultTopR >= 0);
-    if (this->defaultL)
-        Expects(*this->defaultL > 0);
-    if (this->defaultTopR && this->defaultBottomR && this->defaultL)
-        Expects(*this->defaultL >= std::abs(*this->defaultTopR - *this->defaultBottomR));
+    if (defaultBottomR)
+        Expects(defaultBottomR > 0);
+    if (defaultTopR)
+        Expects(defaultTopR >= 0);
+    if (defaultL)
+        Expects(defaultL > 0);
+    if (defaultTopR && defaultBottomR && defaultL)
+        Expects(*defaultL >= std::abs(*defaultTopR - *defaultBottomR));
 
     ShapeDataSerializer serializer;
-    if (this->defaultBottomR)
-        serializer["bottom_r"] = *this->defaultBottomR;
-    if (this->defaultTopR)
-        serializer["top_r"] = *this->defaultTopR;
-    if (this->defaultL)
-        serializer["l"] = *this->defaultL;
-    serializer["subdivisions"] = this->defaultSubdivisions;
+    if (defaultBottomR)
+        serializer["bottom_r"] = *defaultBottomR;
+    if (defaultTopR)
+        serializer["top_r"] = *defaultTopR;
+    if (defaultL)
+        serializer["l"] = *defaultL;
+    serializer["subdivisions"] = defaultSubdivisions;
     this->setDefaultShapeData(serializer.toTextualShapeData());
 
     this->registerDynamicNamedPoint("beg", [this](const ShapeData &data) {
@@ -185,12 +172,5 @@ ShapeData SmoothWedgeTraits::shapeDataFor(double bottomR, double topR, double l,
     if (subdivisions == 0)
         subdivisions = 1;
 
-    for (std::size_t i{}; i < this->species.size(); i++) {
-        const auto &shape = this->species[i];
-        if (shape.equal(bottomR, topR, l, subdivisions))
-            return ShapeData(Data{i});
-    }
-
-    this->species.emplace_back(bottomR, topR, l, subdivisions);
-    return ShapeData(Data{this->species.size() - 1});
+    return this->shapeDataForImpl(bottomR, topR, l, subdivisions);
 }
