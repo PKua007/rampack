@@ -60,6 +60,11 @@ protected:
         return this->speciesStore[speciesIdx];
     }
 
+    [[nodiscard]] SpeciesClass &modifySpecies(std::size_t speciesIdx) {
+        Expects(speciesIdx < this->speciesStore.size());
+        return this->speciesStore[speciesIdx];
+    }
+
 public:
     struct Data {
         std::size_t speciesIdx{};
@@ -83,7 +88,7 @@ public:
     }
 
     [[nodiscard]] double getVolume(const Shape &shape) const final {
-        return this->speciesFor(shape).getVolume(shape);
+        return this->speciesFor(shape).getVolume();
     }
 
     [[nodiscard]] std::size_t getShapeDataSize() const final {
@@ -181,6 +186,14 @@ public:
         auto it = this->speciesNameIdxMap.find(speciesName);
         ExpectsMsg(it != this->speciesNameIdxMap.end(), "Species " + speciesName + " not found");
         return it->second;
+    }
+
+    [[nodiscard]] const std::vector<SpeciesClass> &getAllSpecies() const {
+        return this->speciesStore;
+    }
+
+    [[nodiscard]] std::size_t getNumOfSpecies() const {
+        return this->speciesStore.size();
     }
 };
 
