@@ -29,16 +29,7 @@ public:
     using GeometryComplexProvider = std::function<GeometryComplex(const ShapeData &)>;
 
 protected:
-    struct PolyhedronData {
-        Vector<3> center;
-        Polyhedron polyhedron;
-
-        PolyhedronData(const Vector<3> &center, Polyhedron polyhedron)
-                : center{center}, polyhedron{std::move(polyhedron)}
-        { }
-    };
-
-    using PolyhedronComplex = std::vector<PolyhedronData>;
+    using PolyhedronComplex = std::vector<Polyhedron>;
 
     [[nodiscard]] virtual std::string doPrint(const Shape &shape, const PolyhedronComplex &polyhedronComplex) const = 0;
 
@@ -48,7 +39,7 @@ private:
 
     GeometryComplexProvider geometryComplexProvider;
     std::size_t subdivisions{};
-    mutable std::vector<std::pair<ShapeData, PolyhedronComplex>> polyhedronCache;
+    mutable std::vector<std::pair<ShapeData, PolyhedronComplex>> polyhedronComplexCache;
 
 
 public:

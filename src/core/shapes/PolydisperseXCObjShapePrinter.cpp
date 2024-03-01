@@ -10,10 +10,8 @@ std::string PolydisperseXCObjShapePrinter::doPrint(const Shape &shape,
 {
     std::ostringstream out;
     std::size_t offset{};
-    for (const auto &[center, polyhedron] : polyhedronComplex) {
-        Matrix<3, 3> rot = shape.getOrientation();
-        Vector<3> pos = shape.getPosition() + rot*center;
-        auto transformedPolyhedron = polyhedron.transformed(pos, rot);
+    for (const auto &polyhedron : polyhedronComplex) {
+        auto transformedPolyhedron = polyhedron.transformed(shape.getPosition(), shape.getOrientation());
         transformedPolyhedron.storeWavefrontObj(out, offset);
         offset += transformedPolyhedron.vertices.size();
     }
