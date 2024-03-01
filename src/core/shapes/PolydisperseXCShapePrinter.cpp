@@ -10,8 +10,10 @@ PolydisperseXCShapePrinter::PolyhedronComplex
 PolydisperseXCShapePrinter::buildPolyhedronComplex(const std::vector<GeometryData> &geometries) const {
     PolyhedronComplex polyhedronComplex;
     polyhedronComplex.reserve(geometries.size());
-    for (const auto &[center, geometry] : geometries)
-        polyhedronComplex.emplace_back(center, XCPrinter::buildPolyhedron(*geometry, this->subdivisions));
+    for (const auto &[center, geometry] : geometries) {
+        auto polyhedron = XCPrinter::buildPolyhedron(*geometry, this->subdivisions);
+        polyhedronComplex.push_back(polyhedron.transformed(center, Matrix<3, 3>::identity()));
+    }
     return polyhedronComplex;
 }
 
@@ -22,11 +24,11 @@ std::string PolydisperseXCShapePrinter::print(const Shape &shape) const {
 }
 
 const PolydisperseXCShapePrinter::PolyhedronComplex &PolydisperseXCShapePrinter::findPolyhedronComplex(const ShapeData &data) const {
-    for (const auto &[shapeData, polyhedronComplex] : this->polyhedronCache)
+    for (const auto &[shapeData, polyhedronComplex] : this->polyhedronComplexCache)
         if (shapeData == data)
             return polyhedronComplex;
 
     PolyhedronComplex polyhedronComplex = this->buildPolyhedronComplex(this->geometryComplexProvider(data));
-    this->polyhedronCache.emplace_back(data, std::move(polyhedronComplex));
-    return this->polyhedronCache.back().second;
+    this->polyhedronComplexCache.emplace_back(data, std::move(polyhedronComplex));
+    return this->polyhedronComplexCache.back().second;
 }
