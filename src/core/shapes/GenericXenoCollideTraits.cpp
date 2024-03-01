@@ -70,8 +70,8 @@ GenericXenoCollideTraits::GenericXenoCollideTraits(std::shared_ptr<AbstractXCGeo
 {
     GenericXenoCollideShape shape(std::move(geometry), volume, primaryAxis, secondaryAxis, geometricOrigin,
                                   customNamedPoints);
-    this->addShape("A", shape);
-    this->setDefaultShapeData({{"type", "A"}});
+    this->addSpecies("A", shape);
+    this->setDefaultShapeData({{"species", "A"}});
 }
 
 GenericXenoCollideTraits::GenericXenoCollideTraits(const std::vector<GeometryData> &geometries,
@@ -80,10 +80,10 @@ GenericXenoCollideTraits::GenericXenoCollideTraits(const std::vector<GeometryDat
                                                    const std::map<std::string, Vector<3>> &customNamedPoints)
 {
     GenericXenoCollideShape shape(geometries, volume, primaryAxis, secondaryAxis, geometricOrigin, customNamedPoints);
-    this->addShape("A", shape);
-    this->setDefaultShapeData({{"type", "A"}});
+    this->addSpecies("A", shape);
+    this->setDefaultShapeData({{"species", "A"}});
 }
 
 std::vector<Vector<3>> GenericXenoCollideTraits::getInteractionCentres(const std::byte *data) const {
-    return this->shapeFor(data).getInteractionCentres();
+    return this->speciesFor(data).getInteractionCentres();
 }

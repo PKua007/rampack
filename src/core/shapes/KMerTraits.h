@@ -48,7 +48,7 @@ public:
     { }
 
     void addKMerShape(const std::string &shapeName, std::size_t sphereNum, double sphereRadius, double distance) {
-        this->addShape(shapeName, KMerTraits::generateShape(sphereNum, sphereRadius, distance));
+        this->addSpecies(shapeName, KMerTraits::generateShape(sphereNum, sphereRadius, distance));
     }
 };
 

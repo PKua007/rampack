@@ -111,19 +111,19 @@ SmoothWedgeTraits::getPrinter(const std::string &format, const std::map<std::str
         throw NoSuchShapePrinterException("XenoCollideTraits: unknown printer format: " + format);
 }
 
-const SmoothWedgeShape &SmoothWedgeTraits::shapeFor(const ShapeData &data) const {
-    std::size_t shapeIdx = data.as<Data>().shapeIdx;
-    Expects(shapeIdx < this->shapes.size());
-    return this->shapes[shapeIdx];
+const SmoothWedgeShape &SmoothWedgeTraits::speciesFor(const ShapeData &data) const {
+    std::size_t speciesIdx = data.as<Data>().speciesIdx;
+    Expects(speciesIdx < this->species.size());
+    return this->species[speciesIdx];
 }
 
 void SmoothWedgeTraits::validateShapeData(const ShapeData &data) const {
     const auto &wedgeData = data.as<Data>();
-    ShapeDataValidateMsg(wedgeData.shapeIdx < this->shapes.size(), "Shape index out of range");
+    ShapeDataValidateMsg(wedgeData.speciesIdx < this->species.size(), "Shape index out of range");
 }
 
 TextualShapeData SmoothWedgeTraits::serialize(const ShapeData &data) const {
-    const auto &shape = shapeFor(data);
+    const auto &shape = speciesFor(data);
     ShapeDataSerializer serializer;
     serializer["bottom_r"] = shape.getBottomR();
     serializer["top_r"] = shape.getTopR();
@@ -174,10 +174,10 @@ SmoothWedgeTraits::SmoothWedgeTraits(std::optional<double> defaultBottomR, std::
     this->setDefaultShapeData(serializer.toTextualShapeData());
 
     this->registerDynamicNamedPoint("beg", [this](const ShapeData &data) {
-        return this->shapeFor(data).getBegNamedPoint();
+        return this->speciesFor(data).getBegNamedPoint();
     });
     this->registerDynamicNamedPoint("end", [this](const ShapeData &data) {
-        return this->shapeFor(data).getEndNamedPoint();
+        return this->speciesFor(data).getEndNamedPoint();
     });
 }
 
@@ -185,12 +185,12 @@ ShapeData SmoothWedgeTraits::shapeDataFor(double bottomR, double topR, double l,
     if (subdivisions == 0)
         subdivisions = 1;
 
-    for (std::size_t i{}; i < this->shapes.size(); i++) {
-        const auto &shape = this->shapes[i];
+    for (std::size_t i{}; i < this->species.size(); i++) {
+        const auto &shape = this->species[i];
         if (shape.equal(bottomR, topR, l, subdivisions))
             return ShapeData(Data{i});
     }
 
-    this->shapes.emplace_back(bottomR, topR, l, subdivisions);
-    return ShapeData(Data{this->shapes.size() - 1});
+    this->species.emplace_back(bottomR, topR, l, subdivisions);
+    return ShapeData(Data{this->species.size() - 1});
 }

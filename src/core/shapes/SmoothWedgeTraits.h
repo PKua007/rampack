@@ -85,39 +85,39 @@ public:
 class SmoothWedgeTraits : public XenoCollideTraits<SmoothWedgeTraits>, public ShapeGeometry, public ShapeDataManager {
 private:
     struct Data {
-        std::size_t shapeIdx{};
+        std::size_t speciesIdx{};
 
         friend bool operator==(Data lhs, Data rhs) {
-            return lhs.shapeIdx == rhs.shapeIdx;
+            return lhs.speciesIdx == rhs.speciesIdx;
         }
     };
 
     template<typename Printer>
     std::shared_ptr<Printer> createPrinter(std::size_t meshSubdivisions) const {
         PolydisperseXCShapePrinter::GeometryProvider provider = [this](const ShapeData &data) {
-            const auto &shape = this->shapeFor(data);
+            const auto &shape = this->speciesFor(data);
             CollideGeometry geometry(shape.getBottomR(), shape.getTopR(), shape.getL());
             return std::make_shared<PolymorphicXCAdapter<CollideGeometry>>(geometry);
         };
         return std::make_shared<Printer>(std::move(provider), meshSubdivisions);
     }
 
-    [[nodiscard]] const SmoothWedgeShape &shapeFor(const std::byte *data) const {
-        std::size_t shapeIdx = ShapeData::as<Data>(data).shapeIdx;
-        return this->shapes[shapeIdx];
+    [[nodiscard]] const SmoothWedgeShape &speciesFor(const std::byte *data) const {
+        std::size_t shapeIdx = ShapeData::as<Data>(data).speciesIdx;
+        return this->species[shapeIdx];
     }
 
-    [[nodiscard]] const SmoothWedgeShape &shapeFor(const ShapeData &data) const;
+    [[nodiscard]] const SmoothWedgeShape &speciesFor(const ShapeData &data) const;
 
-    [[nodiscard]] const SmoothWedgeShape &shapeFor(const Shape &shape) const {
-        return this->shapeFor(shape.getData());
+    [[nodiscard]] const SmoothWedgeShape &speciesFor(const Shape &shape) const {
+        return this->speciesFor(shape.getData());
     }
 
     std::optional<double> defaultBottomR{};
     std::optional<double> defaultTopR{};
     std::optional<double> defaultL{};
     std::size_t defaultSubdivisions = 1;
-    mutable std::vector<SmoothWedgeShape> shapes;
+    mutable std::vector<SmoothWedgeShape> species;
 
 public:
     using CollideGeometry = SmoothWedgeShape::CollideGeometry;
@@ -141,7 +141,7 @@ public:
     [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
 
-    [[nodiscard]] double getVolume(const Shape &shape) const override { return this->shapeFor(shape).getVolume(); }
+    [[nodiscard]] double getVolume(const Shape &shape) const override { return this->speciesFor(shape).getVolume(); }
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override { return shape.getOrientation().column(2); }
     [[nodiscard]] Vector<3> getGeometricOrigin([[maybe_unused]] const Shape &shape) const override { return {0, 0, 0}; }
 
@@ -155,11 +155,11 @@ public:
      * @brief Returns CollideGeometry object for the interaction center with index @a idx (see XenoCollideTraits).
      */
     [[nodiscard]] const CollideGeometry &getCollideGeometry(const std::byte *data, std::size_t idx = 0) const {
-        return this->shapeFor(data).getShapeParts()[idx];
+        return this->speciesFor(data).getShapeParts()[idx];
     }
 
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentres(const std::byte *data) const override {
-        return this->shapeFor(data).getInteractionCentres();
+        return this->speciesFor(data).getInteractionCentres();
     }
 
     /**

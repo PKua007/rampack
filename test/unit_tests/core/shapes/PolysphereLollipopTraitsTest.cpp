@@ -23,7 +23,7 @@ TEST_CASE("PolysphereLollipopTraits: basics") {
                                     tipSpherePenetration);
 
     SECTION("sphere data") {
-        const auto &data = traits.getDefaultShape().getSphereData();
+        const auto &data = traits.getDefaultSpecies().getSphereData();
         REQUIRE(data.size() == 3);
         CHECK(data[0].radius == 2);
         CHECK(data[1].radius == 2);

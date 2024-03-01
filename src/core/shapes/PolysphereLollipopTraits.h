@@ -112,7 +112,7 @@ public:
     {
         auto shape = PolysphereLollipopTraits::generateShape(sphereNum, stickSphereRadius, tipSphereRadius,
                                                              stickSpherePenetration, tipSpherePenetration);
-        this->addShape(shapeName, shape);
+        this->addSpecies(shapeName, shape);
     }
 };
 

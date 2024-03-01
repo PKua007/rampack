@@ -80,7 +80,7 @@ public:
 
     [[nodiscard]] const AbstractXCGeometry &
     getCollideGeometry(const std::byte *data, std::size_t i = 0) const /* override */ {
-        const auto &shape = this->shapeFor(data);
+        const auto &shape = this->speciesFor(data);
         const auto &geometries = shape.getGeometries();
         return *geometries[i];
     }
