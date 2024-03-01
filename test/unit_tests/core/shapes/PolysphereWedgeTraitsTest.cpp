@@ -21,7 +21,7 @@ TEST_CASE("PolysphereWedgeTraits") {
     PolysphereWedgeTraits traits(sphereNum, bottomSphereRadius, topSphereRadius, spherePenetration);
 
     SECTION("sphere data") {
-        const auto &data = traits.getDefaultShape().getSphereData();
+        const auto &data = traits.getDefaultSpecies().getSphereData();
         REQUIRE(data.size() == 3);
         CHECK(data[0].radius == 4);
         CHECK(data[1].radius == 3);

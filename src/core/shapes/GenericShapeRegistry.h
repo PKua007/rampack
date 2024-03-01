@@ -15,11 +15,11 @@
 #include "core/io/ShapeDataDeserializer.h"
 
 
-template <typename ShapeClass>
+template <typename SpeciesClass>
 class GenericShapeRegistry : public ShapeGeometry, public ShapeDataManager {
 private:
-    std::map<std::string, std::size_t> shapeNameIdxMap;
-    std::vector<ShapeClass> shapes;
+    std::map<std::string, std::size_t> speciesNameIdxMap;
+    std::vector<SpeciesClass> speciesStore;
 
 protected:
     void registerCustomNamedPoint(const std::string &pointName) {
@@ -27,63 +27,63 @@ protected:
             return;
 
         this->registerDynamicNamedPoint(pointName, [this, pointName](const ShapeData &data) -> Vector<3> {
-            std::size_t shapeIdx = data.as<Data>().shapeIdx;
-            const auto &namedPoints = this->getShape(shapeIdx).getCustomNamedPoints();
+            std::size_t speciesIdx = data.as<Data>().speciesIdx;
+            const auto &namedPoints = this->getSpecies(speciesIdx).getCustomNamedPoints();
 
             auto it = namedPoints.find(pointName);
             if (it == namedPoints.end())
-                this->throwUnavailableNamedPoint(shapeIdx, pointName);
+                this->throwUnavailableNamedPoint(speciesIdx, pointName);
 
             return it->second;
         });
     }
 
-    void throwUnavailableNamedPoint(std::size_t shapeIdx, const std::string &pointName) const {
-        const std::string &shapeName = this->getShapeName(shapeIdx);
+    void throwUnavailableNamedPoint(std::size_t speciesIdx, const std::string &pointName) const {
+        const std::string &speciesName = this->getSpeciesName(speciesIdx);
         std::ostringstream msg;
-        msg << "Named point " << pointName << " is not available for shape " << shapeName;
+        msg << "Named point " << pointName << " is not available for species " << speciesName;
         throw NoSuchNamedPointForShapeException(msg.str());
     }
 
-    [[nodiscard]] const ShapeClass &shapeFor(const Shape &shape) const {
-        return this->shapeFor(shape.getData());
+    [[nodiscard]] const SpeciesClass &speciesFor(const Shape &shape) const {
+        return this->speciesFor(shape.getData());
     }
 
-    [[nodiscard]] const ShapeClass &shapeFor(const ShapeData &data) const {
-        std::size_t shapeIdx = data.as<Data>().shapeIdx;
-        Expects(shapeIdx < this->shapes.size());
-        return this->shapes[shapeIdx];
+    [[nodiscard]] const SpeciesClass &speciesFor(const ShapeData &data) const {
+        std::size_t speciesIdx = data.as<Data>().speciesIdx;
+        Expects(speciesIdx < this->speciesStore.size());
+        return this->speciesStore[speciesIdx];
     }
 
-    [[nodiscard]] const ShapeClass &shapeFor(const std::byte *data) const {
-        std::size_t shapeIdx = ShapeData::as<Data>(data).shapeIdx;
-        return this->shapes[shapeIdx];
+    [[nodiscard]] const SpeciesClass &speciesFor(const std::byte *data) const {
+        std::size_t speciesIdx = ShapeData::as<Data>(data).speciesIdx;
+        return this->speciesStore[speciesIdx];
     }
 
 public:
     struct Data {
-        std::size_t shapeIdx{};
+        std::size_t speciesIdx{};
 
-        friend bool operator==(Data lhs, Data rhs) { return lhs.shapeIdx == rhs.shapeIdx; }
+        friend bool operator==(Data lhs, Data rhs) { return lhs.speciesIdx == rhs.speciesIdx; }
     };
 
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const final {
-        const auto &polysphereShape = this->shapeFor(shape);
-        return shape.getOrientation() * polysphereShape.getPrimaryAxis();
+        const auto &species = this->speciesFor(shape);
+        return shape.getOrientation() * species.getPrimaryAxis();
     }
 
     [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const final {
-        const auto &polysphereShape = this->shapeFor(shape);
-        return shape.getOrientation() * polysphereShape.getSecondaryAxis();
+        const auto &species = this->speciesFor(shape);
+        return shape.getOrientation() * species.getSecondaryAxis();
     }
 
     [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const final {
-        const auto &polysphereShape = this->shapeFor(shape);
-        return shape.getOrientation() * polysphereShape.getGeometricOrigin();
+        const auto &species = this->speciesFor(shape);
+        return shape.getOrientation() * species.getGeometricOrigin();
     }
 
     [[nodiscard]] double getVolume(const Shape &shape) const final {
-        return this->shapeFor(shape).getVolume(shape);
+        return this->speciesFor(shape).getVolume(shape);
     }
 
     [[nodiscard]] std::size_t getShapeDataSize() const final {
@@ -91,8 +91,8 @@ public:
     }
 
     void validateShapeData(const ShapeData &data) const final {
-        const auto &polysphereData = data.as<Data>();
-        ShapeDataValidateMsg(polysphereData.shapeIdx < this->shapes.size(), "Shape index out of range");
+        const auto &speciesData = data.as<Data>();
+        ShapeDataValidateMsg(speciesData.speciesIdx < this->speciesStore.size(), "Species index out of range");
     }
 
     [[nodiscard]] ShapeData::Comparator getComparator() const final {
@@ -100,88 +100,87 @@ public:
     }
 
     [[nodiscard]] TextualShapeData serialize(const ShapeData &data) const final {
-        std::size_t shapeIdx = data.as<Data>().shapeIdx;
-        const std::string &shapeName = this->getShapeName(shapeIdx);
+        std::size_t speciesIdx = data.as<Data>().speciesIdx;
+        const std::string &speciesName = this->getSpeciesName(speciesIdx);
 
         ShapeDataSerializer serializer;
-        serializer["type"] = shapeName;
+        serializer["species"] = speciesName;
         return serializer.toTextualShapeData();
     }
 
     [[nodiscard]] ShapeData deserialize(const TextualShapeData &data) const final {
         ShapeDataDeserializer deserializer(data);
-        auto shapeName = deserializer.as<std::string>("type");
+        auto speciesName = deserializer.as<std::string>("species");
         deserializer.throwIfNotAccessed();
 
-        if (!this->hasShape(shapeName))
-            throw ShapeDataSerializationException("Unknown shape type: " + shapeName);
-        return ShapeData(Data{this->getShapeIdx(shapeName)});
+        if (!this->hasSpecies(speciesName))
+            throw ShapeDataSerializationException("Unknown shape species: " + speciesName);
+        return ShapeData(Data{this->getSpeciesIdx(speciesName)});
     }
 
-    virtual ShapeData addShape(const std::string &shapeName, const ShapeClass &shape) {
+    virtual ShapeData addSpecies(const std::string &speciesName, const SpeciesClass &species) {
         auto containsQuotes = [](const std::string &str) { return str.find('"') != std::string::npos; };
-        Expects(!containsWhitespace(shapeName) && !containsQuotes(shapeName));
-        Expects(!this->hasShape(shapeName));
+        Expects(!containsWhitespace(speciesName) && !containsQuotes(speciesName));
+        Expects(!this->hasSpecies(speciesName));
 
-        this->shapes.push_back(shape);
-        this->shapeNameIdxMap.emplace(shapeName, this->shapes.size() - 1);
+        this->speciesStore.push_back(species);
+        this->speciesNameIdxMap.emplace(speciesName, this->speciesStore.size() - 1);
 
-        for (const auto &namedPoint : shape.getCustomNamedPoints()) {
+        for (const auto &namedPoint : species.getCustomNamedPoints()) {
             const auto &pointName = namedPoint.first;
             this->registerCustomNamedPoint(pointName);
         }
 
-        return ShapeData(Data{this->shapes.size() - 1});
+        return ShapeData(Data{this->speciesStore.size() - 1});
     }
 
-
-    [[nodiscard]] const ShapeClass &getDefaultShape() const {
+    [[nodiscard]] const SpeciesClass &getDefaultSpecies() const {
         const auto &defaultShapeData = this->getDefaultShapeData();
-        ExpectsMsg(!defaultShapeData.empty(), "Default shape is not defined");
-        return this->getShape(this->getDefaultShapeData().at("type"));
+        ExpectsMsg(!defaultShapeData.empty(), "Default species is not defined");
+        return this->getSpecies(defaultShapeData.at("species"));
     }
 
-    void setDefaultShape(const std::string &shapeName) {
-        Expects(this->hasShape(shapeName));
-        this->setDefaultShapeData({{"type", shapeName}});
+    void setDefaultShape(const std::string &speciesName) {
+        Expects(this->hasSpecies(speciesName));
+        this->setDefaultShapeData({{"species", speciesName}});
     }
 
-    [[nodiscard]] bool hasShape(const std::string &shapeName) const {
-        return this->shapeNameIdxMap.find(shapeName) != this->shapeNameIdxMap.end();
+    [[nodiscard]] bool hasSpecies(const std::string &speciesName) const {
+        return this->speciesNameIdxMap.find(speciesName) != this->speciesNameIdxMap.end();
     }
 
-    [[nodiscard]] const ShapeClass &getShape(const std::string &shapeName) const {
-        return this->shapes[this->getShapeIdx(shapeName)];
+    [[nodiscard]] const SpeciesClass &getSpecies(const std::string &shapeName) const {
+        return this->speciesStore[this->getSpeciesIdx(shapeName)];
     }
 
-    [[nodiscard]] const ShapeClass &getShape(std::size_t shapeIdx) const {
-        Expects(shapeIdx < this->shapes.size());
-        return this->shapes[shapeIdx];
+    [[nodiscard]] const SpeciesClass &getSpecies(std::size_t speciesIdx) const {
+        Expects(speciesIdx < this->speciesStore.size());
+        return this->speciesStore[speciesIdx];
     }
 
-    [[nodiscard]] ShapeData shapeDataFor(const std::string &shapeName) const {
-        return ShapeData(Data{this->getShapeIdx(shapeName)});
+    [[nodiscard]] ShapeData shapeDataForSpecies(const std::string &speciesName) const {
+        return ShapeData(Data{this->getSpeciesIdx(speciesName)});
     }
 
-    [[nodiscard]] ShapeData shapeDataForDefault() const {
+    [[nodiscard]] ShapeData shapeDataForDefaultSpecies() const {
         const auto &defaultShapeData = this->getDefaultShapeData();
-        ExpectsMsg(!defaultShapeData.empty(), "Default shape is not defined");
-        std::size_t shapeIdx = this->getShapeIdx(this->getDefaultShapeData().at("type"));
-        return ShapeData(Data{shapeIdx});
+        ExpectsMsg(!defaultShapeData.empty(), "Default species is not defined");
+        std::size_t speciesIdx = this->getSpeciesIdx(defaultShapeData.at("species"));
+        return ShapeData(Data{speciesIdx});
     }
 
-    [[nodiscard]] std::size_t getShapeIdx(const std::string &shapeName) const {
-        auto it = this->shapeNameIdxMap.find(shapeName);
-        ExpectsMsg(it != this->shapeNameIdxMap.end(), "Shape " + shapeName + " not found");
-        return it->second;
-    }
-
-    [[nodiscard]] const std::string &getShapeName(std::size_t shapeIdx) const {
-        Expects(shapeIdx < this->shapes.size());
-        for (const auto &[name, idx] : this->shapeNameIdxMap)
-            if (idx == shapeIdx)
+    [[nodiscard]] const std::string &getSpeciesName(std::size_t speciesIdx) const {
+        Expects(speciesIdx < this->speciesStore.size());
+        for (const auto &[name, idx] : this->speciesNameIdxMap)
+            if (idx == speciesIdx)
                 return name;
         AssertThrow("Unreachable");
+    }
+
+    [[nodiscard]] std::size_t getSpeciesIdx(const std::string &speciesName) const {
+        auto it = this->speciesNameIdxMap.find(speciesName);
+        ExpectsMsg(it != this->speciesNameIdxMap.end(), "Species " + speciesName + " not found");
+        return it->second;
     }
 };
 

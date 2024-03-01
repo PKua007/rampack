@@ -183,7 +183,7 @@ public:
     [[nodiscard]] std::shared_ptr<const ShapePrinter>
     getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;
 
-    ShapeData addShape(const std::string &shapeName, const PolysphereShape &shape) final;
+    ShapeData addSpecies(const std::string &speciesName, const PolysphereShape &shape) final;
 };
 
 

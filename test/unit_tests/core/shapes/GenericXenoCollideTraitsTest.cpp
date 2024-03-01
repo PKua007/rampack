@@ -64,7 +64,7 @@ TEST_CASE("GenericXenoCollideTraits: spherocylinder overlap") {
     FreeBoundaryConditions fbc;
     double l = 3, r = 2;
     XenoCollideSpherocylinderTraits traits(l, r);
-    ShapeData defaultData = traits.shapeDataForDefault();
+    ShapeData defaultData = traits.shapeDataForDefaultSpecies();
 
     Shape sc1{};
     sc1.setData(defaultData);
@@ -171,7 +171,7 @@ TEST_CASE("GenericXenoCollideTraits: spherocylinder overlap") {
 TEST_CASE("GenericXenoCollideTraits: spherocylinder wall overlap") {
     double l = 1.0, r = 0.5;
     XenoCollideSpherocylinderTraits traits(l, r);
-    ShapeData defaultData = traits.shapeDataForDefault();
+    ShapeData defaultData = traits.shapeDataForDefaultSpecies();
     const Interaction &interaction = traits.getInteraction();
 
     CHECK(interaction.hasWallPart());
@@ -224,7 +224,7 @@ TEST_CASE("GenericXenoCollideTraits: spherocylinder wall overlap") {
 TEST_CASE("GenericXenoCollideTraits: spherocylinder basic features") {
     double l = 3, r = 2;
     XenoCollideSpherocylinderTraits traits(l, r);
-    ShapeData defaultData = traits.shapeDataForDefault();
+    ShapeData defaultData = traits.shapeDataForDefaultSpecies();
     Shape defaultShape;
     defaultShape.setData(defaultData);
 
@@ -266,7 +266,7 @@ TEST_CASE("GenericXenoCollideTraits: spherocylinder basic features") {
 TEST_CASE("GenericXenoCollideTraits: dimer overlap") {
     // The same test as for PolysphereTraits
     XenoCollideDimerTraits traits(0.5, 1, 3);
-    ShapeData defaultData = traits.shapeDataForDefault();
+    ShapeData defaultData = traits.shapeDataForDefaultSpecies();
     const Interaction &interaction = traits.getInteraction();
     PeriodicBoundaryConditions pbc(10);
 
@@ -286,7 +286,7 @@ TEST_CASE("GenericXenoCollideTraits: dimer overlap") {
 TEST_CASE("GenericXenoCollideTraits: dimer ranges") {
     // The same test as for PolysphereTraits
     XenoCollideDimerTraits traits(0.5, 1, 3);
-    ShapeData defaultData = traits.shapeDataForDefault();
+    ShapeData defaultData = traits.shapeDataForDefaultSpecies();
     const Interaction &interaction = traits.getInteraction();
 
     CHECK(interaction.getRangeRadius(defaultData.raw()) == 2);

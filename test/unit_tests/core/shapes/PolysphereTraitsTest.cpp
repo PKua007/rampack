@@ -29,8 +29,8 @@ namespace {
 
 TEST_CASE("PolysphereTraits: basic") {
     PolysphereTraits traits;
-    auto dimerData = traits.addShape("dimer", dimer);
-    auto trimerData = traits.addShape("trimer", trimer);
+    auto dimerData = traits.addSpecies("dimer", dimer);
+    auto trimerData = traits.addSpecies("trimer", trimer);
 
     SECTION("hard interactions") {
         // Particles look and are placed like this [x - first sphere (center), o - last sphere]:
@@ -116,32 +116,33 @@ TEST_CASE("PolysphereTraits: basic") {
     }
 
     SECTION("PolysphereShape query") {
-        CHECK(traits.getShape(0) == dimer);
-        CHECK(traits.getShape(1) == trimer);
+        CHECK(traits.getSpecies(0) == dimer);
+        CHECK(traits.getSpecies(1) == trimer);
 
-        CHECK(traits.getShape("dimer") == dimer);
-        CHECK(traits.getShape("trimer") == trimer);
+        CHECK(traits.getSpecies("dimer") == dimer);
+        CHECK(traits.getSpecies("trimer") == trimer);
 
-        CHECK(traits.getShapeName(0) == "dimer");
-        CHECK(traits.getShapeName(1) == "trimer");
+        CHECK(traits.getSpeciesName(0) == "dimer");
+        CHECK(traits.getSpeciesName(1) == "trimer");
 
-        CHECK(traits.getShapeIdx("dimer") == 0);
-        CHECK(traits.getShapeIdx("trimer") == 1);
+        CHECK(traits.getSpeciesIdx("dimer") == 0);
+        CHECK(traits.getSpeciesIdx("trimer") == 1);
 
-        CHECK(traits.hasShape("dimer"));
-        CHECK(traits.hasShape("trimer"));
-        CHECK_FALSE(traits.hasShape("tetramer"));
+        CHECK(traits.hasSpecies("dimer"));
+        CHECK(traits.hasSpecies("trimer"));
+        CHECK_FALSE(traits.hasSpecies("tetramer"));
 
-        CHECK(traits.shapeDataFor("dimer") == dimerData);
-        CHECK(traits.shapeDataFor("trimer") == trimerData);
+        CHECK(traits.shapeDataForSpecies("dimer") == dimerData);
+        CHECK(traits.shapeDataForSpecies("trimer") == trimerData);
     }
 
     SECTION("default shape") {
-        CHECK_THROWS_WITH(traits.getDefaultShape(), Catch::Contains("not defined"));
+        CHECK_THROWS_WITH(traits.getDefaultSpecies(), Catch::Contains("not defined"));
 
         traits.setDefaultShape("trimer");
 
-        CHECK(traits.getDefaultShape() == trimer);
+        CHECK(traits.getDefaultSpecies() == trimer);
+        CHECK(traits.shapeDataForDefaultSpecies() == traits.shapeDataForSpecies("trimer"));
     }
 }
 
@@ -160,7 +161,7 @@ TEST_CASE("PolysphereTraits: mass centre normalization") {
     shape.normalizeMassCentre();
     PolysphereTraits traits(shape);
 
-    const auto &sphereData = traits.getDefaultShape().getSphereData();
+    const auto &sphereData = traits.getDefaultSpecies().getSphereData();
     CHECK(sphereData == std::vector<PolysphereTraits::SphereData>{{{-0.75, 0, 0}, 1}, {{0.25, 0, 0}, std::cbrt(3)}});
     const auto &geometry = traits.getGeometry();
     CHECK_THAT(geometry.getGeometricOrigin(defaultShape), IsApproxEqual(Vector<3>{0.25, 0, 0}, 1e-12));
@@ -187,16 +188,16 @@ TEST_CASE("PolysphereTraits: serialization") {
         const auto &manager = traits.getDataManager();
 
         CHECK(manager.defaultDeserialize({}) == defaultData);
-        CHECK(manager.getDefaultShapeData() == std::map<std::string, std::string>{{"type", "A"}});
+        CHECK(manager.getDefaultShapeData() == std::map<std::string, std::string>{{"species", "A"}});
     }
 
     SECTION("serialization & deserialization") {
         PolysphereTraits traits;
-        traits.addShape("dimer", dimer);
-        auto trimerData = traits.addShape("trimer", trimer);
+        traits.addSpecies("dimer", dimer);
+        auto trimerData = traits.addSpecies("trimer", trimer);
         const auto &manager = traits.getDataManager();
 
-        TextualShapeData textualData{{"type", "trimer"}};
+        TextualShapeData textualData{{"species", "trimer"}};
         CHECK(manager.serialize(trimerData) == textualData);
         CHECK(manager.deserialize(textualData) == trimerData);
     }

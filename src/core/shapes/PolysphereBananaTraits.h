@@ -97,7 +97,7 @@ public:
     void addBananaShape(const std::string &shapeName, double arcRadius, double arcAngle, std::size_t sphereNum,
                         double sphereRadius)
     {
-        this->addShape(
+        this->addSpecies(
                 shapeName, PolysphereBananaTraits::generateShape(arcRadius, arcAngle, sphereNum, sphereRadius)
         );
     }

@@ -155,7 +155,7 @@ bool operator==(const PolysphereShape &lhs, const PolysphereShape &rhs) {
 // PolysphereTraits::WolframPrinter ####################################################################################
 
 std::string PolysphereTraits::WolframPrinter::print(const Shape &shape) const {
-    const auto &sphereData = this->traits.shapeFor(shape).getSphereData();
+    const auto &sphereData = this->traits.speciesFor(shape).getSphereData();
 
     std::ostringstream out;
     out << std::fixed;
@@ -181,20 +181,20 @@ bool PolysphereTraits::HardInteraction::overlapBetween(const Vector<3> &pos1,
                                                        const std::byte *data2, std::size_t idx2,
                                                        const BoundaryConditions &bc) const
 {
-    const auto &sphereData1 = this->traits.shapeFor(data1).getSphereData();
-    const auto &sphereData2 = this->traits.shapeFor(data2).getSphereData();
+    const auto &sphereData1 = this->traits.speciesFor(data1).getSphereData();
+    const auto &sphereData2 = this->traits.speciesFor(data2).getSphereData();
 
     double r = sphereData1[idx1].radius + sphereData2[idx2].radius;
     return bc.getDistance2(pos1, pos2) < r * r;
 }
 
 std::vector<Vector<3>> PolysphereTraits::HardInteraction::getInteractionCentres(const std::byte *data) const {
-    const auto &shape = this->traits.shapeFor(data);
+    const auto &shape = this->traits.speciesFor(data);
     return shape.getInteractionCentres();
 }
 
 double PolysphereTraits::HardInteraction::getRangeRadius(const std::byte *data) const {
-    const auto &sphereData = this->traits.shapeFor(data).getSphereData();
+    const auto &sphereData = this->traits.speciesFor(data).getSphereData();
 
     auto comparator = [](const SphereData &sd1, const SphereData &sd2) {
         return sd1.radius < sd2.radius;
@@ -207,7 +207,7 @@ bool PolysphereTraits::HardInteraction::overlapWithWall(const Vector<3> &pos,
                                                         const std::byte *data, std::size_t idx,
                                                         const Vector<3> &wallOrigin, const Vector<3> &wallVector) const
 {
-    const auto &sphereData = this->traits.shapeFor(data).getSphereData();
+    const auto &sphereData = this->traits.speciesFor(data).getSphereData();
 
     double dotProduct = wallVector * (pos - wallOrigin);
     return dotProduct < sphereData[idx].radius;
@@ -222,8 +222,8 @@ void PolysphereTraits::registerSphereNamedPoint(std::size_t sphereIdx) {
         return;
 
     this->registerDynamicNamedPoint(pointName, [this, sphereIdx, pointName](const ShapeData &data) -> Vector<3> {
-        std::size_t shapeIdx = data.as<Data>().shapeIdx;
-        const auto &sphereData = this->getShape(shapeIdx).getSphereData();
+        std::size_t shapeIdx = data.as<Data>().speciesIdx;
+        const auto &sphereData = this->getSpecies(shapeIdx).getSphereData();
         if (sphereIdx >= sphereData.size())
             this->throwUnavailableNamedPoint(shapeIdx, pointName);
 
@@ -237,8 +237,8 @@ PolysphereTraits::PolysphereTraits()
 { }
 
 PolysphereTraits::PolysphereTraits(const PolysphereShape &polysphereShape) : PolysphereTraits() {
-    this->addShape("A", polysphereShape);
-    this->setDefaultShapeData({{"type", "A"}});
+    this->addSpecies("A", polysphereShape);
+    this->setDefaultShapeData({{"species", "A"}});
 }
 
 PolysphereTraits::PolysphereTraits(const std::shared_ptr<CentralInteraction> &centralInteraction)
@@ -246,7 +246,7 @@ PolysphereTraits::PolysphereTraits(const std::shared_ptr<CentralInteraction> &ce
           wolframPrinter{std::make_shared<WolframPrinter>(*this)}
 {
     this->centralInteraction->installCentresProvider([this](const std::byte *data) {
-        return this->shapeFor(data).getInteractionCentres();
+        return this->speciesFor(data).getInteractionCentres();
     });
 }
 
@@ -254,8 +254,8 @@ PolysphereTraits::PolysphereTraits(const PolysphereShape &polysphereShape,
                                    const std::shared_ptr<CentralInteraction> &centralInteraction)
         : PolysphereTraits(centralInteraction)
 {
-    this->addShape("A", polysphereShape);
-    this->setDefaultShapeData({{"type", "A"}});
+    this->addSpecies("A", polysphereShape);
+    this->setDefaultShapeData({{"species", "A"}});
 }
 
 PolysphereTraits::~PolysphereTraits() {
@@ -279,16 +279,16 @@ PolysphereTraits::getPrinter(const std::string &format, const std::map<std::stri
         throw NoSuchShapePrinterException("PolysphereTraits: unknown printer format: " + format);
 }
 
-ShapeData PolysphereTraits::addShape(const std::string &shapeName, const PolysphereShape &shape) {
+ShapeData PolysphereTraits::addSpecies(const std::string &speciesName, const PolysphereShape &shape) {
     for (std::size_t sphereIdx{}; sphereIdx < shape.getSphereData().size(); sphereIdx++)
         this->registerSphereNamedPoint(sphereIdx);
 
-    return GenericShapeRegistry::addShape(shapeName, shape);
+    return GenericShapeRegistry::addSpecies(speciesName, shape);
 }
 
 std::shared_ptr<ShapePrinter> PolysphereTraits::createObjPrinter(std::size_t subdivisions) const {
     PolydisperseXCShapePrinter::GeometryComplexProvider provider = [this](const ShapeData &data) {
-        const auto &sphereData = this->shapeFor(data).getSphereData();
+        const auto &sphereData = this->speciesFor(data).getSphereData();
 
         PolydisperseXCShapePrinter::GeometryComplex xcSpheres;
         xcSpheres.reserve(sphereData.size());

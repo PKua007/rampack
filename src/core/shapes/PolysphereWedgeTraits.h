@@ -100,7 +100,7 @@ public:
     {
         auto shape = PolysphereWedgeTraits::generateShape(sphereNum, bottomSphereRadius, topSphereRadius,
                                                           spherePenetration);
-        this->addShape(shapeName, shape);
+        this->addSpecies(shapeName, shape);
     }
 };
 
