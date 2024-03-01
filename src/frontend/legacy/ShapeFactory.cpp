@@ -182,9 +182,10 @@ namespace {
             builder.processCommand(command);
 
         auto collideGeometry = builder.releaseCollideGeometry();
-        return std::make_shared<GenericXenoCollideTraits>(
-            std::move(collideGeometry), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
+        GenericXenoCollideShape shape(
+            std::move(collideGeometry), volume, primaryAxis, secondaryAxis, geometricOrigin, namedPoints
         );
+        return std::make_shared<GenericXenoCollideTraits>(std::move(shape));
     }
 
     PolysphereShape parse_polysphere_geometry(std::istream &in) {

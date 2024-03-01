@@ -421,9 +421,10 @@ namespace {
                 script(builder);
                 auto geometry = builder.releaseCollideGeometry();
 
-                return std::make_shared<GenericXenoCollideTraits>(
-                    geometry, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
+                GenericXenoCollideShape shape(
+                    geometry, volume, primaryAxis, secondaryAxis, geometricOrigin, namedPoints
                 );
+                return std::make_shared<GenericXenoCollideTraits>(std::move(shape));
             });
     }
 

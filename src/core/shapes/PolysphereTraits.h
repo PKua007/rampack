@@ -61,7 +61,7 @@ public:
     [[nodiscard]] Vector<3> getGeometricOrigin() const {
         return this->geometricOrigin;
     }
-    [[nodiscard]] double getVolume([[maybe_unused]] const Shape &shape) const { return this->volume; }
+    [[nodiscard]] double getVolume() const { return this->volume; }
     [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->sphereData; }
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const;
 

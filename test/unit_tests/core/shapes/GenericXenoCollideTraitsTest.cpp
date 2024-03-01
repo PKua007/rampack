@@ -16,54 +16,41 @@
 
 
 namespace {
-    class XenoCollideSpherocylinderTraits : public GenericXenoCollideTraits {
-    private:
-        static double getStaticVolume(double l, double r) {
-            return M_PI * r * r * (4.0 / 3.0 * r + l);
-        }
+    GenericXenoCollideShape create_spherocylinder(double l, double r) {
+        Expects(r > 0);
+        Expects(l > 0);
 
-        static std::shared_ptr<AbstractXCGeometry> createShapeModel(double l, double r) {
-            Expects(r > 0);
-            Expects(l > 0);
+        XCBodyBuilder bb;
+        bb.sphere(r);
+        bb.move(-l/2, 0, 0);
+        bb.sphere(r);
+        bb.move(l/2, 0, 0);
+        bb.wrap();
+        auto geometry = bb.releaseCollideGeometry();
 
-            XCBodyBuilder bb;
-            bb.sphere(r);
-            bb.move(-l/2, 0, 0);
-            bb.sphere(r);
-            bb.move(l/2, 0, 0);
-            bb.wrap();
-            return bb.releaseCollideGeometry();
-        }
+        double volume = M_PI*r*r*(4./3*r + l);
 
-    public:
-        XenoCollideSpherocylinderTraits(double l, double r)
-                : GenericXenoCollideTraits(XenoCollideSpherocylinderTraits::createShapeModel(l, r),
-                                           {1, 0, 0}, {0, 0, 1}, {0, 0, 0}, getStaticVolume(l, r),
-                                           {{"beg", {-l / 2, 0, 0}}, {"end", {l / 2,  0, 0}}})
-        { }
-    };
+        return GenericXenoCollideShape(std::move(geometry), volume, {1, 0, 0}, {0, 0, 1}, {0, 0, 0},
+                                       {{"beg", {-l / 2, 0, 0}}, {"end", {l / 2,  0, 0}}});
+    }
 
-    class XenoCollideDimerTraits : public GenericXenoCollideTraits {
-    private:
-        static double getStaticVolume(double r1, double r2) {  return 4*M_PI/3 * (r1*r1*r1 + r1*r2*r2); }
+    GenericXenoCollideShape create_dimer(double r1, double r2, double x2) {
+        Expects(r1 > 0);
+        Expects(r2 > 0);
+        Expects(x2 > 0);
 
-    public:
-        XenoCollideDimerTraits(double r1, double r2, double x2)
-                : GenericXenoCollideTraits({{std::make_shared<XCSphere>(r1), {0, 0, 0}},
-                                            {std::make_shared<XCSphere>(r2), {x2, 0, 0}}},
-                                           {1, 0, 0}, {0, 0, 1}, {0, 0, 0}, getStaticVolume(r1, r2))
-        {
-            Expects(r1 > 0);
-            Expects(r2 > 0);
-            Expects(x2 > 0);
-        }
-    };
+        double volume = 4*M_PI/3 * (r1*r1*r1 + r1*r2*r2);
+
+        return GenericXenoCollideShape({{std::make_shared<XCSphere>(r1), {0, 0, 0}},
+                                        {std::make_shared<XCSphere>(r2), {x2, 0, 0}}},
+                                       volume, {1, 0, 0}, {0, 0, 1}, {0, 0, 0});
+    }
 }
 
 TEST_CASE("GenericXenoCollideTraits: spherocylinder overlap") {
     FreeBoundaryConditions fbc;
     double l = 3, r = 2;
-    XenoCollideSpherocylinderTraits traits(l, r);
+    GenericXenoCollideTraits traits(create_spherocylinder(l, r));
     ShapeData defaultData = traits.shapeDataForDefaultSpecies();
 
     Shape sc1{};
@@ -170,7 +157,7 @@ TEST_CASE("GenericXenoCollideTraits: spherocylinder overlap") {
 
 TEST_CASE("GenericXenoCollideTraits: spherocylinder wall overlap") {
     double l = 1.0, r = 0.5;
-    XenoCollideSpherocylinderTraits traits(l, r);
+    GenericXenoCollideTraits traits(create_spherocylinder(l, r));
     ShapeData defaultData = traits.shapeDataForDefaultSpecies();
     const Interaction &interaction = traits.getInteraction();
 
@@ -223,7 +210,7 @@ TEST_CASE("GenericXenoCollideTraits: spherocylinder wall overlap") {
 
 TEST_CASE("GenericXenoCollideTraits: spherocylinder basic features") {
     double l = 3, r = 2;
-    XenoCollideSpherocylinderTraits traits(l, r);
+    GenericXenoCollideTraits traits(create_spherocylinder(l, r));
     ShapeData defaultData = traits.shapeDataForDefaultSpecies();
     Shape defaultShape;
     defaultShape.setData(defaultData);
@@ -250,12 +237,6 @@ TEST_CASE("GenericXenoCollideTraits: spherocylinder basic features") {
         CHECK(traits.getGeometry().getGeometricOrigin(defaultShape) == Vector<3>{0, 0, 0});
     }
 
-    SECTION("range radius") {
-        double expectedRange = l + 2*r;
-        CHECK(traits.getInteraction().getRangeRadius(defaultData.raw()) == expectedRange);
-        CHECK(traits.getInteraction().getTotalRangeRadius(defaultData.raw()) == expectedRange);
-    }
-
     SECTION("named points") {
         CHECK(traits.getGeometry().getNamedPointForShape("beg", defaultShape) == Vector<3>{-1.5, 0, 0});
         CHECK(traits.getGeometry().getNamedPointForShape("end", defaultShape) == Vector<3>{1.5, 0, 0});
@@ -265,7 +246,7 @@ TEST_CASE("GenericXenoCollideTraits: spherocylinder basic features") {
 
 TEST_CASE("GenericXenoCollideTraits: dimer overlap") {
     // The same test as for PolysphereTraits
-    XenoCollideDimerTraits traits(0.5, 1, 3);
+    GenericXenoCollideTraits traits(create_dimer(0.5, 1, 3));
     ShapeData defaultData = traits.shapeDataForDefaultSpecies();
     const Interaction &interaction = traits.getInteraction();
     PeriodicBoundaryConditions pbc(10);
@@ -283,12 +264,115 @@ TEST_CASE("GenericXenoCollideTraits: dimer overlap") {
     }
 }
 
-TEST_CASE("GenericXenoCollideTraits: dimer ranges") {
-    // The same test as for PolysphereTraits
-    XenoCollideDimerTraits traits(0.5, 1, 3);
-    ShapeData defaultData = traits.shapeDataForDefaultSpecies();
-    const Interaction &interaction = traits.getInteraction();
+TEST_CASE("GenericXenoCollideTraits: polydisperse overlap") {
+    GenericXenoCollideTraits traits;
+    auto dimerData = traits.addSpecies("dimer", create_dimer(0.5, 0.5, 1));
+    auto scData = traits.addSpecies("spherocylinder", create_spherocylinder(1, 0.5));
+    // Dimer lies along x-axis, spherocylinder along y-axis; spherocylinder's cup is tangent to both dimer beads
+    Shape dimerShape({}, Matrix<3, 3>::identity(), dimerData);
+    Shape scShape({0.5, 0.5*(1 + std::sqrt(3.)), 0}, Matrix<3, 3>::rotation(0, 0, M_PI/2), scData);
+    FreeBoundaryConditions fbc;
 
-    CHECK(interaction.getRangeRadius(defaultData.raw()) == 2);
-    CHECK(interaction.getTotalRangeRadius(defaultData.raw()) == 8);
+    SECTION("overlap") {
+        scShape.translate({0, -0.1, 0}, fbc);
+        CHECK(traits.overlapBetweenShapes(dimerShape, scShape, fbc));
+    }
+
+    SECTION("no overlap") {
+        scShape.translate({0, 0.1, 0}, fbc);
+        CHECK_FALSE(traits.overlapBetweenShapes(dimerShape, scShape, fbc));
+    }
+}
+
+TEST_CASE("GenericXenoCollideTraits: range radius") {
+    SECTION("spherocylinder (single interaction centre)") {
+        GenericXenoCollideTraits traits(create_spherocylinder(3, 2));
+        ShapeData defaultData = traits.shapeDataForDefaultSpecies();
+
+        CHECK(traits.getInteraction().getRangeRadius(defaultData.raw()) == 7);
+        CHECK(traits.getInteraction().getTotalRangeRadius(defaultData.raw()) == 7);
+    }
+
+    SECTION("dimer (multiple interaction centres)") {
+        GenericXenoCollideTraits traits(create_dimer(1, 0.5, 1));
+        ShapeData defaultData = traits.shapeDataForDefaultSpecies();
+
+        CHECK(traits.getInteraction().getRangeRadius(defaultData.raw()) == 2);
+        CHECK(traits.getInteraction().getTotalRangeRadius(defaultData.raw()) == 3);
+    }
+}
+
+TEST_CASE("GenericXenoCollideTraits: consistent interaction centres") {
+    SECTION("single centre") {
+        GenericXenoCollideTraits traits;
+        traits.addSpecies("spheroc1", create_spherocylinder(1, 0.5));
+        traits.addSpecies("spheroc2", create_spherocylinder(2, 0.5));
+
+        CHECK_FALSE(traits.isMulticentre());
+        CHECK(traits.getSpecies(0).getInteractionCentres().empty());
+        CHECK(traits.getSpecies(1).getInteractionCentres().empty());
+    }
+
+    SECTION("multicentre pre-promotion") {
+        GenericXenoCollideTraits traits;
+        traits.addSpecies("dimer", create_dimer(0.5, 0.5, 1));
+        traits.addSpecies("spheroc", create_spherocylinder(2, 0.5));
+
+        CHECK(traits.isMulticentre());
+        CHECK(traits.getSpecies(0).getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}, {1, 0, 0}});
+        CHECK(traits.getSpecies(1).getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}});
+    }
+
+    SECTION("multicentre post-promotion") {
+        GenericXenoCollideTraits traits;
+        traits.addSpecies("spheroc", create_spherocylinder(2, 0.5));
+        traits.addSpecies("dimer", create_dimer(0.5, 0.5, 1));
+
+        CHECK(traits.isMulticentre());
+        CHECK(traits.getSpecies(0).getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}});
+        CHECK(traits.getSpecies(1).getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}, {1, 0, 0}});
+    }
+}
+
+TEST_CASE("GenericXenoCollideTraits: isConvex") {
+    SECTION("GenericXenoCollideShape logic") {
+        SECTION("single center: convex by default") {
+            GenericXenoCollideShape spheroc = create_spherocylinder(1, 0.5);
+
+            CHECK(spheroc.isConvex());
+        }
+
+        SECTION("multiple centers: concave by default") {
+            GenericXenoCollideShape dimer = create_dimer(0.5, 0.5, 1);
+
+            CHECK_FALSE(dimer.isConvex());
+        }
+
+        SECTION("multiple centers: forced convex") {
+            GenericXenoCollideShape sphereInSphere({
+                {std::make_shared<XCSphere>(0.5), {0, 0, 0}},
+                {std::make_shared<XCSphere>(0.25), {0, 0, 0}}
+            }, 1, std::nullopt, std::nullopt, {0, 0, 0}, {}, true);
+
+            CHECK(sphereInSphere.isConvex());
+        }
+    }
+
+    SECTION("combining multiple species") {
+        SECTION("convex + convex = convex") {
+            GenericXenoCollideTraits traits;
+            traits.addSpecies("spheroc1", create_spherocylinder(1, 1));
+            traits.addSpecies("spheroc2", create_spherocylinder(2, 1));
+
+            CHECK(traits.isConvex());
+        }
+
+        SECTION("convex + concave = concave") {
+            GenericXenoCollideTraits traits;
+            traits.addSpecies("spheroc", create_spherocylinder(1, 1));
+            traits.addSpecies("dimer", create_dimer(0.5, 0.5, 1));
+
+            CHECK_FALSE(traits.isConvex());
+        }
+    }
 }

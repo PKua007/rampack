@@ -84,7 +84,7 @@ public:
     XenoCollideTraits(const XenoCollideTraits &) = delete;
     XenoCollideTraits &operator=(const XenoCollideTraits &) = delete;
 
-    [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
+    [[nodiscard]] const Interaction &getInteraction() const final { return *this; }
 
     /**
      * @brief Returns ShapePrinter for a given @a format.
@@ -110,17 +110,15 @@ public:
             throw NoSuchShapePrinterException("XenoCollideTraits: unknown printer format: " + format);
     }
 
-    [[nodiscard]] bool hasHardPart() const override { return true; }
-    [[nodiscard]] bool hasWallPart() const override { return true; }
+    [[nodiscard]] bool hasHardPart() const final { return true; }
+    [[nodiscard]] bool hasWallPart() const final { return true; }
     [[nodiscard]] bool hasSoftPart() const override { return false; }
-    // TODO: fix isConvex
-    [[nodiscard]] bool isConvex() const override { return true; }
 
     [[nodiscard]] bool overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1,
                                       const std::byte *data1, std::size_t idx1,
                                       const Vector<3> &pos2, const Matrix<3, 3> &orientation2,
                                       const std::byte *data2, std::size_t idx2,
-                                      const BoundaryConditions &bc) const override
+                                      const BoundaryConditions &bc) const final
     {
         const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
         const auto &collideGeometry1 = thisConcreteTraits.getCollideGeometry(data1, idx1);
@@ -143,7 +141,7 @@ public:
 
     [[nodiscard]] bool overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation, const std::byte *data,
                                        std::size_t idx, const Vector<3> &wallOrigin,
-                                       const Vector<3> &wallVector) const override
+                                       const Vector<3> &wallVector) const final
     {
         const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
         const auto &collideGeometry = thisConcreteTraits.getCollideGeometry(data, idx);
@@ -159,7 +157,7 @@ public:
         return true;
     }
 
-    [[nodiscard]] double getRangeRadius(const std::byte *data) const override {
+    [[nodiscard]] double getRangeRadius(const std::byte *data) const final {
         std::size_t numCenters = std::max(this->getInteractionCentres(data).size(), std::size_t{1});
         const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
         double maxRadius{};
@@ -169,6 +167,22 @@ public:
                 maxRadius = newRadius;
         }
         return 2*maxRadius;
+    }
+
+    [[nodiscard]] double getTotalRangeRadius(const std::byte *data) const final {
+        const auto &thisConcreteTraits = static_cast<const ConcreteCollideTraits &>(*this);
+
+        auto centres = this->getInteractionCentres(data);
+        if (centres.empty())
+            return 2*thisConcreteTraits.getCollideGeometry(data, 0).getCircumsphereRadius();
+
+        double totalRadius{};
+        for (std::size_t i{}; i < centres.size(); i++) {
+            const auto &centre = centres[i];
+            double centreRadius = thisConcreteTraits.getCollideGeometry(data, i).getCircumsphereRadius();
+            totalRadius = std::max(totalRadius, centreRadius + centre.norm());
+        }
+        return 2*totalRadius;
     }
 };
 

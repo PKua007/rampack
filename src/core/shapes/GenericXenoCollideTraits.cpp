@@ -12,7 +12,7 @@ GenericXenoCollideShape::GenericXenoCollideShape(std::shared_ptr<AbstractXCGeome
                                                  const Vector<3> &geometricOrigin,
                                                  const std::map<std::string, Vector<3>> &customNamedPoints)
         : geometries{std::move(geometry)}, interactionCentres{}, primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis},
-          geometricOrigin{geometricOrigin}, volume{volume}, customNamedPoints{customNamedPoints}
+          geometricOrigin{geometricOrigin}, volume{volume}, customNamedPoints{customNamedPoints}, convex{true}
 {
     Expects(this->geometries.front());
     Expects(volume > 0);
@@ -27,7 +27,8 @@ GenericXenoCollideShape::GenericXenoCollideShape(std::shared_ptr<AbstractXCGeome
 GenericXenoCollideShape::GenericXenoCollideShape(const std::vector<GeometryData> &geometries, double volume,
                                                  OptionalAxis primaryAxis, OptionalAxis secondaryAxis,
                                                  const Vector<3> &geometricOrigin,
-                                                 const std::map<std::string, Vector<3>> &customNamedPoints)
+                                                 const std::map<std::string, Vector<3>> &customNamedPoints,
+                                                 bool forceConvex)
         : primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}, geometricOrigin{geometricOrigin},
           customNamedPoints{customNamedPoints}
 {
@@ -49,6 +50,8 @@ GenericXenoCollideShape::GenericXenoCollideShape(const std::vector<GeometryData>
         this->primaryAxis = this->primaryAxis->normalized();
     if (this->secondaryAxis.has_value())
         this->secondaryAxis = this->secondaryAxis->normalized();
+
+    this->convex = forceConvex || (this->geometries.size() == 1);
 }
 
 Vector<3> GenericXenoCollideShape::getPrimaryAxis() const {
@@ -63,27 +66,49 @@ Vector<3> GenericXenoCollideShape::getSecondaryAxis() const {
     return this->secondaryAxis.value();
 }
 
-GenericXenoCollideTraits::GenericXenoCollideTraits(std::shared_ptr<AbstractXCGeometry> geometry,
-                                                   OptionalAxis primaryAxis, OptionalAxis secondaryAxis,
-                                                   const Vector<3> &geometricOrigin, double volume,
-                                                   const std::map<std::string, Vector<3>> &customNamedPoints)
-{
-    GenericXenoCollideShape shape(std::move(geometry), volume, primaryAxis, secondaryAxis, geometricOrigin,
-                                  customNamedPoints);
-    this->addSpecies("A", shape);
-    this->setDefaultShapeData({{"species", "A"}});
+void GenericXenoCollideTraits::imbueFakeInteractionCenter(GenericXenoCollideShape &shape) {
+    if (!shape.interactionCentres.empty())
+        return;
+
+    shape.interactionCentres.push_back({0, 0, 0});
 }
 
-GenericXenoCollideTraits::GenericXenoCollideTraits(const std::vector<GeometryData> &geometries,
-                                                   OptionalAxis primaryAxis, OptionalAxis secondaryAxis,
-                                                   const Vector<3> &geometricOrigin, double volume,
-                                                   const std::map<std::string, Vector<3>> &customNamedPoints)
-{
-    GenericXenoCollideShape shape(geometries, volume, primaryAxis, secondaryAxis, geometricOrigin, customNamedPoints);
+GenericXenoCollideTraits::GenericXenoCollideTraits(const GenericXenoCollideShape &shape) {
     this->addSpecies("A", shape);
     this->setDefaultShapeData({{"species", "A"}});
 }
 
 std::vector<Vector<3>> GenericXenoCollideTraits::getInteractionCentres(const std::byte *data) const {
     return this->speciesFor(data).getInteractionCentres();
+}
+
+bool GenericXenoCollideTraits::isConvex() const {
+    const auto &allSpecies = this->getAllSpecies();
+    return std::all_of(allSpecies.begin(), allSpecies.end(), [](const GenericXenoCollideShape &shape) {
+        return shape.isConvex();
+    });
+}
+
+ShapeData GenericXenoCollideTraits::addSpecies(const std::string &speciesName, const GenericXenoCollideShape &species) {
+    std::size_t numCentres = species.interactionCentres.size();
+    if (numCentres == 0) {
+        if (!this->isMulticentre_)
+            return GenericShapeRegistry::addSpecies(speciesName, species);
+
+        // Add {0, 0, 0} center is any other shape is multi-center
+        auto speciesCopy = species;
+        GenericXenoCollideTraits::imbueFakeInteractionCenter(speciesCopy);
+        return GenericShapeRegistry::addSpecies(speciesName, speciesCopy);
+    } else {
+        // If it was single-center before, add the {0, 0, 0} center retrospectively to all species
+        if (!this->isMulticentre_) {
+            for (std::size_t speciesIdx{}; speciesIdx < this->getNumOfSpecies(); speciesIdx++) {
+                auto &species_ = this->modifySpecies(speciesIdx);
+                GenericXenoCollideTraits::imbueFakeInteractionCenter(species_);
+            }
+        }
+
+        this->isMulticentre_ = true;
+        return GenericShapeRegistry::addSpecies(speciesName, species);
+    }
 }

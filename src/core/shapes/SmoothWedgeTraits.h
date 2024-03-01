@@ -141,6 +141,8 @@ public:
     [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
 
+    [[nodiscard]] bool isConvex() const override { return true; }
+
     [[nodiscard]] double getVolume(const Shape &shape) const override { return this->speciesFor(shape).getVolume(); }
     [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override { return shape.getOrientation().column(2); }
     [[nodiscard]] Vector<3> getGeometricOrigin([[maybe_unused]] const Shape &shape) const override { return {0, 0, 0}; }
