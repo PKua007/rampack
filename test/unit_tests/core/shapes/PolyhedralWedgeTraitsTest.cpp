@@ -58,3 +58,38 @@ TEST_CASE("PolyhedralWedgeTraits: overlap") {
         }
     }
 }
+
+TEST_CASE("PolyhedralWedgeTraits: serialization") {
+    SECTION("default data") {
+        PolyhedralWedgeTraits traits(1, 2, 3, 4, 5, 6);
+
+        ShapeData expected = traits.shapeDataForSpecies(1, 2, 3, 4, 5, 6);
+        CHECK(traits.getDataManager().defaultDeserialize({}) == expected);
+    }
+
+    SECTION("serialization & deserialization") {
+        PolyhedralWedgeTraits traits;
+        const auto &manager = traits.getDataManager();
+
+        TextualShapeData textualData{{"bottom_ax", "1"}, {"bottom_ay", "2"}, {"top_ax", "3"}, {"top_ay", "4"},
+                                     {"l", "5"}, {"subdivisions", "6"}};
+        ShapeData shapeData = traits.shapeDataForSpecies(1, 2, 3, 4, 5, 6);
+        CHECK(manager.serialize(shapeData) == textualData);
+        CHECK(manager.deserialize(textualData) == shapeData);
+    }
+}
+
+TEST_CASE("PolyhedralWedgeTraits: shape data consistency") {
+    PolyhedralWedgeTraits traits(1, 2, 3, 4, 5, 6);
+
+    ShapeData data = traits.shapeDataForSpecies(1, 2, 3, 4, 5, 6);
+    ShapeData differentData = traits.shapeDataForSpecies(7, 8, 9, 10, 11, 12);
+    ShapeData defaultDeserializedData = traits.defaultDeserialize({});
+    ShapeData deserializedData = traits.deserialize(
+        {{"bottom_ax", "1"}, {"bottom_ay", "2"}, {"top_ax", "3"}, {"top_ay", "4"}, {"l", "5"}, {"subdivisions", "6"}}
+    );
+
+    CHECK_FALSE(data == differentData);
+    CHECK(data == defaultDeserializedData);
+    CHECK(data == deserializedData);
+}

@@ -457,33 +457,42 @@ namespace {
     }
 
     MatcherDataclass create_polyhedral_wedge_matcher() {
-        // TODO don't forget about it
-        /*return MatcherDataclass("polyhedral_wedge")
-            .arguments({{"bottom_ax", MatcherFloat{}.nonNegative()},
-                        {"bottom_ay", MatcherFloat{}.nonNegative()},
-                        {"top_ax", MatcherFloat{}.nonNegative()},
-                        {"top_ay", MatcherFloat{}.nonNegative()},
-                        {"l", MatcherFloat{}.positive()},
+        auto noneDouble = MatcherNone{}.mapTo<std::optional<double>>();
+
+        auto positiveDouble = MatcherFloat{}.positive().mapTo<std::optional<double>>();
+        auto optionalPositiveDouble = noneDouble | positiveDouble;
+
+        auto nonNegativeDouble = MatcherFloat{}.nonNegative().mapTo<std::optional<double>>();
+        auto optionalNonNegativeDouble = noneDouble | nonNegativeDouble;
+
+        return MatcherDataclass("polyhedral_wedge")
+            .arguments({{"bottom_ax", optionalNonNegativeDouble, "None"},
+                        {"bottom_ay", optionalNonNegativeDouble, "None"},
+                        {"top_ax", optionalNonNegativeDouble, "None"},
+                        {"top_ay", optionalNonNegativeDouble, "None"},
+                        {"l", optionalPositiveDouble, "None"},
                         {"subdivisions", MatcherInt{}.positive().mapTo<std::size_t>(), "1"}})
             .filter([](const DataclassData &wedge) {
-                auto bottomRx = wedge["bottom_ax"].as<double>();
-                auto bottomRy = wedge["bottom_ay"].as<double>();
-                auto topRx = wedge["top_ax"].as<double>();
-                auto topRy = wedge["top_ay"].as<double>();
-                return (topRx != 0 && bottomRy != 0) || (topRy != 0 && bottomRx != 0);
+                auto bottomAx = wedge["bottom_ax"].as<std::optional<double>>();
+                auto bottomAy = wedge["bottom_ay"].as<std::optional<double>>();
+                auto topAx = wedge["top_ax"].as<std::optional<double>>();
+                auto topAy = wedge["top_ay"].as<std::optional<double>>();
+                if (!bottomAx || !bottomAy || !topAx || !topAy)
+                    return true;
+
+                return (topAx != 0 && bottomAy != 0) || (topAy != 0 && bottomAx != 0);
             })
             .describe("with at least one pair of non-zero orthogonal a-s, one at the top, one at the bottom")
             .mapTo([](const DataclassData &wedge) -> std::shared_ptr<ShapeTraits> {
                 return std::make_shared<PolyhedralWedgeTraits>(
-                    wedge["bottom_ax"].as<double>(),
-                    wedge["bottom_ay"].as<double>(),
-                    wedge["top_ax"].as<double>(),
-                    wedge["top_ay"].as<double>(),
-                    wedge["l"].as<double>(),
+                    wedge["bottom_ax"].as<std::optional<double>>(),
+                    wedge["bottom_ay"].as<std::optional<double>>(),
+                    wedge["top_ax"].as<std::optional<double>>(),
+                    wedge["top_ay"].as<std::optional<double>>(),
+                    wedge["l"].as<std::optional<double>>(),
                     wedge["subdivisions"].as<std::size_t>()
                 );
-            });*/
-        return MatcherDataclass("polyhedral_wedge");
+            });
     }
 
     bool validate_axes(const DataclassData &dataclass) {
