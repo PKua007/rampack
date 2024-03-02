@@ -37,7 +37,8 @@ PolyhedralWedgeShape::PolyhedralWedgeShape(double bottomAx, double bottomAy, dou
     Expects((topAx > 0 && bottomAy > 0) || (topAy > 0 && bottomAx > 0));
     Expects(l > 0);
 
-    if (subdivisions == 0 || subdivisions == 1) {
+    this->subdivisions = subdivisions == 0 ? 1 : subdivisions;
+    if (this->subdivisions == 1) {
         this->interactionCentres = {};
         this->shapeParts.emplace_back(this->bottomAx, this->bottomAy, this->topAx, this->topAy, this->l);
         return;
@@ -92,7 +93,7 @@ PolyhedralWedgeTraits::PolyhedralWedgeTraits(std::optional<double> defaultBottom
     if (defaultTopAx)
         serializer["top_ax"] = *defaultTopAx;
     if (defaultTopAy)
-        serializer["top_ay"] = *defaultTopAx;
+        serializer["top_ay"] = *defaultTopAy;
     if (defaultL)
         serializer["l"] = *defaultL;
     serializer["subdivisions"] = defaultSubdivisions;
@@ -131,7 +132,7 @@ TextualShapeData PolyhedralWedgeTraits::serialize(const ShapeData &data) const {
     serializer["bottom_ay"] = shape.getBottomAy();
     serializer["top_ax"] = shape.getTopAx();
     serializer["top_ay"] = shape.getTopAy();
-    serializer["l"] = shape.getLength();
+    serializer["l"] = shape.getL();
     serializer["subdivisions"] = shape.getSubdivisions();
     return serializer.toTextualShapeData();
 }

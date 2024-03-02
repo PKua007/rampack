@@ -82,7 +82,7 @@ public:
     [[nodiscard]] double getBottomAy() const { return this->bottomAy; }
     [[nodiscard]] double getTopAx() const { return this->topAx; }
     [[nodiscard]] double getTopAy() const { return this->topAy; }
-    [[nodiscard]] double getLength() const { return this->l; }
+    [[nodiscard]] double getL() const { return this->l; }
     [[nodiscard]] std::size_t getSubdivisions() const { return this->subdivisions; }
     [[nodiscard]] const std::vector<CollideGeometry> &getShapeParts() const { return this->shapeParts; }
     [[nodiscard]] const std::vector<Vector<3>> &getInteractionCentres() const { return this->interactionCentres; }
@@ -105,7 +105,7 @@ private:
         PolydisperseXCShapePrinter::GeometryProvider provider = [this](const ShapeData &data) {
             const auto &shape = this->speciesFor(data);
             CollideGeometry geometry(shape.getBottomAx(), shape.getBottomAy(), shape.getTopAx(), shape.getTopAy(),
-                                     shape.getLength());
+                                     shape.getL());
             return std::make_shared<PolymorphicXCAdapter<CollideGeometry>>(geometry);
         };
         return std::make_shared<Printer>(std::move(provider), meshSubdivisions);
