@@ -40,7 +40,7 @@ protected:
     }
 
     template<typename ...Args>
-    ShapeData shapeDataForImpl(Args &&...args) const {
+    ShapeData shapeDataForSpeciesImpl(Args &&...args) const {
         for (std::size_t speciesIdx{}; speciesIdx < this->speciesCache.size(); speciesIdx++) {
             const auto &species = this->speciesCache[speciesIdx];
             if (species.equal(std::forward<Args>(args)...))

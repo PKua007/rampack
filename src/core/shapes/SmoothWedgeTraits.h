@@ -9,7 +9,7 @@
 #include "DynamicShapeCache.h"
 
 
-class SmoothWedgeShape {
+class SmoothWedgeShape /* : public DynamicShapeCache::ConcreteSpecies */  {
 public:
     /**
      * @brief Class representing the geometry of the wedge (see template parameter of XenoCollide)
@@ -54,6 +54,8 @@ private:
 
     [[nodiscard]] std::vector<double> calculateRelativeSpherePositions() const;
 
+    std::vector<CollideGeometry> shapeParts;
+    std::vector<Vector<3>> interactionCentres;
     double bottomR{};
     double topR{};
     double l{};
@@ -61,8 +63,6 @@ private:
     double volume{};
     Vector<3> begNamedPoint{};
     Vector<3> endNamedPoint{};
-    std::vector<CollideGeometry> shapeParts;
-    std::vector<Vector<3>> interactionCentres;
 
 public:
     SmoothWedgeShape(double bottomR, double topR, double l, std::size_t subdivisions = 0) /* override */;
@@ -98,8 +98,6 @@ private:
         return std::make_shared<Printer>(std::move(provider), meshSubdivisions);
     }
 
-    mutable DynamicShapeCache<SmoothWedgeShape> shapeCache;
-
 public:
     using CollideGeometry = SmoothWedgeShape::CollideGeometry;
 
@@ -125,7 +123,9 @@ public:
     [[nodiscard]] bool isConvex() const override { return true; }
 
     [[nodiscard]] double getVolume(const Shape &shape) const override { return this->speciesFor(shape).getVolume(); }
-    [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override { return shape.getOrientation().column(2); }
+    [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override {
+        return shape.getOrientation().column(2);
+    }
     [[nodiscard]] Vector<3> getGeometricOrigin([[maybe_unused]] const Shape &shape) const override { return {0, 0, 0}; }
 
     [[nodiscard]] TextualShapeData serialize(const ShapeData &data) const override;
@@ -153,7 +153,7 @@ public:
     [[nodiscard]] std::shared_ptr<const ShapePrinter>
     getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;
 
-    ShapeData shapeDataFor(double bottomR, double topR, double l, std::size_t subdivisions = 0) const;
+    ShapeData shapeDataForSpecies(double bottomR, double topR, double l, std::size_t subdivisions = 0) const;
 };
 
 

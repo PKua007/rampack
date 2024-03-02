@@ -93,6 +93,36 @@ bool SmoothWedgeShape::equal(double bottomR_, double topR_, double l_, std::size
            == std::tie(bottomR_, topR_, l_, subdivisions_);
 }
 
+SmoothWedgeTraits::SmoothWedgeTraits(std::optional<double> defaultBottomR, std::optional<double> defaultTopR,
+                                     std::optional<double> defaultL, std::size_t defaultSubdivisions)
+{
+    if (defaultBottomR)
+        Expects(defaultBottomR > 0);
+    if (defaultTopR)
+        Expects(defaultTopR >= 0);
+    if (defaultL)
+        Expects(defaultL > 0);
+    if (defaultTopR && defaultBottomR && defaultL)
+        Expects(*defaultL >= std::abs(*defaultTopR - *defaultBottomR));
+
+    ShapeDataSerializer serializer;
+    if (defaultBottomR)
+        serializer["bottom_r"] = *defaultBottomR;
+    if (defaultTopR)
+        serializer["top_r"] = *defaultTopR;
+    if (defaultL)
+        serializer["l"] = *defaultL;
+    serializer["subdivisions"] = defaultSubdivisions;
+    this->setDefaultShapeData(serializer.toTextualShapeData());
+
+    this->registerDynamicNamedPoint("beg", [this](const ShapeData &data) {
+        return this->speciesFor(data).getBegNamedPoint();
+    });
+    this->registerDynamicNamedPoint("end", [this](const ShapeData &data) {
+        return this->speciesFor(data).getEndNamedPoint();
+    });
+}
+
 std::shared_ptr<const ShapePrinter>
 SmoothWedgeTraits::getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const {
     // We override the function from XenoCollideTraits not to redundantly print subdivisions
@@ -135,42 +165,14 @@ ShapeData SmoothWedgeTraits::deserialize(const TextualShapeData &data) const {
                          "Length must be > than the difference between top and bottom sphere radii");
     if (subdivisions == 0)
         subdivisions = 1;
-    return this->shapeDataFor(bottomR, topR, l, subdivisions);
+    return this->shapeDataForSpecies(bottomR, topR, l, subdivisions);
 }
 
-SmoothWedgeTraits::SmoothWedgeTraits(std::optional<double> defaultBottomR, std::optional<double> defaultTopR,
-                                     std::optional<double> defaultL, std::size_t defaultSubdivisions)
+ShapeData SmoothWedgeTraits::shapeDataForSpecies(double bottomR, double topR, double l,
+                                                 std::size_t subdivisions) const
 {
-    if (defaultBottomR)
-        Expects(defaultBottomR > 0);
-    if (defaultTopR)
-        Expects(defaultTopR >= 0);
-    if (defaultL)
-        Expects(defaultL > 0);
-    if (defaultTopR && defaultBottomR && defaultL)
-        Expects(*defaultL >= std::abs(*defaultTopR - *defaultBottomR));
-
-    ShapeDataSerializer serializer;
-    if (defaultBottomR)
-        serializer["bottom_r"] = *defaultBottomR;
-    if (defaultTopR)
-        serializer["top_r"] = *defaultTopR;
-    if (defaultL)
-        serializer["l"] = *defaultL;
-    serializer["subdivisions"] = defaultSubdivisions;
-    this->setDefaultShapeData(serializer.toTextualShapeData());
-
-    this->registerDynamicNamedPoint("beg", [this](const ShapeData &data) {
-        return this->speciesFor(data).getBegNamedPoint();
-    });
-    this->registerDynamicNamedPoint("end", [this](const ShapeData &data) {
-        return this->speciesFor(data).getEndNamedPoint();
-    });
-}
-
-ShapeData SmoothWedgeTraits::shapeDataFor(double bottomR, double topR, double l, std::size_t subdivisions) const {
     if (subdivisions == 0)
         subdivisions = 1;
 
-    return this->shapeDataForImpl(bottomR, topR, l, subdivisions);
+    return this->shapeDataForSpeciesImpl(bottomR, topR, l, subdivisions);
 }

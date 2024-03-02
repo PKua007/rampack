@@ -11,7 +11,7 @@
 
 TEST_CASE("SmoothWedge: geometry") {
     SmoothWedgeTraits traits;
-    ShapeData data = traits.shapeDataFor(2, 1, 5);
+    ShapeData data = traits.shapeDataForSpecies(2, 1, 5);
     const auto &geometry = traits.getGeometry();
     const auto &interaction = traits.getInteraction();
 
@@ -35,7 +35,7 @@ TEST_CASE("SmoothWedge: collide geometry") {
     SECTION("spheres") {
         SECTION("original case") {
             SmoothWedgeTraits traits;
-            ShapeData data = traits.shapeDataFor(2, 1, 5);
+            ShapeData data = traits.shapeDataForSpecies(2, 1, 5);
             const auto &collideGeometry = traits.getCollideGeometry(data.raw());
 
             CHECK(collideGeometry.getInsphereRadius() == Approx(1.6));
@@ -44,7 +44,7 @@ TEST_CASE("SmoothWedge: collide geometry") {
 
         SECTION("case detecting bug") {
             SmoothWedgeTraits traits;
-            ShapeData data = traits.shapeDataFor(3, 1, 5);
+            ShapeData data = traits.shapeDataForSpecies(3, 1, 5);
             const auto &collideGeometry = traits.getCollideGeometry(data.raw());
 
             CHECK(collideGeometry.getInsphereRadius() == Approx(2.4));
@@ -54,7 +54,7 @@ TEST_CASE("SmoothWedge: collide geometry") {
 
     SECTION("no subdivisions") {
         SmoothWedgeTraits traits;
-        ShapeData data = traits.shapeDataFor(2, 1, 5);
+        ShapeData data = traits.shapeDataForSpecies(2, 1, 5);
         const auto &collideGeometry = traits.getCollideGeometry(data.raw());
 
         CHECK_THAT(collideGeometry.getCenter(), IsApproxEqual({0, 0, 0}, 1e-12));
@@ -68,7 +68,7 @@ TEST_CASE("SmoothWedge: collide geometry") {
 
     SECTION("3 subdivisions") {
         SmoothWedgeTraits traits;
-        ShapeData data = traits.shapeDataFor(2, 1, 5, 3);
+        ShapeData data = traits.shapeDataForSpecies(2, 1, 5, 3);
         const auto &collideGeometry0 = traits.getCollideGeometry(data.raw(), 0);
         const auto &collideGeometry1 = traits.getCollideGeometry(data.raw(), 1);
         const auto &collideGeometry2 = traits.getCollideGeometry(data.raw(), 2);
@@ -94,7 +94,7 @@ TEST_CASE("SmoothWedgeTraits: serialization") {
     SECTION("default data") {
         SmoothWedgeTraits traits(1, 2, 3, 4);
 
-        ShapeData expected = traits.shapeDataFor(1, 2, 3, 4);
+        ShapeData expected = traits.shapeDataForSpecies(1, 2, 3, 4);
         CHECK(traits.getDataManager().defaultDeserialize({}) == expected);
     }
 
@@ -103,7 +103,7 @@ TEST_CASE("SmoothWedgeTraits: serialization") {
         const auto &manager = traits.getDataManager();
 
         TextualShapeData textualData{{"bottom_r", "1"}, {"top_r", "2"}, {"l", "3"}, {"subdivisions", "4"}};
-        ShapeData shapeData = traits.shapeDataFor(1, 2, 3, 4);
+        ShapeData shapeData = traits.shapeDataForSpecies(1, 2, 3, 4);
         CHECK(manager.serialize(shapeData) == textualData);
         CHECK(manager.deserialize(textualData) == shapeData);
     }
@@ -112,8 +112,8 @@ TEST_CASE("SmoothWedgeTraits: serialization") {
 TEST_CASE("SmoothWedgeTraits: shape data consistency") {
     SmoothWedgeTraits traits(1, 2, 3, 4);
 
-    ShapeData data = traits.shapeDataFor(1, 2, 3, 4);
-    ShapeData differentData = traits.shapeDataFor(5, 6, 7, 8);
+    ShapeData data = traits.shapeDataForSpecies(1, 2, 3, 4);
+    ShapeData differentData = traits.shapeDataForSpecies(5, 6, 7, 8);
     ShapeData defaultDeserializedData = traits.defaultDeserialize({});
     ShapeData deserializedData = traits.deserialize(
         {{"bottom_r", "1"}, {"top_r", "2"}, {"l", "3"}, {"subdivisions", "4"}}
