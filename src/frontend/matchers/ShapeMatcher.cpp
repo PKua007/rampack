@@ -68,6 +68,11 @@ namespace {
 
     auto namedPoints = MatcherDictionary{}.valuesMatch(vector).mapToStdMap<Vector<3>>();
 
+    auto optionalPositiveDouble = MatcherNone{}.mapTo<std::optional<double>>()
+                                | MatcherFloat{}.positive().mapTo<std::optional<double>>();
+    auto optionalNonNegativeDouble = MatcherNone{}.mapTo<std::optional<double>>()
+                                   | MatcherFloat{}.nonNegative().mapTo<std::optional<double>>();
+
 
     MatcherDataclass create_lj_matcher() {
         return MatcherDataclass("lj")
@@ -104,15 +109,20 @@ namespace {
 
     MatcherDataclass create_sphere_matcher() {
         return MatcherDataclass("sphere")
-            .arguments({{"r", MatcherFloat{}.positive()},
+            .arguments({{"r", optionalPositiveDouble, "None"},
                         {"interaction", sphereInteraction, "hard"}})
+            .filter([](const DataclassData &sphere) {
+                return sphere["interaction"].as<std::shared_ptr<CentralInteraction>>() == nullptr
+                       || sphere["r"].as<std::optional<double>>().has_value();
+            })
+            .describe("for interaction != hard, argument 'r' is required")
             .mapTo([](const DataclassData &sphere) -> std::shared_ptr<ShapeTraits> {
-                auto r = sphere["r"].as<double>();
+                auto r = sphere["r"].as<std::optional<double>>();
                 auto interaction = sphere["interaction"].as<std::shared_ptr<CentralInteraction>>();
                 if (interaction == nullptr)
                     return std::make_shared<SphereTraits>(r);
                 else
-                    return std::make_shared<SphereTraits>(r, interaction);
+                    return std::make_shared<SphereTraits>(*r, interaction);
             });
     }
 
@@ -203,12 +213,9 @@ namespace {
     }
 
     MatcherDataclass create_spherocylinder_matcher() {
-        auto optionalDouble =
-            MatcherNone{}.mapTo<std::optional<double>>() | MatcherFloat{}.positive().mapTo<std::optional<double>>();
-
         return MatcherDataclass("spherocylinder")
-            .arguments({{"l", optionalDouble, "None"},
-                        {"r", optionalDouble, "None"}})
+            .arguments({{"l", optionalPositiveDouble, "None"},
+                        {"r", optionalPositiveDouble, "None"}})
             .mapTo([](const DataclassData &sc) -> std::shared_ptr<ShapeTraits> {
                 return std::make_shared<SpherocylinderTraits>(
                     sc["l"].as<std::optional<double>>(),
@@ -429,10 +436,6 @@ namespace {
     }
 
     MatcherDataclass create_smooth_wedge_matcher() {
-        auto positiveDouble = MatcherFloat{}.positive().mapTo<std::optional<double>>();
-        auto noneDouble = MatcherNone{}.mapTo<std::optional<double>>();
-        auto optionalPositiveDouble = noneDouble | positiveDouble;
-
         return MatcherDataclass("smooth_wedge")
             .arguments({{"l", optionalPositiveDouble, "None"},
                         {"bottom_r", optionalPositiveDouble, "None"},
@@ -457,14 +460,6 @@ namespace {
     }
 
     MatcherDataclass create_polyhedral_wedge_matcher() {
-        auto noneDouble = MatcherNone{}.mapTo<std::optional<double>>();
-
-        auto positiveDouble = MatcherFloat{}.positive().mapTo<std::optional<double>>();
-        auto optionalPositiveDouble = noneDouble | positiveDouble;
-
-        auto nonNegativeDouble = MatcherFloat{}.nonNegative().mapTo<std::optional<double>>();
-        auto optionalNonNegativeDouble = noneDouble | nonNegativeDouble;
-
         return MatcherDataclass("polyhedral_wedge")
             .arguments({{"bottom_ax", optionalNonNegativeDouble, "None"},
                         {"bottom_ay", optionalNonNegativeDouble, "None"},
