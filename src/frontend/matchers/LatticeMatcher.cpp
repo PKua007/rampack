@@ -8,7 +8,6 @@
 #include <ZipIterator.hpp>
 
 #include "LatticeMatcher.h"
-#include "ArrangementMatcher.h"
 #include "frontend/PackingFactory.h"
 #include "core/lattice/UnitCell.h"
 #include "core/lattice/UnitCellFactory.h"
@@ -24,7 +23,8 @@
 #include "core/lattice/LayerRotationTransformer.h"
 #include "core/lattice/LayerWiseCellOptimizationTransformer.h"
 #include "core/lattice/RotationRandomizingTransformer.h"
-#include "core/lattice/RotationRandomizingTransformer.h"
+#include "core/lattice/ShapeParameterRandomizingTransformer.h"
+#include "core/lattice/GaussianShapeParameterRandomizer.h"
 
 using namespace pyon::matcher;
 
@@ -189,6 +189,9 @@ namespace {
     MatcherDataclass create_randomize_flip();
     MatcherDataclass create_layer_rotate();
     MatcherDataclass create_randomize_rotations();
+    MatcherDataclass create_randomize_shape_param();
+
+    MatcherDataclass create_gaussian_param_randomizer();
 
     std::vector<std::shared_ptr<LatticeTransformer>> do_create_transformations(const DictionaryData &kwargs);
     PopulatorData do_create_populator(const DictionaryData &kwargs);
@@ -221,6 +224,17 @@ namespace {
         .containsOnlyCharacters("xyz")
         .uniqueCharacters()
         .length(3);
+
+    auto shapeParamName = MatcherString{}
+        .nonEmpty()
+        .filter([](const std::string &str){
+            if (!std::all_of(str.begin(), str.end(), [](char c) { return c == '_' || std::isalnum(c); }))
+                return false;
+            if (std::isdigit(str.front()))
+                return false;
+            return true;
+        })
+        .describe("valid argument name (only letters, numbers and underscore; doesn't start with a number)");
 
 
     MatcherDataclass create_manual_lattice() {
@@ -412,6 +426,16 @@ namespace {
                 return out.str();
             });
         auto shapeParams = MatcherDictionary{}
+            .keysMatch([](const std::string &paramName) {
+                if (paramName.empty())
+                    return false;
+                if (containsWhitespace(paramName))
+                    return false;
+                if (paramName.find_first_of("\"'") != std::string::npos)
+                    return false;
+                return true;
+            })
+            .describe("keys non empty, without whitespace or quotes")
             .valuesMatch(longMatcher | doubleMatcher | stringMatcher | vectorMatcher);
 
         return MatcherDataclass("shape")
@@ -454,11 +478,12 @@ namespace {
 
     MatcherArray create_transformations() {
         auto transformation = create_optimize_cell()
-            | create_optimize_layers()
-            | create_columnar()
-            | create_randomize_flip()
-            | create_layer_rotate()
-            | create_randomize_rotations();
+                              | create_optimize_layers()
+                              | create_columnar()
+                              | create_randomize_flip()
+                              | create_layer_rotate()
+                              | create_randomize_rotations()
+                              | create_randomize_shape_param();
 
         return MatcherArray{}
             .elementsMatch(transformation)
@@ -588,6 +613,41 @@ namespace {
                 auto seed = randomizeRotation["seed"].as<unsigned long>();
                 auto axis = randomizeRotation["axis"].as<Axis>();
                 return std::make_shared<RotationRandomizingTransformer>(axis, seed);
+            });
+    }
+
+    MatcherDataclass create_randomize_shape_param() {
+        auto paramRandomizer = create_gaussian_param_randomizer();
+
+        return MatcherDataclass("randomize_shape_param")
+            .arguments({{"param", shapeParamName},
+                        {"randomizer", paramRandomizer},
+                        {"seed", MatcherInt{}.mapTo<std::mt19937::result_type>()}})
+            .mapTo([](const DataclassData &randomizeParam) -> std::shared_ptr<LatticeTransformer> {
+                auto paramName = randomizeParam["param"].as<std::string>();
+                auto randomizer = randomizeParam["randomizer"].as<std::shared_ptr<ShapeParameterRandomizer>>();
+                auto seed = randomizeParam["seed"].as<std::mt19937::result_type>();
+
+                return std::make_shared<ShapeParameterRandomizingTransformer>(paramName, std::move(randomizer), seed);
+            });
+    }
+
+    MatcherDataclass create_gaussian_param_randomizer() {
+        auto positiveDouble = MatcherFloat{}.positive().mapTo<std::optional<double>>();
+        auto noneDouble = MatcherNone{}.mapTo<std::optional<double>>();
+        auto optionalPositiveDouble = positiveDouble | noneDouble;
+
+        return MatcherDataclass("gaussian")
+            .arguments({{"mean", MatcherFloat{}},
+                        {"stddev", MatcherFloat{}.positive()},
+                        {"cutoff", optionalPositiveDouble}})
+            .mapTo([](const DataclassData &gaussian) -> std::shared_ptr<ShapeParameterRandomizer> {
+                auto mean = gaussian["mean"].as<double>();
+                auto stddev = gaussian["stddev"].as<double>();
+                constexpr auto INF = std::numeric_limits<double>::infinity();
+                auto cutoff = gaussian["cutoff"].as<std::optional<double>>().value_or(INF);
+
+                return std::make_shared<GaussianShapeParameterRandomizer>(mean, stddev, cutoff);
             });
     }
 
