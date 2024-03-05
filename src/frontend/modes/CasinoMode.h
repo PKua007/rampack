@@ -39,9 +39,9 @@ private:
     [[nodiscard]] Simulation::Environment recreateEnvironment(const RampackParameters &params, const PackingLoader &loader) const;
     void verifyDynamicParameter(const DynamicParameter &dynamicParameter, const std::string &parameterName,
                                 const IntegrationRun &run, std::size_t cycleOffset) const;
-    void performIntegration(Simulation &simulation, Simulation::Environment &env, const IntegrationRun &run,
+    void performIntegration(Simulation &simulation, const Simulation::Environment &env, const IntegrationRun &run,
                             const ShapeTraits &shapeTraits, std::size_t cycleOffset, bool isContinuation);
-    void performOverlapRelaxation(Simulation &simulation, Simulation::Environment &env, const OverlapRelaxationRun &run,
+    void performOverlapRelaxation(Simulation &simulation, const Simulation::Environment &env, const OverlapRelaxationRun &run,
                                   std::shared_ptr<ShapeTraits> shapeTraits, std::size_t cycleOffset,
                                   bool isContinuation);
     void performTransformationRun(Simulation &simulation, const TransformationRun &run, const ShapeTraits &shapeTraits);

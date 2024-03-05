@@ -670,3 +670,7 @@ namespace {
 MatcherAlternative LatticeMatcher::create() {
     return create_manual_lattice() | create_automatic_lattice() | create_automatic_cell_dim_lattice();
 }
+
+MatcherAlternative LatticeMatcher::createIrregularLatticeTransformers() {
+    return create_randomize_flip() | create_randomize_rotations() | create_randomize_shape_param();
+}
