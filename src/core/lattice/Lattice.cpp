@@ -10,8 +10,13 @@
 
 
 Lattice::Lattice(const UnitCell &unitCell, const std::array<std::size_t, 3> &dimensions)
-        : cells{unitCell.deepCopy()}, dimensions{dimensions}, isRegular_{true}
+        : Lattice(unitCell.deepCopy(), dimensions)
+{ }
+
+Lattice::Lattice(UnitCell &&unitCell, const std::array<std::size_t, 3> &dimensions)
+        : dimensions{dimensions}, isRegular_{true}
 {
+    this->cells.emplace_back(std::move(unitCell));
     Expects(std::all_of(dimensions.begin(), dimensions.end(), [](std::size_t dim) { return dim > 0; }));
     this->numCells = std::accumulate(this->dimensions.begin(), this->dimensions.end(), 1, std::multiplies<>{});
 }

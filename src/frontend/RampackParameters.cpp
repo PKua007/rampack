@@ -13,7 +13,7 @@ RunBase &RunBase::of(Run &run) {
     return const_cast<RunBase &>(RunBase::of(std::as_const(run)));
 }
 
-inline const SnapshotCollectorRun &SnapshotCollectorRun::of(const Run &run) {
+const SnapshotCollectorRun &SnapshotCollectorRun::of(const Run &run) {
     auto retriever = [](auto &&run) -> const SnapshotCollectorRun & {
         using RunType = std::decay_t<decltype(run)>;
         if constexpr (!std::is_convertible_v<RunType, SnapshotCollectorRun>) {

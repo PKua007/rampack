@@ -52,6 +52,8 @@ struct BaseParameters {
 struct RunBase {
     std::string runName;
     Simulation::Environment environment;
+    std::vector<FileSnapshotWriter> lastSnapshotWriters;
+    std::optional<std::string> ramsnapOut;
 
     static const RunBase &of(const Run &run);
     static RunBase &of(Run &run);
@@ -60,12 +62,10 @@ struct RunBase {
 /**
  * @brief Run, in which snapshots are collected.
  */
-struct SnapshotCollectorRun {
+struct SnapshotCollectorRun : public RunBase {
     std::size_t snapshotEvery{};
     std::shared_ptr<ObservablesCollector> observablesCollector;
     std::optional<std::string> observablesOut;
-    std::vector<FileSnapshotWriter> lastSnapshotWriters;
-    std::optional<std::string> ramsnapOut;
     std::vector<std::shared_ptr<SimulationRecorderFactory>> simulationRecorders;
     std::optional<std::string> ramtrjOut;
 
@@ -73,7 +73,7 @@ struct SnapshotCollectorRun {
     static SnapshotCollectorRun &of(Run &run);
 };
 
-struct IntegrationRun : public RunBase, public SnapshotCollectorRun {
+struct IntegrationRun : public SnapshotCollectorRun {
     std::optional<std::size_t> thermalizationCycles{};
     std::optional<std::size_t> averagingCycles{};
     std::size_t averagingEvery{};
@@ -83,7 +83,7 @@ struct IntegrationRun : public RunBase, public SnapshotCollectorRun {
     std::optional<std::string> bulkObservablesOutPattern;
 };
 
-struct OverlapRelaxationRun : public RunBase, public SnapshotCollectorRun {
+struct OverlapRelaxationRun : public SnapshotCollectorRun {
     std::size_t inlineInfoEvery{};
     std::size_t orientationFixEvery{};
     std::shared_ptr<ShapeTraits> helperShapeTraits;
@@ -92,8 +92,6 @@ struct OverlapRelaxationRun : public RunBase, public SnapshotCollectorRun {
 
 struct TransformationRun : public RunBase {
     std::vector<std::shared_ptr<LatticeTransformer>> transformers;
-    std::vector<FileSnapshotWriter> lastSnapshotWriters;
-    std::optional<std::string> ramsnapOut;
 };
 
 struct RampackParameters {

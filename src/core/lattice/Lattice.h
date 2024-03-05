@@ -44,6 +44,8 @@ public:
      */
     Lattice(const UnitCell &unitCell, const std::array<std::size_t, 3> &dimensions);
 
+    Lattice(UnitCell &&unitCell, const std::array<std::size_t, 3> &dimensions);
+
     /**
      * @brief Returns a read-only specific cell of given integer indices. For a regular lattice it is always the same
      * cell regardless of the indices.

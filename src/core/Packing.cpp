@@ -235,17 +235,17 @@ double Packing::tryScaling(const TriclinicBox &newBox, const Interaction &intera
 
 Shape Packing::operator[](std::size_t i) const {
     Expects(i < this->size());
-    return this->generateShapeView(i);
+    return this->generateShapeView(i, false);
 }
 
 Shape Packing::front() const {
     Expects(!this->empty());
-    return this->generateShapeView(0);
+    return this->generateShapeView(0, false);
 }
 
 Shape Packing::back() const {
     Expects(!this->empty());
-    return this->generateShapeView(this->size() - 1);
+    return this->generateShapeView(this->size() - 1, false);
 }
 
 double Packing::getPackingFraction(const ShapeGeometry &geometry) const {
@@ -1518,5 +1518,13 @@ void Packing::imbueDefaultShapeData(std::vector<Shape> &shapes, const ShapeDataM
     } catch (const ShapeDataSerializationException &e) {
         ExpectsThrow(std::string("Shapes have empty ShapeData and default recreation failed: ") + e.what());
     }
+}
+
+std::vector<Shape> Packing::getShapes() const {
+    std::vector<Shape> shapes;
+    shapes.reserve(this->size());
+    for (std::size_t i{}; i < this->size(); i++)
+        shapes.push_back(this->generateShapeView(i, true));
+    return shapes;
 }
 

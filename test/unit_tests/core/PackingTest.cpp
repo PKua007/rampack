@@ -28,6 +28,9 @@ namespace {
         // Claim it is not convex to force full overlap check on upscaling moves
         [[nodiscard]] bool isConvex() const override { return false; }
         [[nodiscard]] std::size_t getShapeDataSize() const override { return sizeof(Radius); }
+        [[nodiscard]] ShapeData::Comparator getComparator() const override {
+            return ShapeData::Comparator::forType<Radius>();
+        }
 
         [[nodiscard]] bool overlapBetween(const Vector<3> &pos1,
                                           [[maybe_unused]] const Matrix<3, 3> &orientation1,
@@ -67,6 +70,9 @@ namespace {
         [[nodiscard]] bool hasWallPart() const override { return false; }
         [[nodiscard]] bool isConvex() const override { return false; }
         [[nodiscard]] std::size_t getShapeDataSize() const override { return sizeof(Charge); }
+        [[nodiscard]] ShapeData::Comparator getComparator() const override {
+            return ShapeData::Comparator::forType<Charge>();
+        }
 
         [[nodiscard]] double calculateEnergyBetween(const Vector<3> &pos1,
                                                     [[maybe_unused]] const Matrix<3, 3> &orientation1,
@@ -107,6 +113,9 @@ namespace {
         [[nodiscard]] bool hasWallPart() const override { return true; }
         [[nodiscard]] bool isConvex() const override { return false; }
         [[nodiscard]] std::size_t getShapeDataSize() const override { return sizeof(Tag); }
+        [[nodiscard]] ShapeData::Comparator getComparator() const override {
+            return ShapeData::Comparator::forType<Tag>();
+        }
 
         [[nodiscard]] bool overlapBetween(const Vector<3> &pos1,
                                           [[maybe_unused]] const Matrix<3, 3> &orientation1,
@@ -190,6 +199,9 @@ namespace {
         [[nodiscard]] bool hasWallPart() const override { return false; }
         [[nodiscard]] bool isConvex() const override { return false; }
         [[nodiscard]] std::size_t getShapeDataSize() const override { return sizeof(Tag); }
+        [[nodiscard]] ShapeData::Comparator getComparator() const override {
+            return ShapeData::Comparator::forType<Tag>();
+        }
 
         [[nodiscard]] double calculateEnergyBetween(const Vector<3> &pos1,
                                                     [[maybe_unused]] const Matrix<3, 3> &orientation1,
@@ -836,4 +848,55 @@ TEST_CASE("Packing: named points dumping") {
     REQUIRE(points.size() == 2);
     CHECK_THAT(points[0], IsApproxEqual({1.5, 0.5, 0.5}, 1e-12));
     CHECK_THAT(points[1], IsApproxEqual({0.5, 4.5, 0.5}, 1e-12));
+}
+
+TEST_CASE("Packing: access") {
+    using Radius = PolydisperseSphereHardCoreInteraction::Radius;
+    Radius radius = 0.5;
+    PolydisperseSphereHardCoreInteraction hardCore;
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    const auto NO_ROT = Matrix<3, 3>::identity();
+    Shape shape0({1, 1, 1}, NO_ROT, radius);
+    Shape shape1({3, 3, 3}, NO_ROT, radius);
+    std::vector<Shape> shapes{shape0, shape1};
+    Packing packing({4, 4, 4}, shapes, std::move(pbc), hardCore, hardCore);
+
+    SECTION("operator[]") {
+        auto packingShape1 = packing[1];
+        CHECK(packingShape1 == shape1);
+        CHECK_FALSE(packingShape1.getData().isManaged());
+    }
+
+    SECTION("front") {
+        auto packingShape0 = packing.front();
+        CHECK(packingShape0 == shape0);
+        CHECK_FALSE(packingShape0.getData().isManaged());
+    }
+
+    SECTION("back") {
+        auto packingShape1 = packing.back();
+        CHECK(packingShape1 == shape1);
+        CHECK_FALSE(packingShape1.getData().isManaged());
+    }
+
+    SECTION("iterator") {
+        auto it = packing.begin();
+
+        auto packingShape0 = *(it++);
+        CHECK(packingShape0 == shape0);
+        CHECK_FALSE(packingShape0.getData().isManaged());
+
+        auto packingShape1 = *(it++);
+        CHECK(packingShape1 == shape1);
+        CHECK_FALSE(packingShape1.getData().isManaged());
+
+        CHECK(it == packing.end());
+    }
+
+    SECTION("getShapes") {
+        auto packingShapes = packing.getShapes();
+        REQUIRE(packingShapes == shapes);
+        CHECK(packingShapes[0].getData().isManaged());
+        CHECK(packingShapes[1].getData().isManaged());
+    }
 }
