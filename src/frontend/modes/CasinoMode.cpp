@@ -169,7 +169,7 @@ int CasinoMode::main(int argc, char **argv) {
     auto env = this->recreateEnvironment(rampackParams, packingLoader);
 
     // Perform simulations starting from initial run
-    Simulation simulation(std::move(packing), baseParams.seed, baseParams.domainDivisions, baseParams.saveOnSignal);
+    Simulation simulation(std::move(packing), baseParams.seed, env, baseParams.domainDivisions, baseParams.saveOnSignal);
 
     for (std::size_t i = startRunIndex; i < rampackParams.runs.size(); i++) {
         const auto &run = rampackParams.runs[i];
@@ -204,7 +204,7 @@ int CasinoMode::main(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-void CasinoMode::performIntegration(Simulation &simulation, Simulation::Environment &env, const IntegrationRun &run,
+void CasinoMode::performIntegration(Simulation &simulation, const Simulation::Environment &env, const IntegrationRun &run,
                                     const ShapeTraits &shapeTraits, std::size_t cycleOffset, bool isContinuation)
 {
     this->logger.setAdditionalText(run.runName);
@@ -277,7 +277,7 @@ void CasinoMode::performIntegration(Simulation &simulation, Simulation::Environm
     }
 }
 
-void CasinoMode::performOverlapRelaxation(Simulation &simulation, Simulation::Environment &env,
+void CasinoMode::performOverlapRelaxation(Simulation &simulation, const Simulation::Environment &env,
                                           const OverlapRelaxationRun &run, std::shared_ptr<ShapeTraits> shapeTraits,
                                           std::size_t cycleOffset, bool isContinuation)
 {
@@ -325,7 +325,10 @@ void CasinoMode::performTransformationRun(Simulation &simulation, const Transfor
 
     auto packing = simulation.releasePacking();
     auto shapes = packing->getShapes();
-    UnitCell cell(packing->getBox(), std::move(shapes));
+    const auto &box = packing->getBox();
+    for (auto &shape : shapes)
+        shape.setPosition(box.absoluteToRelative(shape.getPosition()));
+    UnitCell cell(box, std::move(shapes));
     Lattice lattice(std::move(cell), {1, 1, 1});
 
     for (const auto &transformer : run.transformers) {
@@ -336,6 +339,10 @@ void CasinoMode::performTransformationRun(Simulation &simulation, const Transfor
         this->logger << "done." << std::endl;
     }
     this->logger << "All transformations finished." << std::endl;
+
+    packing->reset(lattice.generateMolecules(), lattice.getLatticeBox(),
+                   shapeTraits.getInteraction(), shapeTraits.getDataManager());
+    simulation.resetPacking(std::move(packing));
 
     for (const auto &writer : run.lastSnapshotWriters) {
         try {

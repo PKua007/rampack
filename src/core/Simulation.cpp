@@ -54,9 +54,9 @@ Simulation::Parameter::Parameter(double value) : parameter{std::make_shared<Cons
 Simulation::Simulation(std::unique_ptr<Packing> packing, unsigned long seed,
                        Simulation::Environment initialEnv, const std::array<std::size_t, 3> &domainDivisions,
                        bool handleSignals)
-        : environment{std::move(initialEnv)}, domainDivisions{domainDivisions}
+        : environment{std::move(initialEnv)}, packing{std::move(packing)}, domainDivisions{domainDivisions}
 {
-    this->resetPacking(std::move(packing));
+    Expects(this->packing);
 
     this->numDomains = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies<>{});
     Expects(this->numDomains > 0);
@@ -70,6 +70,8 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, unsigned long seed,
         std::signal(SIGINT, sigint_handler);
         std::signal(SIGTERM, sigint_handler);
     }
+
+    this->reset();
 }
 
 Simulation::Simulation(std::unique_ptr<Packing> packing, unsigned long seed,
@@ -309,23 +311,33 @@ void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std:
 }
 
 void Simulation::reset() {
-    std::uniform_int_distribution<int>(0, this->packing->size() - 1);
+    if (this->packing != nullptr)
+        this->packing->resetCounters();
+
+    if (this->observablesCollector != nullptr)
+        this->observablesCollector->clear();
+
+    std::size_t packingSize = this->packing != nullptr ? this->packing->size() : 0;
+    this->allParticleIndices.resize(packingSize);
+    std::iota(this->allParticleIndices.begin(), this->allParticleIndices.end(), 0);
+
     std::size_t numMoveSamplers = this->environment.getMoveSamplers().size();
     this->moveCounters.resize(numMoveSamplers);
-    this->adjustmentCancelReported.resize(numMoveSamplers, false);
     for (auto &moveCounter : this->moveCounters)
         moveCounter.reset();
     this->scalingCounter.reset();
+
+    this->adjustmentCancelReported.resize(numMoveSamplers, false);
     std::fill(this->adjustmentCancelReported.begin(), this->adjustmentCancelReported.end(), false);
-    this->packing->resetCounters();
+
     this->moveMicroseconds = 0;
     this->scalingMicroseconds = 0;
     this->domainDecompositionMicroseconds = 0;
     this->totalMicroseconds = 0;
-    this->observablesCollector->clear();
     this->performedCycles = 0;
     this->totalCycles = 0;
     this->maxCycles = 0;
+
     sigint_received = false;
 }
 
@@ -809,10 +821,14 @@ void Simulation::updateThermodynamicParameters() {
 
 void Simulation::resetPacking(std::unique_ptr<Packing> newPacking) {
     Expects(!newPacking->empty());
-
     this->packing = std::move(newPacking);
-    this->allParticleIndices.resize(this->packing->size());
-    std::iota(this->allParticleIndices.begin(), this->allParticleIndices.end(), 0);
+    this->reset();
+}
+
+std::unique_ptr<Packing> Simulation::releasePacking() {
+    auto packing_ = std::move(this->packing);
+    this->reset();
+    return packing_;
 }
 
 void Simulation::Environment::combine(Simulation::Environment &other) {

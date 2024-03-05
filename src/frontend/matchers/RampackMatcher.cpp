@@ -15,6 +15,7 @@
 #include "ObservablesMatcher.h"
 #include "FileSnapshotWriterMatcher.h"
 #include "SimulationRecorderFactoryMatcher.h"
+#include "LatticeMatcher.h"
 
 #include "core/ObservablesCollector.h"
 #include "core/io/RamsnapWriter.h"
@@ -44,6 +45,7 @@ namespace {
     MatcherArray create_bulk_observables_matcher();
     MatcherDataclass create_integration();
     MatcherDataclass create_overlap_relaxation();
+    MatcherDataclass create_transform();
     MatcherAlternative create_run();
     MatcherArray create_runs();
     MatcherAlternative create_move_types();
@@ -286,8 +288,31 @@ namespace {
             });
     }
 
+    MatcherDataclass create_transform() {
+        auto transformations = MatcherArray{}
+            .elementsMatch(LatticeMatcher::createIrregularLatticeTransformers())
+            .nonEmpty()
+            .mapToStdVector<std::shared_ptr<LatticeTransformer>>();
+
+        return MatcherDataclass("transform")
+            .arguments({{"run_name", runName},
+                        {"transformations", transformations},
+                        {"output_last_snapshot", create_output_last_snapshot(), "[]"}})
+            .mapTo([](const DataclassData &transform) -> Run {
+                TransformationRun run;
+
+                run.runName = transform["run_name"].as<std::string>();
+                run.environment = {};
+                run.lastSnapshotWriters = transform["output_last_snapshot"].as<std::vector<FileSnapshotWriter>>();
+                run.ramsnapOut = fetch_ramsnap_out(run.lastSnapshotWriters);
+                run.transformers = transform["transformations"].as<std::vector<std::shared_ptr<LatticeTransformer>>>();
+
+                return run;
+            });
+    }
+
     MatcherAlternative create_run() {
-        return create_integration() | create_overlap_relaxation();
+        return create_integration() | create_overlap_relaxation() | create_transform();
     }
 
     MatcherArray create_runs() {

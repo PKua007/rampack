@@ -11,6 +11,7 @@
 class LatticeMatcher {
 public:
     static pyon::matcher::MatcherAlternative create();
+    static pyon::matcher::MatcherAlternative createIrregularLatticeTransformers();
 };
 
 
