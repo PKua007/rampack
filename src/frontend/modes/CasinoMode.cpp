@@ -559,26 +559,24 @@ std::string CasinoMode::formatMoveKey(const std::string &groupName, const std::s
     return moveKey;
 }
 
-CasinoMode::OnTheFlyOutput::OnTheFlyOutput(const Run &run, std::size_t numParticles, std::size_t absoluteCyclesNumber,
-                                           bool isContinuation, Logger &logger)
-        : absoluteCyclesNumber{absoluteCyclesNumber}, isContinuation{isContinuation}, logger{logger}
+CasinoMode::OnTheFlyOutput::OnTheFlyOutput(const SnapshotCollectorRun &run, std::size_t numParticles,
+                                           std::size_t absoluteCyclesNumber, bool isContinuation, Logger &logger)
+        : absoluteCyclesNumber{absoluteCyclesNumber}, snapshotEvery{run.snapshotEvery}, isContinuation{isContinuation},
+          logger{logger}, collector{run.observablesCollector}
 {
-    this->snapshotEvery = std::visit([](auto &&run) { return run.snapshotEvery; }, run);
-    std::optional<std::string> observablesOut = std::visit([](auto &&run) { return run.observablesOut; }, run);
     this->roundedCyclesNumber = this->absoluteCyclesNumber - this->absoluteCyclesNumber % this->snapshotEvery;
 
     std::vector<std::pair<std::string, std::size_t>> lastCycleNumbers;
 
-    for (const auto &factory : std::visit([](auto &&run) { return run.simulationRecorders; }, run)) {
+    for (const auto &factory : run.simulationRecorders) {
         auto recorder = factory->create(numParticles, this->snapshotEvery, isContinuation, this->logger);
         lastCycleNumbers.emplace_back(factory->getFilename(), recorder->getLastCycleNumber());
         this->recorders.push_back(std::move(recorder));
     }
 
-    this->collector = std::visit([](auto &&run) { return run.observablesCollector; }, run);
-    if (observablesOut.has_value()) {
-        this->attachSnapshotOut(*observablesOut);
-        lastCycleNumbers.emplace_back(*observablesOut, this->collector->getOnTheFlyOutputLastCycleNumber());
+    if (run.observablesOut.has_value()) {
+        this->attachSnapshotOut(*run.observablesOut);
+        lastCycleNumbers.emplace_back(*run.observablesOut, this->collector->getOnTheFlyOutputLastCycleNumber());
     }
 
     this->verifyLastCycleNumbers(lastCycleNumbers);

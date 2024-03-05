@@ -33,8 +33,8 @@ private:
         std::shared_ptr<ObservablesCollector> collector;
         std::vector<std::unique_ptr<SimulationRecorder>> recorders;
 
-        OnTheFlyOutput(const Run &run, std::size_t numParticles, std::size_t absoluteCyclesNumber, bool isContinuation,
-                       Logger &logger);
+        OnTheFlyOutput(const SnapshotCollectorRun &run, std::size_t numParticles, std::size_t absoluteCyclesNumber,
+                       bool isContinuation, Logger &logger);
     };
 
 

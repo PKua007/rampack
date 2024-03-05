@@ -19,7 +19,20 @@
 #include "core/ObservablesCollector.h"
 #include "FileSnapshotWriter.h"
 #include "SimulationRecorderFactory.h"
+#include "core/lattice/LatticeTransformer.h"
+#include "utils/Exceptions.h"
+#include "utils/Utils.h"
 
+
+class UnsupportedParametersSection : public InternalError {
+public:
+    using InternalError::InternalError;
+};
+
+struct IntegrationRun;
+struct OverlapRelaxationRun;
+struct TransformationRun;
+using Run = std::variant<IntegrationRun, OverlapRelaxationRun, TransformationRun>;
 
 struct BaseParameters {
     Version version;
@@ -33,55 +46,62 @@ struct BaseParameters {
     bool saveOnSignal{};
 };
 
-struct IntegrationRun {
+/**
+ * @brief Base class for all runs containing mandatory fields.
+ */
+struct RunBase {
     std::string runName;
     Simulation::Environment environment;
+
+    static const RunBase &of(const Run &run);
+    static RunBase &of(Run &run);
+};
+
+/**
+ * @brief Run, in which snapshots are collected.
+ */
+struct SnapshotCollectorRun {
+    std::size_t snapshotEvery{};
+    std::shared_ptr<ObservablesCollector> observablesCollector;
+    std::optional<std::string> observablesOut;
+    std::vector<FileSnapshotWriter> lastSnapshotWriters;
+    std::optional<std::string> ramsnapOut;
+    std::vector<std::shared_ptr<SimulationRecorderFactory>> simulationRecorders;
+    std::optional<std::string> ramtrjOut;
+
+    static const SnapshotCollectorRun &of(const Run &run);
+    static SnapshotCollectorRun &of(Run &run);
+};
+
+struct IntegrationRun : public RunBase, public SnapshotCollectorRun {
     std::optional<std::size_t> thermalizationCycles{};
     std::optional<std::size_t> averagingCycles{};
-    std::size_t snapshotEvery{};
     std::size_t averagingEvery{};
     std::size_t inlineInfoEvery{};
     std::size_t orientationFixEvery{};
-    std::vector<FileSnapshotWriter> lastSnapshotWriters;
-    std::optional<std::string> ramsnapOut;
-    std::vector<std::shared_ptr<SimulationRecorderFactory>> simulationRecorders;
-    std::optional<std::string> ramtrjOut;
-    std::shared_ptr<ObservablesCollector> observablesCollector;
     std::optional<std::string> averagesOut;
-    std::optional<std::string> observablesOut;
     std::optional<std::string> bulkObservablesOutPattern;
 };
 
-struct OverlapRelaxationRun  {
-    std::string runName;
-    Simulation::Environment environment;
-    std::size_t snapshotEvery{};
+struct OverlapRelaxationRun : public RunBase, public SnapshotCollectorRun {
     std::size_t inlineInfoEvery{};
     std::size_t orientationFixEvery{};
     std::shared_ptr<ShapeTraits> helperShapeTraits;
-    std::vector<FileSnapshotWriter> lastSnapshotWriters;
-    std::optional<std::string> ramsnapOut;
-    std::vector<std::shared_ptr<SimulationRecorderFactory>> simulationRecorders;
-    std::optional<std::string> ramtrjOut;
-    std::shared_ptr<ObservablesCollector> observablesCollector;
-    std::optional<std::string> observablesOut;
+
 };
 
-using Run = std::variant<IntegrationRun, OverlapRelaxationRun>;
+struct TransformationRun : public RunBase {
+    std::vector<std::shared_ptr<LatticeTransformer>> transformers;
+    std::vector<FileSnapshotWriter> lastSnapshotWriters;
+    std::optional<std::string> ramsnapOut;
+};
 
 struct RampackParameters {
     BaseParameters baseParameters;
     std::vector<Run> runs;
 };
 
-
-inline void combine_environment(Simulation::Environment &env, const Run &run) {
-    auto environmentGetter = [](const auto &run) {
-        return run.environment;
-    };
-    auto runEnv = std::visit(environmentGetter, run);
-    env.combine(runEnv);
-}
+void combine_environment(Simulation::Environment &env, const Run &run);
 
 
 #endif //RAMPACK_RAMPACKPARAMETERS_H

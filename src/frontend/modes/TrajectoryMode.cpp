@@ -159,8 +159,15 @@ int TrajectoryMode::main(int argc, char **argv) {
     std::size_t startRunIndex = PackingLoader::findStartRunIndex(runName, rampackParams.runs);
     const auto &startRun = rampackParams.runs[startRunIndex];
 
-    auto ramtrjOut = std::visit([](auto &&run) { return run.ramtrjOut; }, startRun);
-    std::string foundRunName = std::visit([](const auto &run) { return run.runName; }, startRun);
+    std::string foundRunName = RunBase::of(startRun).runName;
+
+    std::optional<std::string> ramtrjOut;
+    try {
+        const auto &collectorRun = SnapshotCollectorRun::of(startRun);
+        ramtrjOut = collectorRun.ramtrjOut;
+    } catch (const UnsupportedParametersSection &e) {
+        throw ValidationException("The type of run '" + foundRunName + "' doest not support trajectory recording");
+    }
 
     if (!ramtrjOut.has_value())
         throw ValidationException("RAMTRJ trajectory was not recorded for the run '" + foundRunName + "'");
