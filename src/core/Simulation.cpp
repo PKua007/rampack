@@ -54,10 +54,9 @@ Simulation::Parameter::Parameter(double value) : parameter{std::make_shared<Cons
 Simulation::Simulation(std::unique_ptr<Packing> packing, unsigned long seed,
                        Simulation::Environment initialEnv, const std::array<std::size_t, 3> &domainDivisions,
                        bool handleSignals)
-        : environment{std::move(initialEnv)}, packing{std::move(packing)}, allParticleIndices(this->packing->size()),
-          domainDivisions{domainDivisions}
+        : environment{std::move(initialEnv)}, domainDivisions{domainDivisions}
 {
-    Expects(!this->packing->empty());
+    this->resetPacking(std::move(packing));
 
     this->numDomains = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1, std::multiplies<>{});
     Expects(this->numDomains > 0);
@@ -66,8 +65,6 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, unsigned long seed,
     this->mts.reserve(this->numDomains);
     for (std::size_t i{}; i < this->numDomains; i++)
         this->mts.emplace_back(seed + i);
-
-    std::iota(this->allParticleIndices.begin(), this->allParticleIndices.end(), 0);
 
     if (handleSignals) {
         std::signal(SIGINT, sigint_handler);
@@ -99,6 +96,8 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
                            std::shared_ptr<ObservablesCollector> observablesCollector_,
                            std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger)
 {
+    ExpectsMsg(this->packing, "Packing was released");
+
     Expects(params.thermalisationCycles > 0 || params.averagingCycles > 0);
     Expects(params.inlineInfoEvery > 0);
     Expects(params.rotationMatrixFixEvery > 0);
@@ -205,6 +204,8 @@ void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::siz
                            std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger,
                            std::size_t cycleOffset)
 {
+    ExpectsMsg(this->packing, "Packing was released");
+
     Environment env;
     env.setTemperature(std::move(temperature_));
     env.setPressure(std::move(pressure_));
@@ -225,6 +226,8 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
                                std::shared_ptr<ObservablesCollector> observablesCollector_,
                                std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger)
 {
+    ExpectsMsg(this->packing, "Packing was released");
+
     Expects(params.inlineInfoEvery > 0);
     Expects(params.rotationMatrixFixEvery > 0);
     Expects(params.snapshotEvery > 0);
@@ -291,6 +294,8 @@ void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std:
                                std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger,
                                std::size_t cycleOffset)
 {
+    ExpectsMsg(this->packing, "Packing was released");
+
     Environment env;
     env.setTemperature(std::move(temperature_));
     env.setPressure(std::move(pressure_));
@@ -800,6 +805,14 @@ void Simulation::updateThermodynamicParameters() {
     else
         this->pressure = 0;
     this->observablesCollector->setThermodynamicParameters(this->temperature, this->pressure);
+}
+
+void Simulation::resetPacking(std::unique_ptr<Packing> newPacking) {
+    Expects(!newPacking->empty());
+
+    this->packing = std::move(newPacking);
+    this->allParticleIndices.resize(this->packing->size());
+    std::iota(this->allParticleIndices.begin(), this->allParticleIndices.end(), 0);
 }
 
 void Simulation::Environment::combine(Simulation::Environment &other) {

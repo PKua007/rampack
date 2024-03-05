@@ -403,7 +403,8 @@ public:
     [[nodiscard]] double getTotalMicroseconds() const { return this->totalMicroseconds; }
 
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }
-
+    [[nodiscard]] std::unique_ptr<Packing> releasePacking() { return std::move(this->packing); }
+    void resetPacking(std::unique_ptr<Packing> newPacking);
 
     [[nodiscard]] std::size_t getTotalCycles() const { return this->totalCycles; }
 

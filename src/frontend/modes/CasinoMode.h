@@ -25,9 +25,7 @@ private:
 
         void attachSnapshotOut(const std::string &filename) const;
         void verifyLastCycleNumbers(const std::vector<std::pair<std::string, std::size_t>> &lastCycleNumbers) const;
-
-        void
-        throwInconsistencyException(const std::vector<std::pair<std::string, std::size_t>> &lastCycleNumbers) const;
+        void throwInconsistencyException(const std::vector<std::pair<std::string, std::size_t>> &lastCycleNumbers) const;
 
     public:
         std::shared_ptr<ObservablesCollector> collector;
@@ -46,6 +44,7 @@ private:
     void performOverlapRelaxation(Simulation &simulation, Simulation::Environment &env, const OverlapRelaxationRun &run,
                                   std::shared_ptr<ShapeTraits> shapeTraits, std::size_t cycleOffset,
                                   bool isContinuation);
+    void performTransformationRun(Simulation &simulation, const TransformationRun &run, const ShapeTraits &shapeTraits);
     void overwriteMoveStepSizes(Simulation::Environment &env,
                                 const std::map<std::string, std::string> &packingAuxInfo) const;
     void printPerformanceInfo(const Simulation &simulation);

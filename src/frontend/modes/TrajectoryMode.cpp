@@ -379,7 +379,7 @@ std::string TrajectoryMode::getDefaultRunName(const std::vector<Run> &runs) {
     errorOut << std::endl;
     for (std::size_t i{}, size = runs.size(); i < size; i++) {
         const auto &run =runs[i];
-        errorOut << "- " << std::visit([](const auto &run) { return run.runName; }, run);
+        errorOut << "- " << RunBase::of(run).runName;
         if (i == 0)
             errorOut << " (.first)" << std::endl;
         else if (i == size - 1)

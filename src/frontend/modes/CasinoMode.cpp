@@ -187,6 +187,9 @@ int CasinoMode::main(int argc, char **argv) {
             const auto &overlapRelaxationRun = std::get<OverlapRelaxationRun>(run);
             this->performOverlapRelaxation(simulation, env, overlapRelaxationRun, shapeTraits, cycleOffset,
                                            isContinuation);
+        } else if (std::holds_alternative<TransformationRun>(run)) {
+            const auto &transformationRun = std::get<TransformationRun>(run);
+            this->performTransformationRun(simulation, transformationRun, *shapeTraits);
         } else {
             AssertThrow("Unimplemented run type");
         }
@@ -305,6 +308,38 @@ void CasinoMode::performOverlapRelaxation(Simulation &simulation, Simulation::En
     for (const auto &writer : run.lastSnapshotWriters) {
         try {
             writer.storeSnapshot(simulation, *shapeTraits, this->logger);
+        } catch (const FileException &ex) {
+            this->logger.error() << ex.what() << std::endl;
+        }
+    }
+}
+
+void CasinoMode::performTransformationRun(Simulation &simulation, const TransformationRun &run,
+                                          const ShapeTraits &shapeTraits)
+{
+    this->logger.setAdditionalText(run.runName);
+    this->logger.info() << std::endl;
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+    this->logger << "Performing set of transformation '" << run.runName << "'" << std::endl;
+    this->logger << "--------------------------------------------------------------------" << std::endl;
+
+    auto packing = simulation.releasePacking();
+    auto shapes = packing->getShapes();
+    UnitCell cell(packing->getBox(), std::move(shapes));
+    Lattice lattice(std::move(cell), {1, 1, 1});
+
+    for (const auto &transformer : run.transformers) {
+        const auto &transformerRef = *transformer;
+        std::string transformerName = demangle(typeid(transformerRef).name());
+        this->logger << "Applying " << transformerName << "::transform... " << std::flush;
+        transformer->transform(lattice, shapeTraits);
+        this->logger << "done." << std::endl;
+    }
+    this->logger << "All transformations finished." << std::endl;
+
+    for (const auto &writer : run.lastSnapshotWriters) {
+        try {
+            writer.storeSnapshot(simulation, shapeTraits, this->logger);
         } catch (const FileException &ex) {
             this->logger.error() << ex.what() << std::endl;
         }

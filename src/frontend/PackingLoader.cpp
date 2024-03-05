@@ -36,8 +36,7 @@ void PackingLoader::restorePacking(const Run &startingPackingRun, std::unique_pt
                                    const Interaction &interaction, const ShapeDataManager &dataManager,
                                    std::size_t moveThreads, std::size_t scalingThreads)
 {
-    auto packingFilenameGetter = [](auto &&run) { return *run.ramsnapOut; };
-    std::string startingPackingFilename = std::visit(packingFilenameGetter, startingPackingRun);
+    std::string startingPackingFilename = *RunBase::of(startingPackingRun).ramsnapOut;
     std::ifstream packingFile(startingPackingFilename);
     ValidateOpenedDesc(packingFile, startingPackingFilename, "to load initial packing");
 
@@ -45,8 +44,7 @@ void PackingLoader::restorePacking(const Run &startingPackingRun, std::unique_pt
     this->auxInfo = this->packing->restore(packingFile, interaction, dataManager);
     this->isRestored_ = true;
 
-    auto runNameGetter = [](auto &&run) { return run.runName; };
-    std::string startingRunName = std::visit(runNameGetter, startingPackingRun);
+    std::string startingRunName = RunBase::of(startingPackingRun).runName;
     this->logger.info() << "Loaded packing '" << startingPackingFilename << "' from the run '" << startingRunName;
     this->logger << "' as a starting point." << std::endl;
 }
@@ -132,11 +130,9 @@ void PackingLoader::warnIfOverlapRelaxation() const {
 }
 
 bool PackingLoader::allRunsHaveDatOutput() const {
-    auto hasDatOutput = [](const auto &params) {
-        auto ramsnapOutGetter = [](auto &&run) { return run.ramsnapOut; };
-        return std::visit(ramsnapOutGetter, params).has_value();
-    };
-    return std::all_of(this->runsParameters.begin(), this->runsParameters.end(), hasDatOutput);
+    return std::all_of(this->runsParameters.begin(), this->runsParameters.end(), [](const Run &run) {
+        return RunBase::of(run).ramsnapOut.has_value();
+    });
 }
 
 void PackingLoader::logRunsStatus(const std::vector<PerformedRunData> &runDatas) const {
@@ -163,9 +159,10 @@ std::vector<PackingLoader::PerformedRunData> PackingLoader::gatherRunData() cons
     std::vector<PerformedRunData> runDatas;
     runDatas.reserve(runsParameters.size());
     for (const auto &runParams : runsParameters) {
+        const auto &runBase = RunBase::of(runParams);
+
         PerformedRunData runData;
-        auto runNameGetter = [](auto &&run) { return run.runName; };
-        runData.runName = std::visit(runNameGetter, runParams);
+        runData.runName = runBase.runName;
 
         if (std::holds_alternative<IntegrationRun>(runParams)) {
             const auto &integrationRun = std::get<IntegrationRun>(runParams);
@@ -175,8 +172,7 @@ std::vector<PackingLoader::PerformedRunData> PackingLoader::gatherRunData() cons
             runData.expectedCycles = 0;
         }
 
-        auto packingFilenameGetter = [](auto &&run) { return *run.ramsnapOut; };
-        auto packingFilename = std::visit(packingFilenameGetter, runParams);
+        auto packingFilename = *runBase.ramsnapOut;
         std::ifstream ramsnapInput(packingFilename);
         if (ramsnapInput) {
             runData.wasPerformed = true;
@@ -206,8 +202,7 @@ std::size_t PackingLoader::findStartRunIndex(const std::string &runName, const s
         return runsParameters.size() - 1;
 
     auto nameMatchesStartFrom = [&runName](const auto &params) {
-        auto runNameGetter = [](auto &&run) { return run.runName; };
-        return std::visit(runNameGetter, params) == runName;
+        return RunBase::of(params).runName == runName;
     };
     auto it = std::find_if(runsParameters.begin(), runsParameters.end(), nameMatchesStartFrom);
 

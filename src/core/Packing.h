@@ -157,13 +157,13 @@ private:
                                                     const Interaction &interaction) const;
 
     // Must be inline so that the iterator is inlined by the optimizer
-    [[nodiscard]] Shape generateShapeView(std::size_t idx) const {
+    [[nodiscard]] Shape generateShapeView(std::size_t idx, bool managed) const {
         const auto &pos = this->shapePositions[idx];
         const auto &rot = this->shapeOrientations[idx];
 
         std::size_t dataSize = this->shapeDataSize;
         const std::byte *data = this->shapeDatas.data() + (idx * dataSize);
-        ShapeData shapeData(data, dataSize, this->comparator, false);
+        ShapeData shapeData(data, dataSize, this->comparator, managed);
 
         return Shape(pos, rot, std::move(shapeData));
     }
@@ -200,7 +200,7 @@ public:
 
         bool operator==(const PackingConstIterator &other) const { return this->idx == other.idx; }
         bool operator!=(const PackingConstIterator &other) const { return !(*this == other); }
-        value_type operator*() const { return this->packing->generateShapeView(this->idx); }
+        value_type operator*() const { return this->packing->generateShapeView(this->idx, false); }
     };
 
     friend class PackingConstIterator;
@@ -548,6 +548,8 @@ public:
 
     [[nodiscard]] double getTotalRangeRadius() const;
     [[nodiscard]] double getRangeRadius() const;
+
+    [[nodiscard]] std::vector<Shape> getShapes() const;
 };
 
 

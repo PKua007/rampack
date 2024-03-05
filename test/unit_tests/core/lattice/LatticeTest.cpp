@@ -161,11 +161,23 @@ TEST_CASE("Lattice: not normalized") {
     }
 }
 
-TEST_CASE("Lattice: performing deep copy of a unit cell") {
+TEST_CASE("Lattice: shallow/deep copy of a unit cell") {
     auto boxPtr = std::make_shared<TriclinicBox>(std::array<double, 3>{1, 2, 3});
-    Lattice lattice(UnitCell(boxPtr, {Shape({0.5, 0.5, 0.5})}), {2, 3, 1});
+    UnitCell cell(boxPtr, {Shape({0.5, 0.5, 0.5})});
 
-    *boxPtr = TriclinicBox(std::array<double, 3>{1, 2, 6});
+    SECTION("const UnitCell & -> deep copy") {
+        Lattice lattice(cell, {2, 3, 1});
 
-    CHECK(lattice.getCellBox() == TriclinicBox(std::array<double, 3>{1, 2, 3}));
+        *boxPtr = TriclinicBox(std::array<double, 3>{1, 2, 6});
+
+        CHECK(lattice.getCellBox() == TriclinicBox(std::array<double, 3>{1, 2, 3}));
+    }
+
+    SECTION("UnitCell && -> shallow copy") {
+        Lattice lattice(std::move(cell), {2, 3, 1});
+
+        *boxPtr = TriclinicBox(std::array<double, 3>{1, 2, 6});
+
+        CHECK(lattice.getCellBox() == TriclinicBox(std::array<double, 3>{1, 2, 6}));
+    }
 }
