@@ -154,8 +154,8 @@ int CasinoMode::main(int argc, char **argv) {
         optionalContinuationCycles = continuationCycles;
 
     PackingLoader packingLoader(this->logger, optionalStartFrom, optionalContinuationCycles, rampackParams.runs);
-    auto packing = this->recreatePacking(packingLoader, rampackParams.baseParameters, *shapeTraits,
-                                         baseParams.scalingThreads);
+    auto packing = CasinoMode::recreatePacking(packingLoader, rampackParams.baseParameters, *shapeTraits,
+                                               baseParams.scalingThreads);
 
     if (packingLoader.isAllFinished()) {
         this->logger.warn() << "No runs left to be performed. Exiting." << std::endl;
@@ -177,18 +177,21 @@ int CasinoMode::main(int argc, char **argv) {
         if (i != startRunIndex)
             combine_environment(env, run);
 
-        if (std::holds_alternative<IntegrationRun>(run)) {
-            const auto &integrationRun = std::get<IntegrationRun>(run);
+        if (SimulatingRun::isInstance(run))
+            CasinoMode::verifyIfEnvComplete(env, run);
+
+        if (IntegrationRun::isInstance(run)) {
+            const auto &integrationRun = IntegrationRun::of(run);
             this->verifyDynamicParameter(env.getTemperature(), "temperature", integrationRun, cycleOffset);
             if (env.isBoxScalingEnabled())
                 this->verifyDynamicParameter(env.getPressure(), "pressure", integrationRun, cycleOffset);
             this->performIntegration(simulation, env, integrationRun, *shapeTraits, cycleOffset, isContinuation);
-        } else if (std::holds_alternative<OverlapRelaxationRun>(run)) {
-            const auto &overlapRelaxationRun = std::get<OverlapRelaxationRun>(run);
+        } else if (OverlapRelaxationRun::isInstance(run)) {
+            const auto &overlapRelaxationRun = OverlapRelaxationRun::of(run);
             this->performOverlapRelaxation(simulation, env, overlapRelaxationRun, shapeTraits, cycleOffset,
                                            isContinuation);
-        } else if (std::holds_alternative<TransformationRun>(run)) {
-            const auto &transformationRun = std::get<TransformationRun>(run);
+        } else if (TransformationRun::isInstance(run)) {
+            const auto &transformationRun = TransformationRun::of(run);
             this->performTransformationRun(simulation, transformationRun, *shapeTraits);
         } else {
             AssertThrow("Unimplemented run type");
@@ -240,6 +243,7 @@ void CasinoMode::performIntegration(Simulation &simulation, const Simulation::En
 
     std::vector<std::function<void()>> jobs;
 
+    jobs.reserve(run.lastSnapshotWriters.size());
     for (const auto &writer : run.lastSnapshotWriters)
         jobs.emplace_back([&]() { writer.storeSnapshot(simulation, shapeTraits, this->logger); });
 
@@ -379,8 +383,6 @@ Simulation::Environment CasinoMode::recreateEnvironment(const RampackParameters 
         combine_environment(env, params.runs[startRunIndex]);
     }
 
-    ValidateMsg(env.isComplete(), "Some of parameters: pressure, temperature, moveTypes, scalingType are missing");
-
     return env;
 }
 
@@ -408,7 +410,7 @@ std::unique_ptr<Packing> CasinoMode::recreatePacking(PackingLoader &loader, cons
 }
 
 void CasinoMode::verifyDynamicParameter(const DynamicParameter &dynamicParameter, const std::string &parameterName,
-                                        const IntegrationRun &run, std::size_t cycleOffset) const
+                                        const IntegrationRun &run, std::size_t cycleOffset)
 {
     if (run.averagingCycles == 0)
         return;
@@ -601,7 +603,29 @@ std::string CasinoMode::formatMoveKey(const std::string &groupName, const std::s
     return moveKey;
 }
 
-CasinoMode::OnTheFlyOutput::OnTheFlyOutput(const SnapshotCollectorRun &run, std::size_t numParticles,
+void CasinoMode::verifyIfEnvComplete(const Simulation::Environment &env, const Run &run) {
+    if (env.isComplete())
+        return;
+
+    std::vector<std::string> incompleteParams;
+    if (!env.hasTemperature())
+        incompleteParams.emplace_back("temperature");
+    if (!env.hasPressure())
+        incompleteParams.emplace_back("pressure");
+    if (!env.hasMoveSamplers())
+        incompleteParams.emplace_back("move_types");
+    if (!env.hasBoxScaler())
+        incompleteParams.emplace_back("box_move_type");
+
+    const auto &runName = RunBase::of(run).runName;
+
+    std::stringstream msg;
+    msg << "After combining all previous environments, run '" << runName << "' misses the following components: ";
+    msg << implode(incompleteParams, ", ");
+    throw ValidationException(msg.str());
+}
+
+CasinoMode::OnTheFlyOutput::OnTheFlyOutput(const SimulatingRun &run, std::size_t numParticles,
                                            std::size_t absoluteCyclesNumber, bool isContinuation, Logger &logger)
         : absoluteCyclesNumber{absoluteCyclesNumber}, snapshotEvery{run.snapshotEvery}, isContinuation{isContinuation},
           logger{logger}, collector{run.observablesCollector}

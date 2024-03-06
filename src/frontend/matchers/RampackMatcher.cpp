@@ -297,12 +297,16 @@ namespace {
         return MatcherDataclass("transform")
             .arguments({{"run_name", runName},
                         {"transformations", transformations},
-                        {"output_last_snapshot", create_output_last_snapshot(), "[]"}})
+                        {"output_last_snapshot", create_output_last_snapshot(), "[]"},
+                        {"temperature", dynamicParameter, "None"},
+                        {"pressure", dynamicParameter, "None"},
+                        {"move_types", create_move_types(), "None"},
+                        {"box_move_type", create_box_scaler(), "None"},})
             .mapTo([](const DataclassData &transform) -> Run {
                 TransformationRun run;
 
                 run.runName = transform["run_name"].as<std::string>();
-                run.environment = {};
+                run.environment = create_environment(transform);
                 run.lastSnapshotWriters = transform["output_last_snapshot"].as<std::vector<FileSnapshotWriter>>();
                 run.ramsnapOut = fetch_ramsnap_out(run.lastSnapshotWriters);
                 run.transformers = transform["transformations"].as<std::vector<std::shared_ptr<LatticeTransformer>>>();
@@ -432,15 +436,20 @@ pyon::matcher::MatcherDataclass RampackMatcher::create() {
             return std::unique(runNames.begin(), runNames.end()) == runNames.end();
         })
         .describe("with unique run names")
-        // TODO: maybe transformation run should not require full environment?
         .filter([](const DataclassData &rampack) {
+            auto runs = rampack["runs"].as<std::vector<Run>>();
+            auto firstSimulatingRunIt = std::find_if(runs.begin(), runs.end(), [](const Run &run) {
+                return SimulatingRun::isInstance(run);
+            });
+            if (firstSimulatingRunIt == runs.end())
+                return true;
+
             auto env = create_environment(rampack);
-            auto firstRun = rampack["runs"].as<std::vector<Run>>().front();
-            const auto &firstRunEnv = RunBase::of(firstRun).environment;
-            env.combine(firstRunEnv);
+            for (auto it = runs.begin(); it <= firstSimulatingRunIt; it++)
+                env.combine( RunBase::of(*it).environment);
             return env.isComplete();
         })
-        .describe("base environment combined with the first run's environment should be complete")
+        .describe("base environment combined with the first simulation run's environment should be complete")
         .mapTo([](const DataclassData &rampack) {
             RampackParameters params;
             params.baseParameters = create_base_parameters(rampack);

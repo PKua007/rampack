@@ -31,14 +31,19 @@ private:
         std::shared_ptr<ObservablesCollector> collector;
         std::vector<std::unique_ptr<SimulationRecorder>> recorders;
 
-        OnTheFlyOutput(const SnapshotCollectorRun &run, std::size_t numParticles, std::size_t absoluteCyclesNumber,
+        OnTheFlyOutput(const SimulatingRun &run, std::size_t numParticles, std::size_t absoluteCyclesNumber,
                        bool isContinuation, Logger &logger);
     };
 
+    static void verifyDynamicParameter(const DynamicParameter &dynamicParameter, const std::string &parameterName,
+                                       const IntegrationRun &run, std::size_t cycleOffset);
+    static std::unique_ptr<Packing> recreatePacking(PackingLoader &loader, const BaseParameters &params,
+                                                    const ShapeTraits &traits, std::size_t maxThreads);
+    static std::string formatMoveKey(const std::string &groupName, const std::string &moveName);
+    static bool isStepSizeKey(const std::string &key);
+    static void verifyIfEnvComplete(const Simulation::Environment &env, const Run &run);
 
     [[nodiscard]] Simulation::Environment recreateEnvironment(const RampackParameters &params, const PackingLoader &loader) const;
-    void verifyDynamicParameter(const DynamicParameter &dynamicParameter, const std::string &parameterName,
-                                const IntegrationRun &run, std::size_t cycleOffset) const;
     void performIntegration(Simulation &simulation, const Simulation::Environment &env, const IntegrationRun &run,
                             const ShapeTraits &shapeTraits, std::size_t cycleOffset, bool isContinuation);
     void performOverlapRelaxation(Simulation &simulation, const Simulation::Environment &env, const OverlapRelaxationRun &run,
@@ -50,10 +55,6 @@ private:
     void printPerformanceInfo(const Simulation &simulation);
     void printAverageValues(const ObservablesCollector &collector);
     void printMoveStatistics(const Simulation &simulation) const;
-    static std::unique_ptr<Packing> recreatePacking(PackingLoader &loader, const BaseParameters &params,
-                                                    const ShapeTraits &traits, std::size_t maxThreads);
-    static std::string formatMoveKey(const std::string &groupName, const std::string &moveName);
-    static bool isStepSizeKey(const std::string &key);
 
 public:
     explicit CasinoMode(Logger &logger) : ModeBase(logger) { }

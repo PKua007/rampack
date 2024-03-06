@@ -21,18 +21,17 @@
 #include "SimulationRecorderFactory.h"
 #include "core/lattice/LatticeTransformer.h"
 #include "utils/Exceptions.h"
-#include "utils/Utils.h"
 
-
-class UnsupportedParametersSection : public InternalError {
-public:
-    using InternalError::InternalError;
-};
 
 struct IntegrationRun;
 struct OverlapRelaxationRun;
 struct TransformationRun;
 using Run = std::variant<IntegrationRun, OverlapRelaxationRun, TransformationRun>;
+
+class BadParametersCast : public InternalError {
+public:
+    using InternalError::InternalError;
+};
 
 struct BaseParameters {
     Version version;
@@ -55,43 +54,53 @@ struct RunBase {
     std::vector<FileSnapshotWriter> lastSnapshotWriters;
     std::optional<std::string> ramsnapOut;
 
-    static const RunBase &of(const Run &run);
-    static RunBase &of(Run &run);
+    [[nodiscard]] static const RunBase &of(const Run &run);
+    [[nodiscard]] static RunBase &of(Run &run);
 };
 
 /**
  * @brief Run, in which snapshots are collected.
  */
-struct SnapshotCollectorRun : public RunBase {
+struct SimulatingRun : public RunBase {
     std::size_t snapshotEvery{};
+    std::size_t inlineInfoEvery{};
+    std::size_t orientationFixEvery{};
     std::shared_ptr<ObservablesCollector> observablesCollector;
     std::optional<std::string> observablesOut;
     std::vector<std::shared_ptr<SimulationRecorderFactory>> simulationRecorders;
     std::optional<std::string> ramtrjOut;
 
-    static const SnapshotCollectorRun &of(const Run &run);
-    static SnapshotCollectorRun &of(Run &run);
+    [[nodiscard]] static const SimulatingRun &of(const Run &run);
+    [[nodiscard]] static SimulatingRun &of(Run &run);
+    [[nodiscard]] static bool isInstance(const Run &run);
 };
 
-struct IntegrationRun : public SnapshotCollectorRun {
+struct IntegrationRun : public SimulatingRun {
     std::optional<std::size_t> thermalizationCycles{};
     std::optional<std::size_t> averagingCycles{};
     std::size_t averagingEvery{};
-    std::size_t inlineInfoEvery{};
-    std::size_t orientationFixEvery{};
     std::optional<std::string> averagesOut;
     std::optional<std::string> bulkObservablesOutPattern;
+
+    [[nodiscard]] static const IntegrationRun &of(const Run &run);
+    [[nodiscard]] static IntegrationRun &of(Run &run);
+    [[nodiscard]] static bool isInstance(const Run &run);
 };
 
-struct OverlapRelaxationRun : public SnapshotCollectorRun {
-    std::size_t inlineInfoEvery{};
-    std::size_t orientationFixEvery{};
+struct OverlapRelaxationRun : public SimulatingRun {
     std::shared_ptr<ShapeTraits> helperShapeTraits;
 
+    [[nodiscard]] static const OverlapRelaxationRun &of(const Run &run);
+    [[nodiscard]] static OverlapRelaxationRun &of(Run &run);
+    [[nodiscard]] static bool isInstance(const Run &run);
 };
 
 struct TransformationRun : public RunBase {
     std::vector<std::shared_ptr<LatticeTransformer>> transformers;
+
+    [[nodiscard]] static const TransformationRun &of(const Run &run);
+    [[nodiscard]] static TransformationRun &of(Run &run);
+    [[nodiscard]] static bool isInstance(const Run &run);
 };
 
 struct RampackParameters {

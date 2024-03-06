@@ -163,9 +163,9 @@ int TrajectoryMode::main(int argc, char **argv) {
 
     std::optional<std::string> ramtrjOut;
     try {
-        const auto &collectorRun = SnapshotCollectorRun::of(startRun);
+        const auto &collectorRun = SimulatingRun::of(startRun);
         ramtrjOut = collectorRun.ramtrjOut;
-    } catch (const UnsupportedParametersSection &e) {
+    } catch (const BadParametersCast &e) {
         throw ValidationException("The type of run '" + foundRunName + "' doest not support trajectory recording");
     }
 
