@@ -20,9 +20,9 @@ class ShapeDataFormatException : public ShapeDataException {
     using ShapeDataException::ShapeDataException;
 };
 
-#define ShapeDataValidateMsg(cond, msg) EXCEPTIONS_BLOCK(                                                             \
-    if (!(cond))                                                                                                    \
-        throw ShapeDataFormatException(msg);                                                                                \
+#define ShapeDataValidateMsg(cond, msg) EXCEPTIONS_BLOCK(   \
+    if (!(cond))                                            \
+        throw ShapeDataFormatException(msg);                \
 )
 
 class ShapeDataSerializationException : public ShapeDataException {

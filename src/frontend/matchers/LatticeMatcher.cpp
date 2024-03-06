@@ -8,6 +8,7 @@
 #include <ZipIterator.hpp>
 
 #include "LatticeMatcher.h"
+#include "ShapeMatcher.h"
 #include "frontend/PackingFactory.h"
 #include "core/lattice/UnitCell.h"
 #include "core/lattice/UnitCellFactory.h"
@@ -396,52 +397,10 @@ namespace {
     }
 
     MatcherDataclass create_shape() {
-        auto pos = MatcherArray(MatcherFloat{}.mapTo<double>(), 3).mapToVector<3>();
-        auto rot = MatcherArray(MatcherFloat{}.mapTo<double>(), 3)
-            .mapTo([](const ArrayData &array) -> Matrix<3, 3> {
-                auto angles = array.asStdArray<double, 3>();
-                double factor = M_PI/180;
-                return Matrix<3, 3>::rotation(factor*angles[0], factor*angles[1], factor*angles[2]);
-            });
-
-        auto longMatcher = MatcherInt{}.mapTo([](long i) -> std::string {
-            return std::to_string(i);
-        });
-        auto doubleMatcher = MatcherFloat{}.mapTo([](double d) -> std::string {
-            std::ostringstream out;
-            out << std::setprecision(std::numeric_limits<double>::max_digits10) << d;
-            return out.str();
-        });
-        auto stringMatcher = MatcherString{}
-            .filter([](const std::string &str) {
-                return std::none_of(str.begin(), str.end(), [](char c) { return std::isspace(c) || c == '"'; });
-            })
-            .describe("not containing whitespace or quotation marks (\")");
-        auto vectorMatcher = MatcherArray(MatcherFloat{}, 3)
-            .mapTo([](const ArrayData &arrayData) -> std::string {
-                auto vec = arrayData.asVector<3>();
-                std::ostringstream out;
-                out << std::setprecision(std::numeric_limits<double>::max_digits10);
-                std::copy(vec.begin(), vec.end(), std::ostream_iterator<double>(out, ","));
-                return out.str();
-            });
-        auto shapeParams = MatcherDictionary{}
-            .keysMatch([](const std::string &paramName) {
-                if (paramName.empty())
-                    return false;
-                if (containsWhitespace(paramName))
-                    return false;
-                if (paramName.find_first_of("\"'") != std::string::npos)
-                    return false;
-                return true;
-            })
-            .describe("keys non empty, without whitespace or quotes")
-            .valuesMatch(longMatcher | doubleMatcher | stringMatcher | vectorMatcher);
-
         return MatcherDataclass("shape")
-            .arguments({{"pos", pos},
-                        {"rot", rot, "[0, 0, 0]"}})
-            .variadicKeywordArguments(shapeParams)
+            .arguments({{"pos", ShapeMatcher::createPosition()},
+                        {"rot", ShapeMatcher::createOrientation(), "[0, 0, 0]"}})
+            .variadicKeywordArguments(ShapeMatcher::createShapeData())
             .mapTo([](const DataclassData &shape) -> PartialShape {
                 PartialShape partialShape;
                 auto pos = shape["pos"].as<Vector<3>>();

@@ -2,6 +2,8 @@
 // Created by Piotr Kubala on 16/12/2022.
 //
 
+#include <iterator>
+
 #include "ShapeMatcher.h"
 
 #include "core/shapes/SphereTraits.h"
@@ -510,7 +512,7 @@ std::shared_ptr<ShapeTraits> ShapeMatcher::match(const std::string &expression) 
     auto shapeMatcher = ShapeMatcher::create();
     auto matchReport = shapeMatcher.match(shapeAST, shapeTraits);
     if (!matchReport)
-        throw ValidationException(matchReport.getReason());
+        throw pyon::matcher::MatchException(matchReport.getReason());
 
     return shapeTraits.as<std::shared_ptr<ShapeTraits>>();
 }
@@ -528,4 +530,88 @@ pyon::matcher::MatcherAlternative ShapeMatcher::create() {
         | create_polyspherocylinder_matcher()
         | create_generic_convex_matcher()
         | create_polyhedral_wedge_matcher();
+}
+
+pyon::matcher::MatcherArray ShapeMatcher::createPosition() {
+    return MatcherArray(MatcherFloat{}.mapTo<double>(), 3).mapToVector<3>();
+}
+
+Vector<3> ShapeMatcher::matchPosition(const std::string &expression) {
+    Any position;
+    auto positionAST = pyon::Parser::parse(expression);
+    auto positionMatcher = ShapeMatcher::createPosition();
+    auto matchReport = positionMatcher.match(positionAST, position);
+    if (!matchReport)
+        throw pyon::matcher::MatchException(matchReport.getReason());
+
+    return position.as<Vector<3>>();
+}
+
+pyon::matcher::MatcherArray ShapeMatcher::createOrientation() {
+    return MatcherArray(MatcherFloat{}.mapTo<double>(), 3)
+        .mapTo([](const ArrayData &array) -> Matrix<3, 3> {
+            auto angles = array.asStdArray<double, 3>();
+            double factor = M_PI/180;
+            return Matrix<3, 3>::rotation(factor*angles[0], factor*angles[1], factor*angles[2]);
+        });
+}
+
+Matrix<3, 3> ShapeMatcher::matchOrientation(const std::string &expression) {
+    Any orientation;
+    auto orientationAST = pyon::Parser::parse(expression);
+    auto orientationMatcher = ShapeMatcher::createOrientation();
+    auto matchReport = orientationMatcher.match(orientationAST, orientation);
+    if (!matchReport)
+        throw pyon::matcher::MatchException(matchReport.getReason());
+
+    return orientation.as<Matrix<3, 3>>();
+}
+
+pyon::matcher::MatcherDictionary ShapeMatcher::createShapeData() {
+    auto longMatcher = MatcherInt{}.mapTo([](long i) -> std::string {
+        return std::to_string(i);
+    });
+    auto doubleMatcher = MatcherFloat{}.mapTo([](double d) -> std::string {
+        std::ostringstream out;
+        out << std::setprecision(std::numeric_limits<double>::max_digits10) << d;
+        return out.str();
+    });
+    auto stringMatcher = MatcherString{}
+        .filter([](const std::string &str) {
+            return std::none_of(str.begin(), str.end(), [](char c) { return std::isspace(c) || c == '"'; });
+        })
+        .describe("not containing whitespace or quotation marks (\")");
+    auto vectorMatcher = MatcherArray(MatcherFloat{}, 3)
+        .mapTo([](const ArrayData &arrayData) -> std::string {
+            auto vec = arrayData.asVector<3>();
+            std::ostringstream out;
+            out << std::setprecision(std::numeric_limits<double>::max_digits10);
+            std::copy(vec.begin(), vec.end(), std::ostream_iterator<double>(out, ","));
+            return out.str();
+        });
+
+    return MatcherDictionary{}
+        .keysMatch([](const std::string &paramName) {
+            if (paramName.empty())
+                return false;
+            if (containsWhitespace(paramName))
+                return false;
+            if (paramName.find_first_of("\"'") != std::string::npos)
+                return false;
+            return true;
+        })
+        .describe("keys non empty, without whitespace or quotes")
+        .valuesMatch(longMatcher | doubleMatcher | stringMatcher | vectorMatcher)
+        .mapToStdMap<std::string>();
+}
+
+TextualShapeData ShapeMatcher::matchShapeData(const std::string &expression) {
+    Any shapeData;
+    auto shapeDataAST = pyon::Parser::parse(expression);
+    auto shapeDataMatcher = ShapeMatcher::createShapeData();
+    auto matchReport = shapeDataMatcher.match(shapeDataAST, shapeData);
+    if (!matchReport)
+        throw pyon::matcher::MatchException(matchReport.getReason());
+
+    return shapeData.as<TextualShapeData>();
 }

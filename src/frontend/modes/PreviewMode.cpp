@@ -31,8 +31,7 @@ int PreviewMode::main(int argc, char **argv) {
              cxxopts::value<std::string>(verbosity))
             ("o,output", "outputs the initial configuration loaded from the input file. Supported formats: "
                          "`ramsnap`, `wolfram`, `xyz`. More than one format can be chosen by specifying this option "
-                         "multiple times, or in a single one using pipe `|`. It is advisable to put the argument in "
-                         "single quotes `' '` to escape special shell characters `\"()|`",
+                         "multiple times, or in a single one using pipe `|`. " SHELL_SPECIAL_CHARACTERS_WARNING,
              cxxopts::value<std::vector<std::string>>(outputs))
             ("r,run-names", "output run names from the input file to the standard output. Use with "
                             "`-V warn` for a clean output");

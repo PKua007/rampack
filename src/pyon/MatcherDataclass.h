@@ -17,8 +17,8 @@
 
 
 namespace pyon::matcher {
-    class DataclassException : public MatchException {
-        using MatchException::MatchException;
+    class DataclassException : public MatcherException {
+        using MatcherException::MatcherException;
     };
 
     class NoSuchArgumentException : public DataclassException {

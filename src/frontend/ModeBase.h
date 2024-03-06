@@ -15,6 +15,10 @@
 #include "utils/Logger.h"
 
 
+#define SHELL_SPECIAL_CHARACTERS_WARNING \
+    "It is advisable to put the argument in single quotes `' '` to escape special shell characters `\"|()[]{}`"
+
+
 class ModeBase {
 private:
     std::ofstream auxOutStream;

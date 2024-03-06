@@ -19,6 +19,16 @@ namespace pyon {
             using PyonException::PyonException;
         };
     }
+
+    namespace matcher {
+        class MatchException : public PyonException {
+            using PyonException::PyonException;
+        };
+
+        class MatcherException : public PyonException {
+            using PyonException::PyonException;
+        };
+    }
 } // pyon
 
 #endif //RAMPACK_PYONEXCEPTION_H

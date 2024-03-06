@@ -62,8 +62,7 @@ int TrajectoryMode::main(int argc, char **argv) {
              cxxopts::value<std::string>(obsOutputFilename))
             ("O,observable", "replays the simulation and calculates specified observables (format as in the input file). "
                              "Observables can be passed using multiple options (`-O obs1 -O obs2`) or pipe-separated "
-                             "in a single one (`-O 'obs1|obs2'`). It is advisable to put the argument in single quotes "
-                             "`' '` to escape special shell characters `\"()|`",
+                             "in a single one (`-O 'obs1|obs2'`). " SHELL_SPECIAL_CHARACTERS_WARNING,
              cxxopts::value<std::vector<std::string>>(observables))
             ("b,output-bulk-obs", "calculates bulk observables and outputs them to the file with a name given "
                                   "by the specified pattern. In the pattern, every occurrence of `{}` is replaced with "
@@ -72,8 +71,8 @@ int TrajectoryMode::main(int argc, char **argv) {
              cxxopts::value<std::string>(bulkObsOutputFilename))
             ("B,bulk-observable", "replays the simulation and calculates specified bulk observables (format as in the "
                                   "input file). Observables can be passed using multiple options (`-B obs1 -B obs2`) "
-                                  "or pipe-separated in a single one (`-B 'obs1|obs2'`). It is advisable to put the "
-                                  "argument in single quotes `' '` to escape special shell characters `\"()|`",
+                                  "or pipe-separated in a single one (`-B 'obs1|obs2'`). "
+                                  SHELL_SPECIAL_CHARACTERS_WARNING,
              cxxopts::value<std::vector<std::string>>(bulkObservables))
             ("a,averaging-start", "specifies when the averaging starts. It is used for bulk observables",
              cxxopts::value<std::size_t>(averagingStart))
@@ -82,9 +81,8 @@ int TrajectoryMode::main(int argc, char **argv) {
              cxxopts::value<std::size_t>(maxThreads)->default_value("1"))
             ("s,output-snapshot", "reads the last snapshot and outputs it in a given format: `ramsnap`, `wolfram`, "
                                   "`xyz`. More that one output format can be specified using multiple options (`-s "
-                                  "out1 -s out2`) or pipe-separated in a single one (`-s 'out1|out2'`). It is advisable "
-                                  "to put the argument in single quotes `' '` to escape special shell characters "
-                                  "`\"()|`",
+                                  "out1 -s out2`) or pipe-separated in a single one (`-s 'out1|out2'`). "
+                                  SHELL_SPECIAL_CHARACTERS_WARNING,
              cxxopts::value<std::vector<std::string>>(snapshotOutputs))
             ("I,log-info", "prints basic information about the recorded trajectory on a standard output")
             ("l,log-file", "if specified, messages will be logged both on the standard output and to this file. "
@@ -97,8 +95,8 @@ int TrajectoryMode::main(int argc, char **argv) {
              cxxopts::value<std::string>(auxVerbosity))
             ("t,output-trajectory", "stores the trajectory in a given format: `ramtrj`, `xyz`. More that one output "
                                     "format can be specified using multiple options (`-t out1 -t out2`) or "
-                                    "pipe-separated in a single one (`-t 'out1|out2'`). It is advisable to put the "
-                                    "argument in single quotes `' '` to escape special shell characters `\"()|`",
+                                    "pipe-separated in a single one (`-t 'out1|out2'`). "
+                                    SHELL_SPECIAL_CHARACTERS_WARNING,
              cxxopts::value<std::vector<std::string>>(trajectoryOutputs))
             ("x,truncate", "truncates loaded trajectory to a given number of total cycles; truncated "
                            "trajectory can be stored to a different RAMTRJ file using `-t 'ramtrj(\"filename\")'`",

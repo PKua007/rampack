@@ -11,8 +11,8 @@
 
 
 namespace pyon::matcher {
-    class UninitializedRecursiveMatcherException : public MatchException {
-        using MatchException::MatchException;
+    class UninitializedRecursiveMatcherException : public MatcherException {
+        using MatcherException::MatcherException;
     };
 
 

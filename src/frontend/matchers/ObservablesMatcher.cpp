@@ -675,7 +675,7 @@ std::shared_ptr<BulkObservable> ObservablesMatcher::matchBulkObservable(const st
     Any bulkObservable;
     auto matchReport = bulkObservableMatcher.match(bulkObservableAST, bulkObservable);
     if (!matchReport)
-        throw ValidationException(matchReport.getReason());
+        throw pyon::matcher::MatchException(matchReport.getReason());
 
     return bulkObservable.as<std::shared_ptr<BulkObservable>>();
 }
@@ -688,7 +688,7 @@ ObservablesMatcher::ObservableData ObservablesMatcher::matchObservable(const std
     Any observable;
     auto matchReport = observableMatcher.match(observableAST, observable);
     if (!matchReport)
-        throw ValidationException(matchReport.getReason());
+        throw pyon::matcher::MatchException(matchReport.getReason());
 
     return observable.as<ObservablesMatcher::ObservableData>();
 }
