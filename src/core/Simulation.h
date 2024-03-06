@@ -161,7 +161,7 @@ public:
          * @brief Overwrited this environment with @a other, however only those values which are present in @a other
          * are overwritten.
          */
-        void combine(Environment &other);
+        void combine(const Environment &other);
     };
 
     struct IntegrationParameters {
@@ -239,6 +239,8 @@ private:
     static void printStepSizesChange(Logger &logger, const std::vector<std::pair<std::string, double>> &oldStepSizes,
                                      const std::vector<std::pair<std::string, double>> &newStepSizes);
 
+    void setupRun(const Environment &env, std::shared_ptr<ObservablesCollector> observablesCollector_,
+                  const ShapeTraits &shapeTraits);
     void updateThermodynamicParameters();
     void performCycle(Logger &logger, const ShapeTraits &shapeTraits);
     void performMoves(const ShapeTraits &shapeTraits, Logger &logger);
@@ -335,7 +337,7 @@ public:
      * @a snapshotEvery). It may be empty
      * @param logger Logger object to display simulation data
      */
-    void integrate(Environment env, const IntegrationParameters &params, const ShapeTraits &shapeTraits,
+    void integrate(const Environment &env, const IntegrationParameters &params, const ShapeTraits &shapeTraits,
                    std::shared_ptr<ObservablesCollector> observablesCollector_,
                    std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger);
 
@@ -364,7 +366,7 @@ public:
      * @a snapshotEvery). It may be empty
     * @param logger Logger object to display simulation data
     */
-    void relaxOverlaps(Environment env, const OverlapRelaxationParameters &params, const ShapeTraits &shapeTraits,
+    void relaxOverlaps(const Environment &env, const OverlapRelaxationParameters &params, const ShapeTraits &shapeTraits,
                        std::shared_ptr<ObservablesCollector> observablesCollector_,
                        std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger);
 
