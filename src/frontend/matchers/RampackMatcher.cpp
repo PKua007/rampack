@@ -422,22 +422,21 @@ pyon::matcher::MatcherDataclass RampackMatcher::create() {
                     {"handle_signals", MatcherBoolean{}, "True"}})
         .filter([](const DataclassData &rampack) {
             auto runs = rampack["runs"].as<std::vector<Run>>();
-            auto runNameVisitor = [](const Run &run) {
-                auto runNameGetter = [](auto &&run) { return run.runName; };
-                return std::visit(runNameGetter, run);
+            auto runNameGetter = [](const Run &run) {
+                return RunBase::of(run).runName;
             };
             std::vector<std::string> runNames;
             runNames.reserve(runs.size());
-            std::transform(runs.begin(), runs.end(), std::back_inserter(runNames), runNameVisitor);
+            std::transform(runs.begin(), runs.end(), std::back_inserter(runNames), runNameGetter);
             std::sort(runNames.begin(), runNames.end());
             return std::unique(runNames.begin(), runNames.end()) == runNames.end();
         })
         .describe("with unique run names")
+        // TODO: maybe transformation run should not require full environment?
         .filter([](const DataclassData &rampack) {
             auto env = create_environment(rampack);
             auto firstRun = rampack["runs"].as<std::vector<Run>>().front();
-            auto envGetter = [](auto &&run) { return run.environment; };
-            auto firstRunEnv = std::visit(envGetter, firstRun);
+            const auto &firstRunEnv = RunBase::of(firstRun).environment;
             env.combine(firstRunEnv);
             return env.isComplete();
         })

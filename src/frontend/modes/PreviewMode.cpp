@@ -63,10 +63,8 @@ int PreviewMode::main(int argc, char **argv) {
     if (parsedOptions.count("run-names")) {
         this->logger.info() << "Run names present in '" << inputFilename << "':" << std::endl;
         std::ostream &loggerRaw = this->logger.raw();
-        for (const auto &run : params.runs) {
-            auto runNameGetter = [](auto &&run) { return run.runName; };
-            loggerRaw << std::visit(runNameGetter, run) << std::endl;
-        }
+        for (const auto &run : params.runs)
+            loggerRaw << RunBase::of(run).runName << std::endl;
     }
 
     const auto &baseParams = params.baseParameters;

@@ -6,7 +6,10 @@
 
 
 const RunBase &RunBase::of(const Run &run) {
-    return std::visit([](auto &&run) -> const RunBase & { return static_cast<const RunBase &>(run); }, run);
+    auto converter = [](auto &&run) -> const RunBase & {
+        return static_cast<const RunBase &>(run);
+    };
+    return std::visit(converter, run);
 }
 
 RunBase &RunBase::of(Run &run) {
@@ -14,7 +17,7 @@ RunBase &RunBase::of(Run &run) {
 }
 
 const SnapshotCollectorRun &SnapshotCollectorRun::of(const Run &run) {
-    auto retriever = [](auto &&run) -> const SnapshotCollectorRun & {
+    auto converter = [](auto &&run) -> const SnapshotCollectorRun & {
         using RunType = std::decay_t<decltype(run)>;
         if constexpr (!std::is_convertible_v<RunType, SnapshotCollectorRun>) {
             std::string className = demangle(typeid(RunType).name());
@@ -23,7 +26,7 @@ const SnapshotCollectorRun &SnapshotCollectorRun::of(const Run &run) {
             return static_cast<const SnapshotCollectorRun &>(run);
         }
     };
-    return std::visit(retriever, run);
+    return std::visit(converter, run);
 }
 
 SnapshotCollectorRun &SnapshotCollectorRun::of(Run &run) {
@@ -31,9 +34,6 @@ SnapshotCollectorRun &SnapshotCollectorRun::of(Run &run) {
 }
 
 void combine_environment(Simulation::Environment &env, const Run &run) {
-    auto environmentGetter = [](const auto &run) {
-        return run.environment;
-    };
-    auto runEnv = std::visit(environmentGetter, run);
+    auto runEnv = RunBase::of(run).environment;
     env.combine(runEnv);
 }

@@ -94,7 +94,7 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, double translationStep,
                      std::move(boxScaler), domainDivisions, handleSignals)
 { }
 
-void Simulation::integrate(Environment env, const IntegrationParameters &params, const ShapeTraits &shapeTraits,
+void Simulation::integrate(const Environment &env, const IntegrationParameters &params, const ShapeTraits &shapeTraits,
                            std::shared_ptr<ObservablesCollector> observablesCollector_,
                            std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger)
 {
@@ -107,14 +107,7 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
         Expects(params.averagingEvery > 0 && params.averagingEvery <= params.averagingCycles);
     Expects(params.snapshotEvery <= (params.thermalisationCycles + params.averagingCycles));
 
-    this->environment.combine(env);
-    Expects(this->environment.isComplete());
-
-    for (auto &moveSampler : this->environment.getMoveSamplers())
-        moveSampler->setup(*this->packing, shapeTraits);
-
-    this->observablesCollector = std::move(observablesCollector_);
-    this->reset();
+    this->setupRun(env, std::move(observablesCollector_), shapeTraits);
 
     this->totalCycles = params.cycleOffset;
     this->maxCycles = params.cycleOffset + params.thermalisationCycles + params.averagingCycles;
@@ -219,11 +212,10 @@ void Simulation::integrate(Parameter temperature_, Parameter pressure_, std::siz
     params.snapshotEvery = snapshotEvery;
     params.cycleOffset = cycleOffset;
 
-    this->integrate(std::move(env), params, shapeTraits, std::move(observablesCollector_),
-                    std::move(simulationRecorders), logger);
+    this->integrate(env, params, shapeTraits, std::move(observablesCollector_), std::move(simulationRecorders), logger);
 }
 
-void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameters &params,
+void Simulation::relaxOverlaps(const Environment &env, const OverlapRelaxationParameters &params,
                                const ShapeTraits &shapeTraits,
                                std::shared_ptr<ObservablesCollector> observablesCollector_,
                                std::vector<std::unique_ptr<SimulationRecorder>> simulationRecorders, Logger &logger)
@@ -234,14 +226,7 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
     Expects(params.rotationMatrixFixEvery > 0);
     Expects(params.snapshotEvery > 0);
 
-    this->environment.combine(env);
-    Expects(this->environment.isComplete());
-
-    for (auto &moveSampler : this->environment.getMoveSamplers())
-        moveSampler->setup(*this->packing, shapeTraits);
-
-    this->observablesCollector = std::move(observablesCollector_);
-    this->reset();
+    this->setupRun(env, std::move(observablesCollector_), shapeTraits);
 
     this->totalCycles = params.cycleOffset;
     this->maxCycles = std::numeric_limits<std::size_t>::max();
@@ -306,8 +291,8 @@ void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std:
     params.snapshotEvery = snapshotEvery;
     params.cycleOffset = cycleOffset;
 
-    this->relaxOverlaps(std::move(env), params, shapeTraits, std::move(observablesCollector_),
-                        std::move(simulationRecorders), logger);
+    this->relaxOverlaps(env, params, shapeTraits, std::move(observablesCollector_), std::move(simulationRecorders),
+                        logger);
 }
 
 void Simulation::reset() {
@@ -831,7 +816,20 @@ std::unique_ptr<Packing> Simulation::releasePacking() {
     return packing_;
 }
 
-void Simulation::Environment::combine(Simulation::Environment &other) {
+void Simulation::setupRun(const Simulation::Environment &env,
+                          std::shared_ptr<ObservablesCollector> observablesCollector_, const ShapeTraits &shapeTraits)
+{
+    this->environment.combine(env);
+    Expects(this->environment.isComplete());
+
+    for (auto &moveSampler : this->environment.getMoveSamplers())
+        moveSampler->setup(*this->packing, shapeTraits);
+
+    this->observablesCollector = std::move(observablesCollector_);
+    this->reset();
+}
+
+void Simulation::Environment::combine(const Environment &other) {
     if (other.hasTemperature())
         this->temperature = other.temperature;
     if (other.hasPressure())
