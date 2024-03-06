@@ -40,8 +40,8 @@ namespace pyon::matcher {
         template<typename T, std::size_t SIZE>
         [[nodiscard]] std::array<T, SIZE> asStdArray() const {
             if (this->size() != SIZE)
-                throw MatchException("pyon::matcher::ArrayData::asStdArray: wrong size of matched array; "
-                                     "expected: " + std::to_string(SIZE) + ", got: " + std::to_string(this->size()));
+                throw MatcherException("pyon::matcher::ArrayData::asStdArray: wrong size of matched array; "
+                                       "expected: " + std::to_string(SIZE) + ", got: " + std::to_string(this->size()));
             std::array<T, SIZE> result;
             auto transformer = [](const Any &elem) { return elem.as<T>(); };
             std::transform(this->begin(), this->end(), result.begin(), transformer);
@@ -60,8 +60,8 @@ namespace pyon::matcher {
         template<std::size_t DIM, typename T = double>
         [[nodiscard]] Vector<DIM, T> asVector() const {
             if (this->size() != DIM) {
-                throw MatchException("pyon::matcher::ArrayData::asVector: wrong size of matched array; "
-                                     "expected: " + std::to_string(DIM) + ", got: " + std::to_string(this->size()));
+                throw MatcherException("pyon::matcher::ArrayData::asVector: wrong size of matched array; "
+                                       "expected: " + std::to_string(DIM) + ", got: " + std::to_string(this->size()));
             }
             Vector<DIM, T> result;
             auto transformer = [](const Any &elem) { return elem.as<T>(); };

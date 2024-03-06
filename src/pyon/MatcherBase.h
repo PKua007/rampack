@@ -13,11 +13,6 @@
 
 
 namespace pyon::matcher {
-    class MatchException : public PyonException {
-    public:
-        using PyonException::PyonException;
-    };
-
     class MatchReport {
     private:
         bool matched{};

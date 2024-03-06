@@ -383,6 +383,7 @@ The following transformers are available:
 * [class `columnar`](#class-columnar)
 * [class `randomize_flip`](#class-randomize_flip)
 * [class `layer_rotate`](#class-layer_rotate)
+* [class `randomize_rotation`](#class-randomize_rotation)
 
 
 ### Class `optimize_cell`

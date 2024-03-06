@@ -12,8 +12,11 @@
 
 class ShapePreviewMode : public ModeBase {
 private:
-    void printInteractionInfo(const Interaction &interaction);
-    void printGeometryInfo(const ShapeGeometry &geometry);
+    [[nodiscard]] static Shape createTrialShape(const std::string &shapePos, const std::string &shapeRot,
+                                                const std::string &shapeParams, const ShapeDataManager &manager);
+
+    void printInteractionInfo(const Interaction &interaction, const Shape &trialShape);
+    void printGeometryInfo(const ShapeGeometry &geometry, const Shape &trialShape);
 
 public:
     explicit ShapePreviewMode(Logger &logger) : ModeBase(logger) { }

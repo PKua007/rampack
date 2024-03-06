@@ -298,7 +298,7 @@ XCBodyBuilderScript GenericConvexGeometryMatcher::match(const std::string &expre
     Any writer;
     auto matchReport = GenericConvexGeometryMatcher::script.match(scriptAST, writer);
     if (!matchReport)
-        throw ValidationException(matchReport.getReason());
+        throw pyon::matcher::MatchException(matchReport.getReason());
 
     return writer.as<XCBodyBuilderScript>();
 }

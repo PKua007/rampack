@@ -105,7 +105,7 @@ input file (`-r`, `--run-names` option). Below is the full list of available opt
 
 * ***-o***, ***--output*** *arg*
 
-  outputs the initial configuration loaded from the input file. Supported formats: `ramsnap`, `wolfram`, `xyz`. More than one format can be chosen by specifying this option multiple times, or in a single one using pipe `|`. It is advisable to put the argument in single quotes `' '` to escape special shell characters `"()|`
+  outputs the initial configuration loaded from the input file. Supported formats: `ramsnap`, `wolfram`, `xyz`. More than one format can be chosen by specifying this option multiple times, or in a single one using pipe `|`. It is advisable to put the argument in single quotes `' '` to escape special shell characters `"|()[]{}`
 
 * ***-r***, ***--run-names***
 
@@ -135,7 +135,19 @@ especially useful when you are hand-crafting a shape using generic shape classes
 
 * ***-S***, ***--shape*** *arg*
 
-  manually specified shape (instead of reading from input file using `-i`). It is advisable to put the argument in single quotes `' '` to escape special shell characters `"()|`
+  manually specified shape type (instead of reading from input file using `-i`). It is advisable to put the argument in single quotes `' '` to escape special shell characters `"|()[]{}`
+
+* ***-p***, ***--shape-pos*** *arg*
+
+  specific position of the shape as a 3-element PYON Array of Floats. It is advisable to put the argument in single quotes `' '` to escape special shell characters `"|()[]{}` (default: [0, 0, 0])
+
+* ***-r***, ***--shape-rot*** *arg*
+
+  specific orientation of the shape as a 3-element PYON array of Floats [XYZ Tait-Bryan (aircraft) angles in degrees]. It is advisable to put the argument in single quotes `' '` to escape special shell characters `"|()[]{}` (default: [0, 0, 0])
+
+* ***-d***, ***--shape-params*** *arg*
+
+  shape params, which will be combined with the default values read from `--input` or specified in `--shape`. It is a PYON dictionary, where key is param name and value is Float, Integer, String, or a vector (3-element PYON Array of Floats), as accepted by the shape type. It is advisable to put the argument in single quotes `' '` to escape special shell characters `"|()[]{}` (default: {})
 
 * ***-l***, ***--log-info***
 
@@ -143,7 +155,7 @@ especially useful when you are hand-crafting a shape using generic shape classes
 
 * ***-o***, ***--output*** *arg*
 
-  stores preview of the shape in a format given as an argument: `wolfram`, `obj` (Wavefront OBJ); multiple formats may be passed using multiple `-o` options or separated by a pipe `|` in a single one. It is advisable to put the argument in `' '` to escape special shell characters `"()|`
+  stores preview of the shape in a format given as an argument: `wolfram`, `obj` (Wavefront OBJ); multiple formats may be passed using multiple `-o` options or separated by a pipe `|` in a single one. It is advisable to put the argument in single quotes `' '` to escape special shell characters `"|()[]{}`
 
 [//]: # (end shape-preview)
 
@@ -183,7 +195,7 @@ trajectories (`-f`, `--auto-fix` option). Below is the full list of available op
 
 * ***-O***, ***--observable*** *arg*
 
-  replays the simulation and calculates specified observables (format as in the input file). Observables can be passed using multiple options (`-O obs1 -O obs2`) or pipe-separated in a single one (`-O 'obs1|obs2'`). It is advisable to put the argument in single quotes `' '` to escape special shell characters `"()|`
+  replays the simulation and calculates specified observables (format as in the input file). Observables can be passed using multiple options (`-O obs1 -O obs2`) or pipe-separated in a single one (`-O 'obs1|obs2'`). It is advisable to put the argument in single quotes `' '` to escape special shell characters `"|()[]{}`
 
 * ***-b***, ***--output-bulk-obs*** *arg*
 
@@ -191,7 +203,7 @@ trajectories (`-f`, `--auto-fix` option). Below is the full list of available op
 
 * ***-B***, ***--bulk-observable*** *arg*
 
-  replays the simulation and calculates specified bulk observables (format as in the input file). Observables can be passed using multiple options (`-B obs1 -B obs2`) or pipe-separated in a single one (`-B 'obs1|obs2'`). It is advisable to put the argument in single quotes `' '` to escape special shell characters `"()|`
+  replays the simulation and calculates specified bulk observables (format as in the input file). Observables can be passed using multiple options (`-B obs1 -B obs2`) or pipe-separated in a single one (`-B 'obs1|obs2'`). It is advisable to put the argument in single quotes `' '` to escape special shell characters `"|()[]{}`
 
 * ***-a***, ***--averaging-start*** *arg*
 
@@ -203,7 +215,7 @@ trajectories (`-f`, `--auto-fix` option). Below is the full list of available op
 
 * ***-s***, ***--output-snapshot*** *arg*
 
-  reads the last snapshot and outputs it in a given format: `ramsnap`, `wolfram`, `xyz`. More that one output format can be specified using multiple options (`-s out1 -s out2`) or pipe-separated in a single one (`-s 'out1|out2'`). It is advisable to put the argument in single quotes `' '` to escape special shell characters `"()|`
+  reads the last snapshot and outputs it in a given format: `ramsnap`, `wolfram`, `xyz`. More that one output format can be specified using multiple options (`-s out1 -s out2`) or pipe-separated in a single one (`-s 'out1|out2'`). It is advisable to put the argument in single quotes `' '` to escape special shell characters `"|()[]{}`
 
 * ***-I***, ***--log-info***
 
@@ -219,7 +231,7 @@ trajectories (`-f`, `--auto-fix` option). Below is the full list of available op
 
 * ***-t***, ***--output-trajectory*** *arg*
 
-  stores the trajectory in a given format: `ramtrj`, `xyz`. More that one output format can be specified using multiple options (`-t out1 -t out2`) or pipe-separated in a single one (`-t 'out1|out2'`). It is advisable to put the argument in single quotes `' '` to escape special shell characters `"()|`
+  stores the trajectory in a given format: `ramtrj`, `xyz`. More that one output format can be specified using multiple options (`-t out1 -t out2`) or pipe-separated in a single one (`-t 'out1|out2'`). It is advisable to put the argument in single quotes `' '` to escape special shell characters `"|()[]{}`
 
 * ***-x***, ***--truncate*** *arg*
 
