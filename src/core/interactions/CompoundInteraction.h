@@ -13,15 +13,21 @@
  */
 class CompoundInteraction : public Interaction {
 private:
-    const Interaction &interaction1;
-    const Interaction &interaction2;
+    const Interaction &mainInteration;
+    const Interaction &helperInteration;
 
-    bool hasSoftPart1{};
-    bool hasSoftPart2{};
-    bool hasHardPart1{};
-    bool hasHardPart2{};
-    bool hasWallPart1{};
-    bool hasWallPart2{};
+    bool hasSoftPartMain{};
+    bool hasHardPartMain{};
+    bool hasWallPartMain{};
+
+    bool hasSoftPartHelper{};
+    bool hasHardPartHelper{};
+    bool hasWallPartHelper{};
+    ShapeData helperData;
+    double helperRadius{};
+    double helperTotalRadius{};
+    std::vector<Vector<3>> helperInteractionCentres;
+
     bool isThisConvex{};
 
 public:
@@ -29,22 +35,22 @@ public:
      * @brief Creates the object for two given constituent interactions.
      * @details Both interaction have to have identical interaction centres, otherwise an exception is thrown.
      */
-    CompoundInteraction(const Interaction &interaction1, const Interaction &interaction2);
+    CompoundInteraction(const Interaction &mainInteraction, const Interaction &helperInteraction,
+                        ShapeData helperData = {});
 
-    [[nodiscard]] bool hasHardPart() const override { return this->hasHardPart1 || this->hasHardPart2; }
-    [[nodiscard]] bool hasSoftPart() const override { return this->hasSoftPart1 || this->hasSoftPart2; }
-    [[nodiscard]] bool hasWallPart() const override { return this->hasWallPart1 || this->hasWallPart2; }
+    [[nodiscard]] bool hasHardPart() const override { return this->hasHardPartMain || this->hasHardPartHelper; }
+    [[nodiscard]] bool hasSoftPart() const override { return this->hasSoftPartMain || this->hasSoftPartHelper; }
+    [[nodiscard]] bool hasWallPart() const override { return this->hasWallPartMain || this->hasWallPartHelper; }
     [[nodiscard]] bool isConvex() const override { return this->isThisConvex; }
 
     [[nodiscard]] double getRangeRadius(const std::byte *data) const override {
-        return std::max(this->interaction1.getRangeRadius(data), this->interaction2.getRangeRadius(data));
+        return std::max(this->mainInteration.getRangeRadius(data), this->helperRadius);
     }
 
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentres(const std::byte *data) const override;
 
     [[nodiscard]] double getTotalRangeRadius(const std::byte *data) const override {
-        return std::max(this->interaction1.getTotalRangeRadius(data),
-                        this->interaction2.getTotalRangeRadius(data));
+        return std::max(this->mainInteration.getTotalRangeRadius(data), this->helperTotalRadius);
     }
 
     [[nodiscard]] double calculateEnergyBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1,
