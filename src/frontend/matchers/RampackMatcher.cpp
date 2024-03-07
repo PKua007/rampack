@@ -263,6 +263,19 @@ namespace {
                         {"record_trajectory", create_record_trajectory(), "[]"},
                         {"observables", create_observables_matcher(), "[]"},
                         {"observables_out", out_, "None"}})
+            .filter([](const DataclassData &overlaps) {
+                auto helperShape = overlaps["helper_shape"].as<std::shared_ptr<ShapeTraits>>();
+                if (helperShape == nullptr)
+                    return true;
+
+                try {
+                    static_cast<void>(helperShape->getDataManager().defaultDeserialize({}));
+                    return true;
+                } catch (const ShapeDataException &) {
+                    return false;
+                }
+            })
+            .describe("all default shape parameters of helper_shape must be set and valid ")
             .mapTo([](const DataclassData &overlaps) -> Run {
                 OverlapRelaxationRun run;
 

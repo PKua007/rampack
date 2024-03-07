@@ -293,8 +293,10 @@ void CasinoMode::performOverlapRelaxation(Simulation &simulation, const Simulati
 
     OnTheFlyOutput onTheFlyOutput(run, simulation.getPacking().size(), cycleOffset, isContinuation, this->logger);
 
-    if (run.helperShapeTraits != nullptr)
-        shapeTraits = std::make_shared<CompoundShapeTraits>(shapeTraits, run.helperShapeTraits);
+    if (run.helperShapeTraits != nullptr) {
+        ShapeData helperData = run.helperShapeTraits->getDataManager().defaultDeserialize({});
+        shapeTraits = std::make_shared<CompoundShapeTraits>(shapeTraits, run.helperShapeTraits, helperData);
+    }
 
     Simulation::OverlapRelaxationParameters relaxParams;
     relaxParams.snapshotEvery = run.snapshotEvery;
