@@ -43,43 +43,58 @@
 
 using trompeloeil::_;
 
+namespace {
+    struct Data {
+        std::size_t i{};
+
+        friend bool operator==(Data, Data) { return true; }
+    };
+}
+
 
 TEST_CASE("CompoundInteraction") {
     MAKE_HARD_MOCK(hard);
     MAKE_SOFT_MOCK(soft);
     MAKE_WALL_MOCK(wall);
 
-    std::byte dummyMemoryLocation1{}, dummyMemoryLocation2{};
-    const std::byte *dummyPtr1 = &dummyMemoryLocation1;
-    const std::byte *dummyPtr2 = &dummyMemoryLocation2;
+    ShapeData data1(Data{1});
+    const std::byte *rawData1 = data1.raw();
+
+    ShapeData data2(Data{2});
+    const std::byte *rawData2 = data2.raw();
+
+    Data helperData{3};
+    ShapeData helperShapeData(Data{helperData});
 
     SECTION("range radius") {
-        REQUIRE_CALL(hard, getRangeRadius(dummyPtr1)).RETURN(1);
-        REQUIRE_CALL(soft, getRangeRadius(dummyPtr1)).RETURN(2);
-        REQUIRE_CALL(hard, getTotalRangeRadius(dummyPtr1)).RETURN(3);
-        REQUIRE_CALL(soft, getTotalRangeRadius(dummyPtr1)).RETURN(4);
-        CompoundInteraction compound(hard, soft);
+        REQUIRE_CALL(hard, getRangeRadius(rawData1)).RETURN(1);
+        REQUIRE_CALL(soft, getRangeRadius(_)).WITH(ShapeData::as<Data>(_1) == helperData).RETURN(2);
+        REQUIRE_CALL(hard, getTotalRangeRadius(rawData1)).RETURN(3);
+        REQUIRE_CALL(soft, getTotalRangeRadius(_)).WITH(ShapeData::as<Data>(_1) == helperData).RETURN(4);
+        CompoundInteraction compound(hard, soft, helperShapeData);
 
-        CHECK(compound.getRangeRadius(dummyPtr1) == 2);
-        CHECK(compound.getTotalRangeRadius(dummyPtr1) == 4);
+        CHECK(compound.getRangeRadius(rawData1) == 2);
+        CHECK(compound.getTotalRangeRadius(rawData1) == 4);
     }
 
     SECTION("interaction centres") {
         SECTION("0 centres") {
-            REQUIRE_CALL(hard, getInteractionCentres(dummyPtr1)).RETURN(std::vector<Vector<3>>{});
-            REQUIRE_CALL(soft, getInteractionCentres(dummyPtr1)).RETURN(std::vector<Vector<3>>{});
-            CompoundInteraction compound(hard, soft);
+            REQUIRE_CALL(hard, getInteractionCentres(rawData1)).RETURN(std::vector<Vector<3>>{});
+            REQUIRE_CALL(soft, getInteractionCentres(_))
+                .WITH(ShapeData::as<Data>(_1) == helperData)
+                .RETURN(std::vector<Vector<3>>{});
+            CompoundInteraction compound(hard, soft, helperShapeData);
 
-            CHECK(compound.getInteractionCentres(dummyPtr1).empty());
+            CHECK(compound.getInteractionCentres(rawData1).empty());
         }
 
         SECTION("2 centres") {
             std::vector<Vector<3>> centres{{1, 2, 3}, {4, 5, 6}};
-            REQUIRE_CALL(hard, getInteractionCentres(dummyPtr1)).RETURN(centres);
-            REQUIRE_CALL(soft, getInteractionCentres(dummyPtr1)).RETURN(centres);
-            CompoundInteraction compound(hard, soft);
+            REQUIRE_CALL(hard, getInteractionCentres(rawData1)).RETURN(centres);
+            REQUIRE_CALL(soft, getInteractionCentres(_)).WITH(ShapeData::as<Data>(_1) == helperData).RETURN(centres);
+            CompoundInteraction compound(hard, soft, helperShapeData);
 
-            CHECK(compound.getInteractionCentres(dummyPtr1) == centres);
+            CHECK(compound.getInteractionCentres(rawData1) == centres);
         }
 
         SECTION("incompatible") {
@@ -88,19 +103,23 @@ TEST_CASE("CompoundInteraction") {
             std::vector<Vector<3>> emptyCentres{};
 
             SECTION("different number") {
-                REQUIRE_CALL(hard, getInteractionCentres(dummyPtr1)).RETURN(centres1);
-                REQUIRE_CALL(soft, getInteractionCentres(dummyPtr1)).RETURN(emptyCentres);
-                CompoundInteraction compound(hard, soft);
+                REQUIRE_CALL(hard, getInteractionCentres(rawData1)).RETURN(centres1);
+                REQUIRE_CALL(soft, getInteractionCentres(_))
+                    .WITH(ShapeData::as<Data>(_1) == helperData)
+                    .RETURN(emptyCentres);
+                CompoundInteraction compound(hard, soft, helperShapeData);
 
-                CHECK_THROWS_WITH(compound.getInteractionCentres(dummyPtr1), Catch::Contains("Non identical"));
+                CHECK_THROWS_WITH(compound.getInteractionCentres(rawData1), Catch::Contains("Non identical"));
             }
 
             SECTION("same number buf unequal") {
-                REQUIRE_CALL(hard, getInteractionCentres(dummyPtr1)).RETURN(centres1);
-                REQUIRE_CALL(soft, getInteractionCentres(dummyPtr1)).RETURN(centres2);
-                CompoundInteraction compound(hard, soft);
+                REQUIRE_CALL(hard, getInteractionCentres(rawData1)).RETURN(centres1);
+                REQUIRE_CALL(soft, getInteractionCentres(_))
+                    .WITH(ShapeData::as<Data>(_1) == helperData)
+                    .RETURN(centres2);
+                CompoundInteraction compound(hard, soft, helperShapeData);
 
-                CHECK_THROWS_WITH(compound.getInteractionCentres(dummyPtr1), Catch::Contains("Non identical"));
+                CHECK_THROWS_WITH(compound.getInteractionCentres(rawData1), Catch::Contains("Non identical"));
             }
         }
     }
@@ -152,13 +171,14 @@ TEST_CASE("CompoundInteraction") {
     bool ov1{}, ov2{}, result{};
 
     SECTION("hard + soft overlap and energy") {
-        REQUIRE_CALL(hard, overlapBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, _)).RETURN(true);
-        REQUIRE_CALL(soft, calculateEnergyBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, _))
+        REQUIRE_CALL(hard, overlapBetween(pos1, rot1, rawData1, idx1, pos2, rot2, rawData2, idx2, _)).RETURN(true);
+        REQUIRE_CALL(soft, calculateEnergyBetween(pos1, rot1, _, idx1, pos2, rot2, _, idx2, _))
+            .WITH(ShapeData::as<Data>(_3) == helperData && ShapeData::as<Data>(_7) == helperData)
             .RETURN(2);
-        CompoundInteraction compound(hard, soft);
+        CompoundInteraction compound(hard, soft, helperShapeData);
 
-        CHECK(compound.overlapBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, bc));
-        CHECK(compound.calculateEnergyBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, bc) == 2);
+        CHECK(compound.overlapBetween(pos1, rot1, rawData1, idx1, pos2, rot2, rawData2, idx2, bc));
+        CHECK(compound.calculateEnergyBetween(pos1, rot1, rawData1, idx1, pos2, rot2, rawData2, idx2, bc) == 2);
     }
 
     SECTION("hard + hard overlap") {
@@ -170,11 +190,13 @@ TEST_CASE("CompoundInteraction") {
                                               std::make_tuple(true, true, true));
 
         DYNAMIC_SECTION(std::boolalpha << ov1 << " and " << ov2 << " give " << result) {
-            ALLOW_CALL(hard, overlapBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, _)).RETURN(ov1);
-            ALLOW_CALL(hard2, overlapBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, _)).RETURN(ov2);
-            CompoundInteraction compound(hard, hard2);
+            ALLOW_CALL(hard, overlapBetween(pos1, rot1, rawData1, idx1, pos2, rot2, rawData2, idx2, _)).RETURN(ov1);
+            ALLOW_CALL(hard2, overlapBetween(pos1, rot1, _, idx1, pos2, rot2, _, idx2, _))
+                .WITH(ShapeData::as<Data>(_3) == helperData && ShapeData::as<Data>(_7) == helperData)
+                .RETURN(ov2);
+            CompoundInteraction compound(hard, hard2, helperShapeData);
 
-            CHECK(compound.overlapBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, bc) == result);
+            CHECK(compound.overlapBetween(pos1, rot1, rawData1, idx1, pos2, rot2, rawData2, idx2, bc) == result);
         }
     }
 
@@ -187,23 +209,26 @@ TEST_CASE("CompoundInteraction") {
                                               std::make_tuple(true, true, true));
 
         DYNAMIC_SECTION(std::boolalpha << ov1 << " and " << ov2 << " give " << result) {
-            ALLOW_CALL(wall, overlapWithWall(pos1, rot1, dummyPtr1, idx1, wallOrigin, wallVector)).RETURN(ov1);
-            ALLOW_CALL(wall2, overlapWithWall(pos1, rot1, dummyPtr1, idx1, wallOrigin, wallVector)).RETURN(ov2);
-            CompoundInteraction compound(wall, wall2);
+            ALLOW_CALL(wall, overlapWithWall(pos1, rot1, rawData1, idx1, wallOrigin, wallVector)).RETURN(ov1);
+            ALLOW_CALL(wall2, overlapWithWall(pos1, rot1, _, idx1, wallOrigin, wallVector))
+                .WITH(ShapeData::as<Data>(_3) == helperData)
+                .RETURN(ov2);
+            CompoundInteraction compound(wall, wall2, helperShapeData);
 
-            CHECK(compound.overlapWithWall(pos1, rot1, dummyPtr1, idx1, wallOrigin, wallVector) == result);
+            CHECK(compound.overlapWithWall(pos1, rot1, rawData1, idx1, wallOrigin, wallVector) == result);
         }
     }
 
     SECTION("soft + soft energy") {
         MAKE_SOFT_MOCK(soft2);
 
-        REQUIRE_CALL(soft, calculateEnergyBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, _))
+        REQUIRE_CALL(soft, calculateEnergyBetween(pos1, rot1, rawData1, idx1, pos2, rot2, rawData2, idx2, _))
             .RETURN(1);
-        REQUIRE_CALL(soft2, calculateEnergyBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, _))
+        REQUIRE_CALL(soft2, calculateEnergyBetween(pos1, rot1, _, idx1, pos2, rot2, _, idx2, _))
+            .WITH(ShapeData::as<Data>(_3) == helperData && ShapeData::as<Data>(_7) == helperData)
             .RETURN(2);
-        CompoundInteraction compound(soft, soft2);
+        CompoundInteraction compound(soft, soft2, helperShapeData);
 
-        CHECK(compound.calculateEnergyBetween(pos1, rot1, dummyPtr1, idx1, pos2, rot2, dummyPtr2, idx2, bc) == 3);
+        CHECK(compound.calculateEnergyBetween(pos1, rot1, rawData1, idx1, pos2, rot2, rawData2, idx2, bc) == 3);
     }
 }
