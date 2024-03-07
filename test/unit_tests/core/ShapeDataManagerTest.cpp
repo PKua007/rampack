@@ -40,7 +40,7 @@ namespace {
 TEST_CASE("ShapeDataManager") {
     using trompeloeil::_;
 
-    MockShapeDataManager manager({{"default_int", "5"}});
+    MockShapeDataManager manager(TextualShapeData{{"default_int", "5"}});
     ALLOW_CALL(manager, serialize(_)).RETURN(do_serialize(_1));
     ALLOW_CALL(manager, deserialize(_)).RETURN(do_deserialize(_1));
 
