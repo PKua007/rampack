@@ -74,7 +74,7 @@ TEST_CASE("ShapeDataDeserializer: errors") {
     }
 
     SECTION("no key") {
-        ShapeDataDeserializer deserializer({{"key", "value"}});
+        ShapeDataDeserializer deserializer(TextualShapeData{{"key", "value"}});
         CHECK_THROWS_WITH(deserializer.as<int>("no_key"), Contains("missing parameter", CaseSensitive::No));
     }
 }
