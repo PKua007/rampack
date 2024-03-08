@@ -6,7 +6,7 @@
 #include <sstream>
 
 #include "core/Simulation.h"
-#include "core/lattice/OrthorhombicArrangingModel.h"
+#include "core/lattice/legacy/OrthorhombicArrangingModel.h"
 #include "core/shapes/SphereTraits.h"
 #include "core/shapes/SpherocylinderTraits.h"
 #include "core/shapes/KMerTraits.h"
@@ -55,7 +55,7 @@ TEST_CASE("Simulation: equilibration for dilute hard sphere gas", "[short]") {
     double V = 5000;
     double linearSize = std::cbrt(V);
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
-    auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
+    auto shapes = legacy::OrthorhombicArrangingModel{}.arrange(50, dimensions);
     SphereTraits sphereTraits(0.05);
     auto packing = std::make_unique<Packing>(
         dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction(), sphereTraits.getDataManager()
@@ -83,7 +83,7 @@ TEST_CASE("Simulation: degenerate hard sphere gas", "[short]") {
     double V = 200;
     double linearSize = std::cbrt(V);
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
-    auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
+    auto shapes = legacy::OrthorhombicArrangingModel{}.arrange(50, dimensions);
     SphereTraits sphereTraits(0.5);
     auto packing = std::make_unique<Packing>(
         dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction(), sphereTraits.getDataManager()
@@ -109,7 +109,7 @@ TEST_CASE("Simulation: slightly degenerate hard spherocylinder gas", "[short]") 
     OMP_SET_NUM_THREADS(1);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
     std::array<double, 3> dimensions = {10, 10, 10};
-    auto shapes = OrthorhombicArrangingModel{}.arrange(50, {5, 5, 2}, {2, 2, 5}, dimensions);
+    auto shapes = legacy::OrthorhombicArrangingModel{}.arrange(50, {5, 5, 2}, {2, 2, 5}, dimensions);
     SpherocylinderTraits spherocylinderTraits;
     for (auto &shape : shapes)
         shape.setData(SpherocylinderTraits::Data{3, 0.5});
@@ -165,7 +165,7 @@ TEST_CASE("Simulation: slightly degenerate Lennard-Jones gas", "[short]") {
     double V = 200;
     double linearSize = std::cbrt(V);
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
-    auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
+    auto shapes = legacy::OrthorhombicArrangingModel{}.arrange(50, dimensions);
     SphereTraits sphereTraits(0.5, std::make_unique<LennardJonesInteraction>(1, 0.5));
     auto packing = std::make_unique<Packing>(
         dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction(), sphereTraits.getDataManager()
@@ -196,7 +196,7 @@ TEST_CASE("Simulation: hard dumbbell fluid", "[short]") {
     double V = 600;
     double linearSize = std::cbrt(V);
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
-    auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
+    auto shapes = legacy::OrthorhombicArrangingModel{}.arrange(50, dimensions);
     KMerTraits kmerTraits(2, 0.5, 1);
     auto packing = std::make_unique<Packing>(
         dimensions, std::move(shapes), std::move(pbc), kmerTraits.getInteraction(), kmerTraits.getDataManager()
@@ -225,7 +225,7 @@ TEST_CASE("Simulation: wca dumbbell fluid", "[medium]") {
     double V = 500;
     double linearSize = std::cbrt(V);
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
-    auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
+    auto shapes = legacy::OrthorhombicArrangingModel{}.arrange(50, dimensions);
     // TODO: fix is properly
     for (auto &shape : shapes)
         shape.rotate(Matrix<3, 3>::rotation(0, M_PI/2, 0));
@@ -265,7 +265,7 @@ TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
     double V = 1000;
     double linearSize = std::cbrt(V);
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
-    auto shapes = OrthorhombicArrangingModel{}.arrange(200, dimensions);
+    auto shapes = legacy::OrthorhombicArrangingModel{}.arrange(200, dimensions);
     SphereTraits sphereTraits(0.5);
     auto packing = std::make_unique<Packing>(
         dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction(), sphereTraits.getDataManager(), 4, 4
@@ -292,7 +292,7 @@ TEST_CASE("Simulation: hard sphere domain decomposition", "[medium]") {
 
     // Second part - check if runs are deterministic w.r.t. to a seed
 
-    auto shapes2 = OrthorhombicArrangingModel{}.arrange(200, dimensions);
+    auto shapes2 = legacy::OrthorhombicArrangingModel{}.arrange(200, dimensions);
     auto pbc2 = std::make_unique<PeriodicBoundaryConditions>();
     auto packing2 = std::make_unique<Packing>(
         dimensions, std::move(shapes2), std::move(pbc2), sphereTraits.getInteraction(), sphereTraits.getDataManager(),
@@ -316,7 +316,7 @@ TEST_CASE("Simulation: domain number auto-reduction", "[medium]") {
     double V = 250;
     double linearSize = std::cbrt(V);
     std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
-    auto shapes = OrthorhombicArrangingModel{}.arrange(50, dimensions);
+    auto shapes = legacy::OrthorhombicArrangingModel{}.arrange(50, dimensions);
     SphereTraits sphereTraits(0.5);
     auto packing = std::make_unique<Packing>(
         dimensions, std::move(shapes), std::move(pbc), sphereTraits.getInteraction(), sphereTraits.getDataManager(), 4, 4
@@ -348,7 +348,7 @@ TEST_CASE("Simulation: overlap reduction for hard sphere liquid", "[medium]") {
         auto pbc = std::make_unique<PeriodicBoundaryConditions>();
         double linearSize = 5;
         std::array<double, 3> dimensions = {linearSize, linearSize, linearSize};
-        auto shapes = OrthorhombicArrangingModel{}.arrange(216, dimensions);    // 6 x 6 x 6
+        auto shapes = legacy::OrthorhombicArrangingModel{}.arrange(216, dimensions);    // 6 x 6 x 6
 
         auto sphereTraits = std::make_unique<SphereTraits>(0.5);
         auto squareInverseCore = std::make_unique<SquareInverseCoreInteraction>(1, 1);

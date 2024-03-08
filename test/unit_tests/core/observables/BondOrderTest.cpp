@@ -9,7 +9,7 @@
 
 #include "core/observables/BondOrder.h"
 
-#include "core/lattice/OrthorhombicArrangingModel.h"
+#include "core/lattice/legacy/OrthorhombicArrangingModel.h"
 #include "core/lattice/Lattice.h"
 #include "core/shapes/SphereTraits.h"
 #include "core/shapes/SpherocylinderTraits.h"
@@ -37,7 +37,7 @@ TEST_CASE("BondOrder: hexatic") {
     std::size_t n1 = 4, n2 = 3;
 
     // Create half of hexagonal lattice
-    OrthorhombicArrangingModel arrangingModel;
+    legacy::OrthorhombicArrangingModel arrangingModel;
     std::array<double, 3> boxDimensions{(n1 - 1)*a + r1, (n2 - 1)*b + r2, shift[2]};
     auto shapes1 = arrangingModel.arrange(n1*n2, {n1, n2, 1}, {a, b, c}, boxDimensions);
 

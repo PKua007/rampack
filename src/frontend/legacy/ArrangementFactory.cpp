@@ -6,7 +6,7 @@
 #include <fstream>
 
 #include "ArrangementFactory.h"
-#include "core/lattice/OrthorhombicArrangingModel.h"
+#include "core/lattice/legacy/OrthorhombicArrangingModel.h"
 #include "core/lattice/DistanceOptimizer.h"
 #include "utils/Exceptions.h"
 #include "core/PeriodicBoundaryConditions.h"
@@ -23,6 +23,8 @@
                            "[polarization] := {polar|antipolar} [polarization axis]"
 
 namespace {
+    using namespace legacy;
+
     std::array<double, 3> parse_box_dimensions(const std::string &initialDimensions) {
         std::istringstream dimensionsStream(initialDimensions);
         std::array<double, 3> dimensions{};
@@ -115,8 +117,8 @@ namespace {
                                                  const std::string &axisOrderString,
                                                  const OrthorhombicArrangingModel &model)
     {
-        // TODO: fix nullptr
-        double rangeRadius = interaction.getTotalRangeRadius(nullptr);
+        ShapeData defaultData = dataManager.defaultDeserialize({});
+        double rangeRadius = interaction.getTotalRangeRadius(defaultData.raw());
         constexpr double EPSILON = 1e-12;
 
         std::array<double, 3> testPackingCellDim{};
@@ -234,8 +236,6 @@ namespace legacy {
                                                                 const ShapeTraits &shapeTraits, std::size_t moveThreads,
                                                                 std::size_t scalingThreads)
     {
-        // TODO: fix for ShapaData
-
         const auto &interaction = shapeTraits.getInteraction();
         const auto &dataManager = shapeTraits.getDataManager();
 
