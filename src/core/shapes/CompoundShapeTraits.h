@@ -28,7 +28,7 @@ public:
      * additional interaction.
      */
     CompoundShapeTraits(const std::shared_ptr<ShapeTraits> &mainShapeTraits,
-                        const std::shared_ptr<ShapeTraits> &helperShapeTraits, ShapeData helperData)
+                        const std::shared_ptr<ShapeTraits> &helperShapeTraits, ShapeData helperData = {})
             : mainShapeTraits{mainShapeTraits}, helperShapeTraits{helperShapeTraits},
               compoundInteraction(mainShapeTraits->getInteraction(), helperShapeTraits->getInteraction(), std::move(helperData))
     { }
