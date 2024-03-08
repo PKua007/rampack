@@ -30,6 +30,11 @@
 #include "utils/ParseUtils.h"
 
 
+// TODO: retrofit very old input files. Breaking changes made
+// positionStepSize, rotationStepSize -> move types
+// densitySnapshotFilename -> observableSnapshotFilename
+// orthorombic -> orthorhombic
+
 namespace {
     class LegacyPackingFactory : public PackingFactory {
     private:

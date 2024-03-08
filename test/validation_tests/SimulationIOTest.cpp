@@ -14,7 +14,7 @@
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/volume_scalers/DeltaVolumeScaler.h"
 #include "core/volume_scalers/TriclinicAdapter.h"
-#include "core/lattice/OrthorhombicArrangingModel.h"
+#include "core/lattice/legacy/OrthorhombicArrangingModel.h"
 #include "core/move_samplers/RototranslationSampler.h"
 
 
@@ -34,12 +34,11 @@ namespace {
     }
 }
 
-TEST_CASE("Simulation IO: storing and restoring")
-{
+TEST_CASE("Simulation IO: storing and restoring") {
     KMerTraits traits(2, 0.5, 1);
     const auto &interaction = traits.getInteraction();
     const auto &dataManager = traits.getDataManager();
-    OrthorhombicArrangingModel arrangingModel;
+    legacy::OrthorhombicArrangingModel arrangingModel;
     auto shapes = arrangingModel.arrange(64, {10, 10, 10});
     TriclinicBox box(10);
     std::ostringstream logger_stream;

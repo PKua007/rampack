@@ -6,7 +6,10 @@
 
 #include "matchers/MatrixApproxMatcher.h"
 
-#include "core/lattice/OrthorhombicArrangingModel.h"
+#include "core/lattice/legacy/OrthorhombicArrangingModel.h"
+
+
+using namespace legacy;
 
 using Polarization = OrthorhombicArrangingModel::Polarization;
 using Axis = OrthorhombicArrangingModel::Axis;

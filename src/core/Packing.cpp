@@ -1518,7 +1518,7 @@ void Packing::imbueDefaultShapeData(std::vector<Shape> &shapes, const ShapeDataM
         ShapeData defaultShapeData = manager.defaultDeserialize({});
         for (auto &shape : shapes)
             shape.setData(defaultShapeData);
-    } catch (const ShapeDataSerializationException &e) {
+    } catch (const ShapeDataException &e) {
         ExpectsThrow(std::string("Shapes have empty ShapeData and default recreation failed: ") + e.what());
     }
 }
