@@ -2,16 +2,12 @@
 // Created by pkua on 18.11.22.
 //
 
+#include <iterator>
+
 #include "XYZWriter.h"
 #include "geometry/Quaternion.h"
+#include "utils/Exceptions.h"
 
-
-void XYZWriter::write(std::ostream &out, const Packing &packing,
-                      const std::map<std::string, std::string> &auxInfo) const
-{
-    XYZWriter::storeHeader(out, packing, auxInfo);
-    XYZWriter::storeShapes(out, packing);
-}
 
 void XYZWriter::storeHeader(std::ostream &out, const Packing &packing,
                             const std::map<std::string, std::string> &auxInfo)
@@ -43,13 +39,91 @@ void XYZWriter::storeAuxInfo(std::ostream &out, const std::map<std::string, std:
     }
 }
 
-void XYZWriter::storeShapes(std::ostream &out, const Packing &packing) {
+bool XYZWriter::isPackingPolydisperse(const Packing &packing) {
+    auto dataDifferent = [](const Shape &s1, const Shape &s2) { return s1.getData() != s2.getData(); };
+    return std::adjacent_find(packing.begin(), packing.end(), dataDifferent) != packing.end();
+}
+
+std::string XYZWriter::generateProceduralSpeciesName(const TextualShapeData &textualData) {
+    std::ostringstream type;
+    auto paramPrinter = [](const auto &param) { return param.first + ":" + param.second; };
+    std::transform(textualData.begin(), textualData.end(), std::ostream_iterator<std::string>(type, "/"),
+                   paramPrinter);
+    std::string typeStr = type.str();
+    typeStr.pop_back();
+    return typeStr;
+}
+
+std::optional<std::string> XYZWriter::tryGetSpeciesName(const TextualShapeData &textualData) {
+    if (textualData.size() != 1)
+        return std::nullopt;
+
+    if (textualData.begin()->first != "species")
+        return std::nullopt;
+
+    return textualData.begin()->second;
+}
+
+bool XYZWriter::isMapBijective(const SpeciesMap &speciesMap) {
+    for (std::size_t i{}; i < speciesMap.size(); i++) {
+        for (std::size_t j = i + 1; j < speciesMap.size(); j++) {
+            const auto &entryI = speciesMap[i];
+            const auto &entryJ = speciesMap[j];
+            if (entryI.first == entryJ.first || entryI.second == entryJ.second)
+                return false;
+        }
+    }
+
+    return true;
+}
+
+XYZWriter::XYZWriter(XYZWriter::SpeciesMap speciesMap) : speciesMap{std::move(speciesMap)} {
+    Expects(XYZWriter::isMapBijective(this->speciesMap));
+}
+
+void XYZWriter::storeShapes(std::ostream &out, const Packing &packing, const ShapeDataManager &manager) const {
+    bool isPolydisperse = XYZWriter::isPackingPolydisperse(packing);
+
     for (const auto &shape : packing) {
+        std::string speciesName = this->findSpeciesName(manager, shape.getData(), isPolydisperse);
         const auto &pos = shape.getPosition();
         const auto &rot = shape.getOrientation();
         auto quat = Quaternion::fromMatrix(rot);
-        out << "A ";
+        out << speciesName << " ";
         out << pos[0] << " " << pos[1] << " " << pos[2] << " ";
         out << quat[0] << " " << quat[1] << " " << quat[2] << " " << quat[3] << std::endl;
     }
+}
+
+std::string XYZWriter::findSpeciesName(const ShapeDataManager &manager, const ShapeData &data,
+                                       bool isPolydisperse) const
+{
+    auto textualData = manager.serialize(data);
+
+    auto mappedSpeciesName = this->findMappedSpeciesName(data);
+    if (mappedSpeciesName.has_value())
+        return *mappedSpeciesName;
+
+    auto speciesName = XYZWriter::tryGetSpeciesName(textualData);
+    if (speciesName)
+        return *speciesName;
+
+    if (!isPolydisperse)
+        return "A";
+
+    return XYZWriter::generateProceduralSpeciesName(textualData);
+}
+
+std::optional<std::string> XYZWriter::findMappedSpeciesName(const ShapeData &data) const {
+    for (const auto &[speciesName, speciesData] : this->speciesMap)
+        if (speciesData == data)
+            return speciesName;
+    return std::nullopt;
+}
+
+void XYZWriter::write(std::ostream &out, const Packing &packing, const ShapeDataManager &manager,
+                      const std::map<std::string, std::string> &auxInfo) const
+{
+    XYZWriter::storeHeader(out, packing, auxInfo);
+    this->storeShapes(out, packing, manager);
 }

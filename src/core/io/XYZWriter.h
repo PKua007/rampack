@@ -18,21 +18,36 @@
  * </a>
  */
 class XYZWriter : public SnapshotWriter {
+public:
+    using SpeciesMap = std::vector<std::pair<std::string, ShapeData>>;
+
 private:
     static void storeHeader(std::ostream &out, const Packing &packing,
                             const std::map<std::string, std::string> &auxInfo);
-    static void storeShapes(std::ostream &out, const Packing &packing);
     static void storeAuxInfo(std::ostream &out, const std::map<std::string, std::string> &auxInfo);
+    [[nodiscard]] static bool isPackingPolydisperse(const Packing &packing);
+    [[nodiscard]] static std::string generateProceduralSpeciesName(const TextualShapeData &textualData);
+    [[nodiscard]] static std::optional<std::string> tryGetSpeciesName(const TextualShapeData &textualData);
+    [[nodiscard]] static bool isMapBijective(const SpeciesMap &speciesMap);
+
+    void storeShapes(std::ostream &out, const Packing &packing, const ShapeDataManager &manager) const;
+    [[nodiscard]] std::string findSpeciesName(const ShapeDataManager &manager, const ShapeData &data,
+                                              bool isPolydisperse) const;
+    [[nodiscard]] std::optional<std::string> findMappedSpeciesName(const ShapeData &data) const;
+
+    SpeciesMap speciesMap;
 
 public:
+    explicit XYZWriter(SpeciesMap speciesMap = {});
+
     /**
      * @brief Writes the snapshot to @a out stream.
      * @details All stream flag of @a out are respected - the caller may use them to specify format and precision.
      */
-    void write(std::ostream &out, const Packing &packing, [[maybe_unused]] const ShapeTraits &traits,
+    void write(std::ostream &out, const Packing &packing, const ShapeTraits &traits,
                const std::map<std::string, std::string> &auxInfo) const override
     {
-        this->write(out, packing, auxInfo);
+        this->write(out, packing, traits.getDataManager(), auxInfo);
     }
 
     /**
@@ -40,7 +55,8 @@ public:
      * write(std::ostream&, const Packing&, const ShapeTraits&, const std::map<std::string, std::string>&) const
      * without unused ShapeTraits on the argument list.
      */
-    void write(std::ostream &out, const Packing &packing, const std::map<std::string, std::string> &auxInfo) const;
+    void write(std::ostream &out, const Packing &packing, const ShapeDataManager &manager,
+               const std::map<std::string, std::string> &auxInfo) const;
 };
 
 
