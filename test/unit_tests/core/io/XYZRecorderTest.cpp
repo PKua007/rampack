@@ -26,9 +26,9 @@ TEST_CASE("XYZRecorder") {
         out->precision(1);
         *out << std::fixed;
         XYZRecorder recorder(std::move(out), false);
-        recorder.recordSnapshot(packing, 1000);
+        recorder.recordSnapshot(packing, traits, 1000);
         packing.tryScaling(2, traits.getInteraction());
-        recorder.recordSnapshot(packing, 2000);
+        recorder.recordSnapshot(packing, traits, 2000);
     }
 
     auto expectedOut =

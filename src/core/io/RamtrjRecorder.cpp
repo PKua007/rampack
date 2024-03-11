@@ -39,7 +39,9 @@ RamtrjRecorder::~RamtrjRecorder() {
     this->close0();
 }
 
-void RamtrjRecorder::recordSnapshot(const Packing &packing, std::size_t cycle) {
+void RamtrjRecorder::recordSnapshot(const Packing &packing, [[maybe_unused]] const ShapeTraits &traits,
+                                    std::size_t cycle)
+{
     Expects(this->stream != nullptr);
     Expects(cycle > 0);
     Expects(cycle == (this->numSnapshots + 1) * this->cycleStep);

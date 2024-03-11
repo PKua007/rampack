@@ -6,6 +6,7 @@
 #define RAMPACK_SIMULATIONRECORDER_H
 
 #include "Packing.h"
+#include "ShapeTraits.h"
 
 
 /**
@@ -19,7 +20,7 @@ public:
     /**
      * @brief Records the next snapshot.
      */
-    virtual void recordSnapshot(const Packing &packing, std::size_t cycle) = 0;
+    virtual void recordSnapshot(const Packing &packing, const ShapeTraits &traits, std::size_t cycle) = 0;
 
     /**
      * @brief Returns last recorder cycle number.

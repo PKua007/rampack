@@ -90,11 +90,10 @@ public:
     explicit RamtrjPlayer(std::unique_ptr<std::istream> in, AutoFix &autoFix);
 
     [[nodiscard]] bool hasNext() const override;
-    void nextSnapshot(Packing &packing, const Interaction &interaction, const ShapeDataManager &dataManager) override;
+    void nextSnapshot(Packing &packing, const ShapeTraits &traits) override;
     void reset() override;
-    void lastSnapshot(Packing &packing, const Interaction &interaction, const ShapeDataManager &dataManager) override;
-    void jumpToSnapshot(Packing &packing, const Interaction &interaction, const ShapeDataManager &dataManager,
-                        std::size_t cycleNumber) override;
+    void lastSnapshot(Packing &packing, const ShapeTraits &traits) override;
+    void jumpToSnapshot(Packing &packing, const ShapeTraits &traits, std::size_t cycleNumber) override;
     [[nodiscard]] std::size_t getCurrentSnapshotCycles() const override;
     [[nodiscard]] std::size_t getTotalCycles() const override {
         return this->header.cycleStep * this->header.numSnapshots;

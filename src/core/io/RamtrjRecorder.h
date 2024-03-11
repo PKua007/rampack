@@ -44,7 +44,7 @@ public:
      * the one passed in the constructor). For example, subsequent invocations can be with @a cycle equal 200, 400,
      * 600, etc.
      */
-    void recordSnapshot(const Packing &packing, std::size_t cycle) override;
+    void recordSnapshot(const Packing &packing, const ShapeTraits &traits, std::size_t cycle) override;
 
     [[nodiscard]] std::size_t getLastCycleNumber() const override { return this->numSnapshots * this->cycleStep; }
     void close() override { this->close0(); }

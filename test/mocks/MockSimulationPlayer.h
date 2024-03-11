@@ -13,10 +13,10 @@
 class MockSimulationPlayer : public trompeloeil::mock_interface<SimulationPlayer> {
 public:
     IMPLEMENT_CONST_MOCK0(hasNext);
-    IMPLEMENT_MOCK3(nextSnapshot);
+    IMPLEMENT_MOCK2(nextSnapshot);
     IMPLEMENT_MOCK0(reset);
-    IMPLEMENT_MOCK3(lastSnapshot);
-    IMPLEMENT_MOCK4(jumpToSnapshot);
+    IMPLEMENT_MOCK2(lastSnapshot);
+    IMPLEMENT_MOCK3(jumpToSnapshot);
     IMPLEMENT_CONST_MOCK0(getCurrentSnapshotCycles);
     IMPLEMENT_CONST_MOCK0(getTotalCycles);
     IMPLEMENT_CONST_MOCK0(getCycleStep);

@@ -6,6 +6,7 @@
 #define RAMPACK_SIMULATIONPLAYER_H
 
 #include "Packing.h"
+#include "ShapeTraits.h"
 
 
 /**
@@ -24,8 +25,7 @@ public:
     /**
      * @brief Moves to the next snapshot (the first one is an original invocation) and prints it on @a packing.
      */
-    virtual void nextSnapshot(Packing &packing, const Interaction &interaction,
-                              const ShapeDataManager &dataManager) = 0;
+    virtual void nextSnapshot(Packing &packing, const ShapeTraits &traits) = 0;
 
     /**
      * @brief Moves back to the beginning of the trajectory. Calling nextSnapshot() afterwards will then jump to the
@@ -36,14 +36,12 @@ public:
     /**
      * @brief Moves to the last snapshot and prints it on @a packing.
      */
-    virtual void lastSnapshot(Packing &packing, const Interaction &interaction,
-                              const ShapeDataManager &dataManager) = 0;
+    virtual void lastSnapshot(Packing &packing, const ShapeTraits &traits) = 0;
 
     /**
      * @brief Jumps to a given snapshot and prints it on @a packing.
      */
-    virtual void jumpToSnapshot(Packing &packing, const Interaction &interaction, const ShapeDataManager &dataManager,
-                                std::size_t cycleNumber) = 0;
+    virtual void jumpToSnapshot(Packing &packing, const ShapeTraits &traits, std::size_t cycleNumber) = 0;
 
     /**
      * @brief Returns number of cycles for a current snapshot (which was recently moved to using

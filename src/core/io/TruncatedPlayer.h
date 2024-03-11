@@ -33,10 +33,9 @@ public:
     void close() override { this->player->close(); }
 
     [[nodiscard]] bool hasNext() const override;
-    void nextSnapshot(Packing &packing, const Interaction &interaction, const ShapeDataManager &dataManager) override;
-    void lastSnapshot(Packing &packing, const Interaction &interaction, const ShapeDataManager &dataManager) override;
-    void jumpToSnapshot(Packing &packing, const Interaction &interaction, const ShapeDataManager &dataManager,
-                        std::size_t cycleNumber) override;
+    void nextSnapshot(Packing &packing, const ShapeTraits &traits) override;
+    void lastSnapshot(Packing &packing, const ShapeTraits &traits) override;
+    void jumpToSnapshot(Packing &packing, const ShapeTraits &traits, std::size_t cycleNumber) override;
     [[nodiscard]] std::size_t getTotalCycles() const override;
 };
 

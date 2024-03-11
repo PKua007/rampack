@@ -142,7 +142,7 @@ void Simulation::integrate(const Environment &env, const IntegrationParameters &
                 this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
                 if (!simulationRecorders.empty())
                     for (const auto &recorder : simulationRecorders)
-                       recorder->recordSnapshot(*this->packing, this->totalCycles);
+                       recorder->recordSnapshot(*this->packing, shapeTraits, this->totalCycles);
             }
             if (this->totalCycles % params.inlineInfoEvery == 0)
                 this->printInlineInfo(this->totalCycles, shapeTraits, logger, false);
@@ -171,7 +171,7 @@ void Simulation::integrate(const Environment &env, const IntegrationParameters &
                 this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
                 if (!simulationRecorders.empty())
                     for (const auto &recorder : simulationRecorders)
-                        recorder->recordSnapshot(*this->packing, this->totalCycles);
+                        recorder->recordSnapshot(*this->packing, shapeTraits, this->totalCycles);
             }
             if (this->totalCycles % params.averagingEvery == 0)
                 this->observablesCollector->addAveragingValues(*this->packing, shapeTraits);
@@ -255,7 +255,7 @@ void Simulation::relaxOverlaps(const Environment &env, const OverlapRelaxationPa
             this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
             if (!simulationRecorders.empty())
                 for (const auto &recorder : simulationRecorders)
-                    recorder->recordSnapshot(*this->packing, this->totalCycles);
+                    recorder->recordSnapshot(*this->packing, shapeTraits, this->totalCycles);
         }
         if (this->totalCycles % params.inlineInfoEvery == 0)
             this->printInlineInfo(this->totalCycles, shapeTraits, logger, true);
