@@ -34,7 +34,7 @@ public:
      * @brief Writes the next snapshot.
      * @details @a cycle is stored in the snapshot header as a field named `cycles`.
      */
-    void recordSnapshot(const Packing &packing, std::size_t cycle) override;
+    void recordSnapshot(const Packing &packing, const ShapeTraits &traits, std::size_t cycle) override;
 
     [[nodiscard]] std::size_t getLastCycleNumber() const override { return this->lastCycleNumber; }
     void close() override { this->out = nullptr; }

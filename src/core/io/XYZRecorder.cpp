@@ -8,11 +8,11 @@
 #include "utils/Utils.h"
 
 
-void XYZRecorder::recordSnapshot(const Packing &packing, std::size_t cycle) {
+void XYZRecorder::recordSnapshot(const Packing &packing, const ShapeTraits &traits, std::size_t cycle) {
     Expects(this->out != nullptr);
 
     XYZWriter writer;
-    writer.write(*this->out, packing, {{"cycles", std::to_string(cycle)}});
+    writer.write(*this->out, packing, traits, {{"cycles", std::to_string(cycle)}});
 
     this->lastCycleNumber = cycle;
 }

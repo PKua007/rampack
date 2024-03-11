@@ -76,21 +76,21 @@ TEST_CASE("Simulation IO: storing and restoring") {
 
         SECTION("whole replay") {
             while (player.hasNext())
-                player.nextSnapshot(packing1, interaction, dataManager);
+                player.nextSnapshot(packing1, traits);
             player.close();
 
             assert_equal(packing1, simulation.getPacking());
         }
 
         SECTION("only last") {
-            player.lastSnapshot(packing1, interaction, dataManager);
+            player.lastSnapshot(packing1, traits);
             player.close();
 
             assert_equal(packing1, simulation.getPacking());
         }
 
         SECTION("only last, but using explicit cycle number") {
-            player.jumpToSnapshot(packing1, interaction, dataManager, 2000);
+            player.jumpToSnapshot(packing1, traits, 2000);
             player.close();
 
             assert_equal(packing1, simulation.getPacking());
@@ -121,7 +121,7 @@ TEST_CASE("Simulation IO: storing and restoring") {
         CHECK(player.getTotalCycles() == 2000);
         CHECK(player.getCycleStep() == 100);
         while (player.hasNext())
-            player.nextSnapshot(packing1, interaction, dataManager);
+            player.nextSnapshot(packing1, traits);
         player.close();
 
         assert_equal(packing1, simulation.getPacking());
@@ -148,7 +148,7 @@ TEST_CASE("Simulation IO: storing and restoring") {
         CHECK(player.getTotalCycles() == 1000);
         CHECK(player.getCycleStep() == 100);
         while (player.hasNext())
-            player.nextSnapshot(packing1, interaction, dataManager);
+            player.nextSnapshot(packing1, traits);
         player.close();
 
         assert_equal(packing1, simulation.getPacking());
@@ -181,7 +181,7 @@ TEST_CASE("Simulation IO: storing and restoring") {
         CHECK(player.getCycleStep() == 100);
 
         while (player.hasNext())
-            player.nextSnapshot(packing1, interaction, dataManager);
+            player.nextSnapshot(packing1, traits);
         player.close();
 
         assert_equal(packing1, simulation.getPacking());

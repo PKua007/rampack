@@ -5,8 +5,7 @@
 #include <catch2/catch.hpp>
 
 #include "mocks/MockSimulationPlayer.h"
-#include "mocks/MockInteraction.h"
-#include "mocks/MockShapeDataManager.h"
+#include "mocks/MockShapeTraits.h"
 
 #include "core/io/TruncatedPlayer.h"
 #include "core/Packing.h"
@@ -39,24 +38,23 @@ TEST_CASE("TruncatedPlayer") {
     REQUIRE(truncatedPlayer->getNumMolecules() == 500);
 
     Packing packing(std::make_unique<PeriodicBoundaryConditions>());
-    MockInteraction interaction;
-    MockShapeDataManager dataManager;
+    MockShapeTraits traits;
 
     // Traversing the recording
     {
-        REQUIRE_CALL(mockPlayerRef, nextSnapshot(_, _, _)).TIMES(2).LR_SIDE_EFFECT(currentSnapshot += 1000);
+        REQUIRE_CALL(mockPlayerRef, nextSnapshot(_, _)).TIMES(2).LR_SIDE_EFFECT(currentSnapshot += 1000);
         REQUIRE(truncatedPlayer->hasNext());
-        REQUIRE_NOTHROW(truncatedPlayer->nextSnapshot(packing, interaction, dataManager));
+        REQUIRE_NOTHROW(truncatedPlayer->nextSnapshot(packing, traits));
         REQUIRE(truncatedPlayer->hasNext());
-        REQUIRE_NOTHROW(truncatedPlayer->nextSnapshot(packing, interaction, dataManager));
+        REQUIRE_NOTHROW(truncatedPlayer->nextSnapshot(packing, traits));
         REQUIRE_FALSE(truncatedPlayer->hasNext());
-        REQUIRE_THROWS(truncatedPlayer->nextSnapshot(packing, interaction, dataManager));
+        REQUIRE_THROWS(truncatedPlayer->nextSnapshot(packing, traits));
     }
 
     // Jump to snapshot
     {
-        REQUIRE_CALL(mockPlayerRef, jumpToSnapshot(_, _, _, 1000ul)).LR_SIDE_EFFECT(currentSnapshot = 1000);
-        truncatedPlayer->jumpToSnapshot(packing, interaction, dataManager, 1000);
+        REQUIRE_CALL(mockPlayerRef, jumpToSnapshot(_, _, 1000ul)).LR_SIDE_EFFECT(currentSnapshot = 1000);
+        truncatedPlayer->jumpToSnapshot(packing, traits, 1000);
         REQUIRE(truncatedPlayer->getCurrentSnapshotCycles() == 1000);
     }
 
