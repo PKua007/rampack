@@ -10,6 +10,7 @@
 #include <array>
 #include <stdexcept>
 #include <sstream>
+#include <map>
 
 #include "Logger.h"
 
@@ -96,6 +97,16 @@ inline bool logical_xor(bool p1, bool p2) {
 
 inline bool logical_xnor(bool p1, bool p2) {
     return p1 == p2;
+}
+
+template <typename K, typename V>
+bool is_map_bijective(const std::map<K, V> &map) {
+    for (auto it1 = map.begin(); it1 != map.end(); it1++)
+        for (auto it2 = std::next(it1); it2 != map.end(); it2++)
+            if (it1->second == it2->second)
+                return false;
+
+    return true;
 }
 
 #endif //RAMPACK_UTILS_H

@@ -7,6 +7,7 @@
 #include "XYZWriter.h"
 #include "geometry/Quaternion.h"
 #include "utils/Exceptions.h"
+#include "utils/Utils.h"
 
 
 void XYZWriter::storeHeader(std::ostream &out, const Packing &packing,
@@ -64,17 +65,8 @@ std::optional<std::string> XYZWriter::tryGetSpeciesName(const TextualShapeData &
     return textualData.begin()->second;
 }
 
-bool XYZWriter::isMapBijective(const SpeciesMap &speciesMap) {
-    for (auto it1 = speciesMap.begin(); it1 != speciesMap.end(); it1++)
-        for (auto it2 = std::next(it1); it2 != speciesMap.end(); it2++)
-            if (it1->second == it2->second)
-                return false;
-
-    return true;
-}
-
 XYZWriter::XYZWriter(XYZWriter::SpeciesMap speciesMap) : speciesMap{std::move(speciesMap)} {
-    Expects(XYZWriter::isMapBijective(this->speciesMap));
+    Expects(is_map_bijective(this->speciesMap));
 }
 
 void XYZWriter::storeShapes(std::ostream &out, const Packing &packing, const ShapeDataManager &manager) const {

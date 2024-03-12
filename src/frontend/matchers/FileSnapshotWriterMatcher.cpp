@@ -49,6 +49,10 @@ namespace {
         auto speciesMap = MatcherDictionary{}
             .keysMatch(CommonMatchers::symbol)
             .valuesMatch(ShapeMatcher::createShapeData())
+            .filter([](const DictionaryData &params) {
+                return is_map_bijective(params.asStdMap<TextualShapeData>());
+            })
+            .describe("unique data for each species")
             .mapToStdMap<TextualShapeData>();
 
         return MatcherDataclass("xyz")
