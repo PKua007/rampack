@@ -9,6 +9,7 @@
 
 #include "LatticeMatcher.h"
 #include "ShapeMatcher.h"
+#include "CommonMatchers.h"
 #include "frontend/PackingFactory.h"
 #include "core/lattice/UnitCell.h"
 #include "core/lattice/UnitCellFactory.h"
@@ -225,17 +226,6 @@ namespace {
         .containsOnlyCharacters("xyz")
         .uniqueCharacters()
         .length(3);
-
-    auto shapeParamName = MatcherString{}
-        .nonEmpty()
-        .filter([](const std::string &str){
-            if (!std::all_of(str.begin(), str.end(), [](char c) { return c == '_' || std::isalnum(c); }))
-                return false;
-            if (std::isdigit(str.front()))
-                return false;
-            return true;
-        })
-        .describe("valid argument name (only letters, numbers and underscore; doesn't start with a number)");
 
 
     MatcherDataclass create_manual_lattice() {
@@ -579,7 +569,7 @@ namespace {
         auto paramRandomizer = create_gaussian_param_randomizer();
 
         return MatcherDataclass("randomize_shape_param")
-            .arguments({{"param", shapeParamName},
+            .arguments({{"param", CommonMatchers::symbol},
                         {"randomizer", paramRandomizer},
                         {"seed", MatcherInt{}.mapTo<std::mt19937::result_type>()}})
             .mapTo([](const DataclassData &randomizeParam) -> std::shared_ptr<LatticeTransformer> {

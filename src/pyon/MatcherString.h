@@ -15,12 +15,13 @@
 
 namespace pyon::matcher {
     class MatcherString : public MatcherBase {
-    private:
+    public:
         struct Filter {
             std::function<bool(const std::string&)> predicate;
             std::string description;
         };
 
+    private:
         std::vector<Filter> filters;
         std::function<Any(const std::string&)> mapping = [](const std::string &str) { return str; };
 
@@ -64,6 +65,9 @@ namespace pyon::matcher {
         MatcherString &numeric();
         MatcherString &alpha();
         MatcherString &alphanumeric();
+
+        [[nodiscard]] const std::vector<Filter> &getFilters() const { return this->filters; }
+        [[nodiscard]] const std::function<Any(const std::string&)> &getMapping() const { return this->mapping; }
     };
 } // matcher
 

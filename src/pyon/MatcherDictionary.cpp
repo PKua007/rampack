@@ -249,6 +249,15 @@ namespace pyon::matcher {
         return *this;
     }
 
+    MatcherDictionary &MatcherDictionary::keysMatch(const MatcherString &matcher) {
+        const auto &keyFilters = matcher.getFilters();
+        for (const auto &[filterPredicate, filterDescription] : keyFilters) {
+            this->keysMatch(filterPredicate);
+            this->describe("keys match: " + filterDescription);
+        }
+        return *this;
+    }
+
     MatcherDictionary &MatcherDictionary::hasKeys(const std::vector<std::string> &keys) {
         auto keysMatcher = [keys](const DictionaryData &dict) {
             auto isPresent = [&dict](const std::string &key) { return dict.hasKey(key); };

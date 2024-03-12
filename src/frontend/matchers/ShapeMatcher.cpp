@@ -25,6 +25,7 @@
 #include "core/shapes/PolyhedralWedgeTraits.h"
 
 #include "GenericConvexGeometryMatcher.h"
+#include "CommonMatchers.h"
 
 
 using namespace pyon::matcher;
@@ -591,16 +592,7 @@ pyon::matcher::MatcherDictionary ShapeMatcher::createShapeData() {
         });
 
     return MatcherDictionary{}
-        .keysMatch([](const std::string &paramName) {
-            if (paramName.empty())
-                return false;
-            if (containsWhitespace(paramName))
-                return false;
-            if (paramName.find_first_of("\"'") != std::string::npos)
-                return false;
-            return true;
-        })
-        .describe("keys non empty, without whitespace or quotes")
+        .keysMatch(CommonMatchers::symbol)
         .valuesMatch(longMatcher | doubleMatcher | stringMatcher | vectorMatcher)
         .mapToStdMap<std::string>();
 }

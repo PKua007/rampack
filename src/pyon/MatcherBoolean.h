@@ -41,6 +41,8 @@ namespace pyon::matcher {
         }
 
         MatcherBoolean &mapTo(const std::function<Any(bool)> &mapping_);
+
+        [[nodiscard]] const std::function<Any(bool)> &getMapping() const { return this->mapping; }
     };
 } // matcher
 
