@@ -29,6 +29,8 @@ namespace pyon::matcher {
         MatcherNone &mapTo() {
             return this->mapTo([]() -> T { return {}; });
         }
+
+        [[nodiscard]] const std::function<Any()> &getMapping() const { return this->mapping; }
     };
 }
 

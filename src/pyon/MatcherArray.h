@@ -83,12 +83,13 @@ namespace pyon::matcher {
     };
 
     class MatcherArray : public MatcherBase {
-    private:
+    public:
         struct Filter {
             std::function<bool(const ArrayData&)> predicate;
             std::string description;
         };
 
+    private:
         std::vector<Filter> filters;
         std::function<Any(const ArrayData&)> mapping = [](const ArrayData &array) { return array; };
         std::shared_ptr<MatcherBase> elementMatcher;
@@ -158,6 +159,9 @@ namespace pyon::matcher {
         MatcherArray &sizeInRange(std::size_t low, std::size_t high);
         MatcherArray &empty();
         MatcherArray &nonEmpty();
+
+        [[nodiscard]] const std::vector<Filter> &getFilters() const { return this->filters; }
+        [[nodiscard]] const std::function<Any(const ArrayData&)> &getMapping() const { return this->mapping; }
     };
 } // matcher
 

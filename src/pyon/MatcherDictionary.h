@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "MatcherBase.h"
+#include "MatcherString.h"
 #include "NodeDictionary.h"
 
 
@@ -46,16 +47,17 @@ namespace pyon::matcher {
     };
 
     class MatcherDictionary : public MatcherBase {
+    public:
+        struct Filter {
+            std::function<bool(const DictionaryData&)> predicate;
+            std::string description;
+        };
+
     private:
         struct KeyMatcher {
             std::function<bool(const std::string &)> keyPredicate;
             std::string keyDescription;
             std::shared_ptr<MatcherBase> matcher;
-        };
-
-        struct Filter {
-            std::function<bool(const DictionaryData&)> predicate;
-            std::string description;
         };
 
         std::vector<Filter> filters;
@@ -133,12 +135,16 @@ namespace pyon::matcher {
         MatcherDictionary &hasOnlyKeys(const std::vector<std::string> &keys);
         MatcherDictionary &hasNotKeys(const std::vector<std::string> &keys);
         MatcherDictionary &keysMatch(const std::function<bool(const std::string&)> &predicate);
+        MatcherDictionary &keysMatch(const MatcherString &matcher);
         MatcherDictionary &empty();
         MatcherDictionary &nonEmpty();
         MatcherDictionary &size(std::size_t size);
         MatcherDictionary &sizeAtLeast(std::size_t size);
         MatcherDictionary &sizeAtMost(std::size_t size);
         MatcherDictionary &sizeInRange(std::size_t low, std::size_t high);
+
+        [[nodiscard]] const std::vector<Filter> &getFilters() const { return this->filters; }
+        [[nodiscard]] const std::function<Any(const DictionaryData&)> &getMapping() const { return this->mapping; }
     };
 } // matcher
 

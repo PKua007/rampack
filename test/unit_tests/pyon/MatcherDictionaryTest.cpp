@@ -173,13 +173,28 @@ TEST_CASE("Matcher: Dictionary") {
             CHECK(matcher.outline(4) == R"(    Dictionary, forbidden keys: "c", "d")");
         }
 
-        SECTION("keys match") {
+        SECTION("keys match (predicate)") {
             auto matcher = MatcherDictionary{}.keysMatch([](const std::string &key) { return key.length() == 1; });
             CHECK_FALSE(matcher.match(Parser::parse(R"({"a" : 1, "bb" : 2})"), result));
             CHECK(matcher.match(Parser::parse(R"({"a" : 1, "b" : 2})"), result));
             CHECK(matcher.outline(4) == R"(    Dictionary, keys match <undefined predicate>)");
             matcher.describe("1-character keys");
             CHECK(matcher.outline(4) == R"(    Dictionary, 1-character keys)");
+        }
+
+        SECTION("keys match (MatcherString)") {
+            // Override default MatcherString filter descriptions, because we do not test them here
+            auto nonEmptyAlphanumeric = MatcherString{}
+                .nonEmpty().describe("non-empty")
+                .alphanumeric().describe("alphanumeric");
+
+            auto matcher = MatcherDictionary{}.keysMatch(nonEmptyAlphanumeric);
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"" : 1, "123abc" : 2})"), result));
+            CHECK_FALSE(matcher.match(Parser::parse(R"({"???" : 1, "123abc" : 2})"), result));
+            CHECK(matcher.match(Parser::parse(R"({"12" : 1, "34" : 2})"), result));
+            CHECK(matcher.outline(4) == R"(    Dictionary:
+    - keys match: non-empty
+    - keys match: alphanumeric)");
         }
 
         SECTION("empty") {
