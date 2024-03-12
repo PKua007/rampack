@@ -3,6 +3,8 @@
 //
 
 #include <fstream>
+#include <iterator>
+#include <algorithm>
 
 #include "FileSnapshotWriter.h"
 
@@ -12,7 +14,7 @@ void FileSnapshotWriter::doStore(const Packing &packing, const ShapeTraits &trai
 {
     std::ofstream out(this->filename);
     ValidateOpenedDesc(out, this->filename, "to store " + this->writerFormat + " snapshot data");
-    this->writer->write(out, packing, traits, auxInfo);
+    this->createWriter(traits)->write(out, packing, traits, auxInfo);
     logger.info() << this->writerFormat << " snapshot data stored to '" << this->filename << "'" << std::endl;
 }
 
@@ -49,13 +51,25 @@ std::map<std::string, std::string> FileSnapshotWriter::prepareAuxInfo(const Simu
     auxInfo["cycles"] = std::to_string(simulation.getTotalCycles());
 
     const auto &movesStatistics = simulation.getMovesStatistics();
-    for (const auto &moveStatistics : movesStatistics) {
+    for (const auto &moveStatistics: movesStatistics) {
         auto groupName = moveStatistics.groupName;
-        for (const auto &stepSizeData : moveStatistics.stepSizeDatas) {
+        for (const auto &stepSizeData: moveStatistics.stepSizeDatas) {
             std::string moveKey = FileSnapshotWriter::formatMoveKey(groupName, stepSizeData.moveName);
             auxInfo[moveKey] = doubleToString(stepSizeData.stepSize);
         }
     }
 
     return auxInfo;
+}
+
+std::shared_ptr<SnapshotWriter> XYZFileSnapshotWriter::createWriter(const ShapeTraits &traits) const {
+    XYZWriter::SpeciesMap speciesMap;
+    const auto &manager = traits.getDataManager();
+    auto deserialize = [&manager](const std::pair<std::string, TextualShapeData> &textualEntry) {
+        return std::make_pair(textualEntry.first, manager.defaultDeserialize(textualEntry.second));
+    };
+    std::transform(this->textualSpeciesMap.begin(), this->textualSpeciesMap.end(),
+                   std::inserter(speciesMap, speciesMap.end()), deserialize);
+
+    return std::make_shared<XYZWriter>(std::move(speciesMap));
 }

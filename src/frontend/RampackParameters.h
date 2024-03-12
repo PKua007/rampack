@@ -51,7 +51,7 @@ struct BaseParameters {
 struct RunBase {
     std::string runName;
     Simulation::Environment environment;
-    std::vector<FileSnapshotWriter> lastSnapshotWriters;
+    std::vector<std::shared_ptr<FileSnapshotWriter>> lastSnapshotWriters;
     std::optional<std::string> ramsnapOut;
 
     [[nodiscard]] static const RunBase &of(const Run &run);

@@ -65,14 +65,10 @@ std::optional<std::string> XYZWriter::tryGetSpeciesName(const TextualShapeData &
 }
 
 bool XYZWriter::isMapBijective(const SpeciesMap &speciesMap) {
-    for (std::size_t i{}; i < speciesMap.size(); i++) {
-        for (std::size_t j = i + 1; j < speciesMap.size(); j++) {
-            const auto &entryI = speciesMap[i];
-            const auto &entryJ = speciesMap[j];
-            if (entryI.first == entryJ.first || entryI.second == entryJ.second)
+    for (auto it1 = speciesMap.begin(); it1 != speciesMap.end(); it1++)
+        for (auto it2 = std::next(it1); it2 != speciesMap.end(); it2++)
+            if (it1->second == it2->second)
                 return false;
-        }
-    }
 
     return true;
 }

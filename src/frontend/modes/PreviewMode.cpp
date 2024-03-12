@@ -75,7 +75,7 @@ int PreviewMode::main(int argc, char **argv) {
 
     for (const auto &output : outputs) {
         auto writer = FileSnapshotWriterMatcher::match(output);
-        writer.generateSnapshot(*packing, shapeTraits, 0, this->logger);
+        writer->generateSnapshot(*packing, shapeTraits, 0, this->logger);
     }
 
     return EXIT_SUCCESS;

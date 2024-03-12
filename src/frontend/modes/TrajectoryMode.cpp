@@ -345,12 +345,12 @@ int TrajectoryMode::main(int argc, char **argv) {
 
         for (const auto &snapshotOutput: snapshotOutputs) {
             auto writer = FileSnapshotWriterMatcher::match(snapshotOutput);
-            if (writer.getFilename() == trajectoryFilename) {
+            if (writer->getFilename() == trajectoryFilename) {
                 throw ValidationException("Input trajectory file name '" + trajectoryFilename
                                           + "' cannot be used as an output!");
             }
 
-            writer.generateSnapshot(*packing, shapeTraits, player->getCurrentSnapshotCycles(), this->logger);
+            writer->generateSnapshot(*packing, shapeTraits, player->getCurrentSnapshotCycles(), this->logger);
         }
     }
 

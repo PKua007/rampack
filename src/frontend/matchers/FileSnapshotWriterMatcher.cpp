@@ -3,6 +3,8 @@
 //
 
 #include "FileSnapshotWriterMatcher.h"
+#include "CommonMatchers.h"
+#include "ShapeMatcher.h"
 #include "frontend/FileSnapshotWriter.h"
 #include "core/io/RamsnapWriter.h"
 #include "core/io/WolframWriter.h"
@@ -18,11 +20,9 @@ namespace {
     MatcherDataclass create_ramsnap() {
         return MatcherDataclass("ramsnap")
             .arguments({{"filename", filename}})
-            .mapTo([](const DataclassData &ramsnap) {
+            .mapTo([](const DataclassData &ramsnap) -> std::shared_ptr<FileSnapshotWriter> {
                 auto filename = ramsnap["filename"].as<std::string>();
-                auto writer = std::make_shared<RamsnapWriter>();
-                FileSnapshotWriter fileWriter(filename, "RAMSNAP", std::move(writer));
-                return fileWriter;
+                return std::make_shared<RamsnapFileSnapshotWriter>(filename);
             });
     }
 
@@ -37,24 +37,27 @@ namespace {
             .arguments({{"filename", filename},
                         {"style", style, "standard"}})
             .variadicKeywordArguments(MatcherDictionary{}.valuesMatch(MatcherString{}))
-            .mapTo([](const DataclassData &wolfram) {
+            .mapTo([](const DataclassData &wolfram) -> std::shared_ptr<FileSnapshotWriter> {
                 auto filename = wolfram["filename"].as<std::string>();
                 auto style = wolfram["style"].as<WolframWriter::WolframStyle>();
                 auto params = wolfram.getVariadicKeywordArguments().asStdMap<std::string>();
-                auto writer = std::make_shared<WolframWriter>(style, params);
-                FileSnapshotWriter fileWriter(filename, "Wolfram", std::move(writer));
-                return fileWriter;
+                return std::make_shared<WolframFileSnapshotWriter>(std::move(filename), style, std::move(params));
             });
     }
 
     MatcherDataclass create_xyz() {
+        auto speciesMap = MatcherDictionary{}
+            .keysMatch(CommonMatchers::symbol)
+            .valuesMatch(ShapeMatcher::createShapeData())
+            .mapToStdMap<TextualShapeData>();
+
         return MatcherDataclass("xyz")
-            .arguments({{"filename", filename}})
-            .mapTo([](const DataclassData &xyz) {
+            .arguments({{"filename", filename},
+                        {"species_map", speciesMap, "{}"}})
+            .mapTo([](const DataclassData &xyz) -> std::shared_ptr<FileSnapshotWriter>  {
                 auto filename = xyz["filename"].as<std::string>();
-                auto writer = std::make_shared<XYZWriter>();
-                FileSnapshotWriter fileWriter(filename, "XYZ", std::move(writer));
-                return fileWriter;
+                auto speciesMap = xyz["species_map"].as<std::map<std::string, TextualShapeData>>();
+                return std::make_shared<XYZFileSnapshotWriter>(std::move(filename), std::move(speciesMap));
             });
     }
 }
@@ -64,7 +67,7 @@ pyon::matcher::MatcherAlternative FileSnapshotWriterMatcher::create() {
     return create_ramsnap() | create_wolfram() | create_xyz();
 }
 
-FileSnapshotWriter FileSnapshotWriterMatcher::match(const std::string &expression) {
+std::shared_ptr<FileSnapshotWriter> FileSnapshotWriterMatcher::match(const std::string &expression) {
     auto writerMatcher = FileSnapshotWriterMatcher::create();
     auto writerAST = pyon::Parser::parse(expression);
     Any writer;
@@ -72,5 +75,5 @@ FileSnapshotWriter FileSnapshotWriterMatcher::match(const std::string &expressio
     if (!matchReport)
         throw pyon::matcher::MatchException(matchReport.getReason());
 
-    return writer.as<FileSnapshotWriter>();
+    return writer.as<std::shared_ptr<FileSnapshotWriter>>();
 }
