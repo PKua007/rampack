@@ -28,7 +28,6 @@ private:
     [[nodiscard]] static bool isPackingPolydisperse(const Packing &packing);
     [[nodiscard]] static std::string generateProceduralSpeciesName(const TextualShapeData &textualData);
     [[nodiscard]] static std::optional<std::string> tryGetSpeciesName(const TextualShapeData &textualData);
-    [[nodiscard]] static bool isMapBijective(const SpeciesMap &speciesMap);
 
     void storeShapes(std::ostream &out, const Packing &packing, const ShapeDataManager &manager) const;
     [[nodiscard]] std::string findSpeciesName(const ShapeDataManager &manager, const ShapeData &data,

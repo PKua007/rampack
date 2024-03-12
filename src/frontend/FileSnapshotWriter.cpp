@@ -65,8 +65,14 @@ std::map<std::string, std::string> FileSnapshotWriter::prepareAuxInfo(const Simu
 std::shared_ptr<SnapshotWriter> XYZFileSnapshotWriter::createWriter(const ShapeTraits &traits) const {
     XYZWriter::SpeciesMap speciesMap;
     const auto &manager = traits.getDataManager();
-    auto deserialize = [&manager](const std::pair<std::string, TextualShapeData> &textualEntry) {
-        return std::make_pair(textualEntry.first, manager.defaultDeserialize(textualEntry.second));
+    auto deserialize = [&manager, this](const std::pair<std::string, TextualShapeData> &textualEntry) {
+        try {
+            return std::make_pair(textualEntry.first, manager.defaultDeserialize(textualEntry.second));
+        } catch (const ShapeDataException &e) {
+            throw ValidationException("Could not store '" + this->getFilename()
+                                      + "' XYZ snapshot: parsing params for species '" + textualEntry.first
+                                      + "' failed: " + e.what());
+        }
     };
     std::transform(this->textualSpeciesMap.begin(), this->textualSpeciesMap.end(),
                    std::inserter(speciesMap, speciesMap.end()), deserialize);

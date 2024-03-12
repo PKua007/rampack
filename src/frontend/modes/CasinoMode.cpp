@@ -275,7 +275,7 @@ void CasinoMode::performIntegration(Simulation &simulation, const Simulation::En
     for (const auto &job : jobs) {
         try {
             job();
-        } catch (const FileException &ex) {
+        } catch (const RuntimeException &ex) {
             this->logger.error() << ex.what() << std::endl;
         }
     }
@@ -314,7 +314,7 @@ void CasinoMode::performOverlapRelaxation(Simulation &simulation, const Simulati
     for (const auto &writer : run.lastSnapshotWriters) {
         try {
             writer->storeSnapshot(simulation, *shapeTraits, this->logger);
-        } catch (const FileException &ex) {
+        } catch (const RuntimeException &ex) {
             this->logger.error() << ex.what() << std::endl;
         }
     }
@@ -353,7 +353,7 @@ void CasinoMode::performTransformationRun(Simulation &simulation, const Transfor
     for (const auto &writer : run.lastSnapshotWriters) {
         try {
             writer->storeSnapshot(simulation, shapeTraits, this->logger);
-        } catch (const FileException &ex) {
+        } catch (const RuntimeException &ex) {
             this->logger.error() << ex.what() << std::endl;
         }
     }
