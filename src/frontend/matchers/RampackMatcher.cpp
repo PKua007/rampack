@@ -32,7 +32,8 @@ namespace {
     MatcherString create_version();
     MatcherArray create_output_last_snapshot();
     MatcherArray create_record_trajectory();
-    std::optional<std::string> fetch_ramsnap_out(const std::vector<FileSnapshotWriter> &snapshotWriters);
+    std::optional<std::string>
+    fetch_ramsnap_out(const std::vector<std::shared_ptr<FileSnapshotWriter>> &snapshotWriters);
 
     std::optional<std::string>
     fetch_ramtrj_out(const std::vector<std::shared_ptr<SimulationRecorderFactory>> &recorderFactories);
@@ -105,7 +106,7 @@ namespace {
     MatcherArray create_output_last_snapshot() {
         return MatcherArray{}
             .elementsMatch(FileSnapshotWriterMatcher::create())
-            .mapToStdVector<FileSnapshotWriter>();
+            .mapToStdVector<std::shared_ptr<FileSnapshotWriter>>();
     }
 
     MatcherArray create_record_trajectory() {
@@ -114,12 +115,11 @@ namespace {
             .mapToStdVector<std::shared_ptr<SimulationRecorderFactory>>();
     }
 
-    std::optional<std::string> fetch_ramsnap_out(const std::vector<FileSnapshotWriter> &snapshotWriters) {
-        for (const auto &fileWriter : snapshotWriters) {
-            const auto &writer = fileWriter.getWriter();
-            if (typeid(writer) == typeid(RamsnapWriter))
-                return fileWriter.getFilename();
-        }
+    std::optional<std::string> fetch_ramsnap_out(const std::vector<std::shared_ptr<FileSnapshotWriter>> &snapshotWriters) {
+        for (const auto &fileWriter : snapshotWriters)
+            if (fileWriter->storesRamsnap())
+                return fileWriter->getFilename();
+
         return std::nullopt;
     }
 
@@ -222,7 +222,8 @@ namespace {
                 run.averagingEvery = integration["averaging_every"].as<std::size_t>();
                 run.inlineInfoEvery = integration["inline_info_every"].as<std::size_t>();
                 run.orientationFixEvery = integration["orientation_fix_every"].as<std::size_t>();
-                run.lastSnapshotWriters = integration["output_last_snapshot"].as<std::vector<FileSnapshotWriter>>();
+                run.lastSnapshotWriters
+                    = integration["output_last_snapshot"].as<std::vector<std::shared_ptr<FileSnapshotWriter>>>();
                 run.ramsnapOut = fetch_ramsnap_out(run.lastSnapshotWriters);
                 run.simulationRecorders
                     = integration["record_trajectory"].as<std::vector<std::shared_ptr<SimulationRecorderFactory>>>();
@@ -286,7 +287,8 @@ namespace {
                 run.orientationFixEvery = overlaps["orientation_fix_every"].as<std::size_t>();
                 // Fix helper shape for ShapeData
                 run.helperShapeTraits = overlaps["helper_shape"].as<std::shared_ptr<ShapeTraits>>();
-                run.lastSnapshotWriters = overlaps["output_last_snapshot"].as<std::vector<FileSnapshotWriter>>();
+                run.lastSnapshotWriters
+                    = overlaps["output_last_snapshot"].as<std::vector<std::shared_ptr<FileSnapshotWriter>>>();
                 run.ramsnapOut = fetch_ramsnap_out(run.lastSnapshotWriters);
                 run.simulationRecorders
                     = overlaps["record_trajectory"].as<std::vector<std::shared_ptr<SimulationRecorderFactory>>>();
@@ -320,7 +322,8 @@ namespace {
 
                 run.runName = transform["run_name"].as<std::string>();
                 run.environment = create_environment(transform);
-                run.lastSnapshotWriters = transform["output_last_snapshot"].as<std::vector<FileSnapshotWriter>>();
+                run.lastSnapshotWriters
+                    = transform["output_last_snapshot"].as<std::vector<std::shared_ptr<FileSnapshotWriter>>>();
                 run.ramsnapOut = fetch_ramsnap_out(run.lastSnapshotWriters);
                 run.transformers = transform["transformations"].as<std::vector<std::shared_ptr<LatticeTransformer>>>();
 

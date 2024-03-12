@@ -19,7 +19,7 @@
  */
 class XYZWriter : public SnapshotWriter {
 public:
-    using SpeciesMap = std::vector<std::pair<std::string, ShapeData>>;
+    using SpeciesMap = std::map<std::string, ShapeData>;
 
 private:
     static void storeHeader(std::ostream &out, const Packing &packing,

@@ -166,7 +166,7 @@ namespace {
         return {filename, params};
     }
 
-    FileSnapshotWriter parse_wolfram_writer(const std::string &fileParams) {
+    std::shared_ptr<FileSnapshotWriter> parse_wolfram_writer(const std::string &fileParams) {
         auto [filename, params] = parse_filename_and_params(fileParams, {"style", "mesh_divisions"});
 
         std::string styleStr = "standard";
@@ -183,19 +183,19 @@ namespace {
         else
             throw ValidationException("Unknown wolfram style: \"" + styleStr + "\"");
 
-        return {filename, "Wolfram", std::make_shared<WolframWriter>(wolframStyle, params)};
+        return std::make_shared<WolframFileSnapshotWriter>(std::move(filename), wolframStyle, std::move(params));
     }
 
     template <typename ConcreteParams>
-    std::vector<FileSnapshotWriter> parse_last_snapshot_writers(const ConcreteParams &params) {
-        std::vector<FileSnapshotWriter> writers;
+    std::vector<std::shared_ptr<FileSnapshotWriter>> parse_last_snapshot_writers(const ConcreteParams &params) {
+        std::vector<std::shared_ptr<FileSnapshotWriter>> writers;
 
         if (!params.packingFilename.empty())
-            writers.emplace_back(params.packingFilename, "RAMSNAP", std::make_shared<RamsnapWriter>());
+            writers.push_back(std::make_shared<RamsnapFileSnapshotWriter>(params.packingFilename));
         if (!params.wolframFilename.empty())
             writers.push_back(parse_wolfram_writer(params.wolframFilename));
         if (!params.xyzPackingFilename.empty())
-            writers.emplace_back(params.xyzPackingFilename, "XYZ", std::make_shared<XYZWriter>());
+            writers.emplace_back(std::make_shared<XYZFileSnapshotWriter>(params.packingFilename));
 
         return writers;
     }

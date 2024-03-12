@@ -12,7 +12,7 @@
 class FileSnapshotWriterMatcher {
 public:
     static pyon::matcher::MatcherAlternative create();
-    static FileSnapshotWriter match(const std::string &expression);
+    static std::shared_ptr<FileSnapshotWriter> match(const std::string &expression);
 };
 
 
