@@ -116,7 +116,7 @@ public:
 };
 
 /**
- * @brief An exception thrown by Validate and ValidateMsg macros.
+ * @brief An exception thrown by Expects and ExpectsMsg macros.
  */
 struct PreconditionException : public ContractException {
     explicit PreconditionException(std::string file, std::string function, std::size_t line, std::string condition,
@@ -126,7 +126,7 @@ struct PreconditionException : public ContractException {
 };
 
 /**
- * @brief An exception thrown by Validate and ValidateMsg macros.
+ * @brief An exception thrown by Ensures and EnsuresMsg macros.
  */
 struct PostconditionException : public ContractException {
     explicit PostconditionException(std::string file, std::string function, std::size_t line, std::string condition,
@@ -136,7 +136,7 @@ struct PostconditionException : public ContractException {
 };
 
 /**
- * @brief An exception thrown by Validate and ValidateMsg macros.
+ * @brief An exception thrown by Assert, AssertMsg and AssertThrow macros.
  */
 struct AssertionException : public ContractException {
     explicit AssertionException(std::string file, std::string function, std::size_t line, std::string condition,
