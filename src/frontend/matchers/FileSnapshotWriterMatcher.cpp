@@ -46,18 +46,9 @@ namespace {
     }
 
     MatcherDataclass create_xyz() {
-        auto speciesMap = MatcherDictionary{}
-            .keysMatch(CommonMatchers::symbol)
-            .valuesMatch(ShapeMatcher::createShapeData())
-            .filter([](const DictionaryData &params) {
-                return is_map_bijective(params.asStdMap<TextualShapeData>());
-            })
-            .describe("unique data for each species")
-            .mapToStdMap<TextualShapeData>();
-
         return MatcherDataclass("xyz")
             .arguments({{"filename", filename},
-                        {"species_map", speciesMap, "{}"}})
+                        {"species_map", CommonMatchers::createShapeSpeciesMap(), "{}"}})
             .mapTo([](const DataclassData &xyz) -> std::shared_ptr<FileSnapshotWriter>  {
                 auto filename = xyz["filename"].as<std::string>();
                 auto speciesMap = xyz["species_map"].as<std::map<std::string, TextualShapeData>>();

@@ -10,7 +10,8 @@
 
 class CommonMatchers {
 public:
-    static pyon::matcher::MatcherString symbol;
+    static const pyon::matcher::MatcherString &createSymbol();
+    static const pyon::matcher::MatcherDictionary &createShapeSpeciesMap();
 };
 
 
