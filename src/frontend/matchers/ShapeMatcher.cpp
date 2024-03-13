@@ -15,6 +15,8 @@
 #include "core/shapes/PolyspherocylinderBananaTraits.h"
 #include "core/shapes/SmoothWedgeTraits.h"
 #include "core/shapes/GenericXenoCollideTraits.h"
+#include "core/shapes/PolyhedralWedgeTraits.h"
+#include "core/shapes/NamedSpeciesShapeTraits.h"
 
 #include "core/interactions/CentralInteraction.h"
 #include "core/interactions/LennardJonesInteraction.h"
@@ -22,7 +24,6 @@
 #include "core/interactions/SquareInverseCoreInteraction.h"
 
 #include "geometry/xenocollide/XCBodyBuilder.h"
-#include "core/shapes/PolyhedralWedgeTraits.h"
 
 #include "GenericConvexGeometryMatcher.h"
 #include "CommonMatchers.h"
@@ -47,6 +48,10 @@ namespace {
     MatcherDataclass create_polyspherocylinder_matcher();
     MatcherDataclass create_generic_convex_matcher();
     MatcherDataclass create_polyhedral_wedge_matcher();
+
+    MatcherAlternative create_not_named_species_shape_matcher();
+    MatcherAlternative create_named_species_shape_matcher();
+    MatcherDataclass create_named_species_adapter_matcher();
 
     bool validate_axes(const DataclassData &dataclass);
 
@@ -493,6 +498,73 @@ namespace {
             });
     }
 
+    MatcherAlternative create_not_named_species_shape_matcher() {
+        return create_sphere_matcher()
+               | create_kmer_matcher()
+               | create_polysphere_banana_matcher()
+               | create_polysphere_lollipop_matcher()
+               | create_polysphere_wedge_matcher()
+               | create_spherocylinder_matcher()
+               | create_polyspherocylinder_banana_matcher()
+               | create_smooth_wedge_matcher()
+               | create_polyhedral_wedge_matcher();
+    }
+
+    MatcherAlternative create_named_species_shape_matcher() {
+        return create_polysphere_matcher()
+               | create_polyspherocylinder_matcher()
+               | create_generic_convex_matcher()
+               | create_named_species_adapter_matcher();
+    }
+
+    MatcherDataclass create_named_species_adapter_matcher() {
+        auto optionalSymbolValue = CommonMatchers::createSymbol();
+        optionalSymbolValue.mapTo<std::optional<std::string>>();
+        auto optionalSymbolNone = MatcherNone{}.mapTo<std::optional<std::string>>();
+        auto optionalSymbol = optionalSymbolValue | optionalSymbolNone;
+
+        return MatcherDataclass("named_species")
+            .arguments({{"shape", create_not_named_species_shape_matcher()},
+                        {"species", CommonMatchers::createShapeSpeciesMap()},
+                        {"default", optionalSymbol, "None"}})
+            .filter([](const DataclassData &namedSpecies) {
+                auto shape = namedSpecies["shape"].as<std::shared_ptr<ShapeTraits>>();
+                auto species = namedSpecies["species"].as<std::map<std::string, TextualShapeData>>();
+                try {
+                    for (const auto &[speciesName, speciesData] : species)
+                        static_cast<void>(shape->getDataManager().defaultDeserialize(speciesData));
+                    return true;
+                } catch (const ShapeDataException &e) {
+                    return false;
+                }
+            })
+            .describe("valid and complete shape params (default parameters of 'shape' are respected)")
+            .filter([](const DataclassData &namedSpecies) {
+                auto species = namedSpecies["species"].as<std::map<std::string, TextualShapeData>>();
+                auto defaultSpecies = namedSpecies["default"].as<std::optional<std::string>>();
+                if (!defaultSpecies.has_value())
+                    return true;
+
+                return species.find(*defaultSpecies) != species.end();
+            })
+            .describe("default species' name must be on the list")
+            .mapTo([](const DataclassData &namedSpecies) -> std::shared_ptr<ShapeTraits> {
+                auto shape = namedSpecies["shape"].as<std::shared_ptr<ShapeTraits>>();
+                auto species = namedSpecies["species"].as<std::map<std::string, TextualShapeData>>();
+                auto defaultSpecies = namedSpecies["default"].as<std::optional<std::string>>();
+
+                auto namedSpeciesObj = std::make_shared<NamedSpeciesShapeTraits>(shape);
+                for (const auto &[speciesName, speciesTextData] : species) {
+                    ShapeData speciesData = shape->getDataManager().defaultDeserialize(speciesTextData);
+                    namedSpeciesObj->addSpecies(speciesName, speciesData);
+                }
+                if (defaultSpecies.has_value())
+                    namedSpeciesObj->setDefaultSpecies(*defaultSpecies);
+
+                return namedSpeciesObj;
+            });
+    }
+
     bool validate_axes(const DataclassData &dataclass) {
         if (dataclass["primary_axis"].isEmpty()) {
             return dataclass["secondary_axis"].isEmpty();
@@ -519,18 +591,7 @@ std::shared_ptr<ShapeTraits> ShapeMatcher::match(const std::string &expression) 
 }
 
 pyon::matcher::MatcherAlternative ShapeMatcher::create() {
-    return create_sphere_matcher()
-        | create_kmer_matcher()
-        | create_polysphere_banana_matcher()
-        | create_polysphere_lollipop_matcher()
-        | create_polysphere_wedge_matcher()
-        | create_spherocylinder_matcher()
-        | create_polyspherocylinder_banana_matcher()
-        | create_smooth_wedge_matcher()
-        | create_polysphere_matcher()
-        | create_polyspherocylinder_matcher()
-        | create_generic_convex_matcher()
-        | create_polyhedral_wedge_matcher();
+    return create_not_named_species_shape_matcher() | create_named_species_shape_matcher();
 }
 
 pyon::matcher::MatcherArray ShapeMatcher::createPosition() {
@@ -592,7 +653,7 @@ pyon::matcher::MatcherDictionary ShapeMatcher::createShapeData() {
         });
 
     return MatcherDictionary{}
-        .keysMatch(CommonMatchers::symbol)
+        .keysMatch(CommonMatchers::createSymbol())
         .valuesMatch(longMatcher | doubleMatcher | stringMatcher | vectorMatcher)
         .mapToStdMap<std::string>();
 }

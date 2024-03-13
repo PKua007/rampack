@@ -1493,8 +1493,9 @@ void Packing::validateShapeData(const ShapeDataManager &manager) const {
 
     std::size_t particleIdx{};
     try {
-        for (const auto &shape: *this) {
-            manager.validateShapeData(shape.getData());
+        for (std::size_t i{}; i < this->size(); i++) {
+            ShapeData data(this->getShapeDataPtr(i), this->shapeDataSize, manager.getComparator());
+            manager.validateShapeData(data);
             particleIdx++;
         }
     } catch (const ShapeDataFormatException &e) {

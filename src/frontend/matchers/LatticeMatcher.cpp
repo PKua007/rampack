@@ -569,7 +569,7 @@ namespace {
         auto paramRandomizer = create_gaussian_param_randomizer();
 
         return MatcherDataclass("randomize_shape_param")
-            .arguments({{"param", CommonMatchers::symbol},
+            .arguments({{"param", CommonMatchers::createSymbol()},
                         {"randomizer", paramRandomizer},
                         {"seed", MatcherInt{}.mapTo<std::mt19937::result_type>()}})
             .mapTo([](const DataclassData &randomizeParam) -> std::shared_ptr<LatticeTransformer> {
