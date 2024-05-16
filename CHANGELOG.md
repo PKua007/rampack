@@ -18,6 +18,12 @@ library (later, with Python bindings as well).
 * Added support for all [shape axes](docs/shapes.md#shape-axes) in
   [class `nematic_order`](docs/observables.md#class-nematic_order) observable.
 * Added [class `axial_rotation`](docs/input-file.md#class-axial_rotation) move sampler.
+* Added support for shape polydispersity.
+* Added a new run type for passive system transformations.
+* Added class `randomize_shape_param` lattice transformer.
+* [`shape-preview` mode](docs/operation-modes.md#shape-preview-mode) cooperates with newly added polydispersity;
+  default position, orientation, and shape data may be changed using, respectively, `--shape-pos` (`-s`),
+  `--shape-rot` (`-r`), and `--shape-params` (`-d`) options.
 
 
 ## [1.2.0] - 2023-12-03
