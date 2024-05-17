@@ -73,7 +73,7 @@ TEST_CASE("Lattice: operations") {
         CHECK(lattice.isRegular());
         CHECK(lattice.size() == 12);
 
-        SECTION("operations not throwing forrregular") {
+        SECTION("operations not throwing for regular") {
             CHECK_NOTHROW(lattice.getUnitCell());
             CHECK_NOTHROW(lattice.getUnitCellMolecules());
             CHECK_NOTHROW(lattice.modifyUnitCellMolecules());
@@ -96,7 +96,14 @@ TEST_CASE("Lattice: operations") {
             CHECK_THROWS(lattice.getUnitCell());
             CHECK_THROWS(lattice.getUnitCellMolecules());
             CHECK_THROWS(lattice.modifyUnitCellMolecules());
+            CHECK_THROWS(lattice.changeRegularDimensions({4, 5, 6}));
         }
+    }
+
+    SECTION("modifying dimensions") {
+        lattice.changeRegularDimensions({4, 5, 6});
+
+        CHECK(lattice.getDimensions() == std::array<std::size_t, 3>{4, 5, 6});
     }
 }
 
@@ -179,5 +186,57 @@ TEST_CASE("Lattice: shallow/deep copy of a unit cell") {
         *boxPtr = TriclinicBox(std::array<double, 3>{1, 2, 6});
 
         CHECK(lattice.getCellBox() == TriclinicBox(std::array<double, 3>{1, 2, 6}));
+    }
+}
+
+TEST_CASE("Lattice: copying operations") {
+    UnitCell otherUnitCell(TriclinicBox(5), {Shape({0.1, 0.1, 0.1})});
+    Lattice otherLattice(std::move(otherUnitCell), {1, 1, 2});
+
+    SECTION("copy constructor") {
+        SECTION("regular lattice") {
+            Lattice lattice(otherLattice);
+
+            CHECK(lattice.isRegular());
+            CHECK(lattice.getCellBox() == TriclinicBox(5));
+            CHECK(lattice.getUnitCellMolecules() == std::vector<Shape>{Shape({0.1, 0.1, 0.1})});
+
+            lattice.modifyCellBox() = TriclinicBox(4);
+
+            CHECK(otherLattice.getCellBox() == TriclinicBox(5));
+            CHECK(lattice.getCellBox() == TriclinicBox(4));
+        }
+
+        SECTION("irregular lattice") {
+            otherLattice.modifySpecificCellMolecules(0, 0, 1).front().setPosition({0.2, 0.2, 0.2});
+            Lattice lattice(otherLattice);
+
+            CHECK_FALSE(lattice.isRegular());
+            CHECK(lattice.getCellBox() == TriclinicBox(5));
+            CHECK(lattice.getSpecificCellMolecules(0, 0, 0) == std::vector<Shape>{Shape({0.1, 0.1, 0.1})});
+            CHECK(lattice.getSpecificCellMolecules(0, 0, 1) == std::vector<Shape>{Shape({0.2, 0.2, 0.2})});
+
+            lattice.modifyCellBox() = TriclinicBox(4);
+
+            CHECK(otherLattice.getCellBox() == TriclinicBox(5));
+            CHECK(lattice.getCellBox() == TriclinicBox(4));
+        }
+    }
+
+    SECTION("copy assignment") {
+        auto cellShape = std::make_shared<TriclinicBox>(3);
+        UnitCell unitCell(cellShape, {Shape({0.75, 0.75, 0.75})});
+        Lattice lattice(std::move(unitCell), {1, 1, 3});
+        lattice = otherLattice;
+
+        CHECK(lattice.isRegular());
+        CHECK(lattice.getCellBox() == TriclinicBox(5));
+        CHECK(lattice.getUnitCellMolecules() == std::vector<Shape>{Shape({0.1, 0.1, 0.1})});
+
+        lattice.modifyCellBox() = TriclinicBox(4);
+
+        CHECK(otherLattice.getCellBox() == TriclinicBox(5));
+        CHECK(lattice.getCellBox() == TriclinicBox(4));
+        CHECK(*cellShape == TriclinicBox(3));
     }
 }

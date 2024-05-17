@@ -21,6 +21,24 @@ Lattice::Lattice(UnitCell &&unitCell, const std::array<std::size_t, 3> &dimensio
     this->numCells = std::accumulate(this->dimensions.begin(), this->dimensions.end(), 1, std::multiplies<>{});
 }
 
+Lattice::Lattice(const Lattice &lattice) : Lattice(lattice.cells.front(), lattice.dimensions) {
+    if (lattice.isRegular_)
+        return;
+
+    // Irregular lattice needs copying all molecules individually
+    for (std::size_t i{}; i < this->dimensions[0]; i++)
+        for (std::size_t j{}; j < this->dimensions[1]; j++)
+            for (std::size_t k{}; k < this->dimensions[2]; k++)
+                this->modifySpecificCellMolecules(i, j, k) = lattice.getSpecificCellMolecules(i, j, k);
+
+    Ensures(!this->isRegular_);
+}
+
+Lattice &Lattice::operator=(const Lattice &lattice) {
+    *this = Lattice(lattice);   // Copy and move assign
+    return *this;
+}
+
 const UnitCell &Lattice::getSpecificCell(std::size_t i, std::size_t j, std::size_t k) const {
     if (this->isRegular_)
         return this->cells.front();
@@ -101,6 +119,14 @@ const std::vector<Shape> &Lattice::getUnitCellMolecules() const {
 std::vector<Shape> &Lattice::modifyUnitCellMolecules() {
     Expects(this->isRegular_);
     return this->cells.front().getMolecules();
+}
+
+void Lattice::changeRegularDimensions(const std::array<std::size_t, 3> &newDimensions) {
+    Expects(this->isRegular_);
+    Expects(std::all_of(newDimensions.begin(), newDimensions.end(), [](std::size_t dim) { return dim > 0; }));
+
+    this->dimensions = newDimensions;
+    this->numCells = std::accumulate(this->dimensions.begin(), this->dimensions.end(), 1, std::multiplies<>{});
 }
 
 void Lattice::normalize() {

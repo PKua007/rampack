@@ -46,6 +46,14 @@ public:
 
     Lattice(UnitCell &&unitCell, const std::array<std::size_t, 3> &dimensions);
 
+    Lattice(const Lattice &lattice);
+    Lattice &operator=(const Lattice &lattice);
+
+    // Interestingly, move operations and the destructor can be default
+    Lattice(Lattice &&lattice) noexcept = default;
+    Lattice &operator=(Lattice &&lattice) = default;
+    ~Lattice() = default;
+
     /**
      * @brief Returns a read-only specific cell of given integer indices. For a regular lattice it is always the same
      * cell regardless of the indices.
@@ -91,6 +99,11 @@ public:
      * type (regular or irregular).
      */
     [[nodiscard]] TriclinicBox &modifyCellBox() { return this->cells.front().getBox(); }
+
+    /**
+     * @brief Changes lattice dimensions, provided it is regular (exception is thrown otherwise).
+     */
+    void changeRegularDimensions(const std::array<std::size_t, 3> &newDimensions);
 
     /**
      * @brief Normalizes the lattice.
