@@ -385,6 +385,7 @@ The following transformers are available:
 * [class `randomize_flip`](#class-randomize_flip)
 * [class `layer_rotate`](#class-layer_rotate)
 * [class `randomize_rotation`](#class-randomize_rotation)
+* [class `replicate`](#class-replicate)
 
 
 ### Class `optimize_cell`
