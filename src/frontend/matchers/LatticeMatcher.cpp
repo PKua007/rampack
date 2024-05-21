@@ -27,6 +27,8 @@
 #include "core/lattice/RotationRandomizingTransformer.h"
 #include "core/lattice/ShapeParameterRandomizingTransformer.h"
 #include "core/lattice/GaussianShapeParameterRandomizer.h"
+#include "core/lattice/ReplicatingTransformer.h"
+
 
 using namespace pyon::matcher;
 
@@ -192,6 +194,7 @@ namespace {
     MatcherDataclass create_layer_rotate();
     MatcherDataclass create_randomize_rotations();
     MatcherDataclass create_randomize_shape_param();
+    MatcherDataclass create_replicate();
 
     MatcherDataclass create_gaussian_param_randomizer();
 
@@ -429,10 +432,8 @@ namespace {
         auto transformation = create_optimize_cell()
                               | create_optimize_layers()
                               | create_columnar()
-                              | create_randomize_flip()
                               | create_layer_rotate()
-                              | create_randomize_rotations()
-                              | create_randomize_shape_param();
+                              | LatticeMatcher::createIrregularLatticeTransformers();
 
         return MatcherArray{}
             .elementsMatch(transformation)
@@ -581,6 +582,34 @@ namespace {
             });
     }
 
+    MatcherDataclass create_replicate() {
+        auto numReplicasArray = MatcherArray(MatcherInt{}.positive().mapTo<std::size_t>(), 3)
+            .filter([](const ArrayData &numReplicas) {
+                return std::any_of(numReplicas.begin(), numReplicas.end(), [](const Any &n) {
+                    return n.as<std::size_t>() > 1; }
+                );
+            })
+            .describe("with at least one element > 1")
+            .mapToStdArray<std::size_t, 3>();
+
+        auto numReplicasInt = MatcherInt{}
+            .greater(1)
+            .mapTo([](long numReplicas) {
+                std::array<std::size_t, 3> replicasArray{};
+                replicasArray.fill(numReplicas);
+                return replicasArray;
+            });
+
+        auto numReplicas = numReplicasArray | numReplicasInt;
+
+        return MatcherDataclass("replicate")
+            .arguments({{{"n"}, numReplicas}})
+            .mapTo([](const DataclassData &replicate) -> std::shared_ptr<LatticeTransformer> {
+                auto numReplicas = replicate["n"].as<std::array<std::size_t, 3>>();
+                return std::make_shared<ReplicatingTransformer>(numReplicas);
+            });
+    }
+
     MatcherDataclass create_gaussian_param_randomizer() {
         auto positiveDouble = MatcherFloat{}.positive().mapTo<std::optional<double>>();
         auto noneDouble = MatcherNone{}.mapTo<std::optional<double>>();
@@ -615,11 +644,10 @@ namespace {
     }
 }
 
-
 MatcherAlternative LatticeMatcher::create() {
     return create_manual_lattice() | create_automatic_lattice() | create_automatic_cell_dim_lattice();
 }
 
 MatcherAlternative LatticeMatcher::createIrregularLatticeTransformers() {
-    return create_randomize_flip() | create_randomize_rotations() | create_randomize_shape_param();
+    return create_randomize_flip() | create_randomize_rotations() | create_randomize_shape_param() | create_replicate();
 }
