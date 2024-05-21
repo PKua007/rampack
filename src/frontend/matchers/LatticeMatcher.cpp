@@ -603,10 +603,12 @@ namespace {
         auto numReplicas = numReplicasArray | numReplicasInt;
 
         return MatcherDataclass("replicate")
-            .arguments({{{"n"}, numReplicas}})
+            .arguments({{"n", numReplicas},
+                        {"as_unit_cell", MatcherBoolean{}, "False"}})
             .mapTo([](const DataclassData &replicate) -> std::shared_ptr<LatticeTransformer> {
                 auto numReplicas = replicate["n"].as<std::array<std::size_t, 3>>();
-                return std::make_shared<ReplicatingTransformer>(numReplicas);
+                auto asUnitCell = replicate["as_unit_cell"].as<bool>();
+                return std::make_shared<ReplicatingTransformer>(numReplicas, asUnitCell);
             });
     }
 

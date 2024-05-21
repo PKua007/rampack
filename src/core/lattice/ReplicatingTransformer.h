@@ -12,22 +12,28 @@
 
 /**
  * @brief A LatticeTransformer which replicates the whole lattice a given number of times in each direction.
- * @details If the lattice is regular, the number of cells in each direction is altered accordingly. The irregular
- * lattice is converted into a regular lattice by treating it as a single unit cell in the new replica lattice.
  */
 class ReplicatingTransformer : public LatticeTransformer {
 private:
     std::array<std::size_t, 3> numReplicas{};
+    bool asUnitCell{};
 
     void transformRegular(Lattice &lattice) const;
     void transformIrregular(Lattice &lattice) const;
+    void transformAsUnitCell(Lattice &lattice) const;
+
+    static void replicateCells(const Lattice &originalLattice, Lattice &newLattice,
+                               const std::array<std::size_t, 3> &replicaI);
 
 public:
     /**
-     * @brief Constructs the class by creating a number of replicas given by subsequent indices of @a numReplicas
-     * corresponding to, respectively, x, y, and z direction.
+     * @brief Constructs the class.
+     * @param numReplicas number of replicas to make. Subsequent indices of @a numReplicas correspond to, respectively,
+     * x, y, and z direction.
+     * @param asUnitCell if @a true, the original lattice is collapsed to a single unit cells and the replicas form
+     * the new lattice. Otherwise, the original cells are preserved, but multiplied accordingly.
      */
-    explicit ReplicatingTransformer(const std::array<std::size_t, 3> &numReplicas);
+    explicit ReplicatingTransformer(const std::array<std::size_t, 3> &numReplicas, bool asUnitCell = false);
 
     void transform(Lattice &lattice, const ShapeTraits &shapeTraits) const override;
 };
