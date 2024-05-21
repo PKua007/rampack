@@ -556,16 +556,16 @@ Randomizes rotations of particles. Rotations may be around a specific or random 
 
 ```python
 replicate(
-    n
+    n,
+    as_unit_cell = False
 )
 ```
 
 * **Lattice requirements**: none
-* **Resulting lattice**: regular, normalized if was before
+* **Resulting lattice**: irregular if was before and `as_unit_cell = False`, regular any other case; normalized if was
+  before
 
-Replicates the lattice `n` number of times (see below for the syntax). If the lattice is regular, the number of cells
-in each direction is multiplied by a factor prescribed with `n`. Otherwise, if the lattice is irregular, it is treated
-in its entirety as a unit cell of a new regular lattice with a number of cells dictated by `n`.
+Replicates the lattice `n` number of times (see below for the syntax).
 
 * ***n***
 
@@ -575,6 +575,11 @@ in its entirety as a unit cell of a new regular lattice with a number of cells d
   * Array of Integers (eg. `[1, 2, 3]`) <br />
     Creates a number of replicas dictated by corresponding indices of the Array. For example, for `n=[1, 2, 3]`, the *x*
     direction is not replicated, the *y* direction is replicated twice, while the *z* direction - 3 times.
+
+* ***as_unit_cell*** (*= "False"*)
+
+  If `True`, the original lattice is collapsed into a single unit cell, and replicas form a new regular lattice.
+  Otherwise, original cells are preserved but multiplied; regular lattice stays regular, while irregular - irregular.
 
 
 ## Lattice populators
