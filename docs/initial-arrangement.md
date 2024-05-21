@@ -25,6 +25,7 @@ This reference page describes all options for `arrangement` argument of [class `
     * [Class `randomize_flip`](#class-randomize_flip)
     * [Class `layer_rotate`](#class-layer_rotate)
     * [Class `randomize_rotation`](#class-randomize_rotation)
+    * [Class `replicate`](#class-replicate)
 * [Lattice populators](#lattice-populators)
     * [Class `serial`](#class-serial)
     * [Class `random`](#class-random)
@@ -547,6 +548,33 @@ Randomizes rotations of particles. Rotations may be around a specific or random 
   * `"primary"`, `"secondary"`, `"auxiliary"` <br />
     Rotation around a [shape axis](shapes.md#shape-axes) by a random angle. Rotation axis is not constant - shape axes
     are defined in shape's coordinate system, thus the axis of rotation depends on the orientation of a shape.
+
+
+### Class `replicate`
+
+> Since v1.3.0
+
+```python
+replicate(
+    n
+)
+```
+
+* **Lattice requirements**: none
+* **Resulting lattice**: regular, normalized if was before
+
+Replicates the lattice `n` number of times (see below for the syntax). If the lattice is regular, the number of cells
+in each direction is multiplied by a factor prescribed with `n`. Otherwise, if the lattice is irregular, it is treated
+in its entirety as a unit cell of a new regular lattice with a number of cells dictated by `n`.
+
+* ***n***
+
+  Number of replicas. The following values are accepted:
+  * Integer <br />
+    Creates `n` replicas in each direction. Equivalent to `[n, n, n]`.
+  * Array of Integers (eg. `[1, 2, 3]`) <br />
+    Creates a number of replicas dictated by corresponding indices of the Array. For example, for `n=[1, 2, 3]`, the *x*
+    direction is not replicated, the *y* direction is replicated twice, while the *z* direction - 3 times.
 
 
 ## Lattice populators
