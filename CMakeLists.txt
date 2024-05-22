@@ -52,7 +52,10 @@ if (CMAKE_BUILD_TYPE MATCHES "Release")
 elseif (CMAKE_BUILD_TYPE MATCHES "Debug")
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         add_compile_definitions(_GLIBCXX_DEBUG _GLIBCXX_DEBUG_PEDANTIC)
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+        add_compile_definitions(_LIBCPP_ENABLE_DEBUG_MODE)
     endif()
+
     # This is needed for debugging on macOS
     add_compile_options(-gdwarf-4)
 endif()

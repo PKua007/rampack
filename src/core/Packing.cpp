@@ -74,6 +74,10 @@ void Packing::reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, co
     Expects(!newShapes.empty());
     Expects(Packing::areShapesWithinBox(newShapes, newBox));
 
+    // Invalidate neighbor grid if the number of shapes changed
+    if (newShapes.size() != this->size())
+        this->neighbourGrid = std::nullopt;
+
     this->box = newBox;
     this->shapeDataSize = newDataManager.getShapeDataSize();
 

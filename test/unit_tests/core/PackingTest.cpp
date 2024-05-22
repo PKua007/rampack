@@ -900,3 +900,21 @@ TEST_CASE("Packing: access") {
         CHECK(packingShapes[1].getData().isManaged());
     }
 }
+
+TEST_CASE("Packing: changed number of shapes bug") {
+    // Previous behavior:
+    // Neighbor grid went out of bounds if more shapes were put into the packing than before
+
+    using Radius = PolydisperseSphereHardCoreInteraction::Radius;
+    Radius radius = 0.5;
+    PolydisperseSphereHardCoreInteraction hardCore;
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    std::vector<Shape> shapes;
+    auto noRot = Matrix<3, 3>::identity();
+    Shape shape(Vector<3>{2.5, 2.5, 2.5}, noRot, radius);
+    shapes.resize(1, shape);
+    Packing packing(TriclinicBox(5), shapes, std::move(pbc), hardCore, hardCore);
+
+    shapes.resize(1000, shape);
+    REQUIRE_NOTHROW(packing.reset(shapes, TriclinicBox(5), hardCore, hardCore));
+}
