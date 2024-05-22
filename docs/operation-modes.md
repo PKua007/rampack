@@ -237,6 +237,10 @@ trajectories (`-f`, `--auto-fix` option). Below is the full list of available op
 
   truncates loaded trajectory to a given number of total cycles; truncated trajectory can be stored to a different RAMTRJ file using `-t 'ramtrj("filename")'`
 
+* ***-m***, ***--transform*** *arg*
+
+  modifies each trajectory frame by applying one or more lattice transformers, see https://github.com/PKua007/rampack/blob/main/docs/initial-arrangement.md (each transformer working with irregular lattices is applicable). Chained transformers can be specified using multiple options (`-m trans1 -m trans2`) or pipe-separated in a single one (`-m 'trans1|trans2'`). It is advisable to put the argument in single quotes `' '` to escape special shell characters `"|()[]{}`
+
 [//]: # (end trajectory)
 
 

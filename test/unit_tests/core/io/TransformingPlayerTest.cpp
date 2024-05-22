@@ -46,7 +46,7 @@ TEST_CASE("TransformingPlayer") {
     inout = std::make_unique<std::iostream>(&inout_buf);
     auto originalPlayer = std::make_unique<RamtrjPlayer>(std::move(inout));
     originalPlayer->lastSnapshot(packing, traits);    // Jump to last snapshot
-    TransformingPlayer transformingPlayer(std::move(originalPlayer), transformers);
+    TransformingPlayer transformingPlayer(std::move(originalPlayer), std::move(transformers));
 
     SECTION("reset on construction") {
         CHECK(transformingPlayer.getCurrentSnapshotCycles() == 0);

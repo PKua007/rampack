@@ -6,12 +6,15 @@
 #define RAMPACK_LATTICEMATCHER_H
 
 #include "pyon/Matcher.h"
+#include "core/lattice/LatticeTransformer.h"
 
 
 class LatticeMatcher {
 public:
     static pyon::matcher::MatcherAlternative create();
-    static pyon::matcher::MatcherAlternative createIrregularLatticeTransformers();
+
+    static pyon::matcher::MatcherAlternative createIrregularLatticeTransformer();
+    static std::shared_ptr<LatticeTransformer> matchIrregularLatticeTransformer(const std::string &expression);
 };
 
 

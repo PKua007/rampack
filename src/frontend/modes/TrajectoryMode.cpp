@@ -3,21 +3,23 @@
 //
 
 #include <chrono>
-
 #include <cxxopts.hpp>
 
 #include "TrajectoryMode.h"
-#include "utils/Utils.h"
-#include "frontend/RampackParameters.h"
+
 #include "core/PeriodicBoundaryConditions.h"
-#include "frontend/PackingLoader.h"
 #include "core/SimulationPlayer.h"
 #include "core/io/RamtrjPlayer.h"
+#include "core/io/TransformingPlayer.h"
 #include "core/io/TruncatedPlayer.h"
-#include "frontend/matchers/SimulationRecorderFactoryMatcher.h"
-#include "frontend/matchers/ObservablesMatcher.h"
+#include "frontend/PackingLoader.h"
+#include "frontend/RampackParameters.h"
 #include "frontend/matchers/FileSnapshotWriterMatcher.h"
+#include "frontend/matchers/LatticeMatcher.h"
+#include "frontend/matchers/ObservablesMatcher.h"
+#include "frontend/matchers/SimulationRecorderFactoryMatcher.h"
 #include "utils/Fold.h"
+#include "utils/Utils.h"
 
 
 int TrajectoryMode::main(int argc, char **argv) {
@@ -38,6 +40,7 @@ int TrajectoryMode::main(int argc, char **argv) {
     std::string auxVerbosity;
     std::vector<std::string> trajectoryOutputs;
     std::size_t truncatedCycles;
+    std::vector<std::string> transformsStr;
 
     options
         .set_width(120)
@@ -100,7 +103,13 @@ int TrajectoryMode::main(int argc, char **argv) {
              cxxopts::value<std::vector<std::string>>(trajectoryOutputs))
             ("x,truncate", "truncates loaded trajectory to a given number of total cycles; truncated "
                            "trajectory can be stored to a different RAMTRJ file using `-t 'ramtrj(\"filename\")'`",
-             cxxopts::value<std::size_t>(truncatedCycles));
+             cxxopts::value<std::size_t>(truncatedCycles))
+            ("m,transform", "modifies each trajectory frame by applying one or more lattice transformers, see "
+                            "https://github.com/PKua007/rampack/blob/main/docs/initial-arrangement.md (each "
+                            "transformer working with irregular lattices is applicable). Chained transformers can be "
+                            "specified using multiple options (`-m trans1 -m trans2`) or pipe-separated in a single "
+                            "one (`-m 'trans1|trans2'`). " SHELL_SPECIAL_CHARACTERS_WARNING,
+             cxxopts::value<std::vector<std::string>>(transformsStr));
     
     auto parsedOptions = ModeBase::parseOptions(options, argc, argv);
     if (parsedOptions.count("help")) {
@@ -213,6 +222,15 @@ int TrajectoryMode::main(int argc, char **argv) {
 
         auto truncatedPlayer = std::make_unique<TruncatedPlayer>(std::move(player), truncatedCycles);
         player = std::move(truncatedPlayer);
+    }
+
+    // Transform trajectory (if desired)
+    if (parsedOptions.count("transform")) {
+        std::vector<std::shared_ptr<LatticeTransformer>> transforms;
+        for (const auto &transformStr : transformsStr)
+            transforms.push_back(LatticeMatcher::matchIrregularLatticeTransformer(transformStr));
+        auto transformingPlayer = std::make_unique<TransformingPlayer>(std::move(player), std::move(transforms));
+        player = std::move(transformingPlayer);
     }
 
     // Stored trajectory in RAMTRJ/Wolfram format (if desired)

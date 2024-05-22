@@ -433,7 +433,7 @@ namespace {
                               | create_optimize_layers()
                               | create_columnar()
                               | create_layer_rotate()
-                              | LatticeMatcher::createIrregularLatticeTransformers();
+                              | LatticeMatcher::createIrregularLatticeTransformer();
 
         return MatcherArray{}
             .elementsMatch(transformation)
@@ -650,6 +650,17 @@ MatcherAlternative LatticeMatcher::create() {
     return create_manual_lattice() | create_automatic_lattice() | create_automatic_cell_dim_lattice();
 }
 
-MatcherAlternative LatticeMatcher::createIrregularLatticeTransformers() {
+MatcherAlternative LatticeMatcher::createIrregularLatticeTransformer() {
     return create_randomize_flip() | create_randomize_rotations() | create_randomize_shape_param() | create_replicate();
+}
+
+std::shared_ptr<LatticeTransformer> LatticeMatcher::matchIrregularLatticeTransformer(const std::string &expression) {
+    Any transformer;
+    auto transformerAST = pyon::Parser::parse(expression);
+    auto transformerMatcher = LatticeMatcher::createIrregularLatticeTransformer();
+    auto matchReport = transformerMatcher.match(transformerAST, transformer);
+    if (!matchReport)
+        throw pyon::matcher::MatchException(matchReport.getReason());
+
+    return transformer.as<std::shared_ptr<LatticeTransformer>>();
 }

@@ -305,7 +305,7 @@ namespace {
 
     MatcherDataclass create_transform() {
         auto transformations = MatcherArray{}
-            .elementsMatch(LatticeMatcher::createIrregularLatticeTransformers())
+            .elementsMatch(LatticeMatcher::createIrregularLatticeTransformer())
             .nonEmpty()
             .mapToStdVector<std::shared_ptr<LatticeTransformer>>();
 
