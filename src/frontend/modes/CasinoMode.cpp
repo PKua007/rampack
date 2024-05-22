@@ -13,6 +13,7 @@
 #include "core/shapes/CompoundShapeTraits.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "utils/Fold.h"
+#include "core/lattice/LatticeTraits.h"
 
 
 int CasinoMode::main(int argc, char **argv) {
@@ -330,12 +331,7 @@ void CasinoMode::performTransformationRun(Simulation &simulation, const Transfor
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
     auto packing = simulation.releasePacking();
-    auto shapes = packing->getShapes();
-    const auto &box = packing->getBox();
-    for (auto &shape : shapes)
-        shape.setPosition(box.absoluteToRelative(shape.getPosition()));
-    UnitCell cell(box, std::move(shapes));
-    Lattice lattice(std::move(cell), {1, 1, 1});
+    auto lattice = LatticeTraits::latticeFromPacking(*packing);
 
     for (const auto &transformer : run.transformers) {
         const auto &transformerRef = *transformer;

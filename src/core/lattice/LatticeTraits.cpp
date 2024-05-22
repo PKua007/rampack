@@ -83,3 +83,12 @@ LatticeTraits::ColumnAssociation LatticeTraits::getColumnAssociation(const UnitC
     }
     return columnsAssociation;
 }
+
+Lattice LatticeTraits::latticeFromPacking(const Packing &packing) {
+    auto shapes = packing.getShapes();
+    const auto &box = packing.getBox();
+    for (auto &shape : shapes)
+        shape.setPosition(box.absoluteToRelative(shape.getPosition()));
+    UnitCell cell(box, std::move(shapes));
+    return Lattice(std::move(cell), {1, 1, 1});
+}

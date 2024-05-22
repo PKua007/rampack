@@ -11,6 +11,8 @@
 
 #include "utils/Exceptions.h"
 #include "UnitCell.h"
+#include "Lattice.h"
+#include "core/Packing.h"
 
 
 /**
@@ -83,6 +85,7 @@ public:
 
     static LayerAssociation getLayerAssociation(const UnitCell &cell, Axis layerAxis);
     static ColumnAssociation getColumnAssociation(const UnitCell &cell, Axis columnAxis);
+    static Lattice latticeFromPacking(const Packing &packing);
 };
 
 
