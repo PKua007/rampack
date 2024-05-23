@@ -95,6 +95,15 @@ TEST_CASE("Simulation IO: storing and restoring") {
 
             assert_equal(packing1, simulation.getPacking());
         }
+
+        SECTION("new number of particles") {
+            shapes.push_back(Shape({5, 5, 5}));     // one more shape in the packing before replaying snapshot
+            packing1.reset(shapes, packing1.getBox(), interaction, dataManager);
+
+            player.lastSnapshot(packing1, traits);
+
+            assert_equal(packing1, simulation.getPacking());
+        }
     }
 
     SECTION("with continuation") {

@@ -229,7 +229,9 @@ int TrajectoryMode::main(int argc, char **argv) {
         std::vector<std::shared_ptr<LatticeTransformer>> transforms;
         for (const auto &transformStr : transformsStr)
             transforms.push_back(LatticeMatcher::matchIrregularLatticeTransformer(transformStr));
-        auto transformingPlayer = std::make_unique<TransformingPlayer>(std::move(player), std::move(transforms));
+        auto transformingPlayer = std::make_unique<TransformingPlayer>(
+            std::move(player), std::move(transforms), *packing, shapeTraits
+        );
         player = std::move(transformingPlayer);
     }
 

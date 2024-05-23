@@ -52,12 +52,11 @@ bool RamtrjPlayer::hasNext() const {
 
 void RamtrjPlayer::nextSnapshot(Packing &packing, const ShapeTraits &traits) {
     Expects(this->hasNext());
-    Expects(packing.size() == this->header.numParticles);
 
     TriclinicBox newBox = RamtrjIO::readBox(*this->in);
     std::vector<Shape> newShapes;
     newShapes.reserve(this->header.numParticles);
-    for (std::size_t i{}; i < packing.size(); i++)
+    for (std::size_t i{}; i < this->header.numParticles; i++)
         newShapes.push_back(RamtrjIO::readShape(*this->in));
 
     packing.reset(std::move(newShapes), newBox, traits.getInteraction(), traits.getDataManager());

@@ -13,19 +13,21 @@ class TransformingPlayer : public SimulationPlayer {
 private:
     std::unique_ptr<SimulationPlayer> player;
     std::vector<std::shared_ptr<LatticeTransformer>> transformers;
+    std::size_t numMolecules{};
 
     void transformPacking(Packing &packing, const ShapeTraits &traits) const;
 
 public:
     TransformingPlayer(std::unique_ptr<SimulationPlayer> player,
-                       std::vector<std::shared_ptr<LatticeTransformer>> transformers);
+                       std::vector<std::shared_ptr<LatticeTransformer>> transformers, Packing &testPacking,
+                       const ShapeTraits &traits);
 
     [[nodiscard]] bool hasNext() const override { return this->player->hasNext(); }
     void reset() override { this->player->reset(); }
     [[nodiscard]] std::size_t getCurrentSnapshotCycles() const override { return player->getCurrentSnapshotCycles(); }
     [[nodiscard]] std::size_t getTotalCycles() const override { return this->player->getTotalCycles(); }
     [[nodiscard]] std::size_t getCycleStep() const override { return this->player->getCycleStep(); }
-    [[nodiscard]] std::size_t getNumMolecules() const override { return this->player->getNumMolecules(); }
+    [[nodiscard]] std::size_t getNumMolecules() const override { return this->numMolecules; }
     void close() override { this->player->close(); }
 
     void nextSnapshot(Packing &packing, const ShapeTraits &traits) override;

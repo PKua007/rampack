@@ -8,17 +8,21 @@
 
 
 TransformingPlayer::TransformingPlayer(std::unique_ptr<SimulationPlayer> player,
-                                       std::vector<std::shared_ptr<LatticeTransformer>> transformers)
+                                       std::vector<std::shared_ptr<LatticeTransformer>> transformers,
+                                       Packing &testPacking, const ShapeTraits &traits)
         : player{std::move(player)}, transformers{std::move(transformers)}
 {
     Expects(this->player != nullptr);
     this->player->reset();
+    this->transformPacking(testPacking, traits);
+    this->numMolecules = testPacking.size();
 }
 
 void TransformingPlayer::transformPacking(Packing &packing, const ShapeTraits &traits) const {
     auto lattice = LatticeTraits::latticeFromPacking(packing);
     for (const auto &transformer : this->transformers)
         transformer->transform(lattice, traits);
+
     packing.reset(lattice.generateMolecules(), lattice.getLatticeBox(), traits.getInteraction(),
                   traits.getDataManager());
 }
@@ -26,14 +30,17 @@ void TransformingPlayer::transformPacking(Packing &packing, const ShapeTraits &t
 void TransformingPlayer::nextSnapshot(Packing &packing, const ShapeTraits &traits) {
     this->player->nextSnapshot(packing, traits);
     this->transformPacking(packing, traits);
+    Ensures(packing.size() == this->numMolecules);
 }
 
 void TransformingPlayer::lastSnapshot(Packing &packing, const ShapeTraits &traits) {
     this->player->lastSnapshot(packing, traits);
     this->transformPacking(packing, traits);
+    Ensures(packing.size() == this->numMolecules);
 }
 
 void TransformingPlayer::jumpToSnapshot(Packing &packing, const ShapeTraits &traits, std::size_t cycleNumber) {
     this->player->jumpToSnapshot(packing, traits, cycleNumber);
     this->transformPacking(packing, traits);
+    Ensures(packing.size() == this->numMolecules);
 }

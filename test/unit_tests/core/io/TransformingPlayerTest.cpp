@@ -34,11 +34,13 @@ TEST_CASE("TransformingPlayer") {
     recorder.recordSnapshot(packing, traits, 2000);
     recorder.close();
 
-    // Prepare transformer translating shapes by {0.1, 0.1, 0.1}
+    // Prepare transformer adding shape at {0.3, 0.3, 0.3}
     auto mockTransformer = std::make_shared<MockLatticeTransformer>();
     ALLOW_CALL(*mockTransformer, transform(_, _)).SIDE_EFFECT(
-        for (Shape &shape : _1.modifyUnitCellMolecules())
-            shape.setPosition(shape.getPosition() + Vector<3>{0.1, 0.1, 0.1});
+        std::vector<Shape> &shapes = _1.modifyUnitCellMolecules();
+        Shape newShape = shapes.front();
+        newShape.setPosition({0.3, 0.3, 0.3});
+        shapes.push_back(newShape);
     );
     std::vector<std::shared_ptr<LatticeTransformer>> transformers{mockTransformer};
 
@@ -46,7 +48,7 @@ TEST_CASE("TransformingPlayer") {
     inout = std::make_unique<std::iostream>(&inout_buf);
     auto originalPlayer = std::make_unique<RamtrjPlayer>(std::move(inout));
     originalPlayer->lastSnapshot(packing, traits);    // Jump to last snapshot
-    TransformingPlayer transformingPlayer(std::move(originalPlayer), std::move(transformers));
+    TransformingPlayer transformingPlayer(std::move(originalPlayer), std::move(transformers), packing, traits);
 
     SECTION("reset on construction") {
         CHECK(transformingPlayer.getCurrentSnapshotCycles() == 0);
@@ -55,18 +57,18 @@ TEST_CASE("TransformingPlayer") {
     SECTION("basic info") {
         REQUIRE(transformingPlayer.getTotalCycles() == 2000);
         REQUIRE(transformingPlayer.getCycleStep() == 1000);
-        REQUIRE(transformingPlayer.getNumMolecules() == 1);
+        REQUIRE(transformingPlayer.getNumMolecules() == 2);
     }
 
     SECTION("traversing the recording") {
         REQUIRE(transformingPlayer.hasNext());
         REQUIRE_NOTHROW(transformingPlayer.nextSnapshot(packing, traits));
-        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.2, 0.2, 0.2}}, 1e-12));
+        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.3, 0.3, 0.3}}, 1e-12));
         CHECK(transformingPlayer.getCurrentSnapshotCycles() == 1000);
 
         REQUIRE(transformingPlayer.hasNext());
         REQUIRE_NOTHROW(transformingPlayer.nextSnapshot(packing, traits));
-        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.7, 0.7, 0.7}}, 1e-12));
+        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.6, 0.6, 0.6}, {0.3, 0.3, 0.3}}, 1e-12));
         CHECK(transformingPlayer.getCurrentSnapshotCycles() == 2000);
 
         REQUIRE_FALSE(transformingPlayer.hasNext());
@@ -75,13 +77,13 @@ TEST_CASE("TransformingPlayer") {
 
     SECTION("jump to snapshot") {
         transformingPlayer.jumpToSnapshot(packing, traits, 1000);
-        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.2, 0.2, 0.2}}, 1e-12));
+        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.3, 0.3, 0.3}}, 1e-12));
         REQUIRE(transformingPlayer.getCurrentSnapshotCycles() == 1000);
     }
 
     SECTION("last snapshot") {
         transformingPlayer.lastSnapshot(packing, traits);
-        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.7, 0.7, 0.7}}, 1e-12));
+        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.6, 0.6, 0.6}, {0.3, 0.3, 0.3}}, 1e-12));
         REQUIRE(transformingPlayer.getCurrentSnapshotCycles() == 2000);
     }
 
