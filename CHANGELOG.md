@@ -27,6 +27,7 @@ library (later, with Python bindings as well).
 * [`shape-preview` mode](docs/operation-modes.md#shape-preview-mode) cooperates with newly added polydispersity;
   default position, orientation, and shape data may be changed using, respectively, `--shape-pos` (`-s`),
   `--shape-rot` (`-r`), and `--shape-params` (`-d`) options.
+* Added trajectory snapshot transformations to [`trajectory` mode](docs/operation-modes.md#trajectory-mode).
 
 
 ## [1.2.0] - 2023-12-03
