@@ -24,71 +24,99 @@ TEST_CASE("TransformingPlayer") {
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
     Packing packing(std::move(bc));
 
-    // Prepare recording - packing with a single shape, first at {0.1, 0.1, 0.1}, then at {0.6, 0.6, 0.6}
-    std::stringbuf inout_buf;
-    auto inout = std::make_unique<std::iostream>(&inout_buf);
-    RamtrjRecorder recorder(std::move(inout), 1, 1000, false);
-    packing.reset({Shape({0.1, 0.1, 0.1})}, TriclinicBox(1), traits.getInteraction(), traits.getDataManager());
-    recorder.recordSnapshot(packing, traits, 1000);
-    packing.reset({Shape({0.6, 0.6, 0.6})}, TriclinicBox(1), traits.getInteraction(), traits.getDataManager());
-    recorder.recordSnapshot(packing, traits, 2000);
-    recorder.close();
-
     // Prepare transformer adding shape at {0.3, 0.3, 0.3}
     auto mockTransformer = std::make_shared<MockLatticeTransformer>();
     ALLOW_CALL(*mockTransformer, transform(_, _)).SIDE_EFFECT(
-        std::vector<Shape> &shapes = _1.modifyUnitCellMolecules();
-        Shape newShape = shapes.front();
-        newShape.setPosition({0.3, 0.3, 0.3});
-        shapes.push_back(newShape);
+        const SphereTraits::HardData RADIUS = {0.5};
+        const auto noRot = Matrix<3, 3>::identity();
+        _1.modifyUnitCellMolecules().emplace_back(Vector<3>{0.3, 0.3, 0.3}, noRot, RADIUS);
     );
     std::vector<std::shared_ptr<LatticeTransformer>> transformers{mockTransformer};
 
-    // Prepare player
-    inout = std::make_unique<std::iostream>(&inout_buf);
-    auto originalPlayer = std::make_unique<RamtrjPlayer>(std::move(inout));
-    originalPlayer->lastSnapshot(packing, traits);    // Jump to last snapshot
-    TransformingPlayer transformingPlayer(std::move(originalPlayer), std::move(transformers), packing, traits);
+    SECTION("empty") {
+        // Prepare recorder
+        std::stringbuf inout_buf;
+        auto inout = std::make_unique<std::iostream>(&inout_buf);
+        RamtrjRecorder recorder(std::move(inout), 1, 1000, false);
+        recorder.close();
 
-    SECTION("reset on construction") {
-        CHECK(transformingPlayer.getCurrentSnapshotCycles() == 0);
+        // Prepare packing
+        std::vector<Shape> shapes(2, Shape({0.1, 0.1, 0.1}));
+        packing.reset(std::move(shapes), TriclinicBox(1), traits.getInteraction(), traits.getDataManager());
+
+        // Prepare player
+        inout = std::make_unique<std::iostream>(&inout_buf);
+        auto originalPlayer = std::make_unique<RamtrjPlayer>(std::move(inout));
+        TransformingPlayer transformingPlayer(std::move(originalPlayer), std::move(transformers), packing, traits);
+
+        CHECK(transformingPlayer.getTotalCycles() == 0);
+        CHECK(transformingPlayer.getCycleStep() == 1000);
+        CHECK(transformingPlayer.getNumMolecules() == 3);
+        CHECK_FALSE(transformingPlayer.hasNext());
     }
 
-    SECTION("basic info") {
-        REQUIRE(transformingPlayer.getTotalCycles() == 2000);
-        REQUIRE(transformingPlayer.getCycleStep() == 1000);
-        REQUIRE(transformingPlayer.getNumMolecules() == 2);
-    }
+    SECTION("non-empty") {
+        // Prepare recording - packing with a single shape, first at {0.1, 0.1, 0.1}, then at {0.6, 0.6, 0.6}
+        std::stringbuf inout_buf;
+        auto inout = std::make_unique<std::iostream>(&inout_buf);
+        RamtrjRecorder recorder(std::move(inout), 1, 1000, false);
+        packing.reset({Shape({0.1, 0.1, 0.1})}, TriclinicBox(1), traits.getInteraction(), traits.getDataManager());
+        recorder.recordSnapshot(packing, traits, 1000);
+        packing.reset({Shape({0.6, 0.6, 0.6})}, TriclinicBox(1), traits.getInteraction(), traits.getDataManager());
+        recorder.recordSnapshot(packing, traits, 2000);
+        recorder.close();
 
-    SECTION("traversing the recording") {
-        REQUIRE(transformingPlayer.hasNext());
-        REQUIRE_NOTHROW(transformingPlayer.nextSnapshot(packing, traits));
-        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.3, 0.3, 0.3}}, 1e-12));
-        CHECK(transformingPlayer.getCurrentSnapshotCycles() == 1000);
+        // Imbue a different number of shapes into the packing
+        std::vector<Shape> shapes(3, Shape({0.1, 0.1, 0.1}));
+        packing.reset(std::move(shapes), TriclinicBox(1), traits.getInteraction(), traits.getDataManager());
 
-        REQUIRE(transformingPlayer.hasNext());
-        REQUIRE_NOTHROW(transformingPlayer.nextSnapshot(packing, traits));
-        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.6, 0.6, 0.6}, {0.3, 0.3, 0.3}}, 1e-12));
-        CHECK(transformingPlayer.getCurrentSnapshotCycles() == 2000);
+        // Prepare player
+        inout = std::make_unique<std::iostream>(&inout_buf);
+        auto originalPlayer = std::make_unique<RamtrjPlayer>(std::move(inout));
+        originalPlayer->lastSnapshot(packing, traits);    // Jump to last snapshot
+        TransformingPlayer transformingPlayer(std::move(originalPlayer), std::move(transformers), packing, traits);
 
-        REQUIRE_FALSE(transformingPlayer.hasNext());
-        REQUIRE_THROWS(transformingPlayer.nextSnapshot(packing, traits));
-    }
+        SECTION("reset on construction") {
+            CHECK(transformingPlayer.getCurrentSnapshotCycles() == 0);
+        }
 
-    SECTION("jump to snapshot") {
-        transformingPlayer.jumpToSnapshot(packing, traits, 1000);
-        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.3, 0.3, 0.3}}, 1e-12));
-        REQUIRE(transformingPlayer.getCurrentSnapshotCycles() == 1000);
-    }
+        SECTION("basic info") {
+            CHECK(transformingPlayer.getTotalCycles() == 2000);
+            CHECK(transformingPlayer.getCycleStep() == 1000);
+            CHECK(transformingPlayer.getNumMolecules() == 2);
+        }
 
-    SECTION("last snapshot") {
-        transformingPlayer.lastSnapshot(packing, traits);
-        CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.6, 0.6, 0.6}, {0.3, 0.3, 0.3}}, 1e-12));
-        REQUIRE(transformingPlayer.getCurrentSnapshotCycles() == 2000);
-    }
+        SECTION("traversing the recording") {
+            REQUIRE(transformingPlayer.hasNext());
+            REQUIRE_NOTHROW(transformingPlayer.nextSnapshot(packing, traits));
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.3, 0.3, 0.3}}, 1e-12));
+            CHECK(transformingPlayer.getCurrentSnapshotCycles() == 1000);
 
-    SECTION("reset") {
-        transformingPlayer.reset();
-        REQUIRE(transformingPlayer.getCurrentSnapshotCycles() == 0);
+            REQUIRE(transformingPlayer.hasNext());
+            REQUIRE_NOTHROW(transformingPlayer.nextSnapshot(packing, traits));
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.6, 0.6, 0.6},
+                                                                 {0.3, 0.3, 0.3}}, 1e-12));
+            CHECK(transformingPlayer.getCurrentSnapshotCycles() == 2000);
+
+            REQUIRE_FALSE(transformingPlayer.hasNext());
+            REQUIRE_THROWS(transformingPlayer.nextSnapshot(packing, traits));
+        }
+
+        SECTION("jump to snapshot") {
+            transformingPlayer.jumpToSnapshot(packing, traits, 1000);
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.1, 0.1, 0.1}, {0.3, 0.3, 0.3}}, 1e-12));
+            REQUIRE(transformingPlayer.getCurrentSnapshotCycles() == 1000);
+        }
+
+        SECTION("last snapshot") {
+            transformingPlayer.lastSnapshot(packing, traits);
+            CHECK_THAT(packing, HasParticlesWithApproxPositions({{0.6, 0.6, 0.6}, {0.3, 0.3, 0.3}}, 1e-12));
+            REQUIRE(transformingPlayer.getCurrentSnapshotCycles() == 2000);
+        }
+
+        SECTION("reset") {
+            transformingPlayer.reset();
+            REQUIRE(transformingPlayer.getCurrentSnapshotCycles() == 0);
+        }
     }
 }

@@ -13,7 +13,13 @@ TransformingPlayer::TransformingPlayer(std::unique_ptr<SimulationPlayer> player,
         : player{std::move(player)}, transformers{std::move(transformers)}
 {
     Expects(this->player != nullptr);
-    this->player->reset();
+
+    if (this->player->getTotalCycles() != 0) {
+        this->numMolecules = this->player->getNumMolecules();
+        this->player->lastSnapshot(testPacking, traits);
+        this->player->reset();
+    }
+
     this->transformPacking(testPacking, traits);
     this->numMolecules = testPacking.size();
 }

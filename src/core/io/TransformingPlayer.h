@@ -9,6 +9,9 @@
 #include "core/lattice/LatticeTransformer.h"
 
 
+/**
+ * @brief Decorator SimulationPlayer which applies a set of (irregular) LatticeTransformers to each replayed snapshot.
+ */
 class TransformingPlayer : public SimulationPlayer {
 private:
     std::unique_ptr<SimulationPlayer> player;
@@ -18,6 +21,16 @@ private:
     void transformPacking(Packing &packing, const ShapeTraits &traits) const;
 
 public:
+    /**
+     * @brief Creates the object.
+     * @param player underlying player
+     * @param transformers transformers which are applied to each replayed snapshot. The transformer may change the
+     * number of particles, but their number must be constant for each snapshot
+     * @param testPacking test packing which is used to determine the number of particles after @a transformers are
+     * applied. If @a player has more than zero snapshots, the last snapshot is printed onto @a testPacking before
+     * applying the transformers.
+     * @param traits
+     */
     TransformingPlayer(std::unique_ptr<SimulationPlayer> player,
                        std::vector<std::shared_ptr<LatticeTransformer>> transformers, Packing &testPacking,
                        const ShapeTraits &traits);
@@ -27,7 +40,13 @@ public:
     [[nodiscard]] std::size_t getCurrentSnapshotCycles() const override { return player->getCurrentSnapshotCycles(); }
     [[nodiscard]] std::size_t getTotalCycles() const override { return this->player->getTotalCycles(); }
     [[nodiscard]] std::size_t getCycleStep() const override { return this->player->getCycleStep(); }
+
+    /**
+     * @brief Returns number of molecules after applying the transformers.
+     * @details The number is calculates bases on the test packing (see TransformingPlayer::TransformingPlayer).
+     */
     [[nodiscard]] std::size_t getNumMolecules() const override { return this->numMolecules; }
+
     void close() override { this->player->close(); }
 
     void nextSnapshot(Packing &packing, const ShapeTraits &traits) override;
