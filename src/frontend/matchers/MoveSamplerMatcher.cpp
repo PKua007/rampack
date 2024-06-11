@@ -7,6 +7,7 @@
 #include "core/move_samplers/RototranslationSampler.h"
 #include "core/move_samplers/TranslationSampler.h"
 #include "core/move_samplers/RotationSampler.h"
+#include "core/move_samplers/RotationWithAngleConservationSampler.h"
 #include "core/move_samplers/FlipSampler.h"
 
 using namespace pyon::matcher;
@@ -16,6 +17,7 @@ namespace {
     MatcherDataclass create_rototranslation();
     MatcherDataclass create_translation();
     MatcherDataclass create_rotation();
+    MatcherDataclass create_rotationWithAngleConservation();
     MatcherDataclass create_flip();
 
 
@@ -81,6 +83,20 @@ namespace {
             });
     }
 
+    MatcherDataclass create_rotationWithAngleConservation() {
+        return MatcherDataclass("rotationWithAngleConservation")
+                .arguments({{"step", MatcherFloat{}.positive()},
+                            {"particleAxis", MatcherInt{}.nonNegative()},
+                            {"globalAxis", MatcherArray(MatcherFloat{}.mapTo<double>(),3), "[0,0,1]"}})
+                .mapTo([](const DataclassData &rotationWithAngleConservation) -> std::shared_ptr<MoveSampler> {
+                    auto step = rotationWithAngleConservation["step"].as<double>();
+                    auto particleAxisIdx = rotationWithAngleConservation["particleAxis"].as<long>();
+                    auto globalAxisData = rotationWithAngleConservation["globalAxis"].as<pyon::matcher::ArrayData>();
+                    auto globalAxis = Vector<3, double>({globalAxisData[0].as<double>(), globalAxisData[1].as<double>(), globalAxisData[2].as<double>()});
+                    return std::make_shared<RotationWithAngleConservationSampler>(step, particleAxisIdx, globalAxis);
+                });
+    }
+
     MatcherDataclass create_flip() {
         return MatcherDataclass("flip")
             .arguments({{"every", MatcherInt{}.positive().mapTo<std::size_t>(), "10"}})
@@ -93,5 +109,5 @@ namespace {
 
 
 MatcherAlternative MoveSamplerMatcher::create() {
-    return create_rototranslation() | create_translation() | create_rotation() | create_flip();
+    return create_rototranslation() | create_translation() | create_rotation() | create_rotationWithAngleConservation() | create_flip();
 }
