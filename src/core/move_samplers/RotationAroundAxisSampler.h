@@ -2,8 +2,8 @@
 // Created by ciesla on 09.06.2024.
 //
 
-#ifndef RAMPACK_ROTATIONWITHANGLECONSERVATIONSAMPLER_H
-#define RAMPACK_ROTATIONWITHANGLECONSERVATIONSAMPLER_H
+#ifndef RAMPACK_ROTATIONAROUNDAXISSAMPLER_H
+#define RAMPACK_ROTATIONAROUNDAXISSAMPLER_H
 
 #include "core/MoveSampler.h"
 
@@ -13,20 +13,20 @@
  * The rotation angle is sampled uniformly from an interval given by the current step size. Maximal step size is PI.
  * Internally it consists of a single move named @a rotationWithAngleConservation. The group name is also @a rotation.
  */
-class RotationWithAngleConservationSampler : public MoveSampler {
+class RotationAroundAxisSampler : public MoveSampler {
 private:
     double rotationStepSize{};
     size_t particleAxisIdx{};
-    Vector<3, double> particleAxis{};
-    Vector<3, double> globalAxis{};
+    Vector<3, double> axis{};
+    bool global{};
 
 public:
     /**
      * @brief Constructs the sampler with an initial step size @a rotationStepSize.
      */
-    explicit RotationWithAngleConservationSampler(double rotationStepSize, size_t particleAxis, const Vector<3, double>& globalAxis);
+    explicit RotationAroundAxisSampler(double rotationStepSize, const Vector<3, double>& axis, bool global);
 
-    [[nodiscard]] std::string getName() const override { return "rotationWithAngleConservation"; }
+    [[nodiscard]] std::string getName() const override { return "rotationAroundAxis"; }
 
     [[nodiscard]] std::size_t getNumOfRequestedMoves(std::size_t numParticles) const override { return numParticles; }
 
@@ -38,8 +38,6 @@ public:
     [[nodiscard]] std::vector<std::pair<std::string, double>> getStepSizes() const override;
 
     void setStepSize(const std::string &stepName, double stepSize) override;
-
-    void setupForShapeTraits(const ShapeTraits &shapeTraits) override;
 };
 
-#endif //RAMPACK_ROTATIONWITHANGLECONSERVATIONSAMPLER_H
+#endif //RAMPACK_ROTATIONAROUNDAXISSAMPLER_H

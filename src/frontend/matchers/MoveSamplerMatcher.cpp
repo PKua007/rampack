@@ -7,6 +7,7 @@
 #include "core/move_samplers/RototranslationSampler.h"
 #include "core/move_samplers/TranslationSampler.h"
 #include "core/move_samplers/RotationSampler.h"
+#include "core/move_samplers/RotationAroundAxisSampler.h"
 #include "core/move_samplers/RotationWithAngleConservationSampler.h"
 #include "core/move_samplers/FlipSampler.h"
 
@@ -83,6 +84,20 @@ namespace {
             });
     }
 
+    MatcherDataclass create_rotationAroundAxis() {
+        return MatcherDataclass("rotationAroundAxis")
+                .arguments({{"step", MatcherFloat{}.positive()},
+                            {"axis", MatcherArray(MatcherFloat{}.mapTo<double>(),3), "[0,0,1]"},
+                            {"global", MatcherBoolean{}, "True"}})
+                .mapTo([](const DataclassData &rotationAroundAxis) -> std::shared_ptr<MoveSampler> {
+                    auto step = rotationAroundAxis["step"].as<double>();
+                    auto axisData = rotationAroundAxis["axis"].as<pyon::matcher::ArrayData>();
+                    auto axis = Vector<3, double>({axisData[0].as<double>(), axisData[1].as<double>(), axisData[2].as<double>()});
+                    auto global = rotationAroundAxis["global"].as<bool>();
+                    return std::make_shared<RotationAroundAxisSampler>(step, axis, global);
+                });
+    }
+
     MatcherDataclass create_rotationWithAngleConservation() {
         return MatcherDataclass("rotationWithAngleConservation")
                 .arguments({{"step", MatcherFloat{}.positive()},
@@ -109,5 +124,6 @@ namespace {
 
 
 MatcherAlternative MoveSamplerMatcher::create() {
-    return create_rototranslation() | create_translation() | create_rotation() | create_rotationWithAngleConservation() | create_flip();
+    return create_rototranslation() | create_translation() | create_rotation() | create_rotationAroundAxis()
+    | create_rotationWithAngleConservation() | create_flip();
 }
