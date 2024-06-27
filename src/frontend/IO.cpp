@@ -30,7 +30,7 @@ void IO::storeSnapshots(const ObservablesCollector &observablesCollector, bool i
 }
 
 std::unique_ptr<RamtrjPlayer> IO::loadRamtrjPlayer(std::string &trajectoryFilename, std::size_t numMolecules,
-                                                   bool autoFix_)
+                                                   const ShapeDataManager &manager, bool autoFix_)
 {
     auto trajectoryStream = std::make_unique<std::ifstream>(trajectoryFilename,
                                                             std::ios_base::in | std::ios_base::binary);
@@ -38,7 +38,7 @@ std::unique_ptr<RamtrjPlayer> IO::loadRamtrjPlayer(std::string &trajectoryFilena
     if (autoFix_) {
         RamtrjPlayer::AutoFix autoFix(numMolecules);
         try {
-            auto simulationPlayer = std::make_unique<RamtrjPlayer>(std::move(trajectoryStream), autoFix);
+            auto simulationPlayer = std::make_unique<RamtrjPlayer>(std::move(trajectoryStream), manager, autoFix);
             autoFix.dumpInfo(this->logger);
             this->logger.info() << std::endl;
             return simulationPlayer;
@@ -49,7 +49,7 @@ std::unique_ptr<RamtrjPlayer> IO::loadRamtrjPlayer(std::string &trajectoryFilena
     } else {
         std::unique_ptr<RamtrjPlayer> player;
         try {
-            player = std::make_unique<RamtrjPlayer>(std::move(trajectoryStream));
+            player = std::make_unique<RamtrjPlayer>(std::move(trajectoryStream), manager);
         } catch (const ValidationException &exception) {
             this->logger.error() << "Reading the trajectory failed: " << exception.what() << std::endl;
             this->logger << "You may try to fix it by adding the --auto-fix option." << std::endl;

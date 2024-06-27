@@ -217,7 +217,8 @@ void CasinoMode::performIntegration(Simulation &simulation, const Simulation::En
     this->logger << "Starting integration '" << run.runName << "'" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    OnTheFlyOutput onTheFlyOutput(run, simulation.getPacking().size(), cycleOffset, isContinuation, this->logger);
+    OnTheFlyOutput onTheFlyOutput(run, simulation.getPacking(), shapeTraits.getDataManager(), cycleOffset,
+                                  isContinuation, this->logger);
 
     Simulation::IntegrationParameters integrationParams;
     integrationParams.thermalisationCycles = run.thermalizationCycles.value_or(0);
@@ -292,7 +293,8 @@ void CasinoMode::performOverlapRelaxation(Simulation &simulation, const Simulati
     this->logger << "Starting overlap relaxation '" << run.runName << "'" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    OnTheFlyOutput onTheFlyOutput(run, simulation.getPacking().size(), cycleOffset, isContinuation, this->logger);
+    OnTheFlyOutput onTheFlyOutput(run, simulation.getPacking(), shapeTraits->getDataManager(), cycleOffset,
+                                  isContinuation, this->logger);
 
     if (run.helperShapeTraits != nullptr) {
         ShapeData helperData = run.helperShapeTraits->getDataManager().defaultDeserialize({});
@@ -622,8 +624,9 @@ void CasinoMode::verifyIfEnvComplete(const Simulation::Environment &env, const R
     throw ValidationException(msg.str());
 }
 
-CasinoMode::OnTheFlyOutput::OnTheFlyOutput(const SimulatingRun &run, std::size_t numParticles,
-                                           std::size_t absoluteCyclesNumber, bool isContinuation, Logger &logger)
+CasinoMode::OnTheFlyOutput::OnTheFlyOutput(const SimulatingRun &run, const Packing &packing,
+                                           const ShapeDataManager &manager, std::size_t absoluteCyclesNumber,
+                                           bool isContinuation, Logger &logger)
         : absoluteCyclesNumber{absoluteCyclesNumber}, snapshotEvery{run.snapshotEvery}, isContinuation{isContinuation},
           logger{logger}, collector{run.observablesCollector}
 {
@@ -632,7 +635,7 @@ CasinoMode::OnTheFlyOutput::OnTheFlyOutput(const SimulatingRun &run, std::size_t
     std::vector<std::pair<std::string, std::size_t>> lastCycleNumbers;
 
     for (const auto &factory : run.simulationRecorders) {
-        auto recorder = factory->create(numParticles, this->snapshotEvery, isContinuation, this->logger);
+        auto recorder = factory->create(packing, manager, this->snapshotEvery, isContinuation, this->logger);
         lastCycleNumbers.emplace_back(factory->getFilename(), recorder->getLastCycleNumber());
         this->recorders.push_back(std::move(recorder));
     }

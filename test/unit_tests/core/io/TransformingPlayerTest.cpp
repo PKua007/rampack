@@ -22,7 +22,9 @@ TEST_CASE("TransformingPlayer") {
     // Prepare packing
     SphereTraits traits(0.5);
     auto bc = std::make_unique<PeriodicBoundaryConditions>();
-    Packing packing(std::move(bc));
+    std::vector<Shape> originalShapes{Shape({0.5, 0.5, 0.5})};
+    Packing packing(TriclinicBox(1), std::move(originalShapes), std::move(bc), traits.getInteraction(),
+                    traits.getDataManager());
 
     // Prepare transformer adding shape at {0.3, 0.3, 0.3}
     auto mockTransformer = std::make_shared<MockLatticeTransformer>();
@@ -37,7 +39,7 @@ TEST_CASE("TransformingPlayer") {
         // Prepare recorder
         std::stringbuf inout_buf;
         auto inout = std::make_unique<std::iostream>(&inout_buf);
-        RamtrjRecorder recorder(std::move(inout), 1, 1000, false);
+        RamtrjRecorder recorder(std::move(inout), packing, traits.getDataManager(), 1000, false);
         recorder.close();
 
         // Prepare packing
@@ -46,7 +48,7 @@ TEST_CASE("TransformingPlayer") {
 
         // Prepare player
         inout = std::make_unique<std::iostream>(&inout_buf);
-        auto originalPlayer = std::make_unique<RamtrjPlayer>(std::move(inout));
+        auto originalPlayer = std::make_unique<RamtrjPlayer>(std::move(inout), traits.getDataManager());
         TransformingPlayer transformingPlayer(std::move(originalPlayer), std::move(transformers), packing, traits);
 
         CHECK(transformingPlayer.getTotalCycles() == 0);
@@ -59,7 +61,7 @@ TEST_CASE("TransformingPlayer") {
         // Prepare recording - packing with a single shape, first at {0.1, 0.1, 0.1}, then at {0.6, 0.6, 0.6}
         std::stringbuf inout_buf;
         auto inout = std::make_unique<std::iostream>(&inout_buf);
-        RamtrjRecorder recorder(std::move(inout), 1, 1000, false);
+        RamtrjRecorder recorder(std::move(inout), packing, traits.getDataManager(), 1000, false);
         packing.reset({Shape({0.1, 0.1, 0.1})}, TriclinicBox(1), traits.getInteraction(), traits.getDataManager());
         recorder.recordSnapshot(packing, traits, 1000);
         packing.reset({Shape({0.6, 0.6, 0.6})}, TriclinicBox(1), traits.getInteraction(), traits.getDataManager());
@@ -72,7 +74,7 @@ TEST_CASE("TransformingPlayer") {
 
         // Prepare player
         inout = std::make_unique<std::iostream>(&inout_buf);
-        auto originalPlayer = std::make_unique<RamtrjPlayer>(std::move(inout));
+        auto originalPlayer = std::make_unique<RamtrjPlayer>(std::move(inout), traits.getDataManager());
         originalPlayer->lastSnapshot(packing, traits);    // Jump to last snapshot
         TransformingPlayer transformingPlayer(std::move(originalPlayer), std::move(transformers), packing, traits);
 

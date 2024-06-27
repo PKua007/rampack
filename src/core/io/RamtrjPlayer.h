@@ -81,13 +81,13 @@ public:
      * @details After the construction the internal "pointer" point before the first snapshot. The stream has to be
      * binary and has operable @a tellg and @a seekg methods.
      */
-    explicit RamtrjPlayer(std::unique_ptr<std::istream> in);
+    explicit RamtrjPlayer(std::unique_ptr<std::istream> in, const ShapeDataManager &manager);
 
     /**
      * @brief The same as the other constructor, but it will attempt to fix the trajectory if it was truncated and
      * report the results via autoFix. If fixing fails, exception is thrown afterwards.
      */
-    explicit RamtrjPlayer(std::unique_ptr<std::istream> in, AutoFix &autoFix);
+    explicit RamtrjPlayer(std::unique_ptr<std::istream> in, const ShapeDataManager &manager, AutoFix &autoFix);
 
     [[nodiscard]] bool hasNext() const override;
     void nextSnapshot(Packing &packing, const ShapeTraits &traits) override;

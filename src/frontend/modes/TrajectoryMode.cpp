@@ -200,7 +200,8 @@ int TrajectoryMode::main(int argc, char **argv) {
 
     // Autofix trajectory if desired
     bool autoFix = parsedOptions.count("auto-fix");
-    std::unique_ptr<SimulationPlayer> player = this->io.loadRamtrjPlayer(trajectoryFilename, packing->size(), autoFix);
+    std::unique_ptr<SimulationPlayer> player = this->io.loadRamtrjPlayer(trajectoryFilename, packing->size(),
+                                                                         shapeTraits.getDataManager(), autoFix);
     if (player == nullptr)
         return EXIT_FAILURE;
 
@@ -244,8 +245,8 @@ int TrajectoryMode::main(int argc, char **argv) {
         }
 
         bool isContinuation = false;
-        auto recorder = factory->create(player->getNumMolecules(),
-                                        player->getCycleStep(), isContinuation, this->logger);
+        auto recorder = factory->create(*packing, shapeTraits.getDataManager(), player->getCycleStep(), isContinuation,
+                                        this->logger);
 
         this->logger.info() << "Storing trajectory started..." << std::endl;
 

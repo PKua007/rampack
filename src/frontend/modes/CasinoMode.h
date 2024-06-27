@@ -31,8 +31,8 @@ private:
         std::shared_ptr<ObservablesCollector> collector;
         std::vector<std::unique_ptr<SimulationRecorder>> recorders;
 
-        OnTheFlyOutput(const SimulatingRun &run, std::size_t numParticles, std::size_t absoluteCyclesNumber,
-                       bool isContinuation, Logger &logger);
+        OnTheFlyOutput(const SimulatingRun &run, const Packing &packing, const ShapeDataManager &manager,
+                       std::size_t absoluteCyclesNumber, bool isContinuation, Logger &logger);
     };
 
     static void verifyDynamicParameter(const DynamicParameter &dynamicParameter, const std::string &parameterName,

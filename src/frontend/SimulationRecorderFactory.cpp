@@ -10,8 +10,9 @@
 #include "core/io/XYZRecorder.h"
 
 
-std::unique_ptr<SimulationRecorder> RamtrjRecorderFactory::create(std::size_t numMolecules, std::size_t snapshotEvery,
-                                                                  bool isContinuation, Logger &logger) const
+std::unique_ptr<SimulationRecorder>
+RamtrjRecorderFactory::create(const Packing &packing, const ShapeDataManager &manager, std::size_t snapshotEvery,
+                              bool isContinuation, Logger &logger) const
 {
     std::unique_ptr<std::fstream> inout;
 
@@ -27,10 +28,11 @@ std::unique_ptr<SimulationRecorder> RamtrjRecorderFactory::create(std::size_t nu
 
     ValidateOpenedDesc(*inout, this->filename, "to store RAMTRJ trajectory");
     logger.info() << "RAMTRJ trajectory is stored on the fly to '" << this->filename << "'" << std::endl;
-    return std::make_unique<RamtrjRecorder>(std::move(inout), numMolecules, snapshotEvery, isContinuation);
+    return std::make_unique<RamtrjRecorder>(std::move(inout), packing, manager, snapshotEvery, isContinuation);
 }
 
-std::unique_ptr<SimulationRecorder> XYZRecorderFactory::create([[maybe_unused]] std::size_t numMolecules,
+std::unique_ptr<SimulationRecorder> XYZRecorderFactory::create([[maybe_unused]] const Packing &packing,
+                                                               [[maybe_unused]] const ShapeDataManager &manager,
                                                                [[maybe_unused]] std::size_t snapshotEvery,
                                                                bool isContinuation, Logger &logger) const
 {

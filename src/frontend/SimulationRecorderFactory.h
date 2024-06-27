@@ -22,9 +22,9 @@ public:
 
     virtual ~SimulationRecorderFactory() = default;
 
-    [[nodiscard]] virtual std::unique_ptr<SimulationRecorder> create(std::size_t numMolecules,
-                                                                     std::size_t snapshotEvery,
-                                                                     bool isContinuation, Logger &logger) const = 0;
+    [[nodiscard]] virtual std::unique_ptr<SimulationRecorder>
+    create(const Packing &packing, const ShapeDataManager &manager, std::size_t snapshotEvery, bool isContinuation,
+           Logger &logger) const = 0;
 
     [[nodiscard]] virtual bool createsRamtrj() const = 0;
     [[nodiscard]] const std::string &getFilename() const { return this->filename; }
@@ -36,8 +36,9 @@ public:
     explicit RamtrjRecorderFactory(std::string filename) : SimulationRecorderFactory(std::move(filename))
     { }
 
-    [[nodiscard]] std::unique_ptr<SimulationRecorder> create(std::size_t numMolecules, std::size_t snapshotEvery,
-                                                             bool isContinuation, Logger &logger) const override;
+    [[nodiscard]] std::unique_ptr<SimulationRecorder> create(const Packing &packing, const ShapeDataManager &manager,
+                                                             std::size_t snapshotEvery, bool isContinuation,
+                                                             Logger &logger) const override;
 
     [[nodiscard]] bool createsRamtrj() const override { return true; }
 };
@@ -48,8 +49,9 @@ public:
     explicit XYZRecorderFactory(std::string filename) : SimulationRecorderFactory(std::move(filename))
     { }
 
-    [[nodiscard]] std::unique_ptr<SimulationRecorder> create(std::size_t numMolecules, std::size_t snapshotEvery,
-                                                             bool isContinuation, Logger &logger) const override;
+    [[nodiscard]] std::unique_ptr<SimulationRecorder> create(const Packing &packing, const ShapeDataManager &manager,
+                                                             std::size_t snapshotEvery, bool isContinuation,
+                                                             Logger &logger) const override;
 
     [[nodiscard]] bool createsRamtrj() const override { return false; }
 };

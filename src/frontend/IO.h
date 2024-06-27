@@ -18,7 +18,8 @@ public:
     explicit IO(Logger &logger) : logger{logger} { }
 
     RampackParameters dispatchParams(const std::string &filename);
-    std::unique_ptr<RamtrjPlayer> loadRamtrjPlayer(std::string &trajectoryFilename, size_t numMolecules, bool autoFix_);
+    std::unique_ptr<RamtrjPlayer> loadRamtrjPlayer(std::string &trajectoryFilename, std::size_t numMolecules,
+                                                   const ShapeDataManager &manager, bool autoFix_);
     void storeSnapshots(const ObservablesCollector &observablesCollector, bool isContinuation,
                         const std::string &observableSnapshotFilename) const;
     void storeBulkObservables(const ObservablesCollector &observablesCollector,

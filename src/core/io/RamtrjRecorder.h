@@ -19,9 +19,7 @@
 class RamtrjRecorder : RamtrjIO, public SimulationRecorder {
 private:
     std::unique_ptr<std::iostream> stream;
-    std::size_t numSnapshots{};
-    std::size_t cycleStep{};
-    std::size_t numParticles{};
+    Header header;
 
     void close0();
 
@@ -30,11 +28,11 @@ public:
      * @brief Constructs the recorder using a given @a std::iostream.
      * @details The class takes full responsibility of the stream. It should be opened in binary input-output mode with
      * all stream pointer methods working (@a tellp, @a seekp, @a tellg, @a seekg). If @a append is @a true, new
-     * snapshots will be appended and it is assumed that the @a stream alredy contains correct recording. If @a append
+     * snapshots will be appended and it is assumed that the @a stream already contains correct recording. If @a append
      * is @a false, the stream should be empty, or else an error is reported.
      */
-    RamtrjRecorder(std::unique_ptr<std::iostream> stream, std::size_t numParticles, std::size_t cycleStep,
-                   bool append);
+    RamtrjRecorder(std::unique_ptr<std::iostream> stream, const Packing &packing, const ShapeDataManager &manager,
+                   std::size_t cycleStep, bool append);
 
     ~RamtrjRecorder() override;
 
@@ -46,7 +44,10 @@ public:
      */
     void recordSnapshot(const Packing &packing, const ShapeTraits &traits, std::size_t cycle) override;
 
-    [[nodiscard]] std::size_t getLastCycleNumber() const override { return this->numSnapshots * this->cycleStep; }
+    [[nodiscard]] std::size_t getLastCycleNumber() const override {
+        return this->header.numSnapshots * this->header.cycleStep;
+    }
+
     void close() override { this->close0(); }
 };
 

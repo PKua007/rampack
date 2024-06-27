@@ -8,9 +8,9 @@
 #include "utils/Exceptions.h"
 
 
-RamtrjPlayer::RamtrjPlayer(std::unique_ptr<std::istream> in) : in{std::move(in)} {
+RamtrjPlayer::RamtrjPlayer(std::unique_ptr<std::istream> in, const ShapeDataManager &manager) : in{std::move(in)} {
     this->in->seekg(0);
-    this->header = RamtrjIO::readHeader(*this->in);
+    this->header = RamtrjIO::readHeaderAndShapeData(manager, *this->in);
 
     this->in->seekg(0, std::ios_base::end);
     std::streamoff expectedPos = RamtrjIO::streamoffForSnapshot(this->header, this->header.numSnapshots);
@@ -19,12 +19,13 @@ RamtrjPlayer::RamtrjPlayer(std::unique_ptr<std::istream> in) : in{std::move(in)}
     this->reset();
 }
 
-RamtrjPlayer::RamtrjPlayer(std::unique_ptr<std::istream> in, RamtrjPlayer::AutoFix &autoFix)
+RamtrjPlayer::RamtrjPlayer(std::unique_ptr<std::istream> in, const ShapeDataManager &manager,
+                           RamtrjPlayer::AutoFix &autoFix)
         : in{std::move(in)}
 {
     this->in->seekg(0);
     try {
-        this->header = RamtrjIO::readHeader(*this->in);
+        this->header = RamtrjIO::readHeaderAndShapeData(manager, *this->in);
     } catch (const RamtrjException &ex) {
         autoFix.reportError(ex.what());
         std::rethrow_exception(std::current_exception());
@@ -36,7 +37,7 @@ RamtrjPlayer::RamtrjPlayer(std::unique_ptr<std::istream> in, RamtrjPlayer::AutoF
     if (realPos == expectedPos) {
         autoFix.reportNofix(this->header);
     } else {
-        std::size_t snapshotBytes = realPos - RamtrjIO::getHeaderSize();
+        std::size_t snapshotBytes = realPos - this->header.firstSnapshotOffset;
         autoFix.tryFixing(this->header, snapshotBytes);
     }
 
@@ -57,7 +58,7 @@ void RamtrjPlayer::nextSnapshot(Packing &packing, const ShapeTraits &traits) {
     std::vector<Shape> newShapes;
     newShapes.reserve(this->header.numParticles);
     for (std::size_t i{}; i < this->header.numParticles; i++)
-        newShapes.push_back(RamtrjIO::readShape(*this->in));
+        newShapes.push_back(RamtrjIO::readShape(this->header, i, *this->in));
 
     packing.reset(std::move(newShapes), newBox, traits.getInteraction(), traits.getDataManager());
 
@@ -102,8 +103,8 @@ void RamtrjPlayer::dumpHeader(Logger &out) const {
 }
 
 void RamtrjPlayer::reset() {
-    auto pos = static_cast<std::streamoff>(RamtrjPlayer::getHeaderSize());
-    this->in->seekg(pos);
+    Assert(this->header.firstSnapshotOffset != Header::INVALID_OFFSET);
+    this->in->seekg(this->header.firstSnapshotOffset);
     this->currentSnapshot = 0;
 }
 
