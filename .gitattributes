@@ -1,1 +1,2 @@
-**/*.nb linguist-generated=true
+*.nb        linguist-generated=true
+*.ramtrj    binary
