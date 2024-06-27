@@ -32,6 +32,10 @@ public:
     static constexpr Version NONZERO_DATA_VERSION = {1, 1};
     static constexpr Version SHAPE_DATA_VERSION = {1, 2};
 
+private:
+    static std::string readWhitespaceDelimitedString(std::istream &in);
+    static void writeSpaceDelimitedString(const std::string &str, std::ostream &out);
+
 protected:
     /**
      * @brief Header of RAMTRJ file (as is)
@@ -58,26 +62,32 @@ protected:
     };
 
     /**
-     * @brief Reads the header in a binary format from @a in input stream.
+     * @brief Reads the header and the shape data in a binary format from @a in input stream.
      */
     static Header readHeaderAndShapeData(const ShapeDataManager &manager, std::istream &in);
 
     /**
-     * @brief Writes the header in a binary format to @a out output stream.
+     * @brief Writes the header and the shape data in a binary format to @a out output stream.
+     * @details Header::firstShapshotOffset is updated to a proper offset int @a out.
      */
     static void writeHeaderAndShapeData(Header &header, const ShapeDataManager &manager, std::ostream &out);
 
+    /**
+     * @brief Writes the header alone (without the shape data) in a binary format from @a in input stream.
+     */
     static void writeHeader(const Header &header, std::ostream &out);
 
+    /**
+     * @brief Reads the shape data in a binary format from @a in input stream.
+     */
     static std::vector<ShapeData> readShapeData(const ShapeDataManager &manager, std::size_t numParticles,
                                                 std::istream &in);
 
+    /**
+     * @brief Reads the shape data in a binary format from @a in input stream.
+     */
     static void writeShapeData(const std::vector<ShapeData> &shapeDatas, const ShapeDataManager &manager,
                                std::ostream &out);
-
-    static std::string readWhitespaceDelimitedString(std::istream &in);
-
-    static void writeSpaceDelimitedString(const std::string &str, std::ostream &out);
 
     /**
      * @brief Reads the simulation box dimensions in a binary format from @a in input stream.
@@ -113,7 +123,6 @@ protected:
      * @brief Returns the size of a single snapshot as storef in the file.
      */
     static std::size_t getSnapshotSize(const RamtrjIO::Header &header);
-
 };
 
 

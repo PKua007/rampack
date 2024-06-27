@@ -78,7 +78,7 @@ public:
 
     /**
      * @brief Constructs the player from a given @a std::istream (it takes full responsibility of it).
-     * @details After the construction the internal "pointer" point before the first snapshot. The stream has to be
+     * @details After the construction the internal "pointer" points before the first snapshot. The stream has to be
      * binary and has operable @a tellg and @a seekg methods.
      */
     explicit RamtrjPlayer(std::unique_ptr<std::istream> in, const ShapeDataManager &manager);
