@@ -17,12 +17,15 @@
 
 
 /**
- * @brief An interface describing a concrete shape.
+ * @brief An interface describing all aspects of a concrete shape type.
  */
 class ShapeTraits {
 public:
     virtual ~ShapeTraits() = default;
 
+    /**
+     * @brief Returns the ShapeDataManager object managing ShapeData of the shape.
+     */
     [[nodiscard]] virtual const ShapeDataManager &getDataManager() const = 0;
 
     /**

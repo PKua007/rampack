@@ -10,10 +10,11 @@
 #include "Shape.h"
 #include "BoundaryConditions.h"
 
+
 /**
  * @brief A class representing the interaction between molecules.
  * @details The molecule can consist of many interaction centers, possibly interacting in a different way. Interaction
- * can have either of: hard-core and soft term, or both.
+ * can have either of: hard-core and soft term; or both.
  */
 class Interaction {
 private:
@@ -48,9 +49,11 @@ public:
      * Lennard-Jones interaction centres in a complex molecule)
      * @param pos1 position of the first interaction center (not the center of particle)
      * @param orientation1 orientation of the first molecule
+     * @param data1 raw ShapeData of the first molecule
      * @param idx1 the index of the first interaction center within a molecule
      * @param pos2 position of the second interaction center (not the center of particle)
      * @param orientation2 orientation of the second molecule
+     * @param data2 raw ShapeData of the second molecule
      * @param idx2 the index of the second interaction center within a molecule
      * @param bc boundary conditions used to calculate the interaction
      * @return the soft interaction energy between two interaction centers of two molecules
@@ -73,9 +76,11 @@ public:
      * a polysphere shape).
      * @param pos1 position of the first interaction center (not the center of particle)
      * @param orientation1 orientation of the first molecule
+     * @param data1 raw ShapeData of the first molecule
      * @param idx1 the index of the first interaction center within a molecule
      * @param pos2 position of the second interaction center (not the center of particle)
      * @param orientation2 orientation of the second molecule
+     * @param data2 raw ShapeData of the second molecule
      * @param idx2 the index of the second interaction center within a molecule
      * @param bc boundary conditions used to calculate the interaction
      * @return @a true, if two interaction centers of two molecules overlap
@@ -98,6 +103,7 @@ public:
      * @brief Returns @a true, if a given interaction center overlaps a wall defined by @a wallOrigin and @a wallVector.
      * @param pos position of the interaction center (not the center of particle)
      * @param orientation orientation of the molecule
+     * @param data raw ShapeData of the molecule
      * @param idx the index of the interaction center within a molecule
      * @param wallOrigin arbitrary point lying on the plane of a wall
      * @param wallVector vector normal to the wall (with a unit norm); the direction it points in is in front of a wall,
@@ -116,7 +122,7 @@ public:
 
     /**
      * @brief Returns the distance at which either pair of interaction centres ceases to interact (the cut-off
-     * distance).
+     * distance) for particles with raw ShapeData @a data.
      */
     [[nodiscard]] virtual double getRangeRadius([[maybe_unused]] const std::byte *data) const {
         return std::numeric_limits<double>::infinity();
@@ -124,7 +130,7 @@ public:
 
     /**
      * @brief Returns a list of positions of interaction centers for a molecule placed in the origin and with a default
-     * orientation.
+     * orientation for a particle with raw ShapeData @a data.
      * @details An empty list means there is a single interaction centre in the origin.
      */
     [[nodiscard]] virtual std::vector<Vector<3>> getInteractionCentres([[maybe_unused]] const std::byte *data) const {
@@ -133,13 +139,13 @@ public:
 
     /**
      * @brief Returns a distance at which two molecules cease to interact (opposed to Interaction::getRangeRadius which
-     * applies to a single pair of interaction centers).
-     * @details The distance is calculated between molecules centers.
+     * applies to a single pair of interaction centers) for particles with raw ShapeData @a data.
+     * @details The distance is calculated between the molecules' centers.
      */
     [[nodiscard]] virtual double getTotalRangeRadius(const std::byte *data) const;
 
     /**
-     * @brief A helper function, which calculates the energy between two whole molecules - it uses
+     * @brief A helper function which calculates the energy between two whole molecules - it uses
      * Interaction::calculateEnergyBetween virtual method exhaustively for all pairs of interaction centers of the two
      * given shapes.
      */
@@ -147,13 +153,16 @@ public:
                                                       const BoundaryConditions &bc) const;
 
     /**
-     * @brief A helper function, which check if two whole molecules overlap - it uses Interaction::overlapBetween
+     * @brief A helper function which check if two whole molecules overlap - it uses Interaction::overlapBetween
      * virtual method exhaustively for all pairs of interaction centers of the two given shapes.
      */
     [[nodiscard]] bool overlapBetweenShapes(const Shape &shape1, const Shape &shape2,
                                             const BoundaryConditions &bc) const;
 
-
+    /**
+     * @brief A helper function which check if a whole molecules overlap with a wall - it uses
+     * Interaction::overlapWithWall virtual method exhaustively for all interaction centers of the given shape.
+     */
     [[nodiscard]] bool overlapWithWallForShape(const Shape &shape, const Vector<3> &wallOrigin,
                                                const Vector<3> &wallVector) const;
 };

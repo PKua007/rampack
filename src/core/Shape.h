@@ -13,10 +13,11 @@
 #include "geometry/Vector.h"
 #include "geometry/Matrix.h"
 
+
 /**
- * @brief A class representing a 3D shape with its position and orientation.
- * @details The shape is a simple, non-virtual class - concrete shapes with overlap methods and interaction potentials
- * are acutally implemented using ShapeTraits class.
+ * @brief A class representing a 3D shape with its position, orientation, and shape data (shape parameters).
+ * @details Shape is a simple, non-virtual class - concrete shapes with overlap methods and interaction potentials
+ * are actually implemented using ShapeTraits class.
  */
 class Shape {
 private:
@@ -26,20 +27,23 @@ private:
 
 public:
     /**
-     * @brief Default constructor creating a shape placed in the origin with a default orientation.
+     * @brief Default constructor creating a shape placed in the origin with a default orientation and empty shape data.
      */
     Shape() : orientation{Matrix<3, 3>::identity()} { }
 
     /**
-     * @brief Constructor of a default-oriented shape placed in @a position.
+     * @brief Constructor of a default-oriented shape placed in @a position with empty shape data.
      */
     explicit Shape(const Vector<3> &position) : position{position}, orientation{Matrix<3, 3>::identity()} { }
 
     /**
-     * @brief Constructor taking both the position and orientation of a shape.
+     * @brief Constructor taking the position and orientation of a shape, with empty shape data.
      */
     Shape(const Vector<3> &position, const Matrix<3, 3> &orientation) : position{position}, orientation{orientation} { }
 
+    /**
+     * @brief Constructor taking all of: shape position, orientation, and data (with the concrete type @a T)
+     */
     template<typename T>
     Shape(const Vector<3> &position, const Matrix<3, 3> &orientation, T &&data)
             : position{position}, orientation{orientation}, data{std::forward<T>(data)} { }
@@ -49,7 +53,21 @@ public:
      */
     void translate(const Vector<3> &translation, const BoundaryConditions &bc);
 
+    /**
+     * @brief Sets the absolute shape position.
+     */
     void setPosition(const Vector<3> &position_);
+
+    /**
+     * @brief Sets shape orientation.
+     */
+    void setOrientation(const Matrix<3, 3> &orientation_);
+
+    /**
+     * @brief Sets shape data of the conrete type @a T.
+     */
+    template<typename T>
+    void setData(T &&data_) { this->data = std::forward<T>(data_); }
 
     /**
      * @brief Scales all coordinates of the position vector by a common factor @a factor.
@@ -65,11 +83,6 @@ public:
      * @brief Applies the rotation @a rotation to molecule's orientation.
      */
     void rotate(const Matrix<3, 3> &rotation);
-
-    void setOrientation(const Matrix<3, 3> &orientation_);
-
-    template<typename T>
-    void setData(T &&data_) { this->data = std::forward<T>(data_); }
 
     /**
      * @brief Applies boundary conditions @a bc translation to @a other shape moving it near this shape.
