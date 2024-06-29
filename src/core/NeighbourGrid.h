@@ -30,7 +30,6 @@ private:
     static constexpr std::size_t LIST_END = std::numeric_limits<std::size_t>::max();
 
     TriclinicBox box;
-    std::array<Vector<3>, 3> boxSides;
     std::array<std::size_t, 3> cellDivisions{};
     std::array<double, 3> relativeCellSize{};
     std::vector<std::size_t> cellHeads;

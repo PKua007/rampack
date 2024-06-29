@@ -179,7 +179,6 @@ void NeighbourGrid::setupSizes(const TriclinicBox& newBox, double newCellSize) {
     Expects(newBox.getVolume() > 0);
     Expects(newCellSize > 0);
 
-    auto newBoxSides = newBox.getSides();
     auto newBoxHeights = newBox.getHeights();
 
     // 2 additional cells on both edges - "reflected" cells - are used by periodic boundary conditions
@@ -190,7 +189,6 @@ void NeighbourGrid::setupSizes(const TriclinicBox& newBox, double newCellSize) {
     }
 
     this->box = newBox;
-    this->boxSides = newBoxSides;
     this->cellDivisions = cellDivisions_;
     for (std::size_t i{}; i < 3; i++)
         this->relativeCellSize[i] = 1 / static_cast<double>(this->cellDivisions[i] - 2);

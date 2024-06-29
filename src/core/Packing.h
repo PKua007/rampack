@@ -25,27 +25,29 @@
 
 /**
  * @brief A class representing the packing of molecules, eligible for Monte Carlo perturbations.
- * @details The class contains the boundary conditions and neighbour grid acceleration structure, however neither
- * ShapeTraits nor Interaction are remembered, so they can be easily changed on the fly. Packing remembers both
- * molecule centers and interaction center positions for efficient computations and is tailored for multi-threaded
- * operations - the number of OpenMP thread is recognized in single-molecule methods, which as a result can be
- * performed concurrently. Volume moves have a built-in parallelization.
+ * @details The class contains the boundary conditions and neighbour grid acceleration structure, however ShapeTraits
+ * and related classes are not remembered, so they can be easily changed on the fly. Packing remembers both molecule
+ * centers and interaction center positions for efficient computations and is tailored for multi-threaded operations.
+ * In particular theres is enough slots for temporary move data for all threads with their number specified in the
+ * constructor, and the OpenMP thread id is recognized in single-molecule methods. Thus, they can be invoked
+ * concurrently. Moreover, box moves have a built-in parallelization.
  */
 class Packing {
 private:
-    // shapes, interactionCentres and absoluteInteractionCentres contain additional slots at the end for temporary data
-    // for all threads
+    // shapePositions, shapeOrientations, shapeDatas, interactionCentres, and absoluteInteractionCentres contain
+    // additional slots at the end for temporary data for all threads
 
-    // Shapes in the packing - centers, orientations and auxiliary data
+    // --- Shapes in the packing - centers, orientations and auxiliary data
     std::vector<Vector<3>> shapePositions;
     std::vector<Matrix<3, 3>> shapeOrientations;
     std::vector<std::byte> shapeDatas;
 
+    // --- Interaction centers and their helper structures
     // Maximal number of interaction centers
     std::size_t maxInteractionCentres{};
     // Number of interaction centers for individual particles (for temp shapes - this->maxInteractionCentres)
     std::vector<std::size_t> numInteractionCentres{};
-    // Offsets (indices) of interaction centers
+    // Offsets (indices) of interaction centers (whose number can be different for different molecules)
     std::vector<std::size_t> interactionCentresOffsets;
     // Positions of interaction centers with respect to shape centers (coherent with particle orientations)
     std::vector<Vector<3>> interactionCentres;
@@ -54,30 +56,34 @@ private:
     // Translation of interaction center indices to corresponding particle indices
     std::vector<std::size_t> interactionCentresParticleIndices;
 
+    // --- Multithreading parameters
+    std::size_t moveThreads{};
+    std::size_t scalingThreads{};
+
+    // --- Packing structures and global metadata
+    bool hasAnyWalls{};
+    std::array<bool, 3> hasWall{};
     TriclinicBox box;
     std::unique_ptr<BoundaryConditions> bc;
     std::optional<NeighbourGrid> neighbourGrid;
+    std::optional<NeighbourGrid> tempNeighbourGrid;     // temp ng is used for swapping in volume moves
+    bool overlapCounting{};
+    std::size_t numOverlaps{};
+
+    // --- Shape metadata
     double interactionRange = std::numeric_limits<double>::infinity();
     double totalInteractionRange = std::numeric_limits<double>::infinity();
     std::size_t shapeDataSize{};
     ShapeData::Comparator comparator{};
 
-    std::size_t moveThreads{};
-    std::size_t scalingThreads{};
-
-    bool hasAnyWalls{};
-    std::array<bool, 3> hasWall{};
-
-    bool overlapCounting{};
-    std::size_t numOverlaps{};
-
+    // --- Moves' temp data
     std::vector<std::size_t> lastAlteredParticleIdx{};
     std::vector<int> lastMoveOverlapDeltas{};
     std::size_t lastScalingNumOverlaps{};
     TriclinicBox lastBox;
     std::vector<Vector<3>> lastShapePositions;
-    std::optional<NeighbourGrid> tempNeighbourGrid;     // temp ng is used for swapping in volume moves
 
+    // --- Statistics
     std::size_t neighbourGridRebuilds{};
     std::size_t neighbourGridResizes{};
     double neighbourGridRebuildMicroseconds{};
@@ -119,19 +125,20 @@ private:
 
     // In all the methods below, tempParticleIdx means where the position is stored - may be equal to
     // originalParticleIdx or be the last index (temp shape). originalParticleIdx is the actual id of the particle, but
-    // the position under it may be not representative at the moment - for example in the process of performing the move
+    // the position under it may be not representative at the moment - for example, in the process of performing the
+    // move
 
-    // "Main hub" for checking a single particle (all cases - with or without neighbour grid, one or many interaction
-    // centres
+    // "Main hub" for checking a single particle (all cases - with or without neighbor grid, one or many interaction
+    // centers
     [[nodiscard]] std::size_t countParticleOverlaps(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
                                                     const Interaction &interaction, bool earlyExit) const;
-    // Helper method for the overlap check without neighbour grid - exhaustive checks for all interaction centers
+    // Helper method for the overlap check without neighbor grid - exhaustive checks for all interaction centers
     [[nodiscard]] std::size_t countOverlapsBetweenParticlesWithoutNG(std::size_t originalParticleIdx,
                                                                      std::size_t tempParticleIdx,
                                                                      std::size_t anotherParticleIdx,
                                                                      const Interaction &interaction,
                                                                      bool earlyExit) const;
-    // Helper method for a single interaction center with neighbour grid
+    // Helper method for a single interaction center with neighbor grid
     [[nodiscard]] std::size_t countInteractionCentreOverlapsWithNG(std::size_t originalParticleIdx,
                                                                    std::size_t tempParticleIdx,
                                                                    std::size_t centre,
@@ -156,6 +163,7 @@ private:
     [[nodiscard]] double getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coord,
                                                     const Interaction &interaction) const;
 
+    // Generates Shape view with unmanaged ShapeData
     // Must be inline so that the iterator is inlined by the optimizer
     [[nodiscard]] Shape generateShapeView(std::size_t idx, bool managed) const {
         const auto &pos = this->shapePositions[idx];
@@ -169,6 +177,11 @@ private:
     }
 
 public:
+    /**
+     * @brief Packing iterator, which creates temporary shapes with unmanaged ShapeData on dereferencing.
+     * @details Shape data is stored in a global, linear array. The iterator remain valid as long the Packing object
+     * lives and has not been reset.
+     */
     class PackingConstIterator {
     private:
         const Packing *packing{};
@@ -207,6 +220,7 @@ public:
 
     using const_iterator = PackingConstIterator;
 
+
     /**
      * @brief Creates an empty packing. Packing::restore method can then be used to load shapes.
      * @param bc boundary conditions to use
@@ -221,6 +235,7 @@ public:
      * @param shapes shapes in the packing
      * @param bc boundary conditions to use
      * @param interaction interaction between molecules in the packing
+     * @param dataManager shape data manager associated with the ShapeData of @a shapes
      * @param moveThreads number of threads used for molecule moves. If 0, all OpenMP threads will be used
      * @param scalingThreads number of threads used for volume moves. If 0, all OpenMP threads will be used
      */
@@ -234,6 +249,7 @@ public:
      * @param shapes shapes in the packing
      * @param bc boundary conditions to use
      * @param interaction interaction between molecules in the packing
+     * @param dataManager shape data manager associated with the ShapeData of @a shapes
      * @param moveThreads number of threads used for molecule moves. If 0, all OpenMP threads will be used
      * @param scalingThreads number of threads used for volume moves. If 0, all OpenMP threads will be used
      */
@@ -243,19 +259,6 @@ public:
             : Packing(TriclinicBox(dimensions), std::move(shapes), std::move(bc), interaction, dataManager, moveThreads,
                       scalingThreads)
     { }
-
-    void reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, const Interaction &newInteraction,
-               const ShapeDataManager &newDataManager);
-
-    /**
-     * @brief Performs renormalization of rotation matrices.
-     * @details If @a allowOverlaps is @a true, renormalization will be performed on all particles regardless if it
-     * introduces overlaps or not. Otherwise, for each particle renormalization is performed like a Monte Carlo move
-     * - it is rejected if overlaps are introduces.
-     * @returns Number of particles, which were not normalized.
-     */
-    std::size_t renormalizeOrientations(const Interaction &interaction, const ShapeDataManager &dataManager,
-                                        bool allowOverlaps);
 
     /**
      * @brief Return the number of shapes in the packing.
@@ -292,8 +295,19 @@ public:
      */
     [[nodiscard]] Shape back() const;
 
+    /**
+     * @brief Return simulation box.
+     */
     [[nodiscard]] const TriclinicBox &getBox() const { return this->box; }
 
+    /**
+     * @brief Returns the volume of the simulation box.
+     */
+    [[nodiscard]] double getVolume() const;
+
+    /**
+     * @brief Returns boundary conditions used.
+     */
     [[nodiscard]] const BoundaryConditions &getBoundaryConditions() const { return *this->bc; }
 
     /**
@@ -314,27 +328,6 @@ public:
     }
 
     /**
-     * @brief Toggles if overlaps should be counted when performing moves. If toggled @a false, early exit will
-     * performed in methods like Packing::tryMove and Packing::tryScaling when the first overlap is found.
-     * @details When toggled @a false, move methods work faster, however number of overlaps is not tracked.
-     */
-    void toggleOverlapCounting(bool countOverlaps, const Interaction &interaction);
-
-    /**
-     * @brief Toggles @a true or @a false (@a trueOfFalse) hard walls intersected by axis @a wallAxis
-     * @param wallAxis
-     * @param trueOrFalse
-     */
-    void toggleWall(std::size_t wallAxis, bool trueOrFalse);
-
-    /**
-     * @brief Specifies if the wall is toggled @a true or @a false for all axes at once
-     */
-    void toggleWalls(std::array<bool, 3> axisWalls);
-
-    [[nodiscard]] double getVolume() const;
-
-    /**
      * @brief Calculates the packing fraction of the packing assuming that a single molecule has @a shapeVolume volume.
      */
     [[nodiscard]] double getPackingFraction(const ShapeGeometry &geometry) const;
@@ -352,7 +345,84 @@ public:
     /**
      * @brief Returns the soft potential total energy of the packing for @a interaction.
      */
-    [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;
+
+    [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;/**
+     * @brief Returns the total number of interaction centers in the packing.
+     */
+
+    [[nodiscard]] std::size_t getNumberOfInteractionCentres() const;
+
+    /**
+     * @brief Returns the number of neighbour grid complete rebuilds since the last reset.
+     */
+    [[nodiscard]] std::size_t getNeighbourGridRebuilds() const { return this->neighbourGridRebuilds; }
+
+    /**
+     * @brief Returns the number of neighbour grid resizes (some required full rebuilds, some not) since the last reset.
+     */
+    [[nodiscard]] std::size_t getNeighbourGridResizes() const { return this->neighbourGridResizes; }
+
+    /**
+     * @brief Returns the total time in microseconds consumed for neighbour grid rebuilds since the last reset.
+     */
+    [[nodiscard]] double getNeighbourGridRebuildMicroseconds() const { return this->neighbourGridRebuildMicroseconds; }
+
+    /**
+     * @brief Returns an average number of neighbour per particles according to neighbour grid.
+     */
+    [[nodiscard]] double getAverageNumberOfNeighbours() const;
+
+    /**
+     * @brief Returns estimated memory usage of the packing in bytes (excluding the neighbour grid).
+     */
+    [[nodiscard]] std::size_t getShapesMemoryUsage() const;
+
+    /**
+     * @brief Returns estimated memory usage of the neighbour grid used by the packing.
+     */
+    [[nodiscard]] std::size_t getNeighbourGridMemoryUsage() const;
+
+    /**
+     * @brief Returns the total range radius, calculates as a maximum of Interaction::getTotalRangeRadius over all
+     * particles.
+     */
+    [[nodiscard]] double getTotalRangeRadius() const;
+
+    /**
+     * @brief Returns the single interaction center range radius, calculates as a maximum of Interaction::getRangeRadius
+     * over all particles.
+     */
+    [[nodiscard]] double getRangeRadius() const;
+
+    /**
+     * @brief Returns the list of named points with name @a pointName specified in ShapeGeometry @a geometry of all
+     * molecules in the packing.
+     */
+    [[nodiscard]] std::vector<Vector<3>> dumpNamedPoints(const ShapeGeometry &geometry,
+                                                         const std::string &pointName) const;
+
+    /**
+     * @brief Generates a vector of all shapes in the Packing. Their ShapeData are managed and can be safely used after
+     * the Packing object is reset or destroyed.
+     */
+    [[nodiscard]] std::vector<Shape> getShapes() const;
+
+    /**
+     * @brief Toggles if overlaps should be counted when performing moves. If toggled @a false, early exit will
+     * performed in methods like Packing::tryMove and Packing::tryScaling when the first overlap is found.
+     * @details When toggled @a false, move methods work faster, however number of overlaps is not tracked.
+     */
+    void toggleOverlapCounting(bool countOverlaps, const Interaction &interaction);
+
+    /**
+     * @brief Toggles @a true or @a false (@a trueOfFalse) hard walls intersected by axis @a wallAxis
+     */
+    void toggleWall(std::size_t wallAxis, bool trueOrFalse);
+
+    /**
+     * @brief Specifies if the wall is toggled @a true or @a false for all axes at once
+     */
+    void toggleWalls(std::array<bool, 3> axisWalls);
 
     /**
      * @brief Calculates the number of overlaps in the packing (including wall overlaps if walls are toggled on) for
@@ -369,7 +439,7 @@ public:
      * counting is toggled @a true, this method will actually perform overlap check, not use the cached value as
      * Packing::getCachedNumberOfOverlaps().
      */
-    [[nodiscard]] std::size_t countWallOverlaps(const Interaction &interaction, bool earlyExit) const;
+    [[nodiscard]] std::size_t countWallOverlaps(const Interaction &interaction, bool earlyExit = true) const;
 
     /**
      * @brief For overlap counting toggled @a true it returns cached number of overlaps, i.e. no overlap check are
@@ -467,11 +537,23 @@ public:
     void revertScaling();
 
     /**
+     * @brief Resets the packing with new simulation box a shapes. Neighbor grid is rebuilt and all statistics are
+     * cleared.
+     * @param newShapes new shapes to be inserted into the packing
+     * @param newBox new simulation box
+     * @param newInteraction new interaction between the particles
+     * @param newDataManager new data manager associated with the ShapeData of @a newShapes
+     */
+    void reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, const Interaction &newInteraction,
+               const ShapeDataManager &newDataManager);
+
+    /**
      * @brief Reinitialized the packing for a new interaction @a interaction.
      * @details Old molecule positions and rotations are used, but interaction centers are recalculated and neighbour
      * grid is rebuilt.
      */
     void setupForInteraction(const Interaction &interaction, const ShapeDataManager &dataManager);
+
 
     /**
      * @brief Resets all counters (neighbour grid rebuilds, etc.).
@@ -479,60 +561,36 @@ public:
     void resetCounters();
 
     /**
-     * @brief Stores a packing in an internal representation form.
+     * @brief Performs renormalization of rotation matrices.
+     * @param interaction interaction between the molecules
+     * @param dataManager shape data manager associated with ShapeData of shapes in the Packing
+     * @param allowOverlaps if @a true, renormalization will be performed on all particles regardless if it introduces
+     * overlaps or not. Otherwise, for each particle renormalization is performed like a Monte Carlo move - it is
+     * rejected if overlaps are introduced.
+     * @return Number of particles which were not normalized.
+     */
+    std::size_t renormalizeOrientations(const Interaction &interaction, const ShapeDataManager &dataManager,
+                                        bool allowOverlaps);
+
+    /**
+     * @brief Stores a packing in an internal RAMSNAP representation format.
      * @param out the output stream to store a packing
      * @param auxInfo auxiliary key, value map which can store arbitrary metadata
+     * @param dataManager shape data manager associated with ShapeData of shapes in the Packing, used for serialization
      */
     void store(std::ostream &out, const std::map<std::string, std::string> &auxInfo,
                const ShapeDataManager &dataManager) const;
 
     /**
-     * @brief Clears the current packing (if not empty) and loads it from an internal representation format from @a in
-     * input stream.
+     * @brief Clears the current packing (if not empty) and loads it from an internal RAMSNAP representation format from
+     * @a in input stream.
      * @param in the input stream to load a packing from
      * @param interaction the interaction between the molecules used to setup the packing
-     * @return an auxiliary key, value map which was stored together with a packing
+     * @param dataManager shape data manager associated with ShapeData of shapes in the Packing, used for serialization
+     * @return an auxiliary key=value map which was stored together with the packing
      */
     std::map<std::string, std::string> restore(std::istream &in, const Interaction &interaction,
                                                const ShapeDataManager &dataManager);
-
-    [[nodiscard]] std::size_t getNumberOfInteractionCentres() const;
-
-    /**
-     * @brief Returns the number of neighbour grid complete rebuilds since the last reset.
-     */
-    [[nodiscard]] std::size_t getNeighbourGridRebuilds() const { return this->neighbourGridRebuilds; }
-
-    /**
-     * @brief Returns the number of neighbour grid resizes (some required full rebuilds, some not) since the last reset.
-     */
-    [[nodiscard]] std::size_t getNeighbourGridResizes() const { return this->neighbourGridResizes; }
-
-    /**
-     * @brief Returns the total time in microseconds consumed for neighbour grid rebuilds since the last reset.
-     */
-    [[nodiscard]] double getNeighbourGridRebuildMicroseconds() const { return this->neighbourGridRebuildMicroseconds; }
-
-    /**
-     * @brief Returns an average number of neighbour per particles according to neighbour grid.
-     */
-    [[nodiscard]] double getAverageNumberOfNeighbours() const;
-
-    /**
-     * @brief Returns estimated memory usage of the packing in bytes (excluding the neighbour grid).
-     */
-    [[nodiscard]] std::size_t getShapesMemoryUsage() const;
-
-    /**
-     * @brief Returns estimated memory usage of the neighbour grid used by the packing.
-     */
-    [[nodiscard]] std::size_t getNeighbourGridMemoryUsage() const;
-
-    /**
-     * @brief Auxiliary stream insertion operator outputing textual representation of the packing (used for unit testing
-     * and debugging purposes).
-     */
-    friend std::ostream &operator<<(std::ostream &out, const Packing &packing);
 
     /**
      * @brief Resets race condition sanitizer for NeighbourGrid, see NeighbourGrid::resetRaceConditionSanitizer.
@@ -540,16 +598,10 @@ public:
     void resetNGRaceConditionSanitizer();
 
     /**
-     * @brief Returns the list of named points with name @a pointName specified in ShapeGeometry  @a geometryof all
-     * molecules in the packing.
+     * @brief Auxiliary stream insertion operator outputing textual representation of the packing (used for unit testing
+     * and debugging purposes).
      */
-    [[nodiscard]] std::vector<Vector<3>> dumpNamedPoints(const ShapeGeometry &geometry,
-                                                         const std::string &pointName) const;
-
-    [[nodiscard]] double getTotalRangeRadius() const;
-    [[nodiscard]] double getRangeRadius() const;
-
-    [[nodiscard]] std::vector<Shape> getShapes() const;
+    friend std::ostream &operator<<(std::ostream &out, const Packing &packing);
 };
 
 

@@ -7,8 +7,8 @@
 
 
 // Uncomment to sanitize overlaps.
-// For overlap reduction sanitize whether cached number of overlaps is consistent with a real one after both molecule
-// moves and scaling moves.
+// For overlap reduction, sanitize whether the cached number of overlaps is consistent with a real one after both
+// molecule moves and scaling moves.
 // For normal integration, sanitize whether there are no overlaps after molecule moves and after scaling moves
 
 // #define SIMULATION_SANITIZE_OVERLAPS
@@ -33,13 +33,14 @@
 
 /**
  * @brief A class responsible for performing Monte Carlo sampling.
- * @details Actual moves are done by Packing class - this class only check Metropolis criterion and accepts or rejects
- * them. It also does other "higher level" things such as collecting observables, etc.
+ * @details Actual moves on the shapes are done by the Packing class. The Simulation class samples the moves, checks
+ * the Metropolis criterion and accepts or  rejects them. It also does other "higher level" operations such as
+ * collecting observables, storing simulation trajectories, etc.
  */
 class Simulation {
 public:
     /**
-     * @brief Helper struct for named step sizes.
+     * @brief Helper struct for sizes of named steps.
      */
     struct StepSizeData {
         /** @brief Name of the move. */
@@ -51,7 +52,7 @@ public:
     };
 
     /**
-     * @brief Move statistics for a whole MoveSampler.
+     * @brief Move statistics for a single MoveSampler.
      */
     struct MoveStatistics {
         /** @brief Name of the whoile MoveSampler. */
@@ -73,8 +74,7 @@ public:
          * @brief Calculates move rate (ratio of accepted to total).
          */
         [[nodiscard]] double getRate() const {
-            return static_cast<double>(this->acceptedMoves)
-                   / static_cast<double>(this->totalMoves);
+            return static_cast<double>(this->acceptedMoves) / static_cast<double>(this->totalMoves);
         }
     };
 
@@ -93,19 +93,19 @@ public:
 
     public:
         Parameter() = default;
-        Parameter(double value);
-        Parameter(std::shared_ptr<DynamicParameter> updater) : parameter{std::move(updater)} { }
-        Parameter(std::unique_ptr<DynamicParameter> updater) : parameter{std::move(updater)} { }
-        operator DynamicParameter&() { return *this->parameter; }
-        operator const DynamicParameter&() const { return *this->parameter; }
+        Parameter(double value); // NOLINT(*-explicit-constructor)
+        Parameter(std::shared_ptr<DynamicParameter> updater) : parameter{std::move(updater)} { } // NOLINT(*-explicit-constructor)
+        Parameter(std::unique_ptr<DynamicParameter> updater) : parameter{std::move(updater)} { } // NOLINT(*-explicit-constructor)
+        operator DynamicParameter&() { return *this->parameter; } // NOLINT(*-explicit-constructor)
+        operator const DynamicParameter&() const { return *this->parameter; } // NOLINT(*-explicit-constructor)
         [[nodiscard]] bool hasValue() const { return this->parameter != nullptr; }
     };
 
     /**
      * @brief Environment of the simulation, which may be inherited from a previous run and partially of fully
-     * overriden.
-     * @details <p> It includes temperature, pressure, MoveSampler -s and TriclinicBoxScaler. The inheritability of the
-     * last facilitates remembering step sizes from the previous run.
+     * overridden.
+     * @details <p> It includes temperature, pressure, MoveSampler -s and TriclinicBoxScaler. Inheritance of
+     * MoveSampler -s the TriclinicBoxScaler facilitates remembering step sizes from the previous run.
      *
      * <p> Each field is optional and may or may not have a value. By default all values are not set. When combining
      * with another environment (see combine() method), only the values which are set override old values.
@@ -164,20 +164,37 @@ public:
         void combine(const Environment &other);
     };
 
+    /**
+     * @brief Parameters of the integration run.
+     */
     struct IntegrationParameters {
+        /** @brief Number of cycles in the thermalization (relaxation) phase. */
         std::size_t thermalisationCycles{};
+        /** @brief Number of cycles in the averaging (production) phase. */
         std::size_t averagingCycles{};
+        /** @brief Every how many cycles the averages should be taken. */
         std::size_t averagingEvery = 100;
+        /** @brief Every how many cycles observable values and trajectory snapshots should be taken. */
         std::size_t snapshotEvery = 100;
+        /** @brief Every how many cycles the inline info should be printed. */
         std::size_t inlineInfoEvery = 100;
+        /** @brief Every how many cycles the rotation matrices should be renormalized. */
         std::size_t rotationMatrixFixEvery = 10000;
+        /** @brief The starting cycles of the (previously interrupted) run. */
         std::size_t cycleOffset{};
     };
 
+    /**
+     * @brief Parameters of the overlap relaxation run.
+     */
     struct OverlapRelaxationParameters {
+        /** @brief Every how many cycles observable values and trajectory snapshots should be taken. */
         std::size_t snapshotEvery = 100;
+        /** @brief Every how many cycles the inline info should be printed. */
         std::size_t inlineInfoEvery = 100;
+        /** @brief Every how many cycles the rotation matrices should be renormalized. */
         std::size_t rotationMatrixFixEvery = 10000;
+        /** @brief The starting cycles of the (previously interrupted) run. */
         std::size_t cycleOffset{};
     };
 
@@ -263,7 +280,7 @@ private:
 
 public:
     /**
-     * @brief Constructs the simulation for given parameters - "new" version with some initial Simulation::Environment.
+     * @brief Constructs the simulation for given parameters - "new" version with an initial Simulation::Environment.
      * @param packing initial configuration of shapes
      * @param seed seed of the RNG
      * @param initialEnv initial Simulation::Environment, which may be later combined with another one when performing
@@ -275,8 +292,8 @@ public:
                const std::array<std::size_t, 3> &domainDivisions = {1, 1, 1}, bool handleSignals = false);
 
     /**
-     * @brief Constructs the simulation for given parameters - "new" version with empty Simulation::Environment (a full
-     * one has to be specified in the first run).
+     * @brief Constructs the simulation for given parameters - "new" version with an empty Simulation::Environment (a
+     * full one has to be specified in the first run).
      * @param packing initial configuration of shapes
      * @param seed seed of the RNG
      * @param domainDivisions domain divisions in each direction to use; {1, 1, 1} disables domain division
