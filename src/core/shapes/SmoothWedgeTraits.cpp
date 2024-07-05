@@ -168,8 +168,7 @@ ShapeData SmoothWedgeTraits::deserialize(const TextualShapeData &data) const {
     return this->shapeDataForSpecies(bottomR, topR, l, subdivisions);
 }
 
-ShapeData SmoothWedgeTraits::shapeDataForSpecies(double bottomR, double topR, double l,
-                                                 std::size_t subdivisions) const
+ShapeData SmoothWedgeTraits::shapeDataForSpecies(double bottomR, double topR, double l, std::size_t subdivisions) const
 {
     if (subdivisions == 0)
         subdivisions = 1;

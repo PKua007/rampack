@@ -61,6 +61,7 @@ bool CompoundInteraction::overlapBetween(const Vector<3> &pos1, const Matrix<3, 
     {
         return true;
     }
+
     if (this->hasHardPartHelper
         && this->helperInteration.overlapBetween(pos1, orientation1, this->helperData.raw(), idx1,
                                                  pos2, orientation2, this->helperData.raw(), idx2,
@@ -68,6 +69,7 @@ bool CompoundInteraction::overlapBetween(const Vector<3> &pos1, const Matrix<3, 
     {
         return true;
     }
+
     return false;
 }
 
@@ -80,18 +82,21 @@ bool CompoundInteraction::overlapWithWall(const Vector<3> &pos, const Matrix<3, 
     {
         return true;
     }
+
     if (this->hasWallPartHelper
         && this->helperInteration.overlapWithWall(pos, orientation, this->helperData.raw(), idx, wallOrigin,
                                                   wallVector))
     {
         return true;
     }
+
     return false;
 }
 
 std::vector<Vector<3>> CompoundInteraction::getInteractionCentres(const std::byte *data) const {
     auto centres1 = this->mainInteration.getInteractionCentres(data);
-    AssertMsg(centres1 == this->helperInteractionCentres, "Non identical centres for given data");
+    AssertMsg(centres1 == this->helperInteractionCentres,
+              "Given data yields interaction centers different than the ones of the helper interaction");
 
     return centres1;
 }

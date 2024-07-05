@@ -23,7 +23,7 @@ private:
     std::optional<Vector<3>> secondaryAxis;
     Vector<3> geometricOrigin;
     double volume{};
-    std::map<std::string, Vector<3>> customNamedPoints;
+    std::map<std::string, Vector<3>> namedPoints;
     bool convex{};
 
     friend GenericXenoCollideTraits;
@@ -55,8 +55,8 @@ public:
         return this->geometries;
     }
     [[nodiscard]] const std::vector<Vector<3>> &getInteractionCentres() const { return this->interactionCentres; }
-    [[nodiscard]] const std::map<std::string, Vector<3>> &getCustomNamedPoints() const {
-        return this->customNamedPoints;
+    [[nodiscard]] const std::map<std::string, Vector<3>> &getNamedPoints() const {
+        return this->namedPoints;
     }
     [[nodiscard]] bool isConvex() const { return this->convex; }
 };

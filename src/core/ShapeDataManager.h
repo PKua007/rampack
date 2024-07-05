@@ -100,7 +100,7 @@ public:
      * @brief Deserializes @a data TextualShapeData in an implementation-specific format into ShapeData. Deserialized
      * data is then validated.
      * @throws ShapeDataSerializationException when serialization data is incomplete or malformed
-     * @throws ShapeDataFormatException is the validation after deserialization fails
+     * @throws ShapeDataFormatException if the validation after deserialization fails
      */
     [[nodiscard]] virtual ShapeData deserialize([[maybe_unused]] const TextualShapeData &data) const { return {}; }
 

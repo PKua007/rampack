@@ -19,6 +19,9 @@
  */
 class CentralInteraction : public Interaction {
 public:
+    /**
+     * @brief Alias for the @a std::function which maps raw ShapeData onto a list of interaction centers.
+     */
     using CentresProvider = std::function<std::vector<Vector<3>>(const std::byte *)>;
 
 private:
@@ -34,37 +37,47 @@ protected:
 public:
     /**
      * @brief Constructs the interaction with a single interaction centre in the origin (an empty interaction centres
-     * list)
+     * list) by calling installOnSphere().
      */
     CentralInteraction() { this->installOnSphere(); }
 
     /**
-     * @brief Constructs the interaction with a concrete list of interaction centres @a potentialCentres.
+     * @brief Constructs the interaction with a concrete list of interaction centres @a potentialCentres (independent
+     * of ShapeData).
      */
     explicit CentralInteraction(const std::vector<Vector<3>> &potentialCentres) {
         this->installOnCentres(potentialCentres);
     }
 
+    /**
+     * @brief Constructs the interaction with a given CentralInteraction::CentresProvider.
+     */
     explicit CentralInteraction(CentresProvider centresProvider) : centresProvider{std::move(centresProvider)} { }
 
     /**
-     * @brief Installs the interaction on sphere (empties the list of interaction centres).
+     * @brief Installs the interaction on sphere (resets the current CentralInteraction::CentresProvider).
      */
     void installOnSphere() {
         this->centresProvider = [](const std::byte *) -> std::vector<Vector<3>> { return {}; };
     }
 
     /**
-     * @brief Install the interaction on concrete interaction centres.
+     * @brief Install the interaction on concrete interaction centres (independent of ShapeData).
      */
     void installOnCentres(const std::vector<Vector<3>> &centres) {
         this->centresProvider = [centres](const std::byte *) { return centres; };
     }
 
+    /**
+     * @brief Resets the current CentralInteraction::CentresProvider.
+     */
     void installCentresProvider(CentresProvider centresProvider_) {
         this->centresProvider = std::move(centresProvider_);
     }
 
+    /**
+     * @brief Detaches (resets) the current CentralInteraction::CentresProvider. Equivalent to installOnSphere().
+     */
     void detach() {
         this->installOnSphere();
     }

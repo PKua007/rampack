@@ -139,7 +139,7 @@ TEST_CASE("PolysphereTraits: basic") {
     SECTION("default shape") {
         CHECK_THROWS_WITH(traits.getDefaultSpecies(), Catch::Contains("not defined"));
 
-        traits.setDefaultShape("trimer");
+        traits.setDefaultSpecies("trimer");
 
         CHECK(traits.getDefaultSpecies() == trimer);
         CHECK(traits.shapeDataForDefaultSpecies() == traits.shapeDataForSpecies("trimer"));

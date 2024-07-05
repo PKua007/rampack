@@ -45,7 +45,7 @@ private:
     std::optional<Vector<3>> secondaryAxis;
     Vector<3> geometricOrigin;
     double volume{};
-    std::map<std::string, Vector<3>> customNamedPoints;
+    std::map<std::string, Vector<3>> namedPoints;
 
     [[nodiscard]] double calculateVolume() const;
 
@@ -79,10 +79,8 @@ public:
     [[nodiscard]] Vector<3> calculateMassCentre() const;
 
     void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
-    void addCustomNamedPoints(std::map<std::string, Vector<3>> namedPoints);
-    [[nodiscard]] const std::map<std::string, Vector<3>> &getCustomNamedPoints() const {
-        return this->customNamedPoints;
-    }
+    void addCustomNamedPoints(std::map<std::string, Vector<3>> customNamedPoints);
+    [[nodiscard]] const std::map<std::string, Vector<3>> &getNamedPoints() const { return this->namedPoints; }
     [[nodiscard]] bool spheresOverlap() const;
 
     friend bool operator==(const PolysphereShape &lhs, const PolysphereShape &rhs);
@@ -137,8 +135,6 @@ private:
     friend HardInteraction;
     friend WolframPrinter;
 
-    void registerSphereNamedPoint(std::size_t sphereIdx);
-
 public:
     using SphereData = PolysphereShape::SphereData;
 
@@ -182,8 +178,6 @@ public:
      */
     [[nodiscard]] std::shared_ptr<const ShapePrinter>
     getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;
-
-    ShapeData addSpecies(const std::string &speciesName, const PolysphereShape &shape) final;
 };
 
 

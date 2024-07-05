@@ -109,7 +109,7 @@ TEST_CASE("CompoundInteraction") {
                     .RETURN(emptyCentres);
                 CompoundInteraction compound(hard, soft, helperShapeData);
 
-                CHECK_THROWS_WITH(compound.getInteractionCentres(rawData1), Catch::Contains("Non identical"));
+                CHECK_THROWS_WITH(compound.getInteractionCentres(rawData1), Catch::Contains("centers different"));
             }
 
             SECTION("same number buf unequal") {
@@ -119,7 +119,7 @@ TEST_CASE("CompoundInteraction") {
                     .RETURN(centres2);
                 CompoundInteraction compound(hard, soft, helperShapeData);
 
-                CHECK_THROWS_WITH(compound.getInteractionCentres(rawData1), Catch::Contains("Non identical"));
+                CHECK_THROWS_WITH(compound.getInteractionCentres(rawData1), Catch::Contains("centers different"));
             }
         }
     }

@@ -12,7 +12,7 @@ GenericXenoCollideShape::GenericXenoCollideShape(std::shared_ptr<AbstractXCGeome
                                                  const Vector<3> &geometricOrigin,
                                                  const std::map<std::string, Vector<3>> &customNamedPoints)
         : geometries{std::move(geometry)}, interactionCentres{}, primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis},
-          geometricOrigin{geometricOrigin}, volume{volume}, customNamedPoints{customNamedPoints}, convex{true}
+          geometricOrigin{geometricOrigin}, volume{volume}, namedPoints{customNamedPoints}, convex{true}
 {
     Expects(this->geometries.front());
     Expects(volume > 0);
@@ -30,7 +30,7 @@ GenericXenoCollideShape::GenericXenoCollideShape(const std::vector<GeometryData>
                                                  const std::map<std::string, Vector<3>> &customNamedPoints,
                                                  bool forceConvex)
         : primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}, geometricOrigin{geometricOrigin},
-          customNamedPoints{customNamedPoints}
+          namedPoints{customNamedPoints}
 {
     Expects(!geometries.empty());
     ExpectsMsg(geometries.size() != 1, "For a single interaction center, use the other constructor");

@@ -38,7 +38,7 @@ PolysphereShape::PolysphereShape(std::vector<SphereData> sphereData, OptionalAxi
                                  std::optional<double> volume,
                                  const std::map<std::string, Vector<3>> &customNamedPoints)
         : sphereData{std::move(sphereData)}, primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis},
-          geometricOrigin{geometricOrigin}, customNamedPoints{customNamedPoints}
+          geometricOrigin{geometricOrigin}, namedPoints{customNamedPoints}
 {
     Expects(!this->sphereData.empty());
     if (!this->primaryAxis.has_value())
@@ -52,6 +52,9 @@ PolysphereShape::PolysphereShape(std::vector<SphereData> sphereData, OptionalAxi
         this->volume = *volume;
     else
         this->volume = this->calculateVolume();
+
+    for (std::size_t i{}; i < this->sphereData.size(); i++)
+        this->namedPoints["s" + std::to_string(i)] = this->sphereData[i].position;
 }
 
 Vector<3> PolysphereShape::getPrimaryAxis() const {
@@ -99,7 +102,7 @@ void PolysphereShape::normalizeMassCentre() {
     this->sphereData = std::move(newSphereData);
     this->geometricOrigin -= massCentre;
 
-    for (auto &[name, point] : this->customNamedPoints)
+    for (auto &[name, point] : this->namedPoints)
         point -= massCentre;
 }
 
@@ -138,16 +141,16 @@ bool PolysphereShape::spheresOverlap() const {
     return false;
 }
 
-void PolysphereShape::addCustomNamedPoints(std::map<std::string, Vector<3>> namedPoints) {
-    namedPoints.merge(std::move(this->customNamedPoints));
-    this->customNamedPoints = std::move(namedPoints);
+void PolysphereShape::addCustomNamedPoints(std::map<std::string, Vector<3>> customNamedPoints) {
+    customNamedPoints.merge(std::move(this->namedPoints));
+    this->namedPoints = std::move(customNamedPoints);
 }
 
 bool operator==(const PolysphereShape &lhs, const PolysphereShape &rhs) {
     return std::tie(
-        lhs.sphereData, lhs.primaryAxis, lhs.secondaryAxis, lhs.geometricOrigin, lhs.volume, lhs.customNamedPoints
+        lhs.sphereData, lhs.primaryAxis, lhs.secondaryAxis, lhs.geometricOrigin, lhs.volume, lhs.namedPoints
     ) == std::tie(
-        rhs.sphereData, rhs.primaryAxis, rhs.secondaryAxis, rhs.geometricOrigin, rhs.volume, rhs.customNamedPoints
+        rhs.sphereData, rhs.primaryAxis, rhs.secondaryAxis, rhs.geometricOrigin, rhs.volume, rhs.namedPoints
     );
 }
 
@@ -216,21 +219,6 @@ bool PolysphereTraits::HardInteraction::overlapWithWall(const Vector<3> &pos,
 
 // PolysphereTraits ####################################################################################################
 
-void PolysphereTraits::registerSphereNamedPoint(std::size_t sphereIdx) {
-    std::string pointName = "s" + std::to_string(sphereIdx);
-    if (this->hasNamedPoint(pointName))
-        return;
-
-    this->registerDynamicNamedPoint(pointName, [this, sphereIdx, pointName](const ShapeData &data) -> Vector<3> {
-        std::size_t shapeIdx = data.as<Data>().speciesIdx;
-        const auto &sphereData = this->getSpecies(shapeIdx).getSphereData();
-        if (sphereIdx >= sphereData.size())
-            this->throwUnavailableNamedPoint(shapeIdx, pointName);
-
-        return sphereData[sphereIdx].position;
-    });
-}
-
 PolysphereTraits::PolysphereTraits()
         : interaction{std::make_shared<HardInteraction>(*this)}, centralInteraction{nullptr},
           wolframPrinter{std::make_shared<WolframPrinter>(*this)}
@@ -277,13 +265,6 @@ PolysphereTraits::getPrinter(const std::string &format, const std::map<std::stri
         return this->createObjPrinter(meshSubdivisions);
     else
         throw NoSuchShapePrinterException("PolysphereTraits: unknown printer format: " + format);
-}
-
-ShapeData PolysphereTraits::addSpecies(const std::string &speciesName, const PolysphereShape &shape) {
-    for (std::size_t sphereIdx{}; sphereIdx < shape.getSphereData().size(); sphereIdx++)
-        this->registerSphereNamedPoint(sphereIdx);
-
-    return GenericShapeRegistry::addSpecies(speciesName, shape);
 }
 
 std::shared_ptr<ShapePrinter> PolysphereTraits::createObjPrinter(std::size_t subdivisions) const {

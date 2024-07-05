@@ -7,9 +7,14 @@
 
 #include "core/Interaction.h"
 
+
 /**
- * @brief The class joining two interaction into one Interaction class.
- * @details Both soft and hard parts are correctly combined.
+ * @brief The class joining two interactions (main and helper) into one Interaction class.
+ * @details Both soft and hard parts as well as wall interactions are correctly combined. The associated ShapeData
+ * (passed around in the Interaction methods) is the one of the main interaction. The ShapeData of the helper
+ * interaction in constant - it is passed in the constructor and cached in the class. If the main interaction has
+ * multiple interaction centers, they have to be identical for all ShapeData passed to the methods and coincides with
+ * the ones for the helper interaction.
  */
 class CompoundInteraction : public Interaction {
 private:
@@ -33,7 +38,9 @@ private:
 public:
     /**
      * @brief Creates the object for two given constituent interactions.
-     * @details Both interaction have to have identical interaction centres, otherwise an exception is thrown.
+     * @param mainInteraction main Interaction to be decorated
+     * @param helperInteraction additional Interaction to be taken into account
+     * @param helperData constant ShapeData associated with the @a helperInteraction
      */
     CompoundInteraction(const Interaction &mainInteraction, const Interaction &helperInteraction,
                         ShapeData helperData = {});

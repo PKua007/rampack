@@ -12,9 +12,12 @@
 
 
 /**
- * @brief Construct compound shape traits, where one ShapeTraits instance acts as a base and the second one provides
- * only additional interaction.
- * @details For example, shapes are printed according to main ShapeTraits instance.
+ * @brief Compound shape traits, where one ShapeTraits instance (main traits) acts as a base and the second one (helper
+ * traits) only provides additional Interaction type on top of the main one.
+ * @details ShapeGeometry, ShapeDataManager, and ShapePrinter -s are delegated from the main traits. It means that, in
+ * particular, the associated ShapeData of CompoundShapeTraits correspond to the one of the main traits. Helper traits
+ * have a constant ShapeData, which is passed in the constructor and cannot be altered from the outside.
+ * @sa CompoundInteraction for the restrictions on underlying Interaction instances
  */
 class CompoundShapeTraits : public ShapeTraits {
 private:
@@ -24,13 +27,17 @@ private:
 
 public:
     /**
-     * @brief Construct the class with @a mainShapeTraits as main ShapeTraits, while @a auxShapeTraits only provide
-     * additional interaction.
+     * @brief Construct the class for two given ShapeTraits.
+     * @param mainShapeTraits main shaped traits used as a base
+     * @param helperShapeTraits helper traits, supplying only additional interaction type on top of the one of
+     * @a mainShapeTraits
+     * @param helperData constant ShapeData associated with @a helperShapeTraits
      */
     CompoundShapeTraits(const std::shared_ptr<ShapeTraits> &mainShapeTraits,
                         const std::shared_ptr<ShapeTraits> &helperShapeTraits, ShapeData helperData = {})
             : mainShapeTraits{mainShapeTraits}, helperShapeTraits{helperShapeTraits},
-              compoundInteraction(mainShapeTraits->getInteraction(), helperShapeTraits->getInteraction(), std::move(helperData))
+              compoundInteraction(mainShapeTraits->getInteraction(), helperShapeTraits->getInteraction(),
+                                  std::move(helperData))
     { }
 
     [[nodiscard]] const Interaction &getInteraction() const override { return this->compoundInteraction; }

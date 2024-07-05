@@ -34,7 +34,7 @@ public:
     [[nodiscard]] virtual const Interaction &getInteraction() const = 0;
 
     /**
-     * @brief Returns the ShapePrinter object describing the geometry of the shape.
+     * @brief Returns the ShapeGeometry object describing the geometry of the shape.
      */
     [[nodiscard]] virtual const ShapeGeometry &getGeometry() const = 0;
 
