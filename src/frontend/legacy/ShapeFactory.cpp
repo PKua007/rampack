@@ -20,9 +20,9 @@
 #include "core/shapes/SmoothWedgeTraits.h"
 #include "core/shapes/GenericXenoCollideTraits.h"
 
-#include "core/interactions/LennardJonesInteraction.h"
-#include "core/interactions/RepulsiveLennardJonesInteraction.h"
-#include "core/interactions/SquareInverseCoreInteraction.h"
+#include "core/shapes/interactions/LennardJonesInteraction.h"
+#include "core/shapes/interactions/RepulsiveLennardJonesInteraction.h"
+#include "core/shapes/interactions/SquareInverseCoreInteraction.h"
 
 #include "geometry/xenocollide/XCBodyBuilder.h"
 

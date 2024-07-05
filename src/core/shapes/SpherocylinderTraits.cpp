@@ -6,7 +6,7 @@
 #include "utils/Exceptions.h"
 #include "geometry/SegmentDistanceCalculator.h"
 #include "geometry/xenocollide/XCBodyBuilder.h"
-#include "PolydisperseXCObjShapePrinter.h"
+#include "printers/PolydisperseXCObjShapePrinter.h"
 #include "core/io/ShapeDataSerializer.h"
 #include "core/io/ShapeDataDeserializer.h"
 

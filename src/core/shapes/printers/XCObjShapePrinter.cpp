@@ -4,7 +4,7 @@
 
 #include <sstream>
 #include <utility>
-#include <ZipIterator.hpp>
+#include "ZipIterator.hpp"
 
 #include "XCObjShapePrinter.h"
 #include "geometry/xenocollide/XCPrinter.h"

@@ -2,11 +2,11 @@
 // Created by pkua on 05.03.2022.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
 #include "mocks/MockInteraction.h"
 
-#include "core/interactions/CompoundInteraction.h"
+#include "core/shapes/interactions/CompoundInteraction.h"
 #include "core/PeriodicBoundaryConditions.h"
 
 

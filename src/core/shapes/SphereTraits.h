@@ -8,7 +8,7 @@
 #include <optional>
 
 #include "core/ShapeTraits.h"
-#include "core/interactions/CentralInteraction.h"
+#include "interactions/CentralInteraction.h"
 
 
 /**

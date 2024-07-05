@@ -10,7 +10,7 @@
 
 #include "PolysphereTraits.h"
 #include "utils/Exceptions.h"
-#include "PolydisperseXCObjShapePrinter.h"
+#include "printers/PolydisperseXCObjShapePrinter.h"
 #include "geometry/xenocollide/XCPrimitives.h"
 
 

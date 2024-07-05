@@ -7,7 +7,7 @@
 
 #include "SphereTraits.h"
 #include "utils/Exceptions.h"
-#include "PolydisperseXCObjShapePrinter.h"
+#include "printers/PolydisperseXCObjShapePrinter.h"
 #include "geometry/xenocollide/XCPrimitives.h"
 #include "core/io/ShapeDataSerializer.h"
 #include "core/io/ShapeDataDeserializer.h"

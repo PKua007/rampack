@@ -8,7 +8,7 @@
 #include <memory>
 
 #include "core/ShapeTraits.h"
-#include "core/interactions/CompoundInteraction.h"
+#include "core/shapes/interactions/CompoundInteraction.h"
 
 
 /**

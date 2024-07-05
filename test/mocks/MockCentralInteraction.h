@@ -7,7 +7,7 @@
 
 #include <catch2/trompeloeil.hpp>
 
-#include "core/interactions/CentralInteraction.h"
+#include "core/shapes/interactions/CentralInteraction.h"
 
 
 class MockCentralInteraction : public CentralInteraction {

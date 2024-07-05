@@ -2,9 +2,9 @@
 // Created by pkua on 05.03.2022.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
-#include "core/interactions/SquareInverseCoreInteraction.h"
+#include "core/shapes/interactions/SquareInverseCoreInteraction.h"
 #include "core/FreeBoundaryConditions.h"
 
 TEST_CASE("SquareInverseCoreInteraction") {

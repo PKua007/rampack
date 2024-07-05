@@ -2,9 +2,9 @@
 // Created by Piotr Kubala on 23/12/2020.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
-#include "core/interactions/RepulsiveLennardJonesInteraction.h"
+#include "core/shapes/interactions/RepulsiveLennardJonesInteraction.h"
 #include "core/FreeBoundaryConditions.h"
 
 TEST_CASE("RepulsiveLennardJonesInteraction") {
