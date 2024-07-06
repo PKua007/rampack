@@ -22,25 +22,25 @@
 
 /**
  * @brief A shape with XenoCollide intersection test.
- * @details <p> The class implements all ShapeTraits methods, so that the deriving class @a ConcreteCollideTraits has
- * to only provide @a CollideGeometry objects (conforming to XenoCollide template parameter), shape axes, origin, volume
- * and optionally named points (see ShapeGeometry::getNamedPoint). It supports multiple interaction centres, so one can
- * combine many XenoCollide shapes into a one concave object. Derived class specifies interaction centers by overriding
- * Interaction::getInteractionCentres() method on its own. It must then support as many @a CollideGeometry objects
- * (see @a XenoCollideTraits::ConcreteCollideTraits template parameter).
+ * @details <p> The class implements most Interaction methods, but the deriving class @a ConcreteCollideTraits must
+ * provide @a CollideGeometry objects (conforming to XenoCollide class @a XCGeometry template parameter) and override
+ * Interaction::getInteractionCentres() to specify interaction centers. The support for multiple interaction centers
+ * enables one to combine many XenoCollide shapes into a one concave object. XenoCollideTraits also implements the shape
+ * printing routine (ShapeTraits::getPrinter).
  *
- * <p> Assuming the deriving class is called @a MyShape it should derive from XenoCollideTraits like this (CRTP idiom):
+ * <p> Assuming the deriving class is called @a MyShape, it should derive from XenoCollideTraits in the following way
+ * (CRTP idiom):
  * @code
  * class MyShape : public XenoCollideTraits<MyShape> {
- *     ...
+ *     // ...
  * }
  * @endcode
- * @tparam ConcreteCollideTraits a deriving class (CRTP idiom). It is requires to have a method with signature
+ * @tparam ConcreteCollideTraits a deriving class (CRTP idiom). It is requires to have a method with the signature
  * @code
- * // Returns CollideGeometry object (arbitrary class but conforming to XenoCollide template parameter) for an
- * // interaction center with index idx. If ConcreteCollideTraits has only a single interaction center, the argument
- * // should be ignored, but signature must not be altered
- * const CollideGeometry &ConcreteCollideTraits::getCollideGeometry(std::size_t idx) const
+ * // Returns CollideGeometry object (arbitrary class but conforming to XenoCollide::XCGeometry template parameter)
+ * // for raw shape data `data` an interaction center with index `idx`. If ConcreteCollideTraits has only a single
+ * // interaction center, the value `idx` should be ignored, but the method's signature must not be altered
+ * const CollideGeometry &getCollideGeometry(const std::byte *data, std::size_t idx) const
  * @endcode
  */
 template<typename ConcreteCollideTraits>
@@ -66,7 +66,7 @@ private:
                 const auto &center = centers[i];
                 const auto &geometry = thisConcreteTraits.getCollideGeometry(data.raw(), i);
                 auto polymorphicGeometry = std::make_shared<PolymorphicXCAdapter<Geometry>>(geometry);
-                geometryComplex.emplace_back(center, std::move(polymorphicGeometry));
+                geometryComplex.emplace_back(std::move(polymorphicGeometry), center);
             }
 
             return geometryComplex;

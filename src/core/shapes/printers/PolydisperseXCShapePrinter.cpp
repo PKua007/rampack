@@ -7,10 +7,10 @@
 
 
 PolydisperseXCShapePrinter::PolyhedronComplex
-PolydisperseXCShapePrinter::buildPolyhedronComplex(const std::vector<GeometryData> &geometries) const {
+PolydisperseXCShapePrinter::buildPolyhedronComplex(const GeometryComplex &geometryComplex) const {
     PolyhedronComplex polyhedronComplex;
-    polyhedronComplex.reserve(geometries.size());
-    for (const auto &[center, geometry] : geometries) {
+    polyhedronComplex.reserve(geometryComplex.size());
+    for (const auto &[geometry, center] : geometryComplex) {
         auto polyhedron = XCPrinter::buildPolyhedron(*geometry, this->subdivisions);
         polyhedronComplex.push_back(polyhedron.transformed(center, Matrix<3, 3>::identity()));
     }

@@ -15,7 +15,7 @@ SmoothWedgeShape::CollideGeometry::CollideGeometry(double R, double r, double l)
 {
     Expects(R > 0);
     Expects(r > 0);
-    Expects(l > 0);
+    Expects(l >= std::abs(R - r));
 }
 
 double SmoothWedgeShape::computeVolume(double R, double r, double l) {

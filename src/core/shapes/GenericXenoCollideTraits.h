@@ -11,11 +11,16 @@
 #include "XenoCollideTraits.h"
 #include "geometry/xenocollide/AbstractXCGeometry.h"
 #include "GenericShapeRegistry.h"
+#include "XCGeometryCenter.h"
 
 
 class GenericXenoCollideTraits;
 
-class GenericXenoCollideShape {
+/**
+ * @brief Generic convex shape with XenoCollide intersection test (GenericShapeRegistry species for
+ * GenericXenoCollideTraits).
+ */
+class GenericXenoCollideShape /* : public GenericShapeRegistry::ConcreteSpecies */ {
 private:
     std::vector<std::shared_ptr<const AbstractXCGeometry>> geometries;
     std::vector<Vector<3>> interactionCentres;
@@ -29,17 +34,31 @@ private:
     friend GenericXenoCollideTraits;
 
 public:
-    struct GeometryData {
-        std::shared_ptr<const AbstractXCGeometry> geometry;
-        Vector<3> center;
-    };
-
+    /**
+     * @brief Creates the shapes with a single interaction center. The shape is by definition convex.
+     * @param geometry XenoCollide geometry of the shape
+     * @param volume volume of the shape
+     * @param primaryAxis primary axis of the shape (may be left undefined)
+     * @param secondaryAxis secondary axis of the shape, orthogonal to the primary axis (may be left undefined)
+     * @param geometricOrigin geometric origin of the shape
+     * @param customNamedPoints optional map of name points, where the key is point's name and the value is its position
+     */
     GenericXenoCollideShape(std::shared_ptr<AbstractXCGeometry> geometry, double volume,
                             OptionalAxis primaryAxis = std::nullopt, OptionalAxis secondaryAxis = std::nullopt,
                             const Vector<3> &geometricOrigin = {0, 0, 0},
                             const std::map<std::string, Vector<3>> &customNamedPoints = {});
 
-    GenericXenoCollideShape(const std::vector<GeometryData> &geometries, double volume,
+    /**
+     * @brief Creates the shape with multiple interaction centers. Multi-part shape is by default treated as concave.
+     * @param geometries vector of geometries of all interaction centers
+     * @param volume volume of the shape
+     * @param primaryAxis primary axis of the shape (may be left undefined)
+     * @param secondaryAxis secondary axis of the shape, orthogonal to the primary axis (may be left undefined)
+     * @param geometricOrigin geometric origin of the shape
+     * @param customNamedPoints optional map of name points, where the key is point's name and the value is its position
+     * @param forceConvex should be set @a true if the shape is convex despite being multi-part
+     */
+    GenericXenoCollideShape(const std::vector<XCGeometryCenter> &geometries, double volume,
                             OptionalAxis primaryAxis = std::nullopt, OptionalAxis secondaryAxis = std::nullopt,
                             const Vector<3> &geometricOrigin = {0, 0, 0},
                             const std::map<std::string, Vector<3>> &customNamedPoints = {},
@@ -61,10 +80,12 @@ public:
     [[nodiscard]] bool isConvex() const { return this->convex; }
 };
 
+
 /**
  * @brief XenoCollideTraits using AbstractXCGeometry as @a CollideGeometry.
- * @details It is an adapter class, which enables one to used some implementation of AbstractXCGeometry, for example
- * coming from XCBodyBuilder.
+ * @details It is an adapter class for XenoCollideTraits, which enables one to used some implementation of
+ * AbstractXCGeometry, for example coming from XCBodyBuilder. The class is a registry of predefined named species
+ * (see GenericShapeRegistry).
  */
 class GenericXenoCollideTraits
     : public XenoCollideTraits<GenericXenoCollideTraits>, public GenericShapeRegistry<GenericXenoCollideShape>
@@ -75,16 +96,32 @@ private:
     bool isMulticentre_{};
 
 public:
-    using GeometryData = GenericXenoCollideShape::GeometryData;
-
+    /**
+     * @brief Creates the class with no initially registered species.
+     */
     GenericXenoCollideTraits() = default;
 
+    /**
+     * @brief Creates the class with one species @a shape named `A`, which is set as a default species
+     * (setDefaultSpecies()).
+     */
     explicit GenericXenoCollideTraits(const GenericXenoCollideShape &shape);
 
     [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
 
+    /**
+     * @brief Returns interaction centers for given raw ShapeData @a data.
+     * @details If all registered species have empty interaction center list, the function will also return empty
+     * interaction center list. However, if at least one has non-empty interaction center list, the function will return
+     * a one-element list with [0, 0, 0] center for all species with empty interaction center list.
+     */
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentres(const std::byte *data) const override;
+
+    /**
+     * @brief Returs @a true is all registered species are convex, @a false otherwise.
+     * @return
+     */
     [[nodiscard]] bool isConvex() const override;
 
     [[nodiscard]] const AbstractXCGeometry &
@@ -96,6 +133,9 @@ public:
 
     ShapeData addSpecies(const std::string &speciesName, const GenericXenoCollideShape &species) final;
 
+    /**
+     * @brief Returns @a true if at least one of registered species has a non-empty interaction center list.
+     */
     [[nodiscard]] bool isMulticentre() const { return this->isMulticentre_; }
 };
 

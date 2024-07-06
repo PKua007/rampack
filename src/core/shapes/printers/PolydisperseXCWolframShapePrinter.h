@@ -8,6 +8,9 @@
 #include "PolydisperseXCShapePrinter.h"
 
 
+/**
+ * @brief PolydisperseXCShapePrinter for the Wolfram Mathematica format.
+ */
 class PolydisperseXCWolframShapePrinter : public PolydisperseXCShapePrinter {
 protected:
     std::string doPrint(const Shape &shape, const PolyhedronComplex &polyhedronComplex) const override;

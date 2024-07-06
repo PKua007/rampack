@@ -41,8 +41,8 @@ namespace {
 
         double volume = 4*M_PI/3 * (r1*r1*r1 + r1*r2*r2);
 
-        return GenericXenoCollideShape({{std::make_shared<XCSphere>(r1), {0, 0, 0}},
-                                        {std::make_shared<XCSphere>(r2), {x2, 0, 0}}},
+        return GenericXenoCollideShape({XCGeometryCenter(std::make_shared<XCSphere>(r1), {0, 0, 0}),
+                                        XCGeometryCenter(std::make_shared<XCSphere>(r2), {x2, 0, 0})},
                                        volume, {1, 0, 0}, {0, 0, 1}, {0, 0, 0});
     }
 }
@@ -350,8 +350,8 @@ TEST_CASE("GenericXenoCollideTraits: isConvex") {
 
         SECTION("multiple centers: forced convex") {
             GenericXenoCollideShape sphereInSphere({
-                {std::make_shared<XCSphere>(0.5), {0, 0, 0}},
-                {std::make_shared<XCSphere>(0.25), {0, 0, 0}}
+                XCGeometryCenter(std::make_shared<XCSphere>(0.5), {0, 0, 0}),
+                XCGeometryCenter(std::make_shared<XCSphere>(0.25), {0, 0, 0})
             }, 1, std::nullopt, std::nullopt, {0, 0, 0}, {}, true);
 
             CHECK(sphereInSphere.isConvex());

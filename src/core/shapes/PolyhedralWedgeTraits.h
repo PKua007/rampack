@@ -9,10 +9,14 @@
 #include "DynamicShapeCache.h"
 
 
+/**
+ * @brief A single species of polyhedral wedge (a convex hull of two axis-aligned rectangles) for PolyhedralWedgeShape.
+ */
 class PolyhedralWedgeShape /* : public DynamicShapeCache::ConcreteSpecies */ {
 public:
     /**
-     * @brief Class representing the geometry of the polyhedral wedge (see template parameter of XenoCollide)
+     * @brief Class representing the geometry of the polyhedral wedge (conforming to XenoCollide @a XCGeometry template
+     * parameter).
      */
     class CollideGeometry {
     private:
@@ -72,9 +76,26 @@ private:
     Vector<3> endNamedPoint{};
 
 public:
+    /**
+     * @brief Creates the polyhedral wedge species along the z axis. See CollideGeometry::CollideGeometry for the
+     * details of how the rectangles are placed.
+     * @details The rectangles can be reduces to lines, but the volume of the resulting shape must be positive.
+     * @param bottomAx corresponds to parameter @a bottomAx of CollideGeometry::CollideGeometry
+     * @param bottomAy corresponds to parameter @a bottomAy of CollideGeometry::CollideGeometry
+     * @param topAx corresponds to parameter @a topAx of CollideGeometry::CollideGeometry
+     * @param topAy corresponds to parameter @a topAy of CollideGeometry::CollideGeometry
+     * @param l corresponds to parameter @a l of CollideGeometry::CollideGeometry
+     * @param subdivisions number of partitions into smaller parts (with multiple interaction centers) for neighbor grid
+     * performance reason. Value 0 is treated the same as 1
+     * @throws PreconditionException is the parameters would yield a zero volume
+     */
     PolyhedralWedgeShape(double bottomAx, double bottomAy, double topAx, double topAy, double l,
                          std::size_t subdivisions = 0) /* override */;
 
+    /**
+     * @brief Returns @a true, if the wedge's parameters are as given (see DynamicShapeCache @a ConcreteSpecies template
+     * parameter).
+     */
     [[nodiscard]] bool equal(double bottomAx_, double bottomAy_, double topAx_, double topAy_, double l_,
                              std::size_t subdivisions_) const /* override */;
 
@@ -84,7 +105,7 @@ public:
     [[nodiscard]] double getTopAy() const { return this->topAy; }
     [[nodiscard]] double getL() const { return this->l; }
     [[nodiscard]] std::size_t getSubdivisions() const { return this->subdivisions; }
-    [[nodiscard]] const std::vector<CollideGeometry> &getShapeParts() const { return this->shapeParts; }
+    [[nodiscard]] const std::vector<CollideGeometry> &getSubdividedGeometries() const { return this->shapeParts; }
     [[nodiscard]] const std::vector<Vector<3>> &getInteractionCentres() const { return this->interactionCentres; }
     [[nodiscard]] double getVolume() const { return this->volume; }
     [[nodiscard]] const Vector<3> &getBegNamedPoint() const { return this->begNamedPoint; }
@@ -92,7 +113,7 @@ public:
 };
 
 /**
- * @brief Class representing a wedge build by taking a convex hull of two axis-oriented rectangles.
+ * @brief Class representing a wedge built by taking a convex hull of two axis-oriented rectangles.
  */
 class PolyhedralWedgeTraits
         : public XenoCollideTraits<PolyhedralWedgeTraits>,
@@ -114,15 +135,17 @@ private:
 public:
     using CollideGeometry = PolyhedralWedgeShape::CollideGeometry;
 
-    /** @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::XCPrinter
-     * @a subdivision parameter) */
+    /**
+     * @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::buildPolyhedron
+     * @a subdivisions parameter)
+     */
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 4;
 
     /**
-     * @brief Creates a wedge with parameters @a axTop, @a ayTop, @a axBottom, @a ayBottom, and @a length
-     * (see CollideGeometry::CollideGeometry).
-     * @details If @a subdivision is at least two, the wedge is divided into that many parts along the length to lower
-     * the number of neighbours in the neighbour grid.
+     * @brief Creates a wedge, for which one can optionally define default values of parameters.
+     * @details The default-able parameters correspond to the ones of PolyhedralWedgeShape::PolyhedralWedgeShape. If
+     * @a subdivision is at least two, the wedge is divided into that many parts along the length to lower the number of
+     * neighbours in the neighbour grid.
      */
     explicit PolyhedralWedgeTraits(std::optional<double> defaultBottomAx = std::nullopt,
                                    std::optional<double> defaultBottomAy = std::nullopt,
@@ -147,14 +170,26 @@ public:
     }
     [[nodiscard]] Vector<3> getGeometricOrigin([[maybe_unused]] const Shape &shape) const override { return {0, 0, 0}; }
 
+    /**
+     * @brief Serializes the wedge into a map with shape parameters named `bottom_ax`, `bottom_ay`, `top_ax`, `top_ay`,
+     * `l`, and `subdivisions`.
+     */
     [[nodiscard]] TextualShapeData serialize(const ShapeData &data) const override;
+
+    /**
+     * @brief Deserializes the wedge from a map with shape parameters named `bottom_ax`, `bottom_ay`, `top_ax`,
+     * `top_ay`, `l`, and `subdivisions`.
+     * @throws ShapeDataSerializationException if the keys are incorrect or the values are not numbers
+     * @throws ShapeDataFormatException if the resulting values would throw an exception in
+     * PolyhedralWedgeShape::PolyhedralWedgeShape
+     */
     [[nodiscard]] ShapeData deserialize(const TextualShapeData &data) const override;
 
     /**
      * @brief Returns CollideGeometry object for the interaction center with index @a idx (see XenoCollideTraits).
      */
     [[nodiscard]] const CollideGeometry &getCollideGeometry(const std::byte *data, std::size_t idx = 0) const {
-        return this->speciesFor(data).getShapeParts()[idx];
+        return this->speciesFor(data).getSubdividedGeometries()[idx];
     }
 
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentres(const std::byte *data) const override {
@@ -172,6 +207,10 @@ public:
     [[nodiscard]] std::shared_ptr<const ShapePrinter>
     getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;
 
+    /**
+     * @brief Returns the ShapeData for given parameters (registering it in the DynamicShapeCache). The parameters
+     * (and exception) correspond to the ones of PolyhedralWedgeShape::PolyhedralWedgeShape.
+     */
     ShapeData shapeDataForSpecies(double bottomAx, double bottomAy, double topAx, double topAy, double l,
                                   std::size_t subdivisions = 0) const;
 };

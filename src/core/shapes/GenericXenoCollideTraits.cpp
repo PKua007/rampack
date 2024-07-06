@@ -24,7 +24,7 @@ GenericXenoCollideShape::GenericXenoCollideShape(std::shared_ptr<AbstractXCGeome
         this->secondaryAxis = this->secondaryAxis->normalized();
 }
 
-GenericXenoCollideShape::GenericXenoCollideShape(const std::vector<GeometryData> &geometries, double volume,
+GenericXenoCollideShape::GenericXenoCollideShape(const std::vector<XCGeometryCenter> &geometries, double volume,
                                                  OptionalAxis primaryAxis, OptionalAxis secondaryAxis,
                                                  const Vector<3> &geometricOrigin,
                                                  const std::map<std::string, Vector<3>> &customNamedPoints,
@@ -75,7 +75,7 @@ void GenericXenoCollideTraits::imbueFakeInteractionCenter(GenericXenoCollideShap
 
 GenericXenoCollideTraits::GenericXenoCollideTraits(const GenericXenoCollideShape &shape) {
     this->addSpecies("A", shape);
-    this->setDefaultShapeData({{"species", "A"}});
+    this->setDefaultSpecies("A");
 }
 
 std::vector<Vector<3>> GenericXenoCollideTraits::getInteractionCentres(const std::byte *data) const {

@@ -276,7 +276,7 @@ std::shared_ptr<ShapePrinter> PolysphereTraits::createObjPrinter(std::size_t sub
         for (const auto &sphereDataEntry : sphereData) {
             double radius = sphereDataEntry.radius;
             auto polymorphicSphere = std::make_shared<PolymorphicXCAdapter<XCSphere>>(XCSphere(radius));
-            xcSpheres.emplace_back(sphereDataEntry.position, std::move(polymorphicSphere));
+            xcSpheres.emplace_back(std::move(polymorphicSphere), sphereDataEntry.position);
         }
 
         return xcSpheres;
