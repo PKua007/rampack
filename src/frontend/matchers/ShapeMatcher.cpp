@@ -349,7 +349,7 @@ namespace {
             .arguments({{"chain", chain},
                         {"r", MatcherFloat{}.positive()}})
             .mapTo([](const DataclassData &spherocylinder) {
-                using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
+                using SpherocylinderData = PolyspherocylinderShape::SpherocylinderData;
                 std::vector<SpherocylinderData> result;
                 auto chain = spherocylinder["chain"].as<std::vector<Vector<3>>>();
                 auto r = spherocylinder["r"].as<double>();
@@ -367,7 +367,7 @@ namespace {
             .elementsMatch(spherocylinder)
             .nonEmpty()
             .mapTo([](const ArrayData &array) {
-                using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
+                using SpherocylinderData = PolyspherocylinderShape::SpherocylinderData;
                 std::vector<SpherocylinderData> allScDatas;
                 for (const auto &scData : array.asStdVector<std::vector<SpherocylinderData>>())
                     for (const auto &sphereData : scData)
@@ -385,7 +385,7 @@ namespace {
             .filter(validate_axes)
             .describe("primary_axis and secondary_axis must be orthogonal")
             .mapTo([](const DataclassData &polysc) -> std::shared_ptr<ShapeTraits> {
-                using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
+                using SpherocylinderData = PolyspherocylinderShape::SpherocylinderData;
                 auto sc = polysc["scs"].as<std::vector<SpherocylinderData>>();
                 auto volume = polysc["volume"].as<double>();
                 auto geometricOrigin = polysc["geometric_center"].as<Vector<3>>();
@@ -397,16 +397,10 @@ namespace {
                     secondaryAxis = polysc["secondary_axis"].as<Vector<3>>();
                 auto namedPoints = polysc["named_points"].as<std::map<std::string, Vector<3>>>();
 
-                std::vector<NamedPoint> properNamedPoints;
-                properNamedPoints.reserve(namedPoints.size());
-                for (const auto &[pointName, point] : namedPoints)
-                    properNamedPoints.emplace_back(pointName, point);
-
-                PolyspherocylinderTraits::PolyspherocylinderGeometry geometry(
-                    std::move(sc), primaryAxis, secondaryAxis, geometricOrigin, volume, properNamedPoints
+                PolyspherocylinderShape shape(
+                    std::move(sc), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
                 );
-
-                return std::make_shared<PolyspherocylinderTraits>(std::move(geometry));
+                return std::make_shared<PolyspherocylinderTraits>(std::move(shape));
             });
     }
 

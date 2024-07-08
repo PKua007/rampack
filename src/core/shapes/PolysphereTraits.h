@@ -56,12 +56,14 @@ public:
                              std::optional<double> volume = std::nullopt,
                              const std::map<std::string, Vector<3>> &customNamedPoints = {});
 
-    [[nodiscard]] Vector<3> getPrimaryAxis() const;
-    [[nodiscard]] Vector<3> getSecondaryAxis() const;
-    [[nodiscard]] Vector<3> getGeometricOrigin() const {
-        return this->geometricOrigin;
+    [[nodiscard]] Vector<3> getPrimaryAxis() const /* override */;
+    [[nodiscard]] Vector<3> getSecondaryAxis() const /* override */;
+    [[nodiscard]] Vector<3> getGeometricOrigin() const /* override */ { return this->geometricOrigin; }
+    [[nodiscard]] double getVolume() const /* override */ { return this->volume; }
+    [[nodiscard]] const std::map<std::string, Vector<3>> &getNamedPoints() const  /* override */ {
+        return this->namedPoints;
     }
-    [[nodiscard]] double getVolume() const { return this->volume; }
+
     [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->sphereData; }
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const;
 
@@ -80,7 +82,6 @@ public:
 
     void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
     void addCustomNamedPoints(std::map<std::string, Vector<3>> customNamedPoints);
-    [[nodiscard]] const std::map<std::string, Vector<3>> &getNamedPoints() const { return this->namedPoints; }
     [[nodiscard]] bool spheresOverlap() const;
 
     friend bool operator==(const PolysphereShape &lhs, const PolysphereShape &rhs);
@@ -149,7 +150,7 @@ public:
      * @brief Construct the polymer from the specified @a sphereData.
      * @param geometry PolysphereGeometry describing the molecule.
      */
-    explicit PolysphereTraits(const PolysphereShape &polysphereShape);
+    explicit PolysphereTraits(const PolysphereShape &defaultShape);
 
     explicit PolysphereTraits(const std::shared_ptr<CentralInteraction> &centralInteraction);
 

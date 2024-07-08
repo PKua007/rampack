@@ -10,7 +10,9 @@
 #include "core/FreeBoundaryConditions.h"
 #include "core/PeriodicBoundaryConditions.h"
 
-using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
+
+using SpherocylinderData = PolyspherocylinderShape::SpherocylinderData;
+
 
 TEST_CASE("PolyspherocylinderTraits") {
     // It looks like this (one bigger and one smaller sticking from its top - radius 1 and radius 0.5)
@@ -29,11 +31,12 @@ TEST_CASE("PolyspherocylinderTraits") {
     // X - common cap of both spherocylinders
 
     double volume = 1;  // Arbitrary value, it is not important here
-    PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({SpherocylinderData{{0, 0, 0}, {0, 0, 1}, 1},
-                                                                   SpherocylinderData{{0, 0, 2}, {0, 0, 1}, 0.5}},
-                                                                  {0, 0, 1}, {1, 0, 0}, {0, 1, 0}, volume,
-                                                                  {{"point1", {0, 1, 0}}});
-    PolyspherocylinderTraits traits(geometry);
+    PolyspherocylinderShape polyspherocylinder({SpherocylinderData{{0, 0, 0}, {0, 0, 1}, 1},
+                                                SpherocylinderData{{0, 0, 2}, {0, 0, 1}, 0.5}},
+                                               {0, 0, 1}, {1, 0, 0}, {0, 1, 0}, volume, {{"point1", {0, 1, 0}}});
+    PolyspherocylinderTraits traits(polyspherocylinder);
+
+    ShapeData defaultData = traits.shapeDataForDefaultSpecies();
 
     SECTION("hard interactions") {
         const Interaction &interaction = traits.getInteraction();
@@ -41,15 +44,15 @@ TEST_CASE("PolyspherocylinderTraits") {
         SECTION("meta info") {
             CHECK_FALSE(interaction.hasSoftPart());
             CHECK(interaction.hasHardPart());
-            CHECK(interaction.getRangeRadius(nullptr) == Approx(4));
+            CHECK(interaction.getRangeRadius(defaultData.raw()) == Approx(4));
             std::vector<Vector<3>> expectedCentres = {{0, 0, 0},
                                                       {0, 0, 2}};
-            CHECK_THAT(interaction.getInteractionCentres(nullptr), Catch::UnorderedEquals(expectedCentres));
+            CHECK_THAT(interaction.getInteractionCentres(defaultData.raw()), Catch::UnorderedEquals(expectedCentres));
         }
 
         SECTION("overlap") {
-            Shape shape1({0, 0, 0}, Matrix<3, 3>::rotation(0, M_PI / 2, 0));
-            Shape shape2({4.5, 0, 0});
+            Shape shape1({0, 0, 0}, Matrix<3, 3>::rotation(0, M_PI / 2, 0), defaultData);
+            Shape shape2({4.5, 0, 0}, Matrix<3, 3>::identity(), defaultData);
             FreeBoundaryConditions fbc;
             SECTION("true") {
                 shape1.translate({0.00001, 0, 0}, fbc);
@@ -65,7 +68,7 @@ TEST_CASE("PolyspherocylinderTraits") {
 
     SECTION("toWolfram") {
         auto printer = traits.getPrinter("wolfram", {});
-        Shape shape({-1, 0, 0}, Matrix<3, 3>::rotation(0, M_PI / 2, 0));
+        Shape shape({-1, 0, 0}, Matrix<3, 3>::rotation(0, M_PI / 2, 0), defaultData);
 
         CHECK(printer->print(shape)
               == "{Tube[{{0.000000, 0.000000, 0.000000},{-2.000000, 0.000000, -0.000000}},1.000000]"
@@ -73,12 +76,14 @@ TEST_CASE("PolyspherocylinderTraits") {
     }
 
     SECTION("geometry") {
-        Shape shape({1, 2, 3}, Matrix<3, 3>::rotation(0, M_PI/2, 0));
+        Shape shape({1, 2, 3}, Matrix<3, 3>::rotation(0, M_PI/2, 0), defaultData);
 
+        CHECK(polyspherocylinder.spherocylindersOverlap());
+
+        const auto &geometry = traits.getGeometry();
         CHECK_THAT(geometry.getPrimaryAxis(shape), IsApproxEqual({1, 0, 0}, 1e-8));
         CHECK_THAT(geometry.getSecondaryAxis(shape), IsApproxEqual({0, 0, -1}, 1e-8));
         CHECK_THAT(geometry.getGeometricOrigin(shape), IsApproxEqual({0, 1, 0}, 1e-8));
-        CHECK(geometry.spherocylindersOverlap());
         CHECK_THAT(geometry.getNamedPointForShape("o0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-8));
         CHECK_THAT(geometry.getNamedPointForShape("b0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{-1, 0, 0}, 1e-8));
         CHECK_THAT(geometry.getNamedPointForShape("e0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1, 0, 0}, 1e-8));
@@ -90,35 +95,39 @@ TEST_CASE("PolyspherocylinderTraits") {
 }
 
 TEST_CASE("PolyspherocylinderTraits: wall overlap") {
-    // It is V-shaped molecule with center at a common cap and rotated 45 degrees
-    PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({SpherocylinderData{{0.5, 0.5, 0}, {0.5, 0.5, 0}, 0.5},
-                                                                   SpherocylinderData{{0.5, -0.5, 0}, {0.5, -0.5, 0}, 0.5}},
-                                                                  {0, 1, 0}, {1, 0, 0}, {0, 0, 0});
-    PolyspherocylinderTraits traits(std::move(geometry));
+    // It is V-shaped molecule with the center at a common cap and rotated 45 degrees
+    PolyspherocylinderShape polyspherocylinder({SpherocylinderData{{0.5, 0.5, 0}, {0.5, 0.5, 0}, 0.5},
+                                                SpherocylinderData{{0.5, -0.5, 0}, {0.5, -0.5, 0}, 0.5}},
+                                               {0, 1, 0}, {1, 0, 0}, {0, 0, 0});
+    PolyspherocylinderTraits traits(polyspherocylinder);
+    ShapeData defaultData = traits.shapeDataForDefaultSpecies();
     const Interaction &interaction = traits.getInteraction();
 
     CHECK(interaction.hasWallPart());
 
     SECTION("overlapping") {
-        Shape shape({1.1, 1.1, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/4));
+        Shape shape({1.1, 1.1, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/4), defaultData);
         CHECK(interaction.overlapWithWallForShape(shape, {0, M_SQRT2 + 1.5, 0}, {0, -1, 0}));
     }
 
     SECTION("non-overlapping") {
-        Shape shape({0.9, 0.9, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/4));
+        Shape shape({0.9, 0.9, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/4), defaultData);
         CHECK_FALSE(interaction.overlapWithWallForShape(shape, {0, M_SQRT2 + 1.5, 0}, {0, -1, 0}));
     }
 }
 
 TEST_CASE("PolyspherocylinderTraits: tests from SpherocylinderTraits") {
-    // There are test cases shamelessly copied from SpherocylinderTraitsTest.cpp used to evaluate more thoroughly
-    // the intersection criterion
+    // There are test cases shamelessly copied from SpherocylinderTraitsTest.cpp used to evaluate the intersection
+    // criterion more thoroughly
 
     FreeBoundaryConditions fbc;
-    PolyspherocylinderTraits::PolyspherocylinderGeometry geometry({SpherocylinderData{{0, 0, 0}, {1.5, 0, 0}, 2}},
-                                                                  {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
-    PolyspherocylinderTraits traits(std::move(geometry));
+    PolyspherocylinderShape polyspherocylinder({SpherocylinderData{{0, 0, 0}, {1.5, 0, 0}, 2}},
+                                               {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
+    PolyspherocylinderTraits traits(polyspherocylinder);
+    ShapeData defaultData = traits.shapeDataForDefaultSpecies();
     Shape sc1{}, sc2{};
+    sc1.setData(defaultData);
+    sc2.setData(defaultData);
 
     // Cases are found visually using Mathematica. See wolfram/spheroc_test.nb
     SECTION("sphere-sphere") {

@@ -17,13 +17,11 @@ class PolyspherocylinderBananaTraits : public PolyspherocylinderTraits {
 private:
     static double calculateVolume(double arcRadius, double arcAngle, std::size_t segmentsNum, double radius);
 
-    static PolyspherocylinderTraits::PolyspherocylinderGeometry generateGeometry(double arcRadius, double arcAngle,
-                                                                                 std::size_t segmentsNum, double radius,
-                                                                                 std::size_t subdivisions);
-
     static void basicValidation(double arcRadius, double arcAngle, std::size_t segmentsNum, double radius);
 
 public:
+    static PolyspherocylinderShape generateShape(double arcRadius, double arcAngle, std::size_t segmentsNum,
+                                                 double radius, std::size_t subdivisions);
     static bool isArcOriginOutside(double arcRadius, double arcAngle, std::size_t segmentsNum, double radius);
     static bool isArcOpen(double arcRadius, double arcAngle, std::size_t segmentsNum, double radius);
 
@@ -39,7 +37,7 @@ public:
      */
     PolyspherocylinderBananaTraits(double arcRadius, double arcAngle, std::size_t segmentsNum, double radius,
                                    std::size_t subdivisions = 1)
-            : PolyspherocylinderTraits(generateGeometry(arcRadius, arcAngle, segmentsNum, radius, subdivisions))
+            : PolyspherocylinderTraits(generateShape(arcRadius, arcAngle, segmentsNum, radius, subdivisions))
     { }
 };
 

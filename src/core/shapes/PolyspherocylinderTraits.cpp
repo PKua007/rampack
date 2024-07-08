@@ -11,9 +11,58 @@
 #include "geometry/SegmentDistanceCalculator.h"
 #include "printers/XCObjShapePrinter.h"
 #include "geometry/xenocollide/XCBodyBuilder.h"
+#include "printers/PolydisperseXCObjShapePrinter.h"
 
 
-double PolyspherocylinderTraits::PolyspherocylinderGeometry::calculateVolume() const {
+// PolyspherocylinderShape::SpherocylinderData #########################################################################
+
+PolyspherocylinderShape::SpherocylinderData::SpherocylinderData(const Vector<3> &position, const Vector<3> &halfAxis,
+                                                                double radius)
+        : position{position}, halfAxis{halfAxis}, halfLength{halfAxis.norm()}, radius{radius},
+          circumsphereRadius{radius + halfLength}
+{
+    Expects(radius > 0);
+}
+
+void PolyspherocylinderShape::SpherocylinderData::toWolfram(std::ostream &out, const Shape &shape) const {
+    Vector<3> shapeHalfAxis = this->halfAxisForShape(shape);
+    Vector<3> beg = shape.getPosition() + shape.getOrientation() * this->position + shapeHalfAxis;
+    Vector<3> end = shape.getPosition() + shape.getOrientation() * this->position - shapeHalfAxis;
+
+    out << "Tube[{" << beg << "," << end << "}," << this->radius << "]";
+}
+
+Vector<3> PolyspherocylinderShape::SpherocylinderData::centreForShape(const Shape &shape) const {
+    return shape.getPosition() + shape.getOrientation() * this->position;
+}
+
+double PolyspherocylinderShape::SpherocylinderData::getVolume() const {
+    double radius2 = this->radius * this->radius;
+    double radius3 = radius2 * this->radius;
+    double axisLength = 2 * this->halfLength;
+    return 4*M_PI/3*radius3 + M_PI*radius2*axisLength;
+}
+
+Vector<3> PolyspherocylinderShape::SpherocylinderData::halfAxisForShape(const Shape &shape) const {
+    return shape.getOrientation() * this->halfAxis;
+}
+
+std::shared_ptr<AbstractXCGeometry> PolyspherocylinderShape::SpherocylinderData::createXCGeometry() const {
+    XCBodyBuilder builder;
+    builder.sphere(this->radius);
+    Vector<3> pos1 = -this->halfAxis;
+    builder.move(pos1[0], pos1[1], pos1[2]);
+    builder.sphere(this->radius);
+    Vector<3> pos2 = this->halfAxis;
+    builder.move(pos2[0], pos2[1], pos2[2]);
+    builder.wrap();
+    return builder.releaseCollideGeometry();
+}
+
+
+// PolyspherocylinderShape #############################################################################################
+
+double PolyspherocylinderShape::calculateVolume() const {
     ExpectsMsg(!this->spherocylindersOverlap(), "PolyspherocylinderTraits::PolyspherocylinderGeometry::calculateVolume:"
                                                 " automatic volume not supported for overlapping spheres");
 
@@ -23,12 +72,12 @@ double PolyspherocylinderTraits::PolyspherocylinderGeometry::calculateVolume() c
     return std::accumulate(this->spherocylinderData.begin(), this->spherocylinderData.end(), 0., volumeAccumulator);
 }
 
-PolyspherocylinderTraits::PolyspherocylinderGeometry
-    ::PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, OptionalAxis primaryAxis,
-                                 OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin,
-                                 std::optional<double> volume, const std::vector<NamedPoint> &customNamedPoints)
+PolyspherocylinderShape::PolyspherocylinderShape(std::vector<SpherocylinderData> spherocylinderData,
+                                                 OptionalAxis primaryAxis, OptionalAxis secondaryAxis,
+                                                 const Vector<3> &geometricOrigin, std::optional<double> volume,
+                                                 const std::map<std::string, Vector<3>> &customNamedPoints)
         : spherocylinderData{std::move(spherocylinderData)}, primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis},
-          geometricOrigin{geometricOrigin}
+          geometricOrigin{geometricOrigin}, namedPoints{customNamedPoints}
 {
     Expects(!this->spherocylinderData.empty());
     if (!this->primaryAxis.has_value())
@@ -46,15 +95,29 @@ PolyspherocylinderTraits::PolyspherocylinderGeometry
     for (std::size_t i{}; i < this->spherocylinderData.size(); i++) {
         const auto &scData = this->spherocylinderData[i];
         std::string iStr = std::to_string(i);
-        this->registerStaticNamedPoint("o" + iStr, scData.position);
-        this->registerStaticNamedPoint("b" + iStr, scData.position - scData.halfAxis);
-        this->registerStaticNamedPoint("e" + iStr, scData.position + scData.halfAxis);
+        this->namedPoints["o" + iStr] = scData.position;
+        this->namedPoints["b" + iStr] = scData.position - scData.halfAxis;
+        this->namedPoints["e" + iStr] = scData.position + scData.halfAxis;
     }
-
-    this->registerNamedPoints(customNamedPoints);
 }
 
-bool PolyspherocylinderTraits::PolyspherocylinderGeometry::spherocylindersOverlap() const {
+Vector<3> PolyspherocylinderShape::getPrimaryAxis() const /* override */ {
+    if (!this->primaryAxis.has_value())
+        throw std::runtime_error("PolyspherocylinderGeometry::getPrimaryAxis: primary axis not defined");
+    return this->primaryAxis.value();
+}
+
+Vector<3> PolyspherocylinderShape::getSecondaryAxis() const /* override */ {
+    if (!this->primaryAxis.has_value())
+        throw std::runtime_error("PolyspherocylinderGeometry::getSecondaryAxis: secondary axis not defined");
+    return this->secondaryAxis.value();
+}
+
+Vector<3> PolyspherocylinderShape::getGeometricOrigin() const /* override */ {
+    return this->geometricOrigin;
+}
+
+bool PolyspherocylinderShape::spherocylindersOverlap() const {
     for (std::size_t i{}; i < this->spherocylinderData.size(); i++) {
         for (std::size_t j = i + 1; j < this->spherocylinderData.size(); j++) {
             const auto &data1 = spherocylinderData[i];
@@ -75,35 +138,37 @@ bool PolyspherocylinderTraits::PolyspherocylinderGeometry::spherocylindersOverla
     return false;
 }
 
-PolyspherocylinderTraits::SpherocylinderData::SpherocylinderData(const Vector<3> &position, const Vector<3> &halfAxis,
-                                                                 double radius)
-        : position{position}, halfAxis{halfAxis}, halfLength{halfAxis.norm()}, radius{radius},
-          circumsphereRadius{radius + halfLength}
+void PolyspherocylinderShape::addCustomNamedPoints(std::map<std::string, Vector<3>> customNamedPoints) {
+    customNamedPoints.merge(std::move(this->namedPoints));
+    this->namedPoints = std::move(customNamedPoints);
+}
+
+
+// PolysphereTraits::WolframPrinter ####################################################################################
+
+std::string PolyspherocylinderTraits::WolframPrinter::print(const Shape &shape) const {
+    std::ostringstream out;
+    out << std::fixed;
+    out << "{";
+    const auto &spherocylinderData = this->traits.speciesFor(shape).getSpherocylinderData();
+    for (std::size_t i{}; i < spherocylinderData.size() - 1; i++) {
+        const auto &data = spherocylinderData[i];
+        data.toWolfram(out, shape);
+        out << ",";
+    }
+    spherocylinderData.back().toWolfram(out, shape);
+    out << "}";
+    return out.str();
+}
+
+
+// PolyspherocylinderTraits ############################################################################################
+
+PolyspherocylinderTraits::PolyspherocylinderTraits(const PolyspherocylinderShape &defaultShape)
+    : PolyspherocylinderTraits()
 {
-    Expects(radius > 0);
-}
-
-void PolyspherocylinderTraits::SpherocylinderData::toWolfram(std::ostream &out, const Shape &shape) const {
-    Vector<3> shapeHalfAxis = this->halfAxisForShape(shape);
-    Vector<3> beg = shape.getPosition() + shape.getOrientation() * this->position + shapeHalfAxis;
-    Vector<3> end = shape.getPosition() + shape.getOrientation() * this->position - shapeHalfAxis;
-
-    out << "Tube[{" << beg << "," << end << "}," << this->radius << "]";
-}
-
-Vector<3> PolyspherocylinderTraits::SpherocylinderData::centreForShape(const Shape &shape) const {
-    return shape.getPosition() + shape.getOrientation() * this->position;
-}
-
-double PolyspherocylinderTraits::SpherocylinderData::getVolume() const {
-    double radius2 = this->radius * this->radius;
-    double radius3 = radius2 * this->radius;
-    double axisLength = 2 * this->halfLength;
-    return 4*M_PI/3*radius3 + M_PI*radius2*axisLength;
-}
-
-Vector<3> PolyspherocylinderTraits::SpherocylinderData::halfAxisForShape(const Shape &shape) const {
-    return shape.getOrientation() * this->halfAxis;
+    this->addSpecies("A", defaultShape);
+    this->setDefaultSpecies("A");
 }
 
 bool PolyspherocylinderTraits::overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1,
@@ -112,9 +177,8 @@ bool PolyspherocylinderTraits::overlapBetween(const Vector<3> &pos1, const Matri
                                               [[maybe_unused]] const std::byte *data2, std::size_t idx2,
                                               const BoundaryConditions &bc) const
 {
-    const auto &spherocylinderData = this->getSpherocylinderData();
-    const auto &scData1 = spherocylinderData[idx1];
-    const auto &scData2 = spherocylinderData[idx2];
+    const auto &scData1 = this->speciesFor(data1).getSpherocylinderData()[idx1];
+    const auto &scData2 = this->speciesFor(data1).getSpherocylinderData()[idx2];
 
     Vector<3> pos2bc = pos2 + bc.getTranslation(pos1, pos2);
     double distance2 = (pos2bc - pos1).norm2();
@@ -133,29 +197,11 @@ bool PolyspherocylinderTraits::overlapBetween(const Vector<3> &pos1, const Matri
            < insphereR2;
 }
 
-std::vector<Vector<3>> PolyspherocylinderTraits::getInteractionCentres([[maybe_unused]] const std::byte *data) const {
-    std::vector<Vector<3>> centres;
-    const auto &spherocylinderData = this->getSpherocylinderData();
-    centres.reserve(spherocylinderData.size());
-    for (const auto &scData : spherocylinderData)
-        centres.push_back(scData.position);
-    return centres;
-}
-
-double PolyspherocylinderTraits::getRangeRadius([[maybe_unused]] const std::byte *data) const {
-    auto comparator = [](const SpherocylinderData &sd1, const SpherocylinderData &sd2) {
-        return sd1.circumsphereRadius < sd2.circumsphereRadius;
-    };
-    const auto &spherocylinderData = this->getSpherocylinderData();
-    auto maxIt = std::max_element(spherocylinderData.begin(), spherocylinderData.end(), comparator);
-    return 2 * maxIt->circumsphereRadius;
-}
-
 bool PolyspherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matrix<3, 3> &orientation,
                                                [[maybe_unused]] const std::byte *data, std::size_t idx,
                                                const Vector<3> &wallOrigin, const Vector<3> &wallVector) const
 {
-    const auto &spherocylinderData = this->getSpherocylinderData()[idx];
+    const auto &spherocylinderData = this->speciesFor(data).getSpherocylinderData()[idx];
     Vector<3> halfAxis = orientation * spherocylinderData.halfAxis;
     double radius = spherocylinderData.radius;
 
@@ -170,6 +216,25 @@ bool PolyspherocylinderTraits::overlapWithWall(const Vector<3> &pos, const Matri
         return true;
 
     return false;
+}
+
+std::vector<Vector<3>> PolyspherocylinderTraits::getInteractionCentres(const std::byte *data) const {
+    std::vector<Vector<3>> centres;
+    const auto &spherocylinderData = this->speciesFor(data).getSpherocylinderData();
+    centres.reserve(spherocylinderData.size());
+    for (const auto &scData : spherocylinderData)
+        centres.push_back(scData.position);
+    return centres;
+}
+
+double PolyspherocylinderTraits::getRangeRadius(const std::byte *data) const {
+    using SpherocylinderData = PolyspherocylinderShape::SpherocylinderData;
+    auto comparator = [](const SpherocylinderData &sd1, const SpherocylinderData &sd2) {
+        return sd1.circumsphereRadius < sd2.circumsphereRadius;
+    };
+    const auto &spherocylinderData = this->speciesFor(data).getSpherocylinderData();
+    auto maxIt = std::max_element(spherocylinderData.begin(), spherocylinderData.end(), comparator);
+    return 2 * maxIt->circumsphereRadius;
 }
 
 std::shared_ptr<const ShapePrinter>
@@ -190,52 +255,17 @@ PolyspherocylinderTraits::getPrinter(const std::string &format,
         throw NoSuchShapePrinterException("PolyspherocylinderTraits: unknown printer format: " + format);
 }
 
-PolyspherocylinderTraits::PolyspherocylinderTraits(PolyspherocylinderTraits::PolyspherocylinderGeometry geometry)
-        : geometry{std::move(geometry)}, wolframPrinter{std::make_shared<WolframPrinter>(*this)}
-{
-
-}
-
 std::shared_ptr<ShapePrinter> PolyspherocylinderTraits::createObjPrinter(std::size_t subdivisions) const {
-    const auto &spherocylinderData = this->getSpherocylinderData();
+    PolydisperseXCShapePrinter::GeometryComplexProvider provider = [this](const ShapeData &data) {
+        const auto &spherocylinderData = this->speciesFor(data).getSpherocylinderData();
 
-    std::vector<std::shared_ptr<AbstractXCGeometry>> xcSpherocylinders;
-    std::vector<const AbstractXCGeometry *> geometries;
-    xcSpherocylinders.reserve(spherocylinderData.size());
-    geometries.reserve(spherocylinderData.size());
-    for (const auto &scData : spherocylinderData) {
-        xcSpherocylinders.push_back(PolyspherocylinderTraits::buildXCSpherocylinder(scData));
-        geometries.push_back(xcSpherocylinders.back().get());
-    }
+        PolydisperseXCShapePrinter::GeometryComplex xcSpheres;
+        xcSpheres.reserve(spherocylinderData.size());
+        for (const auto &spherocylinderDataEntry : spherocylinderData)
+            xcSpheres.emplace_back(spherocylinderDataEntry.createXCGeometry(), spherocylinderDataEntry.position);
 
-    auto interactionCentres = this->getInteractionCentres(nullptr);
+        return xcSpheres;
+    };
 
-    return std::make_shared<XCObjShapePrinter>(geometries, interactionCentres, subdivisions);
-}
-
-std::shared_ptr<AbstractXCGeometry> PolyspherocylinderTraits::buildXCSpherocylinder(const SpherocylinderData &scData) {
-    XCBodyBuilder builder;
-    builder.sphere(scData.radius);
-    Vector<3> pos1 = -scData.halfAxis;
-    builder.move(pos1[0], pos1[1], pos1[2]);
-    builder.sphere(scData.radius);
-    Vector<3> pos2 = scData.halfAxis;
-    builder.move(pos2[0], pos2[1], pos2[2]);
-    builder.wrap();
-    return builder.releaseCollideGeometry();
-}
-
-std::string PolyspherocylinderTraits::WolframPrinter::print(const Shape &shape) const {
-    std::ostringstream out;
-    out << std::fixed;
-    out << "{";
-    const auto &spherocylinderData = this->traits.getSpherocylinderData();
-    for (std::size_t i{}; i < spherocylinderData.size() - 1; i++) {
-        const auto &data = spherocylinderData[i];
-        data.toWolfram(out, shape);
-        out << ",";
-    }
-    spherocylinderData.back().toWolfram(out, shape);
-    out << "}";
-    return out.str();
+    return std::make_shared<PolydisperseXCObjShapePrinter>(std::move(provider), subdivisions);
 }

@@ -67,7 +67,7 @@
 
 
 namespace {
-    using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
+    using SpherocylinderData = PolyspherocylinderShape::SpherocylinderData;
 
 
     template <typename ConcreteTraits, typename... Args>
@@ -251,13 +251,10 @@ namespace {
             parse_spherocylinders(fieldsMap.at("spherocylinders"), spherocylinderData);
         ValidateMsg(!spherocylinderData.empty(), GENERIC_POLYSPHEROCYLINDER_USAGE);
 
-        std::vector<NamedPoint> properNamedPoints;
-        for (const auto &[pointName, point] : namedPoints)
-            properNamedPoints.emplace_back(pointName, point);
-        PolyspherocylinderTraits::PolyspherocylinderGeometry geometry(
-            std::move(spherocylinderData), primaryAxis, secondaryAxis, geometricOrigin, volume, properNamedPoints
+        PolyspherocylinderShape geometry(
+            std::move(spherocylinderData), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
         );
-        return std::make_unique<PolyspherocylinderTraits>(std::move(geometry));
+        return std::make_shared<PolyspherocylinderTraits>(geometry);
     }
 
     std::shared_ptr<ShapeTraits> parse_polysphere_wedge(const std::string &shapeName,

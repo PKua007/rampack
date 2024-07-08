@@ -37,9 +37,12 @@ TEST_CASE("PolyspherocylinderBananaTraits: points") {
     SECTION("below half-angle") {
         SECTION("without subdivisions") {
             PolyspherocylinderBananaTraits traits(2, 2*M_PI/3, 2, 1);
+            ShapeData defaultData = traits.shapeDataForDefaultSpecies();
+            Shape defaultDataShape;
+            defaultDataShape.setData(defaultData);
 
             SECTION("spehre data") {
-                const auto &scData = traits.getSpherocylinderData();
+                const auto &scData = traits.getDefaultSpecies().getSpherocylinderData();
                 REQUIRE(scData.size() == 2);
                 CHECK_THAT(scData[0].position, IsApproxEqual({-0.5, 0, -0.5*std::sqrt(3)}, 1e-12));
                 CHECK_THAT(scData[0].halfAxis, IsApproxEqual({-0.5, 0, +0.5*std::sqrt(3)}, 1e-12));
@@ -51,23 +54,25 @@ TEST_CASE("PolyspherocylinderBananaTraits: points") {
 
             SECTION("interaction") {
                 const auto &interaction = traits.getInteraction();
-                CHECK(interaction.getRangeRadius(nullptr) == Approx(4));
-                CHECK(interaction.getTotalRangeRadius(nullptr) == Approx(6));
+                CHECK(interaction.getRangeRadius(defaultData.raw()) == Approx(4));
+                CHECK(interaction.getTotalRangeRadius(defaultData.raw()) == Approx(6));
             }
 
             SECTION("geometry") {
                 const auto &geom = traits.getGeometry();
-                CHECK_THAT(geom.getPrimaryAxis({}), IsApproxEqual({0, 0, 1}, 1e-12));
-                CHECK_THAT(geom.getSecondaryAxis({}), IsApproxEqual({-1, 0, 0}, 1e-12));
-                CHECK_THAT(geom.getNamedPoint("beg").forStatic(), IsApproxEqual({0, 0, -std::sqrt(3)}, 1e-12));
-                CHECK_THAT(geom.getNamedPoint("end").forStatic(), IsApproxEqual({0, 0, +std::sqrt(3)}, 1e-12));
+                CHECK_THAT(geom.getPrimaryAxis(defaultDataShape), IsApproxEqual({0, 0, 1}, 1e-12));
+                CHECK_THAT(geom.getSecondaryAxis(defaultDataShape), IsApproxEqual({-1, 0, 0}, 1e-12));
+                CHECK_THAT(geom.getNamedPoint("beg").forShapeData(defaultData),
+                           IsApproxEqual({0, 0, -std::sqrt(3)}, 1e-12));
+                CHECK_THAT(geom.getNamedPoint("end").forShapeData(defaultData),
+                           IsApproxEqual({0, 0, +std::sqrt(3)}, 1e-12));
             }
         }
 
         SECTION("with subdivisions") {
             PolyspherocylinderBananaTraits traits(2, 2*M_PI/3, 2, 1, 2);
 
-            const auto &scData = traits.getSpherocylinderData();
+            const auto &scData = traits.getDefaultSpecies().getSpherocylinderData();
             REQUIRE(scData.size() == 4);
             CHECK_THAT(scData[0].position, IsApproxEqual({-0.25, 0, -0.75*std::sqrt(3)}, 1e-12));
             CHECK_THAT(scData[0].halfAxis, IsApproxEqual({-0.25, 0, +0.25*std::sqrt(3)}, 1e-12));
@@ -85,7 +90,7 @@ TEST_CASE("PolyspherocylinderBananaTraits: points") {
     SECTION("above half-angle") {
         PolyspherocylinderBananaTraits traits(2, 4*M_PI/3, 2, 1);
 
-        const auto &scData = traits.getSpherocylinderData();
+        const auto &scData = traits.getDefaultSpecies().getSpherocylinderData();
         REQUIRE(scData.size() == 2);
         CHECK_THAT(scData[0].position, IsApproxEqual({-0.5, 0, -0.5*std::sqrt(3)}, 1e-12));
         CHECK_THAT(scData[0].halfAxis, IsApproxEqual({-1.5, 0, +0.5*std::sqrt(3)}, 1e-12));
@@ -98,13 +103,17 @@ TEST_CASE("PolyspherocylinderBananaTraits: points") {
 
 
 TEST_CASE("PolyspherocylinderBananaTraits: volume") {
+    Shape shape;
+
     SECTION("2 acute segments") {
         PolyspherocylinderBananaTraits traits(3, 5*M_PI/3, 2, 1);
-        CHECK(traits.getGeometry().getVolume({}) == Approx(37.3725974707442));    // Mathematica value
+        shape.setData(traits.shapeDataForDefaultSpecies());
+        CHECK(traits.getGeometry().getVolume(shape) == Approx(37.3725974707442));    // Mathematica value
     }
 
     SECTION("3 obtuse segments") {
         PolyspherocylinderBananaTraits traits(2, M_PI/3, 3, 1);
-        CHECK(traits.getGeometry().getVolume({}) == Approx(10.73038812797451));    // Mathematica value
+        shape.setData(traits.shapeDataForDefaultSpecies());
+        CHECK(traits.getGeometry().getVolume(shape) == Approx(10.73038812797451));    // Mathematica value
     }
 }

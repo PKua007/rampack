@@ -58,19 +58,21 @@ double PolyspherocylinderBananaTraits::calculateVolume(double arcRadius, double 
     return n*V1 - (2*n - 2)*V2 + ((n-1)*alpha/2/M_PI + 1)*V3;
 }
 
-PolyspherocylinderBananaTraits::PolyspherocylinderGeometry
-PolyspherocylinderBananaTraits::generateGeometry(double arcRadius, double arcAngle, std::size_t segmentsNum,
-                                                 double radius, std::size_t subdivisions)
+PolyspherocylinderShape PolyspherocylinderBananaTraits::generateShape(double arcRadius, double arcAngle,
+                                                                      std::size_t segmentsNum, double radius,
+                                                                      std::size_t subdivisions)
 {
     PolyspherocylinderBananaTraits::basicValidation(arcRadius, arcAngle, segmentsNum, radius);
     if (segmentsNum > 2)
         Expects(PolyspherocylinderBananaTraits::isArcOriginOutside(arcRadius, arcAngle, segmentsNum, radius));
     Expects(PolyspherocylinderBananaTraits::isArcOpen(arcRadius, arcAngle, segmentsNum, radius));
-    Expects(subdivisions > 0);
+
+    if (subdivisions == 0)
+        subdivisions = 1;
 
     double angleStep = arcAngle/static_cast<double>(segmentsNum);
     double startAngle = -angleStep * static_cast<double>(segmentsNum - 1) / 2;
-    std::vector<SpherocylinderData> scData;
+    std::vector<PolyspherocylinderShape::SpherocylinderData> scData;
     scData.reserve(segmentsNum);
     double angle = startAngle;
     for (std::size_t i{}; i < segmentsNum; i++) {
@@ -90,7 +92,7 @@ PolyspherocylinderBananaTraits::generateGeometry(double arcRadius, double arcAng
         const auto &scFront = scData.front();
         Vector<3> beg = scFront.position - scFront.halfAxis;
         Vector<3> translation = {-beg[0], 0, 0};
-        std::vector<SpherocylinderData> newScData;
+        std::vector<PolyspherocylinderShape::SpherocylinderData> newScData;
         newScData.reserve(scData.size());
         for (auto &data : scData)
             newScData.emplace_back(data.position + translation, data.halfAxis, data.radius);
@@ -98,8 +100,8 @@ PolyspherocylinderBananaTraits::generateGeometry(double arcRadius, double arcAng
     }
 
     double volume = PolyspherocylinderBananaTraits::calculateVolume(arcRadius, arcAngle, segmentsNum, radius);
-    PolyspherocylinderGeometry geometry(scData, {0, 0, 1}, {-1, 0, 0}, {0, 0, 0}, volume);
-    geometry.addCustomNamedPoints({{"beg", scData.front().position - scData.front().halfAxis},
-                                   {"end", scData.back().position + scData.back().halfAxis}});
-    return geometry;
+    PolyspherocylinderShape shape(scData, {0, 0, 1}, {-1, 0, 0}, {0, 0, 0}, volume);
+    shape.addCustomNamedPoints({{"beg", scData.front().position - scData.front().halfAxis},
+                                {"end", scData.back().position + scData.back().halfAxis}});
+    return shape;
 }

@@ -12,12 +12,17 @@
 #include "core/ShapeTraits.h"
 #include "geometry/xenocollide/AbstractXCGeometry.h"
 #include "OptionalAxis.h"
+#include "GenericShapeRegistry.h"
 
 
 /**
- * @brief A class analogous to PolysphereTraits, but for hard spherocylinders.
+ * @brief A helper class defining a whole particle.
+ * @details The class, apart from standard named points (see ShapeGeometry::getNamedPoint()) and
+ * @a customNamedPoints from the constructor, defines points "ox", "bx" and "ex" representing, respectively,
+ * origin, beginning cap center and end cap center of constituent spherocylinders, where "x" is
+ * spherocylinder's index starting from 0.
  */
-class PolyspherocylinderTraits : public ShapeTraits, public Interaction, public ShapeDataManager {
+class PolyspherocylinderShape /* : public GenericShapeRegistry::ConcreteSpecies */ {
 public:
     /**
      * @brief A single building spherocylinder data.
@@ -40,6 +45,7 @@ public:
         [[nodiscard]] Vector<3> centreForShape(const Shape &shape) const;
         void toWolfram(std::ostream &out, const Shape &shape) const;
         [[nodiscard]] double getVolume() const;
+        [[nodiscard]] std::shared_ptr<AbstractXCGeometry> createXCGeometry() const;
 
         /**
          * @brief Returns half-axis for a shape with specific orientation (the orientation matrix is applied to
@@ -58,98 +64,87 @@ public:
         }
     };
 
+private:
+    std::vector<SpherocylinderData> spherocylinderData;
+    std::optional<Vector<3>> primaryAxis;
+    std::optional<Vector<3>> secondaryAxis;
+    Vector<3> geometricOrigin;
+    std::map<std::string, Vector<3>> namedPoints;
+    double volume{};
+
+    [[nodiscard]] double calculateVolume() const;
+
+public:
     /**
-     * @brief A helper class defining a whole particle.
-     * @details The class, apart from standard named points (see ShapeGeometry::getNamedPoint()) and
-     * @a customNamedPoints from the constructor, defines points "ox", "bx" and "ex" representing, respectively,
-     * origin, beginning cap center and end cap center of constituent spherocylinders, where "x" is
-     * spherocylinder's index starting from 0.
+     * @brief Constructs the object.
+     * @param spherocylinderData set of spherocylinders
+     * @param primaryAxis the primary axis of the molecule
+     * @param secondaryAxis the secondary axis of the polymer (should be orthogonal to the primary one)
+     * @param geometricOrigin geometric origin of the molecule which can be different that the mass centre
+     * @param volume volume of the shape
+     * @param customNamedPoints custom named points in addition to default ones (see
+     * PolyspherocylinderGeometry::getNamedPoint)
      */
-    class PolyspherocylinderGeometry : public ShapeGeometry {
-    private:
-        std::vector<SpherocylinderData> spherocylinderData;
-        std::optional<Vector<3>> primaryAxis;
-        std::optional<Vector<3>> secondaryAxis;
-        Vector<3> geometricOrigin;
-        double volume{};
+    PolyspherocylinderShape(std::vector<SpherocylinderData> spherocylinderData, OptionalAxis primaryAxis,
+                            OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin = {0, 0, 0},
+                            std::optional<double> volume = 0,
+                            const std::map<std::string, Vector<3>> &customNamedPoints = {});
 
-        [[nodiscard]] double calculateVolume() const;
+    [[nodiscard]] double getVolume() const /* override */ { return this->volume; }
+    [[nodiscard]] Vector<3> getPrimaryAxis() const /* override */;
+    [[nodiscard]] Vector<3> getSecondaryAxis() const /* override */;
+    [[nodiscard]] Vector<3> getGeometricOrigin() const /* override */;
+    [[nodiscard]] const std::map<std::string, Vector<3>> &getNamedPoints() const  /* override */ {
+        return this->namedPoints;
+    }
 
-    public:
-        /**
-         * @brief Constructs the object.
-         * @param spherocylinderData set of spherocylinders
-         * @param primaryAxis the primary axis of the molecule
-         * @param secondaryAxis the secondary axis of the polymer (should be orthogonal to the primary one)
-         * @param geometricOrigin geometric origin of the molecule which can be different that the mass centre
-         * @param volume volume of the shape
-         * @param customNamedPoints custom named points in addition to default ones (see
-         * PolyspherocylinderGeometry::getNamedPoint)
-         */
-        PolyspherocylinderGeometry(std::vector<SpherocylinderData> spherocylinderData, OptionalAxis primaryAxis,
-                                   OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin = {0, 0, 0},
-                                   std::optional<double> volume = 0,
-                                   const std::vector<NamedPoint> &customNamedPoints = {});
+    [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const {
+        return this->spherocylinderData;
+    }
 
-        [[nodiscard]] double getVolume([[maybe_unused]] const Shape &shape) const override { return this->volume; }
+    [[nodiscard]] bool spherocylindersOverlap() const;
+    void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
+    void addCustomNamedPoints(std::map<std::string, Vector<3>> customNamedPoints);
+};
 
-        [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override {
-            if (!this->primaryAxis.has_value())
-                throw std::runtime_error("PolyspherocylinderGeometry::getPrimaryAxis: primary axis not defined");
-            return shape.getOrientation() * this->primaryAxis.value();
-        }
-
-        [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const override {
-            if (!this->primaryAxis.has_value())
-                throw std::runtime_error("PolyspherocylinderGeometry::getSecondaryAxis: secondary axis not defined");
-            return shape.getOrientation() * this->secondaryAxis.value();
-        }
-
-        [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const override {
-            return shape.getOrientation() * this->geometricOrigin;
-        }
-
-        [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const {
-            return this->spherocylinderData;
-        }
-
-        [[nodiscard]] bool spherocylindersOverlap() const;
-
-        void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
-
-        void addCustomNamedPoints(const std::vector<NamedPoint> &namedPoints) {
-            this->registerNamedPoints(namedPoints);
-        }
-    };
-
+/**
+ * @brief A class analogous to PolysphereTraits, but for hard spherocylinders.
+ */
+class PolyspherocylinderTraits
+        : public ShapeTraits, public GenericShapeRegistry<PolyspherocylinderShape>, public Interaction
+{
 private:
     class WolframPrinter : public ShapePrinter {
     private:
         const PolyspherocylinderTraits &traits;
 
     public:
-        explicit WolframPrinter( const PolyspherocylinderTraits &traits) : traits{traits} { }
+        explicit WolframPrinter(const PolyspherocylinderTraits &traits) : traits{traits} { }
 
         [[nodiscard]] std::string print(const Shape &shape) const override;
     };
 
-    static std::shared_ptr<AbstractXCGeometry> buildXCSpherocylinder(const SpherocylinderData &scData);
-
     [[nodiscard]] std::shared_ptr<ShapePrinter> createObjPrinter(std::size_t subdivisions) const;
 
-    PolyspherocylinderGeometry geometry;
     std::shared_ptr<WolframPrinter> wolframPrinter;
+
+    friend WolframPrinter;
 
 public:
     /** @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::XCPrinter
      * @a subdivision parameter) */
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
 
+    PolyspherocylinderTraits() : wolframPrinter{std::make_shared<WolframPrinter>(*this)} { }
+
     /**
      * @brief Creates the molecule from a given set of spherocylinders.
      * @param geometry PolyspherocylinderGeometry describing the shape
      */
-    explicit PolyspherocylinderTraits(PolyspherocylinderGeometry geometry);
+    explicit PolyspherocylinderTraits(const PolyspherocylinderShape &defaultShape);
+
+    PolyspherocylinderTraits(const PolyspherocylinderTraits &) = delete;
+    PolyspherocylinderTraits &operator=(const PolyspherocylinderTraits &) = delete;
 
     [[nodiscard]] bool hasHardPart() const override { return true; }
     [[nodiscard]] bool hasSoftPart() const override { return false; }
@@ -167,8 +162,8 @@ public:
     [[nodiscard]] double getRangeRadius([[maybe_unused]] const std::byte *data) const override;
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this; }
-    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->geometry; }
     [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this; }
+    [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
 
     /**
      * @brief Returns ShapePrinter for a given @a format.
@@ -180,10 +175,6 @@ public:
      */
     [[nodiscard]] std::shared_ptr<const ShapePrinter>
     getPrinter(const std::string &format, const std::map<std::string, std::string> &params) const override;
-
-    [[nodiscard]] const std::vector<SpherocylinderData> &getSpherocylinderData() const {
-        return this->geometry.getSpherocylinderData();
-    }
 };
 
 
