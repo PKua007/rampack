@@ -42,10 +42,11 @@ public:
 
         SpherocylinderData(const Vector<3> &position, const Vector<3> &halfAxis, double radius);
 
-        [[nodiscard]] Vector<3> centreForShape(const Shape &shape) const;
         void toWolfram(std::ostream &out, const Shape &shape) const;
         [[nodiscard]] double getVolume() const;
         [[nodiscard]] std::shared_ptr<AbstractXCGeometry> createXCGeometry() const;
+
+        [[nodiscard]] Vector<3> centreForShape(const Shape &shape) const;
 
         /**
          * @brief Returns half-axis for a shape with specific orientation (the orientation matrix is applied to
@@ -94,7 +95,7 @@ public:
     [[nodiscard]] Vector<3> getPrimaryAxis() const /* override */;
     [[nodiscard]] Vector<3> getSecondaryAxis() const /* override */;
     [[nodiscard]] Vector<3> getGeometricOrigin() const /* override */;
-    [[nodiscard]] const std::map<std::string, Vector<3>> &getNamedPoints() const  /* override */ {
+    [[nodiscard]] const std::map<std::string, Vector<3>> &getNamedPoints() const /* override */ {
         return this->namedPoints;
     }
 

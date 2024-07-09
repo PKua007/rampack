@@ -9,6 +9,11 @@
 #include "core/shapes/PolyspherocylinderBananaTraits.h"
 
 
+namespace {
+    const ShapeData defaultData{PolyspherocylinderTraits::Data{0}};
+    const Shape defaultShape({}, Matrix<3, 3>::identity(), defaultData);
+}
+
 TEST_CASE("PolyspherocylinderBananaTraits: validation") {
     SECTION("origin outside") {
         // 2 spherocylinders on equilateral triangle sides; one case barely misses triangle's origin, the second one
@@ -37,9 +42,6 @@ TEST_CASE("PolyspherocylinderBananaTraits: points") {
     SECTION("below half-angle") {
         SECTION("without subdivisions") {
             PolyspherocylinderBananaTraits traits(2, 2*M_PI/3, 2, 1);
-            ShapeData defaultData = traits.shapeDataForDefaultSpecies();
-            Shape defaultDataShape;
-            defaultDataShape.setData(defaultData);
 
             SECTION("spehre data") {
                 const auto &scData = traits.getDefaultSpecies().getSpherocylinderData();
@@ -60,8 +62,8 @@ TEST_CASE("PolyspherocylinderBananaTraits: points") {
 
             SECTION("geometry") {
                 const auto &geom = traits.getGeometry();
-                CHECK_THAT(geom.getPrimaryAxis(defaultDataShape), IsApproxEqual({0, 0, 1}, 1e-12));
-                CHECK_THAT(geom.getSecondaryAxis(defaultDataShape), IsApproxEqual({-1, 0, 0}, 1e-12));
+                CHECK_THAT(geom.getPrimaryAxis(defaultShape), IsApproxEqual({0, 0, 1}, 1e-12));
+                CHECK_THAT(geom.getSecondaryAxis(defaultShape), IsApproxEqual({-1, 0, 0}, 1e-12));
                 CHECK_THAT(geom.getNamedPoint("beg").forShapeData(defaultData),
                            IsApproxEqual({0, 0, -std::sqrt(3)}, 1e-12));
                 CHECK_THAT(geom.getNamedPoint("end").forShapeData(defaultData),
@@ -103,17 +105,13 @@ TEST_CASE("PolyspherocylinderBananaTraits: points") {
 
 
 TEST_CASE("PolyspherocylinderBananaTraits: volume") {
-    Shape shape;
-
     SECTION("2 acute segments") {
         PolyspherocylinderBananaTraits traits(3, 5*M_PI/3, 2, 1);
-        shape.setData(traits.shapeDataForDefaultSpecies());
-        CHECK(traits.getGeometry().getVolume(shape) == Approx(37.3725974707442));    // Mathematica value
+        CHECK(traits.getGeometry().getVolume(defaultShape) == Approx(37.3725974707442));    // Mathematica value
     }
 
     SECTION("3 obtuse segments") {
         PolyspherocylinderBananaTraits traits(2, M_PI/3, 3, 1);
-        shape.setData(traits.shapeDataForDefaultSpecies());
-        CHECK(traits.getGeometry().getVolume(shape) == Approx(10.73038812797451));    // Mathematica value
+        CHECK(traits.getGeometry().getVolume(defaultShape) == Approx(10.73038812797451));    // Mathematica value
     }
 }

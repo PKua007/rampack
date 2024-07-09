@@ -25,6 +25,8 @@ public:
     static bool isArcOriginOutside(double arcRadius, double arcAngle, std::size_t segmentsNum, double radius);
     static bool isArcOpen(double arcRadius, double arcAngle, std::size_t segmentsNum, double radius);
 
+    PolyspherocylinderBananaTraits() = default;
+
     /**
      * @brief Constructor with analogous parameters as for PolysphereBananaTraits, but instead the arc is divided into
      * @a segmentsNum segments, on which the spherocylinders radius are built.
