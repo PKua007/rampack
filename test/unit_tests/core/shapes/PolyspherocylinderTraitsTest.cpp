@@ -14,29 +14,31 @@
 using SpherocylinderData = PolyspherocylinderShape::SpherocylinderData;
 
 
-TEST_CASE("PolyspherocylinderTraits") {
-    // It looks like this (one bigger and one smaller sticking from its top - radius 1 and radius 0.5)
-    //      -1  0  1  x
-    //  z    |  |  |
-    //         ###
-    //  3 -    #C#
-    //  2 -  ###O###
-    //  1 -  ###X###
-    //  0 -  ###O###
-    // -1 -  ###C###
-    // -2 -  #######
+TEST_CASE("PolyspherocylinderTraits: basics") {
+    // We have two species that look like this:
+    // CLUB     -1  0  1  x                 STICK   -1  0  1  x
+    //      z    |  |  |                          z  |  |  |
+    //             ___
+    //      3 -    #C#    <- r=0.5                     ___
+    //      2 -  ###O###                          1 -  ###
+    //      1 -  ###X###                          0 -  #O#  <- r=0.5
+    //      0 -  ###O###  <- r=1.0               -1 -  ###
+    //     -1 -  ###C###                               ^^^
+    //     -2 -  #######
     //
     // O - middles of spherocylinders
     // C - cap centres of spherocylinders (non-common)
     // X - common cap of both spherocylinders
 
     double volume = 1;  // Arbitrary value, it is not important here
-    PolyspherocylinderShape polyspherocylinder({SpherocylinderData{{0, 0, 0}, {0, 0, 1}, 1},
-                                                SpherocylinderData{{0, 0, 2}, {0, 0, 1}, 0.5}},
-                                               {0, 0, 1}, {1, 0, 0}, {0, 1, 0}, volume, {{"point1", {0, 1, 0}}});
-    PolyspherocylinderTraits traits(polyspherocylinder);
-
-    ShapeData defaultData = traits.shapeDataForDefaultSpecies();
+    PolyspherocylinderShape club({SpherocylinderData{{0, 0, 0}, {0, 0, 1}, 1},
+                                  SpherocylinderData{{0, 0, 2}, {0, 0, 1}, 0.5}},
+                                 {0, 0, 1}, {1, 0, 0}, {0, 1, 0}, volume, {{"point", {0, 0, 1.5}}});
+    PolyspherocylinderShape stick({SpherocylinderData{{0, 0, 0}, {0, 0, 1}, 0.5}},
+                                 {0, 0, 1}, {1, 0, 0}, {0, 1, 0}, volume);
+    PolyspherocylinderTraits traits;
+    ShapeData clubData = traits.addSpecies("club", club);
+    ShapeData stickData = traits.addSpecies("stick", stick);
 
     SECTION("hard interactions") {
         const Interaction &interaction = traits.getInteraction();
@@ -44,15 +46,20 @@ TEST_CASE("PolyspherocylinderTraits") {
         SECTION("meta info") {
             CHECK_FALSE(interaction.hasSoftPart());
             CHECK(interaction.hasHardPart());
-            CHECK(interaction.getRangeRadius(defaultData.raw()) == Approx(4));
-            std::vector<Vector<3>> expectedCentres = {{0, 0, 0},
-                                                      {0, 0, 2}};
-            CHECK_THAT(interaction.getInteractionCentres(defaultData.raw()), Catch::UnorderedEquals(expectedCentres));
+            CHECK(interaction.getRangeRadius(clubData.raw()) == Approx(4));
+            CHECK(interaction.getRangeRadius(stickData.raw()) == Approx(3));
+            CHECK(interaction.getInteractionCentres(clubData.raw()) == std::vector<Vector<3>>{{0, 0, 0}, {0, 0, 2}});
+            CHECK(interaction.getInteractionCentres(stickData.raw()) == std::vector<Vector<3>>{{0, 0, 0}});
         }
 
         SECTION("overlap") {
-            Shape shape1({0, 0, 0}, Matrix<3, 3>::rotation(0, M_PI / 2, 0), defaultData);
-            Shape shape2({4.5, 0, 0}, Matrix<3, 3>::identity(), defaultData);
+            //  ROTATED CLUB  STICK   ^z
+            //  ###########    ###    |        x
+            //  ####[0]######<>[4]    |-------->
+            //  ###########    ###                  <> is the point of contact (they are tangent)
+
+            Shape shape1({0, 0, 0}, Matrix<3, 3>::rotation(0, M_PI / 2, 0), clubData);
+            Shape shape2({4, 0, 0}, Matrix<3, 3>::identity(), stickData);
             FreeBoundaryConditions fbc;
             SECTION("true") {
                 shape1.translate({0.00001, 0, 0}, fbc);
@@ -68,17 +75,20 @@ TEST_CASE("PolyspherocylinderTraits") {
 
     SECTION("toWolfram") {
         auto printer = traits.getPrinter("wolfram", {});
-        Shape shape({-1, 0, 0}, Matrix<3, 3>::rotation(0, M_PI / 2, 0), defaultData);
+        Shape clubShape({-1, 0, 0}, Matrix<3, 3>::rotation(0, M_PI / 2, 0), clubData);
+        Shape stickShape({-1, 0, 0}, Matrix<3, 3>::rotation(0, M_PI / 2, 0), stickData);
 
-        CHECK(printer->print(shape)
+        CHECK(printer->print(clubShape)
               == "{Tube[{{0.000000, 0.000000, 0.000000},{-2.000000, 0.000000, -0.000000}},1.000000]"
                  ",Tube[{{2.000000, 0.000000, 0.000000},{0.000000, 0.000000, 0.000000}},0.500000]}");
+        CHECK(printer->print(stickShape)
+              == "{Tube[{{0.000000, 0.000000, 0.000000},{-2.000000, 0.000000, -0.000000}},0.500000]}");
     }
 
-    SECTION("geometry") {
-        Shape shape({1, 2, 3}, Matrix<3, 3>::rotation(0, M_PI/2, 0), defaultData);
+    SECTION("geometry for club") {
+        Shape shape({1, 2, 3}, Matrix<3, 3>::rotation(0, M_PI/2, 0), clubData);
 
-        CHECK(polyspherocylinder.spherocylindersOverlap());
+        CHECK(club.spherocylindersOverlap());
 
         const auto &geometry = traits.getGeometry();
         CHECK_THAT(geometry.getPrimaryAxis(shape), IsApproxEqual({1, 0, 0}, 1e-8));
@@ -91,27 +101,37 @@ TEST_CASE("PolyspherocylinderTraits") {
         CHECK_THAT(geometry.getNamedPointForShape("b1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1, 0, 0}, 1e-8));
         CHECK_THAT(geometry.getNamedPointForShape("e1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{3, 0, 0}, 1e-8));
         CHECK_THAT(geometry.getNamedPointForShape("o", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-8));
+        CHECK_THAT(geometry.getNamedPointForShape("point", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1.5, 0, 0}, 1e-8));
+    }
+
+    SECTION("default shape") {
+        CHECK_THROWS_WITH(traits.getDefaultSpecies(), Catch::Contains("not defined"));
+
+        traits.setDefaultSpecies("club");
+
+        CHECK(traits.getDefaultSpecies() == club);
+        CHECK(traits.shapeDataForDefaultSpecies() == traits.shapeDataForSpecies("club"));
     }
 }
 
 TEST_CASE("PolyspherocylinderTraits: wall overlap") {
     // It is V-shaped molecule with the center at a common cap and rotated 45 degrees
-    PolyspherocylinderShape polyspherocylinder({SpherocylinderData{{0.5, 0.5, 0}, {0.5, 0.5, 0}, 0.5},
-                                                SpherocylinderData{{0.5, -0.5, 0}, {0.5, -0.5, 0}, 0.5}},
-                                               {0, 1, 0}, {1, 0, 0}, {0, 0, 0});
-    PolyspherocylinderTraits traits(polyspherocylinder);
-    ShapeData defaultData = traits.shapeDataForDefaultSpecies();
+    PolyspherocylinderShape club({SpherocylinderData{{0.5, 0.5, 0}, {0.5, 0.5, 0}, 0.5},
+                                  SpherocylinderData{{0.5, -0.5, 0}, {0.5, -0.5, 0}, 0.5}},
+                                 {0, 1, 0}, {1, 0, 0}, {0, 0, 0});
+    PolyspherocylinderTraits traits(club);
+    ShapeData clubData = traits.shapeDataForDefaultSpecies();
     const Interaction &interaction = traits.getInteraction();
 
     CHECK(interaction.hasWallPart());
 
     SECTION("overlapping") {
-        Shape shape({1.1, 1.1, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/4), defaultData);
+        Shape shape({1.1, 1.1, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/4), clubData);
         CHECK(interaction.overlapWithWallForShape(shape, {0, M_SQRT2 + 1.5, 0}, {0, -1, 0}));
     }
 
     SECTION("non-overlapping") {
-        Shape shape({0.9, 0.9, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/4), defaultData);
+        Shape shape({0.9, 0.9, 5}, Matrix<3, 3>::rotation({0, 0, 1}, M_PI/4), clubData);
         CHECK_FALSE(interaction.overlapWithWallForShape(shape, {0, M_SQRT2 + 1.5, 0}, {0, -1, 0}));
     }
 }

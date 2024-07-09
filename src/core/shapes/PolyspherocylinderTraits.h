@@ -105,6 +105,8 @@ public:
     [[nodiscard]] bool spherocylindersOverlap() const;
     void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
     void addCustomNamedPoints(std::map<std::string, Vector<3>> customNamedPoints);
+
+    friend bool operator==(const PolyspherocylinderShape &lhs, const PolyspherocylinderShape &rhs);
 };
 
 /**

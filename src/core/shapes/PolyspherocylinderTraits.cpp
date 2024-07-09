@@ -143,6 +143,14 @@ void PolyspherocylinderShape::addCustomNamedPoints(std::map<std::string, Vector<
     this->namedPoints = std::move(customNamedPoints);
 }
 
+bool operator==(const PolyspherocylinderShape &lhs, const PolyspherocylinderShape &rhs) {
+    return std::tie(
+        lhs.spherocylinderData, lhs.primaryAxis, lhs.secondaryAxis, lhs.geometricOrigin, lhs.namedPoints, lhs.volume
+    ) == std::tie(
+        rhs.spherocylinderData, rhs.primaryAxis, rhs.secondaryAxis, rhs.geometricOrigin, rhs.namedPoints, rhs.volume
+    );
+}
+
 
 // PolysphereTraits::WolframPrinter ####################################################################################
 
@@ -178,7 +186,7 @@ bool PolyspherocylinderTraits::overlapBetween(const Vector<3> &pos1, const Matri
                                               const BoundaryConditions &bc) const
 {
     const auto &scData1 = this->speciesFor(data1).getSpherocylinderData()[idx1];
-    const auto &scData2 = this->speciesFor(data1).getSpherocylinderData()[idx2];
+    const auto &scData2 = this->speciesFor(data2).getSpherocylinderData()[idx2];
 
     Vector<3> pos2bc = pos2 + bc.getTranslation(pos1, pos2);
     double distance2 = (pos2bc - pos1).norm2();
