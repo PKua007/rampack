@@ -13,6 +13,10 @@ library (later, with Python bindings as well).
 
 ## [Unreleased]
 
+### Fixed
+
+* Removed legacy, undocumented secondary axis from the [class `kmer`](docs/shapes.md#class-kmer) shape
+
 ### Added
 
 * Added support for shape polydispersity.
