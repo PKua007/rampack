@@ -47,6 +47,7 @@ PolysphereShape PolysphereWedgeTraits::generateShape(std::size_t sphereNum, doub
     Expects(sphereNum >= 2);
     Expects(topSphereRadius > 0);
     Expects(bottomSphereRadius > 0);
+    Expects(spherePenetration >= 0);
     Expects(spherePenetration < 2*std::min(topSphereRadius, bottomSphereRadius));
 
     std::vector<SphereData> data;

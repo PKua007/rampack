@@ -52,7 +52,9 @@ PolysphereShape PolysphereLollipopTraits::generateShape(std::size_t sphereNum, d
     Expects(sphereNum >= 2);
     Expects(stickSphereRadius > 0);
     Expects(tipSphereRadius > 0);
+    Expects(stickSpherePenetration >= 0);
     Expects(stickSpherePenetration < 2 * stickSphereRadius);
+    Expects(tipSpherePenetration >= 0);
     Expects(tipSpherePenetration < 2 * std::min(stickSphereRadius, tipSphereRadius));
 
     std::vector<SphereData> data;

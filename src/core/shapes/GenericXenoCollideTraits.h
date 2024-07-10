@@ -105,7 +105,7 @@ public:
      * @brief Creates the class with one species @a shape named `A`, which is set as a default species
      * (setDefaultSpecies()).
      */
-    explicit GenericXenoCollideTraits(const GenericXenoCollideShape &shape);
+    explicit GenericXenoCollideTraits(const GenericXenoCollideShape &defaultShape);
 
     [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }

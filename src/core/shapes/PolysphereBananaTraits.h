@@ -49,14 +49,18 @@ namespace legacy {
 
 
 /**
- * @brief The banana-shaped hard polymer built by placing spheres on an arc. The sphere can be tangent or overlapping,
+ * @brief The banana-shaped hard polymer built by placing spheres on an arc. The spheres can be tangent or overlapping,
  * depending on the parameters.
- * @details The arc lies in the xz, symmetric w.r.t. x axis and it is bent towards negative x half-space. For
- * @a arcRadius smaller than \f$\pi\f$, the origin in the middle of the line joining endpoints, while for larger
- * @a arcRadius it coincides with arc's midpoint (it is defined in such a way to minimize circumsphere radius). The
- * primary (molecular) axis is z axis, while secondary axis is negative x axis. The class specifies custom named points
- * "beg" and "end" for first and last spheres, together with the ones inherited from PolysphereTraits. Mass centre "cm"
- * named point is defined only in the spheres don't overlap.
+ * @details <p> The arc lies in the XZ plane, symmetric w.r.t. the X axis and it is bent towards the negative X
+ * half-space. For @a arcRadius smaller than \f$\pi\f$, the origin lies in the middle of the line joining the endpoints,
+ * while for larger @a arcRadius it coincides with the arc's midpoint (it is defined in such a way to minimize the
+ * circumsphere radius). The primary (molecular) axis is the Z axis, while the secondary axis is the negative X axis.
+ * The class specifies custom named points "beg" and "end" for the endpoint spheres, respectively with a negative and
+ * a positive z coordinate, together with the ones inherited from PolysphereTraits. Named point "cm" denoting the mass
+ * center is defined only if the spheres do not overlap.
+ *
+ * <p> The class is a thin decorator of PolysphereTraits, which means that arbitrary PolysphereShape species can be
+ * added using addSpecies() method.
  * @sa legacy::PolysphereBananaTraits
  */
 class PolysphereBananaTraits : public PolysphereTraits {
@@ -65,41 +69,57 @@ private:
     static void addMassCentre(PolysphereShape &shape);
 
 public:
+    /**
+     * @brief Generates the PolysphereShape of a banana, compatible with addSpecies().
+     * @param arcRadius the radius of the arc. It must lie in the range 0 < @a arcRadius &le; @a sphereRadius
+     * @param arcAngle the arc angle. It must lie in the range 0 < @a arcAngle < 2&pi;
+     * @param sphereNum number of spheres to be equidistantly placed on the arc. First and last sphere centers are the
+     * arc endpoints. It must be &ge; 2
+     * @param sphereRadius the radius of each sphere
+     * @throws PreconditionException if the shape is malformed (see the constraint of the arguments)
+     */
     static PolysphereShape generateShape(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius);
 
+    /**
+     * @brief Creates the class with hard-core interactions and no initially registered species.
+     */
     PolysphereBananaTraits() = default;
 
     /**
-     * @brief Constructs the shape.
-     * @param arcRadius the radius of the arc
-     * @param arcAngle the arc angle
-     * @param sphereNum number of spheres to be equidistantly placed on the arc. First and last sphere centres are arc
-     * endpoints
-     * @param sphereRadius the radius of each sphere
+     * @brief Creates the class with hard-core interactions and one species named `A` based on the given arguments,
+     * which is set as a default species (setDefaultSpecies()). The arguments have the identical meaning as in
+     * generateShape().
      */
     PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius)
             : PolysphereTraits(generateShape(arcRadius, arcAngle, sphereNum, sphereRadius))
     { }
 
+    /**
+     * @brief Creates the class with soft interactions @a centralInteraction and no initially registered species.
+     */
     explicit PolysphereBananaTraits(const std::shared_ptr<CentralInteraction> &centralInteraction)
             : PolysphereTraits(centralInteraction)
     { }
 
     /**
-     * @brief Similar as PolysphereBananaTraits::PolysphereBananaTraits(double, double, std::size_t, double), but for
-     * soft central interactions given by @a centralInteraction.
+     * @brief Creates the class with soft interactions @a centralInteraction and one species named `A` based on the
+     * given arguments, which is set as a default species (setDefaultSpecies()). The arguments have the identical
+     * meaning as in generateShape().
      */
     PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
                            const std::shared_ptr<CentralInteraction> &centralInteraction)
             : PolysphereTraits(generateShape(arcRadius, arcAngle, sphereNum, sphereRadius), centralInteraction)
     { }
 
+    /**
+     * @brief Registers a new species named @a shapeName of a banana given by the rest of the arguments, whose meaning
+     * is the same as in generateShape().
+     */
     void addBananaShape(const std::string &shapeName, double arcRadius, double arcAngle, std::size_t sphereNum,
                         double sphereRadius)
     {
-        this->addSpecies(
-                shapeName, PolysphereBananaTraits::generateShape(arcRadius, arcAngle, sphereNum, sphereRadius)
-        );
+        this->addSpecies(shapeName,
+                         PolysphereBananaTraits::generateShape(arcRadius, arcAngle, sphereNum, sphereRadius));
     }
 };
 

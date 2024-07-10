@@ -10,43 +10,63 @@
 
 /**
  * @brief A class representing linear k-polymer.
- * @details The polymer lies on Z axis (which consequently is its primary axis). Secondary axis is X axis - formally
- * it is degenerate in XY plane, but was arbitrarily chosen to enable flip moves. Geometric centre coincides with
- * mass centre (endpoint spheres have opposite z coordinates). The class specifies custom named points "beg" and "end"
- * for first and last spheres, together with the ones inherited from PolysphereTraits.
+ * @details <p> The polymer lies on the Z axis (which consequently is its primary axis). Geometric center coincides with
+ * the mass center (the endpoint spheres have opposite z coordinates). Apart from the named points inherited from
+ * PolysphereTraits, the class specifies custom ones: "beg" and "end" for the spheres with centers lying on,
+ * respectively, negative and positive Z half-axes.
+ *
+ * <p> The class is a thin decorator of PolysphereTraits, which means that arbitrary PolysphereShape species can be
+ * added using addSpecies() method.
  */
 class KMerTraits : public PolysphereTraits {
 private:
-    static double caluclateVolume(std::size_t sphereNum, double sphereRadius, double distance);
+    static double calculateVolume(std::size_t sphereNum, double sphereRadius, double distance);
 
 public:
+    /**
+     * @brief Generates the PolysphereShape of a k-mer, compatible with addSpecies().
+     * @param sphereNum number of spheres in the k-mer. It must be &ge; 2
+     * @param sphereRadius radius of the spheres. It must be positive
+     * @param distance the distance between adjacent spheres' centers. It must be positive
+     * @throws PreconditionException for a malformed shape (see the constraints of the arguments)
+     */
     static PolysphereShape generateShape(std::size_t sphereNum, double sphereRadius, double distance);
 
+    /**
+     * @brief Creates the class with hard-core interactions and no initially registered species.
+     */
     KMerTraits() = default;
 
     /**
-     * @brief A hard polymer of identical spheres.
-     * @param sphereNum number of monomers
-     * @param sphereRadius radius of each sphere
-     * @param distance the distance between adjacent spheres' centres
+     * @brief Creates the class with hard-core interactions and one species named `A` based on the given arguments,
+     * which is set as a default species (setDefaultSpecies()). The arguments have the identical meaning as in
+     * generateShape().
      */
     KMerTraits(std::size_t sphereNum, double sphereRadius, double distance)
             : PolysphereTraits(generateShape(sphereNum, sphereRadius, distance))
     { }
 
+    /**
+     * @brief Creates the class with soft interactions @a centralInteraction and no initially registered species.
+     */
     explicit KMerTraits(const std::shared_ptr<CentralInteraction> &centralInteraction)
             : PolysphereTraits(centralInteraction)
     { }
 
     /**
-     * @brief Similar as KMerTraits::KMerTraits(std::size_t, double, double), but with soft central interaction given by
-     * @a centralInteraction.
+     * @brief Creates the class with soft interactions @a centralInteraction and one species named `A` based on the
+     * given arguments, which is set as a default species (setDefaultSpecies()). The arguments have the identical
+     * meaning as in generateShape().
      */
     KMerTraits(std::size_t sphereNum, double sphereRadius, double distance,
                const std::shared_ptr<CentralInteraction> &centralInteraction)
             : PolysphereTraits(generateShape(sphereNum, sphereRadius, distance), centralInteraction)
     { }
 
+    /**
+     * @brief Registers a new species named @a shapeName of a k-mer given by the rest of the arguments, whose meaning is
+     * the same as in generateShape().
+     */
     void addKMerShape(const std::string &shapeName, std::size_t sphereNum, double sphereRadius, double distance) {
         this->addSpecies(shapeName, KMerTraits::generateShape(sphereNum, sphereRadius, distance));
     }

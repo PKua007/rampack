@@ -181,10 +181,9 @@ PolyspherocylinderTraits::PolyspherocylinderTraits(const PolyspherocylinderShape
 }
 
 bool PolyspherocylinderTraits::overlapBetween(const Vector<3> &pos1, const Matrix<3, 3> &orientation1,
-                                              [[maybe_unused]] const std::byte *data1, std::size_t idx1,
-                                              const Vector<3> &pos2, const Matrix<3, 3> &orientation2,
-                                              [[maybe_unused]] const std::byte *data2, std::size_t idx2,
-                                              const BoundaryConditions &bc) const
+                                              const std::byte *data1, std::size_t idx1, const Vector<3> &pos2,
+                                              const Matrix<3, 3> &orientation2, const std::byte *data2,
+                                              std::size_t idx2, const BoundaryConditions &bc) const
 {
     const auto &spherocylinderData1 = this->speciesFor(data1).getSpherocylinderData()[idx1];
     const auto &spherocylinderData2 = this->speciesFor(data2).getSpherocylinderData()[idx2];

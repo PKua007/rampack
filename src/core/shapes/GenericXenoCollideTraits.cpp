@@ -73,8 +73,8 @@ void GenericXenoCollideTraits::imbueFakeInteractionCenter(GenericXenoCollideShap
     shape.interactionCentres.push_back({0, 0, 0});
 }
 
-GenericXenoCollideTraits::GenericXenoCollideTraits(const GenericXenoCollideShape &shape) {
-    this->addSpecies("A", shape);
+GenericXenoCollideTraits::GenericXenoCollideTraits(const GenericXenoCollideShape &defaultShape) {
+    this->addSpecies("A", defaultShape);
     this->setDefaultSpecies("A");
 }
 

@@ -19,7 +19,7 @@ PolysphereShape KMerTraits::generateShape(std::size_t sphereNum, double sphereRa
         data.emplace_back(SphereData({0, 0, sphereZ}, sphereRadius));
         sphereZ += distance;
     }
-    double volume = KMerTraits::caluclateVolume(sphereNum, sphereRadius, distance);
+    double volume = KMerTraits::calculateVolume(sphereNum, sphereRadius, distance);
 
     PolysphereShape shape(std::move(data), {0, 0, 1}, {1, 0, 0}, {0, 0, 0}, volume);
     shape.normalizeMassCentre();
@@ -31,7 +31,7 @@ PolysphereShape KMerTraits::generateShape(std::size_t sphereNum, double sphereRa
     return shape;
 }
 
-double KMerTraits::caluclateVolume(std::size_t sphereNum, double sphereRadius, double distance) {
+double KMerTraits::calculateVolume(std::size_t sphereNum, double sphereRadius, double distance) {
     double sphereVolume = 4./3*M_PI*sphereRadius*sphereRadius*sphereRadius;
     double baseVolume = static_cast<double>(sphereNum) * sphereVolume;
 

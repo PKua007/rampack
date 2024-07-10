@@ -16,18 +16,32 @@
 #include "GenericShapeRegistry.h"
 
 
-class PolysphereShape {
+/**
+ * @brief Class representing a single species of a polysphere for PolysphereTraits, conforming to GenericShapeRegistry
+ * @a ConcreteSpecies template parameter.
+ */
+class PolysphereShape /* : public GenericShapeRegistry::ConcreteSpecies */ {
 public:
     /**
      * @brief A helper class describing a single spherical bead.
      */
     struct SphereData {
+        /** @brief Position of sphere's center. */
         const Vector<3> position;
+        /** @brief Sphere's radius. */
         const double radius{};
 
         SphereData(const Vector<3> &position, double radius);
 
+        /**
+         * @brief Returns the sphere's center calculated for position and orientation of @a shape.
+         */
         [[nodiscard]] Vector<3> centreForShape(const Shape &shape) const;
+
+        /**
+         * @brief Returns Wolfram Mathematica representation of the sphere calculated for position and orientation of
+         * @a shape.
+         */
         void toWolfram(std::ostream &out, const Shape &shape) const;
 
         friend bool operator==(const SphereData &lhs, const SphereData &rhs) {
@@ -50,6 +64,17 @@ private:
     [[nodiscard]] double calculateVolume() const;
 
 public:
+    /**
+     * @brief Create the polysphere with given parameters.
+     * @param sphereData vector of SphereData defining the polysphere
+     * @param volume volume of the shape. If `std::nullopt` is passed, the volume will be calculated automatically, but
+     * only if the spheres in @a sphereData do not overlap. If they do overlap, the volume must be computed manually by
+     * the caller and passed here
+     * @param primaryAxis primary axis of the shape (may be left undefined)
+     * @param secondaryAxis secondary axis of the shape, orthogonal to the primary axis (may be left undefined)
+     * @param geometricOrigin geometric origin of the shape
+     * @param customNamedPoints optional map of name points, where the key is point's name and the value is its position
+     */
     explicit PolysphereShape(std::vector<SphereData> sphereData, OptionalAxis primaryAxis = std::nullopt,
                              OptionalAxis secondaryAxis = std::nullopt,
                              const Vector<3> &geometricOrigin = {0, 0, 0},
@@ -68,20 +93,24 @@ public:
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const;
 
     /**
-     * @brief Calculates mass centre and moves it to {0, 0, 0} (geometric origin and named points are moved
+     * @brief Calculates mass centre and moves it to {0, 0, 0} (geometric origin and named points are translated
      * accordingly).
      * @details Sphere overlaps are not accounted for.
      */
     void normalizeMassCentre();
 
     /**
-     * @brief Calculates and returns mass centre.
+     * @brief Calculates and returns the mass centre.
      * @details Sphere overlaps are not accounted for.
      */
     [[nodiscard]] Vector<3> calculateMassCentre() const;
 
     void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
     void addCustomNamedPoints(std::map<std::string, Vector<3>> customNamedPoints);
+
+    /**
+     * @brief Returns @a true is the constituent beads overlap, @a false otherwise.
+     */
     [[nodiscard]] bool spheresOverlap() const;
 
     friend bool operator==(const PolysphereShape &lhs, const PolysphereShape &rhs);
@@ -139,24 +168,31 @@ private:
 public:
     using SphereData = PolysphereShape::SphereData;
 
-    /** @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::XCPrinter
-     * @a subdivision parameter) */
+    /**
+     * @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::buildPolyhedron
+     * @a subdivisions parameter)
+     */
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
 
-
+    /**
+     * @brief Creates the class with hard-core interactions and no initially registered species.
+     */
     PolysphereTraits();
 
     /**
-     * @brief Construct the polymer from the specified @a sphereData.
-     * @param geometry PolysphereGeometry describing the molecule.
+     * @brief Creates the class with hard-core interactions and one species @a shape named `A`, which is set as a
+     * default species (setDefaultSpecies()).
      */
     explicit PolysphereTraits(const PolysphereShape &defaultShape);
 
+    /**
+     * @brief Creates the class with soft interactions @a centralInteraction and no initially registered species.
+     */
     explicit PolysphereTraits(const std::shared_ptr<CentralInteraction> &centralInteraction);
 
     /**
-     * @brief Similar as PolysphereTraits::PolysphereTraits(const std::vector<SphereData> &, const Vector<3> &, bool),
-     * but for soft central interaction given by @a centralInteraction.
+     * @brief Creates the class with soft interactions @a centralInteraction and one species @a shape named `A`, which
+     * is set as a default species (setDefaultSpecies()).
      */
     PolysphereTraits(const PolysphereShape &polysphereShape,
                      const std::shared_ptr<CentralInteraction> &centralInteraction);
