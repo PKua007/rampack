@@ -172,8 +172,8 @@ public:
     using SphereData = PolysphereShape::SphereData;
 
     /**
-     * @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::buildPolyhedron
-     * @a subdivisions parameter)
+     * @brief The default number of sphere subdivisions when printing the shape in the OBJ format (see
+     * XCPrinter::buildPolyhedron @a subdivisions parameter)
      */
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
 

@@ -12,9 +12,9 @@
 
 /**
  * @brief Hard spherocylinder spanned on Z axis.
- * @details Primary axis is naturally Z axis. Mass centre coincides with geometric origin. The class, apart from
- * standard named points (see ShapeGeometry::getNamedPoint()) defines points "beg" and "end" representing, respectively,
- * beginning cap center and end cap center of the spherocylinder.
+ * @details The primary axis is naturally the Z axis. Mass center coincides with geometric origin. The class, apart from
+ * standard named points (see ShapeGeometry::getNamedPoint()) defines points "beg" and "end" representing spherical cap
+ * centers lying, respectively, on the negative and the positive Z axis.
  */
 class SpherocylinderTraits : public ShapeTraits, public Interaction, public ShapeGeometry, public ShapeDataManager {
 private:
@@ -35,8 +35,14 @@ private:
     friend WolframPrinter;
 
 public:
+    /**
+     * @brief ShapeData -compatible structure with spherocylinder data.
+     */
     struct Data {
+        /** @brief Distance between the spherical caps' centers. It must be non-negative. */
         double length{};
+
+        /** @brief Radius of the spherical caps (half-width of the spherocylinder). It must be positive. */
         double radius{};
 
         [[nodiscard]] friend bool operator==(const Data &lhs, const Data &rhs) {
@@ -44,13 +50,20 @@ public:
         }
     };
 
-    /** @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::XCPrinter
-     * @a subdivision parameter) */
+    /**
+     * @brief The default number of sphere subdivisions when printing the shape in the OBJ format (see
+     * XCPrinter::buildPolyhedron @a subdivisions parameter)
+     */
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
 
     /**
-     * @brief Creates a spherocylinder spanned on x axis with @a length distance between cap centers and @a radius
-     * radius.
+     * @brief Creates a hard spherocylinder, supporting polydispersity.
+     * @param defaultLength if not `std::nullopt`, it defines the default value of Data::length used by
+     * ShapeDataManager::defaultSerialize and ShapeDataManager::defaultDeserialize
+     * @param defaultRadius if not `std::nullopt`, it defines the default value of Data::radius used by
+     * ShapeDataManager::defaultSerialize and ShapeDataManager::defaultDeserialize
+     * @throws PreconditionException if @a defaultLength is set and negative, or if @a defaultRadius is set and
+     * non-positive
      */
     explicit SpherocylinderTraits(std::optional<double> defaultLength = std::nullopt,
                                   std::optional<double> defaultRadius = std::nullopt);
@@ -93,13 +106,28 @@ public:
 
     [[nodiscard]] std::size_t getShapeDataSize() const override { return sizeof(Data); }
 
+    /**
+     * @brief Validates if the @a data, interpreted as Data, are correct, i.e. Data::length is non-negative and
+     * Data::radius is positive. If validation fails, ShapeDataFormatException is thrown.
+     */
     void validateShapeData(const ShapeData &data) const override;
 
     [[nodiscard]] ShapeData::Comparator getComparator() const override {
         return ShapeData::Comparator::forType<Data>();
     }
 
+    /**
+     * @brief Serializes the spherocylinder into a map with shape parameters named `length` and `radius`, corresponding
+     * to the ones of Data.
+     */
     [[nodiscard]] TextualShapeData serialize(const ShapeData &data) const override;
+
+    /**
+     * @brief Deserializes the spherocylinder from a map with shape parameters named `length` and `radius`,
+     * corresponding to the ones of Data.
+     * @throws ShapeDataSerializationException if the keys are incorrect or the values are not numbers
+     * @throws ShapeDataFormatException if the resulting values would not be validated as correct by validateShapeData()
+     */
     [[nodiscard]] ShapeData deserialize(const TextualShapeData &data) const override;
 };
 

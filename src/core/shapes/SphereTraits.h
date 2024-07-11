@@ -13,10 +13,16 @@
 
 /**
  * @brief Spherical molecules with hard or soft interactions.
+ * @details If the interactions are hard, polydispersity is supported. For soft central interactions the spheres are
+ * monodisperse.
  */
 class SphereTraits : public ShapeTraits, public ShapeGeometry {
 public:
+    /**
+     * @brief ShapeData -compatible structure with hard sphere radius.
+     */
     struct HardData {
+        /** @brief Sphere radius. */
         double radius{};
 
         friend bool operator==(HardData lhs, HardData rhs) { return lhs.radius == rhs.radius; }
@@ -71,17 +77,24 @@ private:
     std::shared_ptr<WolframPrinter> wolframPrinter;
 
 public:
-    /** @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::XCPrinter
-     * @a subdivision parameter) */
+    /**
+     * @brief The default number of sphere subdivisions when printing the shape in the OBJ format (see
+     * XCPrinter::buildPolyhedron @a subdivisions parameter)
+     */
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
 
     /**
-     * @brief Creates a hard sphere.
+     * @brief Creates a hard sphere, supporting polydispersity.
+     * @param defaultRadius if not `std::nullopt`, it defines the default HardData::radius value used by
+     * ShapeDataManager::defaultSerialize and ShapeDataManager::defaultDeserialize
+     * @throws PreconditionException if @a defaultRadius is set and non-positive
      */
     explicit SphereTraits(std::optional<double> defaultRadius = std::nullopt);
 
     /**
-     * @brief Creates a sphere interacting via @a centralInteraction soft potential.
+     * @brief Creates a sphere interacting via @a centralInteraction soft potential (does not support polydispersity).
+     * @param fixedRadius fixed radius of all monodisperse spheres
+     * @param centralInteraction type of central interaction between spheres
      */
     SphereTraits(double fixedRadius, std::shared_ptr<CentralInteraction> centralInteraction);
 
@@ -101,6 +114,12 @@ public:
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return *this; }
     [[nodiscard]] double getVolume(const Shape &shape) const override;
 
+    /**
+     * @brief Returns the data manager for the shape.
+     * @details For soft interacting spheres, data manager is trivial and does not handle any shape data. For hard-core
+     * spheres, it supports polydispersity and uses HardData as ShapeData. Serialized form has one key `r` in the map,
+     * whose value is the sphere's radius. ShapeDataManager::validateShapeData checks if the radius is positive.
+     */
     [[nodiscard]] const ShapeDataManager &getDataManager() const override { return *this->dataManager; }
 };
 
