@@ -5,7 +5,6 @@
 #ifndef RAMPACK_POLYSPHEROCYLINDERTRAITS_H
 #define RAMPACK_POLYSPHEROCYLINDERTRAITS_H
 
-
 #include <ostream>
 #include <map>
 
@@ -16,17 +15,14 @@
 
 
 /**
- * @brief A helper class defining a whole particle.
- * @details The class, apart from standard named points (see ShapeGeometry::getNamedPoint()) and
- * @a customNamedPoints from the constructor, defines points "ox", "bx" and "ex" representing, respectively,
- * origin, beginning cap center and end cap center of constituent spherocylinders, where "x" is
- * spherocylinder's index starting from 0.
+ * @brief Class representing a single species of a polyspherocylinder for PolyspherocylinderTraits, conforming to
+ * GenericShapeRegistry @a ConcreteSpecies template parameter.
  */
 class PolyspherocylinderShape /* : public GenericShapeRegistry::ConcreteSpecies */ {
 public:
     /**
-     * @brief A single building spherocylinder data.
-     * @details Spherocylinder cap centers are given by @a posision +/- @a halfAxis
+     * @brief A single spherocylindrical part of a polyspherocylinder. Spherocylinder cap centers are given by
+     * SpherocylinderData::position +/- SpherocylinderData::halfAxis.
      */
     struct SpherocylinderData {
         /** @brief Position of the mass centre of the spherocylinder. */
@@ -35,17 +31,29 @@ public:
         const Vector<3> halfAxis;
         /** @brief The norm of the above vector. */
         const double halfLength{};
-        /** @brief Radius of the spherical cap (and also half-width of the spherocylinder. */
+        /** @brief Radius of the spherical cap (and also half-width of the spherocylinder). */
         const double radius{};
         /** @brief Spherocylinder's circumsphere radius. */
         const double circumsphereRadius{};
 
         SpherocylinderData(const Vector<3> &position, const Vector<3> &halfAxis, double radius);
 
+        /**
+         * @brief Returns Wolfram Mathematica representation of the spherocylinder calculated for position and
+         * orientation of @a shape.
+         */
         void toWolfram(std::ostream &out, const Shape &shape) const;
-        [[nodiscard]] double getVolume() const;
+
+        /**
+         * @brief Creates AbstractXCGeometry for the default-oriented spherocylinder (placed at [0, 0, 0]).
+         */
         [[nodiscard]] std::shared_ptr<AbstractXCGeometry> createXCGeometry() const;
 
+        [[nodiscard]] double getVolume() const;
+
+        /**
+         * @brief Returns the sphere's center calculated for position and orientation of @a shape.
+         */
         [[nodiscard]] Vector<3> centreForShape(const Shape &shape) const;
 
         /**
@@ -77,14 +85,19 @@ private:
 
 public:
     /**
-     * @brief Constructs the object.
+     * @brief Constructs the polyspherocylinder with given parameters.
+     * @details Apart from the named points passed in the @a customNamedPoints argument, 3 series of named point are
+     * created automatically: `o[index]` (midpoint of spherocylinder), `b[index]` (center of the first spherical cap),
+     * and `e[index]` (center of the second spherical cap), where `[index]` is the (0-based) index of the spherocylinder
+     * in @a spherocylinderData vector.
      * @param spherocylinderData set of spherocylinders
      * @param primaryAxis the primary axis of the molecule
      * @param secondaryAxis the secondary axis of the polymer (should be orthogonal to the primary one)
      * @param geometricOrigin geometric origin of the molecule which can be different that the mass centre
-     * @param volume volume of the shape
-     * @param customNamedPoints custom named points in addition to default ones (see
-     * PolyspherocylinderGeometry::getNamedPoint)
+     * @param volume volume of the shape. If `std::nullopt` is passed, the volume will be calculated automatically, but
+     * only if the spherocylinders in @a spherocylinderData do not overlap. If they do overlap, the volume must be
+     * computed manually by the caller and passed here
+     * @param customNamedPoints optional map of name points, where the key is point's name and the value is its position
      */
     PolyspherocylinderShape(std::vector<SpherocylinderData> spherocylinderData, OptionalAxis primaryAxis,
                             OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin = {0, 0, 0},
@@ -103,12 +116,17 @@ public:
         return this->spherocylinderData;
     }
 
+    /**
+     * @brief Returns @a true is the constituent spherocylinders overlap, @a false otherwise.
+     */
     [[nodiscard]] bool spherocylindersOverlap() const;
+
     void setGeometricOrigin(const Vector<3> &geometricOrigin_) { this->geometricOrigin = geometricOrigin_; }
     void addCustomNamedPoints(std::map<std::string, Vector<3>> customNamedPoints);
 
     friend bool operator==(const PolyspherocylinderShape &lhs, const PolyspherocylinderShape &rhs);
 };
+
 
 /**
  * @brief A class analogous to PolysphereTraits, but for hard spherocylinders.
@@ -134,17 +152,22 @@ private:
     friend WolframPrinter;
 
 public:
-    /** @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::XCPrinter
-     * @a subdivision parameter) */
+    /**
+     * @brief The default number of sphere subdivisions when printing the shape (see XCPrinter::buildPolyhedron
+     * @a subdivisions parameter)
+     */
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
 
+    /**
+     * @brief Creates the class with  no initially registered species.
+     */
     PolyspherocylinderTraits() : wolframPrinter{std::make_shared<WolframPrinter>(*this)} { }
 
     /**
-     * @brief Creates the molecule from a given set of spherocylinders.
-     * @param geometry PolyspherocylinderGeometry describing the shape
+     * @brief Creates the class with one initial species @a defaultSpecies named `A`, which is set as a default species
+     * (setDefaultSpecies()).
      */
-    explicit PolyspherocylinderTraits(const PolyspherocylinderShape &defaultShape);
+    explicit PolyspherocylinderTraits(const PolyspherocylinderShape &defaultSpecies);
 
     PolyspherocylinderTraits(const PolyspherocylinderTraits &) = delete;
     PolyspherocylinderTraits &operator=(const PolyspherocylinderTraits &) = delete;

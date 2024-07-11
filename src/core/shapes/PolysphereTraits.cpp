@@ -224,8 +224,8 @@ PolysphereTraits::PolysphereTraits()
           wolframPrinter{std::make_shared<WolframPrinter>(*this)}
 { }
 
-PolysphereTraits::PolysphereTraits(const PolysphereShape &defaultShape) : PolysphereTraits() {
-    this->addSpecies("A", defaultShape);
+PolysphereTraits::PolysphereTraits(const PolysphereShape &defaultSpecies) : PolysphereTraits() {
+    this->addSpecies("A", defaultSpecies);
     this->setDefaultSpecies("A");
 }
 

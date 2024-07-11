@@ -173,10 +173,10 @@ std::string PolyspherocylinderTraits::WolframPrinter::print(const Shape &shape) 
 
 // PolyspherocylinderTraits ############################################################################################
 
-PolyspherocylinderTraits::PolyspherocylinderTraits(const PolyspherocylinderShape &defaultShape)
+PolyspherocylinderTraits::PolyspherocylinderTraits(const PolyspherocylinderShape &defaultSpecies)
     : PolyspherocylinderTraits()
 {
-    this->addSpecies("A", defaultShape);
+    this->addSpecies("A", defaultSpecies);
     this->setDefaultSpecies("A");
 }
 

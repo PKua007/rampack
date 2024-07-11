@@ -65,14 +65,17 @@ private:
 
 public:
     /**
-     * @brief Create the polysphere with given parameters.
+     * @brief Constructs the polysphere with given parameters.
+     * @details Apart from the named points passed in the @a customNamedPoints argument, named point for sphere centers
+     * are created automatically. Their names are `s[index]`, where `[index]` is the (0-based) index of the sphere in
+     * @a sphereData vector.
      * @param sphereData vector of SphereData defining the polysphere
-     * @param volume volume of the shape. If `std::nullopt` is passed, the volume will be calculated automatically, but
-     * only if the spheres in @a sphereData do not overlap. If they do overlap, the volume must be computed manually by
-     * the caller and passed here
      * @param primaryAxis primary axis of the shape (may be left undefined)
      * @param secondaryAxis secondary axis of the shape, orthogonal to the primary axis (may be left undefined)
      * @param geometricOrigin geometric origin of the shape
+     * @param volume volume of the shape. If `std::nullopt` is passed, the volume will be calculated automatically, but
+     * only if the spheres in @a sphereData do not overlap. If they do overlap, the volume must be computed manually by
+     * the caller and passed here
      * @param customNamedPoints optional map of name points, where the key is point's name and the value is its position
      */
     explicit PolysphereShape(std::vector<SphereData> sphereData, OptionalAxis primaryAxis = std::nullopt,
@@ -180,10 +183,10 @@ public:
     PolysphereTraits();
 
     /**
-     * @brief Creates the class with hard-core interactions and one species @a shape named `A`, which is set as a
-     * default species (setDefaultSpecies()).
+     * @brief Creates the class with hard-core interactions and one initial species @a defaultSpecies named `A`, which
+     * is set as a default species (setDefaultSpecies()).
      */
-    explicit PolysphereTraits(const PolysphereShape &defaultShape);
+    explicit PolysphereTraits(const PolysphereShape &defaultSpecies);
 
     /**
      * @brief Creates the class with soft interactions @a centralInteraction and no initially registered species.
