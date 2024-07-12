@@ -9,7 +9,6 @@
 #include "PolyspherocylinderTraits.h"
 #include "utils/Exceptions.h"
 #include "geometry/SegmentDistanceCalculator.h"
-#include "printers/XCObjShapePrinter.h"
 #include "geometry/xenocollide/XCBodyBuilder.h"
 #include "printers/PolydisperseXCObjShapePrinter.h"
 
