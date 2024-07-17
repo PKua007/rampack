@@ -10,7 +10,7 @@
 
 
 /**
- * @brief Decorator SimulationPlayer which applies a set of (irregular) LatticeTransformers to each replayed snapshot.
+ * @brief Decorator SimulationPlayer which applies a set of irregular LatticeTransformers to each replayed snapshot.
  */
 class TransformingPlayer : public SimulationPlayer {
 private:
@@ -29,7 +29,7 @@ public:
      * @param testPacking test packing which is used to determine the number of particles after @a transformers are
      * applied. If @a player has more than zero snapshots, the last snapshot is printed onto @a testPacking before
      * applying the transformers.
-     * @param traits
+     * @param traits shape traits of the particles in @a testPacking
      */
     TransformingPlayer(std::unique_ptr<SimulationPlayer> player,
                        std::vector<std::shared_ptr<LatticeTransformer>> transformers, Packing &testPacking,
@@ -43,7 +43,7 @@ public:
 
     /**
      * @brief Returns number of molecules after applying the transformers.
-     * @details The number is calculates bases on the test packing (see TransformingPlayer::TransformingPlayer).
+     * @details The number is calculates based on the test packing (see TransformingPlayer::TransformingPlayer).
      */
     [[nodiscard]] std::size_t getNumMolecules() const override { return this->numMolecules; }
 

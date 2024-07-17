@@ -14,7 +14,7 @@
 
 
 /**
- * @brief A class which enables recording simulation to a binary format.
+ * @brief Records simulation trajectory in a binary RAMTRJ format (see RamtrjIO for file specification).
  */
 class RamtrjRecorder : RamtrjIO, public SimulationRecorder {
 private:
@@ -27,8 +27,8 @@ public:
     /**
      * @brief Constructs the recorder using a given @a std::iostream.
      * @details In the append mode (`append == true`), the class respects the original RAMTRJ version of the file.
-     * Namely, after new snapshots are appended, the old RAMPACK version which originally generated the trajectory, will
-     * be able to read it properly.
+     * Namely, after new snapshots are appended, the old RAMPACK version. which originally generated the trajectory,
+     * will be able to read it properly.
      * @param stream i/o stream where the trajectory will be stored. The class takes full responsibility of the stream.
      * It should be opened in binary input-output mode with all stream pointer methods working (@a tellp, @a seekp,
      * @a tellg, @a seekg)
@@ -49,6 +49,11 @@ public:
      * @details For each invocation, @a cycle should be a subsequent multiple of cycle step size (in agreement with
      * the one passed in the constructor). For example, subsequent invocations can be with @a cycle equal 200, 400,
      * 600, etc.
+     * @throws PreconditionException if any of the conditions arise:
+     * - RamtrjRecorder is closed
+     * - @a cycle has an incorrect value (check above)
+     * - number of particles in @a packing is different than the one registered in the constructor
+     * - ShapeData of all particles in @a packing are not identical as the ones registered in the constructor
      */
     void recordSnapshot(const Packing &packing, const ShapeTraits &traits, std::size_t cycle) override;
 

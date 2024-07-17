@@ -17,7 +17,7 @@ public:
 
 
 /**
- * @brief Read the RAMSNAP snapshot (see RamsnapWriter for file specification)
+ * @brief Read the RAMSNAP snapshot (see RamsnapIO for file specification)
  */
 class RamsnapReader : public SnapshotReader {
 private:
@@ -45,7 +45,7 @@ public:
 
     /**
      * @brief Convenient wrapper over read(std::istream&, Packing&, const ShapeTraits&) const function with
-     * Interaction and ShapeManager instead of the whole ShapeTraits on the arguments list
+     * Interaction and ShapeDataManager instead of the whole ShapeTraits on the arguments list.
      */
     std::map<std::string, std::string> read(std::istream &in, Packing &packing, const Interaction &interaction,
                                             const ShapeDataManager &manager) const;

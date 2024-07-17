@@ -11,14 +11,13 @@
 void XYZRecorder::recordSnapshot(const Packing &packing, const ShapeTraits &traits, std::size_t cycle) {
     Expects(this->out != nullptr);
 
-    XYZWriter writer;
-    writer.write(*this->out, packing, traits, {{"cycles", std::to_string(cycle)}});
+    this->writer.write(*this->out, packing, traits, {{"cycles", std::to_string(cycle)}});
 
     this->lastCycleNumber = cycle;
 }
 
-XYZRecorder::XYZRecorder(std::unique_ptr<std::iostream> out, bool append)
-        : out{std::move(out)}
+XYZRecorder::XYZRecorder(std::unique_ptr<std::iostream> out, bool append, XYZWriter::SpeciesMap speciesMap)
+        : writer(std::move(speciesMap)), out{std::move(out)}
 {
     Expects(this->out != nullptr);
 

@@ -55,6 +55,22 @@ namespace detail {
 }
 
 
+/**
+ * @brief Deserializing helper for @ref TextualShapeData in a format defined by ShapeDataSerializer.
+ * @details The data are accessed using as() method. The class registers which fields were accessed. After reading all
+ * expected fields, throwIfNotAccessed() may be used to throw ShapeDataSerializationException if extra data were
+ * present. Example usage:
+ * @code
+ * TextualShapeData data{{"int", "42"}, {"double", "3.14"}, {"string", "Hallo Wereld!"}, {"vector", "0.5,1.0,1.5"}};
+ *
+ * ShapeDataDeserializer deserializer(data);
+ * assert(deserializer.as<int>("int") == 42);
+ * assert(deserializer.as<double>("double") == 3.14);
+ * assert(deserializer.as<std::string>("string") == "Hallo Wereld!");
+ * assert(deserializer.as<Vector<3>>("vector") == Vector<3>{0.5, 1.0, 1.5});
+ * deserializer.throwIfNotAccessed();
+ * @endcode
+ */
 class ShapeDataDeserializer {
 private:
     struct GuardedEntry {
@@ -109,15 +125,41 @@ private:
     static Vector<3> asVector(const std::string &paramKey, const std::string &paramValue);
 
 public:
+    /**
+     * @brief Creates a deserializer with no data.
+     */
     ShapeDataDeserializer() = default;
+
+    /**
+     * @brief Creates a deserializer for data @a data.
+     */
     explicit ShapeDataDeserializer(const TextualShapeData &data);
 
+    /**
+     * @brief Returns `true` if shape param with key @a paramKey exists, `false` otherwise.
+     */
     [[nodiscard]] bool hasParam(const std::string &paramKey) const {
         return this->textualShapeData.find(paramKey) != this->textualShapeData.end();
     }
 
+    /**
+     * @brief Returns `true` if shape param with the key @a paramKey was accessed at least once, `false` otherwise.
+     */
     [[nodiscard]] bool wasAccessed(const std::string &paramKey) const;
 
+    /**
+     * @brief Returns the value under key @a param paramKey parsed as type @a T.
+     * @tparam T type of the parameter. It can be one of:
+     * - integral type
+     * - floating point type
+     * - `std::string`
+     * - Vector<3>
+     * @param paramKey key of the shape param to be parsed
+     * @throws ShapeDataSerializationException if any of the following occur:
+     * - key @a paramKey is not present
+     * - parsing fails (note that no additional characters may be present, including whitespace)
+     * - parsing yields an out-of-range value (for numeric types)
+     */
     template <typename T>
     T as(const std::string &paramKey) {
         auto it = this->textualShapeData.find(paramKey);
@@ -142,6 +184,10 @@ public:
             static_assert(always_false<T>, "Only integral, floating point, Vector<3> and std::string types are supported");
     }
 
+    /**
+     * @brief Throws ShapeDataSerializationException if any of the fields of the data passed in the constuctor were not
+     * accessed at least once.
+     */
     void throwIfNotAccessed() const;
 };
 

@@ -19,17 +19,22 @@ public:
     enum class WolframStyle {
         /**
          * @brief A standard style - each shape is printed separately.
-         * @details The output is Graphics3D with a list of shapes, which is easy to process but may grow large. It is
-         * advised for shapes with a small footprint.
+         * @details The output is Graphics3D with a list of shapes, which is easy to process but may grow large. This
+         * style advised for shapes with a small Wolfram code footprint.
          */
         STANDARD,
 
         /**
-         * @brief A single shape with the default position and orientation is printed and then, for each shape in the
-         * packing it is copied and appropriate affine transformation is applied to it.
-         * @details The output is Graphics3D with a list of positions and orientations which is mapped over a single
-         * shape using @a AffineTransform. Is is advised for shapes with a large footprint and for easy access to
-         * positions and orientations of the shapes.
+         * @brief Shapes are grouped by their ShapeData. For each group, a single shape with the default position
+         * and orientation is printed, and a mapping over an array of appropriate affine transformations is applied to
+         * it to accommodate for each shape in the group.
+         * @details More precisely, the output is Graphics3D with a list of lambdas, which map position and orientation
+         * to a shape with fixed ShapeData translated and rotates as given by the arguments. Consequently, a separate
+         * lambda function is generated for all ShapeData groups. Then, each lambda is mapped over a list of positions
+         * and orientations, all of which constitutes the whole packing.
+         *
+         * This style is advised for shapes with a large footprint and, alternatively, when an easy access to positions
+         * and orientations of the shapes is needed.
          */
         AFFINE_TRANSFORM
     };

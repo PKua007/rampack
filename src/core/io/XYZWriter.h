@@ -13,12 +13,27 @@
  * @details The snapshot contains information about triclinic simulation box and all shapes' positions and orientations.
  * Moreover, auxiliary info is stored in the XYZ header. The snapshots produced by this class are readily accepted by
  * <a href="https://www.ovito.org/">Ovito</a>.
- * @sa <a href="https://www.ovito.org/manual/reference/file_formats/input/xyz.html#file-formats-input-xyz">
+ *
+ * Each line representing a single shape starts with a particle type name. The name is generated using the following
+ * decision tree:
+ * - if SpeciesMap passed in the constructor contains a given particle's ShapeData, the corresponding name is used
+ * - otherwise, if particle's serialized @ref TextualShapeData are a map with a single key `species`, its value is used
+ *   as a name
+ * - otherwise, if the Packing is monodisperse, `A` is used as a name (for backwards compatibility)
+ * - finally, if any of the above fails to produce a name, it is generated procedurally from @ref TextualShapeData, with
+ *   `[key]=[value]` pair formatted as `[key]:[value]`, joined by `/`. For example, for
+ *   `TextualShapeData{{"r", "0.5"}, {"l", "1.5"}}` it would be `r=0.5/l=1.5`
+ *
+ * @sa
+ * <a href="https://www.ovito.org/manual/reference/file_formats/input/xyz.html#file-formats-input-xyz-extended-format">
  *     Extended XYZ format
  * </a>
  */
 class XYZWriter : public SnapshotWriter {
 public:
+    /**
+     * @brief Mapping between the species name and corresponding ShapeData.
+     */
     using SpeciesMap = std::map<std::string, ShapeData>;
 
 private:
@@ -37,11 +52,18 @@ private:
     SpeciesMap speciesMap;
 
 public:
+    /**
+     * @brief Creates the writer.
+     * @param speciesMap an optional, custom mapping between the ShapeData and corresponding species names (see class
+     * description)
+     */
     explicit XYZWriter(SpeciesMap speciesMap = {});
 
     /**
      * @brief Writes the snapshot to @a out stream.
-     * @details All stream flag of @a out are respected - the caller may use them to specify format and precision.
+     * @details All stream flags of @a out are respected - the caller may use them to specify format and precision.
+     * Particle type names (the first entry in each line) are generated as described in class description. Auxiliary
+     * info @a auxInfo is stored in the header.
      */
     void write(std::ostream &out, const Packing &packing, const ShapeTraits &traits,
                const std::map<std::string, std::string> &auxInfo) const override
@@ -52,7 +74,7 @@ public:
     /**
      * @brief Convenient wrapper over
      * write(std::ostream&, const Packing&, const ShapeTraits&, const std::map<std::string, std::string>&) const
-     * without unused ShapeTraits on the argument list.
+     * using only ShapeDataManager part of ShapeTraits.
      */
     void write(std::ostream &out, const Packing &packing, const ShapeDataManager &manager,
                const std::map<std::string, std::string> &auxInfo) const;

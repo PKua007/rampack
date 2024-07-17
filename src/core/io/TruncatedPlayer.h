@@ -11,7 +11,7 @@
 
 
 /**
- * @brief Adapted for any SimulationPlayer, which truncated the trajectory on a given number of total cycles.
+ * @brief Adapted for any SimulationPlayer, which truncates the trajectory on a given number of total cycles.
  */
 class TruncatedPlayer : public SimulationPlayer {
 private:

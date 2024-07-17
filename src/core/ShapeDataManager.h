@@ -2,6 +2,8 @@
 // Created by Piotr Kubala on 08/02/2024.
 //
 
+/** @file */
+
 #ifndef RAMPACK_SHAPEDATAMANAGER_H
 #define RAMPACK_SHAPEDATAMANAGER_H
 
@@ -91,14 +93,14 @@ public:
     [[nodiscard]] virtual ShapeData::Comparator getComparator() const { return {}; }
 
     /**
-     * @brief Serializes @a data in an implementation-specific format into TextualShapeData key=value map. @a data in
-     * usually not validated before the serialization.
+     * @brief Serializes @a data in an implementation-specific format into @ref TextualShapeData key=value map. @a data
+     * in usually not validated before the serialization.
      */
     [[nodiscard]] virtual TextualShapeData serialize([[maybe_unused]] const ShapeData &data) const { return {}; }
 
     /**
-     * @brief Deserializes @a data TextualShapeData in an implementation-specific format into ShapeData. Deserialized
-     * data is then validated.
+     * @brief Deserializes @ref TextualShapeData @a data in an implementation-specific format into ShapeData.
+     * Deserialized data is then validated.
      * @throws ShapeDataSerializationException when serialization data is incomplete or malformed
      * @throws ShapeDataFormatException if the validation after deserialization fails
      */

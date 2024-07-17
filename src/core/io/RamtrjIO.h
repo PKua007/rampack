@@ -22,14 +22,52 @@ public:
     using ValidationException::ValidationException;
 };
 
+
 /**
- * @brief Base class for storing and restoring simulation trajectories (in a propertiary RAMTRJ format)
+ * @brief Base class for storing and restoring simulation trajectories (in a propertiary RAMTRJ format).
+ * @details RAMTRJ is a binary format, which stores a simulation trajectory (a series of snapshots) in a compact
+ * form, with a random access to particular shapshots. It has the following structure:
+ * - **HEADER**:
+ *   - `char[7]`: `RAMTRJ\n` magic bytes
+ *   - `unsigned char`: version major
+ *   - `unsigned char`: version minor
+ *   - `unsigned long` (*np*): number of particles
+ *   - `unsigned long` (*ns*): number of snapshots
+ *   - `unsigned long` (*cs*): number of cycles between snapshots
+ * - **SHAPE DATA**:
+ *   - `unsigned long` (*nsd*): number of serialized key=value shape parameters as per ShapeDataManager::serialize
+ *   - *nsd* &times; `char[?]`: space-delimited list of shape parameter keys
+ *   - *np* &times; *nsd* &times; `char[?]`: list of shape parameter values, first grouped in *nsd* values
+ *     corresponding to the keys in the order specified above for a single shape
+ * - **SNAPSHOT DATA**: *ns* snapshots, each in the format:
+ *   - 9 &times; `double`: TriclinicBox matrix, stored row-wise
+ *   - *np* particles, each in the format:
+ *     - 3 &times; `double`: absolute position of the shape
+ *     - 3 &times; `double`: Euler angles of the shape (angle of rotations around x, y, and z axis, performed in this
+ *       order, in radians)
+ *
+ * Space-delimited entries `char[?]` are strings consisting of non-whitespace characters of an unknown length, which are
+ * read byte by byte until whitespace is encountered (it is read but not included). ShapeData are assumed to be constant
+ * between the snapshots, thus the list of them for each particle is stored only once, after the header.
+ *
+ * Version history:
+ * - **1.0**:
+ *   - first release
+ * - **1.1**:
+ *   - *np* and *cs* in the **HEADER** section are set before recording snapshots and they can no longer be zero
+ * - **1.2**:
+ *   - addition of **SHAPE DATA** section
  */
 class RamtrjIO {
 public:
+    /** @brief Current version of RAMTRJ API. */
     static constexpr Version CURRENT_VERSION = {1, 2};
 
+    /** @brief Version since when Header::numParticles and Header::cycleStep cannot be zero before first snapshot is
+     * registered. */
     static constexpr Version NONZERO_DATA_VERSION = {1, 1};
+
+    /** @brief Version since shape data were introduced. */
     static constexpr Version SHAPE_DATA_VERSION = {1, 2};
 
 private:
@@ -38,15 +76,10 @@ private:
 
 protected:
     /**
-     * @brief Header of RAMTRJ file (as is)
-     * @details Version log
-     * <ol>
-     * <li> 1.0 - first release
-     * <li> 1.1 - @a numParticles and @a cycleStep set before recording snapshots (header no longer has zeros)
-     * <li> 1.2 - support for shape data - it is stored once, after the header
-     * </ol>
+     * @brief Header of the RAMTRJ file with basic metadata and ShapeData of all particles.
      */
     struct Header {
+        /** @brief Invalid (unset) offset of shape data. */
         static constexpr std::streamoff INVALID_OFFSET = -1;
 
         char magic[7] = {'R', 'A', 'M', 'T', 'R', 'J', '\n'};

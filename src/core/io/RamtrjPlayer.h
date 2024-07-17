@@ -14,7 +14,7 @@
 
 
 /**
- * @brief Class which enables replaying particle trajectories stored in RAMTRJ binary format.
+ * @brief Replays particle trajectories stored in RAMTRJ binary format (see RamtrjIO for file specification).
  */
 class RamtrjPlayer final : RamtrjIO, public SimulationPlayer {
 private:
