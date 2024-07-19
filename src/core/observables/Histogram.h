@@ -33,37 +33,68 @@
 template<std::size_t DIM = 1, typename T = double>
 struct Histogram {
 public:
+    /**
+     * @brief Helper class enclosing both the value in the bin and the number of samples that procuced it.
+     */
     struct ValueCount {
+        /**
+         * @brief Value in the bin. It may be a total or some type of average.
+         */
         T value{};
+
+        /**
+         * @brief Number of samples that were used to produce the value.
+         */
         std::size_t count{};
 
+        /**
+         * @brief Addition assignment operator summing both the ValueCount::value and ValueCount::count.
+         */
         ValueCount &operator+=(const ValueCount &vc) {
             this->value += vc.value;
             this->count += vc.count;
             return *this;
         }
 
+        /**
+         * @brief Multiplication assignment operator multiplying ValueCount::value by a scalar; ValueCount::count
+         * remains unaltered.
+         */
         template <typename U>
         ValueCount &operator*=(const U &u) {
             this->value *= u;
             return *this;
         }
 
+        /**
+         * @brief Division assignment operator dividing ValueCount::value by a scalar; ValueCount::count remains
+         * unaltered.
+         */
         template <typename U>
         ValueCount &operator/=(const U &u) {
             this->value /= u;
             return *this;
         }
 
+        /**
+         * @brief Addition operator summing both the ValueCount::value and ValueCount::count.
+         */
         friend ValueCount operator+(const ValueCount &lhs, const ValueCount &rhs) {
             return ValueCount(lhs) += rhs;
         }
 
+        /**
+         * @brief Multiplication operator multiplying ValueCount::value by a scalar; ValueCount::count remains
+         * unaltered.
+         */
         template <typename U>
         friend ValueCount operator*(const ValueCount &lhs, const U &rhs) {
             return ValueCount(lhs) *= rhs;
         }
 
+        /**
+         * @brief Division operator dividing ValueCount::value by a scalar; ValueCount::count remains unaltered.
+         */
         template <typename U>
         friend ValueCount operator/(const ValueCount &lhs, const U &rhs) {
             return ValueCount(lhs) /= rhs;
