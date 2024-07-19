@@ -6,7 +6,7 @@
 #define RAMPACK_LAYERROTATIONTRANSFORMER_H
 
 #include "LayerWiseTransformer.h"
-#include "LatticeTraits.h"
+#include "core/lattice/LatticeTraits.h"
 
 
 /**

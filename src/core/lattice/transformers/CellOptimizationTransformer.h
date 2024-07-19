@@ -5,7 +5,7 @@
 #ifndef RAMPACK_CELLOPTIMIZATIONTRANSFORMER_H
 #define RAMPACK_CELLOPTIMIZATIONTRANSFORMER_H
 
-#include "LatticeTransformer.h"
+#include "core/lattice/LatticeTransformer.h"
 #include "core/Interaction.h"
 
 

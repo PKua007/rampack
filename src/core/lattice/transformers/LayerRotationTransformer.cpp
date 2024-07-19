@@ -3,7 +3,7 @@
 //
 
 #include "LayerRotationTransformer.h"
-#include "LatticeTraits.h"
+#include "core/lattice/LatticeTraits.h"
 
 
 LayerRotationTransformer::LayerRotationTransformer(LatticeTraits::Axis layerAxis, LatticeTraits::Axis rotationAxis,

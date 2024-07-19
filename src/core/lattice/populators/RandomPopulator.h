@@ -7,7 +7,7 @@
 
 #include <random>
 
-#include "LatticePopulator.h"
+#include "core/lattice/LatticePopulator.h"
 
 
 /**

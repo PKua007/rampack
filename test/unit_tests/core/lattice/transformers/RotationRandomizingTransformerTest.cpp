@@ -2,13 +2,13 @@
 // Created by Piotr Kubala on 20/06/2023.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
 #include "mocks/MockShapeTraits.h"
 
 #include "matchers/VectorApproxMatcher.h"
 
-#include "core/lattice/RotationRandomizingTransformer.h"
+#include "core/lattice/transformers/RotationRandomizingTransformer.h"
 #include "core/lattice/UnitCellFactory.h"
 
 

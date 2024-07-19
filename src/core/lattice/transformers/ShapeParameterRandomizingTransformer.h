@@ -8,8 +8,8 @@
 #include <memory>
 #include <utility>
 
-#include "LatticeTransformer.h"
-#include "ShapeParameterRandomizer.h"
+#include "core/lattice/LatticeTransformer.h"
+#include "core/lattice/ShapeParameterRandomizer.h"
 
 
 /**

@@ -2,14 +2,14 @@
 // Created by pkua on 25.05.22.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
 #include "matchers/MatrixApproxMatcher.h"
 #include "matchers/VectorApproxMatcher.h"
 
 #include "mocks/MockShapeTraits.h"
 
-#include "core/lattice/FlipRandomizingTransformer.h"
+#include "core/lattice/transformers/FlipRandomizingTransformer.h"
 
 
 TEST_CASE("FlipRandomizingTransformer") {

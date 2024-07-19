@@ -2,12 +2,12 @@
 // Created by pkua on 22.05.22.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
 #include "matchers/MatrixApproxMatcher.h"
 #include "mocks/MockShapeTraits.h"
 
-#include "core/lattice/LayerRotationTransformer.h"
+#include "core/lattice/transformers/LayerRotationTransformer.h"
 
 
 TEST_CASE("LayerRotationTransformer: alternating") {

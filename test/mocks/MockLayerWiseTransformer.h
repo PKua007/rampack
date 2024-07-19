@@ -7,7 +7,7 @@
 
 #include <catch2/trompeloeil.hpp>
 
-#include "core/lattice/LayerWiseTransformer.h"
+#include "core/lattice/transformers/LayerWiseTransformer.h"
 
 
 class MockLayerWiseTransformer : public LayerWiseTransformer {

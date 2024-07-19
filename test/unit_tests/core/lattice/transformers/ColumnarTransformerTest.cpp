@@ -2,11 +2,11 @@
 // Created by pkua on 22.05.22.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
 #include "mocks/MockShapeTraits.h"
 
-#include "core/lattice/ColumnarTransformer.h"
+#include "core/lattice/transformers/ColumnarTransformer.h"
 
 
 TEST_CASE("ColumnarTransformer") {

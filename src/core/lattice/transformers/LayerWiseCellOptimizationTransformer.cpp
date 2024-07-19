@@ -3,7 +3,7 @@
 //
 
 #include "LayerWiseCellOptimizationTransformer.h"
-#include "LatticeTraits.h"
+#include "core/lattice/LatticeTraits.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/Packing.h"
 

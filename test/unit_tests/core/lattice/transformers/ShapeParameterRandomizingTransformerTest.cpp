@@ -2,11 +2,11 @@
 // Created by Piotr Kubala on 03/03/2024.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
 #include "mocks/MockShapeParameterRandomizer.h"
 
-#include "core/lattice/ShapeParameterRandomizingTransformer.h"
+#include "core/lattice/transformers/ShapeParameterRandomizingTransformer.h"
 #include "core/lattice/UnitCellFactory.h"
 #include "core/shapes/SphereTraits.h"
 

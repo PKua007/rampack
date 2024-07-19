@@ -2,11 +2,11 @@
 // Created by Piotr Kubala on 17/05/2024.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
 #include "mocks/MockShapeTraits.h"
 
-#include "core/lattice/ReplicatingTransformer.h"
+#include "core/lattice/transformers/ReplicatingTransformer.h"
 
 
 TEST_CASE("ReplicatingTransformer: construction exceptions") {

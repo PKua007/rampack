@@ -2,12 +2,12 @@
 // Created by pkua on 21.05.22.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
 #include "mocks/MockLayerWiseTransformer.h"
 #include "mocks/MockShapeTraits.h"
 
-#include "core/lattice/LayerWiseTransformer.h"
+#include "core/lattice/transformers/LayerWiseTransformer.h"
 
 
 TEST_CASE("LayerWiseTransformer: 1 layer in cell, 1 requested") {

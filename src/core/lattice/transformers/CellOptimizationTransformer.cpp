@@ -7,9 +7,9 @@
 #include "CellOptimizationTransformer.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/Packing.h"
-#include "DistanceOptimizer.h"
+#include "core/lattice/DistanceOptimizer.h"
 #include "utils/Exceptions.h"
-#include "LatticeTraits.h"
+#include "core/lattice/LatticeTraits.h"
 
 
 void CellOptimizationTransformer::transform(Lattice &lattice, const ShapeTraits &shapeTraits) const {

@@ -5,11 +5,10 @@
 #ifndef RAMPACK_ROTATIONRANDOMIZINGTRANSFORMER_H
 #define RAMPACK_ROTATIONRANDOMIZINGTRANSFORMER_H
 
-
 #include <random>
 #include <variant>
 
-#include "LatticeTransformer.h"
+#include "core/lattice/LatticeTransformer.h"
 
 
 /**

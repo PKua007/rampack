@@ -7,7 +7,7 @@
 
 #include <limits>
 
-#include "ShapeParameterRandomizer.h"
+#include "core/lattice/ShapeParameterRandomizer.h"
 
 
 /**

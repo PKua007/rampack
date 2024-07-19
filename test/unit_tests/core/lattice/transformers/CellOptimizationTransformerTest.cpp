@@ -2,11 +2,11 @@
 // Created by pkua on 23.05.22.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
 #include "matchers/MatrixApproxMatcher.h"
 
-#include "core/lattice/CellOptimizationTransformer.h"
+#include "core/lattice/transformers/CellOptimizationTransformer.h"
 
 #include "core/shapes/SphereTraits.h"
 

@@ -5,8 +5,8 @@
 #ifndef RAMPACK_LAYERWISECELLOPTIMIZATIONTRANSFORMER_H
 #define RAMPACK_LAYERWISECELLOPTIMIZATIONTRANSFORMER_H
 
-#include "LatticeTransformer.h"
-#include "LatticeTraits.h"
+#include "core/lattice/LatticeTransformer.h"
+#include "core/lattice/LatticeTraits.h"
 #include "core/Interaction.h"
 #include "core/Packing.h"
 

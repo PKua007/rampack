@@ -2,9 +2,9 @@
 // Created by pkua on 22.05.22.
 //
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
 
-#include "core/lattice/SerialPopulator.h"
+#include "core/lattice/populators/SerialPopulator.h"
 
 
 TEST_CASE("SerialPopulator: single shape in cell") {

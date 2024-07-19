@@ -5,9 +5,10 @@
 #ifndef RAMPACK_SERIALPOPULATOR_H
 #define RAMPACK_SERIALPOPULATOR_H
 
-#include "LatticePopulator.h"
-#include "LatticeTraits.h"
+#include "core/lattice/LatticePopulator.h"
+#include "core/lattice/LatticeTraits.h"
 #include "utils/Utils.h"
+
 
 /**
  * @brief Populates the lattice in a serial way filling the cell in a given axis order with @a numOfShapes shapes.

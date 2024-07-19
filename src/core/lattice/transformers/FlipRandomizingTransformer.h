@@ -7,7 +7,7 @@
 
 #include <random>
 
-#include "LatticeTransformer.h"
+#include "core/lattice/LatticeTransformer.h"
 #include "core/ShapeGeometry.h"
 
 

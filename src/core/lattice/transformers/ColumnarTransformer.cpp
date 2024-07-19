@@ -6,7 +6,7 @@
 #include <algorithm>
 
 #include "ColumnarTransformer.h"
-#include "LatticeTraits.h"
+#include "core/lattice/LatticeTraits.h"
 #include "core/ShapeTraits.h"
 
 

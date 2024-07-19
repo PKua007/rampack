@@ -13,6 +13,7 @@
 #include "core/Interaction.h"
 #include "geometry/Vector.h"
 
+
 /**
  * @brief An auxiliary class with a couple of static methods enabling one to find the minimal distances between
  * single particles or even optimizing whole packings.
@@ -20,8 +21,6 @@
 class DistanceOptimizer {
 private:
     static std::vector<Shape> generateAbsoluteShapes(std::vector<Shape> relShapes, const Matrix<3, 3> &boxMatrix);
-
-    static constexpr double INF = std::numeric_limits<double>::infinity();
 
 public:
     /**

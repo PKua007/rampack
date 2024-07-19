@@ -7,7 +7,7 @@
 
 #include <array>
 
-#include "LatticeTransformer.h"
+#include "core/lattice/LatticeTransformer.h"
 
 
 /**

@@ -9,8 +9,8 @@
 #include <vector>
 #include <utility>
 
-#include "LatticeTransformer.h"
-#include "LatticeTraits.h"
+#include "core/lattice/LatticeTransformer.h"
+#include "core/lattice/LatticeTraits.h"
 #include "core/ShapeTraits.h"
 
 

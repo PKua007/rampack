@@ -5,8 +5,8 @@
 #ifndef RAMPACK_LAYERWISETRANSFORMER_H
 #define RAMPACK_LAYERWISETRANSFORMER_H
 
-#include "LatticeTransformer.h"
-#include "LatticeTraits.h"
+#include "core/lattice/LatticeTransformer.h"
+#include "core/lattice/LatticeTraits.h"
 #include "core/ShapeTraits.h"
 
 
