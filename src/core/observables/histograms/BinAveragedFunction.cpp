@@ -6,8 +6,8 @@
 
 #include "BinAveragedFunction.h"
 #include "utils/Exceptions.h"
-#include "trackers/DummyTracker.h"
-#include "Histogram.h"
+#include "core/observables/trackers/DummyTracker.h"
+#include "core/observables/Histogram.h"
 
 
 void BinAveragedFunction::addSnapshot(const Packing &packing, [[maybe_unused]] double temperature,

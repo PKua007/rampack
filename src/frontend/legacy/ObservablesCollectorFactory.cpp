@@ -19,7 +19,7 @@
 #include "core/observables/RotationMatrixDrift.h"
 #include "core/observables/Temperature.h"
 #include "core/observables/Pressure.h"
-#include "core/observables/DensityHistogram.h"
+#include "core/observables/histograms/DensityHistogram.h"
 #include "core/observables/correlation/RadialEnumerator.h"
 #include "core/observables/correlation/LayerwiseRadialEnumerator.h"
 #include "core/observables/correlation/PairDensityCorrelation.h"

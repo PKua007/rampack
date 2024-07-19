@@ -2,12 +2,12 @@
 // Created by pkua on 01.11.22.
 //
 
-#include "catch2/catch.hpp"
-#include "ZipIterator.hpp"
+#include <catch2/catch.hpp>
+#include <ZipIterator.hpp>
 
 #include "matchers/VectorApproxMatcher.h"
 
-#include "core/observables/DensityHistogram.h"
+#include "core/observables/histograms/DensityHistogram.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/shapes/SphereTraits.h"
 #include "core/observables/trackers/FourierTracker.h"

@@ -10,9 +10,9 @@
 #include <valarray>
 
 #include "core/BulkObservable.h"
-#include "GoldstoneTracker.h"
-#include "HistogramBuilder.h"
-#include "ShapeFunction.h"
+#include "core/observables/GoldstoneTracker.h"
+#include "core/observables/HistogramBuilder.h"
+#include "core/observables/ShapeFunction.h"
 
 
 /**

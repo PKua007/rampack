@@ -9,7 +9,7 @@
 
 #include "mocks/MockShapeFunction.h"
 
-#include "core/observables/BinAveragedFunction.h"
+#include "core/observables/histograms/BinAveragedFunction.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/shapes/SphereTraits.h"
 #include "core/observables/trackers/FourierTracker.h"

@@ -29,9 +29,10 @@
 
 #include "core/observables/correlation/PairDensityCorrelation.h"
 #include "core/observables/correlation/PairAveragedCorrelation.h"
-#include "core/observables/DensityHistogram.h"
 #include "core/observables/correlation/ProbabilityEvolution.h"
-#include "core/observables/BinAveragedFunction.h"
+
+#include "core/observables/histograms/DensityHistogram.h"
+#include "core/observables/histograms/BinAveragedFunction.h"
 
 #include "core/observables/correlation_functions/S110Correlation.h"
 #include "core/observables/correlation_functions/S220Correlation.h"

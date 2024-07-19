@@ -9,8 +9,8 @@
 #include <optional>
 
 #include "core/BulkObservable.h"
-#include "GoldstoneTracker.h"
-#include "HistogramBuilder.h"
+#include "core/observables/GoldstoneTracker.h"
+#include "core/observables/HistogramBuilder.h"
 
 
 /**
