@@ -2,7 +2,7 @@
 // Created by pkua on 21.05.22.
 //
 
-#include "catch2/catch.hpp"
+#include <catch2/catch.hpp>
 
 #include "mocks/MockLayerWiseTransformer.h"
 #include "mocks/MockShapeTraits.h"

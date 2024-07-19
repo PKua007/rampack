@@ -2,7 +2,7 @@
 // Created by Piotr Kubala on 03/03/2024.
 //
 
-#include "catch2/catch.hpp"
+#include <catch2/catch.hpp>
 #include <limits>
 
 #include "core/lattice/param_randomizers/GaussianShapeParameterRandomizer.h"

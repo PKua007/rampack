@@ -2,7 +2,7 @@
 // Created by pkua on 23.05.22.
 //
 
-#include "catch2/catch.hpp"
+#include <catch2/catch.hpp>
 
 #include "matchers/MatrixApproxMatcher.h"
 

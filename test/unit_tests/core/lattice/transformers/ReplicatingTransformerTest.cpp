@@ -2,7 +2,7 @@
 // Created by Piotr Kubala on 17/05/2024.
 //
 
-#include "catch2/catch.hpp"
+#include <catch2/catch.hpp>
 
 #include "mocks/MockShapeTraits.h"
 

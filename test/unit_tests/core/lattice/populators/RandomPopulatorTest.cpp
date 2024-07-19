@@ -5,7 +5,7 @@
 #include <iterator>
 #include <algorithm>
 
-#include "catch2/catch.hpp"
+#include <catch2/catch.hpp>
 
 #include "core/lattice/populators/RandomPopulator.h"
 
