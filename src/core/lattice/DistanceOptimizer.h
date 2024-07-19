@@ -49,8 +49,9 @@ public:
      * @details The scaling is done axis-by-axis in the order given by @a axisOrderString, so it is essentially
      * a single step of "coord descent" optimization scheme. The angles between Packing faces are preserved.
      * @param packing the packing to shrink
-     * @param interaction the interaction between the molecules in the packing
-     * @param axisOrderString in which order the axes should be shrunk - for eaxmple @a "xzy" means that x axis will
+     * @param interaction the interaction between the molecules in @a packing
+     * @param dataManager the manager of ShapeData of particles in @a packing
+     * @param axisOrderString in which order the axes should be shrunk - for example @a "xzy" means that x axis will
      * be optimized first, then y and z at the end
      */
     static void shrinkPacking(Packing &packing, const Interaction &interaction, const ShapeDataManager &dataManager,

@@ -10,6 +10,9 @@
 #include "ShapeParameterRandomizer.h"
 
 
+/**
+ * @brief ShapeParameterRandomizer randomizing floating point shape parameter according to a normal distribution.
+ */
 class GaussianShapeParameterRandomizer : public ShapeParameterRandomizer {
 private:
     double mean{};
@@ -17,6 +20,13 @@ private:
     double cutoff{};
 
 public:
+    /**
+     * @brief Creates the randomizer for given parameters of the normal distribution.
+     * @param mean mean of the normal distribution
+     * @param sigma standard deviation of the normal distribution
+     * @param cutoff optional cutoff of the distribution to limit its spread. More precisely, no random variables will
+     * be sampled outside of the [@a mean - @a cutoff, @a mean + @a cutoff] range
+     */
     GaussianShapeParameterRandomizer(double mean, double sigma,
                                      double cutoff = std::numeric_limits<double>::infinity());
 

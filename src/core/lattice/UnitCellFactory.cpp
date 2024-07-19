@@ -13,12 +13,12 @@ UnitCell UnitCellFactory::createScCell(const TriclinicBox &box, const ShapeData 
     return UnitCell(box, {createShape({0.5, 0.5, 0.5}, data)});
 }
 
-UnitCell UnitCellFactory::createScCell(const std::array<double, 3> &linearSize, const ShapeData &data) {
-    return UnitCellFactory::createScCell(TriclinicBox(linearSize), data);
+UnitCell UnitCellFactory::createScCell(const std::array<double, 3> &sideLengths, const ShapeData &data) {
+    return UnitCellFactory::createScCell(TriclinicBox(sideLengths), data);
 }
 
-UnitCell UnitCellFactory::createScCell(double linearSize, const ShapeData &data) {
-    return UnitCellFactory::createScCell(TriclinicBox(linearSize), data);
+UnitCell UnitCellFactory::createScCell(double sideLength, const ShapeData &data) {
+    return UnitCellFactory::createScCell(TriclinicBox(sideLength), data);
 }
 
 UnitCell UnitCellFactory::createBccCell(const TriclinicBox &box, const ShapeData &data) {
@@ -28,12 +28,12 @@ UnitCell UnitCellFactory::createBccCell(const TriclinicBox &box, const ShapeData
     });
 }
 
-UnitCell UnitCellFactory::createBccCell(const std::array<double, 3> &linearSize, const ShapeData &data) {
-    return UnitCellFactory::createBccCell(TriclinicBox(linearSize), data);
+UnitCell UnitCellFactory::createBccCell(const std::array<double, 3> &sideLengths, const ShapeData &data) {
+    return UnitCellFactory::createBccCell(TriclinicBox(sideLengths), data);
 }
 
-UnitCell UnitCellFactory::createBccCell(double ballDiameter, const ShapeData &data) {
-    double linearSize = 2 * ballDiameter / std::sqrt(3);
+UnitCell UnitCellFactory::createBccCell(double nearestNeighborDistance, const ShapeData &data) {
+    double linearSize = 2 * nearestNeighborDistance / std::sqrt(3);
     return UnitCellFactory::createBccCell(TriclinicBox(linearSize), data);
 }
 
@@ -46,12 +46,12 @@ UnitCell UnitCellFactory::createFccCell(const TriclinicBox &box, const ShapeData
     });
 }
 
-UnitCell UnitCellFactory::createFccCell(const std::array<double, 3> &linearSize, const ShapeData &data) {
-    return UnitCellFactory::createFccCell(TriclinicBox(linearSize), data);
+UnitCell UnitCellFactory::createFccCell(const std::array<double, 3> &sideLengths, const ShapeData &data) {
+    return UnitCellFactory::createFccCell(TriclinicBox(sideLengths), data);
 }
 
-UnitCell UnitCellFactory::createFccCell(double ballDiameter, const ShapeData &data) {
-    double linearSize = std::sqrt(2) * ballDiameter;
+UnitCell UnitCellFactory::createFccCell(double nearestNeighborDistance, const ShapeData &data) {
+    double linearSize = std::sqrt(2) * nearestNeighborDistance;
     return UnitCellFactory::createFccCell(TriclinicBox(linearSize), data);
 }
 
@@ -85,16 +85,16 @@ UnitCell UnitCellFactory::createHcpCell(const TriclinicBox &box, LatticeTraits::
     return UnitCell(box, std::move(shapes));
 }
 
-UnitCell UnitCellFactory::createHcpCell(const std::array<double, 3> &cuboidalCellSize, LatticeTraits::Axis axis,
+UnitCell UnitCellFactory::createHcpCell(const std::array<double, 3> &sideLengths, LatticeTraits::Axis axis,
                                         const ShapeData &data)
 {
-    return UnitCellFactory::createHcpCell(TriclinicBox(cuboidalCellSize), axis, data);
+    return UnitCellFactory::createHcpCell(TriclinicBox(sideLengths), axis, data);
 }
 
-UnitCell UnitCellFactory::createHcpCell(double ballDiameter, LatticeTraits::Axis axis, const ShapeData &data) {
-    double a = ballDiameter;
-    double b = std::sqrt(3)*ballDiameter;
-    double c = 2*std::sqrt(6)*ballDiameter/3;
+UnitCell UnitCellFactory::createHcpCell(double nearestNeighborDistance, LatticeTraits::Axis axis, const ShapeData &data) {
+    double a = nearestNeighborDistance;
+    double b = std::sqrt(3) * nearestNeighborDistance;
+    double c = 2 * std::sqrt(6) * nearestNeighborDistance / 3;
     switch (axis) {
         case LatticeTraits::Axis::X:
             return UnitCellFactory::createHcpCell({c, a, b}, axis, data);
@@ -129,16 +129,16 @@ UnitCell UnitCellFactory::createHexagonalCell(const TriclinicBox &box, LatticeTr
     AssertThrow("");
 }
 
-UnitCell UnitCellFactory::createHexagonalCell(const std::array<double, 3> &cuboidalCellSize, LatticeTraits::Axis axis,
+UnitCell UnitCellFactory::createHexagonalCell(const std::array<double, 3> &sideLengths, LatticeTraits::Axis axis,
                                               const ShapeData &data)
 {
-    return UnitCellFactory::createHexagonalCell(TriclinicBox(cuboidalCellSize), axis, data);
+    return UnitCellFactory::createHexagonalCell(TriclinicBox(sideLengths), axis, data);
 }
 
-UnitCell UnitCellFactory::createHexagonalCell(double ballDiameter, LatticeTraits::Axis axis, const ShapeData &data) {
-    double a = ballDiameter;
-    double b = std::sqrt(3)*ballDiameter;
-    double c = ballDiameter;
+UnitCell UnitCellFactory::createHexagonalCell(double nearestNeighborDistance, LatticeTraits::Axis axis, const ShapeData &data) {
+    double a = nearestNeighborDistance;
+    double b = std::sqrt(3) * nearestNeighborDistance;
+    double c = nearestNeighborDistance;
     switch (axis) {
         case LatticeTraits::Axis::X:
             return UnitCellFactory::createHexagonalCell({c, a, b}, axis, data);

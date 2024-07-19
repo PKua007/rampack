@@ -9,6 +9,7 @@
 
 #include "LatticePopulator.h"
 
+
 /**
  * @brief Populates lattice randomly, however preserving ordering given by Lattice::generateMolecules().
  */

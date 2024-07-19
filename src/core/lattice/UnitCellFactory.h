@@ -17,103 +17,139 @@ private:
     static Shape createShape(const Vector<3> &pos, const ShapeData &data);
 
 public:
+    /**
+     * @brief Creates a simple cubic cell of a general, triclinic shape given by @a box, accommodating a single particle
+     * with ShapeData @a data in the middle.
+     */
     static UnitCell createScCell(const TriclinicBox &box, const ShapeData &data = {});
 
     /**
-     * @brief Creates a simple cubic cell with a single particle in the middle, however of a possible cuboidal shape
-     * with dimensions @a linearSize.
+     * @brief Creates a simple cubic cell of a cuboidal shape, whose side lengths are @a sideLengths, accommodating a
+     * single particle with ShapeData @a data in the middle.
      */
-    static UnitCell createScCell(const std::array<double, 3> &linearSize, const ShapeData &data = {});
+    static UnitCell createScCell(const std::array<double, 3> &sideLengths, const ShapeData &data = {});
 
     /**
-     * @brief Creates a simple cubic cell with a single particle in the middle, with a cube side length @a linearSize.
+     * @brief Creates a simple cubic cell of a cubic shape, whose side length is @a sideLength, accommodating a single
+     * particle with ShapeData @a data in the middle.
      */
-    static UnitCell createScCell(double linearSize, const ShapeData &data = {});
+    static UnitCell createScCell(double sideLength, const ShapeData &data = {});
 
-
+    /**
+     * @brief Creates a body centered cubic cell of a general, triclinic shape given by @a box, accommodating two
+     * particles with ShapeData @a data.
+     * @details Particles are centered in the box (their cell vector coordinates are {0.25, 0.25, 0.25} and
+     * {0.75, 0.75, 0.75}).
+     */
     static UnitCell createBccCell(const TriclinicBox &box, const ShapeData &data = {});
 
     /**
-     * @brief Creates a body centered cubic cell with two particles, however of a possible cuboidal shape with
-     * dimensions @a linearSize.
+     * @brief Creates a body centered cubic cell of a cuboidal, whose side lengths are @a sideLengths, accommodating two
+     * particles with ShapeData @a data.
      * @details Particles are centered in the box (their cell vector coordinates are {0.25, 0.25, 0.25} and
      * {0.75, 0.75, 0.75}).
      */
-    static UnitCell createBccCell(const std::array<double, 3> &linearSize, const ShapeData &data = {});
+    static UnitCell createBccCell(const std::array<double, 3> &sideLengths, const ShapeData &data = {});
 
     /**
-     * @brief Creates a body centered cubic cell with two particles, with such a cube side length that the distance
-     * between the nearest neighbours is @a ballDiameter.
+     * @brief Creates a body centered cubic cell of a cubic shape, accommodating two particles with ShapeData @a data.
+     * The side length of the cell is such that the distance between the nearest neighbors is
+     * @a nearestNeighborDistance.
      * @details Particles are centered in the box (their cell vector coordinates are {0.25, 0.25, 0.25} and
      * {0.75, 0.75, 0.75}).
      */
-    static UnitCell createBccCell(double ballDiameter, const ShapeData &data = {});
+    static UnitCell createBccCell(double nearestNeighborDistance, const ShapeData &data = {});
 
+    /**
+     * @brief Creates a face centered cubic cell of a general, triclinic shape given by @a box, accommodating four
+     * particles with ShapeData @a data.
+     * @details Particles are centered in the box (their cell vector coordinates are {0.25, 0.25, 0.25},
+     * {0.25, 0.75, 0.75}, {0.75, 0.25, 0.75}, and {0.75, 0.75, 0.25}).
+     */
     static UnitCell createFccCell(const TriclinicBox &box, const ShapeData &data = {});
 
     /**
-     * @brief Creates a face centered cubic cell with four particles, however of a possible cuboidal shape with
-     * dimensions @a linearSize.
+     * @brief Creates a face centered cubic cell of a cuboidal shape, whose side lengths are @a sideLengths,
+     * accommodating four particles with ShapeData @a data.
      * @details Particles are centered in the box (their cell vector coordinates are {0.25, 0.25, 0.25},
-     * {0.25, 0.75, 0.75}, {0.75, 0.25, 0.75} and {0.75, 0.75, 0.25}).
+     * {0.25, 0.75, 0.75}, {0.75, 0.25, 0.75}, and {0.75, 0.75, 0.25}).
      */
-    static UnitCell createFccCell(const std::array<double, 3> &linearSize, const ShapeData &data = {});
+    static UnitCell createFccCell(const std::array<double, 3> &sideLengths, const ShapeData &data = {});
 
     /**
-     * @brief Creates a face centered cubic cell with four particles, with such a cube side length that the distance
-     * between the nearest neighbours is @a ballDiameter.
+     * @brief Creates a face centered cubic cell of a cubic shape, accommodating four particles with ShapeData @a data.
+     * The side length of the cell is such that the distance between the nearest neighbors is
+     * @a nearestNeighborDistance.
      * @details Particles are centered in the box (their cell vector coordinates are {0.25, 0.25, 0.25},
-     * {0.25, 0.75, 0.75}, {0.75, 0.25, 0.75} and {0.75, 0.75, 0.25}).
+     * {0.25, 0.75, 0.75}, {0.75, 0.25, 0.75}, and {0.75, 0.75, 0.25}).
      */
-    static UnitCell createFccCell(double ballDiameter, const ShapeData &data = {});
+    static UnitCell createFccCell(double nearestNeighborDistance, const ShapeData &data = {});
 
-
+    /**
+     * @brief Creates a hexagonal close packed unit cell of a general, triclinic shape given by @a box, accommodating
+     * four particles with ShapeData @a data.
+     * @details @a axis controls the direction along which the (alternating) honeycombs are stacked. Relative
+     * coordinates of particles for the particular values of @a axis are the following:
+     * - LatticeTraits::Axis::X: {1/4, 1/4, 1/12}, {1/4, 3/4, 7/12}, {3/4, 1/4, 5/12}, {3/4, 3/4, 11/12}
+     * - LatticeTraits::Axis::Y: {1/12, 1/4, 1/4}, {7/12, 1/4, 3/4}, {5/12, 3/4, 1/4}, {11/12, 3/4, 3/4}
+     * - LatticeTraits::Axis::Z: {1/4, 1/12, 1/4}, {3/4, 7/12, 1/4}, {1/4, 5/12, 3/4}, {3/4, 11/12, 3/4}
+     */
     static UnitCell createHcpCell(const TriclinicBox &box, LatticeTraits::Axis axis = LatticeTraits::Axis::Z,
                                   const ShapeData &data = {});
 
     /**
-     * @brief Creates a hexagonal close packed unit cell with four molecules within a cuboid of side lengths
-     * @a cuboidalCellSize.
-     * @details @a axis controls the orientation of the honeycombs. If @a axis is LatticeTraits::Axis::Z and assuming
-     * that the first molecule is in the corner, relative cell coordinates of the molecules are {0, 0, 0},
-     * {1/2, 1/2, 0}, {0, 1/3, 1/2} and {1/2, 5/6, 1/2}. However, those coordinates are moved by vector {1/4, 1/12, 1/4}
-     * (in relative coordinates) so that the molecules are equally distant from the cell box faces. If @a axis is
-     * LatticeTraits::Axis::Y, the relative coordinates are cycled so that XYZ becomes YZX. Similarly, if @a axis is
-     * LatticeTraits::Axis::X, XYZ becomes ZXY.
+     * @brief Creates a hexagonal close packed unit cell of a cuboidal shape, whose side lengths are @a sideLengths,
+     * accommodating four particles with ShapeData @a data.
+     * @details @a axis controls the direction along which the (alternating) honeycombs are stacked; see
+     * createHcpCell(const TriclinicBox&, LatticeTraits::Axis, const ShapeData&).
      */
-    static UnitCell createHcpCell(const std::array<double, 3> &cuboidalCellSize,
+    static UnitCell createHcpCell(const std::array<double, 3> &sideLengths,
                                   LatticeTraits::Axis axis = LatticeTraits::Axis::Z, const ShapeData &data = {});
 
     /**
-     * @brief Creates a hexagonal close packed unit cell with four molecules in cuboidal cell with such side lengths,
-     * that the distance between the nearest neighbours is @a ballDiameter.
-     * @details Relative coordinates of molecules and @a axis parameter are the same as for
-     * createHcpCell(const std::array<double, 3>&, LatticeTraits::Axis).
+     * @brief Creates a hexagonal close packed unit cell of a cuboidal shape, accommodating four particles with
+     * ShapeData @a data. The side lengths of the cell are such that the distance between the nearest neighbors is
+     * @a nearestNeighborDistance.
+     * @details @a axis controls the direction along which the (alternating) honeycombs are stacked; see
+     * createHcpCell(const TriclinicBox&, LatticeTraits::Axis, const ShapeData&).
      */
-    static UnitCell createHcpCell(double ballDiameter, LatticeTraits::Axis axis = LatticeTraits::Axis::Z,
+    static UnitCell createHcpCell(double nearestNeighborDistance, LatticeTraits::Axis axis = LatticeTraits::Axis::Z,
                                   const ShapeData &data = {});
 
 
+    /**
+     * @brief Creates a hexagonal cell accommodating two particles with ShapeData @a data, where hexatic honeycombs are
+     * stack directly on top of each other, without alternating offsets as for the hexagonal close packed unit cell. The
+     * cell has a general, triclinic shape given by @a box.
+     * @details @a axis controls the direction along which the honeycombs are stacked. Relative coordinates of particles
+     * for the particular values of @a axis are the following:
+     * - LatticeTraits::Axis::X: {1/2, 1/4, 1/4}, {1/2, 3/4, 3/4}
+     * - LatticeTraits::Axis::Y: {1/4, 1/2, 1/4}, {3/4, 1/2, 3/4}
+     * - LatticeTraits::Axis::Z: {1/4, 1/4, 1/2}, {3/4, 3/4, 1/2}
+     */
     static UnitCell createHexagonalCell(const TriclinicBox &box, LatticeTraits::Axis axis = LatticeTraits::Axis::Z,
                                         const ShapeData &data = {});
 
     /**
-     * @brief Creates a hexagonal cell giving stacked honeycombs, but not alternating as for hcp lattice.
-     * @details @a axis behaves in identical way as for
-     * createHcpCell(const std::array<double, 3>&, LatticeTraits::Axis). If @a axis is LatticeTraits::Axis::Z, relative
-     * cell coordinates of the molecules are {0.5, 0.25, 0.25} and {0.5, 0.75, 0.75}.
+     * @brief Creates a hexagonal cell accommodating two particles with ShapeData @a data, where hexatic honeycombs are
+     * stack directly on top of each other, without alternating offsets as for the hexagonal close packed unit cell. The
+     * cell has a cuboidal shape, whose side lengths are @a sideLengths.
+     * @details @a axis controls the direction along which the honeycombs are stacked; see
+     * createHexagonalCell(const TriclinicBox&, LatticeTraits::Axis, const ShapeData&).
      */
-    static UnitCell createHexagonalCell(const std::array<double, 3> &cuboidalCellSize,
+    static UnitCell createHexagonalCell(const std::array<double, 3> &sideLengths,
                                         LatticeTraits::Axis axis = LatticeTraits::Axis::Z, const ShapeData &data = {});
 
     /**
-     * @brief Creates a hexagonal cell giving stacked honeycombs in cuboidal cell with such side lengths, that the
-     * distance between the nearest neighbours is @a ballDiameter.
-     * @details Relative coordinates of molecules and @a axis parameter are the same as for
-     * createHexagonalCell(const std::array<double, 3> &, LatticeTraits::Axis).
+     * @brief Creates a hexagonal cell accommodating two particles with ShapeData @a data, where hexatic honeycombs are
+     * stack directly on top of each other, without alternating offsets as for the hexagonal close packed unit cell. The
+     * cell has a cuboidal shape, whose side lengths are such that the distance between the nearest neighbors is
+     * @a nearestNeighborDistance.
+     * @details @a axis controls the direction along which the honeycombs are stacked; see
+     * createHexagonalCell(const TriclinicBox&, LatticeTraits::Axis, const ShapeData&).
      */
-    static UnitCell createHexagonalCell(double ballDiameter, LatticeTraits::Axis axis = LatticeTraits::Axis::Z,
-                                        const ShapeData &data = {});
+    static UnitCell createHexagonalCell(double nearestNeighborDistance,
+                                        LatticeTraits::Axis axis = LatticeTraits::Axis::Z, const ShapeData &data = {});
 };
 
 

@@ -63,16 +63,39 @@ public:
         ANTIFERRO
     };
 
+    /**
+     * @brief Alias for a list of indices of particles in the UnitCell belonging to a particular layer of
+     * @ref LayerAssociation.
+     */
     using LayerIndices = std::vector<std::size_t>;
+
+    /**
+     * @brief Alias for the description of layers in the UnitCell - an association between layer's relative coordinate
+     * (undisclosed along which axis) and its @ref LayerIndices
+     */
     using LayerAssociation = std::vector<std::pair<double, LayerIndices>>;
+
+    /**
+     * @brief Alias for two relative coordinates (undisclosed along which axes) of a column in @ref ColumnAssociation.
+     */
     using ColumnCoord = std::array<double, 2>;
+
+    /**
+     * @brief Alias for a list of indices of particles in the UnitCell belonging to a particular column of
+     * @ref ColumnAssociation.
+     */
     using ColumnIndices = std::vector<std::size_t>;
+
+    /**
+     * @brief Alias for the description of columns in the UnitCell - an association between column's @ref ColumnCoord
+     * and its @ref ColumnIndices.
+     */
     using ColumnAssociation = std::vector<std::pair<ColumnCoord, ColumnIndices>>;
 
     /**
      * @brief Converts a string of length 3 with names of axes to their 0-2 indices.
-     * @details Namely, for example "zxy" will be converted to an array with elements {2, 0, 1}. Incorrect string
-     * throw an exception.
+     * @details Namely, for example "zxy" will be converted to an array with elements {2, 0, 1}. Invalid string throws
+     * an exception.
      * @throws AxisOrderParseException if @a axisOrderString is invalid.
      */
     static std::array<std::size_t, 3> parseAxisOrder(const std::string &axisOrderString);
@@ -83,8 +106,21 @@ public:
      */
     static std::size_t axisToIndex(Axis axis);
 
+    /**
+     * @brief Computes @ref LayerAssociation for a given @a cell. A single layer consist of particles, whose coordinate
+     * along @a layerAxis is the same.
+     */
     static LayerAssociation getLayerAssociation(const UnitCell &cell, Axis layerAxis);
+
+    /**
+     * @brief Computes @ref ColumnAssociation for a given @a cell. A single column consist of particles, whose two
+     * coordinates which are not along @a columnAxis are the same.
+     */
     static ColumnAssociation getColumnAssociation(const UnitCell &cell, Axis columnAxis);
+
+    /**
+     * @brief Creates a Lattice with a single unit cell based on @a packing, copying its box shape and particles.
+     */
     static Lattice latticeFromPacking(const Packing &packing);
 };
 
