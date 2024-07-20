@@ -45,8 +45,13 @@ public:
 
 
 class XYZRecorderFactory : public SimulationRecorderFactory {
+private:
+    std::map<std::string, TextualShapeData> textualSpeciesMap;
+
 public:
-    explicit XYZRecorderFactory(std::string filename) : SimulationRecorderFactory(std::move(filename))
+    explicit XYZRecorderFactory(std::string filename,
+                                std::map<std::string, TextualShapeData> textualSpeciesMap = {})
+            : SimulationRecorderFactory(std::move(filename)), textualSpeciesMap{std::move(textualSpeciesMap)}
     { }
 
     [[nodiscard]] std::unique_ptr<SimulationRecorder> create(const Packing &packing, const ShapeDataManager &manager,

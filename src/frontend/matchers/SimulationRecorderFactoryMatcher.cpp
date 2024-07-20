@@ -4,6 +4,7 @@
 
 #include "SimulationRecorderFactoryMatcher.h"
 #include "frontend/SimulationRecorderFactory.h"
+#include "CommonMatchers.h"
 
 using namespace pyon::matcher;
 
@@ -23,10 +24,12 @@ namespace {
 
     MatcherDataclass create_xyz() {
         return MatcherDataclass("xyz")
-            .arguments({{"filename", filename}})
+            .arguments({{"filename", filename},
+                        {"species_map", CommonMatchers::createShapeSpeciesMap(), "{}"}})
             .mapTo([](const DataclassData &xyz) -> std::shared_ptr<SimulationRecorderFactory> {
                 auto filename = xyz["filename"].as<std::string>();
-                return std::make_shared<XYZRecorderFactory>(filename);
+                auto speciesMap = xyz["species_map"].as<std::map<std::string, TextualShapeData>>();
+                return std::make_shared<XYZRecorderFactory>(filename, std::move(speciesMap));
             });
     }
 }
