@@ -17,11 +17,16 @@ library (later, with Python bindings as well).
 
 * Removed legacy, undocumented secondary axis from the [class `kmer`](docs/shapes.md#class-kmer) shape
 
+### Changed
+
+* In [`shape-preview` mode](docs/operation-modes.md#shape-preview-mode), the default position, orientation, and shape
+  data may now be changed using command-line options.
+* XYZ [snapshots](docs/output-formats.md#class-xyz) and [trajectories](docs/output-formats.md#class-xyz-1) correctly
+  handle polydisperse species naming, retaining backwards compatibility; see their documentation for the details.
+
 ### Added
 
 * Added support for shape polydispersity.
-* In [`shape-preview` mode](docs/operation-modes.md#shape-preview-mode) default position, orientation, and shape data
-  may be changed using command-line options.
 * Added support for all [shape axes](docs/shapes.md#shape-axes) in
   [class `nematic_order`](docs/observables.md#class-nematic_order) observable.
 * Added [class `axial_rotation`](docs/input-file.md#class-axial_rotation) move sampler.
