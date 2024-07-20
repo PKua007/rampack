@@ -2,8 +2,8 @@
 // Created by Piotr Kubala on 20/07/2024.
 //
 
-#ifndef RAMPACK_UNIFORMSHAPEPARAMRANDOMIZER_H
-#define RAMPACK_UNIFORMSHAPEPARAMRANDOMIZER_H
+#ifndef RAMPACK_UNIFORMSHAPEPARAMETERRANDOMIZER_H
+#define RAMPACK_UNIFORMSHAPEPARAMETERRANDOMIZER_H
 
 #include <type_traits>
 #include <random>
@@ -19,7 +19,7 @@
  * @tparam Arithmetic type of the randomized value; it must be either an integer or a floating point type
  */
 template<typename Arithmetic>
-class UniformShapeParamRandomizer : public ShapeParameterRandomizer {
+class UniformShapeParameterRandomizer : public ShapeParameterRandomizer {
     static_assert(std::is_arithmetic_v<Arithmetic>, "Arithmetic should be an integral or floating point type");
 
 private:
@@ -32,7 +32,7 @@ public:
      * types and exclusive for floating point types).
      * @throws PreconditionException if @a beg &ge; @a end.
      */
-    UniformShapeParamRandomizer(Arithmetic beg, Arithmetic end) : beg{beg}, end{end} {
+    UniformShapeParameterRandomizer(Arithmetic beg, Arithmetic end) : beg{beg}, end{end} {
         Expects(beg < end);
     }
 
@@ -53,4 +53,4 @@ public:
 };
 
 
-#endif //RAMPACK_UNIFORMSHAPEPARAMRANDOMIZER_H
+#endif //RAMPACK_UNIFORMSHAPEPARAMETERRANDOMIZER_H

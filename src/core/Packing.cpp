@@ -1440,6 +1440,7 @@ const std::byte *Packing::getShapeDataPtr(std::size_t particleIdx) const {
 }
 
 bool Packing::areInteractionCentresConsistent(const Interaction &interaction) const {
+    // TODO: it throws for SmoothWedgeTraits (and similar shapes) is one species is not subdivided and others are.
     std::size_t firstNum = interaction.getInteractionCentres(this->getShapeDataPtr(0)).size();
     for (std::size_t i{}; i < this->size(); i++) {
         std::size_t iNum = interaction.getInteractionCentres(this->getShapeDataPtr(i)).size();

@@ -4,18 +4,18 @@
 
 #include <catch2/catch.hpp>
 
-#include "core/lattice/param_randomizers/UniformShapeParamRandomizer.h"
+#include "core/lattice/param_randomizers/UniformShapeParameterRandomizer.h"
 #include "utils/Quantity.h"
 
 
-TEST_CASE("UniformShapeParamRandomizer") {
+TEST_CASE("UniformShapeParameterRandomizer") {
     std::mt19937 mt; // NOLINT(*-msc51-cpp)
 
     std::vector<double> samples;
     samples.reserve(1000);
 
     SECTION("int") {
-        UniformShapeParamRandomizer<int> randomizer(-1, 1);
+        UniformShapeParameterRandomizer<int> randomizer(-1, 1);
 
         for (std::size_t i{}; i < samples.capacity(); i++)
             samples.push_back(std::stod(randomizer.randomize("", mt)));
@@ -30,7 +30,7 @@ TEST_CASE("UniformShapeParamRandomizer") {
     }
 
     SECTION("double") {
-        UniformShapeParamRandomizer<double> randomizer(-1, 1);
+        UniformShapeParameterRandomizer<double> randomizer(-1, 1);
 
         for (std::size_t i{}; i < samples.capacity(); i++)
             samples.push_back(std::stod(randomizer.randomize("", mt)));

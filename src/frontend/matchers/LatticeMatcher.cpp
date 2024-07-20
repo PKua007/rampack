@@ -27,6 +27,7 @@
 #include "core/lattice/transformers/RotationRandomizingTransformer.h"
 #include "core/lattice/transformers/ShapeParameterRandomizingTransformer.h"
 #include "core/lattice/param_randomizers/GaussianShapeParameterRandomizer.h"
+#include "core/lattice/param_randomizers/UniformShapeParameterRandomizer.h"
 #include "core/lattice/transformers/ReplicatingTransformer.h"
 
 
@@ -197,6 +198,10 @@ namespace {
     MatcherDataclass create_replicate();
 
     MatcherDataclass create_gaussian_param_randomizer();
+    template<typename AritmeticType, typename MatcherType>
+    MatcherDataclass create_uniform_param_randomizer(const std::string &dataclassName);
+    MatcherDataclass create_uniform_int_param_randomizer();
+    MatcherDataclass create_uniform_float_param_randomizer();
 
     std::vector<std::shared_ptr<LatticeTransformer>> do_create_transformations(const DictionaryData &kwargs);
     PopulatorData do_create_populator(const DictionaryData &kwargs);
@@ -567,7 +572,9 @@ namespace {
     }
 
     MatcherDataclass create_randomize_shape_param() {
-        auto paramRandomizer = create_gaussian_param_randomizer();
+        auto paramRandomizer = create_gaussian_param_randomizer()
+                | create_uniform_int_param_randomizer()
+                | create_uniform_float_param_randomizer();
 
         return MatcherDataclass("randomize_shape_param")
             .arguments({{"param", CommonMatchers::createSymbol()},
@@ -629,6 +636,32 @@ namespace {
 
                 return std::make_shared<GaussianShapeParameterRandomizer>(mean, stddev, cutoff);
             });
+    }
+
+    template<typename ArithmeticType, typename MatcherType>
+    MatcherDataclass create_uniform_param_randomizer(const std::string &dataclassName) {
+        return MatcherDataclass(dataclassName)
+            .arguments({{"beg", MatcherType{}},
+                        {"end", MatcherType{}}})
+            .filter([](const DataclassData &uniform) {
+                auto beg = uniform["beg"].as<ArithmeticType>();
+                auto end = uniform["end"].as<ArithmeticType>();
+                return beg < end;
+            })
+            .describe("with beg < end")
+            .mapTo([](const DataclassData &uniform) -> std::shared_ptr<ShapeParameterRandomizer> {
+                auto beg = uniform["beg"].as<ArithmeticType>();
+                auto end = uniform["end"].as<ArithmeticType>();
+                return std::make_shared<UniformShapeParameterRandomizer<ArithmeticType>>(beg, end);
+            });
+    }
+
+    MatcherDataclass create_uniform_int_param_randomizer() {
+        return create_uniform_param_randomizer<long, MatcherInt>("uniform_int");
+    }
+
+    MatcherDataclass create_uniform_float_param_randomizer() {
+        return create_uniform_param_randomizer<double, MatcherFloat>("uniform_float");
     }
 
     std::vector<std::shared_ptr<LatticeTransformer>> do_create_transformations(const DictionaryData &kwargs) {
