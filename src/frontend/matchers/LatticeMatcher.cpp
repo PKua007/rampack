@@ -28,6 +28,7 @@
 #include "core/lattice/transformers/ShapeParameterRandomizingTransformer.h"
 #include "core/lattice/param_randomizers/GaussianShapeParameterRandomizer.h"
 #include "core/lattice/param_randomizers/UniformShapeParameterRandomizer.h"
+#include "core/lattice/param_randomizers/DiscreteShapeParameterRandomizer.h"
 #include "core/lattice/transformers/ReplicatingTransformer.h"
 
 
@@ -202,6 +203,7 @@ namespace {
     MatcherDataclass create_uniform_param_randomizer(const std::string &dataclassName);
     MatcherDataclass create_uniform_int_param_randomizer();
     MatcherDataclass create_uniform_float_param_randomizer();
+    MatcherDataclass create_discrete_param_randomizer();
 
     std::vector<std::shared_ptr<LatticeTransformer>> do_create_transformations(const DictionaryData &kwargs);
     PopulatorData do_create_populator(const DictionaryData &kwargs);
@@ -574,7 +576,8 @@ namespace {
     MatcherDataclass create_randomize_shape_param() {
         auto paramRandomizer = create_gaussian_param_randomizer()
                 | create_uniform_int_param_randomizer()
-                | create_uniform_float_param_randomizer();
+                | create_uniform_float_param_randomizer()
+                | create_discrete_param_randomizer();
 
         return MatcherDataclass("randomize_shape_param")
             .arguments({{"param", CommonMatchers::createSymbol()},
@@ -662,6 +665,19 @@ namespace {
 
     MatcherDataclass create_uniform_float_param_randomizer() {
         return create_uniform_param_randomizer<double, MatcherFloat>("uniform_float");
+    }
+
+    MatcherDataclass create_discrete_param_randomizer() {
+        auto shapeParams = MatcherArray{}
+            .elementsMatch(CommonMatchers::createShapeParamValue())
+            .sizeAtLeast(2);
+
+        return MatcherDataclass("discrete")
+            .variadicArguments(shapeParams)
+            .mapTo([](const DataclassData &discrete) -> std::shared_ptr<ShapeParameterRandomizer> {
+                auto params = discrete.getVariadicArguments().asStdVector<std::string>();
+                return std::make_shared<DiscreteShapeParameterRandomizer>(std::move(params));
+            });
     }
 
     std::vector<std::shared_ptr<LatticeTransformer>> do_create_transformations(const DictionaryData &kwargs) {
