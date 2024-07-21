@@ -12,6 +12,8 @@ class CommonMatchers {
 public:
     static const pyon::matcher::MatcherString &createSymbol();
     static const pyon::matcher::MatcherDictionary &createShapeSpeciesMap();
+    static const pyon::matcher::MatcherAlternative &createShapeParamValue();
+    static const pyon::matcher::MatcherDictionary &createShapeData();
 };
 
 

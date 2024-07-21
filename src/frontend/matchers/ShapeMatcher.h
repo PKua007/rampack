@@ -22,7 +22,7 @@ public:
     static pyon::matcher::MatcherArray createOrientation();
     static Matrix<3, 3> matchOrientation(const std::string &expression);
 
-    static pyon::matcher::MatcherDictionary createShapeData();
+    static const pyon::matcher::MatcherDictionary &createShapeData();
     static TextualShapeData matchShapeData(const std::string &expression);
 };
 

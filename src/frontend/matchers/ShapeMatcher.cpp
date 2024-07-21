@@ -623,39 +623,14 @@ Matrix<3, 3> ShapeMatcher::matchOrientation(const std::string &expression) {
     return orientation.as<Matrix<3, 3>>();
 }
 
-pyon::matcher::MatcherDictionary ShapeMatcher::createShapeData() {
-    auto longMatcher = MatcherInt{}.mapTo([](long i) -> std::string {
-        return std::to_string(i);
-    });
-    auto doubleMatcher = MatcherFloat{}.mapTo([](double d) -> std::string {
-        std::ostringstream out;
-        out << std::setprecision(std::numeric_limits<double>::max_digits10) << d;
-        return out.str();
-    });
-    auto stringMatcher = MatcherString{}
-        .filter([](const std::string &str) {
-            return std::none_of(str.begin(), str.end(), [](char c) { return std::isspace(c) || c == '"'; });
-        })
-        .describe("not containing whitespace or quotation marks (\")");
-    auto vectorMatcher = MatcherArray(MatcherFloat{}, 3)
-        .mapTo([](const ArrayData &arrayData) -> std::string {
-            auto vec = arrayData.asVector<3>();
-            std::ostringstream out;
-            out << std::setprecision(std::numeric_limits<double>::max_digits10);
-            std::copy(vec.begin(), vec.end(), std::ostream_iterator<double>(out, ","));
-            return out.str();
-        });
-
-    return MatcherDictionary{}
-        .keysMatch(CommonMatchers::createSymbol())
-        .valuesMatch(longMatcher | doubleMatcher | stringMatcher | vectorMatcher)
-        .mapToStdMap<std::string>();
+const pyon::matcher::MatcherDictionary &ShapeMatcher::createShapeData() {
+    return CommonMatchers::createShapeData();
 }
 
 TextualShapeData ShapeMatcher::matchShapeData(const std::string &expression) {
     Any shapeData;
     auto shapeDataAST = pyon::Parser::parse(expression);
-    auto shapeDataMatcher = ShapeMatcher::createShapeData();
+    const auto &shapeDataMatcher = ShapeMatcher::createShapeData();
     auto matchReport = shapeDataMatcher.match(shapeDataAST, shapeData);
     if (!matchReport)
         throw pyon::matcher::MatchException(matchReport.getReason());
