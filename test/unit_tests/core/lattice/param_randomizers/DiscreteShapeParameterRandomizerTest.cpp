@@ -5,17 +5,13 @@
 #include <catch2/catch.hpp>
 
 #include "core/lattice/param_randomizers/DiscreteShapeParameterRandomizer.h"
-#include "utils/Quantity.h"
+#include "RandomizerHelpers.h"
 
 
 TEST_CASE("DiscreteShapeParameterRandomizer") {
-    std::mt19937 mt; // NOLINT(*-msc51-cpp)
-    std::vector<std::string> samples;
-    samples.reserve(1000);
     DiscreteShapeParameterRandomizer randomizer{"a", "b", "c"};
 
-    for (std::size_t i{}; i < samples.capacity(); i++)
-        samples.push_back(randomizer.randomize("", mt));
+    std::vector<std::string> samples = sample_randomizer(randomizer, 1000);
 
     std::size_t countM1 = std::count(samples.begin(), samples.end(), "a");
     std::size_t count0 = std::count(samples.begin(), samples.end(), "b");
