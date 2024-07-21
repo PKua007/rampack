@@ -8,17 +8,22 @@
 #include <ZipIterator.hpp>
 
 #include "LatticeMatcher.h"
+
 #include "ShapeMatcher.h"
 #include "CommonMatchers.h"
 #include "frontend/PackingFactory.h"
+#include "frontend/LatticeDimensionsOptimizer.h"
+
 #include "core/lattice/UnitCell.h"
 #include "core/lattice/UnitCellFactory.h"
 #include "core/lattice/Lattice.h"
 #include "core/lattice/LatticeTransformer.h"
 #include "core/lattice/LatticePopulator.h"
+
 #include "core/lattice/populators/SerialPopulator.h"
 #include "core/lattice/populators/RandomPopulator.h"
-#include "frontend/LatticeDimensionsOptimizer.h"
+#include "core/lattice/transformers/ReplicatingTransformer.h"
+
 #include "core/lattice/transformers/CellOptimizationTransformer.h"
 #include "core/lattice/transformers/ColumnarTransformer.h"
 #include "core/lattice/transformers/FlipRandomizingTransformer.h"
@@ -26,10 +31,11 @@
 #include "core/lattice/transformers/LayerWiseCellOptimizationTransformer.h"
 #include "core/lattice/transformers/RotationRandomizingTransformer.h"
 #include "core/lattice/transformers/ShapeParameterRandomizingTransformer.h"
-#include "core/lattice/param_randomizers/GaussianShapeParameterRandomizer.h"
-#include "core/lattice/param_randomizers/UniformShapeParameterRandomizer.h"
+
 #include "core/lattice/param_randomizers/DiscreteShapeParameterRandomizer.h"
-#include "core/lattice/transformers/ReplicatingTransformer.h"
+#include "core/lattice/param_randomizers/GaussianShapeParameterRandomizer.h"
+#include "core/lattice/param_randomizers/TriangularShapeParameterRandomizer.h"
+#include "core/lattice/param_randomizers/UniformShapeParameterRandomizer.h"
 
 
 using namespace pyon::matcher;
@@ -204,6 +210,7 @@ namespace {
     MatcherDataclass create_uniform_int_param_randomizer();
     MatcherDataclass create_uniform_float_param_randomizer();
     MatcherDataclass create_discrete_param_randomizer();
+    MatcherDataclass create_triangular_param_randomizer();
 
     std::vector<std::shared_ptr<LatticeTransformer>> do_create_transformations(const DictionaryData &kwargs);
     PopulatorData do_create_populator(const DictionaryData &kwargs);
@@ -577,7 +584,8 @@ namespace {
         auto paramRandomizer = create_gaussian_param_randomizer()
                 | create_uniform_int_param_randomizer()
                 | create_uniform_float_param_randomizer()
-                | create_discrete_param_randomizer();
+                | create_discrete_param_randomizer()
+                | create_triangular_param_randomizer();
 
         return MatcherDataclass("randomize_shape_param")
             .arguments({{"param", CommonMatchers::createSymbol()},
@@ -677,6 +685,43 @@ namespace {
             .mapTo([](const DataclassData &discrete) -> std::shared_ptr<ShapeParameterRandomizer> {
                 auto params = discrete.getVariadicArguments().asStdVector<std::string>();
                 return std::make_shared<DiscreteShapeParameterRandomizer>(std::move(params));
+            });
+    }
+
+    MatcherDataclass create_triangular_param_randomizer() {
+        auto midFloat = MatcherFloat{}.mapTo<std::optional<double>>();
+        auto midNone = MatcherNone{}.mapTo<std::optional<double>>();
+        auto mid = midFloat | midNone;
+
+        return MatcherDataclass("triangular")
+            .arguments({{"beg", MatcherFloat{}},
+                        {"end", MatcherFloat{}},
+                        {"mid", mid, "None"}})
+            .filter([](const DataclassData &triangular) {
+                auto beg = triangular["beg"].as<double>();
+                auto end = triangular["end"].as<double>();
+                return beg < end;
+            })
+            .describe("with beg < end")
+            .filter([](const DataclassData &triangular) {
+                auto beg = triangular["beg"].as<double>();
+                auto end = triangular["end"].as<double>();
+                auto mid = triangular["mid"].as<std::optional<double>>();
+
+                if (!mid.has_value())
+                    return true;
+                return beg <= *mid && *mid <= end;
+            })
+            .describe("with beg <= mid <= end")
+            .mapTo([](const DataclassData &triangular) -> std::shared_ptr<ShapeParameterRandomizer> {
+                auto beg = triangular["beg"].as<double>();
+                auto end = triangular["end"].as<double>();
+                auto mid = triangular["mid"].as<std::optional<double>>();
+
+                if (mid.has_value())
+                    return std::make_shared<TriangularShapeParameterRandomizer>(beg, *mid, end);
+                else
+                    return std::make_shared<TriangularShapeParameterRandomizer>(beg, end);
             });
     }
 
