@@ -8,7 +8,7 @@
 
 #include "mocks/MockCentralInteraction.h"
 
-#include "core/shapes/PolysphereTraits.h"
+#include "core/shapes/GenericPolysphereTraits.h"
 #include "core/PeriodicBoundaryConditions.h"
 
 
@@ -18,7 +18,7 @@ namespace {
         [[nodiscard]] double calculateEnergyForDistance2([[maybe_unused]] double distance) const override { return 0; }
     };
 
-    const ShapeData defaultData(PolysphereTraits::Data{0});
+    const ShapeData defaultData(GenericPolysphereTraits::Data{0});
     const Shape defaultShape({}, Matrix<3, 3>::identity(), defaultData);
 
     const PolysphereShape dimer({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}},
@@ -27,8 +27,8 @@ namespace {
                                  {-1, 0, 0}, {0, -1, 0}, {-0.5, 0, 0});
 }
 
-TEST_CASE("PolysphereTraits: basic") {
-    PolysphereTraits traits;
+TEST_CASE("GenericPolysphereTraits: basic") {
+    GenericPolysphereTraits traits;
     auto dimerData = traits.addSpecies("dimer", dimer);
     auto trimerData = traits.addSpecies("trimer", trimer);
 
@@ -146,33 +146,33 @@ TEST_CASE("PolysphereTraits: basic") {
     }
 }
 
-TEST_CASE("PolysphereTraits: soft interactions") {
+TEST_CASE("GenericPolysphereTraits: soft interactions") {
     PolysphereShape shape({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}}, {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
-    PolysphereTraits traits(shape, std::make_unique<DummyInteraction>());
+    GenericPolysphereTraits traits(shape, std::make_unique<DummyInteraction>());
     const auto &interaction = dynamic_cast<const CentralInteraction &>(traits.getInteraction());
 
     CHECK(interaction.getInteractionCentres(defaultData.raw()) == std::vector<Vector<3>>{{0, 0, 0}, {3, 0, 0}});
 }
 
-TEST_CASE("PolysphereTraits: mass centre normalization") {
+TEST_CASE("GenericPolysphereTraits: mass centre normalization") {
     double volume = 1;     // Volume is not important here, we are lazy and choose an arbitrary number
     PolysphereShape shape({{{0, 0, 0}, 1}, {{1, 0, 0}, std::cbrt(3)}},
                           {1, 0, 0}, {0, 1, 0}, {1, 0, 0}, volume, {{"point1", {1, 0, 0}}});
     shape.normalizeMassCentre();
-    PolysphereTraits traits(shape);
+    GenericPolysphereTraits traits(shape);
 
     const auto &sphereData = traits.getDefaultSpecies().getSphereData();
-    CHECK(sphereData == std::vector<PolysphereTraits::SphereData>{{{-0.75, 0, 0}, 1}, {{0.25, 0, 0}, std::cbrt(3)}});
+    CHECK(sphereData == std::vector<SphereData>{{{-0.75, 0, 0}, 1}, {{0.25, 0, 0}, std::cbrt(3)}});
     const auto &geometry = traits.getGeometry();
     CHECK_THAT(geometry.getGeometricOrigin(defaultShape), IsApproxEqual(Vector<3>{0.25, 0, 0}, 1e-12));
     CHECK_THAT(geometry.getNamedPointForShape("point1", defaultShape), IsApproxEqual(Vector<3>{0.25, 0, 0}, 1e-12));
 }
 
-TEST_CASE("PolysphereTraits: named points") {
+TEST_CASE("GenericPolysphereTraits: named points") {
     double volume = 1;     // Volume is not important here, we are lazy and choose an arbitrary number
     PolysphereShape polysphereShape({{{0, 0, 0}, 1}, {{1, 0, 0}, 1}},
                                     {1, 0, 0}, {0, 1, 0}, {1, 0, 0}, volume,{{"named1", {0, 2, 0}}});
-    PolysphereTraits traits(polysphereShape);
+    GenericPolysphereTraits traits(polysphereShape);
     const auto &geometry = traits.getGeometry();
 
     Shape shape({1, 2, 3}, Matrix<3, 3>::rotation(0, 0, M_PI/2), defaultData);
@@ -182,9 +182,9 @@ TEST_CASE("PolysphereTraits: named points") {
     CHECK_THAT(geometry.getNamedPointForShape("o", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-12));
 }
 
-TEST_CASE("PolysphereTraits: serialization") {
+TEST_CASE("GenericPolysphereTraits: serialization") {
     SECTION("default data") {
-        PolysphereTraits traits(dimer);
+        GenericPolysphereTraits traits(dimer);
         const auto &manager = traits.getDataManager();
 
         CHECK(manager.defaultDeserialize({}) == defaultData);
@@ -192,7 +192,7 @@ TEST_CASE("PolysphereTraits: serialization") {
     }
 
     SECTION("serialization & deserialization") {
-        PolysphereTraits traits;
+        GenericPolysphereTraits traits;
         traits.addSpecies("dimer", dimer);
         auto trimerData = traits.addSpecies("trimer", trimer);
         const auto &manager = traits.getDataManager();

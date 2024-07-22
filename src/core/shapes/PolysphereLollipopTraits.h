@@ -5,7 +5,7 @@
 #ifndef RAMPACK_POLYSPHERELOLLIPOPTRAITS_H
 #define RAMPACK_POLYSPHERELOLLIPOPTRAITS_H
 
-#include "PolysphereTraits.h"
+#include "GenericPolysphereTraits.h"
 
 
 namespace legacy {
@@ -19,7 +19,7 @@ namespace legacy {
      * for first (small) and last (large) spheres, together with the ones inherited from PolysphereTraits.
      * @sa ::PolysphereLollipopTraits
      */
-    class PolysphereLollipopTraits : public PolysphereTraits {
+    class PolysphereLollipopTraits : public GenericPolysphereTraits {
     private:
         static PolysphereShape generateShape(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
                                              double smallSpherePenetration, double largeSpherePenetration);
@@ -35,7 +35,7 @@ namespace legacy {
          */
         PolysphereLollipopTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
                                  double smallSpherePenetration, double largeSpherePenetration)
-                : PolysphereTraits(generateShape(sphereNum, smallSphereRadius, largeSphereRadius,
+                : GenericPolysphereTraits(generateShape(sphereNum, smallSphereRadius, largeSphereRadius,
                                                  smallSpherePenetration, largeSpherePenetration))
         { }
 
@@ -47,7 +47,7 @@ namespace legacy {
         PolysphereLollipopTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
                                  double smallSpherePenetration, double largeSpherePenetration,
                                  const std::shared_ptr<CentralInteraction> &centralInteraction)
-                : PolysphereTraits(generateShape(sphereNum, smallSphereRadius, largeSphereRadius,
+                : GenericPolysphereTraits(generateShape(sphereNum, smallSphereRadius, largeSphereRadius,
                                                  smallSpherePenetration, largeSpherePenetration),
                                    centralInteraction)
         { }
@@ -67,7 +67,7 @@ namespace legacy {
  * added using addSpecies() method.
  * @sa legacy::PolysphereLollipopTraits
  */
-class PolysphereLollipopTraits : public PolysphereTraits {
+class PolysphereLollipopTraits : public GenericPolysphereTraits {
 private:
     static double calculateVolume(const std::vector<SphereData> &sphereData, double stickSpherePenetration,
                                   double tipSpherePenetration);
@@ -101,7 +101,7 @@ public:
      */
     PolysphereLollipopTraits(std::size_t sphereNum, double stickSphereRadius, double tipSphereRadius,
                              double stickSpherePenetration, double tipSpherePenetration)
-            : PolysphereTraits(generateShape(sphereNum, stickSphereRadius, tipSphereRadius,
+            : GenericPolysphereTraits(generateShape(sphereNum, stickSphereRadius, tipSphereRadius,
                                              stickSpherePenetration, tipSpherePenetration))
     { }
 
@@ -109,7 +109,7 @@ public:
      * @brief Creates the class with soft interactions @a centralInteraction and no initially registered species.
      */
     explicit PolysphereLollipopTraits(const std::shared_ptr<CentralInteraction> &centralInteraction)
-            : PolysphereTraits(centralInteraction)
+            : GenericPolysphereTraits(centralInteraction)
     { }
 
     /**
@@ -120,7 +120,7 @@ public:
     PolysphereLollipopTraits(std::size_t sphereNum, double stickSphereRadius, double tipSphereRadius,
                              double stickSpherePenetration, double tipSpherePenetration,
                              const std::shared_ptr<CentralInteraction> &centralInteraction)
-            : PolysphereTraits(generateShape(sphereNum, stickSphereRadius, tipSphereRadius,
+            : GenericPolysphereTraits(generateShape(sphereNum, stickSphereRadius, tipSphereRadius,
                                              stickSpherePenetration, tipSpherePenetration),
                                centralInteraction)
     { }

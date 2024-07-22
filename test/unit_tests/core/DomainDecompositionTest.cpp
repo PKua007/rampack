@@ -5,8 +5,9 @@
 #include <catch2/catch.hpp>
 
 #include "core/DomainDecomposition.h"
-#include "core/shapes/PolysphereTraits.h"
+#include "core/shapes/GenericPolysphereTraits.h"
 #include "core/PeriodicBoundaryConditions.h"
+
 
 TEST_CASE("DomainDecomposition") {
     // 2 domains for dimers of radius 1, distance 1 (width: 3, range: 2, total range: 6) with origin placed at y = 17
@@ -16,7 +17,7 @@ TEST_CASE("DomainDecomposition") {
 
     double volume = 1; // volume is not important, we are laze and pick arbitrary number
     PolysphereShape shape({{{0, 0, 0}, 1}, {{1, 0, 0}, 1}}, {1, 0, 0}, {0, 1, 0}, {0, 0, 0}, volume);
-    PolysphereTraits dimer(shape);
+    GenericPolysphereTraits dimer(shape);
     auto pbc = std::make_unique<PeriodicBoundaryConditions>();
 
     Matrix<3, 3> id = Matrix<3, 3>::identity();

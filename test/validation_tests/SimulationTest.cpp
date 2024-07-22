@@ -469,7 +469,7 @@ TEST_CASE("Simulation: sphere-dumbbell binary mixture", "[medium]") {
 
     PolysphereShape sphere({{{0, 0, 0}, 0.5}});
     PolysphereShape dumbbell({{{0, 0, -0.5}, 0.5}, {{0, 0, 0.5}, 0.5}});
-    PolysphereTraits polysphereTraits;
+    GenericPolysphereTraits polysphereTraits;
     auto sphereData = polysphereTraits.addSpecies("sphere", sphere);
     auto dimerData = polysphereTraits.addSpecies("dumbbell", dumbbell);
 

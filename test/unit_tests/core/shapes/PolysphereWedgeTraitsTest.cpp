@@ -10,7 +10,7 @@
 
 
 namespace {
-    const Shape defaultShape({}, Matrix<3, 3>::identity(), PolysphereTraits::Data{0});
+    const Shape defaultShape({}, Matrix<3, 3>::identity(), GenericPolysphereTraits::Data{0});
 }
 
 TEST_CASE("PolysphereWedgeTraits") {

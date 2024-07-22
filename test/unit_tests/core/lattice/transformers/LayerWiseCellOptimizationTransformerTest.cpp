@@ -7,7 +7,7 @@
 #include "matchers/VectorApproxMatcher.h"
 
 #include "core/lattice/transformers/LayerWiseCellOptimizationTransformer.h"
-#include "core/shapes/PolysphereTraits.h"
+#include "core/shapes/GenericPolysphereTraits.h"
 
 
 TEST_CASE("LayerWiseCellOptimizationTransformer: 3 layers") {
@@ -20,7 +20,7 @@ TEST_CASE("LayerWiseCellOptimizationTransformer: 3 layers") {
     //    ###
     double volume = 1; // volume is not important, we are laze and pick arbitrary number
     PolysphereShape shape({{{0, 0, 0}, 2}, {{0, 0, -3}, 1}}, {0, 0, -1}, {0, 1, 0}, {0, 0, -1}, volume);
-    PolysphereTraits traits(shape);
+    GenericPolysphereTraits traits(shape);
     // Unit cell:
     //   ####    ####
     //   ####    ####
@@ -75,7 +75,7 @@ TEST_CASE("LayerWiseCellOptimizationTransformer: 1 layer") {
     // Dimer, but mass centre in a middle of a monomer => total range = 3
     double volume = 1; // volume is not important, we are laze and pick arbitrary number
     PolysphereShape shape({{{0, 0, 0}, 0.5}, {{0, 0, 1}, 0.5}}, {0, 0, 1}, {0, 1, 0}, {0, 0, 0}, volume);
-    PolysphereTraits traits(shape);
+    GenericPolysphereTraits traits(shape);
     TriclinicBox initialBox(std::array<double, 3>{5, 5, 3});
     Lattice lattice(UnitCell(initialBox, {Shape({0.5, 0.5, 0.5})}), {2, 2, 2});
     double spacing = 0.5;

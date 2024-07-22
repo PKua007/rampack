@@ -5,7 +5,7 @@
 #ifndef RAMPACK_KMERTRAITS_H
 #define RAMPACK_KMERTRAITS_H
 
-#include "PolysphereTraits.h"
+#include "GenericPolysphereTraits.h"
 
 
 /**
@@ -18,7 +18,7 @@
  * <p> The class is a thin decorator of PolysphereTraits, which means that arbitrary PolysphereShape species can be
  * added using addSpecies() method.
  */
-class KMerTraits : public PolysphereTraits {
+class KMerTraits : public GenericPolysphereTraits {
 private:
     static double calculateVolume(std::size_t sphereNum, double sphereRadius, double distance);
 
@@ -43,14 +43,14 @@ public:
      * generateShape().
      */
     KMerTraits(std::size_t sphereNum, double sphereRadius, double distance)
-            : PolysphereTraits(generateShape(sphereNum, sphereRadius, distance))
+            : GenericPolysphereTraits(generateShape(sphereNum, sphereRadius, distance))
     { }
 
     /**
      * @brief Creates the class with soft interactions @a centralInteraction and no initially registered species.
      */
     explicit KMerTraits(const std::shared_ptr<CentralInteraction> &centralInteraction)
-            : PolysphereTraits(centralInteraction)
+            : GenericPolysphereTraits(centralInteraction)
     { }
 
     /**
@@ -60,7 +60,7 @@ public:
      */
     KMerTraits(std::size_t sphereNum, double sphereRadius, double distance,
                const std::shared_ptr<CentralInteraction> &centralInteraction)
-            : PolysphereTraits(generateShape(sphereNum, sphereRadius, distance), centralInteraction)
+            : GenericPolysphereTraits(generateShape(sphereNum, sphereRadius, distance), centralInteraction)
     { }
 
     /**

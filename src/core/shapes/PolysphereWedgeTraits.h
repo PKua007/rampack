@@ -5,7 +5,7 @@
 #ifndef RAMPACK_POLYSPHEREWEDGETRAITS_H
 #define RAMPACK_POLYSPHEREWEDGETRAITS_H
 
-#include "PolysphereTraits.h"
+#include "GenericPolysphereTraits.h"
 
 
 namespace legacy {
@@ -19,7 +19,7 @@ namespace legacy {
      * for first (small) and last (large) spheres, together with once inherited from PolysphereTraits.
      * @sa ::PolysphereWedgeTraits
      */
-    class PolysphereWedgeTraits : public PolysphereTraits {
+    class PolysphereWedgeTraits : public GenericPolysphereTraits {
     private:
         static PolysphereShape generateShape(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
                                              double spherePenetration);
@@ -34,7 +34,7 @@ namespace legacy {
          */
         PolysphereWedgeTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
                               double spherePenetration)
-                : PolysphereTraits(generateShape(sphereNum, smallSphereRadius, largeSphereRadius, spherePenetration))
+                : GenericPolysphereTraits(generateShape(sphereNum, smallSphereRadius, largeSphereRadius, spherePenetration))
         { }
 
         /**
@@ -43,7 +43,7 @@ namespace legacy {
          */
         PolysphereWedgeTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
                               double spherePenetration, const std::shared_ptr<CentralInteraction> &centralInteraction)
-                : PolysphereTraits(generateShape(sphereNum, smallSphereRadius, largeSphereRadius, spherePenetration),
+                : GenericPolysphereTraits(generateShape(sphereNum, smallSphereRadius, largeSphereRadius, spherePenetration),
                                    centralInteraction)
         { }
     };
@@ -61,7 +61,7 @@ namespace legacy {
  * added using addSpecies() method.
  * @sa legacy::PolysphereWedgeTraits
  */
-class PolysphereWedgeTraits : public PolysphereTraits {
+class PolysphereWedgeTraits : public GenericPolysphereTraits {
 private:
     static double calculateVolume(const std::vector<SphereData> &sphereData, double spherePenetration);
 
@@ -89,14 +89,14 @@ public:
      */
     PolysphereWedgeTraits(std::size_t sphereNum, double bottomSphereRadius, double topSphereRadius,
                           double spherePenetration)
-            : PolysphereTraits(generateShape(sphereNum, bottomSphereRadius, topSphereRadius, spherePenetration))
+            : GenericPolysphereTraits(generateShape(sphereNum, bottomSphereRadius, topSphereRadius, spherePenetration))
     { }
 
     /**
      * @brief Creates the class with soft interactions @a centralInteraction and no initially registered species.
      */
     explicit PolysphereWedgeTraits(const std::shared_ptr<CentralInteraction> &centralInteraction)
-            : PolysphereTraits(centralInteraction)
+            : GenericPolysphereTraits(centralInteraction)
     { }
 
     /**
@@ -106,7 +106,7 @@ public:
      */
     PolysphereWedgeTraits(std::size_t sphereNum, double bottomSphereRadius, double topSphereRadius,
                           double spherePenetration, const std::shared_ptr<CentralInteraction> &centralInteraction)
-            : PolysphereTraits(generateShape(sphereNum, bottomSphereRadius, topSphereRadius, spherePenetration),
+            : GenericPolysphereTraits(generateShape(sphereNum, bottomSphereRadius, topSphereRadius, spherePenetration),
                                centralInteraction)
     { }
 
@@ -114,8 +114,8 @@ public:
      * @brief Registers a new species named @a shapeName of a wedge given by the rest of the arguments, whose meaning is
      * the same as in generateShape().
      */
-    void addLollipopShape(const std::string &shapeName, std::size_t sphereNum, double bottomSphereRadius,
-                          double topSphereRadius, double spherePenetration)
+    void addWedgeShape(const std::string &shapeName, std::size_t sphereNum, double bottomSphereRadius,
+                       double topSphereRadius, double spherePenetration)
     {
         auto shape = PolysphereWedgeTraits::generateShape(sphereNum, bottomSphereRadius, topSphereRadius,
                                                           spherePenetration);

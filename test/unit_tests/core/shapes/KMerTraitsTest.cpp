@@ -9,7 +9,7 @@
 
 TEST_CASE("KMer: volume") {
     Shape shape;
-    shape.setData(PolysphereTraits::Data{0});
+    shape.setData(GenericPolysphereTraits::Data{0});
 
     SECTION("non-overlapping") {
         KMerTraits traits(3, 0.5, 1);

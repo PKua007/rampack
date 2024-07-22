@@ -68,7 +68,7 @@ PolysphereShape PolysphereBananaTraits::generateShape(double arcRadius, double a
             pos += translation;
     }
 
-    std::vector<PolysphereTraits::SphereData> sphereData;
+    std::vector<SphereData> sphereData;
     sphereData.reserve(sphereNum);
     for (const auto &pos : spherePos)
         sphereData.emplace_back(pos, sphereRadius);

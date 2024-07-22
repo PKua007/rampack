@@ -5,7 +5,7 @@
 #ifndef RAMPACK_POLYSPHEREBANANATRAITS_H
 #define RAMPACK_POLYSPHEREBANANATRAITS_H
 
-#include "PolysphereTraits.h"
+#include "GenericPolysphereTraits.h"
 
 
 namespace legacy {
@@ -18,7 +18,7 @@ namespace legacy {
      * for first and last spheres, together with the ones inherited from PolysphereTraits.
      * @sa ::PolysphereBananaTraits
      */
-    class PolysphereBananaTraits : public PolysphereTraits {
+    class PolysphereBananaTraits : public GenericPolysphereTraits {
     private:
         static PolysphereShape generateShape(double arcRadius, double arcAngle, std::size_t sphereNum,
                                              double sphereRadius);
@@ -33,7 +33,7 @@ namespace legacy {
          * @param sphereRadius the radius of each sphere
          */
         PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius)
-                : PolysphereTraits(generateShape(arcRadius, arcAngle, sphereNum, sphereRadius))
+                : GenericPolysphereTraits(generateShape(arcRadius, arcAngle, sphereNum, sphereRadius))
         { }
 
         /**
@@ -42,7 +42,7 @@ namespace legacy {
          */
         PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
                                const std::shared_ptr<CentralInteraction> &centralInteraction)
-                : PolysphereTraits(generateShape(arcRadius, arcAngle, sphereNum, sphereRadius), centralInteraction)
+                : GenericPolysphereTraits(generateShape(arcRadius, arcAngle, sphereNum, sphereRadius), centralInteraction)
         { }
     };
 }
@@ -63,7 +63,7 @@ namespace legacy {
  * added using addSpecies() method.
  * @sa legacy::PolysphereBananaTraits
  */
-class PolysphereBananaTraits : public PolysphereTraits {
+class PolysphereBananaTraits : public GenericPolysphereTraits {
 private:
     static double calculateVolume(const std::vector<SphereData> &sphereData, double arcAngle);
     static void addMassCentre(PolysphereShape &shape);
@@ -91,14 +91,14 @@ public:
      * generateShape().
      */
     PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius)
-            : PolysphereTraits(generateShape(arcRadius, arcAngle, sphereNum, sphereRadius))
+            : GenericPolysphereTraits(generateShape(arcRadius, arcAngle, sphereNum, sphereRadius))
     { }
 
     /**
      * @brief Creates the class with soft interactions @a centralInteraction and no initially registered species.
      */
     explicit PolysphereBananaTraits(const std::shared_ptr<CentralInteraction> &centralInteraction)
-            : PolysphereTraits(centralInteraction)
+            : GenericPolysphereTraits(centralInteraction)
     { }
 
     /**
@@ -108,7 +108,7 @@ public:
      */
     PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
                            const std::shared_ptr<CentralInteraction> &centralInteraction)
-            : PolysphereTraits(generateShape(arcRadius, arcAngle, sphereNum, sphereRadius), centralInteraction)
+            : GenericPolysphereTraits(generateShape(arcRadius, arcAngle, sphereNum, sphereRadius), centralInteraction)
     { }
 
     /**

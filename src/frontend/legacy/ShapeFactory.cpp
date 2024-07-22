@@ -192,7 +192,7 @@ namespace {
         auto [fieldsMap, primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints]
             = parse_generic_shape_traits(in, GENERIC_POLYSPHERE_USAGE, {"spheres"});
 
-        std::vector<PolysphereTraits::SphereData> sphereData;
+        std::vector<SphereData> sphereData;
         auto spheres = ParseUtils::tokenize<double>(fieldsMap.at("spheres"));
         ValidateMsg(!spheres.empty() && (spheres.size() % 4 == 0), GENERIC_POLYSPHERE_USAGE);
         for (std::size_t i{}; i < spheres.size(); i += 4) {
@@ -442,8 +442,8 @@ namespace legacy {
             return parse_generic_xeno_collide(shapeAttrStream);
         } else if (shapeName == "Polysphere") {
             auto geometry = parse_polysphere_geometry(shapeAttrStream);
-            return parse_polysphere_traits<PolysphereTraits>(shapeName, interactionName, interactionAttrStream,
-                                                             geometry);
+            return parse_polysphere_traits<GenericPolysphereTraits>(shapeName, interactionName, interactionAttrStream,
+                                                                    geometry);
         } else if (shapeName == "Polyspherocylinder") {
             ValidateMsg(interactionName == "hard" || interactionName.empty(),
                         "Polyspherocylinder supports only hard interactions");

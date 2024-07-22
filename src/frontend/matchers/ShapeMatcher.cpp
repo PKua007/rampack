@@ -286,10 +286,10 @@ namespace {
             .mapTo([](const DataclassData &sphere) {
                 auto posVector = sphere["pos"].as<std::vector<Vector<3>>>();
                 auto r = sphere["r"].as<double>();
-                std::vector<PolysphereTraits::SphereData> sphereData;
+                std::vector<SphereData> sphereData;
                 sphereData.reserve(posVector.size());
                 auto sphereDataCreator = [r](const Vector<3> &pos) {
-                    return PolysphereTraits::SphereData(pos, r);
+                    return SphereData(pos, r);
                 };
                 std::transform(posVector.begin(), posVector.end(), std::back_inserter(sphereData), sphereDataCreator);
                 return sphereData;
@@ -298,8 +298,8 @@ namespace {
         auto sphereArray = MatcherArray{}.elementsMatch(sphere)
             .nonEmpty()
             .mapTo([](const ArrayData &array) {
-                std::vector<PolysphereTraits::SphereData> allSphereDatas;
-                for (const auto &sphereDatas : array.asStdVector<std::vector<PolysphereTraits::SphereData>>())
+                std::vector<SphereData> allSphereDatas;
+                for (const auto &sphereDatas : array.asStdVector<std::vector<SphereData>>())
                     for (const auto &sphereData : sphereDatas)
                         allSphereDatas.push_back(sphereData);
                 return allSphereDatas;
@@ -317,7 +317,7 @@ namespace {
             .filter(validate_axes)
             .describe("primary_axis and secondary_axis must be orthogonal")
             .mapTo([](const DataclassData &polysphere) -> std::shared_ptr<ShapeTraits> {
-                auto spheres = polysphere["spheres"].as<std::vector<PolysphereTraits::SphereData>>();
+                auto spheres = polysphere["spheres"].as<std::vector<SphereData>>();
                 auto volume = polysphere["volume"].as<double>();
                 auto geometricOrigin = polysphere["geometric_center"].as<Vector<3>>();
                 std::optional<Vector<3>> primaryAxis;
@@ -334,9 +334,9 @@ namespace {
                 );
 
                 if (interaction == nullptr)
-                    return std::make_shared<PolysphereTraits>(shape);
+                    return std::make_shared<GenericPolysphereTraits>(shape);
                 else
-                    return std::make_shared<PolysphereTraits>(shape, interaction);
+                    return std::make_shared<GenericPolysphereTraits>(shape, interaction);
             });
     }
 

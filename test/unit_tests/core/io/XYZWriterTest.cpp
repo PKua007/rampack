@@ -7,7 +7,7 @@
 #include "core/io/XYZWriter.h"
 #include "core/PeriodicBoundaryConditions.h"
 #include "core/shapes/SpherocylinderTraits.h"
-#include "core/shapes/PolysphereTraits.h"
+#include "core/shapes/GenericPolysphereTraits.h"
 
 
 TEST_CASE("XYZWriter") {
@@ -25,7 +25,7 @@ TEST_CASE("XYZWriter") {
     SpherocylinderTraits scTraits;
     using ScData = SpherocylinderTraits::Data;
 
-    PolysphereTraits polysphereTraits;
+    GenericPolysphereTraits polysphereTraits;
     auto monomerData = polysphereTraits.addSpecies("monomer", PolysphereShape({{{0, 0, 0}, 0.5}}));
     auto dimerData = polysphereTraits.addSpecies("dimer", PolysphereShape({{{0, 0, -0.5}, 0.5}, {{0, 0, 0.5}, 0.5}}));
 
