@@ -87,13 +87,19 @@ public:
      */
     [[nodiscard]] bool equal(double bottomR_, double topR_, double l_, std::size_t subdivisions_) const /* override */;
 
+    [[nodiscard]] double getVolume() const /* override */ { return this->volume; }
+    [[nodiscard]] static Vector<3> getPrimaryAxis() /* override */ { return {0, 0, 1}; }
+    [[nodiscard]] static Vector<3> getSecondaryAxis() /* override */ {
+        throw std::runtime_error("SmoothWedgeShape::getPrimaryAxis: primary axis not defined");
+    }
+    [[nodiscard]] static Vector<3> getGeometricOrigin() /* override */ { return {0, 0, 0}; }
+
     [[nodiscard]] double getBottomR() const { return this->bottomR; }
     [[nodiscard]] double getTopR() const { return this->topR; }
     [[nodiscard]] double getL() const { return this->l; }
     [[nodiscard]] std::size_t getSubdivisions() const { return this->subdivisions; }
     [[nodiscard]] const std::vector<CollideGeometry> &getSubdividedGeometries() const { return this->shapeParts; }
     [[nodiscard]] const std::vector<Vector<3>> &getInteractionCentres() const { return this->interactionCentres; }
-    [[nodiscard]] double getVolume() const { return this->volume; }
     [[nodiscard]] const Vector<3> &getBegNamedPoint() const { return this->begNamedPoint; }
     [[nodiscard]] const Vector<3> &getEndNamedPoint() const { return this->endNamedPoint; }
 };
@@ -103,7 +109,7 @@ public:
  * @brief Class representing a smooth wedge - a convex hull of two spheres with different radii.
  */
 class SmoothWedgeTraits
-        : public XenoCollideTraits<SmoothWedgeTraits>, public DynamicShapeCache<SmoothWedgeShape>, public ShapeGeometry
+        : public XenoCollideTraits<SmoothWedgeTraits>, public DynamicShapeCache<SmoothWedgeShape>
 {
 private:
     template<typename Printer>
@@ -143,11 +149,7 @@ public:
 
     [[nodiscard]] bool isConvex() const override { return true; }
 
-    [[nodiscard]] double getVolume(const Shape &shape) const override { return this->speciesFor(shape).getVolume(); }
-    [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const override {
-        return shape.getOrientation().column(2);
-    }
-    [[nodiscard]] Vector<3> getGeometricOrigin([[maybe_unused]] const Shape &shape) const override { return {0, 0, 0}; }
+
 
     /**
      * @brief Serializes the wedge into a map with shape parameters named `bottom_r`, `top_r`, `l`, and `subdivisions`.

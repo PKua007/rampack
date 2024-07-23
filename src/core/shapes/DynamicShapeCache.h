@@ -45,7 +45,7 @@
  * @sa GenericShapeRegistry
  */
 template<typename ConcreteSpecies>
-class DynamicShapeCache : public ShapeDataManager {
+class DynamicShapeCache :  public ShapeGeometry, public ShapeDataManager {
 private:
     struct Data {
         std::size_t speciesIdx{};
@@ -118,6 +118,37 @@ protected:
     }
 
 public:
+    /**
+     * @brief Return shape's primary axis based on `ConcreteSpecies::getPrimaryAxis`.
+     */
+    [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const final {
+        const auto &species = this->speciesFor(shape);
+        return shape.getOrientation() * species.getPrimaryAxis();
+    }
+
+    /**
+     * @brief Return shape's secondary axis based on `ConcreteSpecies::getSecondaryAxis`.
+     */
+    [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const final {
+        const auto &species = this->speciesFor(shape);
+        return shape.getOrientation() * species.getSecondaryAxis();
+    }
+
+    /**
+     * @brief Return shape's geometric origin based on `ConcreteSpecies::getGeometricOrigin`.
+     */
+    [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const final {
+        const auto &species = this->speciesFor(shape);
+        return shape.getOrientation() * species.getGeometricOrigin();
+    }
+
+    /**
+     * @brief Return shape's volume based on `ConcreteSpecies::getVolume`.
+     */
+    [[nodiscard]] double getVolume(const Shape &shape) const final {
+        return this->speciesFor(shape).getVolume();
+    }
+
     [[nodiscard]] std::size_t getShapeDataSize() const final {
         return sizeof(Data);
     }
