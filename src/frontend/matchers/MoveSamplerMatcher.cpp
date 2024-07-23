@@ -19,6 +19,7 @@ namespace {
     MatcherDataclass create_translation();
     MatcherDataclass create_rotation();
     MatcherDataclass create_rotationWithAngleConservation();
+    MatcherDataclass create_rotationAroundAxis();
     MatcherDataclass create_flip();
 
 

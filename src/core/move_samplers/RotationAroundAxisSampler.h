@@ -1,5 +1,5 @@
 //
-// Created by ciesla on 09.06.2024.
+// Created by Michal Ciesla on 09.06.2024.
 //
 
 #ifndef RAMPACK_ROTATIONAROUNDAXISSAMPLER_H
@@ -9,9 +9,10 @@
 
 /**
  * @brief MoveSampler performing the rotational move consisted of two rotations.
- * @details Particles are sampled at random. Rotation is performed around a given global axis or around the particle axis, thus the angle between particle axis and given global axis is conserved.
+ * @details Particles are sampled at random. Rotation is performed around a given axis which can be relative to
+ * simulation box coordinate system (@global=True) or to particle coordinate system.
  * The rotation angle is sampled uniformly from an interval given by the current step size. Maximal step size is PI.
- * Internally it consists of a single move named @a rotationWithAngleConservation. The group name is also @a rotation.
+ * Internally it consists of a single move named @a rotationAroundAxis. The group name is @a rotation.
  */
 class RotationAroundAxisSampler : public MoveSampler {
 private:
