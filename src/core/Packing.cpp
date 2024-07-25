@@ -1320,7 +1320,7 @@ std::vector<Vector<3>> Packing::dumpNamedPoints(const ShapeGeometry &geometry, c
     namedPoints.reserve(this->size());
     const auto &namedPoint = geometry.getNamedPoint(pointName);
     auto namedPointsCalculator = [&namedPoint](const Shape &shape) {
-        return namedPoint.forShape(shape);
+        return namedPoint.evaluateFor(shape);
     };
     std::transform(this->begin(), this->end(), std::back_inserter(namedPoints), namedPointsCalculator);
     return namedPoints;

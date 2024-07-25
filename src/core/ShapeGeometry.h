@@ -7,8 +7,9 @@
 
 #include <map>
 #include <string>
-#include <variant>
 #include <functional>
+#include <optional>
+#include <set>
 
 #include "geometry/Vector.h"
 #include "Shape.h"
@@ -29,27 +30,62 @@ struct NoSuchNamedPointForShapeException : public RuntimeException {
  * some specific ShapeData values (NoSuchNamedPointForShapeException is then thrown).
  */
 class NamedPoint {
+public:
+    enum class Type {
+        STATIC,
+        DYNAMIC,
+        TRANSIENT
+    };
+
+    using DynamicEvaluator = std::function<Vector<3>(const ShapeData &)>;
+    using TransientEvaluator = std::function<Vector<3>(const std::string &, const ShapeData &)>;
+    using TransientLister = std::function<std::set<std::string>(const ShapeData &)>;
+
 private:
-    struct StaticPoint {
+    struct StaticPointAdapter {
         Vector<3> point;
 
+        explicit StaticPointAdapter(const Vector<3> &point = {}) : point{point} { }
         Vector<3> operator()(const ShapeData &) const { return this->point; }
     };
 
+    struct TransientPointAdapter {
+        std::string name;
+        std::function<Vector<3>(const std::string &, const ShapeData &)> evaluator;
+
+        TransientPointAdapter(std::string name, TransientEvaluator evaluator)
+                : name{std::move(name)}, evaluator{std::move(evaluator)}
+        { }
+
+        Vector<3> operator()(const ShapeData &data) const { return this->evaluator(this->name, data); }
+    };
+
+    Type type = Type::STATIC;
     std::string name;
-    std::function<Vector<3>(const ShapeData &)> pointFunctor;
+    DynamicEvaluator pointFunctor;
 
 public:
+    struct StaticTag {
+    private:
+        StaticTag() = default;
+
+        friend NamedPoint;
+    };
+
+
+    constexpr static StaticTag STATIC_TAG{};
+
+
     /**
      * @brief Creates a [0, 0, 0] static point with no name.
      */
-    NamedPoint() : name{}, pointFunctor{StaticPoint{}} { }
+    NamedPoint() : type{Type::STATIC}, name{}, pointFunctor{StaticPointAdapter{}} { }
 
     /**
      * @brief Creates a static point named @a name placed in @a staticPoint coordinates.
      */
     NamedPoint(std::string name, const Vector<3> &staticPoint)
-            : name{std::move(name)}, pointFunctor{StaticPoint{staticPoint}}
+            : type{Type::STATIC}, name{std::move(name)}, pointFunctor{StaticPointAdapter(staticPoint)}
     { }
 
     /**
@@ -58,51 +94,51 @@ public:
      * @param dynamicPoint functor returning point coordinates for the specific ShapeData. If the point is not valid for
      * the concrete ShapeData, NoSuchNamedPointForShapeException should be thrown
      */
-    NamedPoint(std::string name, std::function<Vector<3>(const ShapeData &)> dynamicPoint)
-            : name{std::move(name)}, pointFunctor{std::move(dynamicPoint)}
+    NamedPoint(std::string name, DynamicEvaluator dynamicPoint)
+            : type{Type::DYNAMIC}, name{std::move(name)}, pointFunctor{std::move(dynamicPoint)}
     { }
 
-    /**
-     * @brief Returns @a true if the point is static, @a false otherwise.
-     */
-    [[nodiscard]] bool isStatic() const { return this->pointFunctor.target_type() == typeid(StaticPoint); }
+    NamedPoint(const std::string &name, TransientEvaluator transientPoint)
+            : type{Type::TRANSIENT}, name{name}, pointFunctor{TransientPointAdapter(name, std::move(transientPoint))}
+    { }
+
 
     /**
-     * @brief Returns @a true if the point is dynamic, @a false otherwise.
+     * @brief Returns the name of the point.
      */
-    [[nodiscard]] bool isDynamic() const { return !this->isStatic(); }
+    [[nodiscard]] const std::string &getName() const { return this->name; }
 
     /**
-     * @brief Returns @a true if the point is valid for the given @a data ShapeData, @a false otherwise.
-     * @details The ShapeData may not be valid only in the case of a dynamic point.
+     * @brief Returns the name of the point.
      */
-    [[nodiscard]] bool isValidForShapeData(const ShapeData &data) const;
-
-    /**
-     * @brief Returns the absolute position of the named point for a given shape, taking into account its position and
-     * orientation.
-     * @throws NoSuchNamedPointForShapeException if the point is dynamic and does not support the specific ShapeData
-     */
-    [[nodiscard]] Vector<3> forShape(const Shape &shape) const;
-
-    /**
-     * @brief Returns the position of the named point in shape coordinates (for the default positioned and oriented
-     * shape).
-     * @throws NoSuchNamedPointForShapeException if the point is dynamic and does not support the specific ShapeData
-     */
-    [[nodiscard]] Vector<3> forShapeData(const ShapeData &data) const { return this->pointFunctor(data); }
+    [[nodiscard]] Type getType() const { return this->type; }
 
     /**
      * @brief Returns the position of the named point in shape coordinates (for the default positioned and oriented
      * shape), assuming the point is static.
      * @throws PreconditionException if the point is not static
      */
-    [[nodiscard]] Vector<3> forStatic() const;
+    [[nodiscard]] Vector<3> evaluateFor(StaticTag staticTag) const;
 
     /**
-     * @brief Returns the name of the point.
+     * @brief Returns the position of the named point in shape coordinates (for the default positioned and oriented
+     * shape).
+     * @throws NoSuchNamedPointForShapeException if the point is dynamic and does not support the specific ShapeData
      */
-    [[nodiscard]] const std::string &getName() const { return this->name; }
+    [[nodiscard]] Vector<3> evaluateFor(const ShapeData &data) const { return this->pointFunctor(data); }
+
+    /**
+     * @brief Returns the absolute position of the named point for a given shape, taking into account its position and
+     * orientation.
+     * @throws NoSuchNamedPointForShapeException if the point is dynamic and does not support the specific ShapeData
+     */
+    [[nodiscard]] Vector<3> evaluateFor(const Shape &shape) const;
+
+    /**
+     * @brief Returns @a true if the point is valid for the given @a data ShapeData, @a false otherwise.
+     * @details The ShapeData may not be valid only in the case of a dynamic point.
+     */
+    [[nodiscard]] bool isValidFor(const ShapeData &data) const;
 };
 
 
@@ -125,7 +161,13 @@ public:
     };
 
 private:
-    std::map<std::string, NamedPoint> namedPoints;
+    struct TransientPointData {
+        NamedPoint::TransientEvaluator evaluator;
+        NamedPoint::TransientLister lister;
+    };
+
+    std::map<std::string, NamedPoint> nonTransientNamedPoints;
+    std::optional<TransientPointData> transientNamedPoint;
 
     void resetOriginPoint();
 
@@ -142,28 +184,9 @@ protected:
      * @details The order of points registered using all of: registerStaticNamedPoint(), registerDynamicNamedPoint(),
      * registerNamedPoint(), and registerNamedPoints() methods is remembered.
      */
-    void registerDynamicNamedPoint(const std::string &pointName,
-                                   const std::function<Vector<3>(const ShapeData &)> &point);
+    void registerDynamicNamedPoint(const std::string &pointName, NamedPoint::DynamicEvaluator point);
 
-    /**
-     * @brief Registers a new (static or dynamic) named point @a namedPoint.
-     * @details The order of points registered using all of: registerStaticNamedPoint(), registerDynamicNamedPoint(),
-     * registerNamedPoint(), and registerNamedPoints() methods is remembered.
-     */
-    void registerNamedPoint(NamedPoint namedPoint);
-
-    /**
-     * @brief Registers an array of new new (static or dynamic) named points @a namedPoints_.
-     * @details The order of points registered using all of: registerStaticNamedPoint(), registerDynamicNamedPoint(),
-     * registerNamedPoint(), and registerNamedPoints() methods is remembered.
-     */
-    void registerNamedPoints(const std::vector<NamedPoint> &namedPoints_);
-
-    /**
-     * @brief Translates all static named points, except for "o", by a given @a translation. Dynamic points are not
-     * affected.
-     */
-    void moveStaticNamedPoints(const Vector<3> &translation);
+    void registerTransientNamedPoint(NamedPoint::TransientEvaluator evaluator, NamedPoint::TransientLister lister);
 
 public:
     ShapeGeometry();
@@ -225,13 +248,17 @@ public:
     [[nodiscard]] const NamedPoint &getNamedPoint(const std::string &pointName) const;
 
     /**
-     * @brief Returns a named point with name @a pointName (see getNamedPoint()) on a specifically positioned and
-     * oriented @a shape.
-     * @throws PreconditionException if the point does not exist
-     * @throws NoSuchNamedPointForShapeException if the point is dynamic and does not support the specific ShapeData
+     * @brief Returns a list of all named points (see getNamedPoint()).
      */
-    [[nodiscard]] Vector<3> getNamedPointForShape(const std::string &pointName, const Shape &shape) const {
-        return this->getNamedPoint(pointName).forShape(shape);
+    [[nodiscard]] std::vector<NamedPoint> getNamedPoints(const ShapeData &shapeData) const;
+
+    /**
+     * @brief Returns a named point with name @a pointName (see getNamedPoint()) in shape coordinates (for the default
+     * positioned and oriented shape), assuming the point is static.
+     * @throws PreconditionException if the point does not exist or is not static
+     */
+    [[nodiscard]] Vector<3> evaluateNamedPoint(const std::string &pointName, NamedPoint::StaticTag staticTag) const {
+        return this->getNamedPoint(pointName).evaluateFor(staticTag);
     }
 
     /**
@@ -240,38 +267,40 @@ public:
      * @throws PreconditionException if the point does not exist
      * @throws NoSuchNamedPointForShapeException if the point is dynamic and does not support the specific ShapeData
      */
-    [[nodiscard]] Vector<3> getNamedPointForData(const std::string &pointName, const ShapeData &shapeData) const {
-        return this->getNamedPoint(pointName).forShapeData(shapeData);
+    [[nodiscard]] Vector<3> evaluateNamedPoint(const std::string &pointName, const ShapeData &shapeData) const {
+        return this->getNamedPoint(pointName).evaluateFor(shapeData);
     }
 
     /**
-     * @brief Returns a named point with name @a pointName (see getNamedPoint()) in shape coordinates (for the default
-     * positioned and oriented shape), assuming the point is static.
-     * @throws PreconditionException if the point does not exist or is not static
+     * @brief Returns a named point with name @a pointName (see getNamedPoint()) on a specifically positioned and
+     * oriented @a shape.
+     * @throws PreconditionException if the point does not exist
+     * @throws NoSuchNamedPointForShapeException if the point is dynamic and does not support the specific ShapeData
      */
-    [[nodiscard]] Vector<3> getNamedPointForStatic(const std::string &pointName) const {
-        return this->getNamedPoint(pointName).forStatic();
+    [[nodiscard]] Vector<3> evaluateNamedPoint(const std::string &pointName, const Shape &shape) const {
+        return this->getNamedPoint(pointName).evaluateFor(shape);
     }
 
-    /**
-     * @brief Returns a list of all named points (see getNamedPoint()).
-     */
-    [[nodiscard]] std::vector<NamedPoint> getNamedPoints() const;
+    [[nodiscard]] std::map<std::string, Vector<3>> evaluateNamedPoints(const ShapeData &shapeData) const;
+
+    [[nodiscard]] std::map<std::string, Vector<3>> evaluateNamedPoints(const Shape &shape) const;
 
     /**
      * @brief Returns @a true if named point @a namedPoint exists for any ShapeData.
      */
-    [[nodiscard]] bool hasNamedPoint(const std::string &pointName) const;
+    [[nodiscard]] bool hasNonTransientNamedPoint(const std::string &pointName) const;
 
     /**
      * @brief Returns @a true if named point @a namedPoint exists for the specific ShapeData of @a shape.
      */
-    [[nodiscard]] bool hasNamedPointForShape(const std::string &pointName, const Shape &shape) const;
+    [[nodiscard]] bool hasNamedPoint(const std::string &pointName, const Shape &shape) const {
+        return this->hasNamedPoint(pointName, shape.getData());
+    }
 
     /**
      * @brief Returns @a true if named point @a namedPoint exists for the specific @a shapeData ShapeData.
      */
-    [[nodiscard]] bool hasNamedPointForShapeData(const std::string &pointName, const ShapeData &shapeData) const;
+    [[nodiscard]] bool hasNamedPoint(const std::string &pointName, const ShapeData &shapeData) const;
 
     /**
      * @brief Returns @a true if the primary axis exists.

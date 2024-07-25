@@ -38,11 +38,11 @@ TEST_CASE("PolysphereLollipopTraits: basics") {
         CHECK_THAT(geometry.getGeometricOrigin(defaultShape), IsApproxEqual({0, 0, 0}, 1e-12));
         CHECK_THAT(geometry.getPrimaryAxis(defaultShape), IsApproxEqual({0, 0, 1}, 1e-12));
         CHECK(geometry.getVolume(defaultShape) == Approx(1217*M_PI/12));      // Mathematica value
-        CHECK_THAT(geometry.getNamedPoint("s0").forShape(defaultShape), IsApproxEqual({0, 0, -4.5}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("ss").forShape(defaultShape), IsApproxEqual({0, 0, -4.5}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("s2").forShape(defaultShape), IsApproxEqual({0, 0, 2.5}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("st").forShape(defaultShape), IsApproxEqual({0, 0, 2.5}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("o").forShape(defaultShape), IsApproxEqual({0, 0, 0}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("s0").evaluateFor(defaultShape), IsApproxEqual({0, 0, -4.5}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("ss").evaluateFor(defaultShape), IsApproxEqual({0, 0, -4.5}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("s2").evaluateFor(defaultShape), IsApproxEqual({0, 0, 2.5}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("st").evaluateFor(defaultShape), IsApproxEqual({0, 0, 2.5}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("o").evaluateFor(defaultShape), IsApproxEqual({0, 0, 0}, 1e-12));
         // Named point "cm" has its own test
     }
 }
@@ -51,14 +51,14 @@ TEST_CASE("PolysphereLollipopTraits: mass centre") {
     SECTION("existing") {
         PolysphereLollipopTraits traits(3, 1, 2, 0, 0);
 
-        CHECK_THAT(traits.getGeometry().getNamedPoint("cm").forShape(defaultShape), IsApproxEqual({0, 0, 1.2}, 1e-12));
+        CHECK_THAT(traits.getGeometry().getNamedPoint("cm").evaluateFor(defaultShape), IsApproxEqual({0, 0, 1.2}, 1e-12));
     }
 
     SECTION("not existing") {
         PolysphereLollipopTraits smallPenetrates(3, 1, 2, 0.1, 0);
         PolysphereLollipopTraits largePenetrates(3, 1, 2, 0, 0.1);
 
-        CHECK_FALSE(smallPenetrates.getGeometry().hasNamedPoint("cm"));
-        CHECK_FALSE(largePenetrates.getGeometry().hasNamedPoint("cm"));
+        CHECK_FALSE(smallPenetrates.getGeometry().hasNonTransientNamedPoint("cm"));
+        CHECK_FALSE(largePenetrates.getGeometry().hasNonTransientNamedPoint("cm"));
     }
 }

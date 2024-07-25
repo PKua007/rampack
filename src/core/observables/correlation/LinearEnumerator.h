@@ -37,7 +37,7 @@ public:
     /**
      * @brief Creates the enumerator.
      * @details @a axis determines along which box height the shapes will be grouped. Points named @a focalPointName wil
-     * be used to calculate layering and computing distances (see ShapeGeometry::getNamedPointForShape).
+     * be used to calculate layering and computing distances (see ShapeGeometry::evaluateNamedPoint).
      */
     explicit LinearEnumerator(Axis axis, std::string focalPoint = "o")
             : axis{axis}, focalPointName{std::move(focalPoint)}

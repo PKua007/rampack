@@ -17,26 +17,18 @@ public:
     IMPLEMENT_CONST_MOCK1(getSecondaryAxis);
     IMPLEMENT_CONST_MOCK1(getGeometricOrigin);
 
-    void publicRegisterStaticNamedPoint(const std::string &pointName, const Vector<3> &point)   {
+    void publicRegisterStaticNamedPoint(const std::string &pointName, const Vector<3> &point) {
         this->registerStaticNamedPoint(pointName, point);
     }
 
-    void publicRegisterDynamicNamedPoint(const std::string &pointName,
-                                         const std::function<Vector<3>(const ShapeData &)> &point)
+    void publicRegisterDynamicNamedPoint(const std::string &pointName, NamedPoint::DynamicEvaluator point) {
+        this->registerDynamicNamedPoint(pointName, std::move(point));
+    }
+
+    void publicRegisterTransientNamedPoint(NamedPoint::TransientEvaluator evaluator,
+                                           NamedPoint::TransientLister lister)
     {
-        this->registerDynamicNamedPoint(pointName, point);
-    }
-
-    void publicRegisterNamedPoint(NamedPoint namedPoint) {
-        this->registerNamedPoint(std::move(namedPoint));
-    }
-
-    void publicRegisterNamedPoints(const std::vector<NamedPoint> &namedPoints_) {
-        this->registerNamedPoints(namedPoints_);
-    }
-
-    void publicMoveStaticNamedPoints(const Vector<3> &translation) {
-        this->moveStaticNamedPoints(translation);
+        this->registerTransientNamedPoint(std::move(evaluator), std::move(lister));
     }
 };
 

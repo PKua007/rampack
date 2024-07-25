@@ -54,9 +54,9 @@ public:
      * @param rank rank compute (usually equal 3, 4 or 6)
      * @param planeMillerIndices parameter specifying the plane in which bond order should be computed. It is given as
      * Miller indices with respect to simulation box.
-     * @param layeringPointName named point (see ShapeGeometry::getNamedPointForShape) which should be used to assign shapes
+     * @param layeringPointName named point (see ShapeGeometry::evaluateNamedPoint) which should be used to assign shapes
      * to layers
-     * @param bondOrderPointName named point (see ShapeGeometry::getNamedPointForShape) which should be used to calculate
+     * @param bondOrderPointName named point (see ShapeGeometry::evaluateNamedPoint) which should be used to calculate
      * nearest neighbours and bond order
      * @param local if @a True, local bond order is calculated; otherwise - global.
      */
@@ -72,9 +72,9 @@ public:
      * @param ranks ranks to compute (usually one or more of: 3, 4 and 6)
      * @param planeMillerIndices parameter specifying the plane in which bond order should be computed. It is given as
      * Miller indices with respect to simulation box.
-     * @param layeringPointName named point (see ShapeGeometry::getNamedPointForShape) which should be used to assign shapes
+     * @param layeringPointName named point (see ShapeGeometry::evaluateNamedPoint) which should be used to assign shapes
      * to layers
-     * @param bondOrderPointName named point (see ShapeGeometry::getNamedPointForShape) which should be used to calculate
+     * @param bondOrderPointName named point (see ShapeGeometry::evaluateNamedPoint) which should be used to calculate
      * nearest neighbours and bond order
      * @param local if @a True, local bond order is calculated; otherwise - global.
      */

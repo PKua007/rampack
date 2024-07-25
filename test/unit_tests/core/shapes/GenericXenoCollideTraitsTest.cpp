@@ -238,9 +238,9 @@ TEST_CASE("GenericXenoCollideTraits: spherocylinder basic features") {
     }
 
     SECTION("named points") {
-        CHECK(traits.getGeometry().getNamedPointForShape("beg", defaultShape) == Vector<3>{-1.5, 0, 0});
-        CHECK(traits.getGeometry().getNamedPointForShape("end", defaultShape) == Vector<3>{1.5, 0, 0});
-        CHECK(traits.getGeometry().getNamedPointForShape("o", defaultShape) == Vector<3>{0, 0, 0});
+        CHECK(traits.getGeometry().evaluateNamedPoint("beg", defaultShape) == Vector<3>{-1.5, 0, 0});
+        CHECK(traits.getGeometry().evaluateNamedPoint("end", defaultShape) == Vector<3>{1.5, 0, 0});
+        CHECK(traits.getGeometry().evaluateNamedPoint("o", defaultShape) == Vector<3>{0, 0, 0});
     }
 }
 

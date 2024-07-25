@@ -94,14 +94,14 @@ TEST_CASE("PolyspherocylinderTraits: basics") {
         CHECK_THAT(geometry.getPrimaryAxis(shape), IsApproxEqual({1, 0, 0}, 1e-8));
         CHECK_THAT(geometry.getSecondaryAxis(shape), IsApproxEqual({0, 0, -1}, 1e-8));
         CHECK_THAT(geometry.getGeometricOrigin(shape), IsApproxEqual({0, 1, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPointForShape("o0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPointForShape("b0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{-1, 0, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPointForShape("e0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1, 0, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPointForShape("o1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{2, 0, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPointForShape("b1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1, 0, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPointForShape("e1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{3, 0, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPointForShape("o", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-8));
-        CHECK_THAT(geometry.getNamedPointForShape("point", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1.5, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.evaluateNamedPoint("o0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.evaluateNamedPoint("b0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{-1, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.evaluateNamedPoint("e0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.evaluateNamedPoint("o1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{2, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.evaluateNamedPoint("b1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.evaluateNamedPoint("e1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{3, 0, 0}, 1e-8));
+        CHECK_THAT(geometry.evaluateNamedPoint("o", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-8));
+        CHECK_THAT(geometry.evaluateNamedPoint("point", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{1.5, 0, 0}, 1e-8));
     }
 
     SECTION("default shape") {

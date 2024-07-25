@@ -37,11 +37,11 @@ TEST_CASE("PolysphereWedgeTraits") {
         CHECK_THAT(geometry.getGeometricOrigin(defaultShape), IsApproxEqual({0, 0, 0}, 1e-12));
         CHECK_THAT(geometry.getPrimaryAxis(defaultShape), IsApproxEqual({0, 0, 1}, 1e-12));
         CHECK(geometry.getVolume(defaultShape) == Approx(6205*M_PI/48));     // Mathematica value
-        CHECK_THAT(geometry.getNamedPoint("s0").forShape(defaultShape), IsApproxEqual({0, 0, -4}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("beg").forShape(defaultShape), IsApproxEqual({0, 0, -4}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("s2").forShape(defaultShape), IsApproxEqual({0, 0, 6}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("end").forShape(defaultShape), IsApproxEqual({0, 0, 6}, 1e-12));
-        CHECK_THAT(geometry.getNamedPoint("o").forShape(defaultShape), IsApproxEqual({0, 0, 0}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("s0").evaluateFor(defaultShape), IsApproxEqual({0, 0, -4}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("beg").evaluateFor(defaultShape), IsApproxEqual({0, 0, -4}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("s2").evaluateFor(defaultShape), IsApproxEqual({0, 0, 6}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("end").evaluateFor(defaultShape), IsApproxEqual({0, 0, 6}, 1e-12));
+        CHECK_THAT(geometry.getNamedPoint("o").evaluateFor(defaultShape), IsApproxEqual({0, 0, 0}, 1e-12));
         // Named point "cm" has its own test
     }
 }
@@ -50,13 +50,13 @@ TEST_CASE("PolysphereWedgeTraits: mass centre") {
     SECTION("existing") {
         PolysphereWedgeTraits traits(3, 1, 2, 0);
 
-        CHECK_THAT(traits.getGeometry().getNamedPoint("cm").forShape(defaultShape),
+        CHECK_THAT(traits.getGeometry().getNamedPoint("cm").evaluateFor(defaultShape),
                    IsApproxEqual({0, 0, 35./33}, 1e-12));
     }
 
     SECTION("not existing") {
         PolysphereWedgeTraits traits(3, 1, 2, 0.1);
 
-        CHECK_FALSE(traits.getGeometry().hasNamedPoint("cm"));
+        CHECK_FALSE(traits.getGeometry().hasNonTransientNamedPoint("cm"));
     }
 }

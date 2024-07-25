@@ -20,9 +20,9 @@ TEST_CASE("SmoothWedge: geometry") {
     CHECK_THAT(geometry.getGeometricOrigin(shape), IsApproxEqual({0, 0, 0}, 1e-12));
     // Calculated in Mathematica using the analytic formula, cross-checked with numerical convex hull volume
     CHECK(geometry.getVolume(shape) == Approx(272*M_PI/15));
-    CHECK_THAT(geometry.getNamedPointForShape("o", shape), IsApproxEqual({1, 2, 3}, 1e-12));
-    CHECK_THAT(geometry.getNamedPointForShape("beg", shape), IsApproxEqual({-1.0, 2, 3}, 1e-12));
-    CHECK_THAT(geometry.getNamedPointForShape("end", shape), IsApproxEqual({4.0, 2, 3}, 1e-12));
+    CHECK_THAT(geometry.evaluateNamedPoint("o", shape), IsApproxEqual({1, 2, 3}, 1e-12));
+    CHECK_THAT(geometry.evaluateNamedPoint("beg", shape), IsApproxEqual({-1.0, 2, 3}, 1e-12));
+    CHECK_THAT(geometry.evaluateNamedPoint("end", shape), IsApproxEqual({4.0, 2, 3}, 1e-12));
     CHECK(interaction.getRangeRadius(data.raw()) == 8);
 }
 

@@ -49,7 +49,7 @@ private:
     std::vector<ConcreteSpecies> speciesStore;
 
     void registerNamedPoint(const std::string &pointName) {
-        if (this->hasNamedPoint(pointName))
+        if (this->hasNonTransientNamedPoint(pointName))
             return;
 
         this->registerDynamicNamedPoint(pointName, [this, pointName](const ShapeData &data) -> Vector<3> {

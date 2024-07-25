@@ -165,7 +165,7 @@ TEST_CASE("GenericPolysphereTraits: mass centre normalization") {
     CHECK(sphereData == std::vector<SphereData>{{{-0.75, 0, 0}, 1}, {{0.25, 0, 0}, std::cbrt(3)}});
     const auto &geometry = traits.getGeometry();
     CHECK_THAT(geometry.getGeometricOrigin(defaultShape), IsApproxEqual(Vector<3>{0.25, 0, 0}, 1e-12));
-    CHECK_THAT(geometry.getNamedPointForShape("point1", defaultShape), IsApproxEqual(Vector<3>{0.25, 0, 0}, 1e-12));
+    CHECK_THAT(geometry.evaluateNamedPoint("point1", defaultShape), IsApproxEqual(Vector<3>{0.25, 0, 0}, 1e-12));
 }
 
 TEST_CASE("GenericPolysphereTraits: named points") {
@@ -176,10 +176,10 @@ TEST_CASE("GenericPolysphereTraits: named points") {
     const auto &geometry = traits.getGeometry();
 
     Shape shape({1, 2, 3}, Matrix<3, 3>::rotation(0, 0, M_PI/2), defaultData);
-    CHECK_THAT(geometry.getNamedPointForShape("s0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-12));
-    CHECK_THAT(geometry.getNamedPointForShape("s1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-12));
-    CHECK_THAT(geometry.getNamedPointForShape("named1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{-2, 0, 0}, 1e-12));
-    CHECK_THAT(geometry.getNamedPointForShape("o", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-12));
+    CHECK_THAT(geometry.evaluateNamedPoint("s0", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 0, 0}, 1e-12));
+    CHECK_THAT(geometry.evaluateNamedPoint("s1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-12));
+    CHECK_THAT(geometry.evaluateNamedPoint("named1", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{-2, 0, 0}, 1e-12));
+    CHECK_THAT(geometry.evaluateNamedPoint("o", shape), IsApproxEqual(Vector<3>{1, 2, 3} + Vector<3>{0, 1, 0}, 1e-12));
 }
 
 TEST_CASE("GenericPolysphereTraits: serialization") {

@@ -9,89 +9,82 @@
 #include "utils/Exceptions.h"
 
 
+Vector<3> NamedPoint::evaluateFor([[maybe_unused]] NamedPoint::StaticTag staticTag) const {
+    Expects(this->type == Type::STATIC);
+    return this->pointFunctor.target<StaticPointAdapter>()->point;
+}
+
+bool NamedPoint::isValidFor(const ShapeData &data) const {
+    if (this->getType() != Type::TRANSIENT)
+        return true;
+
+    try {
+        static_cast<void>(this->evaluateFor(data));
+        return true;
+    } catch (const NoSuchNamedPointForShapeException &) {
+        return false;
+    }
+}
+
+Vector<3> NamedPoint::evaluateFor(const Shape &shape) const {
+    return shape.getOrientation() * this->pointFunctor(shape.getData()) + shape.getPosition();
+}
+
+
 ShapeGeometry::ShapeGeometry() {
     this->resetOriginPoint();
 }
 
-ShapeGeometry::ShapeGeometry(const ShapeGeometry &other) : namedPoints{other.namedPoints} {
+ShapeGeometry::ShapeGeometry(const ShapeGeometry &other)
+        : nonTransientNamedPoints{other.nonTransientNamedPoints}, transientNamedPoint{other.transientNamedPoint}
+{
     this->resetOriginPoint();
 }
 
-ShapeGeometry::ShapeGeometry(ShapeGeometry &&other) noexcept : namedPoints{std::move(other.namedPoints)} {
+ShapeGeometry::ShapeGeometry(ShapeGeometry &&other) noexcept
+        : nonTransientNamedPoints{std::move(other.nonTransientNamedPoints)},
+          transientNamedPoint{std::move(other.transientNamedPoint)}
+{
     this->resetOriginPoint();
 }
 
 ShapeGeometry &ShapeGeometry::operator=(const ShapeGeometry &other) {
-    this->namedPoints = other.namedPoints;
+    this->nonTransientNamedPoints = other.nonTransientNamedPoints;
+    this->transientNamedPoint = other.transientNamedPoint;
     this->resetOriginPoint();
     return *this;
 }
 
 ShapeGeometry &ShapeGeometry::operator=(ShapeGeometry &&other) noexcept {
-    this->namedPoints = std::move(other.namedPoints);
+    this->nonTransientNamedPoints = std::move(other.nonTransientNamedPoints);
+    this->transientNamedPoint = std::move(other.transientNamedPoint);
     this->resetOriginPoint();
     return *this;
 }
 
-const NamedPoint &ShapeGeometry::getNamedPoint(const std::string &pointName) const {
-    auto point = this->namedPoints.find(pointName);
-    if (point == this->namedPoints.end())
-        ExpectsThrow("ShapeGeometry::getNamedPoint : unknown point name '" + pointName + "'");
-    return point->second;
+void ShapeGeometry::resetOriginPoint() {
+    this->nonTransientNamedPoints["o"] = NamedPoint("o", [this](const ShapeData &data) -> Vector<3> {
+        Shape trialShape{};
+        trialShape.setData(data.unmanagedCopy());       // Prevent copying data
+        return this->getGeometricOrigin(trialShape);
+    });
 }
 
 void ShapeGeometry::registerStaticNamedPoint(const std::string &pointName, const Vector<3> &point) {
-    Expects(!this->hasNamedPoint(pointName));
-    this->namedPoints[pointName] = NamedPoint(pointName, point);
+    Expects(!this->hasNonTransientNamedPoint(pointName));
+    this->nonTransientNamedPoints[pointName] = NamedPoint(pointName, point);
 }
 
-std::vector<NamedPoint> ShapeGeometry::getNamedPoints() const {
-    std::vector<NamedPoint> namedPointsVec;
-    namedPointsVec.reserve(this->namedPoints.size());
-    for (const auto &[name, point] : this->namedPoints)
-        namedPointsVec.push_back(point);
-    return namedPointsVec;
+void ShapeGeometry::registerDynamicNamedPoint(const std::string &pointName, NamedPoint::DynamicEvaluator point) {
+    Expects(!this->hasNonTransientNamedPoint(pointName));
+    this->nonTransientNamedPoints[pointName] = NamedPoint(pointName, std::move(point));
 }
 
-void ShapeGeometry::registerDynamicNamedPoint(const std::string &pointName,
-                                              const std::function<Vector<3>(const ShapeData &)> &point)
+void ShapeGeometry::registerTransientNamedPoint(NamedPoint::TransientEvaluator evaluator,
+                                                NamedPoint::TransientLister lister)
 {
-    Expects(!this->hasNamedPoint(pointName));
-    this->namedPoints[pointName] = NamedPoint(pointName, point);
-}
-
-void ShapeGeometry::registerNamedPoint(NamedPoint namedPoint) {
-    Expects(!this->hasNamedPoint(namedPoint.getName()));
-    this->namedPoints[namedPoint.getName()] = std::move(namedPoint);
-}
-
-void ShapeGeometry::registerNamedPoints(const std::vector<NamedPoint> &namedPoints_) {
-    for (const auto &namedPoint : namedPoints_)
-        this->registerNamedPoint(namedPoint);
-}
-
-void ShapeGeometry::moveStaticNamedPoints(const Vector<3> &translation) {
-    for (auto &[name, point] : this->namedPoints) {
-        if (!point.isStatic())
-            continue;
-
-        point = NamedPoint(point.getName(), point.forShape({}) + translation);
-    }
-}
-
-bool ShapeGeometry::hasNamedPoint(const std::string &pointName) const {
-    if (pointName == "o")
-        return true;
-    else
-        return this->namedPoints.find(pointName) != this->namedPoints.end();
-}
-
-bool ShapeGeometry::hasNamedPointForShape(const std::string &pointName, const Shape &shape) const {
-    return this->hasNamedPoint(pointName) && this->getNamedPoint(pointName).isValidForShapeData(shape.getData());
-}
-
-bool ShapeGeometry::hasNamedPointForShapeData(const std::string &pointName, const ShapeData &shapeData) const {
-    return this->hasNamedPoint(pointName) && this->getNamedPoint(pointName).isValidForShapeData(shapeData);
+    Expects(!this->transientNamedPoint.has_value());
+    this->transientNamedPoint = TransientPointData{std::move(evaluator), std::move(lister)};
 }
 
 bool ShapeGeometry::hasPrimaryAxis() const {
@@ -153,29 +146,66 @@ Vector<3> ShapeGeometry::getAxis(const Shape &shape, ShapeGeometry::Axis axis) c
     }
 }
 
-void ShapeGeometry::resetOriginPoint() {
-    this->namedPoints["o"] = NamedPoint("o", [this](const ShapeData &data) -> Vector<3> {
-        Shape trialShape{};
-        trialShape.setData(data.unmanagedCopy());       // Prevent copying data
-        return this->getGeometricOrigin(trialShape);
-    });
+const NamedPoint &ShapeGeometry::getNamedPoint(const std::string &pointName) const {
+    auto point = this->nonTransientNamedPoints.find(pointName);
+    if (point == this->nonTransientNamedPoints.end())
+        ExpectsThrow("ShapeGeometry::getNamedPoint : unknown point name '" + pointName + "'");
+    return point->second;
 }
 
-Vector<3> NamedPoint::forShape(const Shape &shape) const {
-    return shape.getPosition() + shape.getOrientation() * this->forShapeData(shape.getData());
-}
+std::vector<NamedPoint> ShapeGeometry::getNamedPoints(const ShapeData &data) const {
+    std::map<std::string, NamedPoint> allPointsMap = this->nonTransientNamedPoints;
 
-Vector<3> NamedPoint::forStatic() const {
-    Expects(this->isStatic());
-    return this->pointFunctor.target<StaticPoint>()->point;
-}
-
-bool NamedPoint::isValidForShapeData(const ShapeData &data) const {
-    try {
-        static_cast<void>(this->forShapeData(data));
-    } catch (const NoSuchNamedPointForShapeException &) {
-        return false;
+    if (this->transientNamedPoint.has_value()) {
+        auto transientPointNames = this->transientNamedPoint->lister(data);
+        for (const auto &transientPointName : transientPointNames)
+            allPointsMap[transientPointName] = NamedPoint(transientPointName, this->transientNamedPoint->evaluator);
     }
 
-    return true;
+    std::vector<NamedPoint> namedPointsVec;
+    namedPointsVec.reserve(allPointsMap.size());
+    for (const auto &[name, point] : allPointsMap)
+        namedPointsVec.push_back(point);
+
+    return namedPointsVec;
+}
+
+std::map<std::string, Vector<3>> ShapeGeometry::evaluateNamedPoints(const ShapeData &shapeData) const {
+    std::map<std::string, Vector<3>> namedPoints;
+
+    for (const auto &[name, point] : this->nonTransientNamedPoints)
+        namedPoints[name] = point.evaluateFor(shapeData);
+
+    if (this->transientNamedPoint.has_value()) {
+        auto transientPointNames = this->transientNamedPoint->lister(shapeData);
+        for (const auto &transientPointName : transientPointNames)
+            namedPoints[transientPointName] = this->transientNamedPoint->evaluator(transientPointName, shapeData);
+    }
+
+    return namedPoints;
+}
+
+std::map<std::string, Vector<3>> ShapeGeometry::evaluateNamedPoints(const Shape &shape) const {
+    auto points = this->evaluateNamedPoints(shape.getData());
+    for (auto &[name, point] : points)
+        point = shape.getOrientation() * point + shape.getPosition();
+    return points;
+}
+
+bool ShapeGeometry::hasNonTransientNamedPoint(const std::string &pointName) const {
+    if (pointName == "o")
+        return true;
+    else
+        return this->nonTransientNamedPoints.find(pointName) != this->nonTransientNamedPoints.end();
+}
+
+bool ShapeGeometry::hasNamedPoint(const std::string &pointName, const ShapeData &shapeData) const {
+    if (this->hasNonTransientNamedPoint(pointName))
+        return true;
+
+    if (!this->transientNamedPoint.has_value())
+        return false;
+
+    auto transientPoints = this->transientNamedPoint->lister(shapeData);
+    return transientPoints.find(pointName) != transientPoints.end();
 }

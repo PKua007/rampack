@@ -226,10 +226,10 @@ TEST_CASE("SpherocylinderTraits: named points") {
     SpherocylinderTraits traits;
     ShapeData data(SpherocylinderData{3, 2});
 
-    CHECK(traits.getGeometry().getNamedPointForData("beg", data) == Vector<3>{0, 0, -1.5});
-    CHECK(traits.getGeometry().getNamedPointForData("end", data) == Vector<3>{0, 0, 1.5});
-    CHECK(traits.getGeometry().getNamedPointForData("cm", data) == Vector<3>{0, 0, 0});
-    CHECK(traits.getGeometry().getNamedPointForData("o", data) == Vector<3>{0, 0, 0});
+    CHECK(traits.getGeometry().evaluateNamedPoint("beg", data) == Vector<3>{0, 0, -1.5});
+    CHECK(traits.getGeometry().evaluateNamedPoint("end", data) == Vector<3>{0, 0, 1.5});
+    CHECK(traits.getGeometry().evaluateNamedPoint("cm", data) == Vector<3>{0, 0, 0});
+    CHECK(traits.getGeometry().evaluateNamedPoint("o", data) == Vector<3>{0, 0, 0});
 }
 
 TEST_CASE("SpherocylinderTraits: serialization") {

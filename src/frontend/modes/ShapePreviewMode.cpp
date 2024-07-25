@@ -158,26 +158,20 @@ void ShapePreviewMode::printGeometryInfo(const ShapeGeometry &geometry, const Sh
     }
 
     this->logger << "Named points     :" << std::endl;
-    auto points = geometry.getNamedPoints();
+    auto points = geometry.getNamedPoints(trialShape.getData());
 
-    using FormattedPoint = std::pair<std::string, std::optional<Vector<3>>>;
+    using FormattedPoint = std::pair<std::string, Vector<3>>;
     std::vector<FormattedPoint> formattedPoints;
     formattedPoints.reserve(points.size());
     int maxLength = 0;
     for (const auto &point : points) {
         maxLength = std::max(maxLength, static_cast<int>(point.getName().length()));
-        if (point.isValidForShapeData(trialShape.getData()))
-            formattedPoints.emplace_back(point.getName(), point.forShape(trialShape));
-        else
-            formattedPoints.emplace_back(point.getName(), std::nullopt);
+        formattedPoints.emplace_back(point.getName(), point.evaluateFor(trialShape));
     }
 
     for (const auto &[pointName, point] : formattedPoints) {
         this->logger << "    " << std::left << std::setw(maxLength) << pointName << " = ";
-        if (point.has_value())
-            this->logger << *point << std::endl;
-        else
-            this->logger << "UNDEFINED FOR THE SPECIFIC SHAPE" << std::endl;
+        this->logger << point << std::endl;
     }
 }
 

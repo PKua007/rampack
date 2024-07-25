@@ -22,8 +22,8 @@ TEST_CASE("PolyhedralWedgeTraits: geometry") {
     CHECK_THAT(geometry.getGeometricOrigin(shape), IsApproxEqual({0, 0, 0}, 1e-12));
     // Calculated in Mathematica using Volume@ConvexHull@vertices
     CHECK(geometry.getVolume(shape) == Approx(36));
-    CHECK(geometry.getNamedPoint("beg").forShapeData(data) == Vector<3>{0, 0, -3});
-    CHECK(geometry.getNamedPoint("end").forShapeData(data) == Vector<3>{0, 0, 3});
+    CHECK(geometry.getNamedPoint("beg").evaluateFor(data) == Vector<3>{0, 0, -3});
+    CHECK(geometry.getNamedPoint("end").evaluateFor(data) == Vector<3>{0, 0, 3});
     CHECK(interaction.getRangeRadius(data.raw()) == Approx(2*std::sqrt(14)));
 }
 

@@ -31,8 +31,8 @@ TEST_CASE("PolysphereBananaTraits: basics") {
             const auto &geom = traits.getGeometry();
             CHECK_THAT(geom.getPrimaryAxis(defaultShape), IsApproxEqual({0, 0, 1}, 1e-12));
             CHECK_THAT(geom.getSecondaryAxis(defaultShape), IsApproxEqual({-1, 0, 0}, 1e-12));
-            CHECK_THAT(geom.getNamedPoint("beg").forShape(defaultShape), IsApproxEqual({0, 0, -std::sqrt(3)}, 1e-12));
-            CHECK_THAT(geom.getNamedPoint("end").forShape(defaultShape), IsApproxEqual({0, 0, +std::sqrt(3)}, 1e-12));
+            CHECK_THAT(geom.getNamedPoint("beg").evaluateFor(defaultShape), IsApproxEqual({0, 0, -std::sqrt(3)}, 1e-12));
+            CHECK_THAT(geom.getNamedPoint("end").evaluateFor(defaultShape), IsApproxEqual({0, 0, +std::sqrt(3)}, 1e-12));
             // "cm" named point has a separate test
         }
     }
@@ -54,13 +54,13 @@ TEST_CASE("PolysphereBananaTraits: mass centre") {
     SECTION("existing") {
         PolysphereBananaTraits traits(3, M_PI, 3, 0.5);
 
-        CHECK_THAT(traits.getGeometry().getNamedPoint("cm").forShape(defaultShape), IsApproxEqual({-1, 0, 0}, 1e-12));
+        CHECK_THAT(traits.getGeometry().getNamedPoint("cm").evaluateFor(defaultShape), IsApproxEqual({-1, 0, 0}, 1e-12));
     }
 
     SECTION("not existing") {
         PolysphereBananaTraits traits(3, 0.1, 3, 0.5);
 
-        CHECK_FALSE(traits.getGeometry().hasNamedPoint("cm"));
+        CHECK_FALSE(traits.getGeometry().hasNonTransientNamedPoint("cm"));
     }
 }
 
