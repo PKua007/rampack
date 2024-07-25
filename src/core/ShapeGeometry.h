@@ -245,7 +245,7 @@ public:
      * @return named point with the name @a pointName
      * @throws PreconditionException if the point does not exist
      */
-    [[nodiscard]] const NamedPoint &getNamedPoint(const std::string &pointName) const;
+    [[nodiscard]] NamedPoint getNamedPoint(const std::string &pointName) const;
 
     /**
      * @brief Returns a list of all named points (see getNamedPoint()).

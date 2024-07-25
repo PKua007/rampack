@@ -146,11 +146,15 @@ Vector<3> ShapeGeometry::getAxis(const Shape &shape, ShapeGeometry::Axis axis) c
     }
 }
 
-const NamedPoint &ShapeGeometry::getNamedPoint(const std::string &pointName) const {
+NamedPoint ShapeGeometry::getNamedPoint(const std::string &pointName) const {
     auto point = this->nonTransientNamedPoints.find(pointName);
-    if (point == this->nonTransientNamedPoints.end())
-        ExpectsThrow("ShapeGeometry::getNamedPoint : unknown point name '" + pointName + "'");
-    return point->second;
+    if (point != this->nonTransientNamedPoints.end())
+        return point->second;
+
+    if (!this->transientNamedPoint.has_value())
+        ExpectsThrow("ShapeGeometry::getNamedPoint : unknown non-transient point name '" + pointName + "'");
+
+    return NamedPoint(pointName, this->transientNamedPoint->evaluator);
 }
 
 std::vector<NamedPoint> ShapeGeometry::getNamedPoints(const ShapeData &data) const {
