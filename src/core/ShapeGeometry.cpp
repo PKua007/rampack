@@ -30,36 +30,20 @@ Vector<3> NamedPoint::evaluateFor(const Shape &shape) const {
     return shape.getOrientation() * this->pointFunctor(shape.getData()) + shape.getPosition();
 }
 
+Vector<3> NamedPoint::evaluateFor(const ShapeData &data) const {
+    if (this->type == Type::TRANSIENT)
+        return this->pointFunctor(data);
+
+    try {
+        return this->pointFunctor(data);
+    } catch (const NoSuchNamedPointForShapeException &forbiddenException) {
+        AssertThrow(std::string("NoSuchNamedPointForShapeException (what(): ") + forbiddenException.what()
+                    + ") was thrown, which is forbidden for non-transient points");
+    }
+}
 
 ShapeGeometry::ShapeGeometry() {
     this->resetOriginPoint();
-}
-
-ShapeGeometry::ShapeGeometry(const ShapeGeometry &other)
-        : nonTransientNamedPoints{other.nonTransientNamedPoints}, transientNamedPoint{other.transientNamedPoint}
-{
-    this->resetOriginPoint();
-}
-
-ShapeGeometry::ShapeGeometry(ShapeGeometry &&other) noexcept
-        : nonTransientNamedPoints{std::move(other.nonTransientNamedPoints)},
-          transientNamedPoint{std::move(other.transientNamedPoint)}
-{
-    this->resetOriginPoint();
-}
-
-ShapeGeometry &ShapeGeometry::operator=(const ShapeGeometry &other) {
-    this->nonTransientNamedPoints = other.nonTransientNamedPoints;
-    this->transientNamedPoint = other.transientNamedPoint;
-    this->resetOriginPoint();
-    return *this;
-}
-
-ShapeGeometry &ShapeGeometry::operator=(ShapeGeometry &&other) noexcept {
-    this->nonTransientNamedPoints = std::move(other.nonTransientNamedPoints);
-    this->transientNamedPoint = std::move(other.transientNamedPoint);
-    this->resetOriginPoint();
-    return *this;
 }
 
 void ShapeGeometry::resetOriginPoint() {
@@ -70,14 +54,14 @@ void ShapeGeometry::resetOriginPoint() {
     });
 }
 
-void ShapeGeometry::registerStaticNamedPoint(const std::string &pointName, const Vector<3> &point) {
+void ShapeGeometry::registerStaticNamedPoint(const std::string &pointName, const Vector<3> &staticCoordinates) {
     Expects(!this->hasNonTransientNamedPoint(pointName));
-    this->nonTransientNamedPoints[pointName] = NamedPoint(pointName, point);
+    this->nonTransientNamedPoints[pointName] = NamedPoint(pointName, staticCoordinates);
 }
 
-void ShapeGeometry::registerDynamicNamedPoint(const std::string &pointName, NamedPoint::DynamicEvaluator point) {
+void ShapeGeometry::registerDynamicNamedPoint(const std::string &pointName, NamedPoint::DynamicEvaluator evaluator) {
     Expects(!this->hasNonTransientNamedPoint(pointName));
-    this->nonTransientNamedPoints[pointName] = NamedPoint(pointName, std::move(point));
+    this->nonTransientNamedPoints[pointName] = NamedPoint(pointName, std::move(evaluator));
 }
 
 void ShapeGeometry::registerTransientNamedPoint(NamedPoint::TransientEvaluator evaluator,
