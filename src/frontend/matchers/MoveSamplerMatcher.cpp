@@ -7,8 +7,7 @@
 #include "core/move_samplers/RototranslationSampler.h"
 #include "core/move_samplers/TranslationSampler.h"
 #include "core/move_samplers/RotationSampler.h"
-#include "core/move_samplers/RotationAroundAxisSampler.h"
-#include "core/move_samplers/RotationWithAngleConservationSampler.h"
+#include "core/move_samplers/AxisRotationSampler.h"
 #include "core/move_samplers/FlipSampler.h"
 
 using namespace pyon::matcher;
@@ -18,8 +17,7 @@ namespace {
     MatcherDataclass create_rototranslation();
     MatcherDataclass create_translation();
     MatcherDataclass create_rotation();
-    MatcherDataclass create_rotationWithAngleConservation();
-    MatcherDataclass create_rotationAroundAxis();
+    MatcherDataclass create_axis_rotation();
     MatcherDataclass create_flip();
 
 
@@ -85,32 +83,18 @@ namespace {
             });
     }
 
-    MatcherDataclass create_rotationAroundAxis() {
-        return MatcherDataclass("rotationAroundAxis")
-                .arguments({{"step", MatcherFloat{}.positive()},
-                            {"axis", MatcherArray(MatcherFloat{}.mapTo<double>(),3), "[0,0,1]"},
-                            {"global", MatcherBoolean{}, "True"}})
-                .mapTo([](const DataclassData &rotationAroundAxis) -> std::shared_ptr<MoveSampler> {
-                    auto step = rotationAroundAxis["step"].as<double>();
-                    auto axisData = rotationAroundAxis["axis"].as<pyon::matcher::ArrayData>();
-                    auto axis = Vector<3, double>({axisData[0].as<double>(), axisData[1].as<double>(), axisData[2].as<double>()});
-                    auto global = rotationAroundAxis["global"].as<bool>();
-                    return std::make_shared<RotationAroundAxisSampler>(step, axis, global);
-                });
-    }
-
-    MatcherDataclass create_rotationWithAngleConservation() {
-        return MatcherDataclass("rotationWithAngleConservation")
-                .arguments({{"step", MatcherFloat{}.positive()},
-                            {"particleAxis", MatcherInt{}.nonNegative()},
-                            {"globalAxis", MatcherArray(MatcherFloat{}.mapTo<double>(),3), "[0,0,1]"}})
-                .mapTo([](const DataclassData &rotationWithAngleConservation) -> std::shared_ptr<MoveSampler> {
-                    auto step = rotationWithAngleConservation["step"].as<double>();
-                    auto particleAxisIdx = rotationWithAngleConservation["particleAxis"].as<long>();
-                    auto globalAxisData = rotationWithAngleConservation["globalAxis"].as<pyon::matcher::ArrayData>();
-                    auto globalAxis = Vector<3, double>({globalAxisData[0].as<double>(), globalAxisData[1].as<double>(), globalAxisData[2].as<double>()});
-                    return std::make_shared<RotationWithAngleConservationSampler>(step, particleAxisIdx, globalAxis);
-                });
+    MatcherDataclass create_axis_rotation() {
+        return MatcherDataclass("axis_rotation");
+//            .arguments({{"step", MatcherFloat{}.positive()},
+//                        {"axis", MatcherArray(MatcherFloat{}.mapTo<double>(),3), "[0,0,1]"},
+//                        {"global", MatcherBoolean{}, "True"}})
+//            .mapTo([](const DataclassData &rotationAroundAxis) -> std::shared_ptr<MoveSampler> {
+//                auto step = rotationAroundAxis["step"].as<double>();
+//                auto axisData = rotationAroundAxis["axis"].as<pyon::matcher::ArrayData>();
+//                auto axis = Vector<3, double>({axisData[0].as<double>(), axisData[1].as<double>(), axisData[2].as<double>()});
+//                auto global = rotationAroundAxis["global"].as<bool>();
+//                return std::make_shared<AxisRotationSampler>(step, axis, global);
+//            });
     }
 
     MatcherDataclass create_flip() {
@@ -125,6 +109,5 @@ namespace {
 
 
 MatcherAlternative MoveSamplerMatcher::create() {
-    return create_rototranslation() | create_translation() | create_rotation() | create_rotationAroundAxis()
-    | create_rotationWithAngleConservation() | create_flip();
+    return create_rototranslation() | create_translation() | create_rotation() | create_axis_rotation() | create_flip();
 }

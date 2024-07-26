@@ -2,10 +2,13 @@
 // Created by Michal Ciesla on 09.06.2024.
 //
 
-#ifndef RAMPACK_ROTATIONAROUNDAXISSAMPLER_H
-#define RAMPACK_ROTATIONAROUNDAXISSAMPLER_H
+#ifndef RAMPACK_AXISROTATIONSAMPLER_H
+#define RAMPACK_AXISROTATIONSAMPLER_H
+
+#include <variant>
 
 #include "core/MoveSampler.h"
+
 
 /**
  * @brief MoveSampler performing the rotational move consisted of two rotations.
@@ -14,31 +17,34 @@
  * The rotation angle is sampled uniformly from an interval given by the current step size. Maximal step size is PI.
  * Internally it consists of a single move named @a rotationAroundAxis. The group name is @a rotation.
  */
-class RotationAroundAxisSampler : public MoveSampler {
+class AxisRotationSampler : public MoveSampler {
+public:
+    using Axis = std::variant<Vector<3>, ShapeGeometry::Axis>;
+
 private:
+    [[nodiscard]] Vector<3> computeAxis(const Shape &shape) const;
+
     double rotationStepSize{};
-    size_t particleAxisIdx{};
-    Vector<3, double> axis{};
-    bool global{};
+    const ShapeGeometry *geometry = nullptr;
+    Axis axis{};
 
 public:
     /**
      * @brief Constructs the sampler with an initial step size @a rotationStepSize.
      */
-    explicit RotationAroundAxisSampler(double rotationStepSize, const Vector<3, double>& axis, bool global);
+    AxisRotationSampler(double rotationStepSize, const Axis &axis);
 
-    [[nodiscard]] std::string getName() const override { return "rotationAroundAxis"; }
-
+    [[nodiscard]] std::string getName() const override;
     [[nodiscard]] std::size_t getNumOfRequestedMoves(std::size_t numParticles) const override { return numParticles; }
-
     MoveData sampleMove(const Packing &packing, const std::vector<std::size_t> &particleIdxs,
                         std::mt19937 &mt) override;
     bool increaseStepSize() override;
     bool decreaseStepSize() override;
-
     [[nodiscard]] std::vector<std::pair<std::string, double>> getStepSizes() const override;
-
     void setStepSize(const std::string &stepName, double stepSize) override;
+    void setupForShapeTraits(const ShapeTraits &shapeTraits) override {
+        this->geometry = &shapeTraits.getGeometry();
+    }
 };
 
-#endif //RAMPACK_ROTATIONAROUNDAXISSAMPLER_H
+#endif //RAMPACK_AXISROTATIONSAMPLER_H

@@ -102,7 +102,7 @@ Vector<3> ShapeGeometry::findFlipAxis(const Shape &shape) const {
 }
 
 Vector<3> ShapeGeometry::getAxis(const Shape &shape, ShapeGeometry::Axis axis) const {
-    switch(axis) {
+    switch (axis) {
         case Axis::PRIMARY:
             return this->getPrimaryAxis(shape);
         case Axis::SECONDARY:
