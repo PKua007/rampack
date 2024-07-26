@@ -115,13 +115,16 @@ TEST_CASE("ShapeGeometry: named points") {
 
     MockShapeGeometry geometry;
 
+    // Static points
     geometry.publicRegisterStaticNamedPoint("a", {2, 0, 0});
     geometry.publicRegisterStaticNamedPoint("b", {3, 0, 0});
 
+    // Dynamic points
     geometry.publicRegisterDynamicNamedPoint("c", [](const ShapeData &data){
         return data.as<TheData>().point;
     });
 
+    // Transient point
     NamedPoint::TransientEvaluator evaluator = [](const std::string &name, const ShapeData &data) -> Vector<3> {
         if (data.as<TheData>().point == Vector<3>{1, 0, 0} && name == "d")
             return {4, 0, 0};
@@ -136,16 +139,19 @@ TEST_CASE("ShapeGeometry: named points") {
     };
     geometry.publicRegisterTransientNamedPoint(evaluator, lister);
 
+    // Geometric origin
     ALLOW_CALL(geometry, getGeometricOrigin(_)).RETURN(_1.getOrientation() * _1.getData().template as<TheData>().point);
 
-    const Matrix<3, 3> zRot = {0, -1, 0,
-                               1,  0, 0,
-                               0,  0, 1};
+    // Trial ShapeData and Shapes
+    const Matrix<3, 3> zRot90 = {0, -1, 0,
+                                 1,  0, 0,
+                                 0,  0, 1};
     ShapeData goodData(TheData{{1, 0, 0}});
     ShapeData badData(TheData{{2, 0, 0}});
-    Shape goodShape({1, 1, 1}, zRot, goodData);
-    Shape badShape({1, 1, 1}, zRot, badData);
+    Shape goodShape({1, 1, 1}, zRot90, goodData);
+    Shape badShape({1, 1, 1}, zRot90, badData);
 
+    // The actual tests
     SECTION("getNamedPoint") {
         CHECK(geometry.getNamedPoint("a").getName() == "a");
         CHECK(geometry.getNamedPoint("b").getName() == "b");
@@ -155,22 +161,23 @@ TEST_CASE("ShapeGeometry: named points") {
     }
 
     SECTION("getNamedPoints") {
+        using EvaluatedPoint = std::pair<std::string, Vector<3>>;
+        auto evaluateOn = [](const ShapeData &data) {
+            return [data](const NamedPoint &point) {
+                return EvaluatedPoint{point.getName(), point.evaluateFor(data)};
+            };
+        };
+
         auto goodPoints = geometry.getNamedPoints(goodData);
         auto badPoints = geometry.getNamedPoints(badData);
 
-        auto evaluatorFor = [](const ShapeData &data) {
-            return [data](const NamedPoint &point) {
-                return std::make_pair(point.getName(), point.evaluateFor(data));
-            };
-        };
-        using EvaluatedPoints = std::vector<std::pair<std::string, Vector<3>>>;
-        EvaluatedPoints goodPointEval, badPointEval;
-        std::transform(goodPoints.begin(), goodPoints.end(), std::back_inserter(goodPointEval), evaluatorFor(goodData));
-        std::transform(badPoints.begin(), badPoints.end(), std::back_inserter(badPointEval), evaluatorFor(badData));
-        CHECK(goodPointEval == EvaluatedPoints{
+        std::vector<EvaluatedPoint> goodPointsEval, badPointsEval;
+        std::transform(goodPoints.begin(), goodPoints.end(), std::back_inserter(goodPointsEval), evaluateOn(goodData));
+        std::transform(badPoints.begin(), badPoints.end(), std::back_inserter(badPointsEval), evaluateOn(badData));
+        CHECK(goodPointsEval == std::vector<EvaluatedPoint>{
             {"a", {2, 0, 0}}, {"b", {3, 0, 0}}, {"c", {1, 0, 0}}, {"d", {4, 0, 0}}, {"o", {1, 0, 0}}
         });
-        CHECK(badPointEval == EvaluatedPoints{
+        CHECK(badPointsEval == std::vector<EvaluatedPoint>{
             {"a", {2, 0, 0}}, {"b", {3, 0, 0}}, {"c", {2, 0, 0}}, {"o", {2, 0, 0}}
         });
     }
@@ -189,6 +196,7 @@ TEST_CASE("ShapeGeometry: named points") {
         CHECK(geometry.evaluateNamedPoint("d", goodData) == Vector<3>{4, 0, 0});
         CHECK_THROWS(geometry.evaluateNamedPoint("d", badData));
         CHECK(geometry.evaluateNamedPoint("o", goodData) == Vector<3>{1, 0, 0});
+        CHECK(geometry.evaluateNamedPoint("o", badData) == Vector<3>{2, 0, 0});
     }
 
     SECTION("evaluateNamedPoint (Shape)") {
@@ -199,6 +207,7 @@ TEST_CASE("ShapeGeometry: named points") {
         CHECK(geometry.evaluateNamedPoint("d", goodShape) == Vector<3>{1, 5, 1});
         CHECK_THROWS(geometry.evaluateNamedPoint("d", badShape));
         CHECK(geometry.evaluateNamedPoint("o", goodShape) == Vector<3>{1, 2, 1});
+        CHECK(geometry.evaluateNamedPoint("o", badShape) == Vector<3>{1, 3, 1});
     }
 
     SECTION("evaluateNamedPoints (ShapeData)") {
@@ -206,10 +215,10 @@ TEST_CASE("ShapeGeometry: named points") {
         auto badPoints = geometry.evaluateNamedPoints(badData);
 
         CHECK(goodPoints == std::map<std::string, Vector<3>>{
-                {"a", {2, 0, 0}}, {"b", {3, 0, 0}}, {"c", {1, 0, 0}}, {"d", {4, 0, 0}}, {"o", {1, 0, 0}}
+            {"a", {2, 0, 0}}, {"b", {3, 0, 0}}, {"c", {1, 0, 0}}, {"d", {4, 0, 0}}, {"o", {1, 0, 0}}
         });
         CHECK(badPoints ==  std::map<std::string, Vector<3>>{
-                {"a", {2, 0, 0}}, {"b", {3, 0, 0}}, {"c", {2, 0, 0}}, {"o", {2, 0, 0}}
+            {"a", {2, 0, 0}}, {"b", {3, 0, 0}}, {"c", {2, 0, 0}}, {"o", {2, 0, 0}}
         });
     }
 
@@ -238,6 +247,7 @@ TEST_CASE("ShapeGeometry: named points") {
         CHECK(geometry.hasNamedPoint("d", goodData));
         CHECK_FALSE(geometry.hasNamedPoint("d", badData));
         CHECK(geometry.hasNamedPoint("o", goodData));
+        CHECK(geometry.hasNamedPoint("o", badData));
     }
 }
 
