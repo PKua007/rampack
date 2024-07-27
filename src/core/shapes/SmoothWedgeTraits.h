@@ -90,9 +90,10 @@ public:
     [[nodiscard]] double getVolume() const /* override */ { return this->volume; }
     [[nodiscard]] static Vector<3> getPrimaryAxis() /* override */ { return {0, 0, 1}; }
     [[nodiscard]] static Vector<3> getSecondaryAxis() /* override */ {
-        throw std::runtime_error("SmoothWedgeShape::getPrimaryAxis: primary axis not defined");
+        throw std::runtime_error("SmoothWedgeShape::getSecondaryAxis: secondary axis not defined");
     }
     [[nodiscard]] static Vector<3> getGeometricOrigin() /* override */ { return {0, 0, 0}; }
+    [[nodiscard]] static std::map<std::string, Vector<3>> getNamedPoints() /* override */ { return {}; }
 
     [[nodiscard]] double getBottomR() const { return this->bottomR; }
     [[nodiscard]] double getTopR() const { return this->topR; }

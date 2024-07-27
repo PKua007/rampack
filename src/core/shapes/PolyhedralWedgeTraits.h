@@ -103,6 +103,7 @@ public:
     [[nodiscard]] static Vector<3> getPrimaryAxis() /* override */ { return {0, 0, 1}; }
     [[nodiscard]] static Vector<3> getSecondaryAxis() /* override */ { return {1, 0, 0}; }
     [[nodiscard]] static Vector<3> getGeometricOrigin() /* override */ { return {0, 0, 0}; }
+    [[nodiscard]] static std::map<std::string, Vector<3>> getNamedPoints() /* override */ { return {}; }
 
     [[nodiscard]] double getBottomAx() const { return this->bottomAx; }
     [[nodiscard]] double getBottomAy() const { return this->bottomAy; }

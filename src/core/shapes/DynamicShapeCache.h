@@ -45,7 +45,7 @@
  * @sa GenericShapeRegistry
  */
 template<typename ConcreteSpecies>
-class DynamicShapeCache :  public ShapeGeometry, public ShapeDataManager {
+class DynamicShapeCache : public ShapeGeometry, public ShapeDataManager {
 private:
     struct Data {
         std::size_t speciesIdx{};
@@ -54,6 +54,28 @@ private:
             return lhs.speciesIdx == rhs.speciesIdx;
         }
     };
+
+     void printSpeciesParameters(std::ostream &out, const ShapeData &data) const {
+        TextualShapeData textualData = this->serialize(data);
+        if (textualData.empty()) {
+            out << "{}";
+            return;
+        }
+
+        out << "{";
+        auto dataIt = textualData.begin();
+        out << dataIt->first << "=" << dataIt->second;
+        for (dataIt++; dataIt != textualData.end(); dataIt++)
+            out << ", " << dataIt->first << "=" << dataIt->second;
+        out << "}";
+    }
+
+    void throwUnavailableNamedPoint(const std::string &pointName, const ShapeData &data) const {
+        std::ostringstream msg;
+        msg << "No point named " << pointName << " for the species with parameters ";
+        this->printSpeciesParameters(msg, data);
+        throw NoSuchNamedPointForShapeException(msg.str());
+    }
 
     mutable std::vector<ConcreteSpecies> speciesCache;
 
@@ -118,6 +140,34 @@ protected:
     }
 
 public:
+    DynamicShapeCache() {
+        NamedPoint::TransientEvaluator evaluator = [this](const std::string &pointName, const ShapeData &data) {
+            const ConcreteSpecies &species = this->speciesFor(data);
+            const std::map<std::string, Vector<3>> &namedPoints = species.getNamedPoints();
+
+            auto it = namedPoints.find(pointName);
+            if (it == namedPoints.end())
+                this->throwUnavailableNamedPoint(pointName, data);
+
+            return it->second;
+        };
+
+        NamedPoint::TransientLister lister = [this](const ShapeData &data) {
+            const ConcreteSpecies &species = this->speciesFor(data);
+            const std::map<std::string, Vector<3>> &namedPoints = species.getNamedPoints();
+
+            std::set<std::string> pointNames;
+            for (const auto &[pointName, pointCoords] : namedPoints)
+                pointNames.insert(pointName);
+            return pointNames;
+        };
+
+        this->registerTransientNamedPoint(std::move(evaluator), std::move(lister));
+    }
+
+    DynamicShapeCache(const DynamicShapeCache &) = delete;
+    DynamicShapeCache &operator=(const DynamicShapeCache &) = delete;
+
     /**
      * @brief Return shape's primary axis based on `ConcreteSpecies::getPrimaryAxis`.
      */
