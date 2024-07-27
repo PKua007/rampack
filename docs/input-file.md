@@ -798,9 +798,9 @@ axial_rotation(
 )
 ```
 
-Monte Carlo move performing rotations of particles around the specified axis - either global or shape axis (in shape
-coordinates). If current step size is equal *current_step*, the rotation angle is selected uniformly from the interval
-[-*current_step*, *current_step*].
+Monte Carlo move performing rotations of particles around the specified axis - either global (lab) or shape axis (in
+local shape coordinates). If the current step size is equal *current_step*, the rotation angle is selected uniformly
+from the interval [-*current_step*, *current_step*].
 
 Arguments:
 
@@ -810,15 +810,15 @@ Arguments:
 
 * ***axis***
 
-  Global or shape rotation axis. Axis of the rotation. The following values are accepted:
+  Global or shape axis, which is the axis of rotation. The following values are accepted:
 
   * Array of Floats (eg. `[1, 1, 0]`) <br />
     Specific global (lab) axis. Axis normalization is performed automatically.
   * `"x"`, `"y"`, `"z"` <br />
     Shorthands for x, y and z global axes.
   * `"primary"`, `"secondary"`, `"auxiliary"` <br />
-    Rotation around a [shape axis](shapes.md#shape-axes). Rotation axis is not constant - shape axes are defined in
-    shape's coordinate system, thus the axis of rotation depends on the orientation of a shape.
+    Rotation around a [shape axis](shapes.md#shape-axes). The rotation axis is not constant - shape axes are defined in
+    shape's coordinate system, thus the axis of rotation depends on the orientation of a particular shape.
 
 
 ## Box move types
