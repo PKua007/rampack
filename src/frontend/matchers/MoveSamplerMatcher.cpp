@@ -7,7 +7,7 @@
 #include "core/move_samplers/RototranslationSampler.h"
 #include "core/move_samplers/TranslationSampler.h"
 #include "core/move_samplers/RotationSampler.h"
-#include "core/move_samplers/AxisRotationSampler.h"
+#include "core/move_samplers/AxialRotationSampler.h"
 #include "core/move_samplers/FlipSampler.h"
 
 using namespace pyon::matcher;
@@ -84,7 +84,7 @@ namespace {
     }
 
     MatcherDataclass create_axis_rotation() {
-        using Axis = AxisRotationSampler::Axis;
+        using Axis = AxialRotationSampler::Axis;
 
         auto axisArray = MatcherArray(MatcherFloat{}, 3)
             .filter([](const ArrayData &arrayData) {
@@ -107,13 +107,13 @@ namespace {
             });
         auto rotAxis = axisArray | axisString;
 
-        return MatcherDataclass("axis_rotation")
+        return MatcherDataclass("axial_rotation")
             .arguments({{"step", MatcherFloat{}.positive()},
                         {"axis", rotAxis}})
             .mapTo([](const DataclassData &rotationAroundAxis) -> std::shared_ptr<MoveSampler> {
                 auto step = rotationAroundAxis["step"].as<double>();
                 auto axis = rotationAroundAxis["axis"].as<Axis>();
-                return std::make_shared<AxisRotationSampler>(step, axis);
+                return std::make_shared<AxialRotationSampler>(step, axis);
             });
     }
 
