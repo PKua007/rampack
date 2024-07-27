@@ -528,7 +528,6 @@ void CasinoMode::printMoveStatistics(const Simulation &simulation) const {
 
     for (const auto &moveStatistics : movesStatistics) {
         std::string groupName = moveStatistics.groupName;
-        groupName.front() = static_cast<char>(std::toupper(groupName.front()));
         this->logger << groupName << " move statistics:" << std::endl;
         this->logger << "  Rate       : " << moveStatistics.getRate() << " (" << moveStatistics.acceptedMoves << "/";
         this->logger << moveStatistics.totalMoves << ")" << std::endl;
