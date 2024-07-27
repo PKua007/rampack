@@ -48,29 +48,6 @@ private:
     std::map<std::string, std::size_t> speciesNameIdxMap;
     std::vector<ConcreteSpecies> speciesStore;
 
-    void registerNamedPoint(const std::string &pointName) {
-        if (this->hasNonTransientNamedPoint(pointName))
-            return;
-
-        this->registerDynamicNamedPoint(pointName, [this, pointName](const ShapeData &data) -> Vector<3> {
-            std::size_t speciesIdx = data.as<Data>().speciesIdx;
-            const auto &namedPoints = this->getSpecies(speciesIdx).getNamedPoints();
-
-            auto it = namedPoints.find(pointName);
-            if (it == namedPoints.end())
-                this->throwUnavailableNamedPoint(speciesIdx, pointName);
-
-            return it->second;
-        });
-    }
-
-    void throwUnavailableNamedPoint(std::size_t speciesIdx, const std::string &pointName) const {
-        const std::string &speciesName = this->getSpeciesName(speciesIdx);
-        std::ostringstream msg;
-        msg << "Named point " << pointName << " is not available for species " << speciesName;
-        throw NoSuchNamedPointForShapeException(msg.str());
-    }
-
 protected:
     /**
      * @brief Returns @a ConcreteSpecies reference for raw ShapeData @a data. As raw ShapeData are used in
@@ -120,7 +97,33 @@ public:
         friend bool operator==(Data lhs, Data rhs) { return lhs.speciesIdx == rhs.speciesIdx; }
     };
 
-    GenericShapeRegistry() = default;
+    GenericShapeRegistry() {
+        NamedPoint::TransientEvaluator evaluator = [this](const std::string &pointName, const ShapeData &data) {
+            const ConcreteSpecies &species = this->speciesFor(data);
+            const std::map<std::string, Vector<3>> &namedPoints = species.getNamedPoints();
+
+            auto it = namedPoints.find(pointName);
+            if (it == namedPoints.end()) {
+                const auto &speciesName = this->getSpeciesName(data.as<Data>().speciesIdx);
+                throw NoSuchNamedPointForShapeException("No point named " + pointName + " for species " + speciesName);
+            }
+
+            return it->second;
+        };
+
+        NamedPoint::TransientLister lister = [this](const ShapeData &data) {
+            const ConcreteSpecies &species = this->speciesFor(data);
+            const std::map<std::string, Vector<3>> &namedPoints = species.getNamedPoints();
+
+            std::set<std::string> pointNames;
+            for (const auto &[pointName, pointCoords] : namedPoints)
+                pointNames.insert(pointName);
+            return pointNames;
+        };
+
+        this->registerTransientNamedPoint(std::move(evaluator), std::move(lister));
+    }
+
     GenericShapeRegistry(const GenericShapeRegistry &) = delete;
     GenericShapeRegistry &operator=(const GenericShapeRegistry &) = delete;
 
@@ -212,12 +215,6 @@ public:
 
         this->speciesStore.push_back(species);
         this->speciesNameIdxMap.emplace(speciesName, this->speciesStore.size() - 1);
-
-        for (const auto &namedPoint : species.getNamedPoints()) {
-            const auto &pointName = namedPoint.first;
-            this->registerNamedPoint(pointName);
-        }
-
         return ShapeData(Data{this->speciesStore.size() - 1});
     }
 
