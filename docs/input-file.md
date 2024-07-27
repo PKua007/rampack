@@ -24,6 +24,7 @@ This reference page describes the simulation pipeline and the format of the inpu
   * [Class `rotation`](#class-rotation)
   * [Class `rototranslation`](#class-rototranslation)
   * [Class `flip`](#class-flip)
+  * [Class `axial_rotation`](#class-axial_rotation)
 * [Box move types](#box-move-types)
   * [Class `delta_v`](#class-delta_v)
   * [Class `linear`](#class-linear-1)
@@ -722,6 +723,7 @@ There are the following particle move types:
 * [Class `rotation`](#class-rotation)
 * [Class `rototranslation`](#class-rototranslation)
 * [Class `flip`](#class-flip)
+* [Class `axial_rotation`](#class-axial_rotation)
 
 
 ### Class `translation`
@@ -785,6 +787,38 @@ attached to the [geometric center](shapes.md#geometric-center) (if only [primary
 the flip is performed around an arbitrary axis orthogonal to the primary axis). `every` controls how often the flip is
 performed. For example, its default value `10` means that in a full single MC cycle, the flip move will be attempted for
 10% of all particles (and accepted according to the Metropolis criterion).
+
+
+### Class `axial_rotation`
+
+```python
+axial_rotation(
+    step,
+    axis
+)
+```
+
+Monte Carlo move performing rotations of particles around the specified axis - either global or shape axis (in shape
+coordinates). If current step size is equal *current_step*, the rotation angle is selected uniformly from the interval
+[-*current_step*, *current_step*].
+
+Arguments:
+
+* ***step***
+
+  The initial value of *current_step*.
+
+* ***axis***
+
+  Global or shape rotation axis. Axis of the rotation. The following values are accepted:
+
+  * Array of Floats (eg. `[1, 1, 0]`) <br />
+    Specific global (lab) axis. Axis normalization is performed automatically.
+  * `"x"`, `"y"`, `"z"` <br />
+    Shorthands for x, y and z global axes.
+  * `"primary"`, `"secondary"`, `"auxiliary"` <br />
+    Rotation around a [shape axis](shapes.md#shape-axes). Rotation axis is not constant - shape axes are defined in
+    shape's coordinate system, thus the axis of rotation depends on the orientation of a shape.
 
 
 ## Box move types

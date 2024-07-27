@@ -7,6 +7,7 @@
 #include "core/move_samplers/RototranslationSampler.h"
 #include "core/move_samplers/TranslationSampler.h"
 #include "core/move_samplers/RotationSampler.h"
+#include "core/move_samplers/AxialRotationSampler.h"
 #include "core/move_samplers/FlipSampler.h"
 
 using namespace pyon::matcher;
@@ -16,6 +17,7 @@ namespace {
     MatcherDataclass create_rototranslation();
     MatcherDataclass create_translation();
     MatcherDataclass create_rotation();
+    MatcherDataclass create_axis_rotation();
     MatcherDataclass create_flip();
 
 
@@ -81,6 +83,40 @@ namespace {
             });
     }
 
+    MatcherDataclass create_axis_rotation() {
+        using Axis = AxialRotationSampler::Axis;
+
+        auto axisArray = MatcherArray(MatcherFloat{}, 3)
+            .filter([](const ArrayData &arrayData) {
+                return arrayData.asVector<3>().norm2() > 1e-20;
+            })
+            .describe("non-zero norm")
+            .mapTo([](const ArrayData &arrayData) -> Axis {
+                return arrayData.asVector<3>();
+            });
+        auto axisString = MatcherString{}
+            .anyOf({"x", "y", "z", "primary", "secondary", "auxiliary"})
+            .mapTo([](const std::string &axis) -> Axis {
+                if (axis == "x")                return Vector<3>{1, 0, 0};
+                else if (axis == "y")           return Vector<3>{0, 1, 0};
+                else if (axis == "z")           return Vector<3>{0, 0, 1};
+                else if (axis == "primary")     return ShapeGeometry::Axis::PRIMARY;
+                else if (axis == "secondary")   return ShapeGeometry::Axis::SECONDARY;
+                else if (axis == "auxiliary")   return ShapeGeometry::Axis::AUXILIARY;
+                else                            AssertThrow(axis);
+            });
+        auto rotAxis = axisArray | axisString;
+
+        return MatcherDataclass("axial_rotation")
+            .arguments({{"step", MatcherFloat{}.positive()},
+                        {"axis", rotAxis}})
+            .mapTo([](const DataclassData &rotationAroundAxis) -> std::shared_ptr<MoveSampler> {
+                auto step = rotationAroundAxis["step"].as<double>();
+                auto axis = rotationAroundAxis["axis"].as<Axis>();
+                return std::make_shared<AxialRotationSampler>(step, axis);
+            });
+    }
+
     MatcherDataclass create_flip() {
         return MatcherDataclass("flip")
             .arguments({{"every", MatcherInt{}.positive().mapTo<std::size_t>(), "10"}})
@@ -93,5 +129,5 @@ namespace {
 
 
 MatcherAlternative MoveSamplerMatcher::create() {
-    return create_rototranslation() | create_translation() | create_rotation() | create_flip();
+    return create_rototranslation() | create_translation() | create_rotation() | create_axis_rotation() | create_flip();
 }

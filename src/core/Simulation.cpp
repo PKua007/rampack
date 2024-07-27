@@ -566,7 +566,6 @@ void Simulation::evaluateMoleculeMoveCounter(Logger &logger) {
         std::vector<bool>::reference cancelReported = this->adjustmentCancelReported[i];
         std::size_t requestedMoves = moveSampler.getNumOfRequestedMoves(this->packing->size());
         auto moveName = moveSampler.getName();
-        moveName.front() = static_cast<char>(toupper(moveName.front()));
 
         if (moveCounter.getMovesSinceEvaluation() < 100 * requestedMoves)
             continue;
