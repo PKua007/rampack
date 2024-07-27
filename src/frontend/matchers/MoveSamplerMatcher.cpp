@@ -84,17 +84,37 @@ namespace {
     }
 
     MatcherDataclass create_axis_rotation() {
-        return MatcherDataclass("axis_rotation");
-//            .arguments({{"step", MatcherFloat{}.positive()},
-//                        {"axis", MatcherArray(MatcherFloat{}.mapTo<double>(),3), "[0,0,1]"},
-//                        {"global", MatcherBoolean{}, "True"}})
-//            .mapTo([](const DataclassData &rotationAroundAxis) -> std::shared_ptr<MoveSampler> {
-//                auto step = rotationAroundAxis["step"].as<double>();
-//                auto axisData = rotationAroundAxis["axis"].as<pyon::matcher::ArrayData>();
-//                auto axis = Vector<3, double>({axisData[0].as<double>(), axisData[1].as<double>(), axisData[2].as<double>()});
-//                auto global = rotationAroundAxis["global"].as<bool>();
-//                return std::make_shared<AxisRotationSampler>(step, axis, global);
-//            });
+        using Axis = AxisRotationSampler::Axis;
+
+        auto axisArray = MatcherArray(MatcherFloat{}, 3)
+            .filter([](const ArrayData &arrayData) {
+                return arrayData.asVector<3>().norm2() > 1e-20;
+            })
+            .describe("non-zero norm")
+            .mapTo([](const ArrayData &arrayData) -> Axis {
+                return arrayData.asVector<3>();
+            });
+        auto axisString = MatcherString{}
+            .anyOf({"x", "y", "z", "primary", "secondary", "auxiliary"})
+            .mapTo([](const std::string &axis) -> Axis {
+                if (axis == "x")                return Vector<3>{1, 0, 0};
+                else if (axis == "y")           return Vector<3>{0, 1, 0};
+                else if (axis == "z")           return Vector<3>{0, 0, 1};
+                else if (axis == "primary")     return ShapeGeometry::Axis::PRIMARY;
+                else if (axis == "secondary")   return ShapeGeometry::Axis::SECONDARY;
+                else if (axis == "auxiliary")   return ShapeGeometry::Axis::AUXILIARY;
+                else                            AssertThrow(axis);
+            });
+        auto rotAxis = axisArray | axisString;
+
+        return MatcherDataclass("axis_rotation")
+            .arguments({{"step", MatcherFloat{}.positive()},
+                        {"axis", rotAxis}})
+            .mapTo([](const DataclassData &rotationAroundAxis) -> std::shared_ptr<MoveSampler> {
+                auto step = rotationAroundAxis["step"].as<double>();
+                auto axis = rotationAroundAxis["axis"].as<Axis>();
+                return std::make_shared<AxisRotationSampler>(step, axis);
+            });
     }
 
     MatcherDataclass create_flip() {
