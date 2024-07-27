@@ -8,7 +8,7 @@
 #include <map>
 #include <string>
 
-#include "core/ShapeGeometry.h"
+#include "SpeciesShapeGeometry.h"
 #include "core/ShapeDataManager.h"
 #include "utils/Exceptions.h"
 #include "core/io/ShapeDataSerializer.h"
@@ -43,10 +43,20 @@
  * @sa DynamicShapeCache
  */
 template <typename ConcreteSpecies>
-class GenericShapeRegistry : public ShapeGeometry, public ShapeDataManager {
+class GenericShapeRegistry
+        : public SpeciesShapeGeometry<GenericShapeRegistry<ConcreteSpecies>>,
+          public ShapeDataManager
+{
 private:
+    void throwUnavailableNamedPoint(const std::string &pointName, const ShapeData &data) const {
+        const auto &speciesName = getSpeciesName(data.as<Data>().speciesIdx);
+        throw NoSuchNamedPointForShapeException("No point named " + pointName + " for species " + speciesName);
+    }
+
     std::map<std::string, std::size_t> speciesNameIdxMap;
     std::vector<ConcreteSpecies> speciesStore;
+
+    friend SpeciesShapeGeometry<GenericShapeRegistry<ConcreteSpecies>>;
 
 protected:
     /**
@@ -97,66 +107,10 @@ public:
         friend bool operator==(Data lhs, Data rhs) { return lhs.speciesIdx == rhs.speciesIdx; }
     };
 
-    GenericShapeRegistry() {
-        NamedPoint::TransientEvaluator evaluator = [this](const std::string &pointName, const ShapeData &data) {
-            const ConcreteSpecies &species = this->speciesFor(data);
-            const std::map<std::string, Vector<3>> &namedPoints = species.getNamedPoints();
 
-            auto it = namedPoints.find(pointName);
-            if (it == namedPoints.end()) {
-                const auto &speciesName = this->getSpeciesName(data.as<Data>().speciesIdx);
-                throw NoSuchNamedPointForShapeException("No point named " + pointName + " for species " + speciesName);
-            }
-
-            return it->second;
-        };
-
-        NamedPoint::TransientLister lister = [this](const ShapeData &data) {
-            const ConcreteSpecies &species = this->speciesFor(data);
-            const std::map<std::string, Vector<3>> &namedPoints = species.getNamedPoints();
-
-            std::set<std::string> pointNames;
-            for (const auto &[pointName, pointCoords] : namedPoints)
-                pointNames.insert(pointName);
-            return pointNames;
-        };
-
-        this->registerTransientNamedPoint(std::move(evaluator), std::move(lister));
-    }
-
+    GenericShapeRegistry() = default;
     GenericShapeRegistry(const GenericShapeRegistry &) = delete;
     GenericShapeRegistry &operator=(const GenericShapeRegistry &) = delete;
-
-    /**
-     * @brief Return shape's primary axis based on `ConcreteSpecies::getPrimaryAxis`.
-     */
-    [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const final {
-        const auto &species = this->speciesFor(shape);
-        return shape.getOrientation() * species.getPrimaryAxis();
-    }
-
-    /**
-     * @brief Return shape's secondary axis based on `ConcreteSpecies::getSecondaryAxis`.
-     */
-    [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const final {
-        const auto &species = this->speciesFor(shape);
-        return shape.getOrientation() * species.getSecondaryAxis();
-    }
-
-    /**
-     * @brief Return shape's geometric origin based on `ConcreteSpecies::getGeometricOrigin`.
-     */
-    [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const final {
-        const auto &species = this->speciesFor(shape);
-        return shape.getOrientation() * species.getGeometricOrigin();
-    }
-
-    /**
-     * @brief Return shape's volume based on `ConcreteSpecies::getVolume`.
-     */
-    [[nodiscard]] double getVolume(const Shape &shape) const final {
-        return this->speciesFor(shape).getVolume();
-    }
 
     [[nodiscard]] std::size_t getShapeDataSize() const final {
         return sizeof(Data);

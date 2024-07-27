@@ -7,6 +7,7 @@
 
 #include <vector>
 
+#include "SpeciesShapeGeometry.h"
 #include "core/ShapeDataManager.h"
 
 
@@ -45,7 +46,7 @@
  * @sa GenericShapeRegistry
  */
 template<typename ConcreteSpecies>
-class DynamicShapeCache : public ShapeGeometry, public ShapeDataManager {
+class DynamicShapeCache : public SpeciesShapeGeometry<DynamicShapeCache<ConcreteSpecies>>, public ShapeDataManager {
 private:
     struct Data {
         std::size_t speciesIdx{};
@@ -55,7 +56,7 @@ private:
         }
     };
 
-     void printSpeciesParameters(std::ostream &out, const ShapeData &data) const {
+    void printSpeciesParameters(std::ostream &out, const ShapeData &data) const {
         TextualShapeData textualData = this->serialize(data);
         if (textualData.empty()) {
             out << "{}";
@@ -78,6 +79,8 @@ private:
     }
 
     mutable std::vector<ConcreteSpecies> speciesCache;
+
+    friend SpeciesShapeGeometry<DynamicShapeCache<ConcreteSpecies>>;
 
 protected:
     /**
@@ -140,64 +143,9 @@ protected:
     }
 
 public:
-    DynamicShapeCache() {
-        NamedPoint::TransientEvaluator evaluator = [this](const std::string &pointName, const ShapeData &data) {
-            const ConcreteSpecies &species = this->speciesFor(data);
-            const std::map<std::string, Vector<3>> &namedPoints = species.getNamedPoints();
-
-            auto it = namedPoints.find(pointName);
-            if (it == namedPoints.end())
-                this->throwUnavailableNamedPoint(pointName, data);
-
-            return it->second;
-        };
-
-        NamedPoint::TransientLister lister = [this](const ShapeData &data) {
-            const ConcreteSpecies &species = this->speciesFor(data);
-            const std::map<std::string, Vector<3>> &namedPoints = species.getNamedPoints();
-
-            std::set<std::string> pointNames;
-            for (const auto &[pointName, pointCoords] : namedPoints)
-                pointNames.insert(pointName);
-            return pointNames;
-        };
-
-        this->registerTransientNamedPoint(std::move(evaluator), std::move(lister));
-    }
-
+    DynamicShapeCache() = default;
     DynamicShapeCache(const DynamicShapeCache &) = delete;
     DynamicShapeCache &operator=(const DynamicShapeCache &) = delete;
-
-    /**
-     * @brief Return shape's primary axis based on `ConcreteSpecies::getPrimaryAxis`.
-     */
-    [[nodiscard]] Vector<3> getPrimaryAxis(const Shape &shape) const final {
-        const auto &species = this->speciesFor(shape);
-        return shape.getOrientation() * species.getPrimaryAxis();
-    }
-
-    /**
-     * @brief Return shape's secondary axis based on `ConcreteSpecies::getSecondaryAxis`.
-     */
-    [[nodiscard]] Vector<3> getSecondaryAxis(const Shape &shape) const final {
-        const auto &species = this->speciesFor(shape);
-        return shape.getOrientation() * species.getSecondaryAxis();
-    }
-
-    /**
-     * @brief Return shape's geometric origin based on `ConcreteSpecies::getGeometricOrigin`.
-     */
-    [[nodiscard]] Vector<3> getGeometricOrigin(const Shape &shape) const final {
-        const auto &species = this->speciesFor(shape);
-        return shape.getOrientation() * species.getGeometricOrigin();
-    }
-
-    /**
-     * @brief Return shape's volume based on `ConcreteSpecies::getVolume`.
-     */
-    [[nodiscard]] double getVolume(const Shape &shape) const final {
-        return this->speciesFor(shape).getVolume();
-    }
 
     [[nodiscard]] std::size_t getShapeDataSize() const final {
         return sizeof(Data);
