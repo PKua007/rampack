@@ -9,6 +9,7 @@
 #include "core/move_samplers/RotationSampler.h"
 #include "core/move_samplers/AxialRotationSampler.h"
 #include "core/move_samplers/FlipSampler.h"
+#include "core/move_samplers//ReflectionSampler.h"
 
 using namespace pyon::matcher;
 
@@ -19,6 +20,7 @@ namespace {
     MatcherDataclass create_rotation();
     MatcherDataclass create_axis_rotation();
     MatcherDataclass create_flip();
+    MatcherDataclass create_reflection();
 
 
     MatcherDataclass create_rototranslation() {
@@ -125,9 +127,20 @@ namespace {
                 return std::make_shared<FlipSampler>(every);
             });
     }
+
+    MatcherDataclass create_reflection() {
+        return MatcherDataclass("reflection")
+                .arguments({{"every", MatcherInt{}.positive().mapTo<std::size_t>(), "10"},
+                            {"planeAxis", MatcherArray(MatcherFloat{}.mapTo<double>(),3), "[0,0,1]"}})
+                .mapTo([](const DataclassData &reflection) -> std::shared_ptr<MoveSampler> {
+                    auto every = reflection["every"].as<std::size_t>();
+                    auto planeAxisData = reflection["planeAxis"].as<pyon::matcher::ArrayData>();
+                    auto planeAxis = Vector<3, double>({planeAxisData[0].as<double>(), planeAxisData[1].as<double>(), planeAxisData[2].as<double>()});
+                    return std::make_shared<ReflectionSampler>(every, planeAxis);
+                });
+    }
 }
 
-
 MatcherAlternative MoveSamplerMatcher::create() {
-    return create_rototranslation() | create_translation() | create_rotation() | create_axis_rotation() | create_flip();
+    return create_rototranslation() | create_translation() | create_rotation() | create_axis_rotation() | create_flip() | create_reflection();
 }
