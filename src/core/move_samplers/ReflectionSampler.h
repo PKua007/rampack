@@ -20,7 +20,10 @@ class ReflectionSampler : public MoveSampler{
 private:
     std::size_t flipEvery{};
     const ShapeGeometry *geometry = nullptr;
-    Vector<3> planeAxis{};
+    const Vector<3> planeAxis{};
+
+    Matrix<3, 3, double> getRotationMatrix(const Vector<3, double> &axis, double cosangle);
+
 
 public:
     /**
@@ -28,7 +31,7 @@ public:
      * calculated by dividing the number of molecules by @a flipEvery).
      */
 
-    explicit ReflectionSampler(std::size_t flipEvery, Vector<3> plane);
+    explicit ReflectionSampler(std::size_t flipEvery, const Vector<3> &plane);
 
     [[nodiscard]] std::string getName() const override { return "reflection"; }
 
@@ -41,7 +44,7 @@ public:
 
     bool decreaseStepSize() override { return false; }
 
-    [[nodiscard]] std::vector<std::pair<std::string, double>> getStepSizes() const override { return {{"rotation", 0}};};
+    [[nodiscard]] std::vector<std::pair<std::string, double>> getStepSizes() const override { return {{"rotation", 0}};}
 
     void setStepSize(const std::string &, double) override { }
 
