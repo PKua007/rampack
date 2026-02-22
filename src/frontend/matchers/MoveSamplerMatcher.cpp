@@ -129,18 +129,42 @@ namespace {
     }
 
     MatcherDataclass create_reflection() {
+        const auto reflectionAxisMatcher = MatcherArray(MatcherFloat{}.mapTo<double>(), 3)
+            .filter([](const ArrayData &arrayData) {
+                return arrayData.asVector<3>().norm2() > 1e-20;
+            })
+            .describe("non-zero norm")
+            .mapToVector<3>();
+
+        using FlipSymmetryAxis = ReflectionSampler::FlipSymmetryAxis;
+        const auto flipSymmetryAxisMatcher = MatcherString{}
+            .anyOf({"primary", "secondary", "auxiliary", "orthogonal_to_primary"})
+            .mapTo([](const std::string &axis) -> FlipSymmetryAxis {
+                if (axis == "primary")                      return ShapeGeometry::Axis::PRIMARY;
+                else if (axis == "secondary")               return ShapeGeometry::Axis::SECONDARY;
+                else if (axis == "auxiliary")               return ShapeGeometry::Axis::AUXILIARY;
+                else if (axis == "orthogonal_to_primary")   return ReflectionSampler::AxisOrthogonalToPrimary{};
+                else                                        AssertThrow(axis);
+            });
+
         return MatcherDataclass("reflection")
-                .arguments({{"every", MatcherInt{}.positive().mapTo<std::size_t>(), "10"},
-                            {"planeAxis", MatcherArray(MatcherFloat{}.mapTo<double>(),3), "[0,0,1]"}})
+                .arguments({{"reflexion_axis", reflectionAxisMatcher},
+                    {"flip_symmetry_axis", flipSymmetryAxisMatcher},
+                    {"every", MatcherInt{}.positive().mapTo<std::size_t>(), "10"}})
                 .mapTo([](const DataclassData &reflection) -> std::shared_ptr<MoveSampler> {
-                    auto every = reflection["every"].as<std::size_t>();
-                    auto planeAxisData = reflection["planeAxis"].as<pyon::matcher::ArrayData>();
-                    auto planeAxis = Vector<3, double>({planeAxisData[0].as<double>(), planeAxisData[1].as<double>(), planeAxisData[2].as<double>()});
-                    return std::make_shared<ReflectionSampler>(every, planeAxis);
+                    const auto reflexionAxis = reflection["reflection_axis"].as<Vector<3>>();
+                    const auto flipSymmetryAxis = reflection["flip_symmetry_axis"].as<FlipSymmetryAxis>();
+                    const auto every = reflection["every"].as<std::size_t>();
+                    return std::make_shared<ReflectionSampler>(reflexionAxis, flipSymmetryAxis, every);
                 });
     }
 }
 
 MatcherAlternative MoveSamplerMatcher::create() {
-    return create_rototranslation() | create_translation() | create_rotation() | create_axis_rotation() | create_flip() | create_reflection();
+    return create_rototranslation()
+        | create_translation()
+        | create_rotation()
+        | create_axis_rotation()
+        | create_flip()
+        | create_reflection();
 }

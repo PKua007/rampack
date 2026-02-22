@@ -4,10 +4,14 @@
 
 #include "ReflectionSampler.h"
 
-ReflectionSampler::ReflectionSampler(std::size_t flipEvery, const Vector<3> &plane) : flipEvery{flipEvery}, planeAxis{plane.normalized()}{
+ReflectionSampler::ReflectionSampler(const Vector<3> &reflectionPlaneAxis_, const FlipSymmetryAxis &flipSymmetryAxis_,
+                                     const std::size_t flipEvery_)
+        : reflectionPlaneAxis{reflectionPlaneAxis_.normalized()}, flipSymmetryAxis{flipSymmetryAxis_},
+          flipEvery{flipEvery_}
+{
     constexpr double EPSILON = 1e-12;
-    Expects(plane.norm2() > EPSILON * EPSILON);
-    Expects(flipEvery > 0);
+    Expects(reflectionPlaneAxis_.norm2() > EPSILON * EPSILON);
+    Expects(flipEvery_ > 0);
 }
 
 std::size_t ReflectionSampler::getNumOfRequestedMoves(std::size_t numParticles) const {
@@ -15,34 +19,78 @@ std::size_t ReflectionSampler::getNumOfRequestedMoves(std::size_t numParticles) 
     return numParticles / this->flipEvery;
 }
 
-Matrix<3, 3, double> ReflectionSampler::getRotationMatrix(const Vector<3, double> &axis, double cosangle)
-{
-    double sina = -2*cosangle*std::sqrt(1-cosangle*cosangle);
-    double cosa = 1-2*cosangle*cosangle;
-    Matrix<3, 3> K = {{      0 , -axis[2],  axis[1],
-                             axis[2],        0, -axis[0],
-                             -axis[1],  axis[0],        0}};
-
-    // Rodrigues' rotation formula
-    return Matrix<3, 3>::identity() + K*sina + (1 - cosa)*K*K;
+void ReflectionSampler::setupForShapeTraits(const ShapeTraits &shapeTraits) {
+    this->geometry = &shapeTraits.getGeometry();
+    this->geometricOrigin = this->geometry->getGeometricOrigin(Shape{});
+    constexpr double EPSILON = 1e-12;
+    this->isGeometricOriginZero = this->geometricOrigin.norm2() < EPSILON*EPSILON;
 }
 
-
-MoveSampler::MoveData ReflectionSampler::sampleMove(const Packing &packing, const std::vector<std::size_t> &particleIdxs, std::mt19937 &mt){
-    Expects(this->geometry != nullptr);
+MoveSampler::MoveData ReflectionSampler::sampleMove(const Packing &packing,
+                                                    const std::vector<std::size_t> &particleIdxs, std::mt19937 &mt)
+{
+    Assert(this->geometry != nullptr);
 
     MoveData moveData;
+
     std::uniform_int_distribution<std::size_t> particleDistribution(0, particleIdxs.size() - 1);
     moveData.particleIdx = particleIdxs[particleDistribution(mt)];
-    Shape shape = packing[moveData.particleIdx];
 
-    Vector<3> shapeAxis = geometry->getPrimaryAxis(shape);
-    Vector<3> rotationAxis = (shapeAxis^this->planeAxis).normalized();
+    const Shape &shape = packing[moveData.particleIdx];
+    moveData.rotation = this->getRotationMatrixPretendingToBeReflection(shape);
 
-    double cosangle = shapeAxis*this->planeAxis;
-    moveData.rotation = this->getRotationMatrix(rotationAxis, cosangle);
-    moveData.moveType = MoveType::ROTATION;
+    if (this->isGeometricOriginZero) {
+        moveData.moveType = MoveType::ROTATION;
+    } else {
+        moveData.moveType = MoveType::ROTOTRANSLATION;
+        // Restore the original geometric origin position after the flip
+        const Vector<3> shapeGeometricOrigin = shape.getOrientation()*this->geometricOrigin;
+        moveData.translation = -moveData.rotation * shapeGeometricOrigin + shapeGeometricOrigin;
+    }
+
     return moveData;
 }
 
+Matrix<3, 3> ReflectionSampler::getRotationMatrixPretendingToBeReflection(const Shape &shape) const {
+    const Vector<3> reflectionPlaneAxisForShape = this->getReflectionPlaneAxisForShape(shape);
+    const Vector<3> symmetryPlaneAxisForShape = this->getFlipSymmetryAxisForShape(shape);
 
+    const double c = reflectionPlaneAxisForShape * symmetryPlaneAxisForShape;
+    const Vector<3> v = reflectionPlaneAxisForShape ^ symmetryPlaneAxisForShape;
+    const double t = 2*c;
+    const double g = t*c - 1;
+
+    const double dv1v1 = 2*v[0]*v[0];
+    const double dv2v2 = 2*v[1]*v[1];
+    const double dv3v3 = 2*v[2]*v[2];
+    const double dv1v2 = 2*v[0]*v[1];
+    const double dv1v3 = 2*v[0]*v[2];
+    const double dv2v3 = 2*v[1]*v[2];
+    const double tv1 = t*v[0];
+    const double tv2 = t*v[1];
+    const double tv3 = t*v[2];
+
+    // This is the composition of two reflections Ra * Rb, first through shape's symmetry plane axis `b`, then through
+    // reflection plane axis `a`. The resulting rotation is around the axis (`a` x `b`) by the angle 2*`theta` given by
+    // cos(`theta`) = `a` . `b`. The formula was optimized for a number of multiplications and additions with the
+    // assistance of GPT o3.
+    return {
+        g + dv1v1,   dv1v2 - tv3, dv1v3 + tv2,
+        dv1v2 + tv3, g + dv2v2,   dv2v3 - tv1,
+        dv1v3 - tv2, dv2v3 + tv1, g + dv3v3
+    };
+}
+
+Vector<3> ReflectionSampler::getReflectionPlaneAxisForShape(const Shape &shape) const {
+    return shape.getOrientation() * this->reflectionPlaneAxis;
+}
+
+Vector<3> ReflectionSampler::getFlipSymmetryAxisForShape(const Shape &shape) const {
+    if (const auto *shapeAxis = std::get_if<ShapeGeometry::Axis>(&this->flipSymmetryAxis)) {
+        return this->geometry->getAxis(shape, *shapeAxis);
+    } else if (std::holds_alternative<AxisOrthogonalToPrimary>(this->flipSymmetryAxis)) {
+        return this->geometry->findFlipAxis(shape);
+    } else {
+        AssertThrow("unreachable");
+    }
+}
