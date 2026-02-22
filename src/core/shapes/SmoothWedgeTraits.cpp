@@ -7,7 +7,7 @@
 #include "geometry/xenocollide/XCBodyBuilder.h"
 
 
-double SmoothWedgeTraits::getVolume(double R, double r, double l) {
+double SmoothWedgeTraits::getVolumeStatic(double R, double r, double l) {
     double r2 = r*r;
     double r3 = r2*r;
     double R2 = R*R;
@@ -26,7 +26,7 @@ double SmoothWedgeTraits::getVolume(double R, double r, double l) {
 
 SmoothWedgeTraits::SmoothWedgeTraits(double R, double r, double l, std::size_t subdivisions)
         : XenoCollideTraits({0, 0, 1}, std::nullopt, {0, 0, 0},
-                            SmoothWedgeTraits::getVolume(R, r, l),
+                            SmoothWedgeTraits::getVolumeStatic(R, r, l),
                             {{"beg", {0, 0, (-l + R - r)/2}}, {"end", {0, 0, (l + R - r)/2}}}),
           R{R}, r{r}, l{l}
 {
