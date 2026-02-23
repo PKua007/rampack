@@ -5,9 +5,9 @@
 #ifndef RAMPACK_AXIALROTATIONSAMPLER_H
 #define RAMPACK_AXIALROTATIONSAMPLER_H
 
-#include <variant>
-
 #include "core/MoveSampler.h"
+#include "core/ShapeGeometry.h"
+#include "core/geometry/GeneralizedShapeAxis.h"
 
 
 /**
@@ -22,24 +22,18 @@
  * - **for a shape axis**: `"axis_rotation([shape axis])"`, where `[shape axis]` is `primary`, `secondary`, or `auxiliary`
  */
 class AxialRotationSampler : public MoveSampler {
-public:
-    /**
-     * @brief Axis variant: Vector<3> - global axis, ShapeGeometry:::Axis - shape axis.
-     */
-    using Axis = std::variant<Vector<3>, ShapeGeometry::Axis>;
-
 private:
     [[nodiscard]] Vector<3> computeAxis(const Shape &shape) const;
 
     double rotationStepSize{};
     const ShapeGeometry *geometry = nullptr;
-    Axis axis{};
+    GeneralizedShapeAxis axis = ShapeGeometry::Axis::PRIMARY;
 
 public:
     /**
      * @brief Constructs the sampler with an initial step size @a rotationStepSize and axis @a axis.
      */
-    AxialRotationSampler(double rotationStepSize, const Axis &axis);
+    explicit AxialRotationSampler(double rotationStepSize, GeneralizedShapeAxis axis = ShapeGeometry::Axis::PRIMARY);
 
     [[nodiscard]] std::string getName() const override;
     [[nodiscard]] std::size_t getNumOfRequestedMoves(std::size_t numParticles) const override { return numParticles; }

@@ -62,7 +62,7 @@ TEST_CASE("AxisRotationSampler") {
     }
 
     SECTION("sampler names") {
-        auto nameFor = [](const AxialRotationSampler::Axis &axis) {
+        auto nameFor = [](const auto &axis) {
             return AxialRotationSampler(M_PI/2, axis).getName();
         };
 

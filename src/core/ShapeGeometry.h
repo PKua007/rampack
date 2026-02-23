@@ -7,6 +7,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #include "geometry/Vector.h"
 #include "Shape.h"
@@ -36,6 +37,8 @@ private:
     std::vector<std::pair<std::string, Vector<3>>> namedPointsOrdered;
 
 protected:
+    virtual ~ShapeGeometry() = default;
+
     /**
      * @brief Registers a new named point @a point with name @a pointName (see getNamedPoint()).
      * @details The order of points registered using this method or registerNamedPoints() is remembered.

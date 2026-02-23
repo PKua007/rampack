@@ -86,19 +86,17 @@ namespace {
     }
 
     MatcherDataclass create_axis_rotation() {
-        using Axis = AxialRotationSampler::Axis;
-
         auto axisArray = MatcherArray(MatcherFloat{}, 3)
             .filter([](const ArrayData &arrayData) {
                 return arrayData.asVector<3>().norm2() > 1e-20;
             })
             .describe("non-zero norm")
-            .mapTo([](const ArrayData &arrayData) -> Axis {
+            .mapTo([](const ArrayData &arrayData) -> GeneralizedShapeAxis {
                 return arrayData.asVector<3>();
             });
         auto axisString = MatcherString{}
             .anyOf({"x", "y", "z", "primary", "secondary", "auxiliary"})
-            .mapTo([](const std::string &axis) -> Axis {
+            .mapTo([](const std::string &axis) -> GeneralizedShapeAxis {
                 if (axis == "x")                return Vector<3>{1, 0, 0};
                 else if (axis == "y")           return Vector<3>{0, 1, 0};
                 else if (axis == "z")           return Vector<3>{0, 0, 1};
@@ -114,7 +112,7 @@ namespace {
                         {"axis", rotAxis}})
             .mapTo([](const DataclassData &rotationAroundAxis) -> std::shared_ptr<MoveSampler> {
                 auto step = rotationAroundAxis["step"].as<double>();
-                auto axis = rotationAroundAxis["axis"].as<Axis>();
+                auto axis = rotationAroundAxis["axis"].as<GeneralizedShapeAxis>();
                 return std::make_shared<AxialRotationSampler>(step, axis);
             });
     }
