@@ -36,7 +36,6 @@ namespace {
     const Vector<3> nontrivialPrimaryAxis{2./3, -2./3, 1./3};
     const Vector<3> flippedNontrivialPrimaryAxis{-2./3, 2./3, -1./3};
     const Vector<3> flippedAndRotatedBy90DegAroundZAxisNontrivialPrimaryAxis{-2./3, -2./3, -1./3};
-
 }
 
 

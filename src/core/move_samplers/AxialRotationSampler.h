@@ -33,7 +33,7 @@ public:
     /**
      * @brief Constructs the sampler with an initial step size @a rotationStepSize and axis @a axis.
      */
-    explicit AxialRotationSampler(double rotationStepSize, GeneralizedShapeAxis axis = ShapeGeometry::Axis::PRIMARY);
+    explicit AxialRotationSampler(double rotationStepSize, const GeneralizedShapeAxis &axis = ShapeGeometry::Axis::PRIMARY);
 
     [[nodiscard]] std::string getName() const override;
     [[nodiscard]] std::size_t getNumOfRequestedMoves(std::size_t numParticles) const override { return numParticles; }

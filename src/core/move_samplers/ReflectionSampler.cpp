@@ -5,7 +5,7 @@
 #include "ReflectionSampler.h"
 
 ReflectionSampler::ReflectionSampler(const GeneralizedShapeAxis &reflectionAxis_,
-                                     const FlipSymmetryAxis &flipSymmetryAxis_, const std::size_t flipEvery_)
+                                     const FlipAxis &flipSymmetryAxis_, const std::size_t flipEvery_)
         : reflectionAxis{reflectionAxis_}, flipSymmetryAxis{flipSymmetryAxis_},
           flipEvery{flipEvery_}
 {
@@ -50,8 +50,8 @@ MoveSampler::MoveData ReflectionSampler::sampleMove(const Packing &packing,
 }
 
 Matrix<3, 3> ReflectionSampler::getRotationMatrixPretendingToBeReflection(const Shape &shape) const {
-    const Vector<3> reflectionAxisForShape = this->getReflectionAxisForShape(shape);
-    const Vector<3> symmetryPlaneAxisForShape = this->getFlipSymmetryAxisForShape(shape);
+    const Vector<3> reflectionAxisForShape = this->reflectionAxis.getForShape(*this->geometry, shape);
+    const Vector<3> symmetryPlaneAxisForShape = this->flipSymmetryAxis.getForShape(*this->geometry, shape);
 
     const double c = reflectionAxisForShape * symmetryPlaneAxisForShape;
     const Vector<3> v = reflectionAxisForShape ^ symmetryPlaneAxisForShape;
@@ -77,18 +77,4 @@ Matrix<3, 3> ReflectionSampler::getRotationMatrixPretendingToBeReflection(const 
         dv1v2 + tv3, g + dv2v2,   dv2v3 - tv1,
         dv1v3 - tv2, dv2v3 + tv1, g + dv3v3
     };
-}
-
-Vector<3> ReflectionSampler::getReflectionAxisForShape(const Shape &shape) const {
-    return this->reflectionAxis.getForShape(*this->geometry, shape);
-}
-
-Vector<3> ReflectionSampler::getFlipSymmetryAxisForShape(const Shape &shape) const {
-    if (const auto *shapeAxis = std::get_if<ShapeGeometry::Axis>(&this->flipSymmetryAxis)) {
-        return this->geometry->getAxis(shape, *shapeAxis);
-    } else if (std::holds_alternative<AxisOrthogonalToPrimary>(this->flipSymmetryAxis)) {
-        return this->geometry->findFlipAxis(shape);
-    } else {
-        AssertThrow("unreachable");
-    }
 }

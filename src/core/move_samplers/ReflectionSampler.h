@@ -5,10 +5,9 @@
 #ifndef RAMPACK_REFLECTIONSAMPLER_H
 #define RAMPACK_REFLECTIONSAMPLER_H
 
-#include <variant>
-
 #include "core/MoveSampler.h"
 #include "core/geometry/GeneralizedShapeAxis.h"
+#include "core/geometry/FlipAxis.h"
 
 /**
  * @brief ReflectionSampler performing the reflection relative to a given plane described by its normal vector.
@@ -17,13 +16,9 @@
  * Internally it consists of a single move named @a reflection. The group name is @a reflection.
  */
 class ReflectionSampler : public MoveSampler {
-public:
-    struct AxisOrthogonalToPrimary {};
-    using FlipSymmetryAxis = std::variant<ShapeGeometry::Axis, AxisOrthogonalToPrimary>;
-
 private:
     const GeneralizedShapeAxis reflectionAxis;
-    const FlipSymmetryAxis flipSymmetryAxis;
+    const FlipAxis flipSymmetryAxis;
     const std::size_t flipEvery{};
 
     const ShapeGeometry *geometry{};
@@ -31,15 +26,13 @@ private:
     bool isGeometricOriginZero{};
 
     [[nodiscard]] Matrix<3, 3> getRotationMatrixPretendingToBeReflection(const Shape &shape) const;
-    [[nodiscard]] Vector<3> getReflectionAxisForShape(const Shape &shape) const;
-    [[nodiscard]] Vector<3> getFlipSymmetryAxisForShape(const Shape &shape) const;
 
 public:
     /**
      * @brief Constructs the class specifying how often to perform a reflection (i.e., how many moves should be
      * requested, calculated by dividing the number of molecules by @a flipEvery).
      */
-    ReflectionSampler(const GeneralizedShapeAxis &reflectionAxis, const FlipSymmetryAxis &flipSymmetryAxis,
+    ReflectionSampler(const GeneralizedShapeAxis &reflectionAxis, const FlipAxis &flipSymmetryAxis,
                       std::size_t flipEvery);
 
     [[nodiscard]] std::string getName() const override { return "reflection"; }
