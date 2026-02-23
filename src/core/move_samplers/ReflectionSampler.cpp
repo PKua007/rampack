@@ -4,13 +4,11 @@
 
 #include "ReflectionSampler.h"
 
-ReflectionSampler::ReflectionSampler(const Vector<3> &reflectionPlaneAxis_, const FlipSymmetryAxis &flipSymmetryAxis_,
-                                     const std::size_t flipEvery_)
-        : reflectionPlaneAxis{reflectionPlaneAxis_.normalized()}, flipSymmetryAxis{flipSymmetryAxis_},
+ReflectionSampler::ReflectionSampler(const GeneralizedShapeAxis &reflectionAxis_,
+                                     const FlipSymmetryAxis &flipSymmetryAxis_, const std::size_t flipEvery_)
+        : reflectionAxis{reflectionAxis_}, flipSymmetryAxis{flipSymmetryAxis_},
           flipEvery{flipEvery_}
 {
-    constexpr double EPSILON = 1e-12;
-    Expects(reflectionPlaneAxis_.norm2() > EPSILON * EPSILON);
     Expects(flipEvery_ > 0);
 }
 
@@ -52,11 +50,11 @@ MoveSampler::MoveData ReflectionSampler::sampleMove(const Packing &packing,
 }
 
 Matrix<3, 3> ReflectionSampler::getRotationMatrixPretendingToBeReflection(const Shape &shape) const {
-    const Vector<3> reflectionPlaneAxisForShape = this->getReflectionPlaneAxisForShape(shape);
+    const Vector<3> reflectionAxisForShape = this->getReflectionAxisForShape(shape);
     const Vector<3> symmetryPlaneAxisForShape = this->getFlipSymmetryAxisForShape(shape);
 
-    const double c = reflectionPlaneAxisForShape * symmetryPlaneAxisForShape;
-    const Vector<3> v = reflectionPlaneAxisForShape ^ symmetryPlaneAxisForShape;
+    const double c = reflectionAxisForShape * symmetryPlaneAxisForShape;
+    const Vector<3> v = reflectionAxisForShape ^ symmetryPlaneAxisForShape;
     const double t = 2*c;
     const double g = t*c - 1;
 
@@ -81,8 +79,8 @@ Matrix<3, 3> ReflectionSampler::getRotationMatrixPretendingToBeReflection(const 
     };
 }
 
-Vector<3> ReflectionSampler::getReflectionPlaneAxisForShape(const Shape &shape) const {
-    return shape.getOrientation() * this->reflectionPlaneAxis;
+Vector<3> ReflectionSampler::getReflectionAxisForShape(const Shape &shape) const {
+    return this->reflectionAxis.getForShape(*this->geometry, shape);
 }
 
 Vector<3> ReflectionSampler::getFlipSymmetryAxisForShape(const Shape &shape) const {

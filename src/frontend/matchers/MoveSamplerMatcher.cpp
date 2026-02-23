@@ -23,6 +23,28 @@ namespace {
     MatcherDataclass create_reflection();
 
 
+    const auto generalizedShapeAxisArrayMatcher = MatcherArray(MatcherFloat{}, 3)
+        .filter([](const ArrayData &arrayData) {
+            return arrayData.asVector<3>().norm2() > 1e-20;
+        })
+        .describe("non-zero norm")
+        .mapTo([](const ArrayData &arrayData) -> GeneralizedShapeAxis {
+            return arrayData.asVector<3>();
+        });
+    const auto generalizedShapeAxisStringMatcher = MatcherString{}
+        .anyOf({"x", "y", "z", "primary", "secondary", "auxiliary"})
+        .mapTo([](const std::string &axis) -> GeneralizedShapeAxis {
+            if (axis == "x")                return Vector<3>{1, 0, 0};
+            else if (axis == "y")           return Vector<3>{0, 1, 0};
+            else if (axis == "z")           return Vector<3>{0, 0, 1};
+            else if (axis == "primary")     return ShapeGeometry::Axis::PRIMARY;
+            else if (axis == "secondary")   return ShapeGeometry::Axis::SECONDARY;
+            else if (axis == "auxiliary")   return ShapeGeometry::Axis::AUXILIARY;
+            else                            AssertThrow(axis);
+        });
+    const auto generalizedShapeAxisMatcher = generalizedShapeAxisArrayMatcher | generalizedShapeAxisStringMatcher;
+
+
     MatcherDataclass create_rototranslation() {
         auto rotStepFloat = MatcherFloat{}.positive().mapTo([](double step) -> std::optional<double> { return step; });
         auto rotStepAuto = MatcherString("auto")
@@ -86,30 +108,9 @@ namespace {
     }
 
     MatcherDataclass create_axis_rotation() {
-        auto axisArray = MatcherArray(MatcherFloat{}, 3)
-            .filter([](const ArrayData &arrayData) {
-                return arrayData.asVector<3>().norm2() > 1e-20;
-            })
-            .describe("non-zero norm")
-            .mapTo([](const ArrayData &arrayData) -> GeneralizedShapeAxis {
-                return arrayData.asVector<3>();
-            });
-        auto axisString = MatcherString{}
-            .anyOf({"x", "y", "z", "primary", "secondary", "auxiliary"})
-            .mapTo([](const std::string &axis) -> GeneralizedShapeAxis {
-                if (axis == "x")                return Vector<3>{1, 0, 0};
-                else if (axis == "y")           return Vector<3>{0, 1, 0};
-                else if (axis == "z")           return Vector<3>{0, 0, 1};
-                else if (axis == "primary")     return ShapeGeometry::Axis::PRIMARY;
-                else if (axis == "secondary")   return ShapeGeometry::Axis::SECONDARY;
-                else if (axis == "auxiliary")   return ShapeGeometry::Axis::AUXILIARY;
-                else                            AssertThrow(axis);
-            });
-        auto rotAxis = axisArray | axisString;
-
         return MatcherDataclass("axial_rotation")
             .arguments({{"step", MatcherFloat{}.positive()},
-                        {"axis", rotAxis}})
+                        {"axis", generalizedShapeAxisMatcher}})
             .mapTo([](const DataclassData &rotationAroundAxis) -> std::shared_ptr<MoveSampler> {
                 auto step = rotationAroundAxis["step"].as<double>();
                 auto axis = rotationAroundAxis["axis"].as<GeneralizedShapeAxis>();
@@ -127,13 +128,6 @@ namespace {
     }
 
     MatcherDataclass create_reflection() {
-        const auto reflectionAxisMatcher = MatcherArray(MatcherFloat{}.mapTo<double>(), 3)
-            .filter([](const ArrayData &arrayData) {
-                return arrayData.asVector<3>().norm2() > 1e-20;
-            })
-            .describe("non-zero norm")
-            .mapToVector<3>();
-
         using FlipSymmetryAxis = ReflectionSampler::FlipSymmetryAxis;
         const auto flipSymmetryAxisMatcher = MatcherString{}
             .anyOf({"primary", "secondary", "auxiliary", "orthogonal_to_primary"})
@@ -146,15 +140,15 @@ namespace {
             });
 
         return MatcherDataclass("reflection")
-                .arguments({{"reflexion_axis", reflectionAxisMatcher},
-                    {"flip_symmetry_axis", flipSymmetryAxisMatcher},
-                    {"every", MatcherInt{}.positive().mapTo<std::size_t>(), "10"}})
-                .mapTo([](const DataclassData &reflection) -> std::shared_ptr<MoveSampler> {
-                    const auto reflexionAxis = reflection["reflection_axis"].as<Vector<3>>();
-                    const auto flipSymmetryAxis = reflection["flip_symmetry_axis"].as<FlipSymmetryAxis>();
-                    const auto every = reflection["every"].as<std::size_t>();
-                    return std::make_shared<ReflectionSampler>(reflexionAxis, flipSymmetryAxis, every);
-                });
+            .arguments({{"reflection_axis", generalizedShapeAxisMatcher},
+                {"flip_symmetry_axis", flipSymmetryAxisMatcher},
+                {"every", MatcherInt{}.positive().mapTo<std::size_t>(), "10"}})
+            .mapTo([](const DataclassData &reflection) -> std::shared_ptr<MoveSampler> {
+                const auto reflectionAxis = reflection["reflection_axis"].as<GeneralizedShapeAxis>();
+                const auto flipSymmetryAxis = reflection["flip_symmetry_axis"].as<FlipSymmetryAxis>();
+                const auto every = reflection["every"].as<std::size_t>();
+                return std::make_shared<ReflectionSampler>(reflectionAxis, flipSymmetryAxis, every);
+            });
     }
 }
 
