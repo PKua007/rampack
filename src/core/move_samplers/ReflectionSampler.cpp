@@ -18,8 +18,11 @@ std::size_t ReflectionSampler::getNumOfRequestedMoves(std::size_t numParticles) 
 }
 
 void ReflectionSampler::setupForShapeTraits(const ShapeTraits &shapeTraits) {
-    this->geometry = &shapeTraits.getGeometry();
-    this->geometricOrigin = this->geometry->getGeometricOrigin(Shape{});
+    const auto &geometry = shapeTraits.getGeometry();
+    this->reflectionAxisForCurrentGeometry = this->reflectionAxis.getForDefaultOrientation(geometry);
+    this->symmetryPlaneAxisForCurrentGeometry = this->flipSymmetryAxis.getForDefaultOrientation(geometry);
+
+    this->geometricOrigin = geometry.getGeometricOrigin(Shape{});
     constexpr double EPSILON = 1e-12;
     this->isGeometricOriginZero = this->geometricOrigin.norm2() < EPSILON*EPSILON;
 }
@@ -27,8 +30,6 @@ void ReflectionSampler::setupForShapeTraits(const ShapeTraits &shapeTraits) {
 MoveSampler::MoveData ReflectionSampler::sampleMove(const Packing &packing,
                                                     const std::vector<std::size_t> &particleIdxs, std::mt19937 &mt)
 {
-    Assert(this->geometry != nullptr);
-
     MoveData moveData;
 
     std::uniform_int_distribution<std::size_t> particleDistribution(0, particleIdxs.size() - 1);
@@ -50,8 +51,8 @@ MoveSampler::MoveData ReflectionSampler::sampleMove(const Packing &packing,
 }
 
 Matrix<3, 3> ReflectionSampler::getRotationMatrixPretendingToBeReflection(const Shape &shape) const {
-    const Vector<3> reflectionAxisForShape = this->reflectionAxis.getForShape(*this->geometry, shape);
-    const Vector<3> symmetryPlaneAxisForShape = this->flipSymmetryAxis.getForShape(*this->geometry, shape);
+    const Vector<3> reflectionAxisForShape = shape.getOrientation() * this->reflectionAxisForCurrentGeometry;
+    const Vector<3> symmetryPlaneAxisForShape = shape.getOrientation() * this->symmetryPlaneAxisForCurrentGeometry;
 
     const double c = reflectionAxisForShape * symmetryPlaneAxisForShape;
     const Vector<3> v = reflectionAxisForShape ^ symmetryPlaneAxisForShape;

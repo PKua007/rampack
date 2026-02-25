@@ -21,7 +21,8 @@ private:
     const FlipAxis flipSymmetryAxis;
     const std::size_t flipEvery{};
 
-    const ShapeGeometry *geometry{};
+    Vector<3> reflectionAxisForCurrentGeometry;
+    Vector<3> symmetryPlaneAxisForCurrentGeometry;
     Vector<3> geometricOrigin;
     bool isGeometricOriginZero{};
 
