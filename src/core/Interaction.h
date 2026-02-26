@@ -123,6 +123,13 @@ public:
     [[nodiscard]] virtual std::vector<Vector<3>> getInteractionCentres() const { return {}; }
 
     /**
+     * @brief Returns interaction center positions for a given @a shape, taking into account its position and
+     * orientation.
+     * @details If getInteractionCentres() return an empty vector, the returned vector is also empty.
+     */
+    [[nodiscard]] std::vector<Vector<3>> getInteractionCentresForShape(const Shape &shape) const;
+
+    /**
      * @brief Returns a distance at which two molecules cease to interact (opposed to Interaction::getRangeRadius which
      * applies to a single pair of interaction centers).
      * @details The distance is calculated between molecules centers.

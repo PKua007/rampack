@@ -54,8 +54,8 @@ Matrix<3, 3> ReflectionSampler::getRotationMatrixPretendingToBeReflection(const 
     const Vector<3> reflectionAxisForShape = shape.getOrientation() * this->reflectionAxisForCurrentGeometry;
     const Vector<3> symmetryPlaneAxisForShape = shape.getOrientation() * this->symmetryPlaneAxisForCurrentGeometry;
 
-    const double c = reflectionAxisForShape * symmetryPlaneAxisForShape;
-    const Vector<3> v = reflectionAxisForShape ^ symmetryPlaneAxisForShape;
+    const double c = symmetryPlaneAxisForShape * reflectionAxisForShape;
+    const Vector<3> v = symmetryPlaneAxisForShape ^ reflectionAxisForShape;
     const double t = 2*c;
     const double g = t*c - 1;
 
