@@ -4,23 +4,23 @@
 
 #include "ReflectionSampler.h"
 
-ReflectionSampler::ReflectionSampler(const GeneralizedShapeAxis &reflectionAxis_,
-                                     const FlipAxis &flipSymmetryAxis_, const std::size_t flipEvery_)
-        : reflectionAxis{reflectionAxis_}, flipSymmetryAxis{flipSymmetryAxis_},
-          flipEvery{flipEvery_}
+ReflectionSampler::ReflectionSampler(const GeneralizedShapeAxis &reflectionAxis,
+                                     const GeneralizedShapeAxis &reflectionSymmetryAxis, const std::size_t reflectEvery)
+        : reflectionAxis{reflectionAxis}, reflectionSymmetryAxis{reflectionSymmetryAxis},
+          reflectEvery{reflectEvery}
 {
-    Expects(flipEvery_ > 0);
+    Expects(reflectEvery > 0);
 }
 
-std::size_t ReflectionSampler::getNumOfRequestedMoves(std::size_t numParticles) const {
-    Expects(numParticles > this->flipEvery);
-    return numParticles / this->flipEvery;
+std::size_t ReflectionSampler::getNumOfRequestedMoves(const std::size_t numParticles) const {
+    Expects(numParticles > this->reflectEvery);
+    return numParticles / this->reflectEvery;
 }
 
 void ReflectionSampler::setupForShapeTraits(const ShapeTraits &shapeTraits) {
     const auto &geometry = shapeTraits.getGeometry();
     this->reflectionAxisForCurrentGeometry = this->reflectionAxis.getForDefaultOrientation(geometry);
-    this->symmetryPlaneAxisForCurrentGeometry = this->flipSymmetryAxis.getForDefaultOrientation(geometry);
+    this->symmetryPlaneAxisForCurrentGeometry = this->reflectionSymmetryAxis.getForDefaultOrientation(geometry);
 
     this->geometricOrigin = geometry.getGeometricOrigin(Shape{});
     constexpr double EPSILON = 1e-12;

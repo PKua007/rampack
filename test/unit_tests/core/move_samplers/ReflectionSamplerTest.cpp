@@ -91,10 +91,11 @@ TEST_CASE("ReflectionSampler") {
     ALLOW_CALL(traits, getSecondaryAxis(_)).RETURN(_1.getOrientation() * secondaryAxis);
     ALLOW_CALL(traits, getGeometricOrigin(_)).RETURN(_1.getOrientation() * geometricOrigin);
 
+    // Reflect through the reflection plane spanned by the Z axis and the disector of the angle between X and Y axes
     const GeneralizedShapeAxis reflectionAxis = Vector<3>{1, -1, 0};
-    const FlipAxis flipAxis = ShapeGeometry::Axis::AUXILIARY;
-    constexpr double stepSize = 1;
-    ReflectionSampler reflectionSampler(reflectionAxis, flipAxis, stepSize);
+    const GeneralizedShapeAxis reflectionSymmetryAxis = ShapeGeometry::Axis::AUXILIARY;
+    constexpr double every = 1;
+    ReflectionSampler reflectionSampler(reflectionAxis, reflectionSymmetryAxis, every);
     reflectionSampler.setupForShapeTraits(traits);
 
     const std::vector<Vector<3>> expectedRelativeCentresAfterReflection{{0, 1, 0}, {0, 0, 0}, {0, 0, 1}};

@@ -7,7 +7,6 @@
 
 #include "core/MoveSampler.h"
 #include "core/geometry/GeneralizedShapeAxis.h"
-#include "core/geometry/FlipAxis.h"
 
 /**
  * @brief ReflectionSampler performing the reflection relative to a given plane described by its normal vector.
@@ -18,8 +17,8 @@
 class ReflectionSampler : public MoveSampler {
 private:
     const GeneralizedShapeAxis reflectionAxis;
-    const FlipAxis flipSymmetryAxis;
-    const std::size_t flipEvery{};
+    const GeneralizedShapeAxis reflectionSymmetryAxis;
+    const std::size_t reflectEvery{};
 
     Vector<3> reflectionAxisForCurrentGeometry;
     Vector<3> symmetryPlaneAxisForCurrentGeometry;
@@ -33,8 +32,8 @@ public:
      * @brief Constructs the class specifying how often to perform a reflection (i.e., how many moves should be
      * requested, calculated by dividing the number of molecules by @a flipEvery).
      */
-    ReflectionSampler(const GeneralizedShapeAxis &reflectionAxis, const FlipAxis &flipSymmetryAxis,
-                      std::size_t flipEvery);
+    ReflectionSampler(const GeneralizedShapeAxis &reflectionAxis, const GeneralizedShapeAxis &reflectionSymmetryAxis,
+                      std::size_t reflectEvery);
 
     [[nodiscard]] std::string getName() const override { return "reflection"; }
     [[nodiscard]] std::size_t getNumOfRequestedMoves(std::size_t numParticles) const override;
