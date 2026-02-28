@@ -9,17 +9,16 @@
 #include "matchers/VectorApproxMatcher.h"
 
 #include "core/move_samplers/AxialRotationSampler.h"
-#include "core/shapes/PolyspherocylinderBananaTraits.h"
 #include "core/lattice/Lattice.h"
 #include "core/PeriodicBoundaryConditions.h"
 
 
 namespace {
-    void test_axis_rotation_move(AxialRotationSampler &rotationSampler, const ShapeTraits &traits,
+    void test_axis_rotation_move(AxialRotationSampler &rotationSampler, const ShapeTraits &traits, const Shape& shape,
                                  const Vector<3> &invariantAxis)
     {
         rotationSampler.setupForShapeTraits(traits);
-        Lattice lattice(UnitCell(TriclinicBox(2), {Shape({0.5, 0.5, 0.5})}), {2, 2, 2});
+        Lattice lattice(UnitCell(TriclinicBox(2), {shape}), {2, 2, 2});
         auto pbc = std::make_unique<PeriodicBoundaryConditions>();
         Packing packing(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), traits.getInteraction());
         std::vector<std::size_t> particleIdxs(packing.size());
@@ -48,16 +47,19 @@ TEST_CASE("AxisRotationSampler") {
     ALLOW_CALL(sphereWithAxis, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{1, 0, 0});
 
     SECTION("performing moves") {
-        SECTION("general shape axis") {
-            AxialRotationSampler rotationSampler(M_PI/2, GeneralShapeAxis(Vector<3>{0, 0, 1}));
+        // Shape rotated 90 deg around Z axis; consequently, shape axis primary=={1, 0, 0} is {0, 1, 0} in lab coords
+        Shape shape({0.5, 0.5, 0.5}, Matrix<3, 3>::rotation(0, 0, M_PI/2));
 
-            test_axis_rotation_move(rotationSampler, sphereWithAxis, {0, 0, 1});
+        SECTION("general shape axis") {
+            AxialRotationSampler rotationSampler(M_PI/2, GeneralShapeAxis(Vector<3>{1, 0, 0}));
+
+            test_axis_rotation_move(rotationSampler, sphereWithAxis, shape, {0, 1, 0});
         }
 
         SECTION("named shape axis") {
             AxialRotationSampler rotationSampler(M_PI/2, ShapeGeometry::Axis::PRIMARY);
 
-            test_axis_rotation_move(rotationSampler, sphereWithAxis, {1, 0, 0});
+            test_axis_rotation_move(rotationSampler, sphereWithAxis, shape, {0, 1, 0});
         }
     }
 
