@@ -6,7 +6,7 @@
 #define RAMPACK_REFLECTIONSAMPLER_H
 
 #include "core/MoveSampler.h"
-#include "core/geometry/GeneralizedShapeAxis.h"
+#include "core/geometry/GeneralShapeAxis.h"
 
 /**
  * @brief ReflectionSampler performing the reflection relative to a given plane described by its normal vector.
@@ -16,8 +16,8 @@
  */
 class ReflectionSampler : public MoveSampler {
 private:
-    const GeneralizedShapeAxis reflectionAxis;
-    const GeneralizedShapeAxis reflectionSymmetryAxis;
+    const GeneralShapeAxis reflectionAxis;
+    const GeneralShapeAxis reflectionSymmetryAxis;
     const std::size_t reflectEvery{};
 
     Vector<3> reflectionAxisForCurrentGeometry;
@@ -32,7 +32,7 @@ public:
      * @brief Constructs the class specifying how often to perform a reflection (i.e., how many moves should be
      * requested, calculated by dividing the number of molecules by @a flipEvery).
      */
-    ReflectionSampler(const GeneralizedShapeAxis &reflectionAxis, const GeneralizedShapeAxis &reflectionSymmetryAxis,
+    ReflectionSampler(const GeneralShapeAxis &reflectionAxis, const GeneralShapeAxis &reflectionSymmetryAxis,
                       std::size_t reflectEvery);
 
     [[nodiscard]] std::string getName() const override { return "reflection"; }

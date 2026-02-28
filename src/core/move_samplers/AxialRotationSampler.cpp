@@ -10,7 +10,7 @@ Vector<3> AxialRotationSampler::computeAxis(const Shape &shape) const {
     return this->axis.getForShape(*this->geometry, shape).normalized();
 }
 
-AxialRotationSampler::AxialRotationSampler(const double rotationStepSize, const GeneralizedShapeAxis &axis)
+AxialRotationSampler::AxialRotationSampler(const double rotationStepSize, const GeneralShapeAxis &axis)
         : rotationStepSize{rotationStepSize}, axis{axis}
 {
     Expects(this->rotationStepSize > 0);

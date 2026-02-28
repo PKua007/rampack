@@ -4,8 +4,8 @@
 
 #include "ReflectionSampler.h"
 
-ReflectionSampler::ReflectionSampler(const GeneralizedShapeAxis &reflectionAxis,
-                                     const GeneralizedShapeAxis &reflectionSymmetryAxis, const std::size_t reflectEvery)
+ReflectionSampler::ReflectionSampler(const GeneralShapeAxis &reflectionAxis,
+                                     const GeneralShapeAxis &reflectionSymmetryAxis, const std::size_t reflectEvery)
         : reflectionAxis{reflectionAxis}, reflectionSymmetryAxis{reflectionSymmetryAxis},
           reflectEvery{reflectEvery}
 {

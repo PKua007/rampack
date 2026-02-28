@@ -92,8 +92,8 @@ TEST_CASE("ReflectionSampler") {
     ALLOW_CALL(traits, getGeometricOrigin(_)).RETURN(_1.getOrientation() * geometricOrigin);
 
     // Reflect through the reflection plane spanned by the Z axis and the disector of the angle between X and Y axes
-    const GeneralizedShapeAxis reflectionAxis = Vector<3>{1, -1, 0};
-    const GeneralizedShapeAxis reflectionSymmetryAxis = ShapeGeometry::Axis::AUXILIARY;
+    const GeneralShapeAxis reflectionAxis(Vector<3>{1, -1, 0});
+    const GeneralShapeAxis reflectionSymmetryAxis(ShapeGeometry::Axis::AUXILIARY);
     constexpr double every = 1;
     ReflectionSampler reflectionSampler(reflectionAxis, reflectionSymmetryAxis, every);
     reflectionSampler.setupForShapeTraits(traits);

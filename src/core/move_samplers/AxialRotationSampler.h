@@ -7,7 +7,7 @@
 
 #include "core/MoveSampler.h"
 #include "core/ShapeGeometry.h"
-#include "core/geometry/GeneralizedShapeAxis.h"
+#include "core/geometry/GeneralShapeAxis.h"
 
 
 /**
@@ -27,13 +27,13 @@ private:
 
     double rotationStepSize{};
     const ShapeGeometry *geometry = nullptr;
-    GeneralizedShapeAxis axis = ShapeGeometry::Axis::PRIMARY;
+    GeneralShapeAxis axis = ShapeGeometry::Axis::PRIMARY;
 
 public:
     /**
      * @brief Constructs the sampler with an initial step size @a rotationStepSize and axis @a axis.
      */
-    explicit AxialRotationSampler(double rotationStepSize, const GeneralizedShapeAxis &axis = ShapeGeometry::Axis::PRIMARY);
+    explicit AxialRotationSampler(double rotationStepSize, const GeneralShapeAxis &axis = ShapeGeometry::Axis::PRIMARY);
 
     [[nodiscard]] std::string getName() const override;
     [[nodiscard]] std::size_t getNumOfRequestedMoves(std::size_t numParticles) const override { return numParticles; }

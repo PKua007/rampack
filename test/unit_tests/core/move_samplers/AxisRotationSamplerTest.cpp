@@ -48,13 +48,13 @@ TEST_CASE("AxisRotationSampler") {
     ALLOW_CALL(sphereWithAxis, getPrimaryAxis(_)).RETURN(_1.getOrientation() * Vector<3>{1, 0, 0});
 
     SECTION("performing moves") {
-        SECTION("global axis") {
-            AxialRotationSampler rotationSampler(M_PI/2, Vector<3>{0, 0, 1});
+        SECTION("general shape axis") {
+            AxialRotationSampler rotationSampler(M_PI/2, GeneralShapeAxis(Vector<3>{0, 0, 1}));
 
             test_axis_rotation_move(rotationSampler, sphereWithAxis, {0, 0, 1});
         }
 
-        SECTION("shape axis") {
+        SECTION("named shape axis") {
             AxialRotationSampler rotationSampler(M_PI/2, ShapeGeometry::Axis::PRIMARY);
 
             test_axis_rotation_move(rotationSampler, sphereWithAxis, {1, 0, 0});
@@ -66,12 +66,13 @@ TEST_CASE("AxisRotationSampler") {
             return AxialRotationSampler(M_PI/2, axis).getName();
         };
 
-        SECTION("global axis") {
-            CHECK(nameFor(Vector<3>{0, 0, 1}) == "axial_rotation(0,0,1)");
-            CHECK(nameFor(Vector<3>{0.6, 0.8, 0}) == "axial_rotation(0.59999999999999998,0.80000000000000004,0)");
+        SECTION("general shape axis") {
+            CHECK(nameFor(GeneralShapeAxis(Vector<3>{0, 0, 1})) == "axial_rotation(0,0,1)");
+            CHECK(nameFor(GeneralShapeAxis(Vector<3>{0.6, 0.8, 0}))
+                  == "axial_rotation(0.59999999999999998,0.80000000000000004,0)");
         }
 
-        SECTION("shape axis") {
+        SECTION("named shape axis") {
             CHECK(nameFor(ShapeGeometry::Axis::PRIMARY) == "axial_rotation(primary)");
             CHECK(nameFor(ShapeGeometry::Axis::SECONDARY) == "axial_rotation(secondary)");
             CHECK(nameFor(ShapeGeometry::Axis::AUXILIARY) == "axial_rotation(auxiliary)");
@@ -79,7 +80,7 @@ TEST_CASE("AxisRotationSampler") {
     }
 
     SECTION("step sizes") {
-        AxialRotationSampler rotationSampler(M_PI/2, Vector<3>{0, 0, 1});
+        AxialRotationSampler rotationSampler(M_PI/2, GeneralShapeAxis(Vector<3>{0, 0, 1}));
 
         rotationSampler.setStepSize("rotation", 0.5);
 
