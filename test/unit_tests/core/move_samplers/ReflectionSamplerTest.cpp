@@ -16,9 +16,9 @@
 #include "core/PeriodicBoundaryConditions.h"
 
 namespace {
-    Packing construct_packing(const ShapeTraits &traits)
+    Packing construct_packing(const ShapeTraits &traits, const Shape &shape)
     {
-        Lattice lattice(UnitCell(TriclinicBox(5), {Shape({0.5, 0.5, 0.5})}), {2, 2, 2});
+        Lattice lattice(UnitCell(TriclinicBox(5), {shape}), {2, 2, 2});
         auto pbc = std::make_unique<PeriodicBoundaryConditions>();
         return Packing(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), traits.getInteraction());
     }
@@ -43,13 +43,13 @@ namespace {
 
     // Builds a small packing, applies one sampled reflection move, and verifies that the reflection was correctly
     // applied by inspecting interaction centers after reflection.
-    void test_reflection_move(const ShapeTraits &traits, ReflectionSampler &reflectionSampler,
+    void test_reflection_move(const ShapeTraits &traits, ReflectionSampler &reflectionSampler, const Shape &shape,
                               const std::vector<Vector<3>> &expectedRelativeCentresAfterReflection_)
     {
         const auto &interaction = traits.getInteraction();
         const auto &geometry = traits.getGeometry();
 
-        auto packing = construct_packing(traits);
+        auto packing = construct_packing(traits, shape);
 
         const Shape reflectedShape = apply_reflection_and_return_shape(packing, reflectionSampler, interaction);
         const auto reflectedShapeInteractionCentres = interaction.getInteractionCentresForShape(reflectedShape);
@@ -91,13 +91,26 @@ TEST_CASE("ReflectionSampler") {
     ALLOW_CALL(traits, getSecondaryAxis(_)).RETURN(_1.getOrientation() * secondaryAxis);
     ALLOW_CALL(traits, getGeometricOrigin(_)).RETURN(_1.getOrientation() * geometricOrigin);
 
-    // Reflect through the reflection plane spanned by the Z axis and the disector of the angle between X and Y axes
-    const GeneralShapeAxis reflectionAxis(Vector<3>{1, -1, 0});
     const GeneralShapeAxis reflectionSymmetryAxis(ShapeGeometry::Axis::AUXILIARY);
     constexpr double every = 1;
-    ReflectionSampler reflectionSampler(reflectionAxis, reflectionSymmetryAxis, every);
-    reflectionSampler.setupForShapeTraits(traits);
+    // The default XZ trimer is rotated by `pi/2` around `x`, so its `z` arm points along `+y`.
+    const Shape rotatedShape({0.5, 0.5, 0.5}, Matrix<3, 3>::rotation(Vector<3>{1, 0, 0}, M_PI/2));
 
-    const std::vector<Vector<3>> expectedRelativeCentresAfterReflection{{0, 1, 0}, {0, 0, 0}, {0, 0, 1}};
-    test_reflection_move(traits, reflectionSampler, expectedRelativeCentresAfterReflection);
+    SECTION("shape-local reflection axis") {
+        // The shape-local reflection plane normal {1, -1, 0} rotates with the particle into lab {1, 0, -1}.
+        ReflectionSampler reflectionSampler(GeneralShapeAxis(Vector<3>{1, -1, 0}), reflectionSymmetryAxis, every);
+        reflectionSampler.setupForShapeTraits(traits);
+
+        const std::vector<Vector<3>> expectedRelativeCentresAfterReflection{{0, 0, 1}, {0, 0, 0}, {0, -1, 0}};
+        test_reflection_move(traits, reflectionSampler, rotatedShape, expectedRelativeCentresAfterReflection);
+    }
+
+    SECTION("lab reflection axis") {
+        // The lab reflection plane normal stays fixed at {1, -1, 0} regardless of particle orientation.
+        ReflectionSampler reflectionSampler(Vector<3>{1, -1, 0}, reflectionSymmetryAxis, every);
+        reflectionSampler.setupForShapeTraits(traits);
+
+        const std::vector<Vector<3>> expectedRelativeCentresAfterReflection{{0, 1, 0}, {0, 0, 0}, {-1, 0, 0}};
+        test_reflection_move(traits, reflectionSampler, rotatedShape, expectedRelativeCentresAfterReflection);
+    }
 }

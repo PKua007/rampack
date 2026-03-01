@@ -4,11 +4,24 @@
 
 #include "ReflectionSampler.h"
 
+#include <limits>
+#include <sstream>
+
 ReflectionSampler::ReflectionSampler(const GeneralShapeAxis &reflectionAxis,
                                      const GeneralShapeAxis &reflectionSymmetryAxis, const std::size_t reflectEvery)
         : reflectionAxis{reflectionAxis}, reflectionSymmetryAxis{reflectionSymmetryAxis},
           reflectEvery{reflectEvery}
 {
+    Expects(reflectEvery > 0);
+}
+
+ReflectionSampler::ReflectionSampler(const Vector<3> &reflectionAxis,
+                                     const GeneralShapeAxis &reflectionSymmetryAxis, const std::size_t reflectEvery)
+        : reflectionAxis{reflectionAxis.normalized()}, reflectionSymmetryAxis{reflectionSymmetryAxis},
+          reflectEvery{reflectEvery}
+{
+    constexpr double EPSILON = 1e-12;
+    Expects(reflectionAxis.norm2() > EPSILON * EPSILON);
     Expects(reflectEvery > 0);
 }
 
@@ -19,7 +32,13 @@ std::size_t ReflectionSampler::getNumOfRequestedMoves(const std::size_t numParti
 
 void ReflectionSampler::setupForShapeTraits(const ShapeTraits &shapeTraits) {
     const auto &geometry = shapeTraits.getGeometry();
-    this->reflectionAxisForCurrentGeometry = this->reflectionAxis.getForDefaultOrientation(geometry);
+    if (const auto *labAxis = std::get_if<Vector<3>>(&this->reflectionAxis))
+        this->reflectionAxisForCurrentGeometry = *labAxis;
+    else if (const auto *shapeAxis = std::get_if<GeneralShapeAxis>(&this->reflectionAxis))
+        this->reflectionAxisForCurrentGeometry = shapeAxis->getForDefaultOrientation(geometry);
+    else
+        AssertThrow("std::variant::valueless_by_exception");
+
     this->symmetryPlaneAxisForCurrentGeometry = this->reflectionSymmetryAxis.getForDefaultOrientation(geometry);
 
     this->geometricOrigin = geometry.getGeometricOrigin(Shape{});
@@ -36,7 +55,10 @@ MoveSampler::MoveData ReflectionSampler::sampleMove(const Packing &packing,
     moveData.particleIdx = particleIdxs[particleDistribution(mt)];
 
     const Shape &shape = packing[moveData.particleIdx];
-    moveData.rotation = this->getRotationMatrixPretendingToBeReflection(shape);
+    const Vector<3> reflectionAxisForShape = this->prepareReflectionAxis(shape);
+    const Vector<3> symmetryPlaneAxisForShape = shape.getOrientation() * this->symmetryPlaneAxisForCurrentGeometry;
+    moveData.rotation = ReflectionSampler::getRotationMatrixPretendingToBeReflection(reflectionAxisForShape,
+                                                                                     symmetryPlaneAxisForShape);
 
     if (this->isGeometricOriginZero) {
         moveData.moveType = MoveType::ROTATION;
@@ -50,12 +72,31 @@ MoveSampler::MoveData ReflectionSampler::sampleMove(const Packing &packing,
     return moveData;
 }
 
-Matrix<3, 3> ReflectionSampler::getRotationMatrixPretendingToBeReflection(const Shape &shape) const {
-    const Vector<3> reflectionAxisForShape = shape.getOrientation() * this->reflectionAxisForCurrentGeometry;
-    const Vector<3> symmetryPlaneAxisForShape = shape.getOrientation() * this->symmetryPlaneAxisForCurrentGeometry;
+Vector<3> ReflectionSampler::prepareReflectionAxis(const Shape &shape) const {
+    if (std::holds_alternative<Vector<3>>(this->reflectionAxis))
+        return this->reflectionAxisForCurrentGeometry;
+    if (std::holds_alternative<GeneralShapeAxis>(this->reflectionAxis))
+        return shape.getOrientation() * this->reflectionAxisForCurrentGeometry;
+    AssertThrow("std::variant::valueless_by_exception");
+}
 
-    const double c = symmetryPlaneAxisForShape * reflectionAxisForShape;
-    const Vector<3> v = symmetryPlaneAxisForShape ^ reflectionAxisForShape;
+std::string ReflectionSampler::getReflectionAxisNameSuffix() const {
+    if (const auto *labAxis = std::get_if<Vector<3>>(&this->reflectionAxis)) {
+        std::ostringstream nameOut;
+        nameOut.precision(std::numeric_limits<double>::max_digits10);
+        nameOut << (*labAxis)[0] << "," << (*labAxis)[1] << "," << (*labAxis)[2];
+        return nameOut.str();
+    }
+    if (const auto *shapeAxis = std::get_if<GeneralShapeAxis>(&this->reflectionAxis))
+        return shapeAxis->getMoveSamplerNameSuffix();
+    AssertThrow("std::variant::valueless_by_exception");
+}
+
+Matrix<3, 3> ReflectionSampler::getRotationMatrixPretendingToBeReflection(const Vector<3> &reflectionAxis,
+                                                                          const Vector<3> &symmetryPlaneAxis)
+{
+    const double c = symmetryPlaneAxis * reflectionAxis;
+    const Vector<3> v = symmetryPlaneAxis ^ reflectionAxis;
     const double t = 2*c;
     const double g = t*c - 1;
 
@@ -69,13 +110,17 @@ Matrix<3, 3> ReflectionSampler::getRotationMatrixPretendingToBeReflection(const 
     const double tv2 = t*v[1];
     const double tv3 = t*v[2];
 
-    // This is the composition of two reflections Ra * Rb, first through shape's symmetry plane axis `b`, then through
-    // reflection plane axis `a`. The resulting rotation is around the axis (`a` x `b`) by the angle 2*`theta` given by
-    // cos(`theta`) = `a` . `b`. The formula was optimized for a number of multiplications and additions with the
-    // assistance of GPT o3.
+    // This is the composition of two reflections `R_a * R_b`, first through shape's symmetry plane axis `b`, then
+    // through reflection plane axis `a`. The resulting rotation is around the axis `a x b` by the angle `2 * theta`,
+    // where `cos(theta) = a . b`. The formula was optimized for a number of multiplications and additions with the
+    // assistance of GPT o3, and debugged with the assistance of Codex 5.3.
     return {
         g + dv1v1,   dv1v2 - tv3, dv1v3 + tv2,
         dv1v2 + tv3, g + dv2v2,   dv2v3 - tv1,
         dv1v3 - tv2, dv2v3 + tv1, g + dv3v3
     };
+}
+
+std::string ReflectionSampler::getName() const {
+    return "reflection(" + this->getReflectionAxisNameSuffix() + ")";
 }

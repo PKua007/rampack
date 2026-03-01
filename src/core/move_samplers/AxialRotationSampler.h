@@ -14,11 +14,11 @@
 
 /**
  * @brief MoveSampler performing the rotations around a fixed lab or shape axis.
- * @details Particles are sampled at random. Rotation is performed around a fixed, lab axis or shape axis (primary,
- * secondary, or auxiliary, see ShapeGeometry). The rotation angle is sampled uniformly from an interval given by the
- * current step size. Maximal step size is &pi;.
+ * @details <p> Particles are sampled at random. Rotation is performed around a fixed, lab axis or shape axis [primary,
+ * secondary, auxiliary (see ShapeGeometry), or an explicit `Vector<3>`]. The rotation angle is sampled uniformly from
+ * an interval given by the current step size. Maximal step size is &pi;.
  *
- * Internally it consists of a single move named `rotation`. The group name is:
+ * <p> Internally it consists of a single move named `rotation`. The group name is:
  * - **for a lab axis**: `"axis_rotation([x],[y],[z])"`, where `[x]`, `[y]`, and `[z]` are full-precision double
  * coordinates (formatted as `%.17g`)
  * - **for a named shape axis**: `"axis_rotation([shape axis])"`, where `[shape axis]` is `primary`, `secondary`,
@@ -28,9 +28,13 @@
 class AxialRotationSampler : public MoveSampler {
 public:
     /**
-     * @brief Constructs the sampler with an initial step size @a rotationStepSize and axis @a axis.
+     * @brief Constructs the sampler with an initial step size @a rotationStepSize and a shape axis @a axis.
      */
     explicit AxialRotationSampler(double rotationStepSize, const GeneralShapeAxis &axis = ShapeGeometry::Axis::PRIMARY);
+
+    /**
+     * @brief Constructs the sampler with an initial step size @a rotationStepSize and a lab axis @a axis.
+     */
     explicit AxialRotationSampler(double rotationStepSize, const Vector<3> &axis);
 
     [[nodiscard]] std::string getName() const override;
