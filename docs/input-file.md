@@ -791,6 +791,8 @@ performed. For example, its default value `10` means that in a full single MC cy
 
 ### Class `axial_rotation`
 
+> Since v1.3.0
+
 ```python
 axial_rotation(
     step,
@@ -810,15 +812,44 @@ Arguments:
 
 * ***axis***
 
-  Global or shape axis, which is the axis of rotation. The following values are accepted:
+  Lab or shape axis, which is the axis of rotation. The following variants are accepted:
 
-  * Array of Floats (eg. `[1, 1, 0]`) <br />
-    Specific global (lab) axis. Axis normalization is performed automatically.
-  * `"x"`, `"y"`, `"z"` <br />
-    Shorthands for x, y and z global axes.
-  * `"primary"`, `"secondary"`, `"auxiliary"` <br />
-    Rotation around a [shape axis](shapes.md#shape-axes). The rotation axis is not constant - shape axes are defined in
-    shape's coordinate system, thus the axis of rotation depends on the orientation of a particular shape.
+  * General axis in lab coordinates
+    ```python
+    # Normalization is done automatically
+    axis = [1, 1, 0]
+    axis = lab_coord([1, 1, 0])
+    axis = lab_coord(axis=[1, 1, 0])
+    ```
+  * Principal axis in lab coordinates
+    ```python
+    # Can be "x", "y", or "z"
+    axis = "x"
+    axis = lab_coord("x")
+    axis = lab_coord(axis="x")
+    ```
+  * General axis in shape coordinates
+    ```python
+    # Normalization is done automatically
+    axis = shape_coord([1, 1, 0])
+    axis = shape_coord(axis=[1, 1, 0])
+    ```
+  * Principal axis in shape coordinates
+    ```python
+    # Can be "x", "y", or "z"
+    axis = shape_coord("x")
+    axis = shape_coord(axis="x")
+    ```
+  * [Shape axis](shapes.md#shape-axes)
+    ```python
+    # Can be "primary", "secondary", or "auxiliary"
+    axis = "primary"
+    axis = shape_coord("primary")
+    axis = shape_coord(axis="primary")
+    ```
+
+  In the variants with shape coordinates (last three), the rotation axis is not constant - shape axes are defined in
+  shape's coordinate system, thus the axis of rotation depends on the orientation of a particular shape.
 
 
 ## Box move types
