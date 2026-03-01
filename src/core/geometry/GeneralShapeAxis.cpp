@@ -34,7 +34,7 @@ std::string GeneralShapeAxis::getMoveSamplerNameSuffixForShapeAxis(const ShapeGe
 std::string GeneralShapeAxis::getMoveSamplerNameSuffixForGeneralShapeAxis(const Vector<3> &generalShapeAxis) {
     std::ostringstream nameOut;
     nameOut.precision(std::numeric_limits<double>::max_digits10);
-    nameOut << generalShapeAxis[0] << "," << generalShapeAxis[1] << "," << generalShapeAxis[2];
+    nameOut << "shape," << generalShapeAxis[0] << "," << generalShapeAxis[1] << "," << generalShapeAxis[2];
     return nameOut.str();
 }
 

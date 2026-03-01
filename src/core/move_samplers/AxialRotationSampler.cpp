@@ -3,17 +3,32 @@
 //
 
 #include "AxialRotationSampler.h"
+#include <limits>
+#include <sstream>
+
 #include "utils/Exceptions.h"
 
 
 Vector<3> AxialRotationSampler::computeAxis(const Shape &shape) const {
-    return this->axis.getForShape(*this->geometry, shape).normalized();
+    if (const auto *labAxis = std::get_if<Vector<3>>(&this->axis))
+        return *labAxis;
+    if (const auto *shapeAxis = std::get_if<GeneralShapeAxis>(&this->axis))
+        return shapeAxis->getForShape(*this->geometry, shape).normalized();
+    AssertThrow("std::variant::valueless_by_exception");
 }
 
 AxialRotationSampler::AxialRotationSampler(const double rotationStepSize, const GeneralShapeAxis &axis)
         : rotationStepSize{rotationStepSize}, axis{axis}
 {
     Expects(this->rotationStepSize > 0);
+}
+
+AxialRotationSampler::AxialRotationSampler(const double rotationStepSize, const Vector<3> &axis)
+        : rotationStepSize{rotationStepSize}, axis{axis.normalized()}
+{
+    constexpr double EPSILON = 1e-12;
+    Expects(this->rotationStepSize > 0);
+    Expects(axis.norm2() > EPSILON * EPSILON);
 }
 
 MoveSampler::MoveData AxialRotationSampler::sampleMove([[maybe_unused]] const Packing &packing,
@@ -62,6 +77,18 @@ void AxialRotationSampler::setStepSize(const std::string &stepName, double stepS
     this->rotationStepSize = stepSize;
 }
 
+std::string AxialRotationSampler::getAxisNameSuffix() const {
+    if (const auto *labAxis = std::get_if<Vector<3>>(&this->axis)) {
+        std::ostringstream nameOut;
+        nameOut.precision(std::numeric_limits<double>::max_digits10);
+        nameOut << (*labAxis)[0] << "," << (*labAxis)[1] << "," << (*labAxis)[2];
+        return nameOut.str();
+    }
+    if (const auto *shapeAxis = std::get_if<GeneralShapeAxis>(&this->axis))
+        return shapeAxis->getMoveSamplerNameSuffix();
+    AssertThrow("std::variant::valueless_by_exception");
+}
+
 std::string AxialRotationSampler::getName() const {
-    return "axial_rotation(" + this->axis.getMoveSamplerNameSuffix() + ")";
+    return "axial_rotation(" + this->getAxisNameSuffix() + ")";
 }

@@ -5,35 +5,33 @@
 #ifndef RAMPACK_AXIALROTATIONSAMPLER_H
 #define RAMPACK_AXIALROTATIONSAMPLER_H
 
+#include <variant>
+
 #include "core/MoveSampler.h"
 #include "core/ShapeGeometry.h"
 #include "core/geometry/GeneralShapeAxis.h"
 
 
 /**
- * @brief MoveSampler performing the rotations around a fixed global or shape axis.
- * @details Particles are sampled at random. Rotation is performed around a fixed, global axis or shape axis (primary,
+ * @brief MoveSampler performing the rotations around a fixed lab or shape axis.
+ * @details Particles are sampled at random. Rotation is performed around a fixed, lab axis or shape axis (primary,
  * secondary, or auxiliary, see ShapeGeometry). The rotation angle is sampled uniformly from an interval given by the
  * current step size. Maximal step size is &pi;.
  *
  * Internally it consists of a single move named `rotation`. The group name is:
- * - **for a global axis**: `"axis_rotation([x],[y],[z])"`, where `[x]`, `[y]`, and `[z]` are full-precision double
+ * - **for a lab axis**: `"axis_rotation([x],[y],[z])"`, where `[x]`, `[y]`, and `[z]` are full-precision double
  * coordinates (formatted as `%.17g`)
- * - **for a shape axis**: `"axis_rotation([shape axis])"`, where `[shape axis]` is `primary`, `secondary`, or `auxiliary`
+ * - **for a named shape axis**: `"axis_rotation([shape axis])"`, where `[shape axis]` is `primary`, `secondary`,
+ * or `auxiliary`
+ * - **for a shape-local vector axis**: `"axis_rotation(shape,[x],[y],[z])"`
  */
 class AxialRotationSampler : public MoveSampler {
-private:
-    [[nodiscard]] Vector<3> computeAxis(const Shape &shape) const;
-
-    double rotationStepSize{};
-    const ShapeGeometry *geometry = nullptr;
-    GeneralShapeAxis axis = ShapeGeometry::Axis::PRIMARY;
-
 public:
     /**
      * @brief Constructs the sampler with an initial step size @a rotationStepSize and axis @a axis.
      */
     explicit AxialRotationSampler(double rotationStepSize, const GeneralShapeAxis &axis = ShapeGeometry::Axis::PRIMARY);
+    explicit AxialRotationSampler(double rotationStepSize, const Vector<3> &axis);
 
     [[nodiscard]] std::string getName() const override;
     [[nodiscard]] std::size_t getNumOfRequestedMoves(std::size_t numParticles) const override { return numParticles; }
@@ -46,6 +44,16 @@ public:
     void setupForShapeTraits(const ShapeTraits &shapeTraits) override {
         this->geometry = &shapeTraits.getGeometry();
     }
+
+private:
+    using Axis = std::variant<Vector<3>, GeneralShapeAxis>;
+
+    [[nodiscard]] Vector<3> computeAxis(const Shape &shape) const;
+    [[nodiscard]] std::string getAxisNameSuffix() const;
+
+    double rotationStepSize{};
+    const ShapeGeometry *geometry = nullptr;
+    Axis axis = GeneralShapeAxis{ShapeGeometry::Axis::PRIMARY};
 };
 
 #endif //RAMPACK_AXIALROTATIONSAMPLER_H

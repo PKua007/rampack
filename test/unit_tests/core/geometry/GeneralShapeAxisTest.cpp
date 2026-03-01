@@ -65,6 +65,6 @@ TEST_CASE("GeneralShapeAxis") {
         CHECK(GeneralShapeAxis(ShapeGeometry::Axis::SECONDARY).getMoveSamplerNameSuffix() == "secondary");
         CHECK(GeneralShapeAxis(ShapeGeometry::Axis::AUXILIARY).getMoveSamplerNameSuffix() == "auxiliary");
         CHECK(GeneralShapeAxis(Vector<3>{3, 4, 0}).getMoveSamplerNameSuffix()
-              == "0.59999999999999998,0.80000000000000004,0");
+              == "shape,0.59999999999999998,0.80000000000000004,0");
     }
 }

@@ -9,7 +9,7 @@
 #include "core/move_samplers/RotationSampler.h"
 #include "core/move_samplers/AxialRotationSampler.h"
 #include "core/move_samplers/FlipSampler.h"
-#include "core/move_samplers//ReflectionSampler.h"
+#include "core/move_samplers/ReflectionSampler.h"
 #include "core/geometry/FlipAxis.h"
 
 using namespace pyon::matcher;
@@ -19,31 +19,66 @@ namespace {
     MatcherDataclass create_rototranslation();
     MatcherDataclass create_translation();
     MatcherDataclass create_rotation();
-    MatcherDataclass create_axis_rotation();
+    MatcherDataclass create_axial_rotation();
     MatcherDataclass create_flip();
     MatcherDataclass create_reflection();
 
 
-    const auto generalShapeAxisArrayMatcher = MatcherArray(MatcherFloat{}, 3)
-        .filter([](const ArrayData &arrayData) {
-            return arrayData.asVector<3>().norm2() > 1e-20;
-        })
-        .describe("non-zero norm")
+    constexpr double AXIS_NORM_EPSILON = 1e-10;
+    const auto hasNonZeroNorm = [](const ArrayData &arrayData) {
+        return arrayData.asVector<3>().norm2() > AXIS_NORM_EPSILON*AXIS_NORM_EPSILON;
+    };
+    constexpr auto nonZeroNormDescription = "non-zero norm";
+
+    const auto vectorLabAxisMatcher = MatcherArray(MatcherFloat{}, 3)
+        .filter(hasNonZeroNorm)
+        .describe(nonZeroNormDescription)
+        .mapTo([](const ArrayData &arrayData) -> Vector<3> {
+            return arrayData.asVector<3>();
+        });
+    const auto xyzLabAxisMatcher = MatcherString{}
+        .anyOf({"x", "y", "z"})
+        .mapTo([](const std::string &axis) -> Vector<3> {
+            if (axis == "x")        return {1, 0, 0};
+            else if (axis == "y")   return {0, 1, 0};
+            else if (axis == "z")   return {0, 0, 1};
+            else                    AssertThrow(axis);
+        });
+    const auto dataclassLabAxisMatcher = MatcherDataclass("lab_coord")
+        .arguments({{"axis", vectorLabAxisMatcher | xyzLabAxisMatcher}})
+        .mapTo([](const DataclassData &labAxis) -> Vector<3> {
+            return labAxis["axis"].as<Vector<3>>();
+        });
+    const auto labAxisMatcher = vectorLabAxisMatcher | xyzLabAxisMatcher | dataclassLabAxisMatcher;
+
+    const auto vectorShapeAxisMatcher = MatcherArray(MatcherFloat{}, 3)
+        .filter(hasNonZeroNorm)
+        .describe(nonZeroNormDescription)
         .mapTo([](const ArrayData &arrayData) -> GeneralShapeAxis {
             return GeneralShapeAxis(arrayData.asVector<3>());
         });
-    const auto generalShapeAxisStringMatcher = MatcherString{}
-        .anyOf({"x", "y", "z", "primary", "secondary", "auxiliary"})
+    const auto xyzShapeAxisMatcher = MatcherString{}
+        .anyOf({"x", "y", "z"})
         .mapTo([](const std::string &axis) -> GeneralShapeAxis {
-            if (axis == "x")                return GeneralShapeAxis(Vector<3>{1, 0, 0});
-            else if (axis == "y")           return GeneralShapeAxis(Vector<3>{0, 1, 0});
-            else if (axis == "z")           return GeneralShapeAxis(Vector<3>{0, 0, 1});
-            else if (axis == "primary")     return ShapeGeometry::Axis::PRIMARY;
+            if (axis == "x")        return GeneralShapeAxis(Vector<3>{1, 0, 0});
+            else if (axis == "y")   return GeneralShapeAxis(Vector<3>{0, 1, 0});
+            else if (axis == "z")   return GeneralShapeAxis(Vector<3>{0, 0, 1});
+            else                    AssertThrow(axis);
+        });
+    const auto namedShapeAxisMatcher = MatcherString{}
+        .anyOf({"primary", "secondary", "auxiliary"})
+        .mapTo([](const std::string &axis) -> GeneralShapeAxis {
+            if (axis == "primary")          return ShapeGeometry::Axis::PRIMARY;
             else if (axis == "secondary")   return ShapeGeometry::Axis::SECONDARY;
             else if (axis == "auxiliary")   return ShapeGeometry::Axis::AUXILIARY;
             else                            AssertThrow(axis);
         });
-    const auto generalShapeAxisMatcher = generalShapeAxisArrayMatcher | generalShapeAxisStringMatcher;
+    const auto dataclassShapeAxisMatcher = MatcherDataclass("shape_coord")
+        .arguments({{"axis", vectorShapeAxisMatcher | xyzShapeAxisMatcher | namedShapeAxisMatcher}})
+        .mapTo([](const DataclassData &shapeAxis) -> GeneralShapeAxis {
+            return shapeAxis["axis"].as<GeneralShapeAxis>();
+        });
+    const auto generalShapeAxisMatcher = namedShapeAxisMatcher | dataclassShapeAxisMatcher;
 
     [[maybe_unused]] const auto flipSymmetryAxisMatcher = MatcherString{}
         .anyOf({"primary", "secondary", "auxiliary", "orthogonal_to_primary"})
@@ -118,14 +153,19 @@ namespace {
             });
     }
 
-    MatcherDataclass create_axis_rotation() {
+    MatcherDataclass create_axial_rotation() {
         return MatcherDataclass("axial_rotation")
             .arguments({{"step", MatcherFloat{}.positive()},
-                        {"axis", generalShapeAxisMatcher}})
+                        {"axis", labAxisMatcher | generalShapeAxisMatcher}})
             .mapTo([](const DataclassData &rotationAroundAxis) -> std::shared_ptr<MoveSampler> {
                 auto step = rotationAroundAxis["step"].as<double>();
-                auto axis = rotationAroundAxis["axis"].as<GeneralShapeAxis>();
-                return std::make_shared<AxialRotationSampler>(step, axis);
+                const auto &axis = rotationAroundAxis["axis"];
+                if (axis.is<Vector<3>>())
+                    return std::make_shared<AxialRotationSampler>(step, axis.as<Vector<3>>());
+                else if (axis.is<GeneralShapeAxis>())
+                    return std::make_shared<AxialRotationSampler>(step, axis.as<GeneralShapeAxis>());
+                else
+                    AssertThrow("axis should be Vector<3> or GeneralShapeAxis");
             });
     }
 
@@ -156,7 +196,7 @@ MatcherAlternative MoveSamplerMatcher::create() {
     return create_rototranslation()
         | create_translation()
         | create_rotation()
-        | create_axis_rotation()
+        | create_axial_rotation()
         | create_flip()
         | create_reflection();
 }
