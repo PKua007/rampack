@@ -25,6 +25,7 @@ This reference page describes the simulation pipeline and the format of the inpu
   * [Class `rototranslation`](#class-rototranslation)
   * [Class `flip`](#class-flip)
   * [Class `axial_rotation`](#class-axial_rotation)
+  * [Class `reflection`](#class-reflection)
 * [Box move types](#box-move-types)
   * [Class `delta_v`](#class-delta_v)
   * [Class `linear`](#class-linear-1)
@@ -724,6 +725,7 @@ There are the following particle move types:
 * [Class `rototranslation`](#class-rototranslation)
 * [Class `flip`](#class-flip)
 * [Class `axial_rotation`](#class-axial_rotation)
+* [Class `reflection`](#class-reflection)
 
 
 ### Class `translation`
@@ -810,7 +812,7 @@ Arguments:
 
   The initial value of *current_step*.
 
-* ***axis***
+* ***axis*** <a id="axialrotation_axis"></a>
 
   Lab or shape axis, which is the axis of rotation. The following variants are accepted:
 
@@ -850,6 +852,44 @@ Arguments:
 
   In the variants with shape coordinates (last three), the rotation axis is not constant - shape axes are defined in
   shape's coordinate system, thus the axis of rotation depends on the orientation of a particular shape.
+
+
+### Class `reflection`
+
+> Since v1.3.0
+
+```python
+reflection(
+    reflection_axis,
+    flip_symmetry_axis,
+    every = 10
+)
+```
+
+Monte Carlo move performing reflections of particles, either in shape's coordinate system or through lab frame reflection
+planes. It is realized by incorporating shape's mirror symmetry axis: reflection through the shape's symmetry plane
+(which leaves the shape unchanged) is composed with reflection through the plane specified by `reflection_axis`;
+composition of two reflections is a rotation, and this rotation is applied as the trial move. Because this construction
+requires the existence of shape mirror symmetry, this move can be realized only on achiral shapes.
+The resulting rotation is performed around shape's [geometric center](shapes.md#geometric-center).
+
+Arguments:
+
+* ***reflection_axis***
+
+  Reflection plane normal in either lab coordinates or shape coordinates. The syntax is exactly the same as for
+  [`axis`](#axialrotation_axis) argument of [class `axial_rotation`](#class-axial_rotation).
+
+* ***flip_symmetry_axis***
+
+  Shape mirror symmetry plane normal. The syntax is based on [`axis`](#axialrotation_axis) argument of
+  [class `axial_rotation`](#class-axial_rotation), but only shape-coordinate variants are allowed here:
+  [shape axes](shapes.md#shape-axes) and `shape_coord(...)` (lab axes are not allowed).
+
+* ***every*** (*= 10*)
+
+  Controls how often the reflection is performed. For example, value `10` means that in a full single MC cycle, the
+  reflection move will be attempted for 10% of all particles (and accepted according to the Metropolis criterion).
 
 
 ## Box move types
