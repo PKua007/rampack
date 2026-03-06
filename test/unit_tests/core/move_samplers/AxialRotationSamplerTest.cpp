@@ -14,7 +14,7 @@
 
 
 namespace {
-    void test_axis_rotation_move(AxialRotationSampler &rotationSampler, const ShapeTraits &traits, const Shape& shape,
+    void test_axial_rotation_move(AxialRotationSampler &rotationSampler, const ShapeTraits &traits, const Shape& shape,
                                  const Vector<3> &invariantAxis)
     {
         rotationSampler.setupForShapeTraits(traits);
@@ -35,7 +35,7 @@ namespace {
 
 }
 
-TEST_CASE("AxisRotationSampler") {
+TEST_CASE("AxialRotationSampler") {
     using trompeloeil::_;
 
     MockShapeTraits sphereWithAxis;
@@ -56,13 +56,13 @@ TEST_CASE("AxisRotationSampler") {
             SECTION("general") {
                 AxialRotationSampler rotationSampler(M_PI/2, GeneralShapeAxis(Vector<3>{1, 0, 0}));
 
-                test_axis_rotation_move(rotationSampler, sphereWithAxis, shape, {0, 1, 0});
+                test_axial_rotation_move(rotationSampler, sphereWithAxis, shape, {0, 1, 0});
             }
 
             SECTION("named") {
                 AxialRotationSampler rotationSampler(M_PI/2, ShapeGeometry::Axis::PRIMARY);
 
-                test_axis_rotation_move(rotationSampler, sphereWithAxis, shape, {0, 1, 0});
+                test_axial_rotation_move(rotationSampler, sphereWithAxis, shape, {0, 1, 0});
             }
         }
 
@@ -70,7 +70,7 @@ TEST_CASE("AxisRotationSampler") {
         SECTION("global axis") {
             AxialRotationSampler rotationSampler(M_PI/2, Vector<3>{1, 0, 0});
 
-            test_axis_rotation_move(rotationSampler, sphereWithAxis, shape, {1, 0, 0});
+            test_axial_rotation_move(rotationSampler, sphereWithAxis, shape, {1, 0, 0});
         }
     }
 

@@ -51,11 +51,9 @@ Vector<3> GeneralShapeAxis::getForDefaultOrientation(const ShapeGeometry &geomet
 }
 
 Vector<3> GeneralShapeAxis::getForShape(const ShapeGeometry &geometry, const Shape &shape) const {
-    if (const auto *shapeAxis = std::get_if<ShapeGeometry::Axis>(&this->axis)) {
+    if (const auto *shapeAxis = std::get_if<ShapeGeometry::Axis>(&this->axis))
         return geometry.getAxis(shape, *shapeAxis);
-    } else if (const auto *generalShapeAxis = std::get_if<Vector<3>>(&this->axis)) {
+    if (const auto *generalShapeAxis = std::get_if<Vector<3>>(&this->axis))
         return shape.getOrientation() * *generalShapeAxis;
-    } else { // valueless_by_exception
-        AssertThrow("std::variant::valueless_by_exception");
-    }
+    AssertThrow("std::variant::valueless_by_exception");
 }

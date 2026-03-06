@@ -25,10 +25,9 @@ public:
         if (actual.size() != this->expected.size())
             return false;
 
-        for (std::size_t i = 0; i < actual.size(); i++) {
+        for (std::size_t i{}; i < actual.size(); i++)
             if (!IsApproxEqual(this->expected[i], this->epsilon).match(actual[i]))
                 return false;
-        }
 
         return true;
     }
@@ -38,9 +37,9 @@ public:
         ss << "has, within " << this->epsilon
            << " tolerance threshold, interaction centres (element-wise) equal to ";
         ss << "{";
-        for (std::size_t i = 0; i < this->expected.size(); i++) {
+        for (std::size_t i{}; i < this->expected.size(); i++) {
             ss << this->expected[i];
-            if (i + 1 < this->expected.size())
+            if (i < this->expected.size() - 1)
                 ss << ", ";
         }
         ss << "}";

@@ -43,11 +43,9 @@ Vector<3> FlipAxis::getForDefaultOrientation(const ShapeGeometry &geometry) cons
 }
 
 Vector<3> FlipAxis::getForShape(const ShapeGeometry &geometry, const Shape &shape) const {
-    if (const auto *shapeAxis = std::get_if<ShapeGeometry::Axis>(&this->axis)) {
+    if (const auto *shapeAxis = std::get_if<ShapeGeometry::Axis>(&this->axis))
         return geometry.getAxis(shape, *shapeAxis);
-    } else if (std::holds_alternative<OrthogonalToPrimary>(this->axis)) {
+    if (std::holds_alternative<OrthogonalToPrimary>(this->axis))
         return geometry.findFlipAxis(shape);
-    } else { // valueless_by_exception
-        AssertThrow("std::variant::valueless_by_exception");
-    }
+    AssertThrow("std::variant::valueless_by_exception");
 }
