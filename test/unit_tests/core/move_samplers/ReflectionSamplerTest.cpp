@@ -2,10 +2,9 @@
 // Created by Michal Ciesla on 14.01.25.
 //
 
-#include <numeric>
 #include <algorithm>
 #include <cmath>
-#include <iostream>
+#include <numeric>
 
 #include <catch2/catch.hpp>
 
@@ -13,9 +12,9 @@
 
 #include "mocks/MockShapeTraits.h"
 
+#include "core/PeriodicBoundaryConditions.h"
 #include "core/lattice/Lattice.h"
 #include "core/move_samplers/ReflectionSampler.h"
-#include "core/PeriodicBoundaryConditions.h"
 
 namespace {
     Packing construct_packing(const ShapeTraits &traits, const Shape &shape, const std::array<std::size_t, 3>& latticeDimensions)
@@ -75,6 +74,7 @@ namespace {
         CHECK_THAT(relativeCentres, AreApproxEqual(expectedRelativeCentresAfterReflection_, 1e-12));
     }
 
+    // Repeatedly applies reflection and checks how much the rotation matrix has drifted
     void test_rotation_matrix_error_cumulation(const ShapeTraits &traits, ReflectionSampler &reflectionSampler,
                                                const Shape &shape, const std::size_t numMoves,
                                                const double maxAllowedError2)
@@ -87,7 +87,7 @@ namespace {
         double maxObservedError2 = orientation_orthogonality_error2(packing[0].getOrientation());
 
         const auto &interaction = traits.getInteraction();
-        for (std::size_t i = 0; i < numMoves; i++) {
+        for (std::size_t i{}; i < numMoves; i++) {
             const auto move = reflectionSampler.sampleMove(packing, particleIdxs, mt);
             packing.tryMove(move.particleIdx, move.translation, move.rotation, interaction);
             packing.acceptMove();
@@ -95,9 +95,7 @@ namespace {
             const auto &orientation = packing[0].getOrientation();
             const double error2 = orientation_orthogonality_error2(orientation);
             REQUIRE(std::isfinite(error2));
-
             maxObservedError2 = std::max(maxObservedError2, error2);
-            std::cout << "#" << i << " current max error: " << maxObservedError2 << std::endl;
         }
 
         CHECK(maxObservedError2 < maxAllowedError2);
@@ -150,13 +148,13 @@ TEST_CASE("ReflectionSampler") {
         const std::vector<Vector<3>> expectedRelativeCentresAfterReflection{{0, 1, 0}, {0, 0, 0}, {-1, 0, 0}};
         test_reflection_move(traits, reflectionSampler, rotatedShape, expectedRelativeCentresAfterReflection);
     }
-
 }
 
-TEST_CASE("ReflectionSampler regression: orientation drift fix")
+TEST_CASE("ReflectionSampler: orientation drift check")
 {
     using trompeloeil::_;
 
+    // Minimal ShapeTraits
     MockShapeTraits traits;
     ALLOW_CALL(traits, hasHardPart()).RETURN(false);
     ALLOW_CALL(traits, hasSoftPart()).RETURN(false);
@@ -166,16 +164,19 @@ TEST_CASE("ReflectionSampler regression: orientation drift fix")
     ALLOW_CALL(traits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
     ALLOW_CALL(traits, getGeometricOrigin(_)).RETURN(Vector<3>{0, 0, 0});
 
-    const Vector<3> strangeReflectionAxis{17, -29, 31};
-    const Vector<3> strangeSymmetryAxis{-23, 37, 19};
-    ReflectionSampler reflectionSampler(GeneralShapeAxis(strangeReflectionAxis),
-                                        GeneralShapeAxis(strangeSymmetryAxis), 1);
+    // Use "ugly" axes and initial shape orientation for a bigger chance of numerical instabilities
+
+    const auto strangeReflectionAxis = Vector<3>{17, -29, 31}.normalized();
+    const auto strangeSymmetryAxis = Vector<3>{-23, 37, 19}.normalized();
+    constexpr double every = 1;
+    ReflectionSampler reflectionSampler(GeneralShapeAxis(strangeReflectionAxis), GeneralShapeAxis(strangeSymmetryAxis),
+                                        every);
     reflectionSampler.setupForShapeTraits(traits);
 
-    const Vector<3> strangeInitialRotationAxis = Vector<3>{-11, 41, 37}.normalized();
+    const auto strangeInitialRotationAxis = Vector<3>{-11, 41, 37}.normalized();
     const Shape strangeOrientedShape({0, 0, 0}, Matrix<3, 3>::rotation(strangeInitialRotationAxis, 1.23456789));
 
     constexpr std::size_t numMoves = 100;
-    constexpr double maxAllowedError2 = 1e-24;
+    constexpr double maxAllowedError2 = 1e-26;
     test_rotation_matrix_error_cumulation(traits, reflectionSampler, strangeOrientedShape, numMoves, maxAllowedError2);
 }
