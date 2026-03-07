@@ -4,6 +4,8 @@
 
 #include <numeric>
 #include <algorithm>
+#include <cmath>
+#include <iostream>
 
 #include <catch2/catch.hpp>
 
@@ -16,9 +18,9 @@
 #include "core/PeriodicBoundaryConditions.h"
 
 namespace {
-    Packing construct_packing(const ShapeTraits &traits, const Shape &shape)
+    Packing construct_packing(const ShapeTraits &traits, const Shape &shape, const std::array<std::size_t, 3>& latticeDimensions)
     {
-        Lattice lattice(UnitCell(TriclinicBox(5), {shape}), {2, 2, 2});
+        Lattice lattice(UnitCell(TriclinicBox(5), {shape}), latticeDimensions);
         auto pbc = std::make_unique<PeriodicBoundaryConditions>();
         return Packing(lattice.getLatticeBox(), lattice.generateMolecules(), std::move(pbc), traits.getInteraction());
     }
@@ -41,6 +43,13 @@ namespace {
         return packing[move.particleIdx];
     }
 
+    double orientation_orthogonality_error2(const Matrix<3, 3> &orientation)
+    {
+        const Matrix<3, 3> orthogonalityError
+            = Matrix<3, 3>::identity() - orientation.transpose() * orientation;
+        return orthogonalityError.norm2();
+    }
+
     // Builds a small packing, applies one sampled reflection move, and verifies that the reflection was correctly
     // applied by inspecting interaction centers after reflection.
     void test_reflection_move(const ShapeTraits &traits, ReflectionSampler &reflectionSampler, const Shape &shape,
@@ -49,7 +58,7 @@ namespace {
         const auto &interaction = traits.getInteraction();
         const auto &geometry = traits.getGeometry();
 
-        auto packing = construct_packing(traits, shape);
+        auto packing = construct_packing(traits, shape, {2, 2, 2});
 
         const Shape reflectedShape = apply_reflection_and_return_shape(packing, reflectionSampler, interaction);
         const auto reflectedShapeInteractionCentres = interaction.getInteractionCentresForShape(reflectedShape);
@@ -64,6 +73,34 @@ namespace {
                        relativeCentres.begin(), toRelativeCentre);
 
         CHECK_THAT(relativeCentres, AreApproxEqual(expectedRelativeCentresAfterReflection_, 1e-12));
+    }
+
+    void test_rotation_matrix_error_cumulation(const ShapeTraits &traits, ReflectionSampler &reflectionSampler,
+                                               const Shape &shape, const std::size_t numMoves,
+                                               const double maxAllowedError2)
+    {
+        auto packing = construct_packing(traits, shape, {1, 1, 1});
+
+        std::vector<std::size_t> particleIdxs{0};
+        std::mt19937 mt(1234); // NOLINT(*-msc51-cpp)
+
+        double maxObservedError2 = orientation_orthogonality_error2(packing[0].getOrientation());
+
+        const auto &interaction = traits.getInteraction();
+        for (std::size_t i = 0; i < numMoves; i++) {
+            const auto move = reflectionSampler.sampleMove(packing, particleIdxs, mt);
+            packing.tryMove(move.particleIdx, move.translation, move.rotation, interaction);
+            packing.acceptMove();
+
+            const auto &orientation = packing[0].getOrientation();
+            const double error2 = orientation_orthogonality_error2(orientation);
+            REQUIRE(std::isfinite(error2));
+
+            maxObservedError2 = std::max(maxObservedError2, error2);
+            std::cout << "#" << i << " current max error: " << maxObservedError2 << std::endl;
+        }
+
+        CHECK(maxObservedError2 < maxAllowedError2);
     }
 }
 
@@ -113,4 +150,32 @@ TEST_CASE("ReflectionSampler") {
         const std::vector<Vector<3>> expectedRelativeCentresAfterReflection{{0, 1, 0}, {0, 0, 0}, {-1, 0, 0}};
         test_reflection_move(traits, reflectionSampler, rotatedShape, expectedRelativeCentresAfterReflection);
     }
+
+}
+
+TEST_CASE("ReflectionSampler regression: orientation drift fix")
+{
+    using trompeloeil::_;
+
+    MockShapeTraits traits;
+    ALLOW_CALL(traits, hasHardPart()).RETURN(false);
+    ALLOW_CALL(traits, hasSoftPart()).RETURN(false);
+    ALLOW_CALL(traits, hasWallPart()).RETURN(false);
+    ALLOW_CALL(traits, getRangeRadius()).RETURN(1);
+    ALLOW_CALL(traits, getTotalRangeRadius()).RETURN(1);
+    ALLOW_CALL(traits, getInteractionCentres()).RETURN(std::vector<Vector<3>>{});
+    ALLOW_CALL(traits, getGeometricOrigin(_)).RETURN(Vector<3>{0, 0, 0});
+
+    const Vector<3> strangeReflectionAxis{17, -29, 31};
+    const Vector<3> strangeSymmetryAxis{-23, 37, 19};
+    ReflectionSampler reflectionSampler(GeneralShapeAxis(strangeReflectionAxis),
+                                        GeneralShapeAxis(strangeSymmetryAxis), 1);
+    reflectionSampler.setupForShapeTraits(traits);
+
+    const Vector<3> strangeInitialRotationAxis = Vector<3>{-11, 41, 37}.normalized();
+    const Shape strangeOrientedShape({0, 0, 0}, Matrix<3, 3>::rotation(strangeInitialRotationAxis, 1.23456789));
+
+    constexpr std::size_t numMoves = 100;
+    constexpr double maxAllowedError2 = 1e-24;
+    test_rotation_matrix_error_cumulation(traits, reflectionSampler, strangeOrientedShape, numMoves, maxAllowedError2);
 }
