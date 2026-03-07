@@ -18,6 +18,7 @@ library (later, with Python bindings as well).
 * Added support for all [shape axes](docs/shapes.md#shape-axes) in
   [class `nematic_order`](docs/observables.md#class-nematic_order) observable.
 * Added [class `axial_rotation`](docs/input-file.md#class-axial_rotation) move sampler.
+* Added [class `reflection`](docs/input-file.md#class-reflection) move sampler.
 
 
 ## [1.2.0] - 2023-12-03

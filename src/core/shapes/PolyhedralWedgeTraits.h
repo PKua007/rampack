@@ -67,7 +67,7 @@ private:
     std::vector<CollideGeometry> shapeModels;
     std::vector<Vector<3>> interactionCentres;
 
-    static double getVolume(double axBottom, double ayBottom, double axTop, double ayTop, double length);
+    static double getVolumeStatic(double axBottom, double ayBottom, double axTop, double ayTop, double length);
 
     template<typename Printer>
     std::shared_ptr<Printer> createPrinter(std::size_t meshSubdivisions) const {

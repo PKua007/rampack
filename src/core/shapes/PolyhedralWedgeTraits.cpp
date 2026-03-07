@@ -7,7 +7,7 @@
 #include "geometry/xenocollide/XCBodyBuilder.h"
 
 
-double PolyhedralWedgeTraits::getVolume(double axBottom, double ayBottom, double axTop, double ayTop, double length) {
+double PolyhedralWedgeTraits::getVolumeStatic(double axBottom, double ayBottom, double axTop, double ayTop, double length) {
     double v = length / 6 * (2 * axBottom * ayBottom + axTop * ayBottom + axBottom * ayTop + 2 * axTop * ayTop);
     return v;
 }
@@ -16,7 +16,7 @@ PolyhedralWedgeTraits::PolyhedralWedgeTraits(double axBottom, double ayBottom, d
                                              double length,
                                              std::size_t subdivisions)
         : XenoCollideTraits({0, 0, 1}, {1, 0, 0}, {0, 0, 0},
-                            PolyhedralWedgeTraits::getVolume(axBottom, ayBottom, axTop, ayTop, length),
+                            PolyhedralWedgeTraits::getVolumeStatic(axBottom, ayBottom, axTop, ayTop, length),
                             {{"beg", {0, 0, -length / 2}}, {"end", {0, 0, length / 2}}}),
           axBottom{axBottom}, ayBottom{ayBottom}, axTop{axTop}, ayTop{ayTop}, length{length}
 {

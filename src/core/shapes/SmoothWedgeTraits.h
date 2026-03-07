@@ -60,7 +60,7 @@ private:
     std::vector<CollideGeometry> shapeModel;
     std::vector<Vector<3>> interactionCentres;
 
-    static double getVolume(double R, double r, double l);
+    static double getVolumeStatic(double R, double r, double l);
 
     [[nodiscard]] std::vector<double> calculateRelativeSpherePositions(std::size_t subdivisions) const;
 

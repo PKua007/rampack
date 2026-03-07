@@ -8,6 +8,18 @@
 #include "core/dynamic_parameters/ExponentialDynamicParameter.h"
 #include "core/dynamic_parameters/PiecewiseDynamicParameter.h"
 
+// GCC 15 can emit a false positive -Wmaybe-uninitialized in create_const().
+// Keep the suppression local to this file and this warning only.
+#if defined(__GNUC__) && !defined(__clang__) && (__GNUC__ == 15)
+#define RAMPACK_GCC15_SUPPRESS_MAYBE_UNINITIALIZED_BEGIN \
+    _Pragma("GCC diagnostic push") \
+    _Pragma("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
+#define RAMPACK_GCC15_SUPPRESS_MAYBE_UNINITIALIZED_END \
+    _Pragma("GCC diagnostic pop")
+#else
+#define RAMPACK_GCC15_SUPPRESS_MAYBE_UNINITIALIZED_BEGIN
+#define RAMPACK_GCC15_SUPPRESS_MAYBE_UNINITIALIZED_END
+#endif
 
 using namespace pyon::matcher;
 
@@ -25,9 +37,11 @@ namespace {
     }
 
     MatcherAlternative create_const() {
+        RAMPACK_GCC15_SUPPRESS_MAYBE_UNINITIALIZED_BEGIN
         auto constFloat = MatcherFloat{}.mapTo([](double d) -> std::shared_ptr<DynamicParameter> {
             return std::make_shared<ConstantDynamicParameter>(d);
         });
+        RAMPACK_GCC15_SUPPRESS_MAYBE_UNINITIALIZED_END
 
         auto constDataclass = MatcherDataclass("const")
             .arguments({{"value", MatcherFloat{}}})
