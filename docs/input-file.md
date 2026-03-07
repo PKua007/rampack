@@ -861,7 +861,7 @@ Arguments:
 ```python
 reflection(
     reflection_axis,
-    flip_symmetry_axis,
+    shape_symmetry_axis,
     every = 10
 )
 ```
@@ -880,7 +880,7 @@ Arguments:
   Reflection plane normal in either lab coordinates or shape coordinates. The syntax is exactly the same as for
   [`axis`](#axialrotation_axis) argument of [class `axial_rotation`](#class-axial_rotation).
 
-* ***flip_symmetry_axis***
+* ***shape_symmetry_axis***
 
   Shape mirror symmetry plane normal. The syntax is based on [`axis`](#axialrotation_axis) argument of
   [class `axial_rotation`](#class-axial_rotation), but only shape-coordinate variants are allowed here:

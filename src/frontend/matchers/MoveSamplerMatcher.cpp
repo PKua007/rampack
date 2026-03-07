@@ -181,11 +181,11 @@ namespace {
     MatcherDataclass create_reflection() {
         return MatcherDataclass("reflection")
             .arguments({{"reflection_axis", labAxisMatcher | generalShapeAxisMatcher},
-                {"flip_symmetry_axis", generalShapeAxisMatcher},
+                {"shape_symmetry_axis", generalShapeAxisMatcher},
                 {"every", MatcherInt{}.positive().mapTo<std::size_t>(), "10"}})
             .mapTo([](const DataclassData &reflection) -> std::shared_ptr<MoveSampler> {
                 const auto &reflectionAxis = reflection["reflection_axis"];
-                const auto reflectionSymmetryAxis = reflection["flip_symmetry_axis"].as<GeneralShapeAxis>();
+                const auto reflectionSymmetryAxis = reflection["shape_symmetry_axis"].as<GeneralShapeAxis>();
                 const auto every = reflection["every"].as<std::size_t>();
                 if (reflectionAxis.is<Vector<3>>()) {
                     return std::make_shared<ReflectionSampler>(reflectionAxis.as<Vector<3>>(),
