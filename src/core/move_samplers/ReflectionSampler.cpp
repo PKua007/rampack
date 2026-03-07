@@ -56,7 +56,8 @@ MoveSampler::MoveData ReflectionSampler::sampleMove(const Packing &packing,
 
     const Shape &shape = packing[moveData.particleIdx];
     const Vector<3> reflectionAxisForShape = this->prepareReflectionAxis(shape);
-    const Vector<3> symmetryPlaneAxisForShape = shape.getOrientation() * this->symmetryPlaneAxisForCurrentGeometry;
+    const Vector<3> symmetryPlaneAxisForShape = this->prepareSymmetryPlaneAxis(shape);
+
     moveData.rotation = ReflectionSampler::getRotationMatrixPretendingToBeReflection(reflectionAxisForShape,
                                                                                      symmetryPlaneAxisForShape);
 
@@ -76,8 +77,12 @@ Vector<3> ReflectionSampler::prepareReflectionAxis(const Shape &shape) const {
     if (std::holds_alternative<Vector<3>>(this->reflectionAxis))
         return this->reflectionAxisForCurrentGeometry;
     if (std::holds_alternative<GeneralShapeAxis>(this->reflectionAxis))
-        return shape.getOrientation() * this->reflectionAxisForCurrentGeometry;
+        return (shape.getOrientation() * this->reflectionAxisForCurrentGeometry).normalized();
     AssertThrow("std::variant::valueless_by_exception");
+}
+
+Vector<3> ReflectionSampler::prepareSymmetryPlaneAxis(const Shape &shape) const {
+    return (shape.getOrientation() * this->symmetryPlaneAxisForCurrentGeometry).normalized();
 }
 
 std::string ReflectionSampler::getReflectionAxisNameSuffix() const {

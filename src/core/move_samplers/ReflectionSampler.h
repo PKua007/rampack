@@ -39,6 +39,7 @@ private:
     bool isGeometricOriginZero{};
 
     [[nodiscard]] Vector<3> prepareReflectionAxis(const Shape &shape) const;
+    [[nodiscard]] Vector<3> prepareSymmetryPlaneAxis(const Shape &shape) const;
     [[nodiscard]] std::string getReflectionAxisNameSuffix() const;
     [[nodiscard]] static Matrix<3, 3> getRotationMatrixPretendingToBeReflection(const Vector<3> &reflectionAxis,
                                                                                 const Vector<3> &symmetryPlaneAxis);
