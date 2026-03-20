@@ -16,8 +16,16 @@ namespace {
 }
 
 TEST_CASE("CentrePairDataMap") {
+    SECTION("default constructor") {
+        const CentrePairDataMap<PairData> pairDataMap;
+
+        CHECK(pairDataMap.getNumCentres() == 0);
+    }
+
     SECTION("default initialization") {
         const CentrePairDataMap<PairData> pairDataMap(3);
+
+        CHECK(pairDataMap.getNumCentres() == 3);
 
         for (std::size_t i = 0; i < 3; i++) {
             for (std::size_t j = 0; j < 3; j++) {
