@@ -4,8 +4,27 @@
 
 #include <catch2/catch.hpp>
 
+#include "core/interactions/CentralInteraction.h"
 #include "core/shapes/SphereTraits.h"
 #include "core/PeriodicBoundaryConditions.h"
+
+namespace {
+    class PairDataInteraction : public CentralInteraction<PairDataInteraction, double> {
+    public:
+        using CentralInteraction<PairDataInteraction, double>::CentralInteraction;
+
+        [[nodiscard]] double calculateEnergyForDistance2([[maybe_unused]] double distance2,
+                                                         const double &pairData) const
+        {
+            return pairData;
+        }
+
+        [[nodiscard]] static double getRangeRadiusForPairData(const double &pairData)
+        {
+            return pairData;
+        }
+    };
+}
 
 TEST_CASE("Sphere: construction") {
     SECTION("default radius") {
@@ -75,4 +94,17 @@ TEST_CASE("Sphere: geometry") {
     CHECK_THROWS(sphereTraits.getGeometry().getSecondaryAxis(Shape{}));
     CHECK(sphereTraits.getGeometry().getGeometricOrigin(Shape{}) == Vector<3>{0, 0, 0});
     CHECK(sphereTraits.getVolume() == Approx(32./3*M_PI));
+}
+
+TEST_CASE("Sphere: soft interaction") {
+    auto centralInteraction = std::make_shared<PairDataInteraction>(2.5);
+    SphereTraits sphereTraits(2, centralInteraction);
+    const Interaction &interaction = sphereTraits.getInteraction();
+    PeriodicBoundaryConditions pbc(100);
+    const Matrix<3, 3> id = Matrix<3, 3>::identity();
+
+    CHECK(interaction.hasSoftPart());
+    CHECK_FALSE(interaction.hasHardPart());
+    CHECK(interaction.getInteractionCentres().empty());
+    CHECK(interaction.calculateEnergyBetween({0, 0, 0}, id, 0, {3, 4, 0}, id, 0, pbc) == Approx(2.5));
 }
