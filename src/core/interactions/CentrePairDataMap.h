@@ -18,12 +18,12 @@
 template <typename PairData>
 class CentrePairDataMap {
 private:
-    std::size_t numCentres{};
+    std::size_t numCentreTypes{};
     std::vector<PairData> pairDataMatrix;
 
     [[nodiscard]] std::size_t flatIndex(const std::size_t idx1, const std::size_t idx2) const
     {
-        return idx1 * this->numCentres + idx2;
+        return idx1 * this->numCentreTypes + idx2;
     }
 
 public:
@@ -33,19 +33,19 @@ public:
     CentrePairDataMap() = default;
 
     /**
-     * @brief Constructs the map for @a numCentres interaction centre types.
+     * @brief Constructs the map for @a numCentreTypes interaction centre types.
      * @details All pair data entries are value-initialized.
      */
-    explicit CentrePairDataMap(const std::size_t numCentres)
-            : numCentres{numCentres}, pairDataMatrix(numCentres * numCentres, PairData{})
+    explicit CentrePairDataMap(const std::size_t numCentreTypes)
+            : numCentreTypes{numCentreTypes}, pairDataMatrix(numCentreTypes * numCentreTypes, PairData{})
     { }
 
     /**
      * @brief Returns the number of interaction centre types stored in the map.
      */
-    [[nodiscard]] std::size_t getNumCentres() const
+    [[nodiscard]] std::size_t getNumCentreTypes() const
     {
-        return this->numCentres;
+        return this->numCentreTypes;
     }
 
     /**
@@ -54,8 +54,8 @@ public:
      */
     void setPairData(const std::size_t idx1, const std::size_t idx2, const PairData &data)
     {
-        Expects(idx1 < this->numCentres);
-        Expects(idx2 < this->numCentres);
+        Expects(idx1 < this->numCentreTypes);
+        Expects(idx2 < this->numCentreTypes);
 
         this->pairDataMatrix[this->flatIndex(idx1, idx2)] = data;
         this->pairDataMatrix[this->flatIndex(idx2, idx1)] = data;

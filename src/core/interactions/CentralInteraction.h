@@ -27,7 +27,7 @@ private:
     [[nodiscard]] static CentrePairDataMap<PairData> broadcastUniformPairData(
             const CentrePairDataMap<PairData> &pairDataMap, std::size_t numCentreTypes)
     {
-        Expects(pairDataMap.getNumCentres() == 1);
+        Expects(pairDataMap.getNumCentreTypes() == 1);
         CentrePairDataMap<PairData> broadcastPairDataMap(numCentreTypes);
         const PairData &pairData = pairDataMap.getPairData(0, 0);
         for (std::size_t i = 0; i < numCentreTypes; i++) {
@@ -40,8 +40,8 @@ private:
     [[nodiscard]] double calculateRangeRadius() const
     {
         double rangeRadius = 0;
-        for (std::size_t i = 0; i < this->pairDataMap.getNumCentres(); i++) {
-            for (std::size_t j = i; j < this->pairDataMap.getNumCentres(); j++) {
+        for (std::size_t i = 0; i < this->pairDataMap.getNumCentreTypes(); i++) {
+            for (std::size_t j = i; j < this->pairDataMap.getNumCentreTypes(); j++) {
                 rangeRadius = std::max(rangeRadius, Derived::getRangeRadiusForPairData(this->pairDataMap.getPairData(i, j)));
             }
         }
@@ -90,10 +90,10 @@ public:
     void bindCentreLayout(const InteractionCentreLayout &interactionCentreLayout,
                           bool allowUniformPairDataBroadcast = false) final
     {
-        if (allowUniformPairDataBroadcast && this->pairDataMap.getNumCentres() == 1)
+        if (allowUniformPairDataBroadcast && this->pairDataMap.getNumCentreTypes() == 1)
             this->pairDataMap = broadcastUniformPairData(this->pairDataMap, interactionCentreLayout.numCentreTypes());
         else
-            Expects(interactionCentreLayout.numCentreTypes() <= this->pairDataMap.getNumCentres());
+            Expects(interactionCentreLayout.numCentreTypes() <= this->pairDataMap.getNumCentreTypes());
 
         this->interactionCentreLayout = interactionCentreLayout;
     }
