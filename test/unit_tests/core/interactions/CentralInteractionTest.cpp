@@ -8,11 +8,13 @@
 #include "core/PeriodicBoundaryConditions.h"
 
 namespace {
-    class DummyInteraction : public CentralInteraction {
-    protected:
-        [[nodiscard]] double calculateEnergyForDistance2(double distance2) const override {
+    class DummyInteraction : public CentralInteraction<DummyInteraction, double> {
+    public:
+        [[nodiscard]] double calculateEnergyForDistance2(double distance2,
+                                                         [[maybe_unused]] const double &pairData) const {
             return std::sqrt(distance2);
         }
+        [[nodiscard]] static double getRangeRadiusForPairData([[maybe_unused]] const double &pairData) { return 0; }
     };
 }
 
@@ -27,15 +29,13 @@ TEST_CASE("CentralInteraction: point installation") {
     SECTION("installOnCentres") {
         DummyInteraction interaction;
 
-        interaction.installOnCentres({{0, 0, 0}, {2, 0, 0}});
+        interaction.bindCentreLayout({{{0, 0, 0}, {2, 0, 0}}, {0, 0}});
 
         REQUIRE(interaction.getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}, {2, 0, 0}});
     }
 
-    SECTION("installOnSphere") {
+    SECTION("sphere constructor") {
         DummyInteraction interaction;
-
-        interaction.installOnSphere();
 
         REQUIRE(interaction.getInteractionCentres().empty());
     }
@@ -43,7 +43,6 @@ TEST_CASE("CentralInteraction: point installation") {
 
 TEST_CASE("CentralInteraction: calculating energy") {
     DummyInteraction interaction;
-    interaction.installOnSphere();
     Shape shape1({1, 5, 5});
     Shape shape2({9, 5, 5});
     PeriodicBoundaryConditions pbc(10);

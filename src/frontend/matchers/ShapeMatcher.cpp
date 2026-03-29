@@ -49,9 +49,8 @@ namespace {
 
 
     auto hardInteraction = MatcherDataclass("hard")
-        .mapTo([](const auto &) -> std::shared_ptr<CentralInteraction> { return nullptr; });
-    auto softInteraction = create_lj_matcher() | create_wca_matcher() | create_square_inverse_core_matcher();
-    auto sphereInteraction = hardInteraction | softInteraction;
+        .mapTo([](const auto &) -> std::shared_ptr<CentralInteractionBase> { return nullptr; });
+    auto sphereInteraction = hardInteraction;
 
     auto vector = MatcherArray(MatcherFloat{}.mapTo<double>(), 3).mapToVector<3>();
 
@@ -78,7 +77,7 @@ namespace {
         return MatcherDataclass("lj")
             .arguments({{"epsilon", MatcherFloat{}.positive()},
                         {"sigma", MatcherFloat{}.positive()}})
-            .mapTo([](const DataclassData &lj) -> std::shared_ptr<CentralInteraction> {
+            .mapTo([](const DataclassData &lj) -> std::shared_ptr<CentralInteractionBase> {
                 return std::make_shared<LennardJonesInteraction>(
                     lj["epsilon"].as<double>(), lj["sigma"].as<double>()
                 );
@@ -89,7 +88,7 @@ namespace {
         return MatcherDataclass("wca")
             .arguments({{"epsilon", MatcherFloat{}.positive()},
                         {"sigma", MatcherFloat{}.positive()}})
-            .mapTo([](const DataclassData &wca) -> std::shared_ptr<CentralInteraction> {
+            .mapTo([](const DataclassData &wca) -> std::shared_ptr<CentralInteractionBase> {
                 return std::make_shared<RepulsiveLennardJonesInteraction>(
                     wca["epsilon"].as<double>(), wca["sigma"].as<double>()
                 );
@@ -100,7 +99,7 @@ namespace {
         return MatcherDataclass("square_inverse_core")
             .arguments({{"epsilon", MatcherFloat{}.positive()},
                         {"sigma", MatcherFloat{}.positive()}})
-            .mapTo([](const DataclassData &square_inverse_core) -> std::shared_ptr<CentralInteraction> {
+            .mapTo([](const DataclassData &square_inverse_core) -> std::shared_ptr<CentralInteractionBase> {
                 return std::make_shared<SquareInverseCoreInteraction>(
                     square_inverse_core["epsilon"].as<double>(), square_inverse_core["sigma"].as<double>()
                 );
@@ -113,7 +112,7 @@ namespace {
                         {"interaction", sphereInteraction, "hard"}})
             .mapTo([](const DataclassData &sphere) -> std::shared_ptr<ShapeTraits> {
                 auto r = sphere["r"].as<double>();
-                auto interaction = sphere["interaction"].as<std::shared_ptr<CentralInteraction>>();
+                auto interaction = sphere["interaction"].as<std::shared_ptr<CentralInteractionBase>>();
                 if (interaction == nullptr)
                     return std::make_shared<SphereTraits>(r);
                 else
@@ -131,7 +130,7 @@ namespace {
                 auto k = kmer["k"].as<std::size_t>();
                 auto r = kmer["r"].as<double>();
                 auto distance = kmer["distance"].as<double>();
-                auto interaction = kmer["interaction"].as<std::shared_ptr<CentralInteraction>>();
+                auto interaction = kmer["interaction"].as<std::shared_ptr<CentralInteractionBase>>();
                 if (interaction == nullptr)
                     return std::make_shared<KMerTraits>(k, r, distance);
                 else
@@ -151,7 +150,7 @@ namespace {
                 auto sphereR = banana["sphere_r"].as<double>();
                 auto arcR = banana["arc_r"].as<double>();
                 auto argAngle = banana["arc_angle"].as<double>();
-                auto interaction = banana["interaction"].as<std::shared_ptr<CentralInteraction>>();
+                auto interaction = banana["interaction"].as<std::shared_ptr<CentralInteractionBase>>();
                 if (interaction == nullptr)
                     return std::make_shared<PolysphereBananaTraits>(arcR, argAngle, sphereN, sphereR);
                 else
@@ -330,7 +329,7 @@ namespace {
                 if (!polysphere["secondary_axis"].isEmpty())
                     secondaryAxis = polysphere["secondary_axis"].as<Vector<3>>();
                 auto namedPoints = polysphere["named_points"].as<ShapeGeometry::NamedPoints>();
-                auto interaction = polysphere["interaction"].as<std::shared_ptr<CentralInteraction>>();
+                auto interaction = polysphere["interaction"].as<std::shared_ptr<CentralInteractionBase>>();
 
                 PolysphereTraits::PolysphereGeometry geometry(
                     std::move(spheres), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
@@ -339,7 +338,7 @@ namespace {
                 if (interaction == nullptr)
                     return std::make_shared<PolysphereTraits>(std::move(geometry));
                 else
-                    return std::make_shared<PolysphereTraits>(std::move(geometry), interaction);
+                    return std::make_shared<PolysphereTraits>(std::move(geometry), interaction, true);
             });
     }
 

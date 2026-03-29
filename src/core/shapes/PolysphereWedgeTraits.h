@@ -42,9 +42,9 @@ namespace legacy {
          * with soft central interaction given by @a centralInteraction.
          */
         PolysphereWedgeTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
-                              double spherePenetration, std::shared_ptr<CentralInteraction> centralInteraction)
+                              double spherePenetration, std::shared_ptr<CentralInteractionBase> centralInteraction)
                 : PolysphereTraits(generateGeometry(sphereNum, smallSphereRadius, largeSphereRadius, spherePenetration),
-                                   std::move(centralInteraction))
+                                   std::move(centralInteraction), true)
         { }
     };
 }
@@ -83,9 +83,9 @@ public:
      * soft central interaction given by @a centralInteraction.
      */
     PolysphereWedgeTraits(std::size_t sphereNum, double bottomSphereRadius, double topSphereRadius,
-                          double spherePenetration, std::shared_ptr<CentralInteraction> centralInteraction)
+                          double spherePenetration, std::shared_ptr<CentralInteractionBase> centralInteraction)
             : PolysphereTraits(generateGeometry(sphereNum, bottomSphereRadius, topSphereRadius, spherePenetration),
-                               std::move(centralInteraction))
+                               std::move(centralInteraction), true)
     { }
 };
 

@@ -8,7 +8,7 @@
 #include <variant>
 
 #include "core/ShapeTraits.h"
-#include "core/interactions/CentralInteraction.h"
+#include "core/interactions/CentralInteractionBase.h"
 
 /**
  * @brief Spherical molecules with hard of soft interactions.
@@ -62,7 +62,7 @@ public:
     /**
      * @brief Creates a sphere interacting via @a centralInteraction soft potential.
      */
-    SphereTraits(double radius, std::shared_ptr<CentralInteraction> centralInteraction);
+    SphereTraits(double radius, std::shared_ptr<CentralInteractionBase> centralInteraction);
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; };
 

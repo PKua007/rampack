@@ -69,6 +69,20 @@
 namespace {
     using SpherocylinderData = PolyspherocylinderTraits::SpherocylinderData;
 
+    template <typename ConcreteTraits, typename... Args>
+    auto make_soft_shape(std::shared_ptr<CentralInteractionBase> centralInteraction, Args&&... args)
+    {
+        if constexpr (std::is_same_v<PolysphereTraits, ConcreteTraits>) {
+            constexpr bool doAllowUniformPairDataBroadcast = true;
+            return std::make_shared<ConcreteTraits>(
+                std::forward<Args>(args)..., std::move(centralInteraction), doAllowUniformPairDataBroadcast
+            );
+        } else {
+            return std::make_shared<ConcreteTraits>(
+                std::forward<Args>(args)..., std::move(centralInteraction)
+            );
+        }
+    }
 
     template <typename ConcreteTraits, typename... Args>
     auto parse_polysphere_traits(const std::string &shapeName, const std::string &interactionName,
@@ -82,9 +96,8 @@ namespace {
             ValidateMsg(interactionAttrStream, "Malformed Lennard Jones attributes. Usage: lj [epsilon] [sigma]");
             ValidateMsg(epsilon > 0, "epsilon parameters should be positive");
             ValidateMsg(sigma > 0, "sigma parameter should be positive");
-            return std::make_shared<ConcreteTraits>(
-                std::forward<Args>(args)..., std::make_unique<LennardJonesInteraction>(epsilon, sigma)
-            );
+            return make_soft_shape<ConcreteTraits>(std::make_unique<LennardJonesInteraction>(epsilon, sigma),
+                                                   std::forward<Args>(args)...);
         } else if (interactionName == "repulsive_lj") {
             double epsilon, sigma;
             interactionAttrStream >> epsilon >> sigma;
@@ -92,9 +105,8 @@ namespace {
                                                "[epsilon] [sigma]");
             ValidateMsg(epsilon > 0, "epsilon parameters should be positive");
             ValidateMsg(sigma > 0, "sigma parameter should be positive");
-            return std::make_shared<ConcreteTraits>(
-                    std::forward<Args>(args)..., std::make_unique<RepulsiveLennardJonesInteraction>(epsilon, sigma)
-            );
+            return make_soft_shape<ConcreteTraits>(std::make_unique<RepulsiveLennardJonesInteraction>(epsilon, sigma),
+                                                   std::forward<Args>(args)...);
         } else if (interactionName == "square_inverse_core") {
             double epsilon, sigma;
             interactionAttrStream >> epsilon >> sigma;
@@ -102,9 +114,8 @@ namespace {
                                                "[epsilon] [sigma]");
             ValidateMsg(epsilon != 0, "epsilon parameters should be non-zero");
             ValidateMsg(sigma > 0, "sigma parameter should be positive");
-            return std::make_shared<ConcreteTraits>(
-                    std::forward<Args>(args)..., std::make_unique<SquareInverseCoreInteraction>(epsilon, sigma)
-            );
+            return make_soft_shape<ConcreteTraits>(std::make_unique<SquareInverseCoreInteraction>(epsilon, sigma),
+                                                   std::forward<Args>(args)...);
         } else {
             throw ValidationException(shapeName + " supports interactions: hard, lj (Lennard Jones), repulsive_lj "
                              "(Lennard Jones cut at the minimum), square_inverse_core (dipole-like short-range "
@@ -341,8 +352,7 @@ namespace legacy {
                                                                        arcRadius, arcAngle, sphereNum, sphereRadius);
             } else {
                 return parse_polysphere_traits<legacy::PolysphereBananaTraits>(
-                        shapeName, interactionName, interactionAttrStream,
-                        arcRadius, arcAngle, sphereNum, sphereRadius
+                    shapeName, interactionName, interactionAttrStream, arcRadius, arcAngle, sphereNum, sphereRadius
                 );
             }
         } else if (shapeName == "PolyspherocylinderBanana") {
@@ -402,16 +412,17 @@ namespace legacy {
                 );
             } else {
                 return parse_polysphere_traits<legacy::PolysphereLollipopTraits>(
-                        shapeName, interactionName, interactionAttrStream,
-                        sphereNum, smallSphereRadius, largeSphereRadius, smallSpherePenetration, largeSpherePenetration
+                    shapeName, interactionName, interactionAttrStream, sphereNum, smallSphereRadius, largeSphereRadius,
+                    smallSpherePenetration, largeSpherePenetration
                 );
             }
         } else if (shapeName == "PolysphereWedge") {
-            if (version >= CONSISTENT_SHAPES_VERSION)
+            if (version >= CONSISTENT_SHAPES_VERSION) {
                 return parse_polysphere_wedge(shapeName, interactionName, shapeAttrStream, interactionAttrStream);
-            else
+            } else {
                 return parse_polysphere_wedge_legacy(shapeName, interactionName, shapeAttrStream,
-                                                     interactionAttrStream);
+                    interactionAttrStream);
+            }
         } else if (shapeName == "Spherocylinder") {
             double r, length;
             shapeAttrStream >> length >> r;
@@ -444,7 +455,7 @@ namespace legacy {
         } else if (shapeName == "Polysphere") {
             auto geometry = parse_polysphere_geometry(shapeAttrStream);
             return parse_polysphere_traits<PolysphereTraits>(shapeName, interactionName, interactionAttrStream,
-                                                             geometry);
+                                                             std::move(geometry));
         } else if (shapeName == "Polyspherocylinder") {
             ValidateMsg(interactionName == "hard" || interactionName.empty(),
                         "Polyspherocylinder supports only hard interactions");

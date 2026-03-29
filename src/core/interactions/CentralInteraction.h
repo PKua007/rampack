@@ -6,11 +6,9 @@
 #define RAMPACK_CENTRALINTERACTION_H
 
 #include <algorithm>
-#include <utility>
-#include <vector>
 
 #include "CentrePairDataMap.h"
-#include "core/Interaction.h"
+#include "CentralInteractionBase.h"
 
 /**
  * @brief A class representing the central interaction, where the energy depends only on the distance between
@@ -20,74 +18,90 @@
  * potentials are programmed by implementing CentralInteraction::calculateEnergyForDistance2 method, which receives
  * PairData for a given pair of interaction centres and may use it in energy computations.
  */
-template <typename PairData>
-class CentralInteraction : public Interaction {
+template <typename Derived, typename PairData>
+class CentralInteraction : public CentralInteractionBase {
 private:
-    std::vector<Vector<3>> potentialCentres;
-    std::vector<std::size_t> centreIdxTypeMap;
     CentrePairDataMap<PairData> pairDataMap;
+    double rangeRadius{};
+
+    [[nodiscard]] static CentrePairDataMap<PairData> broadcastUniformPairData(
+            const CentrePairDataMap<PairData> &pairDataMap, std::size_t numCentreTypes)
+    {
+        Expects(pairDataMap.getNumCentres() == 1);
+        CentrePairDataMap<PairData> broadcastPairDataMap(numCentreTypes);
+        const PairData &pairData = pairDataMap.getPairData(0, 0);
+        for (std::size_t i = 0; i < numCentreTypes; i++) {
+            for (std::size_t j = i; j < numCentreTypes; j++)
+                broadcastPairDataMap.setPairData(i, j, pairData);
+        }
+        return broadcastPairDataMap;
+    }
+
+    [[nodiscard]] double calculateRangeRadius() const
+    {
+        double rangeRadius = 0;
+        for (std::size_t i = 0; i < this->pairDataMap.getNumCentres(); i++) {
+            for (std::size_t j = i; j < this->pairDataMap.getNumCentres(); j++) {
+                rangeRadius = std::max(rangeRadius, Derived::getRangeRadiusForPairData(this->pairDataMap.getPairData(i, j)));
+            }
+        }
+        return rangeRadius;
+    }
 
 protected:
-    /**
-     * @brief Method which should be implemented for a concrete central interaction.
-     * @param distance2 distance squared between interaction centres
-     * @param pairData centre pair data for the concrete pair of interaction centres
-     */
-    [[nodiscard]] virtual double calculateEnergyForDistance2(double distance2, const PairData& pairData) const = 0;
+    [[nodiscard]] const PairData &getPairData(const std::size_t idx1, const std::size_t idx2) const
+    {
+        return this->pairDataMap.getPairData(idx1, idx2);
+    }
 
 public:
     /**
-     * @brief Constructs the interaction. The default setup is a sphere (installOnSphere()) with the default-constructed
-     * PairData.
+     * @brief Constructs the interaction on sphere with the default-constructed PairData.
      */
-    CentralInteraction() { this->installOnSphere(PairData{}); }
+    CentralInteraction()
+            : CentralInteraction(PairData{})
+    { }
 
     /**
-     * @brief Installs the interaction on sphere (empties the list of interaction centres).
+     * @brief Constructs the interaction on sphere.
      * @param pairData pair data for the only pair of interaction centre types present in the spherical case
      */
-    void installOnSphere(const PairData &pairData) {
-        this->potentialCentres = {};
-        this->centreIdxTypeMap = {0};
-        this->pairDataMap = CentrePairDataMap<PairData>(1);
+    explicit CentralInteraction(const PairData &pairData)
+            : pairDataMap(1)
+    {
         this->pairDataMap.setPairData(0, 0, pairData);
-    };
-
-    /**
-     * @brief Install the interaction on concrete interaction centres.
-     * @param centres positions of interaction centres for a molecule in the default placement
-     * @param pairData pair data used for all pairs of interaction centre types
-     */
-    void installOnCentres(const std::vector<Vector<3>> &centres, const PairData &pairData) {
-        Expects(!centres.empty());
-
-        this->potentialCentres = centres;
-        this->centreIdxTypeMap = std::vector<std::size_t>(centres.size(), 0);
-        this->pairDataMap = CentrePairDataMap<PairData>(1);
-        this->pairDataMap.setPairData(0, 0, pairData);
+        this->rangeRadius = this->calculateRangeRadius();
     }
 
     /**
-     * @brief Installs the interaction on concrete interaction centres with explicit interaction centre types.
-     * @param centres positions of interaction centres for a molecule in the default placement
-     * @param centreIdxTypeMap mapping from interaction centre indices to interaction centre types
+     * @brief Constructs the interaction with explicit pair data map and the default spherical layout.
      * @param pairDataMap map of pair data for all pairs of interaction centre types
      */
-    void installOnCentres(const std::vector<Vector<3>> &centres, const std::vector<std::size_t> &centreIdxTypeMap,
-                          const CentrePairDataMap<PairData> &pairDataMap) {
-        Expects(!centres.empty());
-        Expects(centres.size() == centreIdxTypeMap.size());
-        Expects(*std::max_element(centreIdxTypeMap.begin(), centreIdxTypeMap.end()) < pairDataMap.getNumCentres());
-
-        this->potentialCentres = centres;
-        this->centreIdxTypeMap = centreIdxTypeMap;
-        this->pairDataMap = pairDataMap;
+    explicit CentralInteraction(const CentrePairDataMap<PairData> &pairDataMap)
+            : pairDataMap(pairDataMap)
+    {
+        this->rangeRadius = this->calculateRangeRadius();
     }
 
-    [[nodiscard]] bool hasHardPart() const final { return false; }
-    [[nodiscard]] bool hasWallPart() const final { return false; }
-    [[nodiscard]] bool hasSoftPart() const final { return true; }
-    [[nodiscard]] bool isConvex() const final { return false; }
+    /**
+     * @brief Binds the interaction to the specified interaction centre layout preserving currently configured pair
+     * data.
+     */
+    void bindCentreLayout(const InteractionCentreLayout &interactionCentreLayout,
+                          bool allowUniformPairDataBroadcast = false) final
+    {
+        if (allowUniformPairDataBroadcast && this->pairDataMap.getNumCentres() == 1)
+            this->pairDataMap = broadcastUniformPairData(this->pairDataMap, interactionCentreLayout.numCentreTypes());
+        else
+            Expects(interactionCentreLayout.numCentreTypes() <= this->pairDataMap.getNumCentres());
+
+        this->interactionCentreLayout = interactionCentreLayout;
+    }
+
+    [[nodiscard]] double getRangeRadius() const final
+    {
+        return this->rangeRadius;
+    }
 
     [[nodiscard]] double calculateEnergyBetween(const Vector<3> &pos1,
                                                 [[maybe_unused]] const Matrix<3, 3> &orientation1,
@@ -97,14 +111,12 @@ public:
                                                 const std::size_t idx2,
                                                 const BoundaryConditions &bc) const final
     {
-        const std::size_t centreType1 = this->centreIdxTypeMap[idx1];
-        const std::size_t centreType2 = this->centreIdxTypeMap[idx2];
+        const std::size_t centreType1 = this->interactionCentreLayout.getCentreIdxTypeMap()[idx1];
+        const std::size_t centreType2 = this->interactionCentreLayout.getCentreIdxTypeMap()[idx2];
         const auto &pairData = this->pairDataMap.getPairData(centreType1, centreType2);
 
-        return this->calculateEnergyForDistance2(bc.getDistance2(pos1, pos2), pairData);
+        return static_cast<const Derived *>(this)->calculateEnergyForDistance2(bc.getDistance2(pos1, pos2), pairData);
     }
-
-    [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const final { return this->potentialCentres; }
 };
 
 

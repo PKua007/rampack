@@ -41,9 +41,9 @@ namespace legacy {
          * for soft central interactions given by @a centralInteraction.
          */
         PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
-                               std::shared_ptr<CentralInteraction> centralInteraction)
+                               std::shared_ptr<CentralInteractionBase> centralInteraction)
                 : PolysphereTraits(generateGeometry(arcRadius, arcAngle, sphereNum, sphereRadius),
-                                   std::move(centralInteraction))
+                                   std::move(centralInteraction), true)
         { }
     };
 }
@@ -85,9 +85,9 @@ public:
      * soft central interactions given by @a centralInteraction.
      */
     PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
-                           std::shared_ptr<CentralInteraction> centralInteraction)
+                           std::shared_ptr<CentralInteractionBase> centralInteraction)
             : PolysphereTraits(generateGeometry(arcRadius, arcAngle, sphereNum, sphereRadius),
-                               std::move(centralInteraction))
+                               std::move(centralInteraction), true)
     { }
 };
 

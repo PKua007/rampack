@@ -4,15 +4,19 @@
 
 #include <catch2/catch.hpp>
 
+#include "core/interactions/CentralInteraction.h"
 #include "core/shapes/PolysphereTraits.h"
 #include "core/PeriodicBoundaryConditions.h"
 
 #include "matchers/VectorApproxMatcher.h"
 
 namespace {
-    class DummyInteraction : public CentralInteraction {
-    protected:
-        [[nodiscard]] double calculateEnergyForDistance2([[maybe_unused]] double distance) const override { return 0; }
+    class DummyInteraction : public CentralInteraction<DummyInteraction, double> {
+    public:
+        [[nodiscard]] double calculateEnergyForDistance2([[maybe_unused]] double distance,
+                                                         [[maybe_unused]] const double &pairData) const
+        { return 0; }
+        [[nodiscard]] static double getRangeRadiusForPairData([[maybe_unused]] const double &pairData) { return 0; }
     };
 }
 
@@ -97,10 +101,11 @@ TEST_CASE("PolysphereTraits: hard interactions") {
 
 TEST_CASE("PolysphereTraits: soft interactions") {
     PolysphereTraits::PolysphereGeometry geometry({{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}}, {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
-    PolysphereTraits traits(std::move(geometry), std::make_unique<DummyInteraction>());
-    const auto &interaction = dynamic_cast<const CentralInteraction &>(traits.getInteraction());
+    auto interaction = std::make_shared<DummyInteraction>();
+    PolysphereTraits traits(std::move(geometry), interaction, true);
+    const auto &baseInteraction = dynamic_cast<const CentralInteractionBase &>(traits.getInteraction());
 
-    CHECK(interaction.getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}, {3, 0, 0}});
+    CHECK(baseInteraction.getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}, {3, 0, 0}});
 }
 
 TEST_CASE("PolysphereTraits: mass centre normalization") {

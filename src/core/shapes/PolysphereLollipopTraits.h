@@ -47,10 +47,10 @@ namespace legacy {
          */
         PolysphereLollipopTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
                                  double smallSpherePenetration, double largeSpherePenetration,
-                                 std::unique_ptr<CentralInteraction> centralInteraction)
+                                 std::shared_ptr<CentralInteractionBase> centralInteraction)
                 : PolysphereTraits(generateGeometry(sphereNum, smallSphereRadius, largeSphereRadius,
                                                     smallSpherePenetration, largeSpherePenetration),
-                                   std::move(centralInteraction))
+                                   std::move(centralInteraction), true)
         { }
     };
 }
@@ -97,10 +97,10 @@ public:
      */
     PolysphereLollipopTraits(std::size_t sphereNum, double stickSphereRadius, double tipSphereRadius,
                              double stickSpherePenetration, double tipSpherePenetration,
-                             std::shared_ptr<CentralInteraction> centralInteraction)
+                             std::shared_ptr<CentralInteractionBase> centralInteraction)
             : PolysphereTraits(generateGeometry(sphereNum, stickSphereRadius, tipSphereRadius,
                                                 stickSpherePenetration, tipSpherePenetration),
-                               std::move(centralInteraction))
+                               std::move(centralInteraction), true)
     { }
 };
 

@@ -9,9 +9,11 @@
 #include <ostream>
 #include <map>
 #include <optional>
+#include <vector>
 
 #include "core/ShapeTraits.h"
-#include "core/interactions/CentralInteraction.h"
+#include "core/interactions/CentralInteractionBase.h"
+#include "core/interactions/InteractionCentreLayout.h"
 #include "OptionalAxis.h"
 
 
@@ -42,6 +44,35 @@ public:
     };
 
     /**
+     * @brief A helper class storing per-type metadata for interaction centres.
+     */
+    struct InteractionCentreTypeMetadata {
+        double radius{};
+
+        explicit InteractionCentreTypeMetadata(double radius);
+    };
+
+    /**
+     * @brief A helper class storing interaction centre layout together with per-type metadata.
+     */
+    class InteractionCentreLayoutWithMetadata {
+    private:
+        InteractionCentreLayout interactionCentreLayout;
+        std::vector<InteractionCentreTypeMetadata> centreTypeMetadata;
+
+    public:
+        InteractionCentreLayoutWithMetadata() = default;
+        InteractionCentreLayoutWithMetadata(InteractionCentreLayout interactionCentreLayout,
+                                            std::vector<InteractionCentreTypeMetadata> centreTypeMetadata);
+
+        [[nodiscard]] const InteractionCentreLayout &getInteractionCentreLayout() const
+        { return this->interactionCentreLayout; }
+
+        [[nodiscard]] const std::vector<InteractionCentreTypeMetadata> &getCentreTypeMetadata() const
+        { return this->centreTypeMetadata; }
+    };
+
+    /**
      * @brief A helper class defining a whole particle.
      * @details The class, apart from standard named points (see ShapeGeometry::getNamedPoint()) and
      * @a customNamedPoints from the constructor, defines points "sx" representing constituent spheres, where "x" is
@@ -50,12 +81,16 @@ public:
     class PolysphereGeometry : public ShapeGeometry {
     private:
         std::vector<SphereData> sphereData;
+        InteractionCentreLayout interactionCentreLayout;
+        std::vector<double> displayRadiiByType;
         std::optional<Vector<3>> primaryAxis;
         std::optional<Vector<3>> secondaryAxis;
         Vector<3> geometricOrigin;
         double volume{};
 
         [[nodiscard]] double calculateVolume() const;
+        [[nodiscard]] static InteractionCentreLayoutWithMetadata sphereDataToInteractionCentreLayoutWithMetadata(
+                std::vector<SphereData> sphereData);
 
     public:
         /**
@@ -72,6 +107,13 @@ public:
          * PolysphereGeometry::getNamedPoint)
          */
         explicit PolysphereGeometry(std::vector<SphereData> sphereData, OptionalAxis primaryAxis = std::nullopt,
+                                    OptionalAxis secondaryAxis = std::nullopt,
+                                    const Vector<3> &geometricOrigin = {0, 0, 0},
+                                    std::optional<double> volume = std::nullopt,
+                                    const ShapeGeometry::NamedPoints &customNamedPoints = {});
+
+        explicit PolysphereGeometry(InteractionCentreLayoutWithMetadata interactionCentreLayoutWithMetadata,
+                                    OptionalAxis primaryAxis = std::nullopt,
                                     OptionalAxis secondaryAxis = std::nullopt,
                                     const Vector<3> &geometricOrigin = {0, 0, 0},
                                     std::optional<double> volume = std::nullopt,
@@ -96,6 +138,9 @@ public:
         [[nodiscard]] double getVolume() const override { return this->volume; }
 
         [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->sphereData; }
+        [[nodiscard]] const InteractionCentreLayout &getInteractionCentreLayout() const
+        { return this->interactionCentreLayout; }
+        [[nodiscard]] const std::vector<double> &getDisplayRadiiByType() const { return this->displayRadiiByType; }
 
         /**
          * @brief Calculates mass centre and moves it to {0, 0, 0} (geometric origin and named points are moved
@@ -122,10 +167,11 @@ public:
 private:
     class HardInteraction : public Interaction {
     private:
-        std::vector<SphereData> sphereData;
+        std::vector<Vector<3>> interactionCentres;
+        std::vector<double> radii;
 
     public:
-        explicit HardInteraction(std::vector<SphereData> sphereData);
+        explicit HardInteraction(const PolysphereGeometry &geometry);
 
         [[nodiscard]] bool hasHardPart() const override { return true; }
         [[nodiscard]] bool hasSoftPart() const override { return false; }
@@ -172,7 +218,8 @@ public:
      * @brief Similar as PolysphereTraits::PolysphereTraits(const std::vector<SphereData> &, const Vector<3> &, bool),
      * but for soft central interaction given by @a centralInteraction.
      */
-    PolysphereTraits(PolysphereGeometry geometry, std::shared_ptr<CentralInteraction> centralInteraction);
+    PolysphereTraits(PolysphereGeometry geometry, std::shared_ptr<CentralInteractionBase> centralInteraction,
+                     bool allowUniformPairDataBroadcast = false);
 
     [[nodiscard]] const Interaction &getInteraction() const override { return *this->interaction; }
     [[nodiscard]] const ShapeGeometry &getGeometry() const override { return this->geometry; }
