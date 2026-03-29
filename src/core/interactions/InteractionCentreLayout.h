@@ -41,8 +41,10 @@ public:
             : centres{std::move(centres)}, centreIdxTypeMap{std::move(centreIdxTypeMap)},
               numCentreTypes_{calculateNumCentreTypes(this->centreIdxTypeMap)}
     {
-        Expects(this->centres.size() == this->centreIdxTypeMap.size() || this->centres.empty());
-        Expects(!this->centreIdxTypeMap.empty());
+        if (this->centres.empty())
+            Expects(this->centreIdxTypeMap == std::vector<std::size_t>{0});
+        else
+            Expects(this->centres.size() == this->centreIdxTypeMap.size());
     }
 
     [[nodiscard]] const std::vector<Vector<3>> &getCentres() const
