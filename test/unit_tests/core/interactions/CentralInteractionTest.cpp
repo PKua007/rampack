@@ -28,19 +28,85 @@ TEST_CASE("CentralInteraction: basics") {
     CHECK_FALSE(interaction.hasHardPart());
 }
 
-TEST_CASE("CentralInteraction: point installation") {
-    SECTION("installOnCentres") {
+TEST_CASE("CentralInteraction: binding centre layout") {
+    PeriodicBoundaryConditions pbc(100);
+    const Matrix<3, 3> id = Matrix<3, 3>::identity();
+
+    SECTION("default construction") {
         PairDataInteraction interaction;
 
-        interaction.bindCentreLayout({{{0, 0, 0}, {2, 0, 0}}, {0, 0}});
-
-        REQUIRE(interaction.getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}, {2, 0, 0}});
+        CHECK(interaction.getInteractionCentres().empty());
+        CHECK(interaction.calculateEnergyBetween({0, 0, 0}, id, 0, {0, 2, 0}, id, 0, pbc) == Approx(0));
     }
 
-    SECTION("sphere constructor") {
-        PairDataInteraction interaction;
+    SECTION("binds explicit centre layout") {
+        CentrePairDataMap<double> pairDataMap(2);
+        pairDataMap.setPairData(0, 0, 1.0);
+        pairDataMap.setPairData(0, 1, 2.0);
+        pairDataMap.setPairData(1, 1, 3.0);
+        PairDataInteraction interaction(pairDataMap);
+
+        interaction.bindCentreLayout({{{0, 0, 0}, {2, 0, 0}}, {0, 1}});
+
+        REQUIRE(interaction.getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}, {2, 0, 0}});
+        CHECK(interaction.calculateEnergyBetween({0, 0, 0}, id, 0, {0, 2, 0}, id, 1, pbc) == Approx(4));
+    }
+
+    SECTION("bindSphere") {
+        PairDataInteraction interaction(3.5);
+        interaction.bindSphere();
 
         REQUIRE(interaction.getInteractionCentres().empty());
+        CHECK(interaction.calculateEnergyBetween({0, 0, 0}, id, 0, {0, 2, 0}, id, 0, pbc) == Approx(7));
+    }
+
+    SECTION("broadcasts uniform pair data when enabled") {
+        PairDataInteraction interaction(3.5);
+
+        interaction.bindCentreLayout({{{0, 0, 0}, {1, 0, 0}, {2, 0, 0}}, {2, 0, 1}}, true);
+
+        CHECK(interaction.getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}, {1, 0, 0}, {2, 0, 0}});
+        CHECK(interaction.calculateEnergyBetween({0, 0, 0}, id, 0, {0, 0, 0}, id, 1, pbc) == Approx(0));
+        CHECK(interaction.calculateEnergyBetween({0, 0, 0}, id, 0, {0, 1, 0}, id, 2, pbc) == Approx(3.5));
+        CHECK(interaction.calculateEnergyBetween({0, 0, 0}, id, 1, {0, 4, 0}, id, 2, pbc) == Approx(14));
+    }
+
+    SECTION("fails without broadcast when layout has too many centre types") {
+        PairDataInteraction interaction(3.5);
+
+        CHECK_THROWS_AS(interaction.bindCentreLayout({{{0, 0, 0}, {1, 0, 0}}, {0, 1}}),
+                        PreconditionException);
+    }
+
+    SECTION("fails when broadcast is requested for non-uniform pair data") {
+        CentrePairDataMap<double> pairDataMap(2);
+        pairDataMap.setPairData(0, 0, 1.0);
+        pairDataMap.setPairData(0, 1, 2.0);
+        pairDataMap.setPairData(1, 1, 3.0);
+        PairDataInteraction interaction(pairDataMap);
+
+        CHECK_THROWS_AS(interaction.bindCentreLayout({{{0, 0, 0}, {1, 0, 0}, {2, 0, 0}}, {0, 1, 2}}, true),
+                        PreconditionException);
+    }
+
+    SECTION("rebinding centre layout") {
+        PairDataInteraction interaction(3.5);
+
+        interaction.bindCentreLayout({{{0, 0, 0}, {1, 0, 0}}, {0, 0}});
+
+        SECTION("replaces bound centres") {
+            interaction.bindCentreLayout({{{0, 0, 0}, {2, 0, 0}, {4, 0, 0}}, {0, 0, 0}});
+
+            CHECK(interaction.getInteractionCentres() == std::vector<Vector<3>>{{0, 0, 0}, {2, 0, 0}, {4, 0, 0}});
+            CHECK(interaction.calculateEnergyBetween({0, 0, 0}, id, 0, {0, 3, 0}, id, 2, pbc) == Approx(10.5));
+        }
+
+        SECTION("can be rebound to a sphere") {
+            interaction.bindSphere();
+
+            CHECK(interaction.getInteractionCentres().empty());
+            CHECK(interaction.calculateEnergyBetween({0, 0, 0}, id, 0, {0, 2, 0}, id, 0, pbc) == Approx(7));
+        }
     }
 }
 
@@ -71,37 +137,5 @@ TEST_CASE("CentralInteraction: range radius") {
         PairDataInteraction interaction(pairDataMap);
 
         CHECK(interaction.getRangeRadius() == Approx(5.5));
-    }
-}
-
-TEST_CASE("CentralInteraction: binding centre layout") {
-    SECTION("broadcasts uniform pair data when enabled") {
-        PairDataInteraction interaction(3.5);
-        PeriodicBoundaryConditions pbc(100);
-        const Matrix<3, 3> id = Matrix<3, 3>::identity();
-
-        interaction.bindCentreLayout({{{0, 0, 0}, {1, 0, 0}, {2, 0, 0}}, {2, 0, 1}}, true);
-
-        CHECK(interaction.calculateEnergyBetween({0, 0, 0}, id, 0, {0, 0, 0}, id, 1, pbc) == Approx(0));
-        CHECK(interaction.calculateEnergyBetween({0, 0, 0}, id, 0, {0, 1, 0}, id, 2, pbc) == Approx(3.5));
-        CHECK(interaction.calculateEnergyBetween({0, 0, 0}, id, 1, {0, 4, 0}, id, 2, pbc) == Approx(14));
-    }
-
-    SECTION("fails without broadcast when layout has too many centre types") {
-        PairDataInteraction interaction(3.5);
-
-        CHECK_THROWS_AS(interaction.bindCentreLayout({{{0, 0, 0}, {1, 0, 0}}, {0, 1}}),
-                        PreconditionException);
-    }
-
-    SECTION("fails when broadcast is requested for non-uniform pair data") {
-        CentrePairDataMap<double> pairDataMap(2);
-        pairDataMap.setPairData(0, 0, 1.0);
-        pairDataMap.setPairData(0, 1, 2.0);
-        pairDataMap.setPairData(1, 1, 3.0);
-        PairDataInteraction interaction(pairDataMap);
-
-        CHECK_THROWS_AS(interaction.bindCentreLayout({{{0, 0, 0}, {1, 0, 0}, {2, 0, 0}}, {0, 1, 2}}, true),
-                        PreconditionException);
     }
 }
