@@ -18,7 +18,9 @@
 
 
 /**
- * @brief A polymer consisting of identical or different hard of soft-interacting spheres.
+ * @brief A polymer consisting of identical or different hard- or soft-interacting spheres.
+ * @details The hard representation is always described bead-by-bead by SphereData. Soft central interactions may,
+ * however, use a more general interaction-centre layout with explicit centre types.
  */
 class PolysphereTraits : public ShapeTraits {
 public:
@@ -45,6 +47,8 @@ public:
 
     /**
      * @brief A helper class storing per-type metadata for interaction centres.
+     * @details At the moment it stores only the radius used to reconstruct SphereData and to visualize interaction
+     * centres of a given type, but it may be extended in the future with further per-type attributes.
      */
     struct InteractionCentreTypeMetadata {
         double radius{};
@@ -53,7 +57,9 @@ public:
     };
 
     /**
-     * @brief A helper class storing interaction centre layout together with per-type metadata.
+     * @brief A helper class storing interaction-centre layout together with per-type metadata.
+     * @details This is the typed backend construction API for PolysphereGeometry. It separates interaction-centre
+     * positions and their types from metadata associated with each type.
      */
     class InteractionCentreLayoutWithMetadata {
     private:
@@ -62,20 +68,34 @@ public:
 
     public:
         InteractionCentreLayoutWithMetadata() = default;
+
+        /**
+         * @brief Constructs the typed interaction-centre description of a polysphere.
+         * @param interactionCentreLayout interaction-centre positions together with centre types
+         * @param centreTypeMetadata metadata for all interaction-centre types
+         */
         InteractionCentreLayoutWithMetadata(InteractionCentreLayout interactionCentreLayout,
                                             std::vector<InteractionCentreTypeMetadata> centreTypeMetadata);
 
-        [[nodiscard]] const InteractionCentreLayout &getInteractionCentreLayout() const
-        { return this->interactionCentreLayout; }
+        /**
+         * @brief Returns the interaction-centre layout of the polysphere.
+         */
+        [[nodiscard]] const InteractionCentreLayout &getInteractionCentreLayout() const {
+            return this->interactionCentreLayout;
+        }
 
-        [[nodiscard]] const std::vector<InteractionCentreTypeMetadata> &getCentreTypeMetadata() const
-        { return this->centreTypeMetadata; }
+        /**
+         * @brief Returns metadata for all interaction-centre types.
+         */
+        [[nodiscard]] const std::vector<InteractionCentreTypeMetadata> &getCentreTypeMetadata() const {
+            return this->centreTypeMetadata;
+        }
     };
 
     /**
-     * @brief A helper class defining a whole particle.
+     * @brief A helper class defining the geometry of the particle.
      * @details The class, apart from standard named points (see ShapeGeometry::getNamedPoint()) and
-     * @a customNamedPoints from the constructor, defines points "sx" representing constituent spheres, where "x" is
+     * @a customNamedPoints from the constructor, defines points "s[x]" representing constituent spheres, where "[x]" is
      * sphere's index starting from 0.
      */
     class PolysphereGeometry : public ShapeGeometry {
@@ -89,8 +109,8 @@ public:
         double volume{};
 
         [[nodiscard]] double calculateVolume() const;
-        [[nodiscard]] static InteractionCentreLayoutWithMetadata sphereDataToInteractionCentreLayoutWithMetadata(
-                std::vector<SphereData> sphereData);
+        [[nodiscard]] static InteractionCentreLayoutWithMetadata
+        sphereDataToInteractionCentreLayoutWithMetadata(std::vector<SphereData> sphereData);
 
     public:
         /**
@@ -101,10 +121,10 @@ public:
          * @param geometricOrigin geometric origin of the molecule which can be different that the mass centre
          * @param volume volume of the polymer; if not specified, it is calculated automatically, but only for
          * non-overlapping spheres
-         *
-         *
          * @param customNamedPoints custom named points in addition to default ones (see
          * PolysphereGeometry::getNamedPoint)
+         * @details This legacy-style constructor synthesizes a typed interaction-centre layout in which each sphere
+         * becomes its own interaction-centre type.
          */
         explicit PolysphereGeometry(std::vector<SphereData> sphereData, OptionalAxis primaryAxis = std::nullopt,
                                     OptionalAxis secondaryAxis = std::nullopt,
@@ -112,6 +132,18 @@ public:
                                     std::optional<double> volume = std::nullopt,
                                     const ShapeGeometry::NamedPoints &customNamedPoints = {});
 
+        /**
+         * @brief Constructs the object from an explicit typed interaction-centre description.
+         * @param interactionCentreLayoutWithMetadata interaction-centre layout together with per-type metadata
+         * containing sphere radii
+         * @param primaryAxis the primary axis of the polymer
+         * @param secondaryAxis the secondary axis of the polymer (should be orthogonal to the primary one)
+         * @param geometricOrigin geometric origin of the molecule which can be different from the mass centre
+         * @param volume volume of the polymer; if not specified, it is calculated automatically, but only for
+         * non-overlapping spheres reconstructed from the supplied metadata
+         * @param customNamedPoints custom named points in addition to default ones (see
+         * PolysphereGeometry::getNamedPoint)
+         */
         explicit PolysphereGeometry(InteractionCentreLayoutWithMetadata interactionCentreLayoutWithMetadata,
                                     OptionalAxis primaryAxis = std::nullopt,
                                     OptionalAxis secondaryAxis = std::nullopt,
@@ -137,9 +169,24 @@ public:
 
         [[nodiscard]] double getVolume() const override { return this->volume; }
 
+        /**
+         * @brief Returns bead-wise sphere representation of the polysphere.
+         * @details In the typed-layout case, the vector is reconstructed from interaction-centre positions and
+         * per-type metadata.
+         */
         [[nodiscard]] const std::vector<SphereData> &getSphereData() const { return this->sphereData; }
-        [[nodiscard]] const InteractionCentreLayout &getInteractionCentreLayout() const
-        { return this->interactionCentreLayout; }
+
+        /**
+         * @brief Returns the interaction-centre layout used by soft central interactions.
+         */
+        [[nodiscard]] const InteractionCentreLayout &getInteractionCentreLayout() const {
+            return this->interactionCentreLayout;
+        }
+
+        /**
+         * @brief Returns radii associated with interaction-centre types.
+         * @details The order matches interaction-centre type indices used by getInteractionCentreLayout().
+         */
         [[nodiscard]] const std::vector<double> &getDisplayRadiiByType() const { return this->displayRadiiByType; }
 
         /**
@@ -209,14 +256,17 @@ public:
     static constexpr std::size_t DEFAULT_MESH_SUBDIVISIONS = 3;
 
     /**
-     * @brief Construct the polymer from the specified @a sphereData.
+     * @brief Constructs a hard polysphere from the specified geometry.
      * @param geometry PolysphereGeometry describing the molecule.
      */
     explicit PolysphereTraits(PolysphereGeometry geometry);
 
     /**
-     * @brief Similar as PolysphereTraits::PolysphereTraits(const std::vector<SphereData> &, const Vector<3> &, bool),
-     * but for soft central interaction given by @a centralInteraction.
+     * @brief Constructs a polysphere with a soft central interaction bound to its interaction-centre layout.
+     * @param geometry PolysphereGeometry describing the molecule
+     * @param centralInteraction soft central interaction to be bound to the geometry interaction-centre layout
+     * @param allowUniformPairDataBroadcast if @a true and @a centralInteraction stores pair data for a single
+     * interaction-centre type only, this singular pair data is broadcast to all centre types present in @a geometry
      */
     PolysphereTraits(PolysphereGeometry geometry, std::shared_ptr<CentralInteractionBase> centralInteraction,
                      bool allowUniformPairDataBroadcast = false);

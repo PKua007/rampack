@@ -39,7 +39,7 @@ TEST_CASE("PolysphereGeometry: construction") {
 
         CHECK(geometry.getSphereData() == std::vector<SphereData>{{{0, 0, 0}, 0.5}, {{3, 0, 0}, 1}});
         CHECK(geometry.getInteractionCentreLayout().getCentres() == std::vector<Vector<3>>{{0, 0, 0}, {3, 0, 0}});
-        CHECK(geometry.getInteractionCentreLayout().getCentreIdxTypeMap() == std::vector<std::size_t>{0, 1});
+        CHECK(geometry.getInteractionCentreLayout().getCentreIdxTypeIdxMap() == std::vector<std::size_t>{0, 1});
         CHECK(geometry.getDisplayRadiiByType() == std::vector<double>{0.5, 1});
 
         Shape shape({}, Matrix<3, 3>::identity());
@@ -56,7 +56,7 @@ TEST_CASE("PolysphereGeometry: construction") {
                                             {{0, 0, 0}, 0.5}, {{1, 0, 0}, 0.25}, {{2, 0, 0}, 0.25}, {{3, 0, 0}, 0.5}});
         CHECK(geometry.getInteractionCentreLayout().getCentres()
               == std::vector<Vector<3>>{{0, 0, 0}, {1, 0, 0}, {2, 0, 0}, {3, 0, 0}});
-        CHECK(geometry.getInteractionCentreLayout().getCentreIdxTypeMap() == std::vector<std::size_t>{1, 0, 0, 1});
+        CHECK(geometry.getInteractionCentreLayout().getCentreIdxTypeIdxMap() == std::vector<std::size_t>{1, 0, 0, 1});
         CHECK(geometry.getDisplayRadiiByType() == std::vector<double>{0.25, 0.5});
 
         Shape shape({}, Matrix<3, 3>::identity());
@@ -150,7 +150,7 @@ TEST_CASE("PolysphereGeometry: mass centre normalization") {
     const auto &sphereData = geometry.getSphereData();
     CHECK(sphereData == std::vector<SphereData>{{{-0.75, 0, 0}, 1}, {{0.25, 0, 0}, std::cbrt(3)}});
     CHECK(geometry.getInteractionCentreLayout().getCentres() == std::vector<Vector<3>>{{-0.75, 0, 0}, {0.25, 0, 0}});
-    CHECK(geometry.getInteractionCentreLayout().getCentreIdxTypeMap() == std::vector<std::size_t>{1, 0});
+    CHECK(geometry.getInteractionCentreLayout().getCentreIdxTypeIdxMap() == std::vector<std::size_t>{1, 0});
     CHECK(geometry.getDisplayRadiiByType() == std::vector<double>{std::cbrt(3), 1});
     CHECK_THAT(geometry.getGeometricOrigin({}), IsApproxEqual(Vector<3>{0.25, 0, 0}, 1e-12));
     CHECK_THAT(geometry.getNamedPointForShape("point1", {}), IsApproxEqual(Vector<3>{0.25, 0, 0}, 1e-12));

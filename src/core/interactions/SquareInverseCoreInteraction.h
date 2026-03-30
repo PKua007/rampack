@@ -10,18 +10,24 @@
 
 #include "CentralInteraction.h"
 
+/**
+ * @brief Parameters of square-inverse-core interaction for a pair of interaction-centre types.
+ */
 struct SquareInverseCorePairData {
     double epsilon{};
     double sigma{};
 };
 
+/**
+ * @brief A central interaction with square-inverse-core potential.
+ * @details For a pair of interaction-centre types with parameters SquareInverseCorePairData `(epsilon, sigma)`, the
+ * potential is equal to `epsilon * max(0, (sigma/r)^2 - 1)`.
+ */
 class SquareInverseCoreInteraction : public CentralInteraction<SquareInverseCoreInteraction, SquareInverseCorePairData> {
 public:
-    using CentralInteraction<SquareInverseCoreInteraction, SquareInverseCorePairData>::CentralInteraction;
+    using CentralInteraction::CentralInteraction;
 
-    SquareInverseCoreInteraction(double epsilon, double sigma)
-            : CentralInteraction({epsilon, sigma})
-    {
+    SquareInverseCoreInteraction(double epsilon, double sigma) : CentralInteraction({epsilon, sigma}) {
         Expects(epsilon != 0);
         Expects(sigma > 0);
     }
@@ -31,8 +37,7 @@ public:
         return pairData.epsilon * std::max(0.0, std::pow(pairData.sigma, 2) / distance2 - 1);
     }
 
-    [[nodiscard]] static double getRangeRadiusForPairData(const SquareInverseCorePairData &pairData)
-    {
+    [[nodiscard]] static double getRangeRadiusForPairData(const SquareInverseCorePairData &pairData) {
         return pairData.sigma;
     }
 };

@@ -7,25 +7,29 @@
 
 #include "CentralInteraction.h"
 
+/**
+ * @brief Parameters of repulsive Lennard-Jones interaction for a pair of interaction-centre types.
+ */
 struct RepulsiveLennardJonesPairData {
     double epsilon{};
     double sigma{};
 };
 
 /**
- * @brief CentralInteraction class representing Weeks-Chandler-Anderson interaction (repulsive part of LJ interaction).
- * @details It is defined as 4 * epsilon * ((r/sigma)^12 - (r/sigma)^6) + epsilon for r < 2^(1/6), 0 otherwise.
+ * @brief A central interaction representing Weeks-Chandler-Anderson potential.
+ * @details For a pair of interaction-centre types with RepulsiveLennardJonesPairData `(epsilon, sigma)`, the potential
+ * is equal to `4 * epsilon * ((sigma/r)^12 - (sigma/r)^6) + epsilon` for `r < 2^(1/6) * sigma` and `0` otherwise.
  */
-class RepulsiveLennardJonesInteraction : public CentralInteraction<RepulsiveLennardJonesInteraction, RepulsiveLennardJonesPairData> {
+class RepulsiveLennardJonesInteraction
+    : public CentralInteraction<RepulsiveLennardJonesInteraction, RepulsiveLennardJonesPairData>
+{
 private:
     static constexpr double WCA_CUTOFF_SIGMA_MULTIPLIER = 1.122462048309373;
 
 public:
-    using CentralInteraction<RepulsiveLennardJonesInteraction, RepulsiveLennardJonesPairData>::CentralInteraction;
+    using CentralInteraction::CentralInteraction;
 
-    RepulsiveLennardJonesInteraction(double epsilon, double sigma)
-            : CentralInteraction({epsilon, sigma})
-    {
+    RepulsiveLennardJonesInteraction(double epsilon, double sigma) : CentralInteraction({epsilon, sigma}) {
         Expects(epsilon > 0);
         Expects(sigma > 0);
     }
@@ -43,8 +47,7 @@ public:
         return 4 * pairData.epsilon * (x12 - x6) + pairData.epsilon;
     }
 
-    [[nodiscard]] static double getRangeRadiusForPairData(const RepulsiveLennardJonesPairData &pairData)
-    {
+    [[nodiscard]] static double getRangeRadiusForPairData(const RepulsiveLennardJonesPairData &pairData) {
         return pairData.sigma * WCA_CUTOFF_SIGMA_MULTIPLIER;
     }
 };

@@ -11,7 +11,7 @@
 #include "core/interactions/CentralInteractionBase.h"
 
 /**
- * @brief Spherical molecules with hard of soft interactions.
+ * @brief Spherical molecules with hard or centrally soft interactions.
  */
 class SphereTraits : public ShapeTraits, public ShapeGeometry {
 private:
@@ -61,6 +61,8 @@ public:
 
     /**
      * @brief Creates a sphere interacting via @a centralInteraction soft potential.
+     * @details The supplied interaction is rebound to the canonical spherical interaction-centre layout, regardless of
+     * any layout previously bound to it.
      */
     SphereTraits(double radius, std::shared_ptr<CentralInteractionBase> centralInteraction);
 
@@ -71,7 +73,7 @@ public:
      * @details The following formats are supported:
      * <ol>
      *     <li> `wolfram` - Wolfram Mathematica shape
-     *     <li> `obj` - Wavefront OBJ triangle mesh (it accepts @a mesh_divisions parameter, default: 4)
+     *     <li> `obj` - Wavefront OBJ triangle mesh (it accepts @a mesh_divisions parameter, default: 3)
      * </ol>
      */
     [[nodiscard]] std::shared_ptr<const ShapePrinter>

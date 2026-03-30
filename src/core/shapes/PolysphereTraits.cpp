@@ -88,9 +88,9 @@ PolysphereTraits::InteractionCentreTypeMetadata::InteractionCentreTypeMetadata(d
     Expects(radius > 0);
 }
 
-PolysphereTraits::InteractionCentreLayoutWithMetadata::InteractionCentreLayoutWithMetadata(
-        InteractionCentreLayout interactionCentreLayout,
-        std::vector<InteractionCentreTypeMetadata> centreTypeMetadata)
+PolysphereTraits::InteractionCentreLayoutWithMetadata
+    ::InteractionCentreLayoutWithMetadata(InteractionCentreLayout interactionCentreLayout,
+                                          std::vector<InteractionCentreTypeMetadata> centreTypeMetadata)
         : interactionCentreLayout{std::move(interactionCentreLayout)}, centreTypeMetadata{std::move(centreTypeMetadata)}
 {
     Expects(this->interactionCentreLayout.numCentreTypes() == this->centreTypeMetadata.size());
@@ -123,8 +123,7 @@ double PolysphereTraits::HardInteraction::getRangeRadius() const {
     return 2 * *std::max_element(this->radii.begin(), this->radii.end());
 }
 
-PolysphereTraits::HardInteraction::HardInteraction(const PolysphereGeometry &geometry)
-{
+PolysphereTraits::HardInteraction::HardInteraction(const PolysphereGeometry &geometry) {
     const auto &sphereData = geometry.getSphereData();
     this->interactionCentres.reserve(sphereData.size());
     this->radii.reserve(sphereData.size());
@@ -154,21 +153,24 @@ double PolysphereTraits::PolysphereGeometry::calculateVolume() const {
 }
 
 PolysphereTraits::InteractionCentreLayoutWithMetadata
-PolysphereTraits::PolysphereGeometry::sphereDataToInteractionCentreLayoutWithMetadata(std::vector<SphereData> sphereData)
+PolysphereTraits::PolysphereGeometry::sphereDataToInteractionCentreLayoutWithMetadata(
+    std::vector<SphereData> sphereData)
 {
     Expects(!sphereData.empty());
+
     std::vector<Vector<3>> centres;
-    std::vector<std::size_t> centreIdxTypeMap;
+    std::vector<std::size_t> centreIdxTypeIdxMap;
     std::vector<InteractionCentreTypeMetadata> centreTypeMetadata;
     centres.reserve(sphereData.size());
-    centreIdxTypeMap.reserve(sphereData.size());
+    centreIdxTypeIdxMap.reserve(sphereData.size());
     centreTypeMetadata.reserve(sphereData.size());
+
     for (std::size_t i{}; i < sphereData.size(); i++) {
         centres.push_back(sphereData[i].position);
-        centreIdxTypeMap.push_back(i);
+        centreIdxTypeIdxMap.push_back(i);
         centreTypeMetadata.emplace_back(sphereData[i].radius);
     }
-    return {InteractionCentreLayout{std::move(centres), std::move(centreIdxTypeMap)}, std::move(centreTypeMetadata)};
+    return {InteractionCentreLayout{std::move(centres), std::move(centreIdxTypeIdxMap)}, std::move(centreTypeMetadata)};
 }
 
 void PolysphereTraits::PolysphereGeometry::normalizeMassCentre() {
@@ -189,7 +191,7 @@ void PolysphereTraits::PolysphereGeometry::normalizeMassCentre() {
     std::transform(this->interactionCentreLayout.getCentres().begin(), this->interactionCentreLayout.getCentres().end(),
                    std::back_inserter(shiftedCentres),
                    [massCentre](const Vector<3> &centre) { return centre - massCentre; });
-    this->interactionCentreLayout = {std::move(shiftedCentres), this->interactionCentreLayout.getCentreIdxTypeMap()};
+    this->interactionCentreLayout = {std::move(shiftedCentres), this->interactionCentreLayout.getCentreIdxTypeIdxMap()};
     this->geometricOrigin -= massCentre;
     this->moveNamedPoints(-massCentre);
 }
@@ -198,14 +200,14 @@ PolysphereTraits::PolysphereGeometry::PolysphereGeometry(std::vector<SphereData>
                                                          OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin,
                                                          std::optional<double> volume,
                                                          const ShapeGeometry::NamedPoints &customNamedPoints)
-        : PolysphereGeometry(PolysphereGeometry::sphereDataToInteractionCentreLayoutWithMetadata(std::move(sphereData)), primaryAxis,
-                             secondaryAxis, geometricOrigin, volume, customNamedPoints)
+        : PolysphereGeometry(PolysphereGeometry::sphereDataToInteractionCentreLayoutWithMetadata(std::move(sphereData)),
+                             primaryAxis, secondaryAxis, geometricOrigin, volume, customNamedPoints)
 { }
 
-PolysphereTraits::PolysphereGeometry::PolysphereGeometry(
-        InteractionCentreLayoutWithMetadata interactionCentreLayoutWithMetadata, OptionalAxis primaryAxis,
-        OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin, std::optional<double> volume,
-        const ShapeGeometry::NamedPoints &customNamedPoints)
+PolysphereTraits::PolysphereGeometry
+    ::PolysphereGeometry(InteractionCentreLayoutWithMetadata interactionCentreLayoutWithMetadata,
+                         OptionalAxis primaryAxis, OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin,
+                         std::optional<double> volume, const ShapeGeometry::NamedPoints &customNamedPoints)
         : interactionCentreLayout{interactionCentreLayoutWithMetadata.getInteractionCentreLayout()},
           displayRadiiByType(interactionCentreLayoutWithMetadata.getCentreTypeMetadata().size()),
           primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}, geometricOrigin{geometricOrigin}
@@ -219,11 +221,11 @@ PolysphereTraits::PolysphereGeometry::PolysphereGeometry(
         this->secondaryAxis = this->secondaryAxis->normalized();
 
     const auto &centres = this->interactionCentreLayout.getCentres();
-    const auto &centreIdxTypeMap = this->interactionCentreLayout.getCentreIdxTypeMap();
+    const auto &centreIdxTypeIdxMap = this->interactionCentreLayout.getCentreIdxTypeIdxMap();
     const auto &centreTypeMetadata = interactionCentreLayoutWithMetadata.getCentreTypeMetadata();
     this->sphereData.reserve(centres.size());
     for (std::size_t i{}; i < centres.size(); i++) {
-        double radius = centreTypeMetadata[centreIdxTypeMap[i]].radius;
+        double radius = centreTypeMetadata[centreIdxTypeIdxMap[i]].radius;
         this->sphereData.emplace_back(centres[i], radius);
         this->registerNamedPoint("s" + std::to_string(i), centres[i]);
     }

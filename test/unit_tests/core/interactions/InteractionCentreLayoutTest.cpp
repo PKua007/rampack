@@ -13,7 +13,7 @@ TEST_CASE("InteractionCentreLayout: construction") {
             InteractionCentreLayout layout;
 
             CHECK(layout.getCentres().empty());
-            CHECK(layout.getCentreIdxTypeMap() == std::vector<std::size_t>{0});
+            CHECK(layout.getCentreIdxTypeIdxMap() == std::vector<std::size_t>{0});
             CHECK(layout.numCentres() == 0);
             CHECK(layout.numCentreTypes() == 1);
         }
@@ -22,7 +22,7 @@ TEST_CASE("InteractionCentreLayout: construction") {
             InteractionCentreLayout layout({}, {0});
 
             CHECK(layout.getCentres().empty());
-            CHECK(layout.getCentreIdxTypeMap() == std::vector<std::size_t>{0});
+            CHECK(layout.getCentreIdxTypeIdxMap() == std::vector<std::size_t>{0});
             CHECK(layout.numCentres() == 0);
             CHECK(layout.numCentreTypes() == 1);
         }
@@ -31,7 +31,7 @@ TEST_CASE("InteractionCentreLayout: construction") {
             InteractionCentreLayout layout({{0, 0, 0}, {1, 0, 0}}, {2, 0});
 
             CHECK(layout.getCentres() == std::vector<Vector<3>>{{0, 0, 0}, {1, 0, 0}});
-            CHECK(layout.getCentreIdxTypeMap() == std::vector<std::size_t>{2, 0});
+            CHECK(layout.getCentreIdxTypeIdxMap() == std::vector<std::size_t>{2, 0});
             CHECK(layout.numCentres() == 2);
             CHECK(layout.numCentreTypes() == 3);
         }
