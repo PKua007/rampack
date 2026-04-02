@@ -6,6 +6,28 @@
 #include "utils/Exceptions.h"
 #include "geometry/VolumeCalculator.h"
 
+namespace {
+    PolysphereTraits::InteractionCentreLayoutWithMetadata
+    makeDistinctRadiusLayout(const std::vector<PolysphereTraits::SphereData> &sphereData)
+    {
+        std::vector<Vector<3>> centres;
+        std::vector<std::size_t> centreIdxTypeIdxMap;
+        std::vector<PolysphereTraits::InteractionCentreTypeMetadata> centreTypeMetadata;
+        centres.reserve(sphereData.size());
+        centreIdxTypeIdxMap.reserve(sphereData.size());
+        centreTypeMetadata.reserve(sphereData.size());
+
+        for (std::size_t i{}; i < sphereData.size(); i++) {
+            centres.push_back(sphereData[i].position);
+            centreIdxTypeIdxMap.push_back(i);
+            centreTypeMetadata.emplace_back(sphereData[i].radius);
+        }
+
+        return {InteractionCentreLayout{std::move(centres), std::move(centreIdxTypeIdxMap)},
+                std::move(centreTypeMetadata)};
+    }
+}
+
 
 namespace legacy {
     PolysphereWedgeTraits::PolysphereGeometry
@@ -29,7 +51,8 @@ namespace legacy {
             currentRadius += radiusDelta;
         }
 
-        PolysphereGeometry geometry(std::move(data), {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
+        auto interactionCentreLayout = makeDistinctRadiusLayout(data);
+        PolysphereGeometry geometry(std::move(interactionCentreLayout), {1, 0, 0}, {0, 1, 0}, {0, 0, 0});
         geometry.normalizeMassCentre();
         double end1 = geometry.getSphereData().front().position[0];
         double end2 = geometry.getSphereData().back().position[0];
@@ -75,7 +98,8 @@ PolysphereWedgeTraits::generateGeometry(std::size_t sphereNum, double bottomSphe
     }
 
     double volume = PolysphereWedgeTraits::calculateVolume(data, spherePenetration);
-    PolysphereGeometry geometry(data, {0, 0, 1}, std::nullopt, {0, 0, 0}, volume);
+    auto interactionCentreLayout = makeDistinctRadiusLayout(data);
+    PolysphereGeometry geometry(std::move(interactionCentreLayout), {0, 0, 1}, std::nullopt, {0, 0, 0}, volume);
     geometry.addCustomNamedPoints({{"beg", data.front().position}, {"end", data.back().position}});
     if (spherePenetration == 0)
         geometry.addCustomNamedPoints({{"cm", geometry.calculateMassCentre()}});

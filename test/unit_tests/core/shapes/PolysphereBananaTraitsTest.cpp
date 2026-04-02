@@ -88,3 +88,11 @@ TEST_CASE("PolysphereBananaTraits: volume") {
         }
     }
 }
+
+TEST_CASE("PolysphereBananaTraits: interaction centre layout") {
+    PolysphereBananaTraits traits(2, 2*M_PI/3, 3, 1);
+    const auto &geometry = dynamic_cast<const PolysphereTraits::PolysphereGeometry &>(traits.getGeometry());
+
+    CHECK(geometry.getInteractionCentreLayout().getCentreIdxTypeIdxMap() == std::vector<std::size_t>{0, 0, 0});
+    CHECK(geometry.getDisplayRadiiByType() == std::vector<double>{1});
+}

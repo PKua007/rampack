@@ -6,6 +6,25 @@
 #include "utils/Exceptions.h"
 #include "geometry/VolumeCalculator.h"
 
+namespace {
+    PolysphereTraits::InteractionCentreLayoutWithMetadata
+    makeUniformRadiusLayout(const std::vector<PolysphereTraits::SphereData> &sphereData, double radius)
+    {
+        std::vector<Vector<3>> centres;
+        std::vector<std::size_t> centreIdxTypeIdxMap;
+        centres.reserve(sphereData.size());
+        centreIdxTypeIdxMap.assign(sphereData.size(), 0);
+
+        for (const auto &dataElem : sphereData)
+            centres.push_back(dataElem.position);
+
+        return {
+            InteractionCentreLayout{std::move(centres), std::move(centreIdxTypeIdxMap)},
+            {PolysphereTraits::InteractionCentreTypeMetadata{radius}}
+        };
+    }
+}
+
 
 namespace legacy {
     PolysphereBananaTraits::PolysphereGeometry
@@ -30,7 +49,8 @@ namespace legacy {
 
         // Calculate volume disregarding sphere overlaps - behaviour consistent with simulations pre version 0.2
         double volume = static_cast<double>(sphereNum) * 4./3*M_PI * std::pow(sphereRadius, 3);
-        PolysphereGeometry geometry(std::move(sphereData), {0, 1, 0}, {-1, 0, 0}, {0, 0, 0}, volume);
+        auto interactionCentreLayout = makeUniformRadiusLayout(sphereData, sphereRadius);
+        PolysphereGeometry geometry(std::move(interactionCentreLayout), {0, 1, 0}, {-1, 0, 0}, {0, 0, 0}, volume);
         geometry.normalizeMassCentre();
         geometry.setGeometricOrigin({0, 0, 0});
         const auto &newSphereData = geometry.getSphereData();
@@ -75,7 +95,8 @@ PolysphereBananaTraits::generateGeometry(double arcRadius, double arcAngle, std:
         sphereData.emplace_back(pos, sphereRadius);
 
     double volume = PolysphereBananaTraits::calculateVolume(sphereData, arcAngle);
-    PolysphereGeometry geometry(std::move(sphereData), {0, 0, 1}, {-1, 0, 0}, {0, 0, 0}, volume);
+    auto interactionCentreLayout = makeUniformRadiusLayout(sphereData, sphereRadius);
+    PolysphereGeometry geometry(std::move(interactionCentreLayout), {0, 0, 1}, {-1, 0, 0}, {0, 0, 0}, volume);
     geometry.addCustomNamedPoints({{"beg", spherePos.front()}, {"end", spherePos.back()}});
     PolysphereBananaTraits::addMassCentre(geometry);
     return geometry;

@@ -55,3 +55,21 @@ TEST_CASE("PolysphereWedgeTraits: mass centre") {
         CHECK_FALSE(traits.getGeometry().hasNamedPoint("cm"));
     }
 }
+
+TEST_CASE("PolysphereWedgeTraits: interaction centre layout") {
+    SECTION("different radii") {
+        PolysphereWedgeTraits traits(3, 4, 2, 1);
+        const auto &geometry = dynamic_cast<const PolysphereTraits::PolysphereGeometry &>(traits.getGeometry());
+
+        CHECK(geometry.getInteractionCentreLayout().getCentreIdxTypeIdxMap() == std::vector<std::size_t>{0, 1, 2});
+        CHECK(geometry.getDisplayRadiiByType() == std::vector<double>{4, 3, 2});
+    }
+
+    SECTION("equal radii remain distinguishable") {
+        PolysphereWedgeTraits traits(3, 2, 2, 0);
+        const auto &geometry = dynamic_cast<const PolysphereTraits::PolysphereGeometry &>(traits.getGeometry());
+
+        CHECK(geometry.getInteractionCentreLayout().getCentreIdxTypeIdxMap() == std::vector<std::size_t>{0, 1, 2});
+        CHECK(geometry.getDisplayRadiiByType() == std::vector<double>{2, 2, 2});
+    }
+}

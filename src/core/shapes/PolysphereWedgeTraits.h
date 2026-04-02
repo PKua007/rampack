@@ -15,8 +15,10 @@ namespace legacy {
      * @details The molecule is spanned on x axis and centered in its mass centre. Primary axis is naturally x axis
      * (positive, towards the largest sphere). Secondary axis is y axis - formally it is degenerate in yz plane, but was
      * arbitrarily chosen to enable flip moves. Geometric centre lies in the centre of a bounding box (it coincides with
-     * the mass centre only if all spheres have the same radius). The class specifies custom named points "ss" and "sl"
-     * for first (small) and last (large) spheres, together with once inherited from PolysphereTraits.
+     * the mass centre only if all spheres have the same radius). Soft central interactions use a typed
+     * interaction-centre layout with a distinct centre type assigned to every sphere, even when some radii are equal.
+     * The class specifies custom named points "ss" and "sl" for first (small) and last (large) spheres, together with
+     * once inherited from PolysphereTraits.
      * @sa ::PolysphereWedgeTraits
      */
     class PolysphereWedgeTraits : public PolysphereTraits {
@@ -55,8 +57,9 @@ namespace legacy {
  * @details The molecule is spanned on z axis and centered in the center of the bounding box in order to minimize the
  * circumsphere radius. Primary axis is naturally positive z axis. Secondary axis is x axis - formally it is degenerate
  * in xz plane, but was arbitrarily chosen to enable flip moves. The class specifies custom named points "beg" and "end"
- * for bottom and top spheres, together with once inherited from PolysphereTraits. Mass centre "cm" named point is
- * defined only if @a spherePenetration is zero.
+ * for bottom and top spheres, together with once inherited from PolysphereTraits. Soft central interactions use a typed
+ * interaction-centre layout with a distinct centre type assigned to every sphere, even in the degenerate case when all
+ * radii are equal. Mass centre "cm" named point is defined only if @a spherePenetration is zero.
  * @sa legacy::PolysphereWedgeTraits
  */
 class PolysphereWedgeTraits : public PolysphereTraits {

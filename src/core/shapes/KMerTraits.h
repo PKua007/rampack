@@ -11,8 +11,9 @@
  * @brief A class representing linear k-polymer.
  * @details The polymer lies on Z axis (which consequently is its primary axis). Secondary axis is X axis - formally
  * it is degenerate in XY plane, but was arbitrarily chosen to enable flip moves. Geometric centre coincides with
- * mass centre (endpoint spheres have opposite z coordinates). The class specifies custom named points "beg" and "end"
- * for first and last spheres, together with the ones inherited from PolysphereTraits.
+ * mass centre (endpoint spheres have opposite z coordinates). Soft central interactions use a typed interaction-centre
+ * layout with a single centre type shared by all spheres. The class specifies custom named points "beg" and "end" for
+ * first and last spheres, together with the ones inherited from PolysphereTraits.
  */
 class KMerTraits : public PolysphereTraits {
 private:
