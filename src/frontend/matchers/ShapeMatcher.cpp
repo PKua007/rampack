@@ -4,6 +4,12 @@
 
 #include "ShapeMatcher.h"
 
+#include <map>
+#include <optional>
+#include <set>
+#include <string>
+#include <vector>
+
 #include "core/shapes/SphereTraits.h"
 #include "core/shapes/KMerTraits.h"
 #include "core/shapes/PolysphereBananaTraits.h"
@@ -14,23 +20,64 @@
 #include "core/shapes/SmoothWedgeTraits.h"
 #include "core/shapes/GenericXenoCollideTraits.h"
 
-#include "core/interactions/CentralInteraction.h"
-#include "core/interactions/LennardJonesInteraction.h"
-#include "core/interactions/RepulsiveLennardJonesInteraction.h"
-#include "core/interactions/SquareInverseCoreInteraction.h"
-
 #include "geometry/xenocollide/XCBodyBuilder.h"
 #include "core/shapes/PolyhedralWedgeTraits.h"
 
 #include "GenericConvexGeometryMatcher.h"
+#include "SoftInteractionMatcher.h"
+#include "utils/Utils.h"
 
 
 using namespace pyon::matcher;
 
 namespace {
-    MatcherDataclass create_lj_matcher();
-    MatcherDataclass create_wca_matcher();
-    MatcherDataclass create_square_inverse_core_matcher();
+    struct ParsedPolysphereEntry {
+        std::vector<Vector<3>> positions;
+        double radius{};
+        std::optional<std::string> typeLabel;
+    };
+
+    struct PolysphereCentreData {
+        Vector<3> position;
+        double radius{};
+        std::string typeLabel;
+    };
+
+    struct InteractionCentreTypeCoverage {
+        std::vector<std::string> typeLabels;
+
+        [[nodiscard]] std::function<bool(const DataclassData &)> generateFilter() const;
+        [[nodiscard]] std::string generateDescription() const;
+    };
+
+    class PolysphereLayoutBuilder {
+        private:
+            std::vector<Vector<3>> centrePositions;
+            std::vector<std::size_t> centreIdxTypeIdxMap;
+            std::vector<PolysphereTraits::InteractionCentreTypeMetadata> typeMetadata;
+            std::vector<std::string> typeLabels;
+            std::map<std::string, std::size_t> typeLabelToIdx;
+
+            std::size_t fetch_or_create_type_idx(const PolysphereCentreData &centre);
+
+        public:
+            void consume(const PolysphereCentreData &centre);
+            [[nodiscard]] PolysphereTraits::InteractionCentreLayoutWithMetadata releaseLayoutWithMetadata();
+            [[nodiscard]] std::vector<std::string> releaseTypeLabels();
+    };
+
+    template <typename Traits, typename... Args>
+    std::shared_ptr<ShapeTraits>
+    create_traits_with_central_interaction(const std::shared_ptr<SoftInteractionFactory> &interactionFactory,
+                                           const std::vector<std::string>& typeLabels, Args&&... args);
+
+    bool validates_interaction_factory(const std::shared_ptr<SoftInteractionFactory> &interactionFactory,
+                                      const std::vector<std::string> &typeLabels);
+    bool validate_axes(const DataclassData &dataclass);
+    std::vector<PolysphereCentreData> flatten_polysphere_entries(const std::vector<ParsedPolysphereEntry> &entries);
+    bool polysphere_centres_have_consistent_type_radii(const std::vector<PolysphereCentreData> &centres);
+    std::vector<std::string> extract_polysphere_type_labels(const std::vector<PolysphereCentreData> &centres);
+    std::vector<std::string> build_polysphere_wedge_type_labels(std::size_t sphereN);
 
     MatcherDataclass create_sphere_matcher();
     MatcherDataclass create_kmer_matcher();
@@ -45,12 +92,10 @@ namespace {
     MatcherDataclass create_generic_convex_matcher();
     MatcherDataclass create_polyhedral_wedge_matcher();
 
-    bool validate_axes(const DataclassData &dataclass);
 
+    const InteractionCentreTypeCoverage singleCentreTypeCoverage{{"s"}};
 
-    auto hardInteraction = MatcherDataclass("hard")
-        .mapTo([](const auto &) -> std::shared_ptr<CentralInteractionBase> { return nullptr; });
-    auto sphereInteraction = hardInteraction;
+    auto centralInteraction = SoftInteractionMatcher::create();
 
     auto vector = MatcherArray(MatcherFloat{}.mapTo<double>(), 3).mapToVector<3>();
 
@@ -73,50 +118,135 @@ namespace {
         });
 
 
-    MatcherDataclass create_lj_matcher() {
-        return MatcherDataclass("lj")
-            .arguments({{"epsilon", MatcherFloat{}.positive()},
-                        {"sigma", MatcherFloat{}.positive()}})
-            .mapTo([](const DataclassData &lj) -> std::shared_ptr<CentralInteractionBase> {
-                return std::make_shared<LennardJonesInteraction>(
-                    lj["epsilon"].as<double>(), lj["sigma"].as<double>()
-                );
-            });
+    std::function<bool(const DataclassData &)> InteractionCentreTypeCoverage::generateFilter() const {
+        return [typeLabels = this->typeLabels](const DataclassData &shape) {
+            return validates_interaction_factory(
+                shape["interaction"].as<std::shared_ptr<SoftInteractionFactory>>(), typeLabels
+            );
+        };
     }
 
-    MatcherDataclass create_wca_matcher() {
-        return MatcherDataclass("wca")
-            .arguments({{"epsilon", MatcherFloat{}.positive()},
-                        {"sigma", MatcherFloat{}.positive()}})
-            .mapTo([](const DataclassData &wca) -> std::shared_ptr<CentralInteractionBase> {
-                return std::make_shared<RepulsiveLennardJonesInteraction>(
-                    wca["epsilon"].as<double>(), wca["sigma"].as<double>()
-                );
-            });
+    std::string InteractionCentreTypeCoverage::generateDescription() const {
+        auto quotedTypeLabels = this->typeLabels;
+        for (auto &typeLabel : quotedTypeLabels)
+            typeLabel = "\"" + typeLabel + "\"";
+        return "interaction parameters must cover the implicit type labels: " + implode(quotedTypeLabels);
     }
 
-    MatcherDataclass create_square_inverse_core_matcher() {
-        return MatcherDataclass("square_inverse_core")
-            .arguments({{"epsilon", MatcherFloat{}.positive()},
-                        {"sigma", MatcherFloat{}.positive()}})
-            .mapTo([](const DataclassData &square_inverse_core) -> std::shared_ptr<CentralInteractionBase> {
-                return std::make_shared<SquareInverseCoreInteraction>(
-                    square_inverse_core["epsilon"].as<double>(), square_inverse_core["sigma"].as<double>()
-                );
-            });
+    bool validates_interaction_factory(const std::shared_ptr<SoftInteractionFactory> &interactionFactory,
+                                       const std::vector<std::string> &typeLabels)
+    {
+        const bool isHardInteraction = (interactionFactory == nullptr);
+        if (isHardInteraction)
+            return true;
+        return interactionFactory->supportsTypes(typeLabels);
+    }
+
+    template <typename Traits, typename... Args>
+    std::shared_ptr<ShapeTraits>
+    create_traits_with_central_interaction(const std::shared_ptr<SoftInteractionFactory> &interactionFactory,
+                                           const std::vector<std::string>& typeLabels, Args&&... args)
+    {
+        const bool isHardInteraction = (interactionFactory == nullptr);
+        if (isHardInteraction)
+            return std::make_shared<Traits>(std::forward<Args>(args)...);
+
+        return std::make_shared<Traits>(std::forward<Args>(args)..., interactionFactory->createForTypes(typeLabels));
+    }
+
+    std::vector<PolysphereCentreData> flatten_polysphere_entries(const std::vector<ParsedPolysphereEntry> &entries) {
+        std::vector<PolysphereCentreData> centres;
+        for (std::size_t entryIdx{}; entryIdx < entries.size(); entryIdx++) {
+            const auto &entry = entries[entryIdx];
+            const std::string typeLabel = entry.typeLabel.value_or(std::to_string(entryIdx));
+            for (const auto &position : entry.positions)
+                centres.push_back({position, entry.radius, typeLabel});
+        }
+
+        return centres;
+    }
+
+    bool polysphere_centres_have_consistent_type_radii(const std::vector<PolysphereCentreData> &centres) {
+        std::map<std::string, double> radiusByType;
+        for (const auto &centre : centres) {
+            auto [it, typeNotSeen] = radiusByType.emplace(centre.typeLabel, centre.radius);
+            if (typeNotSeen)
+                continue;
+
+            const double previousRadius = it->second;
+            const double newRadius = centre.radius;
+            if (std::abs(newRadius - previousRadius) > 1e-10)
+                return false;
+        }
+
+        return true;
+    }
+
+    std::vector<std::string> extract_polysphere_type_labels(const std::vector<PolysphereCentreData> &centres) {
+        std::vector<std::string> typeLabels;
+        std::set<std::string> seenLabels;
+        for (const auto &centre : centres) {
+            [[maybe_unused]] auto [it, inserted] = seenLabels.emplace(centre.typeLabel);
+            if (inserted)
+                typeLabels.push_back(centre.typeLabel);
+        }
+
+        return typeLabels;
+    }
+
+    std::size_t PolysphereLayoutBuilder::fetch_or_create_type_idx(const PolysphereCentreData &centre) {
+        auto typeIt = this->typeLabelToIdx.find(centre.typeLabel);
+        if (typeIt != this->typeLabelToIdx.end()) {
+            const std::size_t typeIdx = typeIt->second;
+            Assert(std::abs(this->typeMetadata[typeIdx].radius - centre.radius) <= 1e-10);
+            return typeIdx;
+        }
+
+        const std::size_t typeIdx = this->typeMetadata.size();
+        this->typeLabelToIdx.emplace(centre.typeLabel, typeIdx);
+        this->typeLabels.push_back(centre.typeLabel);
+        this->typeMetadata.emplace_back(centre.radius);
+        return typeIdx;
+    }
+
+    void PolysphereLayoutBuilder::consume(const PolysphereCentreData &centre) {
+        const std::size_t typeIdx = this->fetch_or_create_type_idx(centre);
+        this->centrePositions.push_back(centre.position);
+        this->centreIdxTypeIdxMap.push_back(typeIdx);
+    }
+
+    PolysphereTraits::InteractionCentreLayoutWithMetadata PolysphereLayoutBuilder::releaseLayoutWithMetadata() {
+        return {
+            InteractionCentreLayout(std::move(this->centrePositions), std::move(this->centreIdxTypeIdxMap)),
+            std::move(this->typeMetadata)
+        };
+    }
+
+    std::vector<std::string> PolysphereLayoutBuilder::releaseTypeLabels() {
+        return std::move(this->typeLabels);
+    }
+
+    std::vector<std::string> build_polysphere_wedge_type_labels(std::size_t sphereN) {
+        std::vector<std::string> typeLabels;
+        typeLabels.reserve(sphereN);
+        for (std::size_t i{}; i < sphereN; i++)
+            typeLabels.push_back("s" + std::to_string(i));
+
+        return typeLabels;
     }
 
     MatcherDataclass create_sphere_matcher() {
         return MatcherDataclass("sphere")
             .arguments({{"r", MatcherFloat{}.positive()},
-                        {"interaction", sphereInteraction, "hard"}})
-            .mapTo([](const DataclassData &sphere) -> std::shared_ptr<ShapeTraits> {
+                        {"interaction", centralInteraction, "hard"}})
+            .filter(singleCentreTypeCoverage.generateFilter())
+            .describe(singleCentreTypeCoverage.generateDescription())
+            .mapTo([typeLabels = singleCentreTypeCoverage.typeLabels](const DataclassData &sphere) -> std::shared_ptr<ShapeTraits> {
                 auto r = sphere["r"].as<double>();
-                auto interaction = sphere["interaction"].as<std::shared_ptr<CentralInteractionBase>>();
-                if (interaction == nullptr)
-                    return std::make_shared<SphereTraits>(r);
-                else
-                    return std::make_shared<SphereTraits>(r, interaction);
+                auto interactionFactory = sphere["interaction"].as<std::shared_ptr<SoftInteractionFactory>>();
+                return create_traits_with_central_interaction<SphereTraits>(
+                    interactionFactory, typeLabels, r
+                );
             });
     }
 
@@ -125,16 +255,17 @@ namespace {
             .arguments({{"k", MatcherInt{}.greaterEquals(2).mapTo<std::size_t>()},
                         {"r", MatcherFloat{}.positive()},
                         {"distance", MatcherFloat{}.positive()},
-                        {"interaction", sphereInteraction, "hard"}})
-            .mapTo([](const DataclassData &kmer) -> std::shared_ptr<ShapeTraits> {
+                        {"interaction", centralInteraction, "hard"}})
+            .filter(singleCentreTypeCoverage.generateFilter())
+            .describe(singleCentreTypeCoverage.generateDescription())
+            .mapTo([typeLabels = singleCentreTypeCoverage.typeLabels](const DataclassData &kmer) -> std::shared_ptr<ShapeTraits> {
                 auto k = kmer["k"].as<std::size_t>();
                 auto r = kmer["r"].as<double>();
                 auto distance = kmer["distance"].as<double>();
-                auto interaction = kmer["interaction"].as<std::shared_ptr<CentralInteractionBase>>();
-                if (interaction == nullptr)
-                    return std::make_shared<KMerTraits>(k, r, distance);
-                else
-                    return std::make_shared<KMerTraits>(k, r, distance, interaction);
+                auto interactionFactory = kmer["interaction"].as<std::shared_ptr<SoftInteractionFactory>>();
+                return create_traits_with_central_interaction<KMerTraits>(
+                    interactionFactory, typeLabels, k, r, distance
+                );
             });
     }
 
@@ -144,27 +275,30 @@ namespace {
                         {"sphere_r", MatcherFloat{}.positive()},
                         {"arc_r", MatcherFloat{}.positive()},
                         {"arc_angle", MatcherFloat{}.greaterEquals(0).less(2*M_PI)},
-                        {"interaction", sphereInteraction, "hard"}})
-            .mapTo([](const DataclassData &banana) -> std::shared_ptr<ShapeTraits> {
+                        {"interaction", centralInteraction, "hard"}})
+            .filter(singleCentreTypeCoverage.generateFilter())
+            .describe(singleCentreTypeCoverage.generateDescription())
+            .mapTo([typeLabels = singleCentreTypeCoverage.typeLabels](const DataclassData &banana) -> std::shared_ptr<ShapeTraits> {
                 auto sphereN = banana["sphere_n"].as<std::size_t>();
                 auto sphereR = banana["sphere_r"].as<double>();
                 auto arcR = banana["arc_r"].as<double>();
                 auto argAngle = banana["arc_angle"].as<double>();
-                auto interaction = banana["interaction"].as<std::shared_ptr<CentralInteractionBase>>();
-                if (interaction == nullptr)
-                    return std::make_shared<PolysphereBananaTraits>(arcR, argAngle, sphereN, sphereR);
-                else
-                    return std::make_shared<PolysphereBananaTraits>(arcR, argAngle, sphereN, sphereR, interaction);
+                auto interactionFactory = banana["interaction"].as<std::shared_ptr<SoftInteractionFactory>>();
+                return create_traits_with_central_interaction<PolysphereBananaTraits>(
+                    interactionFactory, typeLabels, arcR, argAngle, sphereN, sphereR
+                );
             });
     }
 
     MatcherDataclass create_polysphere_lollipop_matcher() {
+        const InteractionCentreTypeCoverage lollipopCentreTypeCoverage{{"ss", "st"}};
         return MatcherDataclass("polysphere_lollipop")
             .arguments({{"sphere_n", MatcherInt{}.greaterEquals(2).mapTo<std::size_t>()},
                         {"stick_r", MatcherFloat{}.positive()},
                         {"tip_r", MatcherFloat{}.positive()},
                         {"stick_penetration", MatcherFloat{}.nonNegative(), "0"},
-                        {"tip_penetration", MatcherFloat{}.nonNegative(), "0"}})
+                        {"tip_penetration", MatcherFloat{}.nonNegative(), "0"},
+                        {"interaction", centralInteraction, "hard"}})
             .filter([](const DataclassData &lollipop) {
                 return lollipop["stick_penetration"].as<double>() < 2 * lollipop["stick_r"].as<double>();
             })
@@ -174,14 +308,17 @@ namespace {
                 return lollipop["tip_penetration"].as<double>() < 2 * smallerR;
             })
             .describe("tip_penetration < 2 * min(stick_r, tip_r)")
-            .mapTo([](const DataclassData &lollipop) -> std::shared_ptr<ShapeTraits> {
+            .filter(lollipopCentreTypeCoverage.generateFilter())
+            .describe(lollipopCentreTypeCoverage.generateDescription())
+            .mapTo([typeLabels = lollipopCentreTypeCoverage.typeLabels](const DataclassData &lollipop) -> std::shared_ptr<ShapeTraits> {
                 auto sphereN = lollipop["sphere_n"].as<std::size_t>();
                 auto stickR = lollipop["stick_r"].as<double>();
                 auto tipR = lollipop["tip_r"].as<double>();
                 auto stickPenetration = lollipop["stick_penetration"].as<double>();
                 auto tipPenetration = lollipop["tip_penetration"].as<double>();
-                return std::make_shared<PolysphereLollipopTraits>(
-                    sphereN, stickR, tipR, stickPenetration, tipPenetration
+                auto interactionFactory = lollipop["interaction"].as<std::shared_ptr<SoftInteractionFactory>>();
+                return create_traits_with_central_interaction<PolysphereLollipopTraits>(
+                    interactionFactory, typeLabels, sphereN, stickR, tipR, stickPenetration, tipPenetration
                 );
             });
     }
@@ -191,7 +328,16 @@ namespace {
             .arguments({{"sphere_n", MatcherInt{}.greaterEquals(2).mapTo<std::size_t>()},
                         {"bottom_r", MatcherFloat{}.positive()},
                         {"top_r", MatcherFloat{}.positive()},
-                        {"penetration", MatcherFloat{}.nonNegative(), "0"}})
+                        {"penetration", MatcherFloat{}.nonNegative(), "0"},
+                        {"interaction", centralInteraction, "hard"}})
+            .filter([](const DataclassData &wedge) {
+                auto sphereN = wedge["sphere_n"].as<std::size_t>();
+                return validates_interaction_factory(
+                    wedge["interaction"].as<std::shared_ptr<SoftInteractionFactory>>(),
+                    build_polysphere_wedge_type_labels(sphereN)
+                );
+            })
+            .describe(R"(interaction parameters must cover the implicit type labels: "s0", "s1", ..., "s[n-1]")")
             .filter([](const DataclassData &wedge) {
                 double smallerR = std::min(wedge["bottom_r"].as<double>(), wedge["top_r"].as<double>());
                 return wedge["penetration"].as<double>() < 2 * smallerR;
@@ -202,7 +348,11 @@ namespace {
                 auto bottomR = wedge["bottom_r"].as<double>();
                 auto topR = wedge["top_r"].as<double>();
                 auto penetration = wedge["penetration"].as<double>();
-                return std::make_shared<PolysphereWedgeTraits>(sphereN, bottomR, topR, penetration);
+                auto interactionFactory = wedge["interaction"].as<std::shared_ptr<SoftInteractionFactory>>();
+                auto wedgeTypeLabels = build_polysphere_wedge_type_labels(sphereN);
+                return create_traits_with_central_interaction<PolysphereWedgeTraits>(
+                    interactionFactory, wedgeTypeLabels, sphereN, bottomR, topR, penetration
+                );
             });
     }
 
@@ -283,43 +433,58 @@ namespace {
             .mapToStdVector<Vector<3>>();
         auto spherePos = singleSpherePos | multiSpherePos;
 
+        auto centreTypeImplicit = MatcherNone{}.mapTo<std::optional<std::string>>();
+        auto centreTypeExplicit = MatcherString{}.nonEmpty().mapTo<std::optional<std::string>>();
         auto sphere = MatcherDataclass("sphere")
             .arguments({{"pos", spherePos},
-                        {"r", MatcherFloat{}.positive()}})
-            .mapTo([](const DataclassData &sphere) {
-                auto posVector = sphere["pos"].as<std::vector<Vector<3>>>();
-                auto r = sphere["r"].as<double>();
-                std::vector<PolysphereTraits::SphereData> sphereData;
-                sphereData.reserve(posVector.size());
-                auto sphereDataCreator = [r](const Vector<3> &pos) {
-                    return PolysphereTraits::SphereData(pos, r);
-                };
-                std::transform(posVector.begin(), posVector.end(), std::back_inserter(sphereData), sphereDataCreator);
-                return sphereData;
+                        {"r", MatcherFloat{}.positive()},
+                        {"type", centreTypeImplicit | centreTypeExplicit, "None"}})
+            .mapTo([](const DataclassData &sphere) -> ParsedPolysphereEntry {
+                ParsedPolysphereEntry entry;
+                entry.positions = sphere["pos"].as<std::vector<Vector<3>>>();
+                entry.radius = sphere["r"].as<double>();
+                entry.typeLabel = sphere["type"].as<std::optional<std::string>>();
+                return entry;
             });
-
+        auto singleSphere = sphere.copy()
+            .mapTo([](const DataclassData &sphere) {
+                ParsedPolysphereEntry entry;
+                entry.positions = sphere["pos"].as<std::vector<Vector<3>>>();
+                entry.radius = sphere["r"].as<double>();
+                entry.typeLabel = sphere["type"].as<std::optional<std::string>>();
+                return flatten_polysphere_entries({entry});
+            });
         auto sphereArray = MatcherArray{}.elementsMatch(sphere)
             .nonEmpty()
             .mapTo([](const ArrayData &array) {
-                std::vector<PolysphereTraits::SphereData> allSphereDatas;
-                for (const auto &sphereDatas : array.asStdVector<std::vector<PolysphereTraits::SphereData>>())
-                    for (const auto &sphereData : sphereDatas)
-                        allSphereDatas.push_back(sphereData);
-                return allSphereDatas;
+                return flatten_polysphere_entries(array.asStdVector<ParsedPolysphereEntry>());
             });
 
         return MatcherDataclass("polysphere")
-            .arguments({{"spheres", sphere | sphereArray},
+            .arguments({{"spheres", singleSphere | sphereArray},
                         {"volume", MatcherFloat{}.positive()},
                         {"geometric_center", vector, "[0, 0, 0]"},
                         {"primary_axis", axis | MatcherNone{}, "None"},
                         {"secondary_axis", axis | MatcherNone{}, "None"},
                         {"named_points", namedPoints, "{}"},
-                        {"interaction", sphereInteraction, "hard"}})
+                        {"interaction", centralInteraction, "hard"}})
+            .filter([](const DataclassData &polysphere) {
+                auto centres = polysphere["spheres"].as<std::vector<PolysphereCentreData>>();
+                return polysphere_centres_have_consistent_type_radii(centres);
+            })
+            .describe("all polysphere spheres sharing one type label must have the same radius")
+            .filter([](const DataclassData &polysphere) {
+                auto centres = polysphere["spheres"].as<std::vector<PolysphereCentreData>>();
+                return validates_interaction_factory(
+                    polysphere["interaction"].as<std::shared_ptr<SoftInteractionFactory>>(),
+                    extract_polysphere_type_labels(centres)
+                );
+            })
+            .describe("interaction parameters must cover exactly the explicit or implicit polysphere type labels")
             .filter(validate_axes)
             .describe("primary_axis and secondary_axis must be orthogonal")
             .mapTo([](const DataclassData &polysphere) -> std::shared_ptr<ShapeTraits> {
-                auto spheres = polysphere["spheres"].as<std::vector<PolysphereTraits::SphereData>>();
+                auto centres = polysphere["spheres"].as<std::vector<PolysphereCentreData>>();
                 auto volume = polysphere["volume"].as<double>();
                 auto geometricOrigin = polysphere["geometric_center"].as<Vector<3>>();
                 std::optional<Vector<3>> primaryAxis;
@@ -329,16 +494,26 @@ namespace {
                 if (!polysphere["secondary_axis"].isEmpty())
                     secondaryAxis = polysphere["secondary_axis"].as<Vector<3>>();
                 auto namedPoints = polysphere["named_points"].as<ShapeGeometry::NamedPoints>();
-                auto interaction = polysphere["interaction"].as<std::shared_ptr<CentralInteractionBase>>();
+                auto interactionFactory = polysphere["interaction"].as<std::shared_ptr<SoftInteractionFactory>>();
 
+                PolysphereLayoutBuilder layoutBuilder;
+                for (const auto &centre : centres)
+                    layoutBuilder.consume(centre);
+
+                auto layoutWithMetadata = layoutBuilder.releaseLayoutWithMetadata();
                 PolysphereTraits::PolysphereGeometry geometry(
-                    std::move(spheres), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
+                    std::move(layoutWithMetadata), primaryAxis, secondaryAxis, geometricOrigin, volume, namedPoints
                 );
 
-                if (interaction == nullptr)
+                if (interactionFactory == nullptr) {
                     return std::make_shared<PolysphereTraits>(std::move(geometry));
-                else
-                    return std::make_shared<PolysphereTraits>(std::move(geometry), interaction, true);
+                } else {
+                    constexpr bool allowUniformPairDataBroadcast = true;
+                    auto centralInteraction = interactionFactory->createForTypes(layoutBuilder.releaseTypeLabels());
+                    return std::make_shared<PolysphereTraits>(
+                        std::move(geometry), std::move(centralInteraction), allowUniformPairDataBroadcast
+                    );
+                }
             });
     }
 
