@@ -22,6 +22,7 @@
 
 using namespace pyon::matcher;
 
+// TYPES
 namespace {
     using ParameterValues = std::map<std::string, Any>;
     template <typename PairData>
@@ -100,18 +101,19 @@ namespace {
         std::string name;
         std::shared_ptr<MatcherBase> matcher;
     };
+}
 
+// FORWARD DECLARATIONS
+namespace {
     template <typename ConcreteMatcher>
-    InteractionParamSpec make_parameter_spec(std::string name, ConcreteMatcher matcher) {
-        static_assert(std::is_base_of_v<MatcherBase, ConcreteMatcher>,
-                      "ConcreteMatcher template parameter is not a matcher derived from MatcherBase");
-        return {std::move(name), std::make_shared<ConcreteMatcher>(std::move(matcher))};
-    }
+    InteractionParamSpec make_parameter_spec(std::string name, ConcreteMatcher matcher);
 
     template <typename PairData, typename Interaction>
-    std::shared_ptr<CentralInteractionBase> create_central_interaction(
-        const PairParamMap &pairParameters, const std::optional<ParameterValues> &defaultParameters,
-        const std::vector<std::string> &typeLabels, const PairDataFactory<PairData> &pairDataFactory);
+    std::shared_ptr<CentralInteractionBase>
+    create_central_interaction(const PairParamMap &pairParameters,
+                               const std::optional<ParameterValues> &defaultParameters,
+                               const std::vector<std::string> &typeLabels,
+                               const PairDataFactory<PairData> &pairDataFactory);
 
     MatcherDictionary create_param_dictionary_matcher(const std::vector<InteractionParamSpec> &parameterSpecs);
     MatcherDictionary create_type_pair_dictionary_matcher(const std::vector<InteractionParamSpec> &parameterSpecs);
@@ -126,12 +128,23 @@ namespace {
     MatcherAlternative create_lj_matcher();
     MatcherAlternative create_wca_matcher();
     MatcherAlternative create_square_inverse_core_matcher();
+}
 
+// DEFINITIONS
+namespace {
+    template <typename ConcreteMatcher>
+    InteractionParamSpec make_parameter_spec(std::string name, ConcreteMatcher matcher) {
+        static_assert(std::is_base_of_v<MatcherBase, ConcreteMatcher>,
+                      "ConcreteMatcher template parameter is not a matcher derived from MatcherBase");
+        return {std::move(name), std::make_shared<ConcreteMatcher>(std::move(matcher))};
+    }
 
     template <typename PairData, typename ConcreteInteraction>
-    std::shared_ptr<CentralInteractionBase> create_central_interaction(
-        const PairParamMap &pairParameters, const std::optional<ParameterValues> &defaultParameters,
-        const std::vector<std::string> &typeLabels, const PairDataFactory<PairData> &pairDataFactory)
+    std::shared_ptr<CentralInteractionBase>
+    create_central_interaction(const PairParamMap &pairParameters,
+                               const std::optional<ParameterValues> &defaultParameters,
+                               const std::vector<std::string> &typeLabels,
+                               const PairDataFactory<PairData> &pairDataFactory)
     {
         std::map<std::string, std::size_t> typeNameToIdx;
         for (std::size_t i{}; i < typeLabels.size(); i++) {
