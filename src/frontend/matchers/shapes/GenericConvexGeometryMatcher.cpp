@@ -7,6 +7,7 @@
 
 using namespace pyon::matcher;
 
+// FORWARD DECLARATIONS
 namespace {
     MatcherAlternative create_script(const RecursiveMatcher &shapeRecursion);
     MatcherDataclass create_point();
@@ -23,12 +24,16 @@ namespace {
     MatcherDataclass create_diff(const RecursiveMatcher &shapeRecursion);
     MatcherDataclass create_wrap(const RecursiveMatcher &shapeRecursion);
     bool is_non_zero(const std::array<double, 3> &array);
+}
 
-
+// GLOBAL VARIABLES
+namespace {
     auto position = MatcherArray(MatcherFloat{}, 3).mapToVector<3>();
     auto rotation = MatcherArray(MatcherFloat{}, 3).mapToStdArray<double, 3>();
+}
 
-
+// DEFINITIONS
+namespace {
     MatcherDataclass create_point() {
         return MatcherDataclass("point")
             .arguments({{"pos", position}})
@@ -283,6 +288,7 @@ namespace {
         return array != std::array<double, 3>{0, 0, 0};
     }
 }
+
 
 RecursiveMatcher GenericConvexGeometryMatcher::shapeRecursion;
 MatcherAlternative GenericConvexGeometryMatcher::script = GenericConvexGeometryMatcher::create();

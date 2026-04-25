@@ -6,6 +6,25 @@
 #include "utils/Exceptions.h"
 #include "geometry/VolumeCalculator.h"
 
+namespace {
+    PolysphereTraits::InteractionCentreLayoutWithMetadata
+    makeUniformRadiusLayout(const std::vector<PolysphereTraits::SphereData> &sphereData, double radius)
+    {
+        std::vector<Vector<3>> centres;
+        std::vector<std::size_t> centreIdxTypeIdxMap;
+        centres.reserve(sphereData.size());
+        centreIdxTypeIdxMap.assign(sphereData.size(), 0);
+
+        for (const auto &dataElem : sphereData)
+            centres.push_back(dataElem.position);
+
+        return {
+            InteractionCentreLayout{std::move(centres), std::move(centreIdxTypeIdxMap)},
+            {PolysphereTraits::InteractionCentreTypeMetadata{radius}}
+        };
+    }
+}
+
 
 KMerTraits::PolysphereGeometry KMerTraits::generateGeometry(std::size_t sphereNum, double sphereRadius, double distance)
 {
@@ -21,7 +40,8 @@ KMerTraits::PolysphereGeometry KMerTraits::generateGeometry(std::size_t sphereNu
         sphereZ += distance;
     }
     double volume = KMerTraits::caluclateVolume(sphereNum, sphereRadius, distance);
-    PolysphereGeometry geometry(std::move(data), {0, 0, 1}, {1, 0, 0}, {0, 0, 0}, volume);
+    auto interactionCentreLayout = makeUniformRadiusLayout(data, sphereRadius);
+    PolysphereGeometry geometry(std::move(interactionCentreLayout), {0, 0, 1}, {1, 0, 0}, {0, 0, 0}, volume);
     geometry.normalizeMassCentre();
     geometry.setGeometricOrigin({0, 0, 0});
     const auto &newSphereData = geometry.getSphereData();

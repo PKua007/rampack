@@ -10,6 +10,9 @@ This reference contains information regarding shapes available in the software.
 * [Shape traits](#shape-traits)
   * [Shape axes](#shape-axes)
   * [Interactions](#interactions)
+  * [Interaction centers](#interaction-centers)
+    * [Interaction center types](#interaction-center-types)
+  * [Geometric center](#geometric-center)
   * [Named points](#named-points)
 * [Specific shape classes](#specific-shape-classes)
   * [Class `sphere`](#class-sphere)
@@ -47,7 +50,7 @@ Each shape has from 0 to 3 shape axes, usually perpendicular to one another. The
 
 The number of axes depends on the symmetry of the shape. For example, the [sphere](#class-sphere) has no axes,
 [spherocylinder](#class-spherocylinder) has only the primary axis (along its length), while 
-[polysphere banana](#class-polyspherocylinder_banana) has all three axes defined. If both the primary and the secondary
+[polysphere banana](#class-polysphere_banana) has all three axes defined. If both the primary and the secondary
 axes are defined, the auxiliary axis is defined automatically as the normalized cross product of the former two axes;
 thus, primary, secondary and auxiliary axes, in the given order, form a right-handed vector triad. 
 
@@ -75,6 +78,21 @@ atomic parts (in the given example - the spherical beads) which interact pairwis
 parts are called *interaction centers*. To speed up the computation of interaction energy, the neighbor grid stores
 individual interaction centers - thus, when the energy is computed, it is only done for center pairs which are close to
 each other.
+
+
+#### Interaction center types
+
+> Since v1.3.0
+
+Some compound shapes group interaction centers into *interaction center types*. For example,
+[polysphere_lollipop](#class-polysphere_lollipop) uses two type labels: `"ss"` for all stick spheres and `"st"` for
+the tip sphere. This grouping is used by [soft interactions](#soft-interaction-classes), whose parameters may be
+specified separately for each pair of interaction center types. Without this grouping, assigning pairwise parameters
+would require treating every pair of centers independently, which is difficult to write by hand and grows quadratically
+with the number of centers.
+
+Currently, interaction center types are used only by polysphere-like shapes. They may be extended in the future to
+other compound shapes, for example polyspherocylinder-like shapes.
 
 
 ### Geometric center
@@ -128,6 +146,8 @@ Hard sphere with radius `r`.
 Shape traits:
 * **Geometric center**: {0, 0, 0} (red cross)
 * **Interaction centers**: geometric center
+* **Interaction center types**:
+  * `"s"` - the only interaction center
 * **Shape axes**: None
 * **Named points**:
   * `"o"` - geometric center
@@ -159,6 +179,8 @@ center.
 Shape traits:
 * **Geometric center**: {0, 0, 0} (red cross)
 * **Interaction centers**: center of each sphere
+* **Interaction center types**:
+  * `"s"` - all sphere centers
 * **Shape axes**:
   * *primary* = {0, 0, 1}
 * **Named points**:
@@ -197,6 +219,8 @@ endpoints of the arc. Otherwise, the geometric center lies in the arc center.
 Shape traits:
 * **Geometric center**: {0, 0, 0} (red cross)
 * **Interaction centers**: center of each sphere
+* **Interaction center types**:
+  * `"s"` - all sphere centers
 * **Shape axes**:
   * *primary* = {0, 0, 1}
   * *secondary* = {-1, 0, 0}
@@ -223,7 +247,8 @@ polysphere_lollipop(
     stick_r,
     tip_r,
     stick_penetration = 0,
-    tip_penetration = 0
+    tip_penetration = 0,
+    interaction = hard
 )
 ```
 
@@ -231,7 +256,7 @@ polysphere_lollipop(
 
 The shape similar to the [k-mer](#class-kmer), however the top sphere may have a radius different the rest of lower
 spheres. There are `sphere_n - 1` identical spheres with radius `stick_r` placed on the z-axis (lollipop's stick) and a
-different sphere with radius `large_r` at the top (lollipop's tip). The overlap between "stick" spheres is controlled by 
+different sphere with radius `tip_r` at the top (lollipop's tip). The overlap between "stick" spheres is controlled by
 `stick_penetration` (where 0 means that the spheres are tangent), while the overlap between the "tip" sphere and the
 uppermost "stick" sphere is controlled by `tip_penetration`. The spheres are placed in such a way that the uppermost
 and lowermost points on the shape are equidistant from the geometric center.
@@ -239,6 +264,9 @@ and lowermost points on the shape are equidistant from the geometric center.
 Shape traits:
 * **Geometric center**: {0, 0, 0} (red cross)
 * **Interaction centers**: center of each sphere
+* **Interaction center types**:
+  * `"ss"` - centers of stick spheres with radius `stick_r`
+  * `"st"` - center of the tip sphere with radius `tip_r`
 * **Shape axes**:
   * *primary* = {0, 0, 1}
 * **Named points**:
@@ -248,8 +276,11 @@ Shape traits:
     uppermost sphere
   * `"ss"` - the center of the bottom sphere with radius `stick_r` (equivalent to `"s0"`)
   * `"st"` - the center of the top sphere with radius `"tip_r"` (equivalent to `"s[sphere_n - 1]"`)
-* **Interactions**: only hard-core - spheres are polydisperse, while soft interactions currently do not support
-  pair-wise interaction parameters
+* **Interactions**:
+  * class `hard` - hard-core interaction
+  * `since v1.3.0` [class `lj`](#class-lj)
+  * `since v1.3.0` [class `wca`](#class-wca)
+  * `since v1.3.0` [class `square_inverse_core`](#class-square_inverse_core)
 
 
 ### Class `polysphere_wedge`
@@ -274,6 +305,9 @@ the shape are equidistant from the geometric center.
 Shape traits:
 * **Geometric center**: {0, 0, 0} (red cross)
 * **Interaction centers**: center of each sphere
+* **Interaction center types**:
+  * `"si"` - the center of the `i`-th sphere, starting from 0 for the lowermost sphere to `sphere_n - 1` for the
+    uppermost sphere
 * **Shape axes**:
   * *primary* = {0, 0, 1}
 * **Named points**:
@@ -283,14 +317,17 @@ Shape traits:
     uppermost sphere
   * `"beg"` - the center of the bottom sphere (equivalent to `"s0"`)
   * `"end"` - the center of the top sphere (equivalent to `"s[sphere_n - 1]"`)
-* **Interactions**:  only hard-core - spheres are polydisperse, while soft interactions currently do not support
-  pair-wise interaction parameters
+* **Interactions**:
+  * class `hard` - hard-core interaction
+  * `since v1.3.0` [class `lj`](#class-lj)
+  * `since v1.3.0` [class `wca`](#class-wca)
+  * `since v1.3.0` [class `square_inverse_core`](#class-square_inverse_core)
 
 
 ### Class `spherocylinder`
 
 ```python
-polysphere_wedge(
+spherocylinder(
     l,
     r
 )
@@ -329,7 +366,7 @@ polyspherocylinder_banana(
 <img src="img/shapes/polyspherocylinder_banana.png" alt="polyspherocylinder_banana" width="570" height="250">
 
 The shape is created by spanning `segment_n` identical segments on a circular arc with radius `arc_radius` and
-the arc angle `arc_angle` and then building sperocylinders with radius `sc_r` around these segments (they become the
+the arc angle `arc_angle` and then building spherocylinders with radius `sc_r` around these segments (they become the
 heights of cylinder parts of the spherocylinders). The arc lies in the xz plane. The arc angle is symmetric w.r.t. the
 x-axis and its opens toward the positive x-axis. If the angle is below 180&deg;, the geometric center lies in the middle
 between the endpoints of the arc. Otherwise, the geometric center lies in the arc center. The optional parameter
@@ -406,7 +443,7 @@ polyhedral_wedge(
 
 A polyhedron built by joining two axis-oriented rectangles placed on the XY planes with z coordinates equal `-l/2` and
 `l/2`. The side lengths of the bottom (`z = -l/2`) rectangle are given by `bottom_ax` and `bottom_ay`, while `top_ax`
-and `top_az` control the size of the top (`z = l/2`) rectangle. Please note that since the geometric center is in the
+and `top_ay` control the size of the top (`z = l/2`) rectangle. Please note that since the geometric center is in the
 midpoint of length of the polyhedron, the circumsphere may not be optimal. If `subdivisions > 1`, the polyhedron is
 divided into that many parts along its length to optimize neighbor grid performance.
 
@@ -463,13 +500,13 @@ Arguments:
   ```python
   sphere(
       pos,
-      r
+      r,
+      type = None
   )
   ```
-  
-  where `r` is radius and `pos` can be either a single position (Array of 3 Floats) representing a single sphere or an
-  Array of positions (Array of Arrays of 3 Floats), which represents many spheres with the same radius `r`. As an
-  example, the shape from the illustration can be created using
+
+  The `sphere` object itself represents either a single sphere or a list of spheres with a common radius and interaction
+  center type. As an example, the shape from the illustration can be created using
 
   ```python
   spheres=[
@@ -478,16 +515,45 @@ Arguments:
   ]
   ```
 
-  **IMPORTANT NOTE**: For best performance, choose shape positions in a way that optimizes their distances from
-  the origin {0, 0, 0}:
+  Arguments:
 
-  ```python
-  sphere(pos=[[0, 0, 0], [0, 0, 1]], r=0.5)
-  sphere(pos=[[0, 0, -0.5], [0, 0, 0.5]], r=0.5)
-  ```
+  * ***pos***
 
-  Both cases are the same dimer, however the first one is centered in {0, 0, 0.5} and has a suboptimal circumsphere
-  radius equal 1.5, while the second one is centered in {0, 0, 0} and has the optimal circumsphere radius equal 1.
+    It can be either a single position (Array of 3 Floats) representing a single sphere or an Array of positions (Array
+    of Arrays of 3 Floats), which represents many spheres with the same radius and interaction center type.
+
+    **IMPORTANT NOTE**: For best performance, choose shape positions in a way that optimizes their distances from
+    the origin {0, 0, 0}:
+
+    ```python
+    sphere(pos=[[0, 0, 0], [0, 0, 1]], r=0.5)
+    sphere(pos=[[0, 0, -0.5], [0, 0, 0.5]], r=0.5)
+    ```
+
+    Both cases are the same dimer, however the first one is centered in {0, 0, 0.5} and has a suboptimal circumsphere
+    radius equal 1.5, while the second one is centered in {0, 0, 0} and has the optimal circumsphere radius equal 1.
+
+  * ***r***
+
+    Common radius of all spheres specified by the `pos` argument.
+
+  * `since v1.3.0` ***type*** *(= None)*
+
+    The interaction center type label, common for all spheres specified by the `pos` argument. If it is not specified
+    explicitly, it is implicitly defined as the stringified index of this `sphere` object in the `spheres=[...]` Array,
+    or `"0"` if a single `spheres=sphere(...)` was used. For example:
+
+    ```python
+    spheres=[
+        sphere(pos=[[-1, 0, 0], [1, 0, 0]], r=0.5, type="side"),  # explicit type "side"
+        sphere(pos=[0, 0, 0], r=0.7),                             # implicit type "1"
+        sphere(pos=[[0, -1, 0], [0, 1, 0]], r=0.5, type="side")   # explicit type "side"
+    ]
+    ```
+
+    The interaction center type labels assigned to consecutive sphere centers are
+    `["side", "side", "1", "side", "side"]`. The type labels may be repeated in multiple `sphere` entries. In that case,
+    the same radius must be specified for all of them.
 
 * ***volume***
 
@@ -514,16 +580,16 @@ Arguments:
   The Dictionary of custom named points, where the keys are Strings representing point names, while the values are
   Arrays of 3 Floats representing the positions of the named points.
 
-* ***interation*** (*= hard*)
+* ***interaction*** (*= hard*)
 
-  Interaction between pairs of spheres. See *Shape traits* below for a list of supported interactions. <br />
-  **IMPORTANT NOTE**: currently, if a soft interaction is chosen, all pairs of spheres interact via the same potential
-  (with the same potential parameters), even if spheres have different radii. It is not the case for the hard-core
-  interaction, where the radii are respected.
+  Interaction between pairs of spheres. See *Shape traits* below for a list of supported interactions.
 
 Shape traits:
 * **Geometric center**: as specified by `geometric_center`
 * **Interaction centers**: centers of spheres
+* **Interaction center types**:
+  * explicit labels specified by the `type` argument of `sphere`
+  * implicit labels `"0"`, `"1"`, ... for `sphere` entries whose `type` is `None`
 * **Shape axes**: as specified by `primary_axis` and `secondary axis` (auxiliary axis is computed automatically)
 * **Named points**:
   * `"o"` - geometric center
@@ -930,14 +996,23 @@ This section lists all soft interaction types available for selected shapes. The
 * [Class `wca`](#class-wca)
 * [Class `square_inverse_core`](#class-square_inverse_core)
 
+Soft interactions define energy between pairs of interaction centers and share a common interface. Two variants are
+accepted:
+
+1. **Uniform parameters** - one set of parameters for all interaction center pairs.
+2. `since v1.3.0` **Pairwise parameters** - a dictionary with parameters for pairs of interaction center types.
+
+The full common syntax is shown for [class `lj`](#class-lj).
+
+**Supported by**: [class `sphere`](#class-sphere), [class `kmer`](#class-kmer),
+[class `polysphere_banana`](#class-polysphere_banana), [class `polysphere_lollipop`](#class-polysphere_lollipop),
+[class `polysphere_wedge`](#class-polysphere_wedge), [class `polysphere`](#class-polysphere).
+
 
 ### Class `lj`
 
 ```python
-lj(
-    epsilon,
-    sigma
-)
+lj(**kwargs)    # See below for call signatures
 ```
 
 [Lennard-Jones](https://en.wikipedia.org/wiki/Lennard-Jones_potential) interaction between all pairs of interaction
@@ -948,17 +1023,66 @@ centers, defined as
 where *r* is the distance between the interaction centers. The interaction has cut-off radius of *r* = 3&sigma;, which
 is a widely accepted trade-off between accuracy and computational efficiency.
 
-**Supported by**: [class `sphere`](#class-sphere), [class `kmer`](#class-kmer),
-[class `polysphere_banana`](#class-polysphere_banana), [class `polysphere`](#class-polysphere).
+Interaction params:
+* `"epsilon"` - energy scale &epsilon;; must be positive
+* `"sigma"` - distance scale &sigma;; must be positive
+
+Call signatures:
+
+1. **Uniform parameters** <a id="lj_uniformparams"></a>
+
+   ```python
+   lj(
+       epsilon,
+       sigma
+   )
+   ```
+
+   Assigns the same parameters, listed as explicit arguments `epsilon` and `sigma` of the constructor, to all
+   interaction center pairs. This is usually enough for shapes with a single interaction center type, such as
+   [class `sphere`](#class-sphere), [class `kmer`](#class-kmer), and
+   [class `polysphere_banana`](#class-polysphere_banana).
+
+2. **Pairwise parameters** <a id="lj_pairparams"></a>
+
+   > Since v1.3.0
+
+   ```python
+   lj(
+       params
+   )
+   ```
+
+   Assigns parameters to pairs of interaction center types. `params` is a Dictionary which maps comma-separated pairs
+   of interaction center types to LJ parameter Dictionaries containing `"epsilon"` and `"sigma"`. The order of
+   dictionary entries is arbitrary, and the order of type labels within a pair does not matter.
+
+   For example, [class `polysphere_lollipop`](#class-polysphere_lollipop) has two interaction center types: `"ss"` and
+   `"st"`. A complete parameter dictionary can be written as:
+
+   ```python
+   lj(params={
+       "ss,ss": {"epsilon": 1, "sigma": 1},
+       "ss,st": {"epsilon": 1, "sigma": 1.2},
+       "st,st": {"epsilon": 1, "sigma": 1.5}
+   })
+   ```
+
+   The list of pairs must be exhaustive. Alternatively, if most pairs should use the same parameters, one can use
+   `"default"` and override only selected pairs:
+
+   ```python
+   lj(params={
+       "default": {"epsilon": 1, "sigma": 1},
+       "ss,st": {"epsilon": 1, "sigma": 1.2}
+   })
+   ```
 
 
 ### Class `wca`
 
 ```python
-wca(
-    epsilon,
-    sigma
-)
+wca(**kwargs)    # See below for call signatures
 ```
 
 [Weeks-Chandler-Andersen](https://doi.org/10.1063/1.1674820) interaction between all pairs of interaction centers. It is
@@ -972,17 +1096,41 @@ based on a repulsive part of the Lennard-Jones potential and is defined as
 where *r* is the distance between the interaction centers. The interaction has a range of r = 2<sup>1/6</sup>&sigma;.
 After that point, it is zero.
 
-**Supported by**: [class `sphere`](#class-sphere), [class `kmer`](#class-kmer),
-[class `polysphere_banana`](#class-polysphere_banana), [class `polysphere`](#class-polysphere).
+Interaction params:
+* `"epsilon"` - energy scale &epsilon;; must be positive
+* `"sigma"` - distance scale &sigma;; must be positive
+
+Call signatures:
+
+1. **Uniform parameters**
+
+   ```python
+   wca(
+       epsilon,
+       sigma
+   )
+   ```
+
+   Analogous to [class `lj`](#class-lj) [uniform parameters](#lj_uniformparams).
+
+2. **Pairwise parameters**
+
+   > Since v1.3.0
+
+   ```python
+   wca(
+       params
+   )
+   ```
+
+   Analogous to [class `lj`](#class-lj) [pairwise parameters](#lj_pairparams), with the same set of parameters:
+   `"epsilon"` and `"sigma"`.
 
 
 ### Class `square_inverse_core`
 
 ```python
-square_inverse_core(
-    epsilon,
-    sigma
-)
+square_inverse_core(**kwargs)    # See below for call signatures
 ```
 
 Short-ranged repulsive interaction between all pairs of interaction centers decreasing with the inverse square of
@@ -998,8 +1146,35 @@ where *r* is the distance between the interaction centers. It is useful especial
 [helper interaction](input-file.md#overlaprelaxation_helpershape) because of shorter computation time compared to
 for example [WCA potential](#class-wca).
 
-**Supported by**: [class `sphere`](#class-sphere), [class `kmer`](#class-kmer),
-[class `polysphere_banana`](#class-polysphere_banana), [class `polysphere`](#class-polysphere).
+Interaction params:
+* `"epsilon"` - energy scale &epsilon;; must be positive
+* `"sigma"` - interaction range &sigma;; must be positive
+
+Call signatures:
+
+1. **Uniform parameters**
+
+   ```python
+   square_inverse_core(
+       epsilon,
+       sigma
+   )
+   ```
+
+   Analogous to [class `lj`](#class-lj) [uniform parameters](#lj_uniformparams).
+
+2. **Pairwise parameters**
+
+   > Since v1.3.0
+
+   ```python
+   square_inverse_core(
+       params
+   )
+   ```
+
+   Analogous to [class `lj`](#class-lj) [pairwise parameters](#lj_pairparams), with the same set of parameters:
+   `"epsilon"` and `"sigma"`.
 
 
 [&uarr; back to the top](#shapes)

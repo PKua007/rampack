@@ -7,6 +7,29 @@
 #include "utils/Exceptions.h"
 #include "geometry/VolumeCalculator.h"
 
+namespace {
+    PolysphereTraits::InteractionCentreLayoutWithMetadata
+    makeLollipopLayout(const std::vector<PolysphereTraits::SphereData> &sphereData,
+                       double stickSphereRadius, double tipSphereRadius)
+    {
+        std::vector<Vector<3>> centres;
+        std::vector<std::size_t> centreIdxTypeIdxMap;
+        centres.reserve(sphereData.size());
+        centreIdxTypeIdxMap.reserve(sphereData.size());
+
+        for (std::size_t i{}; i < sphereData.size(); i++) {
+            centres.push_back(sphereData[i].position);
+            centreIdxTypeIdxMap.push_back(i + 1 == sphereData.size() ? 1 : 0);
+        }
+
+        return {
+            InteractionCentreLayout{std::move(centres), std::move(centreIdxTypeIdxMap)},
+            {PolysphereTraits::InteractionCentreTypeMetadata{stickSphereRadius},
+             PolysphereTraits::InteractionCentreTypeMetadata{tipSphereRadius}}
+        };
+    }
+}
+
 
 namespace legacy {
     PolysphereLollipopTraits::PolysphereGeometry
@@ -32,7 +55,8 @@ namespace legacy {
         centrePos += smallSphereRadius + largeSphereRadius - largeSpherePenetration;
         data.emplace_back(Vector<3>{centrePos, 0, 0}, largeSphereRadius);
 
-        PolysphereGeometry geometry(std::move(data), {1, 0, 0}, {0, 1, 0});
+        auto interactionCentreLayout = makeLollipopLayout(data, smallSphereRadius, largeSphereRadius);
+        PolysphereGeometry geometry(std::move(interactionCentreLayout), {1, 0, 0}, {0, 1, 0});
         geometry.normalizeMassCentre();
         double end1 = geometry.getSphereData().front().position[0];
         double end2 = geometry.getSphereData().back().position[0];
@@ -82,7 +106,8 @@ PolysphereLollipopTraits::generateGeometry(std::size_t sphereNum, double stickSp
     }
 
     double volume = PolysphereLollipopTraits::calculateVolume(data, stickSpherePenetration, tipSpherePenetration);
-    PolysphereGeometry geometry(data, {0, 0, 1}, std::nullopt, {0, 0, 0}, volume);
+    auto interactionCentreLayout = makeLollipopLayout(data, stickSphereRadius, tipSphereRadius);
+    PolysphereGeometry geometry(std::move(interactionCentreLayout), {0, 0, 1}, std::nullopt, {0, 0, 0}, volume);
     geometry.addCustomNamedPoints({{"ss", data.front().position}, {"st", data.back().position}});
     if (stickSpherePenetration == 0 && tipSpherePenetration == 0)
         geometry.addCustomNamedPoints({{"cm", geometry.calculateMassCentre()}});
@@ -116,4 +141,3 @@ double PolysphereLollipopTraits::calculateVolume(const std::vector<SphereData> &
 
     return baseVolume;
 }
-

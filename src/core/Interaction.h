@@ -54,6 +54,8 @@ public:
      * @param idx2 the index of the second interaction center within a molecule
      * @param bc boundary conditions used to calculate the interaction
      * @return the soft interaction energy between two interaction centers of two molecules
+     * @details The caller is obliged to use `idx1 = idx2 = 0` if the concrete implementation has an empty interaction
+     * centre list. Calling the method with other values of indices is an undefined behaviour in that case.
      */
     [[nodiscard]] virtual double calculateEnergyBetween([[maybe_unused]] const Vector<3> &pos1,
                                                         [[maybe_unused]] const Matrix<3, 3> &orientation1,
@@ -77,6 +79,8 @@ public:
      * @param idx2 the index of the second interaction center within a molecule
      * @param bc boundary conditions used to calculate the interaction
      * @return @a true, if two interaction centers of two molecules overlap
+     * @details The caller is obliged to use `idx1 = idx2 = 0` if the concrete implementation has an empty interaction
+     * centre list.
      */
     [[nodiscard]] virtual bool overlapBetween([[maybe_unused]] const Vector<3> &pos1,
                                               [[maybe_unused]] const Matrix<3, 3> &orientation1,
@@ -99,6 +103,8 @@ public:
      * @param wallVector vector normal to the wall (with a unit norm); the direction it points in is in front of a wall,
      * while the opposite direction is behind the wall
      * @return @a true, if any part of the interaction centre lies behind the wall
+     * @details The caller is obliged to use `idx = 0` if the concrete implementation has an empty interaction centre
+     * list.
      */
     [[nodiscard]] virtual bool overlapWithWall([[maybe_unused]] const Vector<3> &pos,
                                                [[maybe_unused]] const Matrix<3, 3> &orientation,
@@ -125,7 +131,8 @@ public:
     /**
      * @brief Returns interaction center positions for a given @a shape, taking into account its position and
      * orientation.
-     * @details If getInteractionCentres() return an empty vector, the returned vector is also empty.
+     * @details If getInteractionCentres() returns an empty vector, the returned vector contains a single point equal
+     * to shape's position.
      */
     [[nodiscard]] std::vector<Vector<3>> getInteractionCentresForShape(const Shape &shape) const;
 

@@ -19,6 +19,18 @@ library (later, with Python bindings as well).
   [class `nematic_order`](docs/observables.md#class-nematic_order) observable.
 * Added [class `axial_rotation`](docs/input-file.md#class-axial_rotation) move sampler.
 * Added [class `reflection`](docs/input-file.md#class-reflection) move sampler.
+* Added pairwise parameters for [soft interactions](docs/shapes.md#soft-interaction-classes) between
+  [interaction center types](docs/shapes.md#interaction-center-types) of sphere-based shapes.
+
+### Changed
+
+* For pairwise parameters of [soft interactions](docs/shapes.md#soft-interaction-classes), interaction centers are now
+  grouped into [interaction center types](docs/shapes.md#interaction-center-types).
+* Polysphere-like classes now support pairwise [soft interactions](docs/shapes.md#soft-interaction-classes)
+  universally.
+  This includes [class `polysphere`](docs/shapes.md#class-polysphere) itself, as well as the previously hard-only
+  [class `polysphere_lollipop`](docs/shapes.md#class-polysphere_lollipop) and
+  [class `polysphere_wedge`](docs/shapes.md#class-polysphere_wedge).
 
 
 ## [1.2.0] - 2023-12-03

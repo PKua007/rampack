@@ -19,11 +19,11 @@ SphereTraits::SphereTraits(double radius)
     this->registerNamedPoint("cm", {0, 0, 0});
 }
 
-SphereTraits::SphereTraits(double radius, std::shared_ptr<CentralInteraction> centralInteraction)
+SphereTraits::SphereTraits(double radius, std::shared_ptr<CentralInteractionBase> centralInteraction)
         : radius{radius}, wolframPrinter{std::make_shared<WolframPrinter>(radius)}
 {
     Expects(radius > 0);
-    centralInteraction->installOnSphere();
+    centralInteraction->bindSphere();
     this->interaction = std::move(centralInteraction);
     this->registerNamedPoint("cm", {0, 0, 0});
 }

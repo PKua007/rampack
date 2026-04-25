@@ -14,8 +14,9 @@ namespace legacy {
      * sphere can be tangent or overlapping, depending on the parameters.
      * @details The arc lies in the xy plane with x = 0, y = 0 origin, symmetric w.r.t. x axis and lying in negative
      * x half-plane. The primary (molecular) axis is thus y axis, while secondary (polarization) axis is negative x
-     * axis. Geometric origin is placed in the mass centre. The class specifies custom named points "sbeg" and "send"
-     * for first and last spheres, together with the ones inherited from PolysphereTraits.
+     * axis. Geometric origin is placed in the mass centre. Soft central interactions use a typed interaction-centre
+     * layout with a single centre type shared by all spheres. The class specifies custom named points "sbeg" and
+     * "send" for first and last spheres, together with the ones inherited from PolysphereTraits.
      * @sa ::PolysphereBananaTraits
      */
     class PolysphereBananaTraits : public PolysphereTraits {
@@ -41,9 +42,9 @@ namespace legacy {
          * for soft central interactions given by @a centralInteraction.
          */
         PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
-                               std::shared_ptr<CentralInteraction> centralInteraction)
+                               std::shared_ptr<CentralInteractionBase> centralInteraction)
                 : PolysphereTraits(generateGeometry(arcRadius, arcAngle, sphereNum, sphereRadius),
-                                   std::move(centralInteraction))
+                                   std::move(centralInteraction), true)
         { }
     };
 }
@@ -56,7 +57,8 @@ namespace legacy {
  * @a arcRadius smaller than \f$\pi\f$, the origin in the middle of the line joining endpoints, while for larger
  * @a arcRadius it coincides with arc's midpoint (it is defined in such a way to minimize circumsphere radius). The
  * primary (molecular) axis is z axis, while secondary axis is negative x axis. The class specifies custom named points
- * "beg" and "end" for first and last spheres, together with the ones inherited from PolysphereTraits. Mass centre "cm"
+ * "beg" and "end" for first and last spheres, together with the ones inherited from PolysphereTraits. Soft central
+ * interactions use a typed interaction-centre layout with a single centre type shared by all spheres. Mass centre "cm"
  * named point is defined only in the spheres don't overlap.
  * @sa legacy::PolysphereBananaTraits
  */
@@ -85,9 +87,9 @@ public:
      * soft central interactions given by @a centralInteraction.
      */
     PolysphereBananaTraits(double arcRadius, double arcAngle, std::size_t sphereNum, double sphereRadius,
-                           std::shared_ptr<CentralInteraction> centralInteraction)
+                           std::shared_ptr<CentralInteractionBase> centralInteraction)
             : PolysphereTraits(generateGeometry(arcRadius, arcAngle, sphereNum, sphereRadius),
-                               std::move(centralInteraction))
+                               std::move(centralInteraction), true)
     { }
 };
 

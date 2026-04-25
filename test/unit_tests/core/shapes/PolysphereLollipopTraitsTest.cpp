@@ -58,3 +58,21 @@ TEST_CASE("PolysphereLollipopTraits: mass centre") {
         CHECK_FALSE(largePenetrates.getGeometry().hasNamedPoint("cm"));
     }
 }
+
+TEST_CASE("PolysphereLollipopTraits: interaction centre layout") {
+    SECTION("different radii") {
+        PolysphereLollipopTraits traits(3, 2, 4, 1, 2);
+        const auto &geometry = dynamic_cast<const PolysphereTraits::PolysphereGeometry &>(traits.getGeometry());
+
+        CHECK(geometry.getInteractionCentreLayout().getCentreIdxTypeIdxMap() == std::vector<std::size_t>{0, 0, 1});
+        CHECK(geometry.getDisplayRadiiByType() == std::vector<double>{2, 4});
+    }
+
+    SECTION("equal radii remain distinguishable") {
+        PolysphereLollipopTraits traits(3, 2, 2, 0, 0);
+        const auto &geometry = dynamic_cast<const PolysphereTraits::PolysphereGeometry &>(traits.getGeometry());
+
+        CHECK(geometry.getInteractionCentreLayout().getCentreIdxTypeIdxMap() == std::vector<std::size_t>{0, 0, 1});
+        CHECK(geometry.getDisplayRadiiByType() == std::vector<double>{2, 2});
+    }
+}

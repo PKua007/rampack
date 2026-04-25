@@ -12,7 +12,6 @@
 #include "geometry/xenocollide/XCPrimitives.h"
 
 
-
 std::string PolysphereTraits::WolframPrinter::print(const Shape &shape) const {
     std::ostringstream out;
     out << std::fixed;
@@ -29,22 +28,19 @@ std::string PolysphereTraits::WolframPrinter::print(const Shape &shape) const {
 }
 
 PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry,
-                                   std::shared_ptr<CentralInteraction> centralInteraction)
+                                   std::shared_ptr<CentralInteractionBase> centralInteraction,
+                                   bool allowUniformPairDataBroadcast)
         : geometry{std::move(geometry)}, wolframPrinter{std::make_shared<WolframPrinter>(*this)}
 {
-    const auto &sphereData = this->getSphereData();
-    std::vector<Vector<3>> centres;
-    centres.reserve(sphereData.size());
-    std::transform(sphereData.begin(), sphereData.end(), std::back_inserter(centres),
-                   [](const SphereData &data) { return data.position; });
-    centralInteraction->installOnCentres(centres);
+    centralInteraction->bindCentreLayout(this->geometry.getInteractionCentreLayout(), allowUniformPairDataBroadcast);
+    Expects(this->geometry.getInteractionCentreLayout() == centralInteraction->getInteractionCentreLayout());
     this->interaction = std::move(centralInteraction);
 }
 
 PolysphereTraits::PolysphereTraits(PolysphereTraits::PolysphereGeometry geometry)
     : geometry{std::move(geometry)}, wolframPrinter{std::make_shared<WolframPrinter>(*this)}
 {
-    this->interaction = std::make_shared<HardInteraction>(this->getSphereData());
+    this->interaction = std::make_shared<HardInteraction>(this->geometry);
 }
 
 std::shared_ptr<const ShapePrinter>
@@ -86,6 +82,20 @@ PolysphereTraits::SphereData::SphereData(const Vector<3> &position, double radiu
     Expects(radius > 0);
 }
 
+PolysphereTraits::InteractionCentreTypeMetadata::InteractionCentreTypeMetadata(double radius)
+        : radius{radius}
+{
+    Expects(radius > 0);
+}
+
+PolysphereTraits::InteractionCentreLayoutWithMetadata
+    ::InteractionCentreLayoutWithMetadata(InteractionCentreLayout interactionCentreLayout,
+                                          std::vector<InteractionCentreTypeMetadata> centreTypeMetadata)
+        : interactionCentreLayout{std::move(interactionCentreLayout)}, centreTypeMetadata{std::move(centreTypeMetadata)}
+{
+    Expects(this->interactionCentreLayout.numCentreTypes() == this->centreTypeMetadata.size());
+}
+
 void PolysphereTraits::SphereData::toWolfram(std::ostream &out, const Shape &shape) const {
     out << "Sphere[" << this->centreForShape(shape) << "," << this->radius << "]";
 }
@@ -101,29 +111,26 @@ bool PolysphereTraits::HardInteraction::overlapBetween(const Vector<3> &pos1,
                                                        [[maybe_unused]] const Matrix<3, 3> &orientation2,
                                                        std::size_t idx2, const BoundaryConditions &bc) const
 {
-    double r = this->sphereData[idx1].radius + this->sphereData[idx2].radius;
+    double r = this->radii[idx1] + this->radii[idx2];
     return bc.getDistance2(pos1, pos2) < r * r;
 }
 
 std::vector<Vector<3>> PolysphereTraits::HardInteraction::getInteractionCentres() const {
-    std::vector<Vector<3>> centres;
-    centres.reserve(this->sphereData.size());
-    for (const auto &data : this->sphereData)
-        centres.push_back(data.position);
-    return centres;
+    return this->interactionCentres;
 }
 
 double PolysphereTraits::HardInteraction::getRangeRadius() const {
-    auto comparator = [](const SphereData &sd1, const SphereData &sd2) {
-        return sd1.radius < sd2.radius;
-    };
-    return 2 * std::max_element(this->sphereData.begin(), this->sphereData.end(), comparator)->radius;
+    return 2 * *std::max_element(this->radii.begin(), this->radii.end());
 }
 
-PolysphereTraits::HardInteraction::HardInteraction(std::vector<SphereData> sphereData)
-        : sphereData{std::move(sphereData)}
-{
-    Expects(!this->sphereData.empty());
+PolysphereTraits::HardInteraction::HardInteraction(const PolysphereGeometry &geometry) {
+    const auto &sphereData = geometry.getSphereData();
+    this->interactionCentres.reserve(sphereData.size());
+    this->radii.reserve(sphereData.size());
+    for (const auto &sphere : sphereData) {
+        this->interactionCentres.push_back(sphere.position);
+        this->radii.push_back(sphere.radius);
+    }
 }
 
 bool PolysphereTraits::HardInteraction::overlapWithWall(const Vector<3> &pos,
@@ -132,7 +139,7 @@ bool PolysphereTraits::HardInteraction::overlapWithWall(const Vector<3> &pos,
                                                         const Vector<3> &wallVector) const
 {
     double dotProduct = wallVector * (pos - wallOrigin);
-    return dotProduct < this->sphereData[idx].radius;
+    return dotProduct < this->radii[idx];
 }
 
 double PolysphereTraits::PolysphereGeometry::calculateVolume() const {
@@ -143,6 +150,27 @@ double PolysphereTraits::PolysphereGeometry::calculateVolume() const {
         return volume_ + 4 * M_PI / 3 * data.radius * data.radius * data.radius;
     };
     return std::accumulate(this->sphereData.begin(), this->sphereData.end(), 0., volumeAccumulator);
+}
+
+PolysphereTraits::InteractionCentreLayoutWithMetadata
+PolysphereTraits::PolysphereGeometry::sphereDataToInteractionCentreLayoutWithMetadata(
+    std::vector<SphereData> sphereData)
+{
+    Expects(!sphereData.empty());
+
+    std::vector<Vector<3>> centres;
+    std::vector<std::size_t> centreIdxTypeIdxMap;
+    std::vector<InteractionCentreTypeMetadata> centreTypeMetadata;
+    centres.reserve(sphereData.size());
+    centreIdxTypeIdxMap.reserve(sphereData.size());
+    centreTypeMetadata.reserve(sphereData.size());
+
+    for (std::size_t i{}; i < sphereData.size(); i++) {
+        centres.push_back(sphereData[i].position);
+        centreIdxTypeIdxMap.push_back(i);
+        centreTypeMetadata.emplace_back(sphereData[i].radius);
+    }
+    return {InteractionCentreLayout{std::move(centres), std::move(centreIdxTypeIdxMap)}, std::move(centreTypeMetadata)};
 }
 
 void PolysphereTraits::PolysphereGeometry::normalizeMassCentre() {
@@ -158,6 +186,12 @@ void PolysphereTraits::PolysphereGeometry::normalizeMassCentre() {
                    massCentreShifter);
 
     this->sphereData = std::move(newSphereData);
+    std::vector<Vector<3>> shiftedCentres;
+    shiftedCentres.reserve(this->interactionCentreLayout.numCentres());
+    std::transform(this->interactionCentreLayout.getCentres().begin(), this->interactionCentreLayout.getCentres().end(),
+                   std::back_inserter(shiftedCentres),
+                   [massCentre](const Vector<3> &centre) { return centre - massCentre; });
+    this->interactionCentreLayout = {std::move(shiftedCentres), this->interactionCentreLayout.getCentreIdxTypeIdxMap()};
     this->geometricOrigin -= massCentre;
     this->moveNamedPoints(-massCentre);
 }
@@ -166,10 +200,19 @@ PolysphereTraits::PolysphereGeometry::PolysphereGeometry(std::vector<SphereData>
                                                          OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin,
                                                          std::optional<double> volume,
                                                          const ShapeGeometry::NamedPoints &customNamedPoints)
-        : sphereData{std::move(sphereData)}, primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis},
-          geometricOrigin{geometricOrigin}
+        : PolysphereGeometry(PolysphereGeometry::sphereDataToInteractionCentreLayoutWithMetadata(std::move(sphereData)),
+                             primaryAxis, secondaryAxis, geometricOrigin, volume, customNamedPoints)
+{ }
+
+PolysphereTraits::PolysphereGeometry
+    ::PolysphereGeometry(InteractionCentreLayoutWithMetadata interactionCentreLayoutWithMetadata,
+                         OptionalAxis primaryAxis, OptionalAxis secondaryAxis, const Vector<3> &geometricOrigin,
+                         std::optional<double> volume, const ShapeGeometry::NamedPoints &customNamedPoints)
+        : interactionCentreLayout{interactionCentreLayoutWithMetadata.getInteractionCentreLayout()},
+          displayRadiiByType(interactionCentreLayoutWithMetadata.getCentreTypeMetadata().size()),
+          primaryAxis{primaryAxis}, secondaryAxis{secondaryAxis}, geometricOrigin{geometricOrigin}
 {
-    Expects(!this->sphereData.empty());
+    Expects(this->interactionCentreLayout.numCentres() > 0);
     if (!this->primaryAxis.has_value())
         Expects(!this->secondaryAxis.has_value());
     if (this->primaryAxis.has_value())
@@ -177,15 +220,23 @@ PolysphereTraits::PolysphereGeometry::PolysphereGeometry(std::vector<SphereData>
     if (this->secondaryAxis.has_value())
         this->secondaryAxis = this->secondaryAxis->normalized();
 
+    const auto &centres = this->interactionCentreLayout.getCentres();
+    const auto &centreIdxTypeIdxMap = this->interactionCentreLayout.getCentreIdxTypeIdxMap();
+    const auto &centreTypeMetadata = interactionCentreLayoutWithMetadata.getCentreTypeMetadata();
+    this->sphereData.reserve(centres.size());
+    for (std::size_t i{}; i < centres.size(); i++) {
+        double radius = centreTypeMetadata[centreIdxTypeIdxMap[i]].radius;
+        this->sphereData.emplace_back(centres[i], radius);
+        this->registerNamedPoint("s" + std::to_string(i), centres[i]);
+    }
+
+    std::transform(centreTypeMetadata.begin(), centreTypeMetadata.end(), this->displayRadiiByType.begin(),
+                   [](const InteractionCentreTypeMetadata &metadata) { return metadata.radius; });
+
     if (volume.has_value())
         this->volume = *volume;
     else
         this->volume = this->calculateVolume();
-
-    for (std::size_t i{}; i < this->sphereData.size(); i++) {
-        const auto &ssData = this->sphereData[i];
-        this->registerNamedPoint("s" + std::to_string(i), ssData.position);
-    }
 
     this->registerNamedPoints(customNamedPoints);
 }

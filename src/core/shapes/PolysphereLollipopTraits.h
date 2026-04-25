@@ -15,8 +15,10 @@ namespace legacy {
      * @details The molecule is spanned on x axis and centered in its mass centre. Primary axis is naturally x axis
      * (positive, towards the large sphere). Secondary axis is y axis - formally it is degenerate in yz plane, but was
      * arbitrarily chosen to enable flip moves. Geometric centre lies in the centre of a bounding box (it coincides with
-     * the mass centre only if all spheres have the same radii). The class specifies custom named points "ss" and "sl"
-     * for first (small) and last (large) spheres, together with the ones inherited from PolysphereTraits.
+     * the mass centre only if all spheres have the same radii). Soft central interactions use a typed
+     * interaction-centre layout with one centre type for the stick spheres and a second, distinct centre type for the
+     * large tip sphere, even when both radii are equal. The class specifies custom named points "ss" and "sl" for
+     * first (small) and last (large) spheres, together with the ones inherited from PolysphereTraits.
      * @sa ::PolysphereLollipopTraits
      */
     class PolysphereLollipopTraits : public PolysphereTraits {
@@ -47,10 +49,10 @@ namespace legacy {
          */
         PolysphereLollipopTraits(std::size_t sphereNum, double smallSphereRadius, double largeSphereRadius,
                                  double smallSpherePenetration, double largeSpherePenetration,
-                                 std::unique_ptr<CentralInteraction> centralInteraction)
+                                 std::shared_ptr<CentralInteractionBase> centralInteraction)
                 : PolysphereTraits(generateGeometry(sphereNum, smallSphereRadius, largeSphereRadius,
                                                     smallSpherePenetration, largeSpherePenetration),
-                                   std::move(centralInteraction))
+                                   std::move(centralInteraction), true)
         { }
     };
 }
@@ -62,8 +64,10 @@ namespace legacy {
  * radius. Primary axis is naturally z axis (positive, towards the large sphere). Secondary axis is x axis - formally it
  * is degenerate in xz plane, but was arbitrarily chosen to enable flip moves. The class specifies custom named points
  * "ss" and "st" for the first (the end of lollipop's stick) and the last (the tip of the lollipop) sphere, together
- * with the ones inherited from PolysphereTraits. Mass centre "cm" named point is defined only if both
- * @a smallSpherePenetration and @a largeSpherePenetration are zero.
+ * with the ones inherited from PolysphereTraits. Soft central interactions use a typed interaction-centre layout with
+ * one centre type for the stick spheres and a second, distinct centre type for the tip sphere, even when both radii
+ * are equal. Mass centre "cm" named point is defined only if both @a smallSpherePenetration and
+ * @a largeSpherePenetration are zero.
  * @sa legacy::PolysphereLollipopTraits
  */
 class PolysphereLollipopTraits : public PolysphereTraits {
@@ -97,10 +101,10 @@ public:
      */
     PolysphereLollipopTraits(std::size_t sphereNum, double stickSphereRadius, double tipSphereRadius,
                              double stickSpherePenetration, double tipSpherePenetration,
-                             std::shared_ptr<CentralInteraction> centralInteraction)
+                             std::shared_ptr<CentralInteractionBase> centralInteraction)
             : PolysphereTraits(generateGeometry(sphereNum, stickSphereRadius, tipSphereRadius,
                                                 stickSpherePenetration, tipSpherePenetration),
-                               std::move(centralInteraction))
+                               std::move(centralInteraction), true)
     { }
 };
 

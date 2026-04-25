@@ -8,21 +8,37 @@
 #include "CentralInteraction.h"
 
 /**
- * @brief CentralInteraction class representing Lennard-Jones interaction.
- * @details It is defined as 4 * epsilon * ((r/sigma)^12 - (r/sigma)^6)
+ * @brief Parameters of Lennard-Jones interaction for a pair of interaction-centre types.
  */
-class LennardJonesInteraction : public CentralInteraction {
-private:
+struct LennardJonesPairData {
     double epsilon{};
     double sigma{};
+};
 
-protected:
-    [[nodiscard]] double calculateEnergyForDistance2(double distance2) const override;
-
+/**
+ * @brief A central interaction representing Lennard-Jones potential.
+ * @details For a pair of interaction-centre types with LennardJonesPairData `(epsilon, sigma)`, the potential is equal
+ * to `4 * epsilon * ((sigma/r)^12 - (sigma/r)^6)`.
+ */
+class LennardJonesInteraction : public CentralInteraction<LennardJonesInteraction, LennardJonesPairData> {
 public:
-    LennardJonesInteraction(double epsilon, double sigma);
+    using CentralInteraction::CentralInteraction;
 
-    [[nodiscard]] double getRangeRadius() const override { return 3 * this->sigma; }
+    LennardJonesInteraction(double epsilon, double sigma) : CentralInteraction({epsilon, sigma}) {
+        Expects(epsilon > 0);
+        Expects(sigma > 0);
+    }
+
+    [[nodiscard]] double calculateEnergyForDistance2(double distance2, const LennardJonesPairData &pairData) const {
+        double x2 = pairData.sigma * pairData.sigma / distance2;
+        double x6 = x2*x2*x2;
+        double x12 = x6*x6;
+        return 4 * pairData.epsilon * (x12 - x6);
+    }
+
+    [[nodiscard]] static double getRangeRadiusForPairData(const LennardJonesPairData &pairData) {
+        return 3 * pairData.sigma;
+    }
 };
 
 

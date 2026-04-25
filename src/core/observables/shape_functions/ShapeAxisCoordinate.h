@@ -11,8 +11,8 @@
 /**
  * @brief Function returning a given coordinate value of a given shape axis.
  * @details Both the primary name and a singular component name are `[axis]_[comp]`, where `[axis]` is `pa`, `sa` or
- * `aa`, referring to, respectively` primary, secondary and auxiliary axis (see ShapeGeometry) and `[comp]` is `x`, `y`
- * or `z`.
+ * `aa`, referring to, respectively, primary, secondary, and auxiliary axis (see ShapeGeometry), and `[comp]` is `x`,
+ * `y` or `z`.
  */
 class ShapeAxisCoordinate : public ShapeFunction {
 private:
