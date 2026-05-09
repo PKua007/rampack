@@ -24,7 +24,6 @@
 #include "core/lattice/LayerRotationTransformer.h"
 #include "core/lattice/LayerWiseCellOptimizationTransformer.h"
 #include "core/lattice/RotationRandomizingTransformer.h"
-#include "core/lattice/RotationRandomizingTransformer.h"
 
 using namespace pyon::matcher;
 
@@ -81,6 +80,9 @@ namespace {
 
     class AutoAxisOrderSerialPopulator : public LatticePopulator {
     private:
+        std::size_t startFrom{};
+        std::size_t every{};
+
         [[nodiscard]] std::string optimizeAxisOrder(const Lattice &lattice) const {
             std::string axisOrder = "xyz";
             auto dim = lattice.getDimensions();
@@ -91,10 +93,13 @@ namespace {
         }
 
     public:
+        AutoAxisOrderSerialPopulator(std::size_t startFrom, std::size_t every) : startFrom{startFrom}, every{every}
+        { }
+
         [[nodiscard]] std::vector<Shape> populateLattice(const Lattice &lattice,
                                                          std::size_t numOfShapes) const override
         {
-            SerialPopulator serialPopulator(this->optimizeAxisOrder(lattice));
+            SerialPopulator serialPopulator(this->optimizeAxisOrder(lattice), this->startFrom, this->every);
             return serialPopulator.populateLattice(lattice, numOfShapes);
         }
     };
@@ -379,14 +384,18 @@ namespace {
 
         return MatcherDataclass("serial")
             .arguments({{"n_shapes", MatcherInt{}.positive().mapTo<std::size_t>()},
-                        {"axis_order", axisOrderAuto | axisOrder, R"("auto")"}})
+                        {"axis_order", axisOrderAuto | axisOrder, R"("auto")"},
+                        {"start_from", MatcherInt{}.nonNegative().mapTo<std::size_t>(), "0"},
+                        {"every", MatcherInt{}.positive().mapTo<std::size_t>(), "1"}})
             .mapTo([](const DataclassData &serial) -> PopulatorData {
                 auto nShapes = serial["n_shapes"].as<std::size_t>();
                 auto axisOrder = serial["axis_order"].as<std::string>();
+                auto startFrom = serial["start_from"].as<std::size_t>();
+                auto every = serial["every"].as<std::size_t>();
                 if (axisOrder == "auto")
-                    return {std::make_shared<AutoAxisOrderSerialPopulator>(), nShapes};
+                    return {std::make_shared<AutoAxisOrderSerialPopulator>(startFrom, every), nShapes};
                 else
-                    return {std::make_shared<SerialPopulator>(axisOrder), nShapes};
+                    return {std::make_shared<SerialPopulator>(axisOrder, startFrom, every), nShapes};
             });
     }
 

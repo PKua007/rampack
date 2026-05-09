@@ -11,6 +11,7 @@
 
 std::vector<Shape> RandomPopulator::populateLattice(const Lattice &lattice, std::size_t numOfShapes) const {
     std::size_t latticeSize = lattice.size();
+    Expects(numOfShapes > 0);
     Expects(latticeSize >= numOfShapes);
 
     auto allShapes = lattice.generateMolecules();
