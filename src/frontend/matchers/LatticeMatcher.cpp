@@ -97,7 +97,7 @@ namespace {
         { }
 
         [[nodiscard]] std::vector<Shape> populateLattice(const Lattice &lattice,
-                                                         std::size_t numOfShapes) const override
+                                                         std::optional<std::size_t> numOfShapes) const override
         {
             SerialPopulator serialPopulator(this->optimizeAxisOrder(lattice), this->startFrom, this->every);
             return serialPopulator.populateLattice(lattice, numOfShapes);
@@ -106,8 +106,8 @@ namespace {
 
     class FullPopulator : public LatticePopulator {
     public:
-        [[nodiscard]] std::vector<Shape> populateLattice(const Lattice &lattice,
-                                                         [[maybe_unused]] std::size_t numOfShapes) const override
+        [[nodiscard]] std::vector<Shape>
+        populateLattice(const Lattice &lattice, [[maybe_unused]] std::optional<std::size_t> numOfShapes) const override
         {
             return lattice.generateMolecules();
         }

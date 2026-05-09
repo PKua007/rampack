@@ -12,12 +12,16 @@ SerialPopulator::SerialPopulator(const std::string &axisOrderString, const std::
     Expects(every > 0);
 }
 
-std::vector<Shape> SerialPopulator::populateLattice(const Lattice &lattice, std::size_t numOfShapes) const {
-    Expects(numOfShapes > 0);
-    Expects((numOfShapes - 1) * this->every + this->startFrom < lattice.size());
+std::vector<Shape> SerialPopulator::populateLattice(const Lattice &lattice, std::optional<std::size_t> numOfShapes) const {
+    const auto latticeSize = lattice.size();
+    if (numOfShapes.has_value()) {
+        Expects(*numOfShapes > 0);
+        Expects((*numOfShapes - 1) * this->every + this->startFrom < latticeSize);
+    } else {
+        Expects(this->startFrom < latticeSize);
+    }
 
     std::vector<Shape> shapes;
-    shapes.reserve(numOfShapes);
     const auto &dim = lattice.getDimensions();
 
     std::array<std::size_t, 3> i{};
@@ -37,7 +41,7 @@ std::vector<Shape> SerialPopulator::populateLattice(const Lattice &lattice, std:
                         shapeIdx++;
                         continue;
                     }
-                    if (shapes.size() == numOfShapes)
+                    if (numOfShapes.has_value() && shapes.size() == *numOfShapes)
                         return shapes;
 
                     auto pos = Vector<3>{static_cast<double>(i[0]),

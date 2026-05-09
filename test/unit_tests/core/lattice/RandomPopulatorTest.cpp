@@ -34,4 +34,10 @@ TEST_CASE("RandomPopulator") {
     SECTION("throws for zero requested shapes") {
         CHECK_THROWS_AS(randomPopulator.populateLattice(lattice, 0), PreconditionException);
     }
+
+    SECTION("fills all shapes when numOfShapes is nullopt") {
+        auto shapes = randomPopulator.populateLattice(lattice, std::nullopt);
+
+        CHECK(shapes == lattice.generateMolecules());
+    }
 }

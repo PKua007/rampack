@@ -35,7 +35,8 @@ public:
      * lattice (Y is the outermost loop). All cells but last are filled fully (the last one may not be filled fully in
      * order to meet @a numOfShapes target). Order of shapes within the cell is preserved.
      */
-    [[nodiscard]] std::vector<Shape> populateLattice(const Lattice &lattice, std::size_t numOfShapes) const override;
+    [[nodiscard]] std::vector<Shape> populateLattice(const Lattice &lattice,
+                                                     std::optional<std::size_t> numOfShapes) const override;
 };
 
 

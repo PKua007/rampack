@@ -33,6 +33,14 @@ TEST_CASE("SerialPopulator: single shape in cell") {
 
         CHECK(shapes == std::vector<Shape>{Shape({0.5, 0.5, 1.5}), Shape({0.5, 1.5, 0.5}), Shape({1.5, 1.5, 1.5})});
     }
+
+    SECTION("fill all with delayed start and skip") {
+        SerialPopulator serialPopulator("yxz", 1, 3);
+
+        auto shapes = serialPopulator.populateLattice(lattice, std::nullopt);
+
+        CHECK(shapes == std::vector<Shape>{Shape({0.5, 0.5, 1.5}), Shape({0.5, 1.5, 0.5}), Shape({1.5, 1.5, 1.5})});
+    }
 }
 
 TEST_CASE("SerialPopulator: 2 shapes in cell") {
@@ -59,9 +67,20 @@ TEST_CASE("SerialPopulator: 2 shapes in cell") {
     SECTION("delayed start and skip") {
         SerialPopulator serialPopulator("yxz", 1, 2);
 
-        auto shapes = serialPopulator.populateLattice(lattice, 3);
+        auto shapes = serialPopulator.populateLattice(lattice, 2);
 
-        CHECK(shapes == std::vector<Shape>{Shape({0.5, 0.5, 0.25}), Shape({0.5, 0.5, 1.25}), Shape({1.5, 0.5, 0.25})});
+        CHECK(shapes == std::vector<Shape>{Shape({0.5, 0.5, 0.25}), Shape({0.5, 0.5, 1.25})});
+    }
+
+    SECTION("fill all with delayed start and skip") {
+        SerialPopulator serialPopulator("yxz", 1, 2);
+
+        auto shapes = serialPopulator.populateLattice(lattice, std::nullopt);
+
+        CHECK(shapes == std::vector<Shape>{Shape({0.5, 0.5, 0.25}), Shape({0.5, 0.5, 1.25}),
+                                           Shape({1.5, 0.5, 0.25}), Shape({1.5, 0.5, 1.25}),
+                                           Shape({0.5, 1.5, 0.25}), Shape({0.5, 1.5, 1.25}),
+                                           Shape({1.5, 1.5, 0.25}), Shape({1.5, 1.5, 1.25})});
     }
 }
 
@@ -81,5 +100,10 @@ TEST_CASE("SerialPopulator: errors") {
 
         CHECK_NOTHROW(SerialPopulator("xyz", 1, 3).populateLattice(lattice, 3));
         CHECK_THROWS_AS(SerialPopulator("xyz", 2, 3).populateLattice(lattice, 3), PreconditionException);
+    }
+
+    SECTION("startFrom too far") {
+        CHECK_NOTHROW(SerialPopulator("xyz", 7).populateLattice(lattice, std::nullopt));
+        CHECK_THROWS_AS(SerialPopulator("xyz", 8).populateLattice(lattice, std::nullopt), PreconditionException);
     }
 }
