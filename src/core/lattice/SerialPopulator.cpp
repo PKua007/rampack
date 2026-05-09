@@ -7,7 +7,8 @@
 
 
 std::vector<Shape> SerialPopulator::populateLattice(const Lattice &lattice, std::size_t numOfShapes) const {
-    Expects(lattice.size() >= numOfShapes);
+    Expects(numOfShapes > 0);
+    Expects(numOfShapes + this->startFrom <= lattice.size());
 
     std::vector<Shape> shapes;
     shapes.reserve(numOfShapes);
@@ -16,11 +17,14 @@ std::vector<Shape> SerialPopulator::populateLattice(const Lattice &lattice, std:
     std::array<std::size_t, 3> i{};
     i.fill(0);
 
+    std::size_t shapeIdx{};
     for (i[this->axisOrder[0]] = 0; i[this->axisOrder[0]] < dim[this->axisOrder[0]]; i[this->axisOrder[0]]++) {
         for (i[this->axisOrder[1]] = 0; i[this->axisOrder[1]] < dim[this->axisOrder[1]]; i[this->axisOrder[1]]++) {
             for (i[this->axisOrder[2]] = 0; i[this->axisOrder[2]] < dim[this->axisOrder[2]]; i[this->axisOrder[2]]++) {
                 const auto &cell = lattice.getSpecificCell(i[0], i[1], i[2]);
                 for (const auto &shape : cell) {
+                    if (shapeIdx++ < this->startFrom)
+                        continue;
                     if (shapes.size() == numOfShapes)
                         return shapes;
                     Vector<3> pos = Vector<3>{static_cast<double>(i[0]),

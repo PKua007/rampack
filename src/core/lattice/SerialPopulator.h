@@ -15,14 +15,16 @@
 class SerialPopulator : public LatticePopulator {
 private:
     std::array<std::size_t, 3> axisOrder{};
+    std::size_t startFrom{};
 
 public:
     /**
      * @brief Constructs the object.
      * @param axisOrderString order in which axes will be looped through.
+     * @param startFrom skip that many shapes and start filling from the next
      */
-    explicit SerialPopulator(const std::string &axisOrderString)
-            : axisOrder{LatticeTraits::parseAxisOrder(axisOrderString)}
+    explicit SerialPopulator(const std::string &axisOrderString, const std::size_t startFrom = 0)
+            : axisOrder{LatticeTraits::parseAxisOrder(axisOrderString)}, startFrom{startFrom}
     { }
 
     /**
