@@ -25,6 +25,14 @@ TEST_CASE("SerialPopulator: single shape in cell") {
 
         CHECK(shapes == std::vector<Shape>{Shape({1.5, 0.5, 0.5}), Shape({1.5, 0.5, 1.5}), Shape({0.5, 1.5, 0.5})});
     }
+
+    SECTION("delayed start and skip") {
+        SerialPopulator serialPopulator("yxz", 1, 3);
+
+        auto shapes = serialPopulator.populateLattice(lattice, 3);
+
+        CHECK(shapes == std::vector<Shape>{Shape({0.5, 0.5, 1.5}), Shape({0.5, 1.5, 0.5}), Shape({1.5, 1.5, 1.5})});
+    }
 }
 
 TEST_CASE("SerialPopulator: 2 shapes in cell") {
@@ -47,26 +55,31 @@ TEST_CASE("SerialPopulator: 2 shapes in cell") {
 
         CHECK(shapes == std::vector<Shape>{Shape({0.5, 0.5, 0.25}), Shape({0.5, 0.5, 1.5}), Shape({0.5, 0.5, 1.25})});
     }
+
+    SECTION("delayed start and skip") {
+        SerialPopulator serialPopulator("yxz", 1, 2);
+
+        auto shapes = serialPopulator.populateLattice(lattice, 3);
+
+        CHECK(shapes == std::vector<Shape>{Shape({0.5, 0.5, 0.25}), Shape({0.5, 0.5, 1.25}), Shape({1.5, 0.5, 0.25})});
+    }
 }
 
 TEST_CASE("SerialPopulator: errors") {
     Lattice lattice(UnitCell(TriclinicBox(1), {Shape({0.5, 0.5, 0.5})}), {2, 2, 2});
 
     SECTION("no shapes") {
-        SerialPopulator serialPopulator("xyz");
-
-        CHECK_THROWS_AS(serialPopulator.populateLattice(lattice, 0), PreconditionException);
+        CHECK_THROWS_AS(SerialPopulator("xyz").populateLattice(lattice, 0), PreconditionException);
     }
 
     SECTION("too many shapes") {
-        SerialPopulator serialPopulator("xyz");
+        CHECK_NOTHROW(SerialPopulator("xyz").populateLattice(lattice, 8));
+        CHECK_THROWS_AS(SerialPopulator("xyz").populateLattice(lattice, 9), PreconditionException);
 
-        CHECK_THROWS_AS(serialPopulator.populateLattice(lattice, 9), PreconditionException);
-    }
+        CHECK_NOTHROW(SerialPopulator("xyz", 1).populateLattice(lattice, 7));
+        CHECK_THROWS_AS(SerialPopulator("xyz", 2).populateLattice(lattice, 7), PreconditionException);
 
-    SECTION("skipped too far") {
-        SerialPopulator serialPopulator("xyz", 2);
-
-        CHECK_THROWS_AS(serialPopulator.populateLattice(lattice, 7), PreconditionException);
+        CHECK_NOTHROW(SerialPopulator("xyz", 1, 3).populateLattice(lattice, 3));
+        CHECK_THROWS_AS(SerialPopulator("xyz", 2, 3).populateLattice(lattice, 3), PreconditionException);
     }
 }

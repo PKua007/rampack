@@ -16,16 +16,16 @@ class SerialPopulator : public LatticePopulator {
 private:
     std::array<std::size_t, 3> axisOrder{};
     std::size_t startFrom{};
+    std::size_t every{};
 
 public:
     /**
      * @brief Constructs the object.
      * @param axisOrderString order in which axes will be looped through.
-     * @param startFrom skip that many shapes and start filling from the next
+     * @param startFrom skip that many shapes and start filling from the next.
+     * @param every every how many lattice slots to fill (for 1, all subsequent slots are filled)
      */
-    explicit SerialPopulator(const std::string &axisOrderString, const std::size_t startFrom = 0)
-            : axisOrder{LatticeTraits::parseAxisOrder(axisOrderString)}, startFrom{startFrom}
-    { }
+    explicit SerialPopulator(const std::string &axisOrderString, std::size_t startFrom = 0, std::size_t every = 1);
 
     /**
      * @brief Returns molecules for a given @a lattice populating it cell by cell and looping through them in the axis
