@@ -49,7 +49,7 @@ namespace {
 
     struct PopulatorData {
         std::shared_ptr<LatticePopulator> populator;
-        std::size_t numShapes{};
+        std::optional<std::size_t> numShapes;
     };
 
     class LatticePackingFactory : public PackingFactory {
@@ -57,7 +57,7 @@ namespace {
         Lattice lattice;
         std::vector<std::shared_ptr<LatticeTransformer>> transformers;
         std::shared_ptr<LatticePopulator> populator;
-        std::size_t numShapes{};
+        std::optional<std::size_t> numShapes;
 
     public:
         LatticePackingFactory(Lattice lattice, std::vector<std::shared_ptr<LatticeTransformer>> transformers,
@@ -227,7 +227,7 @@ namespace {
                 Lattice theLattice(cell, latticeDim);
 
                 auto transformations = do_create_transformations(kwargs);
-                PopulatorData fullPopulator{std::make_shared<FullPopulator>(), 0};
+                PopulatorData fullPopulator{std::make_shared<FullPopulator>(), std::nullopt};
                 return std::make_shared<LatticePackingFactory>(theLattice, transformations, fullPopulator);
             });
     }
@@ -381,14 +381,16 @@ namespace {
 
     MatcherDataclass create_serial() {
         auto axisOrderAuto = MatcherString("auto");
+        auto nShapes = MatcherInt{}.positive().mapTo<std::optional<std::size_t>>();
+        auto nShapesNone = MatcherNone{}.mapTo<std::optional<std::size_t>>();
 
         return MatcherDataclass("serial")
-            .arguments({{"n_shapes", MatcherInt{}.positive().mapTo<std::size_t>()},
+            .arguments({{"n_shapes", nShapes | nShapesNone, "None"},
                         {"axis_order", axisOrderAuto | axisOrder, R"("auto")"},
                         {"start_from", MatcherInt{}.nonNegative().mapTo<std::size_t>(), "0"},
                         {"every", MatcherInt{}.positive().mapTo<std::size_t>(), "1"}})
             .mapTo([](const DataclassData &serial) -> PopulatorData {
-                auto nShapes = serial["n_shapes"].as<std::size_t>();
+                auto nShapes = serial["n_shapes"].as<std::optional<std::size_t>>();
                 auto axisOrder = serial["axis_order"].as<std::string>();
                 auto startFrom = serial["start_from"].as<std::size_t>();
                 auto every = serial["every"].as<std::size_t>();
@@ -516,7 +518,7 @@ namespace {
         if (kwargs.hasKey("fill_partially"))
             return kwargs["fill_partially"].as<PopulatorData>();
         else
-            return {std::make_shared<FullPopulator>(), 0};
+            return {std::make_shared<FullPopulator>(), std::nullopt};
     }
 }
 
