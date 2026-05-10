@@ -20,8 +20,6 @@ class LayerWiseTransformer : public LatticeTransformer {
 private:
     LatticeTraits::Axis axis;
 
-    static std::size_t LCM(std::size_t n1, std::size_t n2);
-
     void recalculateUnitCell(UnitCell &cell, LatticeTraits::LayerAssociation &layerAssociation,
                              std::array<std::size_t, 3> &latticeDim, std::size_t requestedNumOfLayers) const;
 

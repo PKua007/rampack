@@ -3,6 +3,7 @@
 //
 
 #include <algorithm>
+#include <numeric>
 
 #include "LayerWiseTransformer.h"
 #include "utils/Exceptions.h"
@@ -41,7 +42,7 @@ void LayerWiseTransformer::recalculateUnitCell(UnitCell &cell, LatticeTraits::La
 {
     std::size_t numOfLayers = layerAssociation.size();
     // As many cells will be merged as is needed to contain requested number of layers preserving periodicity
-    std::size_t newNumOfLayers = LayerWiseTransformer::LCM(numOfLayers, requestedNumOfLayers);
+    std::size_t newNumOfLayers = std::lcm(numOfLayers, requestedNumOfLayers);
     std::size_t cellFactor = newNumOfLayers / numOfLayers;
     std::size_t axisIdx = LatticeTraits::axisToIndex(this->axis);
 
@@ -90,17 +91,4 @@ void LayerWiseTransformer::recalculateUnitCell(UnitCell &cell, LatticeTraits::La
     }
 
     cell = UnitCell(newCellShape, newCellShapes);
-}
-
-std::size_t LayerWiseTransformer::LCM(std::size_t n1, std::size_t n2) {
-    Expects(n1 > 0);
-    Expects(n2 > 0);
-
-    if (n1 < n2)
-        std::swap(n1, n2);
-
-    std::size_t n1_0 = n1;
-    while (n1 % n2 != 0)
-        n1 += n1_0;
-    return n1;
 }
