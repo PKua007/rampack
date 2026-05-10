@@ -43,6 +43,7 @@ private:
     std::size_t rotationAxisIdx{};
     RotationAngle rotationAngle = Radians{0};
     bool isAlternating{};
+    bool isCumulative{};
 
     [[nodiscard]] double getRotationAngle() const;
 
@@ -58,9 +59,23 @@ public:
      * @param rotationAngle angle by which to perform rotations (either explicit in Radians or FullRotationQuotient)
      * @param isAlternating if @a true, molecules in even layers will be rotated counter-clockwise and clockwise in odd
      * layers. If @a false, all molecules will be rotated counter-clockwise
+     * @param isCumulative if @a true, angle of rotation starts at zero at the lowest layer and is accumulated when
+     * moving up the layers, according to @a rotationAngle and @a isAlternating. If @a false, each layer is rotated
+     * independently. *Note*: for @a isAlternating equal `true`, the following is implied:
+     * <ul>
+     *   <li>
+     *     if @a isCumulative equals `true`, even layers are not rotated, while odd layers are rotated clockwise from
+     *     the original position
+     *   </li>
+     *   <li>
+     *     if @a isCumulative equals `false`, even layers are rotated counter-clockwise, while odd layers are rotated
+     *     clockwise from the original position
+     *   </li>
+     * </ul>
      */
     LayerRotationTransformer(LatticeTraits::Axis layerAxis, LatticeTraits::Axis rotationAxis,
-                             const RotationAngle& rotationAngle, bool isAlternating = true);
+                             const RotationAngle& rotationAngle, bool isAlternating = true,
+                             bool isCumulative = false);
 };
 
 
