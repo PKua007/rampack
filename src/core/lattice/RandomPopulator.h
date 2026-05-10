@@ -27,7 +27,8 @@ public:
      * @brief Populates @a lattice randomly with @a numOfShapes shapes leaving out random places in order to meet
      * requested @a numOfShapes, however preserving ordering given by Lattice::generateMolecules().
      */
-    [[nodiscard]] std::vector<Shape> populateLattice(const Lattice &lattice, std::size_t numOfShapes) const override;
+    [[nodiscard]] std::vector<Shape> populateLattice(const Lattice &lattice,
+                                                     std::optional<std::size_t> numOfShapes) const override;
 };
 
 

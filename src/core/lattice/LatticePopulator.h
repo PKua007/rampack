@@ -5,6 +5,7 @@
 #ifndef RAMPACK_LATTICEPOPULATOR_H
 #define RAMPACK_LATTICEPOPULATOR_H
 
+#include <optional>
 #include <vector>
 
 #include "Lattice.h"
@@ -21,10 +22,12 @@ public:
     virtual ~LatticePopulator() = default;
 
     /**
-     * @brief Populates a given @a lattice with @a numOfShapes shapes. Which ones are skipped is specific to
-     * implementing class.
+     * @brief Populates a given @a lattice with @a numOfShapes shapes.
+     * @details Which ones are skipped is specific to implementing class. If @a numOfShapes is @a std::nullopt, as many
+     * shapes as possible are populated according to the current filling scheme.
      */
-    [[nodiscard]] virtual std::vector<Shape> populateLattice(const Lattice &lattice, std::size_t numOfShapes) const = 0;
+    [[nodiscard]] virtual std::vector<Shape> populateLattice(const Lattice &lattice,
+                                                             std::optional<std::size_t> numOfShapes) const = 0;
 };
 
 

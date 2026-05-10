@@ -21,6 +21,8 @@ library (later, with Python bindings as well).
 * Added [class `reflection`](docs/input-file.md#class-reflection) move sampler.
 * Added pairwise parameters for [soft interactions](docs/shapes.md#soft-interaction-classes) between
   [interaction center types](docs/shapes.md#interaction-center-types) of sphere-based shapes.
+* Added delayed and strided filling to [class `serial`](docs/initial-arrangement.md#class-serial) lattice populator
+  via `start_from` and `every`. `n_shapes` is now optional and defaults to traversing the lattice until the end.
 
 ### Changed
 
@@ -31,8 +33,6 @@ library (later, with Python bindings as well).
   This includes [class `polysphere`](docs/shapes.md#class-polysphere) itself, as well as the previously hard-only
   [class `polysphere_lollipop`](docs/shapes.md#class-polysphere_lollipop) and
   [class `polysphere_wedge`](docs/shapes.md#class-polysphere_wedge).
-
-
 ## [1.2.0] - 2023-12-03
 
 ### Fixed

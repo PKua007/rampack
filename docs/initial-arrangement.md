@@ -561,21 +561,41 @@ in [class `lattice`](#class-lattice). The following ones are available:
 
 ```python
 serial(
-    n_shapes,
-    axis_order = "auto"
+    n_shapes = None,
+    axis_order = "auto",
+    start_from = 0,
+    every = 1
 )
 ```
 
-Fills the vacant spots in the lattice cell by cell, where cells are first grouped in rows, then rows in layers, and
-finally the layers are stacked on top of one another. The operation is interrupted when `n_shapes` shapes is already
-placed, leaving the rest of spaces empty.
+Fills the vacant spots in the lattice cell by cell. The traversal order is controlled by `axis_order`, while
+`start_from` and `every` determine which lattice slots are skipped. Filling stops after `n_shapes` shapes are placed,
+or after the traversal ends if `n_shapes = None`. Example:
+
+```python
+lattice(
+    cell = sc,
+    cell_dim = 1,
+    n_cells = [9, 9, 9],
+    fill_partially = serial(
+        n_shapes = 122,
+        axis_order = "zyx",
+        start_from = 243,
+        every = 2
+    )
+)
+```
+
+This creates a `9 x 9 x 9` simple cubic lattice in which only the three middle layers along the z-axis are populated,
+with occupied lattice slots alternating in a checkerboard pattern.
 
 Arguments:
 
-* ***n_shapes***
+* ***n_shapes*** (*= `None`*)
 
   Determines how many shapes have to be placed inside the lattice. It has to be smaller or equal the maximal number of
-  shapes in the lattice.
+  shapes reachable by the current filling scheme. If it is `None`, it is treated as the highest possible value (lattice
+  slots are populated according to the current filling scheme until the lattice traversal ends).
 
 * ***axis_order*** (*= "auto"*)
   
@@ -586,6 +606,18 @@ Arguments:
   * `"auto"` - outermost loop is for the axis with the highest number of cells, and the innermost loop for the one with
     the lowest. It means that rows are created along the direction with the smallest number of cells, and layers created
     of such rows are stacked along the axis with the highest number of cells
+
+* `since v1.3.0` ***start_from*** (*= 0*)
+
+  Number of lattice slots to skip before placing the first shape.
+
+* `since v1.3.0` ***every*** (*= 1*)
+
+  Place a shape in every `every`-th lattice slot after applying `start_from`. For `every = 1`, all subsequent matching
+  slots are populated.
+
+> Since v1.3.0, `n_shapes` defaults to `None` (fill according to the current serial scheme until the lattice traversal
+> ends). Previously, it had to be specified explicitly.
     
 
 ### Class `random`
