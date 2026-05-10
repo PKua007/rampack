@@ -15,7 +15,7 @@ LayerRotationTransformer::LayerRotationTransformer(LatticeTraits::Axis layerAxis
           rotationAngle{rotationAngle}, isAlternating{isAlternating}
 { }
 
-std::size_t LayerRotationTransformer::getRequestedNumOfLayers() const {
+std::optional<std::size_t> LayerRotationTransformer::getRequestedNumOfLayers() const {
     return this->isAlternating ? 2 : 1;
 }
 

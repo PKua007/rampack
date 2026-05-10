@@ -48,7 +48,7 @@ private:
 
 protected:
     [[nodiscard]] Shape transformShape(const Shape &shape, std::size_t layerIdx) const override;
-    [[nodiscard]] std::size_t getRequestedNumOfLayers() const override;
+    [[nodiscard]] std::optional<std::size_t> getRequestedNumOfLayers() const override;
 
 public:
     /**

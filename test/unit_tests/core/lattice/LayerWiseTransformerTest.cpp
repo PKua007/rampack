@@ -20,7 +20,7 @@ TEST_CASE("LayerWiseTransformer: 1 layer in cell, 1 requested") {
 
     transformer.transform(lattice, shapeTraits);
 
-    auto expectedMolecules = std::vector<Shape>{Shape({0.5, 0.5, 0}), Shape({0, 0.5, 0})};
+    auto expectedMolecules = std::vector{Shape({0.5, 0.5, 0}), Shape({0, 0.5, 0})};
     CHECK_THAT(lattice.getSpecificCell(0, 0, 0).getMolecules(), Catch::UnorderedEquals(expectedMolecules));
     CHECK(lattice.getCellBox() == TriclinicBox(1));
     CHECK(lattice.getLatticeBox() == TriclinicBox(2));
@@ -39,8 +39,8 @@ TEST_CASE("LayerWiseTransformer: 1 layer in cell, 2 requested") {
 
     transformer.transform(lattice, shapeTraits);
 
-    auto expectedMolecules = std::vector<Shape>{Shape({0, 0, 0.25}), Shape({0.5, 0, 0.25}),
-                                                Shape({0, 0, 0.75}), Shape({0.5, 0, 0.75})};
+    auto expectedMolecules = std::vector{Shape({0, 0, 0.25}), Shape({0.5, 0, 0.25}),
+                                         Shape({0, 0, 0.75}), Shape({0.5, 0, 0.75})};
     CHECK_THAT(lattice.getSpecificCell(0, 0, 0).getMolecules(), Catch::UnorderedEquals(expectedMolecules));
     CHECK(lattice.getCellBox() == TriclinicBox(std::array<double, 3>{1, 1, 2}));
     CHECK(lattice.getLatticeBox() == TriclinicBox(std::array<double, 3>{2, 2, 4}));
@@ -62,12 +62,32 @@ TEST_CASE("LayerWiseTransformer: 2 layers in cell, 2 requested") {
 
     transformer.transform(lattice, shapeTraits);
 
-    auto expectedMolecules = std::vector<Shape>{Shape({0, 0, 0.25}), Shape({0.5, 0, 0.25}),
-                                                Shape({0, 0, 0.75}), Shape({0.5, 0, 0.75})};
+    auto expectedMolecules = std::vector{Shape({0, 0, 0.25}), Shape({0.5, 0, 0.25}),
+                                         Shape({0, 0, 0.75}), Shape({0.5, 0, 0.75})};
     CHECK_THAT(lattice.getSpecificCell(0, 0, 0).getMolecules(), Catch::UnorderedEquals(expectedMolecules));
     CHECK(lattice.getCellBox() == TriclinicBox(1));
     CHECK(lattice.getLatticeBox() == TriclinicBox(2));
     CHECK(lattice.getDimensions() == std::array<std::size_t, 3>{2, 2, 2});
+}
+
+TEST_CASE("LayerWiseTransformer: 2 layers in cell, std::nullopt requested") {
+    Lattice lattice(UnitCell(TriclinicBox(1), {Shape({0.5, 0.5, 0.25}), Shape({0.5, 0.5, 0.75})}), {2, 2, 2});
+    MockLayerWiseTransformer transformer(LatticeTraits::Axis::Z);
+    ALLOW_CALL(transformer, getRequestedNumOfLayers()).RETURN(std::nullopt);
+    REQUIRE_CALL(transformer, transformShape(Shape({0.5, 0.5, 0.125}), 0ul)).RETURN(Shape({0, 0, 0.125}));
+    REQUIRE_CALL(transformer, transformShape(Shape({0.5, 0.5, 0.375}), 1ul)).RETURN(Shape({0, 0, 0.375}));
+    REQUIRE_CALL(transformer, transformShape(Shape({0.5, 0.5, 0.625}), 2ul)).RETURN(Shape({0, 0, 0.625}));
+    REQUIRE_CALL(transformer, transformShape(Shape({0.5, 0.5, 0.875}), 3ul)).RETURN(Shape({0, 0, 0.875}));
+    MockShapeTraits shapeTraits;
+
+    transformer.transform(lattice, shapeTraits);
+
+    auto expectedMolecules = std::vector{Shape({0, 0, 0.125}), Shape({0, 0, 0.375}),
+                                         Shape({0, 0, 0.625}), Shape({0, 0, 0.875})};
+    CHECK_THAT(lattice.getSpecificCell(0, 0, 0).getMolecules(), Catch::UnorderedEquals(expectedMolecules));
+    CHECK(lattice.getCellBox() == TriclinicBox(std::array<double, 3>{1, 1, 2}));
+    CHECK(lattice.getLatticeBox() == TriclinicBox(std::array<double, 3>{2, 2, 2}));
+    CHECK(lattice.getDimensions() == std::array<std::size_t, 3>{2, 2, 1});
 }
 
 TEST_CASE("LayerWiseTransformer: 3 layers in cell, 2 requested") {
@@ -85,9 +105,9 @@ TEST_CASE("LayerWiseTransformer: 3 layers in cell, 2 requested") {
 
     transformer.transform(lattice, shapeTraits);
 
-    auto expectedMolecules = std::vector<Shape>{Shape({0, 0, 0.125}), Shape({0, 0, 0.25}),
-                                                Shape({0, 0, 0.375}), Shape({0, 0, 0.625}),
-                                                Shape({0, 0, 0.75}), Shape({0, 0, 0.875})};
+    auto expectedMolecules = std::vector{Shape({0, 0, 0.125}), Shape({0, 0, 0.25}),
+                                         Shape({0, 0, 0.375}), Shape({0, 0, 0.625}),
+                                         Shape({0, 0, 0.75}), Shape({0, 0, 0.875})};
     CHECK_THAT(lattice.getSpecificCell(0, 0, 0).getMolecules(), Catch::UnorderedEquals(expectedMolecules));
     CHECK(lattice.getCellBox() == TriclinicBox(std::array<double, 3>{1, 1, 2}));
     CHECK(lattice.getLatticeBox() == TriclinicBox(std::array<double, 3>{2, 2, 2}));

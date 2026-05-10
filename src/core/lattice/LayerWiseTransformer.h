@@ -5,6 +5,8 @@
 #ifndef RAMPACK_LAYERWISETRANSFORMER_H
 #define RAMPACK_LAYERWISETRANSFORMER_H
 
+#include <optional>
+
 #include "LatticeTransformer.h"
 #include "LatticeTraits.h"
 #include "core/ShapeTraits.h"
@@ -32,8 +34,9 @@ protected:
 
     /**
      * @brief Returns requested number of layers.
+     * @details If `std::nullopt`, whole columns of cells along the layering axis will become new unit cells.
      */
-    [[nodiscard]] virtual std::size_t getRequestedNumOfLayers() const = 0;
+    [[nodiscard]] virtual std::optional<std::size_t> getRequestedNumOfLayers() const = 0;
 
 public:
     /**
