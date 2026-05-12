@@ -26,10 +26,10 @@ public:
      * [`gcd(numerator, denominator) = 1`].
      */
     struct FullRotationQuotient {
-        const unsigned numerator{};
+        const int numerator{};
         const unsigned denominator{};
 
-        FullRotationQuotient(unsigned numerator, unsigned denominator);
+        FullRotationQuotient(int numerator, unsigned denominator);
 
         [[nodiscard]] double toRadians() const { return 2*M_PI*numerator/denominator; }
     };

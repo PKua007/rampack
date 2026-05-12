@@ -2,28 +2,32 @@
 // Created by Piotr Kubala on 03/01/2023.
 //
 
+#include <charconv>
+#include <regex>
 #include <utility>
 #include <variant>
+
 #include <iterator> // Must be included before ZipIterator!
 #include <ZipIterator.hpp>
 
 #include "LatticeMatcher.h"
+
 #include "ArrangementMatcher.h"
-#include "frontend/PackingFactory.h"
-#include "core/lattice/UnitCell.h"
-#include "core/lattice/UnitCellFactory.h"
-#include "core/lattice/Lattice.h"
-#include "core/lattice/LatticeTransformer.h"
-#include "core/lattice/LatticePopulator.h"
-#include "core/lattice/SerialPopulator.h"
-#include "core/lattice/RandomPopulator.h"
-#include "frontend/LatticeDimensionsOptimizer.h"
 #include "core/lattice/CellOptimizationTransformer.h"
 #include "core/lattice/ColumnarTransformer.h"
 #include "core/lattice/FlipRandomizingTransformer.h"
+#include "core/lattice/Lattice.h"
+#include "core/lattice/LatticePopulator.h"
+#include "core/lattice/LatticeTransformer.h"
 #include "core/lattice/LayerRotationTransformer.h"
 #include "core/lattice/LayerWiseCellOptimizationTransformer.h"
+#include "core/lattice/RandomPopulator.h"
 #include "core/lattice/RotationRandomizingTransformer.h"
+#include "core/lattice/SerialPopulator.h"
+#include "core/lattice/UnitCell.h"
+#include "core/lattice/UnitCellFactory.h"
+#include "frontend/LatticeDimensionsOptimizer.h"
+#include "frontend/PackingFactory.h"
 
 using namespace pyon::matcher;
 
@@ -454,18 +458,104 @@ namespace {
             });
     }
 
+    std::optional<std::pair<std::string, std::string>> parse_quotient_rotation_parts(std::string quotientRotation) {
+        quotientRotation.erase(std::remove_if(quotientRotation.begin(), quotientRotation.end(), isspace),
+                               quotientRotation.end());
+
+        static std::regex quotientRegex(R"(([+-]?[0-9]+)\/([0-9]+))");
+        std::smatch quotientMatch;
+        if (!std::regex_match(quotientRotation, quotientMatch, quotientRegex))
+            return std::nullopt;
+
+        std::string numerator = quotientMatch[1];
+        std::string denominator = quotientMatch[2];
+        if (numerator.front() == '+')
+            numerator = numerator.substr(1);
+        return std::make_pair(numerator, denominator);
+    }
+
+    template <typename Int, typename = std::enable_if_t<std::is_integral_v<Int>>>
+    Int parse_integral_maybe_out_of_range(const std::string &str) {
+        Int result{};
+        const auto ptrBegin = str.data();
+        const auto ptrEnd = str.data() + str.size();
+        auto [ptr, ec] = std::from_chars(ptrBegin, ptrEnd, result);
+
+        if (ec == std::errc::result_out_of_range)
+            throw std::out_of_range(str);
+        const bool parsedFully = (ptr == ptrEnd);
+        if (ec == std::errc{} && parsedFully)
+            return result;
+        AssertThrow("unreachable: regex should have caught it earlier");
+    }
+
+    std::optional<std::pair<int, unsigned>>
+    parse_quotient_rotation_ints(const std::pair<std::string, std::string> &quotientRotationParts) {
+        try {
+            return std::make_pair(
+                parse_integral_maybe_out_of_range<int>(quotientRotationParts.first),
+                parse_integral_maybe_out_of_range<unsigned>(quotientRotationParts.second)
+            );
+        } catch (const std::out_of_range&) {
+            return std::nullopt;
+        }
+        AssertThrow("unreachable: regex should have caught it earlier");
+    }
+
     MatcherDataclass create_layer_rotate() {
+        using RotationAngle = LayerRotationTransformer::RotationAngle;
+        using FullRotationQuotient = LayerRotationTransformer::FullRotationQuotient;
+
+        auto degreeRotation = MatcherFloat{}.mapTo([](const float rotation) -> RotationAngle {
+            return M_PI * rotation / 180;
+        });
+
+        auto quotientRotation = MatcherString{}
+        .filter([](const std::string &rotation) {
+            return parse_quotient_rotation_parts(rotation).has_value();
+        })
+        .describe(R"(of the form "(+/-)numerator/denominator")")
+        .filter([](const std::string &rotation) {
+            const auto quotientRotationParts = *parse_quotient_rotation_parts(rotation);
+            return parse_quotient_rotation_ints(quotientRotationParts).has_value();
+        })
+        .describe([]() -> std::string {
+            constexpr auto unsignedMin = std::numeric_limits<unsigned>::min();
+            constexpr auto unsignedMax = std::numeric_limits<unsigned>::max();
+            constexpr auto signedMin = std::numeric_limits<int>::min();
+            constexpr auto signedMax = std::numeric_limits<int>::max();
+            std::ostringstream rangeDescription;
+            rangeDescription << "with numerator in the range [" << signedMin << ", " << signedMax
+                             << "] and denominator in the range [" << unsignedMin << ", " << unsignedMax << "]";
+            return rangeDescription.str();
+        }())
+        .filter([](const std::string &rotation) {
+            const auto quotientRotationParts = *parse_quotient_rotation_parts(rotation);
+            const auto[numerator, denominator] = *parse_quotient_rotation_ints(quotientRotationParts);
+            return denominator != 0;
+        })
+        .describe("with denominator != 0")
+        .mapTo([](const std::string &rotation) -> RotationAngle {
+            const auto quotientRotationParts = *parse_quotient_rotation_parts(rotation);
+            const auto[numerator, denominator] = *parse_quotient_rotation_ints(quotientRotationParts);
+            return FullRotationQuotient(numerator, denominator);
+        });
+
         return MatcherDataclass("layer_rotate")
             .arguments({{"layer_axis", axis},
                         {"rot_axis", axis},
-                        {"rot_angle", MatcherFloat{}},
-                        {"alternating", MatcherBoolean{}}})
+                        {"rot_angle", degreeRotation | quotientRotation},
+                        {"alternating", MatcherBoolean{}},
+                        {"cumulative", MatcherBoolean{}, "False"}})
             .mapTo([](const DataclassData &layerRotate) -> std::shared_ptr<LatticeTransformer> {
                 auto layerAxis = layerRotate["layer_axis"].as<LatticeTraits::Axis>();
                 auto rotAxis = layerRotate["rot_axis"].as<LatticeTraits::Axis>();
-                auto rotAngle = M_PI * layerRotate["rot_angle"].as<double>() / 180;
+                auto rotAngle = layerRotate["rot_angle"].as<RotationAngle>();
                 auto alternating = layerRotate["alternating"].as<bool>();
-                return std::make_shared<LayerRotationTransformer>(layerAxis, rotAxis, rotAngle, alternating);
+                auto cumulative = layerRotate["cumulative"].as<bool>();
+                return std::make_shared<LayerRotationTransformer>(
+                    layerAxis, rotAxis, rotAngle, alternating, cumulative
+                );
             });
     }
 

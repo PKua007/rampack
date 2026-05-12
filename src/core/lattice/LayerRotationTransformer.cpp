@@ -30,14 +30,13 @@ std::optional<std::size_t> LayerRotationTransformer::getRequestedNumOfLayers() c
     AssertThrow("valueless by exception");
 }
 
-LayerRotationTransformer::FullRotationQuotient::FullRotationQuotient(const unsigned numerator,
-                                                                     const unsigned denominator)
+LayerRotationTransformer::FullRotationQuotient::FullRotationQuotient(const int numerator, const unsigned denominator)
         : numerator{numerator}, denominator{denominator}
 {
     Expects(denominator != 0);
 
     const unsigned gcd = std::gcd(this->numerator, this->denominator);
-    const_cast<unsigned&>(this->numerator) /= gcd;
+    const_cast<int&>(this->numerator) /= gcd;
     const_cast<unsigned&>(this->denominator) /= gcd;
 }
 
