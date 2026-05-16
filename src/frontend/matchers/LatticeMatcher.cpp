@@ -502,49 +502,59 @@ namespace {
         AssertThrow("unreachable: regex should have caught it earlier");
     }
 
-    MatcherDataclass create_layer_rotate() {
+    MatcherDataclass create_quotient_rotation() {
         using RotationAngle = LayerRotationTransformer::RotationAngle;
         using FullRotationQuotient = LayerRotationTransformer::FullRotationQuotient;
+
+        auto quotientString = MatcherString{}
+            .filter([](const std::string &rotation) {
+                return parse_quotient_rotation_parts(rotation).has_value();
+            })
+            .describe(R"(of the form "(+/-)numerator/denominator")")
+            .filter([](const std::string &rotation) {
+                const auto quotientRotationParts = *parse_quotient_rotation_parts(rotation);
+                return parse_quotient_rotation_ints(quotientRotationParts).has_value();
+            })
+            .describe([]() -> std::string {
+                constexpr auto unsignedMin = std::numeric_limits<unsigned>::min();
+                constexpr auto unsignedMax = std::numeric_limits<unsigned>::max();
+                constexpr auto signedMin = std::numeric_limits<int>::min();
+                constexpr auto signedMax = std::numeric_limits<int>::max();
+                std::ostringstream rangeDescription;
+                rangeDescription << "with numerator in the range [" << signedMin << ", " << signedMax
+                                 << "] and denominator in the range [" << unsignedMin << ", " << unsignedMax << "]";
+                return rangeDescription.str();
+            }())
+            .filter([](const std::string &rotation) {
+                const auto quotientRotationParts = *parse_quotient_rotation_parts(rotation);
+                const auto[numerator, denominator] = *parse_quotient_rotation_ints(quotientRotationParts);
+                return denominator != 0;
+            })
+            .describe("with denominator != 0")
+            .mapTo([](const std::string &rotation) -> RotationAngle {
+                const auto quotientRotationParts = *parse_quotient_rotation_parts(rotation);
+                const auto[numerator, denominator] = *parse_quotient_rotation_ints(quotientRotationParts);
+                return FullRotationQuotient(numerator, denominator);
+            });
+
+        return MatcherDataclass("turn_fraction")
+            .arguments({{"fraction", quotientString}})
+            .mapTo([](const DataclassData &quotient) {
+                return quotient["fraction"].as<RotationAngle>();
+            });
+    }
+
+    MatcherDataclass create_layer_rotate() {
+        using RotationAngle = LayerRotationTransformer::RotationAngle;
 
         auto degreeRotation = MatcherFloat{}.mapTo([](const float rotation) -> RotationAngle {
             return M_PI * rotation / 180;
         });
 
-        auto quotientRotation = MatcherString{}
-        .filter([](const std::string &rotation) {
-            return parse_quotient_rotation_parts(rotation).has_value();
-        })
-        .describe(R"(of the form "(+/-)numerator/denominator")")
-        .filter([](const std::string &rotation) {
-            const auto quotientRotationParts = *parse_quotient_rotation_parts(rotation);
-            return parse_quotient_rotation_ints(quotientRotationParts).has_value();
-        })
-        .describe([]() -> std::string {
-            constexpr auto unsignedMin = std::numeric_limits<unsigned>::min();
-            constexpr auto unsignedMax = std::numeric_limits<unsigned>::max();
-            constexpr auto signedMin = std::numeric_limits<int>::min();
-            constexpr auto signedMax = std::numeric_limits<int>::max();
-            std::ostringstream rangeDescription;
-            rangeDescription << "with numerator in the range [" << signedMin << ", " << signedMax
-                             << "] and denominator in the range [" << unsignedMin << ", " << unsignedMax << "]";
-            return rangeDescription.str();
-        }())
-        .filter([](const std::string &rotation) {
-            const auto quotientRotationParts = *parse_quotient_rotation_parts(rotation);
-            const auto[numerator, denominator] = *parse_quotient_rotation_ints(quotientRotationParts);
-            return denominator != 0;
-        })
-        .describe("with denominator != 0")
-        .mapTo([](const std::string &rotation) -> RotationAngle {
-            const auto quotientRotationParts = *parse_quotient_rotation_parts(rotation);
-            const auto[numerator, denominator] = *parse_quotient_rotation_ints(quotientRotationParts);
-            return FullRotationQuotient(numerator, denominator);
-        });
-
         return MatcherDataclass("layer_rotate")
             .arguments({{"layer_axis", axis},
                         {"rot_axis", axis},
-                        {"rot_angle", degreeRotation | quotientRotation},
+                        {"rot_angle", degreeRotation | create_quotient_rotation()},
                         {"alternating", MatcherBoolean{}},
                         {"cumulative", MatcherBoolean{}, "False"}})
             .mapTo([](const DataclassData &layerRotate) -> std::shared_ptr<LatticeTransformer> {
