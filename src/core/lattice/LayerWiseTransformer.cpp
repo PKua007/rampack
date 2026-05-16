@@ -3,6 +3,7 @@
 //
 
 #include <algorithm>
+#include <numeric>
 
 #include "LayerWiseTransformer.h"
 #include "utils/Exceptions.h"
@@ -12,26 +13,29 @@ void LayerWiseTransformer::transform(Lattice &lattice, [[maybe_unused]] const Sh
     TransformerValidateMsg(lattice.isRegular(), "Lattice must be regular for layerwise transforming operations");
     TransformerValidateMsg(lattice.isNormalized(),
                            "Relative coordinates in unit cell must be in range [0, 1) to perform layerwise "
-                           "transforimng operation");
+                           "transforming operation");
 
     auto cell = lattice.getSpecificCell(0, 0, 0);
     auto layerAssociation = LatticeTraits::getLayerAssociation(cell, this->axis);
-    std::size_t requestedNumOfLayers = this->getRequestedNumOfLayers();
     auto dim = lattice.getDimensions();
+
+    const std::size_t axisIdx = LatticeTraits::axisToIndex(this->axis);
+    // If std::nullopt, merge whole columns of cells along the layering axis into new unit cells
+    const std::size_t requestedNumOfLayers = this->getRequestedNumOfLayers().value_or(layerAssociation.size() * dim[axisIdx]);
 
     this->recalculateUnitCell(cell, layerAssociation, dim, requestedNumOfLayers);
     Assert(layerAssociation.size() % requestedNumOfLayers == 0);
-    std::size_t numOfLayers = layerAssociation.size();
+    const std::size_t numOfLayers = layerAssociation.size();
 
     for (std::size_t layerIdx{}; layerIdx < numOfLayers; layerIdx++) {
         const auto &layerShapes = layerAssociation[layerIdx].second;
-        for (auto shapeIdx : layerShapes) {
+        for (const auto shapeIdx : layerShapes) {
             auto &cellShape = cell[shapeIdx];
             cellShape = this->transformShape(cellShape, layerIdx % requestedNumOfLayers);
         }
     }
 
-    Lattice newLattice(cell, dim);
+    const Lattice newLattice(cell, dim);
     lattice = newLattice;
 }
 
@@ -39,11 +43,11 @@ void LayerWiseTransformer::recalculateUnitCell(UnitCell &cell, LatticeTraits::La
                                                std::array<std::size_t, 3> &latticeDim,
                                                std::size_t requestedNumOfLayers) const
 {
-    std::size_t numOfLayers = layerAssociation.size();
+    const std::size_t numOfLayers = layerAssociation.size();
     // As many cells will be merged as is needed to contain requested number of layers preserving periodicity
-    std::size_t newNumOfLayers = LayerWiseTransformer::LCM(numOfLayers, requestedNumOfLayers);
-    std::size_t cellFactor = newNumOfLayers / numOfLayers;
-    std::size_t axisIdx = LatticeTraits::axisToIndex(this->axis);
+    const std::size_t newNumOfLayers = std::lcm(numOfLayers, requestedNumOfLayers);
+    const std::size_t cellFactor = newNumOfLayers / numOfLayers;
+    const std::size_t axisIdx = LatticeTraits::axisToIndex(this->axis);
 
     // Modify dimensions
     TransformerValidateMsg(latticeDim[axisIdx] % cellFactor == 0,
@@ -56,13 +60,13 @@ void LayerWiseTransformer::recalculateUnitCell(UnitCell &cell, LatticeTraits::La
     // cell size
     std::vector<std::pair<double, std::vector<std::size_t>>> newLayerAssociation;
     newLayerAssociation.reserve(newNumOfLayers);
-    std::size_t numMoleculesInCell = cell.size();
+    const std::size_t numMoleculesInCell = cell.size();
     for (std::size_t i{}; i < cellFactor; i++) {
-        for (const auto &layer : layerAssociation) {
-            double newLayerCoord = layer.first;
+        for (const auto &[layerCoord, moleculeIdxs] : layerAssociation) {
+            double newLayerCoord = layerCoord;
             newLayerCoord += static_cast<double>(i);
             newLayerCoord += static_cast<double>(cellFactor);
-            auto newMoleculeIdxs = layer.second;
+            auto newMoleculeIdxs = moleculeIdxs;
             // Indices of replicated molecules are shifted according to replica number preserving the order
             for (auto &newIdx : newMoleculeIdxs)
                 newIdx += i * numMoleculesInCell;
@@ -75,7 +79,7 @@ void LayerWiseTransformer::recalculateUnitCell(UnitCell &cell, LatticeTraits::La
     // appropriate scaling of relative coordinates (cell gets bigger)
     auto newCellShapeSides = cell.getBox().getSides();
     newCellShapeSides[axisIdx] *= static_cast<double>(cellFactor);
-    TriclinicBox newCellShape(newCellShapeSides);
+    const TriclinicBox newCellShape(newCellShapeSides);
 
     std::vector<Shape> newCellShapes;
     newCellShapes.reserve(cellFactor * numMoleculesInCell);
@@ -90,17 +94,4 @@ void LayerWiseTransformer::recalculateUnitCell(UnitCell &cell, LatticeTraits::La
     }
 
     cell = UnitCell(newCellShape, newCellShapes);
-}
-
-std::size_t LayerWiseTransformer::LCM(std::size_t n1, std::size_t n2) {
-    Expects(n1 > 0);
-    Expects(n2 > 0);
-
-    if (n1 < n2)
-        std::swap(n1, n2);
-
-    std::size_t n1_0 = n1;
-    while (n1 % n2 != 0)
-        n1 += n1_0;
-    return n1;
 }

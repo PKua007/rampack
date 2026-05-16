@@ -5,6 +5,8 @@
 #ifndef RAMPACK_LAYERWISETRANSFORMER_H
 #define RAMPACK_LAYERWISETRANSFORMER_H
 
+#include <optional>
+
 #include "LatticeTransformer.h"
 #include "LatticeTraits.h"
 #include "core/ShapeTraits.h"
@@ -20,8 +22,6 @@ class LayerWiseTransformer : public LatticeTransformer {
 private:
     LatticeTraits::Axis axis;
 
-    static std::size_t LCM(std::size_t n1, std::size_t n2);
-
     void recalculateUnitCell(UnitCell &cell, LatticeTraits::LayerAssociation &layerAssociation,
                              std::array<std::size_t, 3> &latticeDim, std::size_t requestedNumOfLayers) const;
 
@@ -34,8 +34,9 @@ protected:
 
     /**
      * @brief Returns requested number of layers.
+     * @details If `std::nullopt`, whole columns of cells along the layering axis will become new unit cells.
      */
-    [[nodiscard]] virtual std::size_t getRequestedNumOfLayers() const = 0;
+    [[nodiscard]] virtual std::optional<std::size_t> getRequestedNumOfLayers() const = 0;
 
 public:
     /**

@@ -482,7 +482,8 @@ layer_rotate(
     layer_axis,
     rot_axis,
     rot_angle,
-    alternating
+    alternating,
+    cumulative = False
 )
 ```
 
@@ -490,7 +491,23 @@ layer_rotate(
 * **Resulting lattice**: regular, normalized
 
 It recognizes the layers in the same way as [class `optimize_layers`](#class-optimize_layers) and rotates the particles
-in them.
+in them. Rotation may be applied independently to each layer or accumulated from one layer to the next, depending on
+the `alternating` and `cumulative` arguments. Examples:
+
+```python
+# All shapes are rotated counter-clockwise by 70 deg around the Y axis
+layer_rotate(layer_axis="z", rot_axis="y", rot_angle=70, alternating=False, cumulative=False)
+
+# XY layers alternate between counter-clockwise and clockwise rotation by 70 deg around the Y axis
+layer_rotate(layer_axis="z", rot_axis="y", rot_angle=70, alternating=True, cumulative=False)
+
+# XZ layers alternate between not being rotated and being rotated clockwise by 70 deg around the X axis
+layer_rotate(layer_axis="y", rot_axis="x", rot_angle=70, alternating=True, cumulative=True)
+
+# YZ layers are rotated counter-clockwise by, subsequently, 0, 72, 144, 216, and 288 deg around the Z axis,
+# wrapping periodically after 5 rotations
+layer_rotate(layer_axis="x", rot_axis="z", rot_angle=turn_fraction("1/5"), alternating=False, cumulative=True)
+```
 
 Arguments:
 
@@ -505,13 +522,41 @@ Arguments:
 
 * ***rot_angle***
 
-  The angle of rotation in degrees.
+  The angle of rotation. The following values are accepted:
+  * Float <br />
+    Rotation angle in degrees.
+  * `since v1.3.0` Class `turn_fraction(fraction)` <br />
+    A fraction of a full 360&deg; turn, specified as:
+    ```python
+    turn_fraction("(+/-)numerator/denominator")
+    ```
+    Positive fractions represent counter-clockwise rotations, while the negative ones - clockwise rotations. Examples:
+    ```python
+    turn_fraction("1/10")  # or turn_fraction(fraction="1/10")
+    turn_fraction("+2/7")  # or turn_fraction(fraction="+2/7")
+    turn_fraction("-3/8")  # or turn_fraction(fraction="-3/8")
+    ```
+    This form is especially useful in the  `alternating=False`, `cumulative=True` config, where it represents a periodic
+    twist.
 
 * ***alternating***
 
-  If `False`, all particles in the system will be rotated in the same direction. If `True`, particles in even layers
-  will be rotated counterclockwise, and particle in odd layers clockwise. 
+  If `False`, all layers in the system will be rotated in the same direction. If `True`, even layers will be rotated
+  counterclockwise, while odd layers - clockwise. <br />
+  **Note**: layers are counted from 0, *ie.* the lowermost one is an *even* layer.
+
+* `since v1.3.0` ***cumulative*** (*= `False`*)
+
+  If `False`, each layer is rotated independently according to `alternating`.
   
+  If `True`, the rotation is accumulated while moving through successive layers:
+  * if `alternating=False`, 0<sup>th</sup> layer is not rotated, 1<sup>st</sup> one by `rot_angle`, 2<sup>nd</sup> one
+    by `2*rot_angle`, etc. <br />
+    **Note**: if `rot_angle` is specified in degrees, rotations are always assumed to be non-periodic and a whole column
+    of unit cells in the direction of layering is collapsed into a single unit cell. To represent a periodic twist, use
+    the `rot_angle=turn_fraction(...)` variant instead.
+  * if `alternating=True`, even layers are not rotated, while odd layers are rotated clockwise by `rot_angle`.
+
 
 ### Class `randomize_rotation`
 
