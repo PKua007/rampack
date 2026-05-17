@@ -13,6 +13,11 @@ library (later, with Python bindings as well).
 
 ## [Unreleased]
 
+### Fixed
+
+* Fixed corrupted [XYZ trajectory recording](docs/output-formats.md#class-xyz-1) when continuing a run and appending
+  snapshots.
+
 ### Added
 
 * Added support for all [shape axes](docs/shapes.md#shape-axes) in
