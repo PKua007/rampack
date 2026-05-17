@@ -3,30 +3,36 @@
 //
 
 #include <regex>
+#include <sstream>
 
 #include "TempFileEnvironment.h"
+
+#include <iostream>
 
 #include "utils/Exceptions.h"
 
 
-TempFileEnvironment::TempFileEnvironment(const std::string &envName) {
+TempFileEnvironment::TempFileEnvironment(const std::string &envName, const bool clearOnDestruction)
+        : clearOnDestruction{clearOnDestruction}
+{
     static const std::regex envNameRegex(R"([-[:alnum:]_]+)");
     Expects(std::regex_match(envName, envNameRegex));
 
     const auto rootPath = std::filesystem::path(__FILE__).remove_filename();
     this->envPath = rootPath / "tmp_files" / envName;
-    Expects(!std::filesystem::exists(envPath));
+    if (this->clearOnDestruction && std::filesystem::exists(envPath))
+        std::filesystem::remove_all(this->envPath);
 
     std::filesystem::create_directories(this->envPath);
 }
 
 TempFileEnvironment::~TempFileEnvironment() {
-    if (std::filesystem::exists(this->envPath))
+    if (this->clearOnDestruction && std::filesystem::exists(this->envPath))
         std::filesystem::remove_all(this->envPath);
 }
 
 std::fstream TempFileEnvironment::openFile(const std::filesystem::path &filePath,
-                                           std::ios_base::openmode openMode) const
+                                           const std::ios_base::openmode openMode) const
 {
     Expects(filePath.is_relative());
 
@@ -36,8 +42,9 @@ std::fstream TempFileEnvironment::openFile(const std::filesystem::path &filePath
             std::filesystem::create_directories(fullParentPath);
     }
 
-    std::fstream file(this->envPath / filePath, openMode);
-    Assert(file.is_open());
+    const auto absoluteFilePath = this->envPath / filePath;
+    std::fstream file(absoluteFilePath, openMode);
+    AssertMsg(file.is_open(), absoluteFilePath);
     return file;
 }
 
@@ -54,4 +61,11 @@ void TempFileEnvironment::createDirectory(const std::filesystem::path &path) con
 void TempFileEnvironment::removeDirectory(const std::filesystem::path &path) const {
     Expects(path.is_relative());
     std::filesystem::remove_all(this->envPath / path);
+}
+
+std::string TempFileEnvironment::dumpFileContents(const std::filesystem::path &filePath) const {
+    auto file = this->openFile(filePath, std::ios_base::in);
+    std::ostringstream fileDump;
+    fileDump << file.rdbuf();
+    return fileDump.str();
 }

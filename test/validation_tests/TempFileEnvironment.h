@@ -9,12 +9,14 @@
 #include <fstream>
 #include <string>
 
+
 class TempFileEnvironment {
 private:
     std::filesystem::path envPath;
+    bool clearOnDestruction{};
 
 public:
-    explicit TempFileEnvironment(const std::string &envName);
+    explicit TempFileEnvironment(const std::string &envName, bool cleanOnDestruction = true);
     TempFileEnvironment(const TempFileEnvironment &) = delete;
     TempFileEnvironment(TempFileEnvironment &&) noexcept = delete;
     TempFileEnvironment &operator=(const TempFileEnvironment &) = delete;
@@ -25,6 +27,7 @@ public:
     void removeFile(const std::filesystem::path &filePath) const;
     void createDirectory(const std::filesystem::path &path) const;
     void removeDirectory(const std::filesystem::path &path) const;
+    [[nodiscard]] std::string dumpFileContents(const std::filesystem::path &filePath) const;
 };
 
 
