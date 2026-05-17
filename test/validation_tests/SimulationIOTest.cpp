@@ -7,6 +7,8 @@
 #include "matchers/MatrixApproxMatcher.h"
 #include "matchers/VectorApproxMatcher.h"
 
+#include "TempFileEnvironment.h"
+
 #include "core/Simulation.h"
 #include "core/io/RamtrjRecorder.h"
 #include "core/io/RamtrjPlayer.h"
@@ -36,6 +38,8 @@ namespace {
 
 TEST_CASE("Simulation IO: storing and restoring")
 {
+    TempFileEnvironment fileEnv("SimulationIO");
+    constexpr auto ramtrjFilename = "recording.ramtrj";
     KMerTraits traits(2, 0.5, 1);
     const auto &interaction = traits.getInteraction();
     OrthorhombicArrangingModel arrangingModel;
@@ -43,7 +47,6 @@ TEST_CASE("Simulation IO: storing and restoring")
     TriclinicBox box(10);
     std::ostringstream logger_stream;
     Logger logger(logger_stream);
-    std::stringbuf inout_buf;
 
     // Player packing
     auto pbc1 = std::make_unique<PeriodicBoundaryConditions>();
@@ -58,15 +61,17 @@ TEST_CASE("Simulation IO: storing and restoring")
     Simulation simulation(std::move(packing2), std::move(moveSamplers), 1234, std::move(scaler));
 
     SECTION("without continuation") {
-        auto inout_stream = std::make_unique<std::iostream>(&inout_buf);
+        auto inout_stream = std::make_unique<std::fstream>(
+            fileEnv.openFile(ramtrjFilename, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc)
+        );
         std::vector<std::unique_ptr<SimulationRecorder>> recorders;
         recorders.push_back(std::make_unique<RamtrjRecorder>(std::move(inout_stream), simulation.getPacking().size(),
                                                              100, false));
         auto collector = std::make_unique<ObservablesCollector>();
         simulation.integrate(1, 1, 1000, 1000, 100, 100, traits, std::move(collector), std::move(recorders), logger);
 
-        auto in_stream = std::make_unique<std::istream>(&inout_buf);
-        // We also check is auto fix will correctly tell that no fixing in needed
+        auto in_stream = std::make_unique<std::fstream>(fileEnv.openFile(ramtrjFilename, std::ios::in | std::ios::binary));
+        // We also check if auto fix will correctly tell that no fixing in needed
         RamtrjPlayer::AutoFix autoFix(simulation.getPacking().size());
         RamtrjPlayer player(std::move(in_stream), autoFix);
 
@@ -99,7 +104,9 @@ TEST_CASE("Simulation IO: storing and restoring")
 
     SECTION("with continuation") {
         // Initial run
-        auto inout_stream1 = std::make_unique<std::iostream>(&inout_buf);
+        auto inout_stream1 = std::make_unique<std::fstream>(
+            fileEnv.openFile(ramtrjFilename, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc)
+        );
         std::vector<std::unique_ptr<SimulationRecorder>> recorders1;
         recorders1.push_back(std::make_unique<RamtrjRecorder>(std::move(inout_stream1), simulation.getPacking().size(),
                                                               100, false));
@@ -107,7 +114,9 @@ TEST_CASE("Simulation IO: storing and restoring")
         simulation.integrate(1, 1, 500, 500, 100, 100, traits, std::move(collector1), std::move(recorders1), logger);
 
         // Continuation
-        auto inout_stream2 = std::make_unique<std::iostream>(&inout_buf);
+        auto inout_stream2 = std::make_unique<std::fstream>(
+            fileEnv.openFile(ramtrjFilename, std::ios::in | std::ios::out | std::ios::binary)
+        );
         std::vector<std::unique_ptr<SimulationRecorder>> recorders2;
         recorders2.push_back(std::make_unique<RamtrjRecorder>(std::move(inout_stream2), simulation.getPacking().size(),
                                                               100, true));
@@ -116,7 +125,7 @@ TEST_CASE("Simulation IO: storing and restoring")
         simulation.integrate(1, 1, 500, 500, 100, 100, traits, std::move(collector2), std::move(recorders2), logger,
                              1000);
 
-        auto in_stream = std::make_unique<std::istream>(&inout_buf);
+        auto in_stream = std::make_unique<std::fstream>(fileEnv.openFile(ramtrjFilename, std::ios::in | std::ios::binary));
         RamtrjPlayer player(std::move(in_stream));
         CHECK(player.getTotalCycles() == 2000);
         CHECK(player.getCycleStep() == 100);
@@ -129,13 +138,17 @@ TEST_CASE("Simulation IO: storing and restoring")
 
     SECTION("with continuation from 0 snapshots") {
         // Initial run
-        auto inout_stream1 = std::make_unique<std::iostream>(&inout_buf);
+        auto inout_stream1 = std::make_unique<std::fstream>(
+            fileEnv.openFile(ramtrjFilename, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc)
+        );
         auto recorder1 = std::make_unique<RamtrjRecorder>(std::move(inout_stream1), simulation.getPacking().size(),
                                                           100, false);
         recorder1.reset();
 
         // Continuation
-        auto inout_stream2 = std::make_unique<std::iostream>(&inout_buf);
+        auto inout_stream2 = std::make_unique<std::fstream>(
+            fileEnv.openFile(ramtrjFilename, std::ios::in | std::ios::out | std::ios::binary)
+        );
         std::vector<std::unique_ptr<SimulationRecorder>> recorders2;
         recorders2.push_back(std::make_unique<RamtrjRecorder>(std::move(inout_stream2), simulation.getPacking().size(),
                                                               100, true));
@@ -143,7 +156,7 @@ TEST_CASE("Simulation IO: storing and restoring")
         auto collector2 = std::make_unique<ObservablesCollector>();
         simulation.integrate(1, 1, 500, 500, 100, 100, traits, std::move(collector2), std::move(recorders2), logger);
 
-        auto in_stream = std::make_unique<std::istream>(&inout_buf);
+        auto in_stream = std::make_unique<std::fstream>(fileEnv.openFile(ramtrjFilename, std::ios::in | std::ios::binary));
         RamtrjPlayer player(std::move(in_stream));
         CHECK(player.getTotalCycles() == 1000);
         CHECK(player.getCycleStep() == 100);
@@ -155,7 +168,9 @@ TEST_CASE("Simulation IO: storing and restoring")
     }
 
     SECTION("fixing trajectory") {
-        auto inout_stream = std::make_unique<std::iostream>(&inout_buf);
+        auto inout_stream = std::make_unique<std::fstream>(
+            fileEnv.openFile(ramtrjFilename, std::ios::in | std::ios::out | std::ios::binary | std::ios::trunc)
+        );
         std::vector<std::unique_ptr<SimulationRecorder>> recorders;
         recorders.push_back(std::make_unique<RamtrjRecorder>(std::move(inout_stream), simulation.getPacking().size(),
                                                              100, false));
@@ -164,12 +179,12 @@ TEST_CASE("Simulation IO: storing and restoring")
 
         // Add garbage bytes
         {
-            std::iostream inout(&inout_buf);
-            inout.seekp(0, std::ios::end);
-            inout.write("12345", 5);
+            auto out_stream = fileEnv.openFile(ramtrjFilename, std::ios::app | std::ios::binary);
+            out_stream.seekp(0, std::ios::end);
+            out_stream.write("12345", 5);
         }
 
-        auto in_stream = std::make_unique<std::istream>(&inout_buf);
+        auto in_stream = std::make_unique<std::fstream>(fileEnv.openFile(ramtrjFilename, std::ios::in | std::ios::binary));
         RamtrjPlayer::AutoFix autoFix(simulation.getPacking().size());
         RamtrjPlayer player(std::move(in_stream), autoFix);
 
