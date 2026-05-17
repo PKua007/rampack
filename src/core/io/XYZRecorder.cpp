@@ -26,6 +26,7 @@ XYZRecorder::XYZRecorder(std::unique_ptr<std::iostream> out, bool append)
     if (append) {
         if (this->out->tellp() != 0)
             this->findLastCycleNumber();
+        this->out->seekp(0, std::ios::end);
     } else {
         ValidateMsg(this->out->tellp() == 0, "XYZRecorder: append = false however stream is not empty");
     }
