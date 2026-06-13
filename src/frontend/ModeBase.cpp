@@ -60,7 +60,7 @@ cxxopts::ParseResult ModeBase::parseOptions(cxxopts::Options &options, int argc,
     cxxopts::ParseResult parsedOptions;
     try {
         parsedOptions = options.parse(argc, argv);
-    } catch (const cxxopts::OptionParseException &ex) {
+    } catch (const cxxopts::exceptions::parsing &ex) {
         throw ValidationException(std::string("An error occurred while parsing command line options:\n") + ex.what());
     }
     return parsedOptions;
