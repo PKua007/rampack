@@ -6,10 +6,12 @@
 #define RAMPACK_MOVESAMPLER_H
 
 #include <random>
+#include <utility>
 #include <vector>
 
 #include "geometry/Matrix.h"
 #include "geometry/Vector.h"
+#include "core/ParticleSelection.h"
 #include "core/ShapeTraits.h"
 #include "core/Packing.h"
 
@@ -49,6 +51,18 @@ public:
     };
 
     virtual ~MoveSampler() = default;
+
+    void setParticleSelection(ParticleSelection selection) {
+        this->particleSelection = std::move(selection);
+    }
+
+    [[nodiscard]] ParticleSelection &getParticleSelection() {
+        return this->particleSelection;
+    }
+
+    [[nodiscard]] const ParticleSelection &getParticleSelection() const {
+        return this->particleSelection;
+    }
 
     /**
      * @brief Returns main (group) name of the MoveSampler.
@@ -98,6 +112,9 @@ public:
     virtual void setupForShapeTraits([[maybe_unused]] const ShapeTraits &shapeTraits) {
         // Do nothing by default
     }
+
+private:
+    ParticleSelection particleSelection;
 };
 
 

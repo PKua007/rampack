@@ -304,6 +304,8 @@ void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std:
 void Simulation::reset() {
     std::uniform_int_distribution<int>(0, this->packing->size() - 1);
     std::size_t numMoveSamplers = this->environment.getMoveSamplers().size();
+    for (auto &moveSampler : this->environment.getMoveSamplers())
+        moveSampler->getParticleSelection().prepare(this->packing->size());
     this->moveCounters.resize(numMoveSamplers);
     this->adjustmentCancelReported.resize(numMoveSamplers, false);
     for (auto &moveCounter : this->moveCounters)
