@@ -204,6 +204,16 @@ private:
         friend Counter operator+(Counter c1, const Counter &c2) { return c1 += c2; }
     };
 
+    struct DomainMoveScratch {
+        std::vector<std::vector<std::size_t>> filteredParticlesBySampler;
+        std::vector<const std::vector<std::size_t> *> particlesBySampler;
+        std::vector<std::size_t> moveTypeAccumulations;
+
+        void initialize(std::size_t numMoveSamplers, std::size_t maxParticles);
+        void resetForDomain(const std::vector<std::size_t> &domainParticleIndices);
+        [[nodiscard]] std::size_t getMemoryUsage() const;
+    };
+
     double temperature{};
     double pressure{};
 
@@ -228,6 +238,7 @@ private:
     std::vector<std::size_t> allParticleIndices;
     std::array<std::size_t, 3> domainDivisions;
     std::size_t numDomains{};
+    std::vector<DomainMoveScratch> domainMoveScratchByThread;
 
     std::shared_ptr<ObservablesCollector> observablesCollector;
 
@@ -253,7 +264,10 @@ private:
     void evaluateScalingMoveCounter(Logger &logger);
     void reset();
     void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger, bool displayOverlaps);
+    void calculateMoveTypeAccumulations(std::size_t numParticles,
+                                        std::vector<std::size_t> &moveTypeAccumulations) const;
     [[nodiscard]] std::vector<std::size_t> calculateMoveTypeAccumulations(std::size_t numParticles) const;
+    [[nodiscard]] std::size_t getDomainMemoryUsage() const;
     void fixRotationMatrices(const Interaction &interaction, Logger &logger);
     static double getRotationMatrixDeviation(const Matrix<3, 3> &rotation);
 
