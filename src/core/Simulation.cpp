@@ -581,8 +581,12 @@ void Simulation::evaluateMoleculeMoveCounter(Logger &logger) {
         auto &moveSampler = *moveSamplers[i];
         auto &moveCounter = this->moveCounters[i];
         std::vector<bool>::reference cancelReported = this->adjustmentCancelReported[i];
-        std::size_t requestedMoves = moveSampler.getNumOfRequestedMoves(this->packing->size());
+        std::size_t eligibleParticles = moveSampler.getParticleSelection().getNumActiveParticles();
+        std::size_t requestedMoves = moveSampler.getNumOfRequestedMoves(eligibleParticles);
         auto moveName = moveSampler.getName();
+
+        if (requestedMoves == 0)
+            continue;
 
         if (moveCounter.getMovesSinceEvaluation() < 100 * requestedMoves)
             continue;
