@@ -102,7 +102,7 @@ namespace {
     }
 }
 
-TEST_CASE("ReflectionSampler") {
+TEST_CASE("ReflectionSampler: move sampling") {
     using trompeloeil::_;
 
     // An L-shaped trimer on an XZ plane, but with its geometric center (the middle ball) displaced from the origin
@@ -147,6 +147,27 @@ TEST_CASE("ReflectionSampler") {
 
         const std::vector<Vector<3>> expectedRelativeCentresAfterReflection{{0, 1, 0}, {0, 0, 0}, {-1, 0, 0}};
         test_reflection_move(traits, reflectionSampler, rotatedShape, expectedRelativeCentresAfterReflection);
+    }
+}
+
+TEST_CASE("ReflectionSampler: requested moves") {
+    const GeneralShapeAxis reflectionAxis(Vector<3>{1, 0, 0});
+    const GeneralShapeAxis reflectionSymmetryAxis(ShapeGeometry::Axis::AUXILIARY);
+    ReflectionSampler reflectionSampler(reflectionAxis, reflectionSymmetryAxis, 10);
+
+    SECTION("no particles request no moves") {
+        CHECK(reflectionSampler.getNumOfRequestedMoves(0) == 0);
+    }
+
+    SECTION("non-empty sparse particle counts request at least one move") {
+        CHECK(reflectionSampler.getNumOfRequestedMoves(1) == 1);
+        CHECK(reflectionSampler.getNumOfRequestedMoves(9) == 1);
+    }
+
+    SECTION("larger particle counts request one move per reflection period") {
+        CHECK(reflectionSampler.getNumOfRequestedMoves(10) == 1);
+        CHECK(reflectionSampler.getNumOfRequestedMoves(19) == 1);
+        CHECK(reflectionSampler.getNumOfRequestedMoves(20) == 2);
     }
 }
 

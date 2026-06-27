@@ -4,6 +4,7 @@
 
 #include "ReflectionSampler.h"
 
+#include <algorithm>
 #include <limits>
 #include <sstream>
 
@@ -26,8 +27,10 @@ ReflectionSampler::ReflectionSampler(const Vector<3> &reflectionAxis,
 }
 
 std::size_t ReflectionSampler::getNumOfRequestedMoves(const std::size_t numParticles) const {
-    Expects(numParticles > this->reflectEvery);
-    return numParticles / this->reflectEvery;
+    if (numParticles == 0)
+        return 0;
+
+    return std::max<std::size_t>(1, numParticles / this->reflectEvery);
 }
 
 void ReflectionSampler::setupForShapeTraits(const ShapeTraits &shapeTraits) {

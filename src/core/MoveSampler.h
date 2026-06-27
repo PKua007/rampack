@@ -52,14 +52,27 @@ public:
 
     virtual ~MoveSampler() = default;
 
+    /**
+     * @brief Sets the particles eligible for moves sampled by this MoveSampler.
+     * @details The default selection is ParticleSelection::Mode::ALL. The selection is prepared by Simulation for the
+     * current packing size before sampling starts.
+     */
     void setParticleSelection(ParticleSelection selection) {
         this->particleSelection = std::move(selection);
     }
 
+    /**
+     * @brief Returns mutable particle eligibility selection for this MoveSampler.
+     * @details Simulation prepares this selection before a run. After preparation, the selection is used to provide
+     * eligible particle indices to sampleMove() and to calculate requested move counts.
+     */
     [[nodiscard]] ParticleSelection &getParticleSelection() {
         return this->particleSelection;
     }
 
+    /**
+     * @brief Returns particle eligibility selection for this MoveSampler.
+     */
     [[nodiscard]] const ParticleSelection &getParticleSelection() const {
         return this->particleSelection;
     }
@@ -74,7 +87,7 @@ public:
      * @brief Samples a single move according to current step sizes.
      * @param packing Packing on which the move should be performed (notice it is only used to gather information,
      * the actual move is not applied to it)
-     * @param particleIdxs indices of the particles to be sampled from
+     * @param particleIdxs non-empty indices of particles eligible for this sampler in the current move batch
      * @param mt Mersene twister engine
      * @return a sampled move
      */
@@ -82,8 +95,10 @@ public:
                                 std::mt19937 &mt) = 0;
 
     /**
-     * @brief For a given number of molecules @a numParticles return how many moves the MoveSampler requests to be done
-     * in a single cycle.
+     * @brief Returns how many moves this sampler requests for @a numParticles eligible particles.
+     * @details @a numParticles is the size of the particle set currently available to this sampler. It may be smaller
+     * than the whole packing because of particle selection or domain decomposition. Implementations should return 0 for
+     * 0 eligible particles and at least 1 for non-empty eligible sets that are valid for this sampler.
      */
     [[nodiscard]] virtual std::size_t getNumOfRequestedMoves(std::size_t numParticles) const = 0;
 
