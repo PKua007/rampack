@@ -112,6 +112,7 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
 
     this->observablesCollector = std::move(observablesCollector_);
     this->reset();
+    this->checkPreparedMoveSelectionPreconditions();
 
     this->totalCycles = params.cycleOffset;
     this->maxCycles = params.cycleOffset + params.thermalisationCycles + params.averagingCycles;
@@ -234,6 +235,7 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
 
     this->observablesCollector = std::move(observablesCollector_);
     this->reset();
+    this->checkPreparedMoveSelectionPreconditions();
 
     this->totalCycles = params.cycleOffset;
     this->maxCycles = std::numeric_limits<std::size_t>::max();
@@ -325,6 +327,19 @@ void Simulation::reset() {
     sigint_received = false;
 }
 
+void Simulation::checkPreparedMoveSelectionPreconditions() const {
+    for (const auto &moveSampler : this->environment.getMoveSamplers()) {
+        const auto &selection = moveSampler->getParticleSelection();
+        const std::size_t eligibleParticles = selection.getNumActiveParticles();
+        ExpectsMsg(eligibleParticles > 0,
+                   "Move sampler has no eligible particles after applying particle selection");
+
+        const std::size_t requestedMoves = moveSampler->getNumOfRequestedMoves(eligibleParticles);
+        ExpectsMsg(requestedMoves > 0,
+                   "Move sampler requested zero moves despite having eligible particles");
+    }
+}
+
 void Simulation::performCycle(Logger &logger, const ShapeTraits &shapeTraits) {
     const auto &interaction = shapeTraits.getInteraction();
 
@@ -395,8 +410,7 @@ void Simulation::performMovesWithoutDomainDivision(const ShapeTraits &shapeTrait
     scratch.prepareForWholePacking(moveSamplers);
 
     const std::size_t numMoves = scratch.getNumMoves();
-    if (numMoves == 0)
-        return;
+    Assert(numMoves > 0);
     for (std::size_t i{}; i < numMoves; i++)
         this->tryMove(shapeTraits, scratch, this->moveCounters);
 }

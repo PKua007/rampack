@@ -274,6 +274,7 @@ private:
     void evaluateMoleculeMoveCounter(Logger &logger);
     void evaluateScalingMoveCounter(Logger &logger);
     void reset();
+    void checkPreparedMoveSelectionPreconditions() const;
     void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger, bool displayOverlaps);
     [[nodiscard]] std::size_t getMoveScratchMemoryUsage() const;
     void fixRotationMatrices(const Interaction &interaction, Logger &logger);
