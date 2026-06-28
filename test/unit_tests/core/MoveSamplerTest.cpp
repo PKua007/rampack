@@ -8,7 +8,7 @@
 
 
 TEST_CASE("MoveSampler: particle selection") {
-    SECTION("default selection activates all particles after preparation") {
+    SECTION("default selection is all particles") {
         MockMoveSampler sampler;
 
         CHECK(sampler.getParticleSelection().getMode() == ParticleSelection::Mode::ALL);
