@@ -20,6 +20,7 @@ This reference page describes the simulation pipeline and the format of the inpu
   * [Class `log`](#class-log)
   * [Class `piecewise`](#class-piecewise)
 * [Particle move types](#particle-move-types)
+  * [Particle selection masks](#particle-selection-masks)
   * [Class `translation`](#class-translation)
   * [Class `rotation`](#class-rotation)
   * [Class `rototranslation`](#class-rototranslation)
@@ -728,12 +729,39 @@ There are the following particle move types:
 * [Class `reflection`](#class-reflection)
 
 
+### Particle selection masks
+
+By default, all shapes in the packing have all configured move types applied to them. However, each individual move type
+can optionally use either:
+* **Whitelist mode** (`whitelist_shapes` argument) - the move type is applied only to the selected shapes
+* **Blacklist mode** (`blacklist_shapes` argument) - the move type is applied to all shapes except the selected ones
+
+Both arguments accept two alternative syntax forms:
+* **Array**: an explicit Array of 0-based shape indices: `whitelist_shapes=[0, 10, 11, 12, 100]`
+* **Printer-style String**: a comma-separated list of indices and inclusive ranges: `blacklist_shapes="0,10-12,100"`
+
+Example:
+
+```python
+move_types=[
+    translation(step=1),
+    rotation(step=0.1, whitelist_shapes="100-149"),
+    flip(every=10, blacklist_shapes=[0, 100, 200])
+]
+```
+
+Here, all shapes will be translated, rotations will be applied only to shapes 101<sup>st</sup> through
+150<sup>th</sup>, and flips will be applied to all shapes except the first, 101<sup>st</sup>, and 201<sup>st</sup>.
+
+
 ### Class `translation`
 
 ```python
 translation(
     step,
-    max_step = None
+    max_step = None,
+    whitelist_shapes = None,
+    blacklist_shapes = None
 )
 ```
 
@@ -743,18 +771,24 @@ translation is constructed by sampling random coordinates of the translation vec
 while `max_step` imposes an upper limit on it. If `None`, the upper limit is half of the smallest height of the
 simulation box.
 
+See [Particle selection masks](#particle-selection-masks) for `whitelist_shapes` and `blacklist_shapes`.
+
 
 ### Class `rotation`
 
 ```python
 rotation(
-    step
+    step,
+    whitelist_shapes = None,
+    blacklist_shapes = None
 )
 ```
 
 Monte Carlo move performing only rotations of particles. If current step size is equal *current_step*, random rotation
 is constructed by selecting a random rotation axis and performing the rotation around this axis with the rotation angle
 selected uniformly from the interval [-*current_step*, *current_step*]. `step` is the initial value of *current_step*.
+
+See [Particle selection masks](#particle-selection-masks) for `whitelist_shapes` and `blacklist_shapes`.
 
 
 ### Class `rototranslation`
@@ -763,7 +797,9 @@ selected uniformly from the interval [-*current_step*, *current_step*]. `step` i
 rototranslation(
     trans_step,
     rot_step = "auto",
-    max_trans_step = None
+    max_trans_step = None,
+    whitelist_shapes = None,
+    blacklist_shapes = None
 )
 ```
 
@@ -775,12 +811,16 @@ as in [class `translation`](#class-translation) and [class `rotation`](#class-ro
 adjusted at the same time and their ratio remains constant. If `rot_step = "auto"`, then it will be adjusted
 automatically bases on `trans_step` and shape's interaction range.
 
+See [Particle selection masks](#particle-selection-masks) for `whitelist_shapes` and `blacklist_shapes`.
+
 
 ### Class `flip`
 
 ```python
 flip(
-    every = 10
+    every = 10,
+    whitelist_shapes = None,
+    blacklist_shapes = None
 )
 ```
 
@@ -790,6 +830,8 @@ the flip is performed around an arbitrary axis orthogonal to the primary axis). 
 performed. For example, its default value `10` means that in a full single MC cycle, the flip move will be attempted for
 10% of all particles (and accepted according to the Metropolis criterion).
 
+See [Particle selection masks](#particle-selection-masks) for `whitelist_shapes` and `blacklist_shapes`.
+
 
 ### Class `axial_rotation`
 
@@ -798,13 +840,17 @@ performed. For example, its default value `10` means that in a full single MC cy
 ```python
 axial_rotation(
     step,
-    axis
+    axis,
+    whitelist_shapes = None,
+    blacklist_shapes = None
 )
 ```
 
 Monte Carlo move performing rotations of particles around the specified axis - either global (lab) or shape axis (in
 local shape coordinates). If the current step size is equal *current_step*, the rotation angle is selected uniformly
 from the interval [-*current_step*, *current_step*].
+
+See [Particle selection masks](#particle-selection-masks) for `whitelist_shapes` and `blacklist_shapes`.
 
 Arguments:
 
@@ -862,7 +908,9 @@ Arguments:
 reflection(
     reflection_axis,
     shape_symmetry_axis,
-    every = 10
+    every = 10,
+    whitelist_shapes = None,
+    blacklist_shapes = None
 )
 ```
 
@@ -872,6 +920,8 @@ planes. It is realized by incorporating shape's mirror symmetry axis: reflection
 composition of two reflections is a rotation, and this rotation is applied as the trial move. Because this construction
 requires the existence of shape mirror symmetry, this move can be realized only on achiral shapes.
 The resulting rotation is performed around shape's [geometric center](shapes.md#geometric-center).
+
+See [Particle selection masks](#particle-selection-masks) for `whitelist_shapes` and `blacklist_shapes`.
 
 Arguments:
 
