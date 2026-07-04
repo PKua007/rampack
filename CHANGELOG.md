@@ -30,6 +30,8 @@ library (later, with Python bindings as well).
   via `start_from` and `every`. `n_shapes` is now optional and defaults to traversing the lattice until the end.
 * Added `cumulative` rotation mode and `turn_fraction(...)` angle specification to
   [class `layer_rotate`](docs/initial-arrangement.md#class-layer_rotate).
+* Added [particle selection masks](docs/input-file.md#particle-selection-masks) for move samplers via `whitelist_shapes`
+  and `blacklist_shapes`.
 
 ### Changed
 
