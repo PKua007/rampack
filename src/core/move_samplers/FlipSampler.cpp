@@ -5,14 +5,18 @@
 #include "FlipSampler.h"
 #include "utils/Exceptions.h"
 
+#include <algorithm>
+
 
 FlipSampler::FlipSampler(size_t flipEvery) : flipEvery{flipEvery} {
     Expects(flipEvery > 0);
 }
 
 std::size_t FlipSampler::getNumOfRequestedMoves(std::size_t numParticles) const {
-    Expects(numParticles > this->flipEvery);
-    return numParticles / this->flipEvery;
+    if (numParticles == 0)
+        return 0;
+
+    return std::max<std::size_t>(1, numParticles / this->flipEvery);
 }
 
 MoveSampler::MoveData FlipSampler::sampleMove(const Packing &packing, const std::vector<std::size_t> &particleIdxs,

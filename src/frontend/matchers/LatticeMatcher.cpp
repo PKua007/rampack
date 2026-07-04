@@ -2,7 +2,6 @@
 // Created by Piotr Kubala on 03/01/2023.
 //
 
-#include <charconv>
 #include <regex>
 #include <utility>
 #include <variant>
@@ -28,6 +27,7 @@
 #include "core/lattice/UnitCellFactory.h"
 #include "frontend/LatticeDimensionsOptimizer.h"
 #include "frontend/PackingFactory.h"
+#include "utils/ParseUtils.h"
 
 using namespace pyon::matcher;
 
@@ -474,32 +474,19 @@ namespace {
         return std::make_pair(numerator, denominator);
     }
 
-    template <typename Int, typename = std::enable_if_t<std::is_integral_v<Int>>>
-    Int parse_integral_maybe_out_of_range(const std::string &str) {
-        Int result{};
-        const auto ptrBegin = str.data();
-        const auto ptrEnd = str.data() + str.size();
-        auto [ptr, ec] = std::from_chars(ptrBegin, ptrEnd, result);
-
-        if (ec == std::errc::result_out_of_range)
-            throw std::out_of_range(str);
-        const bool parsedFully = (ptr == ptrEnd);
-        if (ec == std::errc{} && parsedFully)
-            return result;
-        AssertThrow("unreachable: regex should have caught it earlier");
-    }
-
     std::optional<std::pair<int, unsigned>>
     parse_quotient_rotation_ints(const std::pair<std::string, std::string> &quotientRotationParts) {
         try {
             return std::make_pair(
-                parse_integral_maybe_out_of_range<int>(quotientRotationParts.first),
-                parse_integral_maybe_out_of_range<unsigned>(quotientRotationParts.second)
+                ParseUtils::parseIntegral<int>(quotientRotationParts.first),
+                ParseUtils::parseIntegral<unsigned>(quotientRotationParts.second)
             );
         } catch (const std::out_of_range&) {
             return std::nullopt;
+        } catch (const std::invalid_argument&) {
+            AssertThrow("unreachable: regex should have caught it earlier");
         }
-        AssertThrow("unreachable: regex should have caught it earlier");
+        AssertThrow("unreachable");
     }
 
     MatcherDataclass create_quotient_rotation() {

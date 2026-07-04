@@ -12,6 +12,7 @@
 #include "utils/Utils.h"
 #include "core/shapes/CompoundShapeTraits.h"
 #include "core/PeriodicBoundaryConditions.h"
+#include "frontend/MoveSelectionValidator.h"
 #include "utils/Fold.h"
 
 
@@ -209,6 +210,8 @@ void CasinoMode::performIntegration(Simulation &simulation, Simulation::Environm
     this->logger << "Starting integration '" << run.runName << "'" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
+    MoveSelectionValidator::validate(env, simulation.getPacking().size(), this->logger);
+
     OnTheFlyOutput onTheFlyOutput(run, simulation.getPacking().size(), cycleOffset, isContinuation, this->logger);
 
     Simulation::IntegrationParameters integrationParams;
@@ -282,6 +285,8 @@ void CasinoMode::performOverlapRelaxation(Simulation &simulation, Simulation::En
     this->logger << "--------------------------------------------------------------------" << std::endl;
     this->logger << "Starting overlap relaxation '" << run.runName << "'" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
+
+    MoveSelectionValidator::validate(env, simulation.getPacking().size(), this->logger);
 
     OnTheFlyOutput onTheFlyOutput(run, simulation.getPacking().size(), cycleOffset, isContinuation, this->logger);
 

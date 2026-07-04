@@ -44,7 +44,7 @@ namespace {
             return std::tie(lhs.type1, lhs.type2) < std::tie(rhs.type1, rhs.type2);
         }
 
-        friend bool operator==(const TypeNamePair &lhs, const TypeNamePair &rhs) {
+        [[maybe_unused]] friend bool operator==(const TypeNamePair &lhs, const TypeNamePair &rhs) {
             return std::tie(lhs.type1, lhs.type2) == std::tie(rhs.type1, rhs.type2);
         }
     };

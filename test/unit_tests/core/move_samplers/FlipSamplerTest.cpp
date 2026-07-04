@@ -37,7 +37,7 @@ namespace {
 }
 
 
-TEST_CASE("FlipSampler") {
+TEST_CASE("FlipSampler: move sampling") {
     using trompeloeil::_;
 
     MockShapeTraits traits;
@@ -73,5 +73,24 @@ TEST_CASE("FlipSampler") {
                                       0, 0, -1};
         Vector<3> expectedTranslation{0, 0, 0};
         test_flip_move(traits, expectedMoveType, expectedRotation, expectedTranslation);
+    }
+}
+
+TEST_CASE("FlipSampler: requested moves") {
+    FlipSampler flipSampler(10);
+
+    SECTION("no particles request no moves") {
+        CHECK(flipSampler.getNumOfRequestedMoves(0) == 0);
+    }
+
+    SECTION("non-empty sparse particle counts request at least one move") {
+        CHECK(flipSampler.getNumOfRequestedMoves(1) == 1);
+        CHECK(flipSampler.getNumOfRequestedMoves(9) == 1);
+    }
+
+    SECTION("larger particle counts request one move per flip period") {
+        CHECK(flipSampler.getNumOfRequestedMoves(10) == 1);
+        CHECK(flipSampler.getNumOfRequestedMoves(19) == 1);
+        CHECK(flipSampler.getNumOfRequestedMoves(20) == 2);
     }
 }

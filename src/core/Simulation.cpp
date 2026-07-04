@@ -12,6 +12,7 @@
 #include "Simulation.h"
 #include "DomainDecomposition.h"
 #include "utils/Exceptions.h"
+#include "utils/Utils.h"
 #include "move_samplers/RototranslationSampler.h"
 #include "dynamic_parameters/ConstantDynamicParameter.h"
 
@@ -54,8 +55,7 @@ Simulation::Parameter::Parameter(double value) : parameter{std::make_shared<Cons
 Simulation::Simulation(std::unique_ptr<Packing> packing, unsigned long seed,
                        Simulation::Environment initialEnv, const std::array<std::size_t, 3> &domainDivisions,
                        bool handleSignals)
-        : environment{std::move(initialEnv)}, packing{std::move(packing)}, allParticleIndices(this->packing->size()),
-          domainDivisions{domainDivisions}
+        : environment{std::move(initialEnv)}, packing{std::move(packing)}, domainDivisions{domainDivisions}
 {
     Expects(!this->packing->empty());
 
@@ -66,8 +66,6 @@ Simulation::Simulation(std::unique_ptr<Packing> packing, unsigned long seed,
     this->mts.reserve(this->numDomains);
     for (std::size_t i{}; i < this->numDomains; i++)
         this->mts.emplace_back(seed + i);
-
-    std::iota(this->allParticleIndices.begin(), this->allParticleIndices.end(), 0);
 
     if (handleSignals) {
         std::signal(SIGINT, sigint_handler);
@@ -114,6 +112,7 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
 
     this->observablesCollector = std::move(observablesCollector_);
     this->reset();
+    this->checkPreparedMoveSelectionPreconditions();
 
     this->totalCycles = params.cycleOffset;
     this->maxCycles = params.cycleOffset + params.thermalisationCycles + params.averagingCycles;
@@ -236,6 +235,7 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
 
     this->observablesCollector = std::move(observablesCollector_);
     this->reset();
+    this->checkPreparedMoveSelectionPreconditions();
 
     this->totalCycles = params.cycleOffset;
     this->maxCycles = std::numeric_limits<std::size_t>::max();
@@ -302,10 +302,14 @@ void Simulation::relaxOverlaps(Parameter temperature_, Parameter pressure_, std:
 }
 
 void Simulation::reset() {
-    std::uniform_int_distribution<int>(0, this->packing->size() - 1);
     std::size_t numMoveSamplers = this->environment.getMoveSamplers().size();
+    for (auto &moveSampler : this->environment.getMoveSamplers())
+        moveSampler->getParticleSelection().prepare(this->packing->size());
     this->moveCounters.resize(numMoveSamplers);
     this->adjustmentCancelReported.resize(numMoveSamplers, false);
+    this->moveScratchByThread.resize(this->packing->getMoveThreads());
+    for (auto &scratch : this->moveScratchByThread)
+        scratch.initialize(numMoveSamplers, this->packing->size());
     for (auto &moveCounter : this->moveCounters)
         moveCounter.reset();
     this->scalingCounter.reset();
@@ -320,6 +324,19 @@ void Simulation::reset() {
     this->totalCycles = 0;
     this->maxCycles = 0;
     sigint_received = false;
+}
+
+void Simulation::checkPreparedMoveSelectionPreconditions() const {
+    for (const auto &moveSampler : this->environment.getMoveSamplers()) {
+        const auto &selection = moveSampler->getParticleSelection();
+        const std::size_t eligibleParticles = selection.getNumActiveParticles();
+        ExpectsMsg(eligibleParticles > 0,
+                   "Move sampler has no eligible particles after applying particle selection");
+
+        const std::size_t requestedMoves = moveSampler->getNumOfRequestedMoves(eligibleParticles);
+        ExpectsMsg(requestedMoves > 0,
+                   "Move sampler requested zero moves despite having eligible particles");
+    }
 }
 
 void Simulation::performCycle(Logger &logger, const ShapeTraits &shapeTraits) {
@@ -387,10 +404,14 @@ void Simulation::performMoves(const ShapeTraits &shapeTraits, Logger &logger) {
 }
 
 void Simulation::performMovesWithoutDomainDivision(const ShapeTraits &shapeTraits) {
-    auto moveTypeAccumulations = this->calculateMoveTypeAccumulations(this->packing->size());
-    std::size_t numMoves = moveTypeAccumulations.back();
+    const auto &moveSamplers = this->environment.getMoveSamplers();
+    auto &scratch = this->moveScratchByThread.front();
+    scratch.prepareForWholePacking(moveSamplers);
+
+    const std::size_t numMoves = scratch.getNumMoves();
+    Assert(numMoves > 0);
     for (std::size_t i{}; i < numMoves; i++)
-        this->tryMove(shapeTraits, this->allParticleIndices, this->moveCounters, moveTypeAccumulations);
+        this->tryMove(shapeTraits, scratch, this->moveCounters);
 }
 
 void Simulation::performMovesWithDomainDivision(const ShapeTraits &shapeTraits) {
@@ -428,12 +449,15 @@ void Simulation::performMovesWithDomainDivision(const ShapeTraits &shapeTraits) 
                 if (domainParticleIndices.empty())
                     continue;
 
-                std::size_t averageNumParticles = this->packing->size() / this->numDomains;
-                auto moveTypeAccumulations = this->calculateMoveTypeAccumulations(averageNumParticles);
-                std::size_t numMoves = moveTypeAccumulations.back();
+                auto &scratch = this->moveScratchByThread[OMP_THREAD_ID];
+                const auto &moveSamplers = this->environment.getMoveSamplers();
+                scratch.prepareForDomain(moveSamplers, domainParticleIndices);
+
+                const std::size_t numMoves = scratch.getNumMoves();
+                if (numMoves == 0)
+                    continue;
                 for (std::size_t x{}; x < numMoves; x++) {
-                    this->tryMove(shapeTraits, domainParticleIndices, tempMoveCounters, moveTypeAccumulations,
-                                  activeDomain);
+                    this->tryMove(shapeTraits, scratch, tempMoveCounters, activeDomain);
                 }
             }
         }
@@ -444,13 +468,17 @@ void Simulation::performMovesWithDomainDivision(const ShapeTraits &shapeTraits) 
     Simulation::accumulateCounters(this->moveCounters, tempMoveCounters);
 }
 
-bool Simulation::tryMove(const ShapeTraits &shapeTraits, const std::vector<std::size_t> &particleIndices,
-                         std::vector<Counter> &moveCounters_, const std::vector<std::size_t> &moveTypeAccumulations,
+bool Simulation::tryMove(const ShapeTraits &shapeTraits, const MoveScratch &scratch,
+                         std::vector<Counter> &moveCounters_,
                          std::optional<ActiveDomain> boundaries)
 {
     const auto &moveSamplers = this->environment.getMoveSamplers();
+    const auto &moveTypeAccumulations = scratch.getMoveTypeAccumulations();
+
     Expects(moveCounters_.size() == moveSamplers.size());
     Expects(moveTypeAccumulations.size() == moveSamplers.size());
+    Expects(!moveTypeAccumulations.empty());
+    Expects(moveTypeAccumulations.back() > 0);
 
     std::size_t numMoves = moveTypeAccumulations.back();
     std::uniform_int_distribution<std::size_t> moveDistribution(0, numMoves - 1);
@@ -464,7 +492,9 @@ bool Simulation::tryMove(const ShapeTraits &shapeTraits, const std::vector<std::
     }
 
     auto &moveSampler = moveSamplers[moveType];
-    auto move = moveSampler->sampleMove(*this->packing, particleIndices, mt);
+    const auto &eligibleParticles = scratch.getParticlesForSampler(moveType);
+    Expects(!eligibleParticles.empty());
+    auto move = moveSampler->sampleMove(*this->packing, eligibleParticles, mt);
     const auto &interaction = shapeTraits.getInteraction();
     double dE{};
     switch (move.moveType) {
@@ -564,8 +594,12 @@ void Simulation::evaluateMoleculeMoveCounter(Logger &logger) {
         auto &moveSampler = *moveSamplers[i];
         auto &moveCounter = this->moveCounters[i];
         std::vector<bool>::reference cancelReported = this->adjustmentCancelReported[i];
-        std::size_t requestedMoves = moveSampler.getNumOfRequestedMoves(this->packing->size());
+        std::size_t eligibleParticles = moveSampler.getParticleSelection().getNumActiveParticles();
+        std::size_t requestedMoves = moveSampler.getNumOfRequestedMoves(eligibleParticles);
         auto moveName = moveSampler.getName();
+
+        if (requestedMoves == 0)
+            continue;
 
         if (moveCounter.getMovesSinceEvaluation() < 100 * requestedMoves)
             continue;
@@ -654,6 +688,109 @@ std::size_t Simulation::Counter::getAcceptedMoves() const {
     return this->acceptedMoves;
 }
 
+void Simulation::MoveScratch::initialize(std::size_t numMoveSamplers, std::size_t maxParticles) {
+    this->filteredParticlesBySampler.resize(numMoveSamplers);
+    this->particlesBySampler.resize(numMoveSamplers);
+    this->moveTypeAccumulations.reserve(numMoveSamplers);
+    for (auto &filteredParticles : this->filteredParticlesBySampler)
+        filteredParticles.reserve(maxParticles);
+    this->clear();
+}
+
+void Simulation::MoveScratch::clear() {
+    for (auto &filteredParticles : this->filteredParticlesBySampler)
+        filteredParticles.clear();
+    std::fill(this->particlesBySampler.begin(), this->particlesBySampler.end(), nullptr);
+    this->moveTypeAccumulations.clear();
+}
+
+std::size_t Simulation::MoveScratch::getMemoryUsage() const {
+    std::size_t bytes{};
+    bytes += get_vector_memory_usage(this->filteredParticlesBySampler);
+    for (const auto &filteredParticles : this->filteredParticlesBySampler)
+        bytes += get_vector_memory_usage(filteredParticles);
+    bytes += get_vector_memory_usage(this->particlesBySampler);
+    bytes += get_vector_memory_usage(this->moveTypeAccumulations);
+    return bytes;
+}
+
+void Simulation::MoveScratch::prepareForWholePacking(const std::vector<std::shared_ptr<MoveSampler>> &moveSamplers) {
+    this->clear();
+    this->prepareWholePackingParticlesBySampler(moveSamplers);
+    this->calculateMoveTypeAccumulations(moveSamplers);
+}
+
+void Simulation::MoveScratch::prepareForDomain(const std::vector<std::shared_ptr<MoveSampler>> &moveSamplers,
+                                               const std::vector<std::size_t> &domainParticleIndices)
+{
+    this->clear();
+    this->prepareDomainParticlesBySampler(moveSamplers, domainParticleIndices);
+    this->calculateMoveTypeAccumulations(moveSamplers);
+}
+
+void Simulation::MoveScratch::prepareWholePackingParticlesBySampler(
+        const std::vector<std::shared_ptr<MoveSampler>> &moveSamplers)
+{
+    Expects(this->particlesBySampler.size() == moveSamplers.size());
+
+    for (std::size_t samplerIdx{}; samplerIdx < moveSamplers.size(); ++samplerIdx) {
+        const auto &selection = moveSamplers[samplerIdx]->getParticleSelection();
+        this->particlesBySampler[samplerIdx] = &selection.getActiveParticleIndices();
+    }
+}
+
+void Simulation::MoveScratch::prepareDomainParticlesBySampler(
+        const std::vector<std::shared_ptr<MoveSampler>> &moveSamplers,
+        const std::vector<std::size_t> &domainParticleIndices)
+{
+    Expects(this->particlesBySampler.size() == moveSamplers.size());
+    Expects(this->filteredParticlesBySampler.size() == moveSamplers.size());
+
+    for (std::size_t samplerIdx{}; samplerIdx < moveSamplers.size(); ++samplerIdx) {
+        const auto &selection = moveSamplers[samplerIdx]->getParticleSelection();
+        if (selection.getMode() == ParticleSelection::Mode::ALL) {
+            this->particlesBySampler[samplerIdx] = &domainParticleIndices;
+            continue;
+        }
+
+        auto &filteredParticles = this->filteredParticlesBySampler[samplerIdx];
+        for (std::size_t particleIdx : domainParticleIndices) {
+            if (selection.isParticleActive(particleIdx))
+                filteredParticles.push_back(particleIdx);
+        }
+        this->particlesBySampler[samplerIdx] = &filteredParticles;
+    }
+}
+
+void Simulation::MoveScratch::calculateMoveTypeAccumulations(
+        const std::vector<std::shared_ptr<MoveSampler>> &moveSamplers)
+{
+    Expects(this->particlesBySampler.size() == moveSamplers.size());
+
+    this->moveTypeAccumulations.clear();
+    std::size_t moveTypeAccumulation = 0;
+    for (std::size_t samplerIdx{}; samplerIdx < moveSamplers.size(); ++samplerIdx) {
+        Expects(this->particlesBySampler[samplerIdx] != nullptr);
+        moveTypeAccumulation += moveSamplers[samplerIdx]->getNumOfRequestedMoves(
+                this->particlesBySampler[samplerIdx]->size());
+        this->moveTypeAccumulations.push_back(moveTypeAccumulation);
+    }
+}
+
+std::size_t Simulation::MoveScratch::getNumMoves() const {
+    return this->moveTypeAccumulations.empty() ? 0 : this->moveTypeAccumulations.back();
+}
+
+const std::vector<std::size_t> &Simulation::MoveScratch::getMoveTypeAccumulations() const {
+    return this->moveTypeAccumulations;
+}
+
+const std::vector<std::size_t> &Simulation::MoveScratch::getParticlesForSampler(std::size_t samplerIdx) const {
+    Expects(samplerIdx < this->particlesBySampler.size());
+    Expects(this->particlesBySampler[samplerIdx] != nullptr);
+    return *this->particlesBySampler[samplerIdx];
+}
+
 void Simulation::printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger,
                                  bool displayOverlaps)
 {
@@ -665,7 +802,8 @@ void Simulation::printInlineInfo(std::size_t cycleNumber, const ShapeTraits &tra
     logger << std::endl;
     logger.verbose() << "Memory usage (bytes): shape: " << this->packing->getShapesMemoryUsage() << ", ";
     logger << "ng: " << this->packing->getNeighbourGridMemoryUsage() << ", ";
-    logger << "obs: " << this->observablesCollector->getMemoryUsage() << std::endl;
+    logger << "obs: " << this->observablesCollector->getMemoryUsage() << ", ";
+    logger << "ms: " << this->getMoveScratchMemoryUsage() << std::endl;
 }
 
 bool Simulation::wasInterrupted() const {
@@ -677,17 +815,11 @@ void Simulation::accumulateCounters(std::vector<Counter> &out, const std::vector
         out[i] += in[i];
 }
 
-std::vector<std::size_t> Simulation::calculateMoveTypeAccumulations(std::size_t numParticles) const {
-    const auto &moveSamplers = this->environment.getMoveSamplers();
-    std::vector<std::size_t> moveTypeAccumulations;
-    moveTypeAccumulations.reserve(moveSamplers.size());
-    std::size_t moveTypeAccumulation = 0;
-    for (const auto &moveSampler : moveSamplers) {
-        moveTypeAccumulation += moveSampler->getNumOfRequestedMoves(numParticles);
-        moveTypeAccumulations.push_back(moveTypeAccumulation);
-    }
-
-    return moveTypeAccumulations;
+std::size_t Simulation::getMoveScratchMemoryUsage() const {
+    std::size_t bytes = get_vector_memory_usage(this->moveScratchByThread);
+    for (const auto &scratch : this->moveScratchByThread)
+        bytes += scratch.getMemoryUsage();
+    return bytes;
 }
 
 void Simulation::printStepSizesChange(Logger &logger, const std::vector<std::pair<std::string, double>> &oldStepSizes,

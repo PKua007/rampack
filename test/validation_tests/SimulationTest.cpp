@@ -3,6 +3,7 @@
 //
 
 #include <catch2/catch.hpp>
+#include <numeric>
 #include <sstream>
 
 #include "core/Simulation.h"
@@ -26,6 +27,7 @@
 #include "utils/OMPMacros.h"
 #include "core/lattice/UnitCellFactory.h"
 #include "core/lattice/Lattice.h"
+#include "core/lattice/SerialPopulator.h"
 #include "core/volume_scalers/TriclinicDeltaScaler.h"
 
 
@@ -43,6 +45,130 @@ namespace {
         [[nodiscard]] std::vector<double> getIntervalValues() const override { return {}; }
         [[nodiscard]] std::vector<std::string> getNominalValues() const override { return {}; }
         [[nodiscard]] std::string getName() const override { return "overlap guard"; }
+    };
+
+    class MoveMaskingFixture {
+    public:
+        struct Config {
+            std::array<std::size_t, 3> particlesInLine;
+            std::array<double, 3> unitCellDimensions;
+            std::size_t cycles;
+            double rotationStep;
+            double translationStep;
+        };
+
+    private:
+        Config config;
+        std::unique_ptr<Simulation> simulation;
+        SpherocylinderTraits traits{1., 0.2};
+        TriclinicBox box;
+        std::vector<Shape> shapes;
+        std::vector<Shape> initialShapes;
+        std::vector<std::size_t> selectedIndices;
+
+        [[nodiscard]] ParticleSelection createSelectedThirdSelection(bool useWhitelist) const {
+            std::size_t numSelectedParticles = this->selectedIndices.size();
+            std::vector<std::size_t> indices;
+            if (useWhitelist) {
+                indices.resize(numSelectedParticles);
+                std::iota(indices.begin(), indices.end(), 0);
+                return ParticleSelection::whitelist(std::move(indices));
+            } else {
+                indices.resize(this->shapes.size() - numSelectedParticles);
+                std::iota(indices.begin(), indices.end(), numSelectedParticles);
+                return ParticleSelection::blacklist(std::move(indices));
+            }
+        }
+
+        [[nodiscard]] static std::array<std::size_t, 3> getDomainDivisions(bool useDomainDivision) {
+            if (useDomainDivision)
+                return {2, 1, 1};
+            else
+                return {1, 1, 1};
+        }
+
+        static std::vector<std::size_t> createSelectedIndices(std::size_t numSelectedParticles) {
+            std::vector<std::size_t> indices(numSelectedParticles);
+            std::iota(indices.begin(), indices.end(), 0);
+            return indices;
+        }
+
+    public:
+        explicit MoveMaskingFixture(Config config_) : config{std::move(config_)} {
+            REQUIRE(this->config.particlesInLine[0] % 3 == 0);
+
+            Lattice lattice(UnitCellFactory::createScCell(this->config.unitCellDimensions),
+                            this->config.particlesInLine);
+            this->box = lattice.getLatticeBox();
+            this->shapes = SerialPopulator("xyz").populateLattice(lattice, lattice.size());
+            this->initialShapes = this->shapes;
+            this->selectedIndices = createSelectedIndices(this->shapes.size() / 3);
+        }
+
+        [[nodiscard]] std::unique_ptr<RotationSampler> createSelectedThirdRotationSampler(bool useWhitelist) const {
+            auto rotationSampler = std::make_unique<RotationSampler>(this->config.rotationStep);
+            rotationSampler->setParticleSelection(this->createSelectedThirdSelection(useWhitelist));
+            return rotationSampler;
+        }
+
+        [[nodiscard]] std::unique_ptr<TranslationSampler> createTranslationSampler() const {
+            return std::make_unique<TranslationSampler>(this->config.translationStep);
+        }
+
+        void run(std::vector<std::unique_ptr<MoveSampler>> moveSamplers, bool useDomainDivision) {
+            auto domainDivisions = MoveMaskingFixture::getDomainDivisions(useDomainDivision);
+            std::size_t numDomains = std::accumulate(domainDivisions.begin(), domainDivisions.end(), 1,
+                                                     std::multiplies<>{});
+            OMP_SET_NUM_THREADS(numDomains);
+
+            auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+            auto packing = std::make_unique<Packing>(this->box, std::move(this->shapes), std::move(pbc),
+                                                     this->traits.getInteraction(), numDomains, numDomains);
+            this->simulation = std::make_unique<Simulation>(std::move(packing), std::move(moveSamplers), 1234,
+                                                            nullptr, domainDivisions);
+            auto collector = std::make_unique<ObservablesCollector>();
+            std::ostringstream loggerStream;
+            Logger logger(loggerStream);
+
+            this->simulation->integrate(1, 1, this->config.cycles, 0, 100, this->config.cycles, this->traits,
+                                        std::move(collector), {}, logger);
+        }
+
+        [[nodiscard]] const Packing &getPacking() const {
+            return this->simulation->getPacking();
+        }
+
+        void checkFirstThirdOrientationsChanged() const {
+            const auto &packing = this->getPacking();
+            for (std::size_t idx{}; idx < this->selectedIndices.size(); ++idx) {
+                double orientationDelta2 = (packing[idx].getOrientation() - this->initialShapes[idx].getOrientation())
+                                           .norm2();
+                CHECK(orientationDelta2 > 1e-10);
+            }
+        }
+
+        void checkLastTwoThirdsOrientationsUnchanged() const {
+            const auto &packing = this->getPacking();
+            for (std::size_t idx{this->selectedIndices.size()}; idx < this->initialShapes.size(); ++idx) {
+                double orientationDelta2 = (packing[idx].getOrientation() - this->initialShapes[idx].getOrientation())
+                                           .norm2();
+                CHECK(orientationDelta2 < 1e-20);
+            }
+        }
+
+        void checkPositionsUnchanged() const {
+            const auto &packing = this->getPacking();
+            for (std::size_t idx{}; idx < this->initialShapes.size(); ++idx)
+                CHECK((packing[idx].getPosition() - this->initialShapes[idx].getPosition()).norm2()
+                      < 1e-20);
+        }
+
+        void checkAllPositionsChanged() const {
+            const auto &packing = this->getPacking();
+            for (std::size_t idx{}; idx < this->initialShapes.size(); ++idx)
+                CHECK((packing[idx].getPosition() - this->initialShapes[idx].getPosition()).norm2()
+                      > 1e-10);
+        }
     };
 }
 
@@ -398,4 +524,55 @@ TEST_CASE("Simulation: hard dumbbell NVT relaxation", "[short]") {
     Quantity P2 = simulation.getObservablesCollector().getFlattenedAverageValues().front().quantity;
     CHECK(std::abs(P2.value) < 0.05);
     CHECK(simulation.getPacking().getNumberDensity() == Approx(108/7.2/7.2/7.2));
+}
+
+TEST_CASE("Simulation: masked rotations affect only selected particles", "[medium]") {
+    bool useWhitelist = GENERATE(false, true);
+    bool useDomainDivision = GENERATE(false, true);
+    DYNAMIC_SECTION((useWhitelist ? "whitelist" : "blacklist")) {
+        DYNAMIC_SECTION((useDomainDivision ? "domain division" : "no domain division")) {
+            MoveMaskingFixture::Config config{};
+            config.particlesInLine = {6, 3, 3};
+            config.unitCellDimensions = {2., 2., 2.};
+            config.cycles = 10000;
+            config.rotationStep = 1;
+            config.translationStep = 1;
+            MoveMaskingFixture fixture(config);
+
+            std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
+            moveSamplers.push_back(fixture.createSelectedThirdRotationSampler(useWhitelist));
+
+            fixture.run(std::move(moveSamplers), useDomainDivision);
+
+            fixture.checkFirstThirdOrientationsChanged();
+            fixture.checkLastTwoThirdsOrientationsUnchanged();
+            fixture.checkPositionsUnchanged();
+        }
+    }
+}
+
+TEST_CASE("Simulation: masked rotations coexist with unmasked translations", "[medium]") {
+    bool useWhitelist = GENERATE(false, true);
+    bool useDomainDivision = GENERATE(false, true);
+    DYNAMIC_SECTION((useWhitelist ? "whitelist" : "blacklist")) {
+        DYNAMIC_SECTION((useDomainDivision ? "domain division" : "no domain division")) {
+            MoveMaskingFixture::Config config{};
+            config.particlesInLine = {6, 3, 3};
+            config.unitCellDimensions = {2., 2., 2.};
+            config.cycles = 10000;
+            config.rotationStep = 1;
+            config.translationStep = 1;
+            MoveMaskingFixture fixture(config);
+
+            std::vector<std::unique_ptr<MoveSampler>> moveSamplers;
+            moveSamplers.push_back(fixture.createTranslationSampler());
+            moveSamplers.push_back(fixture.createSelectedThirdRotationSampler(useWhitelist));
+
+            fixture.run(std::move(moveSamplers), useDomainDivision);
+
+            fixture.checkFirstThirdOrientationsChanged();
+            fixture.checkLastTwoThirdsOrientationsUnchanged();
+            fixture.checkAllPositionsChanged();
+        }
+    }
 }

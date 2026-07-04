@@ -204,6 +204,29 @@ private:
         friend Counter operator+(Counter c1, const Counter &c2) { return c1 += c2; }
     };
 
+    struct MoveScratch {
+    private:
+        std::vector<std::vector<std::size_t>> filteredParticlesBySampler;
+        std::vector<const std::vector<std::size_t> *> particlesBySampler;
+        std::vector<std::size_t> moveTypeAccumulations;
+
+        void clear();
+        void prepareWholePackingParticlesBySampler(const std::vector<std::shared_ptr<MoveSampler>> &moveSamplers);
+        void prepareDomainParticlesBySampler(const std::vector<std::shared_ptr<MoveSampler>> &moveSamplers,
+                                             const std::vector<std::size_t> &domainParticleIndices);
+        void calculateMoveTypeAccumulations(const std::vector<std::shared_ptr<MoveSampler>> &moveSamplers);
+
+    public:
+        void initialize(std::size_t numMoveSamplers, std::size_t maxParticles);
+        void prepareForWholePacking(const std::vector<std::shared_ptr<MoveSampler>> &moveSamplers);
+        void prepareForDomain(const std::vector<std::shared_ptr<MoveSampler>> &moveSamplers,
+                              const std::vector<std::size_t> &domainParticleIndices);
+        [[nodiscard]] std::size_t getNumMoves() const;
+        [[nodiscard]] const std::vector<std::size_t> &getMoveTypeAccumulations() const;
+        [[nodiscard]] const std::vector<std::size_t> &getParticlesForSampler(std::size_t samplerIdx) const;
+        [[nodiscard]] std::size_t getMemoryUsage() const;
+    };
+
     double temperature{};
     double pressure{};
 
@@ -225,9 +248,9 @@ private:
     std::uniform_real_distribution<double> unitIntervalDistribution;
 
     std::unique_ptr<Packing> packing;
-    std::vector<std::size_t> allParticleIndices;
     std::array<std::size_t, 3> domainDivisions;
     std::size_t numDomains{};
+    std::vector<MoveScratch> moveScratchByThread;
 
     std::shared_ptr<ObservablesCollector> observablesCollector;
 
@@ -244,16 +267,16 @@ private:
     void performMoves(const ShapeTraits &shapeTraits, Logger &logger);
     void performMovesWithDomainDivision(const ShapeTraits &shapeTraits);
     void performMovesWithoutDomainDivision(const ShapeTraits &shapeTraits);
-    bool tryMove(const ShapeTraits &shapeTraits, const std::vector<std::size_t> &particleIndices,
-                 std::vector<Counter> &moveCounters_, const std::vector<std::size_t> &moveTypeAccumulations,
+    bool tryMove(const ShapeTraits &shapeTraits, const MoveScratch &scratch, std::vector<Counter> &moveCounters_,
                  std::optional<ActiveDomain> boundaries = std::nullopt);
     bool tryScaling(const Interaction &interaction);
     void evaluateCounters(Logger &logger);
     void evaluateMoleculeMoveCounter(Logger &logger);
     void evaluateScalingMoveCounter(Logger &logger);
     void reset();
+    void checkPreparedMoveSelectionPreconditions() const;
     void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger, bool displayOverlaps);
-    [[nodiscard]] std::vector<std::size_t> calculateMoveTypeAccumulations(std::size_t numParticles) const;
+    [[nodiscard]] std::size_t getMoveScratchMemoryUsage() const;
     void fixRotationMatrices(const Interaction &interaction, Logger &logger);
     static double getRotationMatrixDeviation(const Matrix<3, 3> &rotation);
 

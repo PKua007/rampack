@@ -5,6 +5,10 @@
 #ifndef RAMPACK_PARSEUTILS_H
 #define RAMPACK_PARSEUTILS_H
 
+#include <charconv>
+#include <stdexcept>
+#include <system_error>
+#include <type_traits>
 #include <vector>
 #include <istream>
 #include <sstream>
@@ -32,6 +36,21 @@ public:
     static std::vector<T> tokenize(const std::string &str) {
         std::istringstream in(str);
         return tokenize<T>(in);
+    }
+
+    template <typename Int, typename = std::enable_if_t<std::is_integral_v<Int>>>
+    static Int parseIntegral(const std::string &str) {
+        Int result{};
+        const auto ptrBegin = str.data();
+        const auto ptrEnd = str.data() + str.size();
+        auto [ptr, ec] = std::from_chars(ptrBegin, ptrEnd, result);
+
+        if (ec == std::errc::result_out_of_range)
+            throw std::out_of_range(str);
+        if (ec != std::errc{} || ptr != ptrEnd)
+            throw std::invalid_argument(str);
+
+        return result;
     }
 
     /* It parses tokenized string to a key=>value map. Allowed fields are given by 'fields'. Values of fields are
