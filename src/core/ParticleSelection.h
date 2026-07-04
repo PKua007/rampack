@@ -39,6 +39,9 @@ public:
     void prepare(std::size_t numParticles_);
 
     [[nodiscard]] Mode getMode() const { return this->mode; }
+    [[nodiscard]] const std::vector<std::size_t> &getSpecifiedParticleIndices() const {
+        return this->specifiedParticleIndices;
+    }
     [[nodiscard]] const std::vector<std::size_t> &getActiveParticleIndices() const {
         return this->activeParticleIndices;
     }

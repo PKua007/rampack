@@ -14,10 +14,8 @@ ParticleSelection::ParticleSelection(const Mode mode_, std::vector<std::size_t> 
         : mode{mode_}, specifiedParticleIndices{std::move(particleIndices)}
 {
     std::sort(this->specifiedParticleIndices.begin(), this->specifiedParticleIndices.end());
-    const auto duplicateIt = std::adjacent_find(this->specifiedParticleIndices.begin(),
-                                                this->specifiedParticleIndices.end());
-
-    ExpectsMsg(duplicateIt == this->specifiedParticleIndices.end(), "ParticleSelection: duplicate particle index");
+    auto duplicateStart = std::unique(this->specifiedParticleIndices.begin(), this->specifiedParticleIndices.end());
+    this->specifiedParticleIndices.erase(duplicateStart, this->specifiedParticleIndices.end());
 }
 
 ParticleSelection ParticleSelection::whitelist(std::vector<std::size_t> indices) {
