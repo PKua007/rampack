@@ -10,6 +10,7 @@
 #include <memory>
 #include <optional>
 #include <map>
+#include <cstdint>
 
 #include "Shape.h"
 #include "BoundaryConditions.h"
@@ -37,6 +38,7 @@ private:
         std::vector<double> energyByParticle;
         std::vector<double> lastEnergyByParticle;
         std::vector<double> lastMoveEnergy;
+        std::vector<std::uint8_t> lastMoveEnergyNeedsRecalculation;
         double totalEnergy{};
         double lastTotalEnergy{};
 
@@ -143,7 +145,10 @@ private:
     [[nodiscard]] double calculateExternalEnergy(std::size_t originalParticleIdx, std::size_t tempParticleIdx) const;
 
     void clearExternalFields();
+    void setupExternalFieldsForCurrentBox() const;
     void rebuildExternalEnergyCache();
+    [[nodiscard]] double prepareMoveExternalEnergy(std::size_t originalParticleIdx, std::size_t tempParticleIdx);
+    void acceptExternalEnergyChange(std::size_t particleIdx);
 
     using iterator = decltype(shapes)::iterator;
 

@@ -535,9 +535,9 @@ bool Simulation::tryScaling(const Interaction &interaction) {
     double factor = newV/oldV;
 
     auto N = static_cast<double>(this->packing->size());
-    if (interaction.hasSoftPart() || this->areOverlapsCounted) {
-        // Soft interaction present - we have a nontrivial energy change, and we always need to try scaling.
-        // Same if only hard part, but overlaps are counted, so non-negative energy changes are not guaranteed.
+    if (interaction.hasSoftPart() || this->packing->hasExternalFields() || this->areOverlapsCounted) {
+        // Soft interaction or external fields present - we have a nontrivial energy change, and we always need to try
+        // scaling. Same if only hard part, but overlaps are counted, so non-negative energy changes are not guaranteed.
         double dE = this->packing->tryScaling(newBox, interaction);
         double exponent = N * log(factor) - dE / this->temperature - this->pressure * deltaV / this->temperature;
         if (this->unitIntervalDistribution(mt) <= std::exp(exponent)) {
