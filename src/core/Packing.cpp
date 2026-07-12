@@ -43,6 +43,20 @@ namespace {
     };
 }
 
+void Packing::ExternalFieldCache::clear(const std::size_t moveThreads) {
+    this->activeFieldIndicesByParticle.clear();
+    this->energyByParticle.clear();
+    this->lastEnergyByParticle.clear();
+    this->lastMoveEnergy.assign(moveThreads, 0);
+    this->totalEnergy = 0;
+    this->lastTotalEnergy = 0;
+}
+
+void Packing::clearExternalFields() {
+    this->externalFields.clear();
+    this->externalFieldCache.clear(this->moveThreads);
+}
+
 Packing::Packing(const TriclinicBox &box, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
                  const Interaction &interaction, std::size_t moveThreads, std::size_t scalingThreads)
         : bc{std::move(bc)}
@@ -79,6 +93,7 @@ void Packing::reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, co
     this->lastMoveOverlapDeltas.resize(this->moveThreads, 0);
     this->bc->setBox(this->box);
     this->setupForInteraction(newInteraction);
+    this->clearExternalFields();
 }
 
 double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction,
@@ -229,6 +244,50 @@ double Packing::getPackingFraction(double shapeVolume) const {
 
 double Packing::getNumberDensity() const {
     return this->size() / this->getVolume();
+}
+
+void Packing::setupForExternalFields(const std::vector<std::shared_ptr<ExternalField>> &fields) {
+    Expects(std::all_of(fields.begin(), fields.end(), [](const auto &field) { return field != nullptr; }));
+
+    this->clearExternalFields();
+    this->externalFields = fields;
+
+    this->externalFieldCache.activeFieldIndicesByParticle.resize(this->size());
+    this->externalFieldCache.energyByParticle.resize(this->size(), 0);
+    this->externalFieldCache.lastEnergyByParticle.resize(this->size(), 0);
+
+    for (std::size_t fieldIdx{}; fieldIdx < this->externalFields.size(); ++fieldIdx) {
+        auto &field = this->externalFields[fieldIdx];
+        field->setupForBox(this->box);
+
+        auto &selection = field->getParticleSelection();
+        selection.prepare(this->size());
+        for (auto particleIdx : selection.getActiveParticleIndices())
+            this->externalFieldCache.activeFieldIndicesByParticle[particleIdx].push_back(fieldIdx);
+    }
+
+    this->rebuildExternalEnergyCache();
+}
+
+double Packing::calculateExternalEnergy(const std::size_t originalParticleIdx,
+                                        const std::size_t tempParticleIdx) const
+{
+    double energy{};
+    const auto &shape = this->shapes[tempParticleIdx];
+    for (auto fieldIdx : this->externalFieldCache.activeFieldIndicesByParticle[originalParticleIdx]) {
+        const auto &field = this->externalFields[fieldIdx];
+        energy += field->calculateEnergy(shape.getPosition(), shape.getOrientation());
+    }
+    return energy;
+}
+
+void Packing::rebuildExternalEnergyCache() {
+    this->externalFieldCache.totalEnergy = 0;
+    for (std::size_t particleIdx{}; particleIdx < this->size(); ++particleIdx) {
+        auto energy = this->calculateExternalEnergy(particleIdx, particleIdx);
+        this->externalFieldCache.energyByParticle[particleIdx] = energy;
+        this->externalFieldCache.totalEnergy += energy;
+    }
 }
 
 void Packing::acceptTranslation() {
@@ -1238,4 +1297,3 @@ void Packing::tryOrientationFix(std::size_t particleIdx, const std::vector<Vecto
         this->recalculateAbsoluteInteractionCentres(tempParticleIdx);
     }
 }
-

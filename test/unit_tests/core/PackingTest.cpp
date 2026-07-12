@@ -9,6 +9,7 @@
 #include "matchers/PackingApproxPositionsCatchMatcher.h"
 #include "matchers/VectorApproxMatcher.h"
 
+#include "mocks/MockExternalField.h"
 #include "mocks/MockShapeGeometry.h"
 
 #include "core/Packing.h"
@@ -612,4 +613,55 @@ TEST_CASE("Packing: named points dumping") {
     REQUIRE(points.size() == 2);
     CHECK_THAT(points[0], IsApproxEqual({1.5, 0.5, 0.5}, 1e-12));
     CHECK_THAT(points[1], IsApproxEqual({0.5, 4.5, 0.5}, 1e-12));
+}
+
+TEST_CASE("Packing: external fields") {
+    SphereHardCoreInteraction hardCore(0.25);
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    std::vector<Shape> shapes;
+    shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5});
+    shapes.emplace_back(Vector<3>{1.5, 0.5, 0.5});
+    shapes.emplace_back(Vector<3>{2.5, 0.5, 0.5});
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore, 2);
+
+    SECTION("empty field list means no external fields") {
+        packing.setupForExternalFields({});
+
+        CHECK_FALSE(packing.hasExternalFields());
+        CHECK(packing.getExternalEnergy() == 0);
+    }
+
+    SECTION("external energy is summed over active particles") {
+        using trompeloeil::_;
+        auto allParticlesField = std::make_shared<MockExternalField>();
+        auto selectedField = std::make_shared<MockExternalField>();
+        selectedField->setParticleSelection(ParticleSelection::whitelist({1}));
+        REQUIRE_CALL(*allParticlesField, setupForBox(_));
+        REQUIRE_CALL(*selectedField, setupForBox(_));
+        ALLOW_CALL(*allParticlesField, calculateEnergy(_, _)).RETURN(_1[0]);
+        ALLOW_CALL(*selectedField, calculateEnergy(_, _)).RETURN(10 * _1[0]);
+
+        packing.setupForExternalFields({allParticlesField, selectedField});
+
+        CHECK(packing.hasExternalFields());
+        CHECK(packing.getExternalEnergy() == Approx(0.5 + 1.5 + 2.5 + 15));
+    }
+
+    SECTION("reset clears external fields") {
+        using trompeloeil::_;
+        auto field = std::make_shared<MockExternalField>();
+        REQUIRE_CALL(*field, setupForBox(_));
+        ALLOW_CALL(*field, calculateEnergy(_, _)).RETURN(_1[0]);
+        packing.setupForExternalFields({field});
+        REQUIRE(packing.hasExternalFields());
+        REQUIRE(packing.getExternalEnergy() != 0);
+
+        std::vector<Shape> newShapes;
+        newShapes.emplace_back(Vector<3>{0.5, 0.5, 0.5});
+        newShapes.emplace_back(Vector<3>{3.5, 0.5, 0.5});
+        packing.reset(std::move(newShapes), TriclinicBox(std::array<double, 3>{5, 5, 5}), hardCore);
+
+        CHECK_FALSE(packing.hasExternalFields());
+        CHECK(packing.getExternalEnergy() == 0);
+    }
 }

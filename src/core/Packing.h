@@ -18,6 +18,7 @@
 #include "ShapeGeometry.h"
 #include "NeighbourGrid.h"
 #include "ActiveDomain.h"
+#include "ExternalField.h"
 #include "utils/OMPMacros.h"
 #include "TriclinicBox.h"
 
@@ -31,6 +32,17 @@
  */
 class Packing {
 private:
+    struct ExternalFieldCache {
+        std::vector<std::vector<std::size_t>> activeFieldIndicesByParticle;
+        std::vector<double> energyByParticle;
+        std::vector<double> lastEnergyByParticle;
+        std::vector<double> lastMoveEnergy;
+        double totalEnergy{};
+        double lastTotalEnergy{};
+
+        void clear(std::size_t moveThreads);
+    };
+
     // shapes, interactionCentres and absoluteInteractionCentres contain additional slots at the end for temporary data
     // for all threads
 
@@ -66,6 +78,9 @@ private:
     std::size_t neighbourGridRebuilds{};
     std::size_t neighbourGridResizes{};
     double neighbourGridRebuildMicroseconds{};
+
+    ExternalFieldCache externalFieldCache;
+    std::vector<std::shared_ptr<ExternalField>> externalFields;
 
 
     static bool areShapesWithinBox(const std::vector<Shape> &shapes, const TriclinicBox &box);
@@ -125,6 +140,10 @@ private:
                                                                 const Interaction &interaction) const;
     [[nodiscard]] double getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coord,
                                                     const Interaction &interaction) const;
+    [[nodiscard]] double calculateExternalEnergy(std::size_t originalParticleIdx, std::size_t tempParticleIdx) const;
+
+    void clearExternalFields();
+    void rebuildExternalEnergyCache();
 
     using iterator = decltype(shapes)::iterator;
 
@@ -266,6 +285,24 @@ public:
      * @brief Return the number density, so the number of particles divided by the volume of the packing.
      */
     [[nodiscard]] double getNumberDensity() const;
+
+    /**
+     * @brief Prepares one-body external fields for the current packing state.
+     * @details This method invalidates previous external-field setup. Fields are expected to already be prepared for
+     * shape geometry. This method prepares box-dependent data, particle selections, and cached per-particle energies.
+     * It must be called again after Packing::reset if external fields are still needed.
+     */
+    void setupForExternalFields(const std::vector<std::shared_ptr<ExternalField>> &fields);
+
+    /**
+     * @brief Returns @a true if runtime external fields are configured for this packing.
+     */
+    [[nodiscard]] bool hasExternalFields() const { return !this->externalFields.empty(); }
+
+    /**
+     * @brief Returns cached total one-body external-field energy.
+     */
+    [[nodiscard]] double getExternalEnergy() const { return this->externalFieldCache.totalEnergy; }
 
     /**
      * @brief Returns energy fluctuations (variance) per molecule computed for @a interaction.
