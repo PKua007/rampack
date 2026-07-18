@@ -42,6 +42,7 @@ struct IntegrationRun {
     std::size_t averagingEvery{};
     std::size_t inlineInfoEvery{};
     std::size_t orientationFixEvery{};
+    std::size_t externalEnergyFixEvery{};
     std::vector<FileSnapshotWriter> lastSnapshotWriters;
     std::optional<std::string> ramsnapOut;
     std::vector<std::shared_ptr<SimulationRecorderFactory>> simulationRecorders;
@@ -58,6 +59,7 @@ struct OverlapRelaxationRun  {
     std::size_t snapshotEvery{};
     std::size_t inlineInfoEvery{};
     std::size_t orientationFixEvery{};
+    std::size_t externalEnergyFixEvery{};
     std::shared_ptr<ShapeTraits> helperShapeTraits;
     std::vector<FileSnapshotWriter> lastSnapshotWriters;
     std::optional<std::string> ramsnapOut;

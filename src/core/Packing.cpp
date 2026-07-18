@@ -222,7 +222,7 @@ double Packing::tryScaling(const TriclinicBox &newBox, const Interaction &intera
         this->recalculateAbsoluteInteractionCentres();
     this->rebuildNeighbourGrid();
     if (this->hasExternalFields())
-        this->rebuildExternalEnergyCache();
+        this->recalculateExternalEnergyCache();
 
     static constexpr double INF = std::numeric_limits<double>::infinity();
     if (interaction.hasHardPart()) {
@@ -288,7 +288,7 @@ void Packing::setupForExternalFields(const std::vector<std::shared_ptr<ExternalF
     }
 
     this->setupExternalFieldsForCurrentBox();
-    this->rebuildExternalEnergyCache();
+    this->recalculateExternalEnergyCache();
 }
 
 void Packing::setupExternalFieldsForCurrentBox() const {
@@ -308,7 +308,7 @@ double Packing::calculateExternalEnergy(const std::size_t originalParticleIdx,
     return energy;
 }
 
-void Packing::rebuildExternalEnergyCache() {
+void Packing::recalculateExternalEnergyCache() {
     double totalEnergy{};
     #pragma omp parallel for default(none) reduction(+:totalEnergy) num_threads(this->scalingThreads)
     for (std::size_t particleIdx = 0; particleIdx < this->size(); ++particleIdx) {
@@ -317,6 +317,13 @@ void Packing::rebuildExternalEnergyCache() {
         totalEnergy += energy;
     }
     this->externalFieldCache.totalEnergy = totalEnergy;
+}
+
+void Packing::rebuildExternalEnergyCache() {
+    if (!this->hasExternalFields())
+        return;
+
+    this->recalculateExternalEnergyCache();
 }
 
 double Packing::prepareMoveExternalEnergy(const std::size_t originalParticleIdx,
@@ -1317,19 +1324,6 @@ bool Packing::isBoxUpscaled(const TriclinicBox &oldBox, const TriclinicBox &newB
 }
 
 std::size_t Packing::renormalizeOrientations(const Interaction &interaction, bool allowOverlaps) {
-    if (allowOverlaps) {
-        auto newShapes = std::vector<Shape>(this->begin(), this->end());
-        #pragma omp parallel for shared(newShapes) default(none) num_threads(this->scalingThreads)
-        for (std::size_t i = 0; i < this->size(); i++) {
-            auto &shape = this->shapes[i];
-            auto rot = shape.getOrientation();
-            Packing::fixRotationMatrix(rot);
-            shape.setOrientation(rot);
-        }
-        this->reset(std::move(newShapes), this->box, interaction);
-        return 0;
-    }
-
     // For a good measure, reset NG sanitizer - it may have not been reset after last operation
     this->resetNGRaceConditionSanitizer();
 
@@ -1343,10 +1337,15 @@ std::size_t Packing::renormalizeOrientations(const Interaction &interaction, boo
 
         this->tryOrientationFix(particleIdx, centres);
 
-        if (this->calculateMoveOverlapEnergy(particleIdx, tempParticleIdx, interaction) > 0)
+        // This also prepares the cached overlap delta needed by acceptRotation() when overlaps are counted.
+        double overlapEnergy = this->calculateMoveOverlapEnergy(particleIdx, tempParticleIdx, interaction);
+        if (!allowOverlaps && overlapEnergy > 0) {
             rejectionCounter++;
-        else
+        } else {
+            // tryOrientationFix() bypasses tryRotation(), so prepare its external energy explicitly before acceptance.
+            static_cast<void>(this->prepareMoveExternalEnergy(particleIdx, tempParticleIdx));
             this->acceptRotation();
+        }
     }
 
     return rejectionCounter;

@@ -259,6 +259,7 @@ void CasinoMode::performIntegration(Simulation &simulation, Simulation::Environm
     integrationParams.snapshotEvery = run.snapshotEvery;
     integrationParams.inlineInfoEvery = run.inlineInfoEvery;
     integrationParams.rotationMatrixFixEvery = run.orientationFixEvery;
+    integrationParams.externalEnergyFixEvery = run.externalEnergyFixEvery;
     integrationParams.cycleOffset = cycleOffset;
 
     simulation.integrate(env, integrationParams, shapeTraits, std::move(onTheFlyOutput.collector),
@@ -336,6 +337,7 @@ void CasinoMode::performOverlapRelaxation(Simulation &simulation, Simulation::En
     relaxParams.snapshotEvery = run.snapshotEvery;
     relaxParams.inlineInfoEvery = run.inlineInfoEvery;
     relaxParams.rotationMatrixFixEvery = run.orientationFixEvery;
+    relaxParams.externalEnergyFixEvery = run.externalEnergyFixEvery;
     relaxParams.cycleOffset = cycleOffset;
 
     simulation.relaxOverlaps(env, relaxParams, *shapeTraits, std::move(onTheFlyOutput.collector),

@@ -146,7 +146,7 @@ private:
 
     void clearExternalFields();
     void setupExternalFieldsForCurrentBox() const;
-    void rebuildExternalEnergyCache();
+    void recalculateExternalEnergyCache();
     [[nodiscard]] double prepareMoveExternalEnergy(std::size_t originalParticleIdx, std::size_t tempParticleIdx);
     void acceptExternalEnergyChange(std::size_t particleIdx);
 
@@ -305,6 +305,12 @@ public:
     void setupForExternalFields(const std::vector<std::shared_ptr<ExternalField>> &fields);
 
     /**
+     * @brief Fully rebuilds cached per-particle and total one-body external-field energies.
+     * @details If no external fields are configured, this method does nothing.
+     */
+    void rebuildExternalEnergyCache();
+
+    /**
      * @brief Returns @a true if runtime external fields are configured for this packing.
      */
     [[nodiscard]] bool hasExternalFields() const { return !this->externalFields.empty(); }
@@ -315,7 +321,7 @@ public:
     [[nodiscard]] double getExternalEnergy() const { return this->externalFieldCache.totalEnergy; }
 
     /**
-     * @brief Returns energy fluctuations (variance) per molecule computed for @a interaction.
+     * @brief Returns the sample standard deviation of per-molecule energies computed for @a interaction.
      */
     [[nodiscard]] double getParticleEnergyFluctuations(const Interaction &interaction) const;
 

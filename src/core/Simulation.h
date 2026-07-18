@@ -178,6 +178,7 @@ public:
         std::size_t snapshotEvery = 100;
         std::size_t inlineInfoEvery = 100;
         std::size_t rotationMatrixFixEvery = 10000;
+        std::size_t externalEnergyFixEvery = 10000;
         std::size_t cycleOffset{};
     };
 
@@ -185,6 +186,7 @@ public:
         std::size_t snapshotEvery = 100;
         std::size_t inlineInfoEvery = 100;
         std::size_t rotationMatrixFixEvery = 10000;
+        std::size_t externalEnergyFixEvery = 10000;
         std::size_t cycleOffset{};
     };
 

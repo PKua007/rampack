@@ -100,6 +100,7 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
     Expects(params.thermalisationCycles > 0 || params.averagingCycles > 0);
     Expects(params.inlineInfoEvery > 0);
     Expects(params.rotationMatrixFixEvery > 0);
+    Expects(params.externalEnergyFixEvery > 0);
     if (params.averagingCycles > 0)
         Expects(params.averagingEvery > 0 && params.averagingEvery <= params.averagingCycles);
     Expects(params.snapshotEvery <= (params.thermalisationCycles + params.averagingCycles));
@@ -143,6 +144,8 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
 
             if (this->totalCycles % params.rotationMatrixFixEvery == 0)
                 this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
+            if (this->totalCycles % params.externalEnergyFixEvery == 0)
+                this->packing->rebuildExternalEnergyCache();
             if (this->totalCycles % params.snapshotEvery == 0) {
                 this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
                 if (!simulationRecorders.empty())
@@ -172,6 +175,8 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
 
             if (this->totalCycles % params.rotationMatrixFixEvery == 0)
                 this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
+            if (this->totalCycles % params.externalEnergyFixEvery == 0)
+                this->packing->rebuildExternalEnergyCache();
             if (this->totalCycles % params.snapshotEvery == 0) {
                 this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
                 if (!simulationRecorders.empty())
@@ -226,6 +231,7 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
 {
     Expects(params.inlineInfoEvery > 0);
     Expects(params.rotationMatrixFixEvery > 0);
+    Expects(params.externalEnergyFixEvery > 0);
     Expects(params.snapshotEvery > 0);
 
     this->environment.combine(env);
@@ -261,6 +267,8 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
 
         if (this->totalCycles % params.rotationMatrixFixEvery == 0)
             this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
+        if (this->totalCycles % params.externalEnergyFixEvery == 0)
+            this->packing->rebuildExternalEnergyCache();
         if (this->totalCycles % params.snapshotEvery == 0) {
             this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
             if (!simulationRecorders.empty())
