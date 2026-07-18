@@ -1219,6 +1219,11 @@ void Packing::toggleWalls(std::array<bool, 3> axisWalls) {
     this->hasAnyWalls = std::find(this->hasWall.begin(), this->hasWall.end(), true) != this->hasWall.end();
 }
 
+bool Packing::hasWallOnAxis(const std::size_t wallAxis) const {
+    Expects(wallAxis < this->hasWall.size());
+    return this->hasWall[wallAxis];
+}
+
 std::size_t Packing::countParticleWallOverlaps(std::size_t particleIdx, const Interaction &interaction,
                                                bool earlyExit) const
 {

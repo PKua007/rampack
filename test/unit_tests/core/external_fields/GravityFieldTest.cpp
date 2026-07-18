@@ -9,6 +9,12 @@
 #include "utils/Exceptions.h"
 
 
+TEST_CASE("GravityField: name") {
+    const GravityField field(1, {0, 0, -1});
+
+    CHECK(field.getName() == "gravity");
+}
+
 TEST_CASE("GravityField: validation") {
     SECTION("g has to be positive") {
         CHECK_THROWS_AS(GravityField(0, {0, 0, -1}), PreconditionException);

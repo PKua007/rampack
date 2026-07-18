@@ -279,6 +279,11 @@ public:
      */
     void toggleWalls(std::array<bool, 3> axisWalls);
 
+    /**
+     * @brief Returns whether hard walls are enabled for the box-axis pair intersected by @a wallAxis.
+     */
+    [[nodiscard]] bool hasWallOnAxis(std::size_t wallAxis) const;
+
     [[nodiscard]] double getVolume() const;
 
     /**

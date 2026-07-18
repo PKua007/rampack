@@ -35,6 +35,8 @@ private:
     Vector<3> boxAnchorAbs;
 
 public:
+    [[nodiscard]] std::string getName() const override { return "gravity"; }
+
     /**
      * @brief Constructs a gravity field.
      * @param g Positive field strength.

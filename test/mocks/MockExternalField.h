@@ -12,6 +12,7 @@
 
 class MockExternalField : public trompeloeil::mock_interface<ExternalField> {
 public:
+    IMPLEMENT_CONST_MOCK0(getName);
     IMPLEMENT_MOCK1(setupForShapeGeometry);
     IMPLEMENT_MOCK1(setupForBox);
     IMPLEMENT_CONST_MOCK2(calculateEnergy);

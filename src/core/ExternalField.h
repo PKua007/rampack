@@ -6,11 +6,11 @@
 #define RAMPACK_EXTERNALFIELD_H
 
 #include <array>
-#include <utility>
+#include <string>
 
 #include "geometry/Matrix.h"
 #include "geometry/Vector.h"
-#include "core/ParticleSelection.h"
+#include "core/ParticleSelectable.h"
 #include "core/ShapeGeometry.h"
 #include "core/TriclinicBox.h"
 
@@ -20,33 +20,12 @@
  * @details The default particle selection is ParticleSelection::Mode::ALL. The selection has to be prepared for the
  * current packing size before hot-path energy evaluation uses it.
  */
-class ExternalField {
-private:
-    ParticleSelection particleSelection;
-
+class ExternalField : public ParticleSelectable {
 public:
-    virtual ~ExternalField() = default;
-
     /**
-     * @brief Sets particles eligible for this external field.
+     * @brief Returns the external-field name used in diagnostics.
      */
-    void setParticleSelection(ParticleSelection selection) {
-        this->particleSelection = std::move(selection);
-    }
-
-    /**
-     * @brief Returns mutable particle eligibility selection for this external field.
-     */
-    [[nodiscard]] ParticleSelection &getParticleSelection() {
-        return this->particleSelection;
-    }
-
-    /**
-     * @brief Returns particle eligibility selection for this external field.
-     */
-    [[nodiscard]] const ParticleSelection &getParticleSelection() const {
-        return this->particleSelection;
-    }
+    [[nodiscard]] virtual std::string getName() const = 0;
 
     /**
      * @brief Prepares shape-geometry dependent data used by the field.
