@@ -122,6 +122,8 @@ public:
         Parameter pressure;
         std::vector<std::shared_ptr<MoveSampler>> moveSamplers;
         std::vector<std::shared_ptr<const MoveSampler>> constMoveSamplers;
+        std::optional<std::vector<std::shared_ptr<ExternalField>>> externalFields;
+        std::vector<std::shared_ptr<const ExternalField>> constExternalFields;
         std::shared_ptr<TriclinicBoxScaler> boxScaler;
         BoxScalerStatus boxScalerStatus = BoxScalerStatus::UNSET;
 
@@ -140,6 +142,11 @@ public:
         [[nodiscard]] const std::vector<std::shared_ptr<const MoveSampler>> &getMoveSamplers() const;
         const std::vector<std::shared_ptr<MoveSampler>> &getMoveSamplers();
         void setMoveSamplers(std::vector<std::shared_ptr<MoveSampler>> moveSamplers_);
+
+        [[nodiscard]] bool hasExternalFields() const { return this->externalFields.has_value(); }
+        [[nodiscard]] const std::vector<std::shared_ptr<const ExternalField>> &getExternalFields() const;
+        const std::vector<std::shared_ptr<ExternalField>> &getExternalFields();
+        void setExternalFields(std::vector<std::shared_ptr<ExternalField>> externalFields_);
 
         [[nodiscard]] bool hasBoxScaler() const { return this->boxScalerStatus != BoxScalerStatus::UNSET; }
         [[nodiscard]] bool isBoxScalingEnabled() const {
@@ -274,6 +281,7 @@ private:
     void evaluateMoleculeMoveCounter(Logger &logger);
     void evaluateScalingMoveCounter(Logger &logger);
     void reset();
+    void setupForExternalFields(const ShapeTraits &shapeTraits);
     void checkPreparedMoveSelectionPreconditions() const;
     void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger, bool displayOverlaps);
     [[nodiscard]] std::size_t getMoveScratchMemoryUsage() const;

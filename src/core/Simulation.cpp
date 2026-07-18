@@ -112,6 +112,7 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
 
     this->observablesCollector = std::move(observablesCollector_);
     this->reset();
+    this->setupForExternalFields(shapeTraits);
     this->checkPreparedMoveSelectionPreconditions();
 
     this->totalCycles = params.cycleOffset;
@@ -235,6 +236,7 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
 
     this->observablesCollector = std::move(observablesCollector_);
     this->reset();
+    this->setupForExternalFields(shapeTraits);
     this->checkPreparedMoveSelectionPreconditions();
 
     this->totalCycles = params.cycleOffset;
@@ -324,6 +326,18 @@ void Simulation::reset() {
     this->totalCycles = 0;
     this->maxCycles = 0;
     sigint_received = false;
+}
+
+void Simulation::setupForExternalFields(const ShapeTraits &shapeTraits) {
+    if (!this->environment.hasExternalFields()) {
+        this->packing->setupForExternalFields({});
+        return;
+    }
+
+    const auto &externalFields = this->environment.getExternalFields();
+    for (const auto &externalField : externalFields)
+        externalField->setupForShapeGeometry(shapeTraits.getGeometry());
+    this->packing->setupForExternalFields(externalFields);
 }
 
 void Simulation::checkPreparedMoveSelectionPreconditions() const {
@@ -939,6 +953,10 @@ void Simulation::Environment::combine(Simulation::Environment &other) {
         this->constMoveSamplers = other.constMoveSamplers;
         this->moveSamplers = other.moveSamplers;
     }
+    if (other.hasExternalFields()) {
+        this->externalFields = other.externalFields;
+        this->constExternalFields = other.constExternalFields;
+    }
     if (other.hasBoxScaler()) {
         this->boxScaler = other.boxScaler;
         this->boxScalerStatus = other.boxScalerStatus;
@@ -1001,6 +1019,23 @@ void Simulation::Environment::setMoveSamplers(std::vector<std::shared_ptr<MoveSa
                         [](const auto &s) { return s != nullptr; }));
     this->moveSamplers = moveSamplers_;
     this->constMoveSamplers.assign(moveSamplers_.begin(), moveSamplers_.end());
+}
+
+const std::vector<std::shared_ptr<const ExternalField>> &Simulation::Environment::getExternalFields() const {
+    Expects(this->hasExternalFields());
+    return this->constExternalFields;
+}
+
+const std::vector<std::shared_ptr<ExternalField>> &Simulation::Environment::getExternalFields() {
+    Expects(this->hasExternalFields());
+    return *this->externalFields;
+}
+
+void Simulation::Environment::setExternalFields(std::vector<std::shared_ptr<ExternalField>> externalFields_) {
+    Expects(std::all_of(externalFields_.begin(), externalFields_.end(),
+                       [](const auto &field) { return field != nullptr; }));
+    this->externalFields = std::move(externalFields_);
+    this->constExternalFields.assign(this->externalFields->begin(), this->externalFields->end());
 }
 
 const TriclinicBoxScaler &Simulation::Environment::getBoxScaler() const {
