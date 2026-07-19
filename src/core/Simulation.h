@@ -435,6 +435,7 @@ public:
      */
     [[nodiscard]] double getTotalMicroseconds() const { return this->totalMicroseconds; }
 
+    [[nodiscard]] Packing &getPacking() { return *this->packing; }
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }
 
 

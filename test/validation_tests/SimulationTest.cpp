@@ -3,6 +3,8 @@
 //
 
 #include <catch2/catch.hpp>
+#include <iomanip>
+#include <limits>
 #include <numeric>
 #include <sstream>
 
@@ -29,6 +31,7 @@
 #include "core/lattice/Lattice.h"
 #include "core/lattice/SerialPopulator.h"
 #include "core/volume_scalers/TriclinicDeltaScaler.h"
+#include "core/external_fields/GravityField.h"
 
 
 namespace {
@@ -168,6 +171,106 @@ namespace {
             for (std::size_t idx{}; idx < this->initialShapes.size(); ++idx)
                 CHECK((packing[idx].getPosition() - this->initialShapes[idx].getPosition()).norm2()
                       > 1e-10);
+        }
+    };
+
+    class ExternalEnergyCacheFixture {
+    public:
+        struct RebuildResult {
+            double externalEnergyBefore{};
+            double totalEnergyBefore{};
+            double externalEnergyAfter{};
+            double totalEnergyAfter{};
+            std::size_t acceptedMoves{};
+            std::size_t totalMoves{};
+        };
+
+        struct ProcessedDrift {
+            double absolute{};
+            double relative{};
+            double epsilonUnits{};
+        };
+
+    private:
+        Logger &logger;
+        Simulation::IntegrationParameters integrationParameters;
+        std::array<std::size_t, 3> domainDivisions;
+        std::size_t numDomains{};
+        SphereTraits sphereTraits{0.1};
+        std::unique_ptr<Simulation> simulation;
+
+    public:
+        ExternalEnergyCacheFixture(Logger &logger_, const Simulation::IntegrationParameters &integrationParameters_,
+                                   const std::array<std::size_t, 3> &domainDivisions_)
+                : logger{logger_}, integrationParameters{integrationParameters_}, domainDivisions{domainDivisions_},
+                  numDomains{std::accumulate(
+                      this->domainDivisions.begin(), this->domainDivisions.end(), 1ull, std::multiplies<>{}
+                  )}
+        {
+            OMP_SET_NUM_THREADS(this->numDomains);
+
+            const Lattice lattice(UnitCellFactory::createScCell(2), {8, 4, 2});
+            auto packing_ = std::make_unique<Packing>(lattice.getLatticeBox(), lattice.generateMolecules(),
+                                                      std::make_unique<PeriodicBoundaryConditions>(),
+                                                      this->sphereTraits.getInteraction(), this->numDomains,
+                                                      this->numDomains);
+            packing_->toggleWall(2, true);
+            this->simulation = std::make_unique<Simulation>(std::move(packing_), 1234, this->domainDivisions);
+        }
+
+        void run() const {
+            Simulation::Environment environment;
+            environment.setTemperature(1);
+            environment.disableBoxScaling();
+            environment.setMoveSamplers({std::make_shared<TranslationSampler>(1, 1)});
+            environment.setExternalFields({std::make_shared<GravityField>(0.5, Vector<3>{0, 0, -1})});
+
+            this->simulation->integrate(std::move(environment), this->integrationParameters, this->sphereTraits,
+                                        std::make_shared<ObservablesCollector>(), {}, this->logger);
+        }
+
+        [[nodiscard]] RebuildResult rebuildAndMeasure() const {
+            auto &packing = this->simulation->getPacking();
+            RebuildResult result;
+            result.externalEnergyBefore = packing.getExternalEnergy();
+            result.totalEnergyBefore = packing.getTotalEnergy(this->sphereTraits.getInteraction());
+            packing.rebuildExternalEnergyCache();
+            result.externalEnergyAfter = packing.getExternalEnergy();
+            result.totalEnergyAfter = packing.getTotalEnergy(this->sphereTraits.getInteraction());
+
+            const auto moveStatistics = this->simulation->getMovesStatistics().front();
+            result.acceptedMoves = moveStatistics.acceptedMoves;
+            result.totalMoves = moveStatistics.totalMoves;
+
+            return result;
+        }
+
+        static ProcessedDrift processDrift(const RebuildResult &result) {
+            ProcessedDrift drift;
+            drift.absolute = std::abs(result.externalEnergyAfter - result.externalEnergyBefore);
+            drift.relative = drift.absolute / std::abs(result.externalEnergyAfter);
+            drift.epsilonUnits = drift.relative / std::numeric_limits<double>::epsilon();
+            return drift;
+        }
+
+        [[nodiscard]] static std::string formatRebuildResult(const RebuildResult &result,
+                                                             const ProcessedDrift &drift)
+        {
+            std::ostringstream out;
+            out << std::setprecision(std::numeric_limits<double>::max_digits10);
+            out << "energy: before=" << result.externalEnergyBefore << ", after=" << result.externalEnergyAfter
+                << std::endl;
+            out << "drift: absolute=" << drift.absolute << ", relative=" << drift.relative
+                << ", epsilon units=" << drift.epsilonUnits << std::endl;
+            out << "moves: accepted=" << result.acceptedMoves << "/" << result.totalMoves << " ("
+                << static_cast<double>(result.acceptedMoves) / static_cast<double>(result.totalMoves) << ")";
+            return out.str();
+        }
+
+        static void checkCommonCoherence(const RebuildResult &result) {
+            CHECK(result.externalEnergyBefore == result.totalEnergyBefore);
+            CHECK(result.externalEnergyAfter == result.totalEnergyAfter);
+            CHECK(result.acceptedMoves > 100000);
         }
     };
 }
@@ -573,6 +676,50 @@ TEST_CASE("Simulation: masked rotations coexist with unmasked translations", "[m
             fixture.checkFirstThirdOrientationsChanged();
             fixture.checkLastTwoThirdsOrientationsUnchanged();
             fixture.checkAllPositionsChanged();
+        }
+    }
+}
+
+TEST_CASE("Simulation: external-energy cache stays coherent and rebuilds on schedule", "[medium]") {
+    static constexpr std::size_t CACHE_REBUILD_EVERY = 10000;
+    const auto domainDiv = GENERATE(std::array<std::size_t, 3>{1, 1, 1}, std::array<std::size_t, 3>{4, 1, 1});
+
+    DYNAMIC_SECTION("domain divisions: " << domainDiv[0] << " x " << domainDiv[1] << " x " << domainDiv[2]) {
+        std::ostringstream loggerStream;
+        Logger logger(loggerStream);
+        Simulation::IntegrationParameters integrationParams;
+        integrationParams.thermalisationCycles = 2000;
+        integrationParams.averagingEvery = 1000;
+        integrationParams.snapshotEvery = 1000;
+        integrationParams.inlineInfoEvery = 1000;
+        integrationParams.rotationMatrixFixEvery = CACHE_REBUILD_EVERY + 1;
+        integrationParams.externalEnergyFixEvery = CACHE_REBUILD_EVERY;
+
+        SECTION("manual rebuild corrects only accumulated numerical drift") {
+            integrationParams.averagingCycles = (CACHE_REBUILD_EVERY - 1) - integrationParams.thermalisationCycles;
+            ExternalEnergyCacheFixture fixture(logger, integrationParams, domainDiv);
+
+            fixture.run();
+
+            auto result = fixture.rebuildAndMeasure();
+            auto drift = ExternalEnergyCacheFixture::processDrift(result);
+            INFO(ExternalEnergyCacheFixture::formatRebuildResult(result, drift));
+            ExternalEnergyCacheFixture::checkCommonCoherence(result);
+            CHECK(drift.epsilonUnits > 0);
+            CHECK(drift.epsilonUnits < 1000);
+        }
+
+        SECTION("scheduled rebuild restores cache coherence") {
+            integrationParams.averagingCycles = CACHE_REBUILD_EVERY - integrationParams.thermalisationCycles;
+            ExternalEnergyCacheFixture fixture(logger, integrationParams, domainDiv);
+
+            fixture.run();
+
+            auto result = fixture.rebuildAndMeasure();
+            auto drift = ExternalEnergyCacheFixture::processDrift(result);
+            INFO(ExternalEnergyCacheFixture::formatRebuildResult(result, drift));
+            ExternalEnergyCacheFixture::checkCommonCoherence(result);
+            CHECK(drift.epsilonUnits <= 1);
         }
     }
 }

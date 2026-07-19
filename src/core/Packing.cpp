@@ -350,8 +350,11 @@ void Packing::acceptExternalEnergyChange(const std::size_t particleIdx) {
         this->externalFieldCache.lastMoveEnergy[threadId] = finalEnergy;
         this->externalFieldCache.lastMoveEnergyNeedsRecalculation[threadId] = false;
     }
-    this->externalFieldCache.totalEnergy += finalEnergy - this->externalFieldCache.energyByParticle[particleIdx];
+    double energyDelta = finalEnergy - this->externalFieldCache.energyByParticle[particleIdx];
     this->externalFieldCache.energyByParticle[particleIdx] = finalEnergy;
+
+    #pragma omp atomic update
+    this->externalFieldCache.totalEnergy += energyDelta;
 }
 
 void Packing::acceptTranslation() {
