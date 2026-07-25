@@ -12,6 +12,7 @@
 #include "BoxScalerMatcher.h"
 #include "ShapeMatcher.h"
 #include "MoveSamplerMatcher.h"
+#include "ExternalFieldMatcher.h"
 #include "ObservablesMatcher.h"
 #include "FileSnapshotWriterMatcher.h"
 #include "SimulationRecorderFactoryMatcher.h"
@@ -47,6 +48,7 @@ namespace {
     MatcherAlternative create_run();
     MatcherArray create_runs();
     MatcherAlternative create_move_types();
+    MatcherAlternative create_external_fields();
     MatcherAlternative create_box_scaler();
     MatcherAlternative create_box_move_threads();
     MatcherArray create_domain_divisions();
@@ -166,9 +168,11 @@ namespace {
                         {"pressure", dynamicParameter, "None"},
                         {"move_types", create_move_types(), "None"},
                         {"box_move_type", create_box_scaler(), "None"},
+                        {"external_fields", create_external_fields(), "None"},
                         {"averaging_every", nullableEvery, "0"},
                         {"inline_info_every", notNullEvery, "100"},
                         {"orientation_fix_every", notNullEvery, "10000"},
+                        {"external_energy_fix_every", notNullEvery, "10000"},
                         {"output_last_snapshot", create_output_last_snapshot(), "[]"},
                         {"record_trajectory", create_record_trajectory(), "[]"},
                         {"averages_out", out_, "None"},
@@ -220,6 +224,7 @@ namespace {
                 run.averagingEvery = integration["averaging_every"].as<std::size_t>();
                 run.inlineInfoEvery = integration["inline_info_every"].as<std::size_t>();
                 run.orientationFixEvery = integration["orientation_fix_every"].as<std::size_t>();
+                run.externalEnergyFixEvery = integration["external_energy_fix_every"].as<std::size_t>();
                 run.lastSnapshotWriters = integration["output_last_snapshot"].as<std::vector<FileSnapshotWriter>>();
                 run.ramsnapOut = fetch_ramsnap_out(run.lastSnapshotWriters);
                 run.simulationRecorders
@@ -254,8 +259,10 @@ namespace {
                         {"pressure", dynamicParameter, "None"},
                         {"move_types", create_move_types(), "None"},
                         {"box_move_type", create_box_scaler(), "None"},
+                        {"external_fields", create_external_fields(), "None"},
                         {"inline_info_every", notNullEvery, "100"},
                         {"orientation_fix_every", notNullEvery, "10000"},
+                        {"external_energy_fix_every", notNullEvery, "10000"},
                         {"helper_shape", helperShape, "None"},
                         {"output_last_snapshot", create_output_last_snapshot(), "[]"},
                         {"record_trajectory", create_record_trajectory(), "[]"},
@@ -269,6 +276,7 @@ namespace {
                 run.snapshotEvery = overlaps["snapshot_every"].as<std::size_t>();
                 run.inlineInfoEvery = overlaps["inline_info_every"].as<std::size_t>();
                 run.orientationFixEvery = overlaps["orientation_fix_every"].as<std::size_t>();
+                run.externalEnergyFixEvery = overlaps["external_energy_fix_every"].as<std::size_t>();
                 run.helperShapeTraits = overlaps["helper_shape"].as<std::shared_ptr<ShapeTraits>>();
                 run.lastSnapshotWriters = overlaps["output_last_snapshot"].as<std::vector<FileSnapshotWriter>>();
                 run.ramsnapOut = fetch_ramsnap_out(run.lastSnapshotWriters);
@@ -308,6 +316,19 @@ namespace {
         return samplerArray | samplerNone;
     }
 
+    MatcherAlternative create_external_fields() {
+        using ExternalFields = std::vector<std::shared_ptr<ExternalField>>;
+
+        auto externalFieldsArray = MatcherArray{}
+            .elementsMatch(ExternalFieldMatcher::create())
+            .mapTo([](const ArrayData &externalFields) -> std::optional<ExternalFields> {
+                return externalFields.asStdVector<std::shared_ptr<ExternalField>>();
+            });
+        auto externalFieldsNone = MatcherNone{}.mapTo<std::optional<ExternalFields>>();
+
+        return externalFieldsArray | externalFieldsNone;
+    }
+
     MatcherAlternative create_box_scaler() {
         auto boxScaler = BoxScalerMatcher::create();
         auto disabledScaling = MatcherDataclass("disabled")
@@ -337,6 +358,8 @@ namespace {
         auto pressure = environment["pressure"].as<std::shared_ptr<DynamicParameter>>();
         auto moveSamplers = environment["move_types"].as<std::vector<std::shared_ptr<MoveSampler>>>();
         auto boxScaler = environment["box_move_type"];
+        auto externalFields
+            = environment["external_fields"].as<std::optional<std::vector<std::shared_ptr<ExternalField>>>>();
 
         Simulation::Environment env;
 
@@ -346,6 +369,8 @@ namespace {
             env.setPressure(pressure);
         if (!moveSamplers.empty())
             env.setMoveSamplers(std::move(moveSamplers));
+        if (externalFields.has_value())
+            env.setExternalFields(std::move(*externalFields));
 
         if (boxScaler.is<BoxScalingDisabled>()) {
             env.disableBoxScaling();
@@ -390,6 +415,7 @@ pyon::matcher::MatcherDataclass RampackMatcher::create() {
                     {"pressure", dynamicParameter, "None"},
                     {"move_types", create_move_types(), "None"},
                     {"box_move_type", create_box_scaler(), "None"},
+                    {"external_fields", create_external_fields(), "None"},
                     {"walls", walls, "[False, False, False]"},
                     {"box_move_threads", create_box_move_threads(), "1"},
                     {"domain_divisions", create_domain_divisions(), "[1, 1, 1]"},
