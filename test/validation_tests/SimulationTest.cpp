@@ -210,7 +210,8 @@ namespace {
         {
             OMP_SET_NUM_THREADS(this->numDomains);
 
-            const Lattice lattice(UnitCellFactory::createScCell(2), {8, 4, 2});
+            // 64 particles in an 8 x 8 x 8 cubic box.
+            const Lattice lattice(UnitCellFactory::createScCell(2), {4, 4, 4});
             auto packing_ = std::make_unique<Packing>(lattice.getLatticeBox(), lattice.generateMolecules(),
                                                       std::make_unique<PeriodicBoundaryConditions>(),
                                                       this->sphereTraits.getInteraction(), this->numDomains,
@@ -768,7 +769,8 @@ TEST_CASE("Simulation: barometric curve for dilute hard-sphere gas", "[medium]")
 
 TEST_CASE("Simulation: external-energy cache stays coherent and rebuilds on schedule", "[medium]") {
     static constexpr std::size_t CACHE_REBUILD_EVERY = 10000;
-    const auto domainDiv = GENERATE(std::array<std::size_t, 3>{1, 1, 1}, std::array<std::size_t, 3>{4, 1, 1});
+    // Compare serial moves with four balanced concurrent domains.
+    const auto domainDiv = GENERATE(std::array<std::size_t, 3>{1, 1, 1}, std::array<std::size_t, 3>{2, 2, 1});
 
     DYNAMIC_SECTION("domain divisions: " << domainDiv[0] << " x " << domainDiv[1] << " x " << domainDiv[2]) {
         std::ostringstream loggerStream;
