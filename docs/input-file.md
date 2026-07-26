@@ -33,6 +33,8 @@ This reference page describes the simulation pipeline and the format of the inpu
   * [Class `log`](#class-log)
   * [Class `delta_triclinic`](#class-delta_triclinic)
   * [Class `disabled`](#class-disabled)
+* [External fields](#external-fields)
+  * [Class `gravity`](#class-gravity)
 
 
 ## PYON format
@@ -184,6 +186,7 @@ rampack(
     pressure = None,
     move_types = None,
     box_move_type = None,
+    external_fields = None,
     walls = [False, False, False],
     box_move_threads = 1,
     domain_divisions = [1, 1, 1],
@@ -265,6 +268,13 @@ Arguments:
   [Simulation environment](#simulation-environment). If `None`, it is left unspecified (*incomplete simulation
   environment*).
 
+* ***external_fields*** (*= None*) <a id="rampack_externalfields"></a>
+
+  The Array of one-body fields acting on particles. Available field types are described in
+  [External fields](#external-fields). It is a part of the [Simulation environment](#simulation-environment).
+  If `None`, no external-field value is specified for the initial environment. An empty Array explicitly specifies
+  that no external fields should be used.
+
 * ***walls*** (*= [False, False, False]*) <a id="rampack_walls"></a>
 
   An Array of Booleans that specifies which pairs of parallel box walls should be hard (non-penetrable by hard
@@ -316,6 +326,7 @@ Arguments:
 * `pressure`
 * `move_types`
 * `box_move_type`
+* `external_fields`
 
 These simulation environment arguments are present in [class `rampack`](#class-rampack) and in all
 [Run types](#run-types). One can specify any combination of these arguments (including none of them). When at least of
@@ -323,7 +334,9 @@ them is `None`, the environment is called *incomplete*. Otherwise, it is *comple
 `box_move_type = disabled`. Then, simulation is of NVT type and parameter `pressure` is ignored (environment can be
 complete even if it is `None`). Simulation environments can be combined. When it is done, all not-`None` components of a
 new environment overwrite the ones from the old environment, while for `None` components of the new environment the old
-ones are reused.
+ones are reused. External fields are optional and do not affect whether an environment is complete. For
+`external_fields`, `None` inherits the previous value, `[]` clears all inherited fields, and a non-empty Array replaces
+the previous field list.
 
 ### Simulation pipeline
 
@@ -378,6 +391,8 @@ are performed:
       * if `move_types = None` or `box_move_type = None`, the move types are "inherited" from the previous run, and
         they remember dynamically adjusted step sizes. If `move_types` or `box_move_type` are overriden, previous step
         sizes are lost (as they can be meaningless for the new move types).
+      * if `external_fields = None`, external fields are inherited from the previous run. An explicit
+        `external_fields = []` clears them, while a non-empty Array replaces them.
    4. The rest is the same as for the first run.
    
 5. The previous step is repeated for all remaining runs in the Array.
@@ -402,6 +417,7 @@ integration(
     pressure = None,
     move_types = None,
     box_move_type = None,
+    external_fields = None,
     averaging_every = 0,
     inline_info_every = 100,
     orientation_fix_every = 10000,
@@ -466,6 +482,13 @@ Arguments:
   using [class `disabled`](#class-disabled) turns off box updating, which means the simulation is of NVT type
   (`pressure` is ignored and may be `None`). It is a part of the [Simulation environment](#simulation-environment). If
   `None`, the value from the previous run (or from [class `rampack`](#class-rampack) arguments) is reused.
+
+* ***external_fields*** (*= None*) <a id="integration_externalfields"></a>
+
+  The Array of one-body fields acting on particles. Available field types are described in
+  [External fields](#external-fields). It is a part of the [Simulation environment](#simulation-environment). If
+  `None`, fields from the previous run (or from [class `rampack`](#class-rampack) arguments) are reused. An empty Array
+  clears inherited fields, while a non-empty Array replaces them.
 
 * ***averaging_every*** (*= 0*) <a id="integration_averagingevery"></a>
 
@@ -560,6 +583,7 @@ overlap_relaxation(
     pressure = None,
     move_types = None,
     box_move_type = None,
+    external_fields = None,
     inline_info_every = 100,
     orientation_fix_every = 10000,
     helper_shape = None,
@@ -602,6 +626,10 @@ Arguments:
 * ***box_move_type*** (*= None*)
 
   See [`integration.box_move_type`](#integration_boxmovetype).
+
+* ***external_fields*** (*= None*)
+
+  See [`integration.external_fields`](#integration_externalfields).
 
 * ***inline_info_every*** (*= 100*)
 
@@ -1070,6 +1098,113 @@ disabled( )
 
 Disables box scaling. As a consequence, box remains constant, thus NVT simulation is performed. `pressure` becomes
 redundant and can be left out of the simulation environment (`pressure = None`).
+
+
+## External fields
+
+> Since v1.3.0
+
+External fields add one-body potential energy independently of pair interactions. Multiple fields may be active at the
+same time, in which case their contributions are added. Each field may have a particle selection mask. The syntax is the
+same as in [Particle selection masks](#particle-selection-masks): `whitelist_shapes` restricts a field to the selected
+particles, whereas `blacklist_shapes` applies it to all particles except the selected ones. The two arguments are
+mutually exclusive. Out-of-range particle indices are ignored with a warning. A mask that leaves no eligible particles
+is rejected.
+
+There are the following external fields:
+* [Class `gravity`](#class-gravity)
+
+
+### Class `gravity`
+
+```python
+gravity(
+    g,
+    direction_hkl,
+    point = None,
+    box_anchor = [0, 0, 0],
+    whitelist_shapes = None,
+    blacklist_shapes = None
+)
+```
+
+A box-attached linear field. For a selected point at absolute position **r**, the one-particle energy is
+
+*U* = -*g* **d** &middot; (**r** - **a**)
+
+where **d** is the normalized absolute field direction (specified using generalized fractional Miller indices
+`direction_hkl`) and **a** is the absolute box anchor (computed from the relative coordinates `box_anchor`).
+
+Arguments:
+
+* ***g***
+
+  Positive field strength.
+
+* ***direction_hkl***
+
+  A three-element Array of Floats with non-zero norm. The direction is given in reciprocal, box-normal coordinates
+  (generalized fractional Miller indices). More precisely, the absolute direction **d** is computed as
+
+  **d** = (*h* **g**<sub>1</sub> + *k* **g**<sub>2</sub> + *l* **g**<sub>3</sub>)
+          / &Vert;*h* **g**<sub>1</sub> + *k* **g**<sub>2</sub> + *l* **g**<sub>3</sub>&Vert;,
+
+  where **g**<sub>*i*</sub>, *i* = 1, 2, 3, are the reciprocal box vectors. For their definitions, see
+  [class `smectic_order`](observables.md#class-smectic_order). Some useful special cases and caveats follow:
+
+  * For an orthorhombic box, the reciprocal and direct box vectors have the same cardinal directions. For example,
+    `direction_hkl = [0, 1, 0]` points along the second box vector **v**<sub>2</sub> (the Y-axis if the box is
+    axis-aligned).
+  * For an axis-aligned cubic box, [*h*, *k*, *l*] directly specifies the lab-frame direction, up to normalization.
+  * For an axis-aligned orthorhombic box with side lengths *L*<sub>*i*</sub>, a desired lab-frame direction with
+    components [*u*<sub>1</sub>, *u*<sub>2</sub>, *u*<sub>3</sub>] is represented, up to an overall factor, by<br />
+    [*h*, *k*, *l*]
+    = [*L*<sub>1</sub>*u*<sub>1</sub>, *L*<sub>2</sub>*u*<sub>2</sub>, *L*<sub>3</sub>*u*<sub>3</sub>].
+  * For a general triclinic box, **g**<sub>1</sub>, **g**<sub>2</sub>, and **g**<sub>3</sub> point perpendicular to the
+    wall pairs spanned by, respectively, (**v**<sub>2</sub>, **v**<sub>3</sub>),
+    (**v**<sub>3</sub>, **v**<sub>1</sub>), and (**v**<sub>1</sub>, **v**<sub>2</sub>) box vectors.
+
+  A non-zero component makes the potential discontinuous across the periodic boundary for the corresponding box height.
+  Consequently, every such axis must have a hard wall enabled in [`rampack.walls`](#rampack_walls); otherwise the input
+  is rejected. RAMPACK does not enable the required walls automatically.
+
+* ***point*** (*= None*)
+
+  The [named point](shapes.md#named-points) of the particle at which the potential is evaluated. The name must be
+  defined for the configured shape. If `None`, `"cm"` is used when the shape defines it; otherwise the geometric center
+  `"o"` is used. An off-center point makes the energy depend on particle orientation.
+
+* ***box_anchor*** (*= [0, 0, 0]*)
+
+  The zero-potential anchor **a**, expressed in relative box coordinates. It is a three-element Array of Floats, each in
+  the closed interval `[0, 1]`. For example, `[0, 0, 0]` anchors the field at the box origin, while `[0, 0, 1]` anchors
+  it at the far wall along the third box axis. In a fixed box, changing the anchor only adds a constant to each eligible
+  particle's energy and therefore does not affect move acceptance. It does affect energy differences when the box is
+  perturbed.
+
+* ***whitelist_shapes*** (*= None*)
+* ***blacklist_shapes*** (*= None*)
+
+  See [Particle selection masks](#particle-selection-masks).
+
+The field direction and anchor move with the simulation box rather than remaining fixed in the laboratory frame. Box
+moves along gravity should normally be disabled unless a piston or barostat interpretation is intended. In such a case,
+choosing appropriate `direction_hkl` and `box_anchor` is essential. For example,
+
+```python
+gravity(g=1, direction_hkl=[0, 0, 1], box_anchor=[0, 0, 1])
+```
+
+together with `walls=[False, False, True]` and [class `delta_triclinic`](#class-delta_triclinic) box moves represents the
+following physical system:
+
+* The "upper" wall at relative coordinate *s*<sub>3</sub> = 1, parallel to box vectors **v**<sub>1</sub> and
+  **v**<sub>2</sub>, is the zero-potential reference plane, even as it is perturbed.
+* The gravity is along the box height perpendicular to this wall and acts towards it.
+* Box perturbations have the following effects:
+  * The opposite, "lower" wall acts as a piston or barostat whose distance from the "upper" wall may change.
+  * The remaining four box walls may be sheared or deformed, allowing the stress tensor to relax.
+  * The box may accumulate a global rotation; the gravity direction and the reference wall rotate with it.
 
 
 [&uarr; back to the top](#input-file)
