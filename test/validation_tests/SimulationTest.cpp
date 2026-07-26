@@ -21,6 +21,7 @@
 #include "core/ObservablesCollector.h"
 #include "core/observables/NumberDensity.h"
 #include "core/observables/NematicOrder.h"
+#include "core/observables/DensityHistogram.h"
 #include "core/shapes/CompoundShapeTraits.h"
 #include "core/interactions/SquareInverseCoreInteraction.h"
 #include "core/move_samplers/RototranslationSampler.h"
@@ -676,6 +677,91 @@ TEST_CASE("Simulation: masked rotations coexist with unmasked translations", "[m
             fixture.checkFirstThirdOrientationsChanged();
             fixture.checkLastTwoThirdsOrientationsUnchanged();
             fixture.checkAllPositionsChanged();
+        }
+    }
+}
+
+TEST_CASE("Simulation: barometric curve for dilute hard-sphere gas", "[medium]") {
+    // Physical parameters
+    static constexpr std::size_t NUM_CELLS = 8;
+    static constexpr std::size_t NUM_PARTICLES = NUM_CELLS * NUM_CELLS * NUM_CELLS;
+    static constexpr double BOX_SIZE = 20;
+    static constexpr double SPHERE_RADIUS = 0.01;
+    static constexpr double TEMPERATURE = 1;
+    static constexpr double GRAVITY = 0.1;
+
+    // Histogram validation parameters
+    static constexpr std::size_t NUM_BINS_Z = 50;
+    static constexpr std::array<std::size_t, 4> BIN_INDICES{10, 20, 30, 40};
+    static constexpr double MAX_RELATIVE_ERROR = 0.06;
+
+    // Initial lattice and simulation environment
+    SphereTraits sphereTraits(SPHERE_RADIUS);
+    Lattice lattice(UnitCellFactory::createScCell(BOX_SIZE / NUM_CELLS), {NUM_CELLS, NUM_CELLS, NUM_CELLS});
+
+    Simulation::Environment environment;
+    environment.setTemperature(TEMPERATURE);
+    environment.disableBoxScaling();
+    environment.setMoveSamplers({std::make_shared<TranslationSampler>(1, 1)});
+    environment.setExternalFields({std::make_shared<GravityField>(GRAVITY, Vector<3>{0, 0, -1})});
+
+    // Integration parameters
+    Simulation::IntegrationParameters integrationParameters;
+    integrationParameters.thermalisationCycles = 1000;
+    integrationParameters.averagingCycles = 9000;
+    integrationParameters.averagingEvery = 10;
+
+    // Domain-decomposition variant
+    const auto domainDiv = GENERATE(std::array<std::size_t, 3>{1, 1, 1}, std::array<std::size_t, 3>{2, 2, 1});
+    const std::size_t numDomains = std::accumulate(domainDiv.begin(), domainDiv.end(), 1ull, std::multiplies<>{});
+
+    // Observables and logging
+    constexpr std::array<std::size_t, 3> numBins{0, 0, NUM_BINS_Z};
+    auto densityHistogram = std::make_shared<DensityHistogram>(
+        numBins, nullptr, DensityHistogram::Normalization::AVG_COUNT, false, numDomains
+    );
+    auto collector = std::make_shared<ObservablesCollector>();
+    collector->addBulkObservable(densityHistogram);
+    std::ostringstream loggerStream;
+    Logger logger(loggerStream);
+
+    // Theoretical barometric curve
+    // With U(z) = g*z, k_B = 1, relative height x = z/L, and n = NUM_BINS_Z:
+    //
+    //     decayRate = g*L/T
+    //     amplitude = (N/n)*decayRate / (1 - exp(-decayRate))
+    //     expectedAvgCount(x) = amplitude*exp(-decayRate*x)
+    //
+    // The amplitude normalizes N particles over 0 <= x <= 1 and approximates each histogram bin by its midpoint.
+    // The finite-bin and wall-exclusion corrections are negligible compared to the acceptance range.
+    constexpr double decayRate = GRAVITY * BOX_SIZE / TEMPERATURE;
+    const double amplitude = (static_cast<double>(NUM_PARTICLES) / NUM_BINS_Z) * decayRate / (1 - std::exp(-decayRate));
+
+    DYNAMIC_SECTION("domain divisions: " << domainDiv[0] << " x " << domainDiv[1] << " x " << domainDiv[2]) {
+        // Run simulation
+        OMP_SET_NUM_THREADS(numDomains);
+
+        auto packing = std::make_unique<Packing>(
+            lattice.getLatticeBox(), lattice.generateMolecules(), std::make_unique<PeriodicBoundaryConditions>(),
+            sphereTraits.getInteraction(), numDomains, numDomains
+        );
+        packing->toggleWall(2, true);
+        Simulation simulation(std::move(packing), 1234, domainDiv);
+
+        simulation.integrate(std::move(environment), integrationParameters, sphereTraits, collector, {}, logger);
+
+        // Validate the sampled curve
+        const auto histogram = densityHistogram->dumpValues();
+        REQUIRE(histogram.size() == NUM_BINS_Z);
+
+        for (const auto binIdx : BIN_INDICES) {
+            const double relativeZ = histogram[binIdx].binMiddle[2];
+            const double measured = histogram[binIdx].value;
+            const double expected = amplitude * std::exp(-decayRate * relativeZ);
+            const double relativeError = (measured - expected) / expected;
+            INFO("z = " << relativeZ << ", expected = " << expected << ", measured = " << measured
+                        << ", relative error = " << relativeError);
+            CHECK(std::abs(relativeError) < MAX_RELATIVE_ERROR);
         }
     }
 }
