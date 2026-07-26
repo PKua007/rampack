@@ -12,6 +12,7 @@
 
 /**
  * @brief A capability for objects whose activity can be restricted to selected particles.
+ * @details The default ParticleSelection selects all particles.
  */
 class ParticleSelectable {
 private:
@@ -22,20 +23,21 @@ public:
 
     /**
      * @brief Sets particles eligible for this object.
+     * @details The supplied selection may need to be prepared again before it is used with a packing.
      */
     void setParticleSelection(ParticleSelection selection) {
         this->particleSelection = std::move(selection);
     }
 
     /**
-     * @brief Returns mutable particle eligibility selection.
+     * @brief Returns the mutable particle eligibility selection.
      */
     [[nodiscard]] ParticleSelection &getParticleSelection() {
         return this->particleSelection;
     }
 
     /**
-     * @brief Returns particle eligibility selection.
+     * @brief Returns the particle eligibility selection.
      */
     [[nodiscard]] const ParticleSelection &getParticleSelection() const {
         return this->particleSelection;

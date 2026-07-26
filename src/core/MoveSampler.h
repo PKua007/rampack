@@ -20,7 +20,8 @@
  * @details It can sample particle indices in any order and perform any combination of translational and rotational
  * moves (either of them or both). MoveSampler has its main (group) name returned by getName(), however it can consist
  * of more than one move types (for example rototranslation moves consist of rotations and translation). Each of inner
- * moves has its own step size. Step sizes can be increased, decreased, queried and set using move name.
+ * moves has its own step size. Step sizes can be increased, decreased, queried and set using move name. The inherited
+ * particle selection restricts which particles this sampler can perturb.
  */
 class MoveSampler : public ParticleSelectable {
 public:

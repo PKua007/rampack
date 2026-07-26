@@ -29,7 +29,8 @@
  * ShapeTraits nor Interaction are remembered, so they can be easily changed on the fly. Packing remembers both
  * molecule centers and interaction center positions for efficient computations and is tailored for multi-threaded
  * operations - the number of OpenMP thread is recognized in single-molecule methods, which as a result can be
- * performed concurrently. Volume moves have a built-in parallelization.
+ * performed concurrently. Volume moves have a built-in parallelization. Configured one-body external fields and their
+ * per-particle energies are cached, rebuilt during reconfiguration, volume move, or after a manual trigger.
  */
 class Packing {
 private:
@@ -300,7 +301,8 @@ public:
      * @brief Prepares one-body external fields for the current packing state.
      * @details This method invalidates previous external-field setup. Fields are expected to already be prepared for
      * shape geometry. This method prepares box-dependent data, particle selections, and cached per-particle energies.
-     * It must be called again after Packing::reset if external fields are still needed.
+     * Passing an empty vector clears all fields. It must be called again after Packing::reset if external fields are
+     * still needed.
      */
     void setupForExternalFields(const std::vector<std::shared_ptr<ExternalField>> &fields);
 
@@ -316,7 +318,8 @@ public:
     [[nodiscard]] bool hasExternalFields() const { return !this->externalFields.empty(); }
 
     /**
-     * @brief Returns cached total one-body external-field energy.
+     * @brief Returns the total one-body external-field energy.
+     * @details The contributions are read from the current cache.
      */
     [[nodiscard]] double getExternalEnergy() const { return this->externalFieldCache.totalEnergy; }
 
@@ -326,7 +329,9 @@ public:
     [[nodiscard]] double getParticleEnergyFluctuations(const Interaction &interaction) const;
 
     /**
-     * @brief Returns the soft potential total energy of the packing for @a interaction.
+     * @brief Returns total pair-interaction and one-body external-field energy.
+     * @details The pair contribution is zero when @a interaction has no soft part. The external contribution is read
+     * from the current cache.
      */
     [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;
 

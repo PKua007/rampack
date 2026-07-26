@@ -102,10 +102,10 @@ public:
     };
 
     /**
-     * @brief Environment of the simulation, which may be inherited from a previous run and partially of fully
-     * overriden.
-     * @details <p> It includes temperature, pressure, MoveSampler -s and TriclinicBoxScaler. The inheritability of the
-     * last facilitates remembering step sizes from the previous run.
+     * @brief Environment of the simulation, which may be inherited from a previous run and partially or fully
+     * overridden.
+     * @details <p> It includes temperature, pressure, move samplers, external fields, and a TriclinicBoxScaler. The
+     * inheritability of move samplers and the box scaler facilitates remembering step sizes from the previous run.
      *
      * <p> Each field is optional and may or may not have a value. By default all values are not set. When combining
      * with another environment (see combine() method), only the values which are set override old values.

@@ -17,8 +17,7 @@
 
 /**
  * @brief An interface representing a one-body external field contribution to particle energy.
- * @details The default particle selection is ParticleSelection::Mode::ALL. The selection has to be prepared for the
- * current packing size before hot-path energy evaluation uses it.
+ * @details The default particle selection is ParticleSelection::Mode::ALL.
  */
 class ExternalField : public ParticleSelectable {
 public:
@@ -39,12 +38,16 @@ public:
 
     /**
      * @brief Calculates external-field energy for a shape position and orientation.
+     * @details Implementations must be safe for concurrent const calls and should not allocate. Both setup methods must
+     * have been called for the current shape geometry and box.
      */
     [[nodiscard]] virtual double calculateEnergy(const Vector<3> &shapePos,
                                                  const Matrix<3, 3> &shapeRot) const = 0;
 
     /**
      * @brief Returns whether the field is continuous along each box axis.
+     * @details A false value for an axis means that periodic wrapping across its wall pair changes the potential and
+     * therefore hard walls are required on that axis.
      */
     [[nodiscard]] virtual std::array<bool, 3> getContinuityAlongBoxAxes() const = 0;
 };

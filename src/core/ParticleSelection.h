@@ -10,9 +10,10 @@
 
 
 /**
- * @brief A class specifying particles eligible for a move.
+ * @brief A class specifying particles eligible for an operation.
  * @details Selection is defined by mode and optional particle indices. It has to be prepared for the current packing
- * size before active particle indices and membership queries are used.
+ * size before active particle indices and membership queries are used. It is shared by particle-selectable components,
+ * such as move samplers and external fields.
  */
 class ParticleSelection {
 public:
