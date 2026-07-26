@@ -658,6 +658,18 @@ TEST_CASE("Packing: external fields") {
         CHECK(packing.getParticleEnergyFluctuations(hardCore) == Approx(1));
     }
 
+    SECTION("energy fluctuations combine half pair energy with one-body external energy") {
+        SphereDistanceInteraction distanceInteraction;
+        packing.setupForInteraction(distanceInteraction);
+
+        auto field = std::make_shared<MockExternalField>();
+        REQUIRE_CALL(*field, setupForBox(_));
+        ALLOW_CALL(*field, calculateEnergy(_, _)).RETURN(_1[0]);
+        packing.setupForExternalFields({field});
+
+        CHECK(packing.getParticleEnergyFluctuations(distanceInteraction) == Approx(std::sqrt(13. / 12)));
+    }
+
     SECTION("reset clears external fields") {
         auto field = std::make_shared<MockExternalField>();
         REQUIRE_CALL(*field, setupForBox(_));
