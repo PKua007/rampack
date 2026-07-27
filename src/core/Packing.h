@@ -10,6 +10,7 @@
 #include <memory>
 #include <optional>
 #include <map>
+#include <cstdint>
 
 #include "Shape.h"
 #include "BoundaryConditions.h"
@@ -18,6 +19,7 @@
 #include "ShapeGeometry.h"
 #include "NeighbourGrid.h"
 #include "ActiveDomain.h"
+#include "ExternalField.h"
 #include "utils/OMPMacros.h"
 #include "TriclinicBox.h"
 
@@ -27,10 +29,23 @@
  * ShapeTraits nor Interaction are remembered, so they can be easily changed on the fly. Packing remembers both
  * molecule centers and interaction center positions for efficient computations and is tailored for multi-threaded
  * operations - the number of OpenMP thread is recognized in single-molecule methods, which as a result can be
- * performed concurrently. Volume moves have a built-in parallelization.
+ * performed concurrently. Volume moves have a built-in parallelization. Configured one-body external fields and their
+ * per-particle energies are cached, rebuilt during reconfiguration, volume move, or after a manual trigger.
  */
 class Packing {
 private:
+    struct ExternalFieldCache {
+        std::vector<std::vector<std::size_t>> activeFieldIndicesByParticle;
+        std::vector<double> energyByParticle;
+        std::vector<double> lastEnergyByParticle;
+        std::vector<double> lastMoveEnergy;
+        std::vector<std::uint8_t> lastMoveEnergyNeedsRecalculation;
+        double totalEnergy{};
+        double lastTotalEnergy{};
+
+        void clear(std::size_t moveThreads);
+    };
+
     // shapes, interactionCentres and absoluteInteractionCentres contain additional slots at the end for temporary data
     // for all threads
 
@@ -66,6 +81,9 @@ private:
     std::size_t neighbourGridRebuilds{};
     std::size_t neighbourGridResizes{};
     double neighbourGridRebuildMicroseconds{};
+
+    ExternalFieldCache externalFieldCache;
+    std::vector<std::shared_ptr<ExternalField>> externalFields;
 
 
     static bool areShapesWithinBox(const std::vector<Shape> &shapes, const TriclinicBox &box);
@@ -125,6 +143,13 @@ private:
                                                                 const Interaction &interaction) const;
     [[nodiscard]] double getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coord,
                                                     const Interaction &interaction) const;
+    [[nodiscard]] double calculateExternalEnergy(std::size_t originalParticleIdx, std::size_t tempParticleIdx) const;
+
+    void clearExternalFields();
+    void setupExternalFieldsForCurrentBox() const;
+    void recalculateExternalEnergyCache();
+    [[nodiscard]] double prepareMoveExternalEnergy(std::size_t originalParticleIdx, std::size_t tempParticleIdx);
+    void acceptExternalEnergyChange(std::size_t particleIdx);
 
     using iterator = decltype(shapes)::iterator;
 
@@ -255,6 +280,11 @@ public:
      */
     void toggleWalls(std::array<bool, 3> axisWalls);
 
+    /**
+     * @brief Returns whether hard walls are enabled for the box-axis pair intersected by @a wallAxis.
+     */
+    [[nodiscard]] bool hasWallOnAxis(std::size_t wallAxis) const;
+
     [[nodiscard]] double getVolume() const;
 
     /**
@@ -268,12 +298,40 @@ public:
     [[nodiscard]] double getNumberDensity() const;
 
     /**
-     * @brief Returns energy fluctuations (variance) per molecule computed for @a interaction.
+     * @brief Prepares one-body external fields for the current packing state.
+     * @details This method invalidates previous external-field setup. Fields are expected to already be prepared for
+     * shape geometry. This method prepares box-dependent data, particle selections, and cached per-particle energies.
+     * Passing an empty vector clears all fields. It must be called again after Packing::reset if external fields are
+     * still needed.
+     */
+    void setupForExternalFields(const std::vector<std::shared_ptr<ExternalField>> &fields);
+
+    /**
+     * @brief Fully rebuilds cached per-particle and total one-body external-field energies.
+     * @details If no external fields are configured, this method does nothing.
+     */
+    void rebuildExternalEnergyCache();
+
+    /**
+     * @brief Returns @a true if runtime external fields are configured for this packing.
+     */
+    [[nodiscard]] bool hasExternalFields() const { return !this->externalFields.empty(); }
+
+    /**
+     * @brief Returns the total one-body external-field energy.
+     * @details The contributions are read from the current cache.
+     */
+    [[nodiscard]] double getExternalEnergy() const { return this->externalFieldCache.totalEnergy; }
+
+    /**
+     * @brief Returns the sample standard deviation of per-molecule energies computed for @a interaction.
      */
     [[nodiscard]] double getParticleEnergyFluctuations(const Interaction &interaction) const;
 
     /**
-     * @brief Returns the soft potential total energy of the packing for @a interaction.
+     * @brief Returns total pair-interaction and one-body external-field energy.
+     * @details The pair contribution is zero when @a interaction has no soft part. The external contribution is read
+     * from the current cache.
      */
     [[nodiscard]] double getTotalEnergy(const Interaction &interaction) const;
 

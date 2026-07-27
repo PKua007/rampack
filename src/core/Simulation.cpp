@@ -100,6 +100,7 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
     Expects(params.thermalisationCycles > 0 || params.averagingCycles > 0);
     Expects(params.inlineInfoEvery > 0);
     Expects(params.rotationMatrixFixEvery > 0);
+    Expects(params.externalEnergyFixEvery > 0);
     if (params.averagingCycles > 0)
         Expects(params.averagingEvery > 0 && params.averagingEvery <= params.averagingCycles);
     Expects(params.snapshotEvery <= (params.thermalisationCycles + params.averagingCycles));
@@ -112,6 +113,7 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
 
     this->observablesCollector = std::move(observablesCollector_);
     this->reset();
+    this->setupForExternalFields(shapeTraits);
     this->checkPreparedMoveSelectionPreconditions();
 
     this->totalCycles = params.cycleOffset;
@@ -142,6 +144,8 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
 
             if (this->totalCycles % params.rotationMatrixFixEvery == 0)
                 this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
+            if (this->totalCycles % params.externalEnergyFixEvery == 0)
+                this->packing->rebuildExternalEnergyCache();
             if (this->totalCycles % params.snapshotEvery == 0) {
                 this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
                 if (!simulationRecorders.empty())
@@ -171,6 +175,8 @@ void Simulation::integrate(Environment env, const IntegrationParameters &params,
 
             if (this->totalCycles % params.rotationMatrixFixEvery == 0)
                 this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
+            if (this->totalCycles % params.externalEnergyFixEvery == 0)
+                this->packing->rebuildExternalEnergyCache();
             if (this->totalCycles % params.snapshotEvery == 0) {
                 this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
                 if (!simulationRecorders.empty())
@@ -225,6 +231,7 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
 {
     Expects(params.inlineInfoEvery > 0);
     Expects(params.rotationMatrixFixEvery > 0);
+    Expects(params.externalEnergyFixEvery > 0);
     Expects(params.snapshotEvery > 0);
 
     this->environment.combine(env);
@@ -235,6 +242,7 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
 
     this->observablesCollector = std::move(observablesCollector_);
     this->reset();
+    this->setupForExternalFields(shapeTraits);
     this->checkPreparedMoveSelectionPreconditions();
 
     this->totalCycles = params.cycleOffset;
@@ -259,6 +267,8 @@ void Simulation::relaxOverlaps(Environment env, const OverlapRelaxationParameter
 
         if (this->totalCycles % params.rotationMatrixFixEvery == 0)
             this->fixRotationMatrices(shapeTraits.getInteraction(), logger);
+        if (this->totalCycles % params.externalEnergyFixEvery == 0)
+            this->packing->rebuildExternalEnergyCache();
         if (this->totalCycles % params.snapshotEvery == 0) {
             this->observablesCollector->addSnapshot(*this->packing, this->totalCycles, shapeTraits);
             if (!simulationRecorders.empty())
@@ -324,6 +334,18 @@ void Simulation::reset() {
     this->totalCycles = 0;
     this->maxCycles = 0;
     sigint_received = false;
+}
+
+void Simulation::setupForExternalFields(const ShapeTraits &shapeTraits) {
+    if (!this->environment.hasExternalFields()) {
+        this->packing->setupForExternalFields({});
+        return;
+    }
+
+    const auto &externalFields = this->environment.getExternalFields();
+    for (const auto &externalField : externalFields)
+        externalField->setupForShapeGeometry(shapeTraits.getGeometry());
+    this->packing->setupForExternalFields(externalFields);
 }
 
 void Simulation::checkPreparedMoveSelectionPreconditions() const {
@@ -535,9 +557,9 @@ bool Simulation::tryScaling(const Interaction &interaction) {
     double factor = newV/oldV;
 
     auto N = static_cast<double>(this->packing->size());
-    if (interaction.hasSoftPart() || this->areOverlapsCounted) {
-        // Soft interaction present - we have a nontrivial energy change, and we always need to try scaling.
-        // Same if only hard part, but overlaps are counted, so non-negative energy changes are not guaranteed.
+    if (interaction.hasSoftPart() || this->packing->hasExternalFields() || this->areOverlapsCounted) {
+        // Soft interaction or external fields present - we have a nontrivial energy change, and we always need to try
+        // scaling. Same if only hard part, but overlaps are counted, so non-negative energy changes are not guaranteed.
         double dE = this->packing->tryScaling(newBox, interaction);
         double exponent = N * log(factor) - dE / this->temperature - this->pressure * deltaV / this->temperature;
         if (this->unitIntervalDistribution(mt) <= std::exp(exponent)) {
@@ -939,6 +961,10 @@ void Simulation::Environment::combine(Simulation::Environment &other) {
         this->constMoveSamplers = other.constMoveSamplers;
         this->moveSamplers = other.moveSamplers;
     }
+    if (other.hasExternalFields()) {
+        this->externalFields = other.externalFields;
+        this->constExternalFields = other.constExternalFields;
+    }
     if (other.hasBoxScaler()) {
         this->boxScaler = other.boxScaler;
         this->boxScalerStatus = other.boxScalerStatus;
@@ -1001,6 +1027,23 @@ void Simulation::Environment::setMoveSamplers(std::vector<std::shared_ptr<MoveSa
                         [](const auto &s) { return s != nullptr; }));
     this->moveSamplers = moveSamplers_;
     this->constMoveSamplers.assign(moveSamplers_.begin(), moveSamplers_.end());
+}
+
+const std::vector<std::shared_ptr<const ExternalField>> &Simulation::Environment::getExternalFields() const {
+    Expects(this->hasExternalFields());
+    return this->constExternalFields;
+}
+
+const std::vector<std::shared_ptr<ExternalField>> &Simulation::Environment::getExternalFields() {
+    Expects(this->hasExternalFields());
+    return *this->externalFields;
+}
+
+void Simulation::Environment::setExternalFields(std::vector<std::shared_ptr<ExternalField>> externalFields_) {
+    Expects(std::all_of(externalFields_.begin(), externalFields_.end(),
+                       [](const auto &field) { return field != nullptr; }));
+    this->externalFields = std::move(externalFields_);
+    this->constExternalFields.assign(this->externalFields->begin(), this->externalFields->end());
 }
 
 const TriclinicBoxScaler &Simulation::Environment::getBoxScaler() const {

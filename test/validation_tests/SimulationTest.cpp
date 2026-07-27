@@ -3,6 +3,8 @@
 //
 
 #include <catch2/catch.hpp>
+#include <iomanip>
+#include <limits>
 #include <numeric>
 #include <sstream>
 
@@ -19,6 +21,7 @@
 #include "core/ObservablesCollector.h"
 #include "core/observables/NumberDensity.h"
 #include "core/observables/NematicOrder.h"
+#include "core/observables/DensityHistogram.h"
 #include "core/shapes/CompoundShapeTraits.h"
 #include "core/interactions/SquareInverseCoreInteraction.h"
 #include "core/move_samplers/RototranslationSampler.h"
@@ -29,6 +32,7 @@
 #include "core/lattice/Lattice.h"
 #include "core/lattice/SerialPopulator.h"
 #include "core/volume_scalers/TriclinicDeltaScaler.h"
+#include "core/external_fields/GravityField.h"
 
 
 namespace {
@@ -168,6 +172,107 @@ namespace {
             for (std::size_t idx{}; idx < this->initialShapes.size(); ++idx)
                 CHECK((packing[idx].getPosition() - this->initialShapes[idx].getPosition()).norm2()
                       > 1e-10);
+        }
+    };
+
+    class ExternalEnergyCacheFixture {
+    public:
+        struct RebuildResult {
+            double externalEnergyBefore{};
+            double totalEnergyBefore{};
+            double externalEnergyAfter{};
+            double totalEnergyAfter{};
+            std::size_t acceptedMoves{};
+            std::size_t totalMoves{};
+        };
+
+        struct ProcessedDrift {
+            double absolute{};
+            double relative{};
+            double epsilonUnits{};
+        };
+
+    private:
+        Logger &logger;
+        Simulation::IntegrationParameters integrationParameters;
+        std::array<std::size_t, 3> domainDivisions;
+        std::size_t numDomains{};
+        SphereTraits sphereTraits{0.1};
+        std::unique_ptr<Simulation> simulation;
+
+    public:
+        ExternalEnergyCacheFixture(Logger &logger_, const Simulation::IntegrationParameters &integrationParameters_,
+                                   const std::array<std::size_t, 3> &domainDivisions_)
+                : logger{logger_}, integrationParameters{integrationParameters_}, domainDivisions{domainDivisions_},
+                  numDomains{std::accumulate(
+                      this->domainDivisions.begin(), this->domainDivisions.end(), 1ull, std::multiplies<>{}
+                  )}
+        {
+            OMP_SET_NUM_THREADS(this->numDomains);
+
+            // 64 particles in an 8 x 8 x 8 cubic box.
+            const Lattice lattice(UnitCellFactory::createScCell(2), {4, 4, 4});
+            auto packing_ = std::make_unique<Packing>(lattice.getLatticeBox(), lattice.generateMolecules(),
+                                                      std::make_unique<PeriodicBoundaryConditions>(),
+                                                      this->sphereTraits.getInteraction(), this->numDomains,
+                                                      this->numDomains);
+            packing_->toggleWall(2, true);
+            this->simulation = std::make_unique<Simulation>(std::move(packing_), 1234, this->domainDivisions);
+        }
+
+        void run() const {
+            Simulation::Environment environment;
+            environment.setTemperature(1);
+            environment.disableBoxScaling();
+            environment.setMoveSamplers({std::make_shared<TranslationSampler>(1, 1)});
+            environment.setExternalFields({std::make_shared<GravityField>(0.5, Vector<3>{0, 0, -1})});
+
+            this->simulation->integrate(std::move(environment), this->integrationParameters, this->sphereTraits,
+                                        std::make_shared<ObservablesCollector>(), {}, this->logger);
+        }
+
+        [[nodiscard]] RebuildResult rebuildAndMeasure() const {
+            auto &packing = this->simulation->getPacking();
+            RebuildResult result;
+            result.externalEnergyBefore = packing.getExternalEnergy();
+            result.totalEnergyBefore = packing.getTotalEnergy(this->sphereTraits.getInteraction());
+            packing.rebuildExternalEnergyCache();
+            result.externalEnergyAfter = packing.getExternalEnergy();
+            result.totalEnergyAfter = packing.getTotalEnergy(this->sphereTraits.getInteraction());
+
+            const auto moveStatistics = this->simulation->getMovesStatistics().front();
+            result.acceptedMoves = moveStatistics.acceptedMoves;
+            result.totalMoves = moveStatistics.totalMoves;
+
+            return result;
+        }
+
+        static ProcessedDrift processDrift(const RebuildResult &result) {
+            ProcessedDrift drift;
+            drift.absolute = std::abs(result.externalEnergyAfter - result.externalEnergyBefore);
+            drift.relative = drift.absolute / std::abs(result.externalEnergyAfter);
+            drift.epsilonUnits = drift.relative / std::numeric_limits<double>::epsilon();
+            return drift;
+        }
+
+        [[nodiscard]] static std::string formatRebuildResult(const RebuildResult &result,
+                                                             const ProcessedDrift &drift)
+        {
+            std::ostringstream out;
+            out << std::setprecision(std::numeric_limits<double>::max_digits10);
+            out << "energy: before=" << result.externalEnergyBefore << ", after=" << result.externalEnergyAfter
+                << std::endl;
+            out << "drift: absolute=" << drift.absolute << ", relative=" << drift.relative
+                << ", epsilon units=" << drift.epsilonUnits << std::endl;
+            out << "moves: accepted=" << result.acceptedMoves << "/" << result.totalMoves << " ("
+                << static_cast<double>(result.acceptedMoves) / static_cast<double>(result.totalMoves) << ")";
+            return out.str();
+        }
+
+        static void checkCommonCoherence(const RebuildResult &result) {
+            CHECK(result.externalEnergyBefore == result.totalEnergyBefore);
+            CHECK(result.externalEnergyAfter == result.totalEnergyAfter);
+            CHECK(result.acceptedMoves > 100000);
         }
     };
 }
@@ -573,6 +678,136 @@ TEST_CASE("Simulation: masked rotations coexist with unmasked translations", "[m
             fixture.checkFirstThirdOrientationsChanged();
             fixture.checkLastTwoThirdsOrientationsUnchanged();
             fixture.checkAllPositionsChanged();
+        }
+    }
+}
+
+TEST_CASE("Simulation: barometric curve for dilute hard-sphere gas", "[medium]") {
+    // Physical parameters
+    static constexpr std::size_t NUM_CELLS = 8;
+    static constexpr std::size_t NUM_PARTICLES = NUM_CELLS * NUM_CELLS * NUM_CELLS;
+    static constexpr double BOX_SIZE = 20;
+    static constexpr double SPHERE_RADIUS = 0.01;
+    static constexpr double TEMPERATURE = 1;
+    static constexpr double GRAVITY = 0.1;
+
+    // Histogram validation parameters
+    static constexpr std::size_t NUM_BINS_Z = 50;
+    static constexpr std::array<std::size_t, 4> BIN_INDICES{10, 20, 30, 40};
+    static constexpr double MAX_RELATIVE_ERROR = 0.06;
+
+    // Initial lattice and simulation environment
+    SphereTraits sphereTraits(SPHERE_RADIUS);
+    Lattice lattice(UnitCellFactory::createScCell(BOX_SIZE / NUM_CELLS), {NUM_CELLS, NUM_CELLS, NUM_CELLS});
+
+    Simulation::Environment environment;
+    environment.setTemperature(TEMPERATURE);
+    environment.disableBoxScaling();
+    environment.setMoveSamplers({std::make_shared<TranslationSampler>(1, 1)});
+    environment.setExternalFields({std::make_shared<GravityField>(GRAVITY, Vector<3>{0, 0, -1})});
+
+    // Integration parameters
+    Simulation::IntegrationParameters integrationParameters;
+    integrationParameters.thermalisationCycles = 1000;
+    integrationParameters.averagingCycles = 9000;
+    integrationParameters.averagingEvery = 10;
+
+    // Domain-decomposition variant
+    const auto domainDiv = GENERATE(std::array<std::size_t, 3>{1, 1, 1}, std::array<std::size_t, 3>{2, 2, 1});
+    const std::size_t numDomains = std::accumulate(domainDiv.begin(), domainDiv.end(), 1ull, std::multiplies<>{});
+
+    // Observables and logging
+    constexpr std::array<std::size_t, 3> numBins{0, 0, NUM_BINS_Z};
+    auto densityHistogram = std::make_shared<DensityHistogram>(
+        numBins, nullptr, DensityHistogram::Normalization::AVG_COUNT, false, numDomains
+    );
+    auto collector = std::make_shared<ObservablesCollector>();
+    collector->addBulkObservable(densityHistogram);
+    std::ostringstream loggerStream;
+    Logger logger(loggerStream);
+
+    // Theoretical barometric curve
+    // With U(z) = g*z, k_B = 1, relative height x = z/L, and n = NUM_BINS_Z:
+    //
+    //     decayRate = g*L/T
+    //     amplitude = (N/n)*decayRate / (1 - exp(-decayRate))
+    //     expectedAvgCount(x) = amplitude*exp(-decayRate*x)
+    //
+    // The amplitude normalizes N particles over 0 <= x <= 1 and approximates each histogram bin by its midpoint.
+    // The finite-bin and wall-exclusion corrections are negligible compared to the acceptance range.
+    constexpr double decayRate = GRAVITY * BOX_SIZE / TEMPERATURE;
+    const double amplitude = (static_cast<double>(NUM_PARTICLES) / NUM_BINS_Z) * decayRate / (1 - std::exp(-decayRate));
+
+    DYNAMIC_SECTION("domain divisions: " << domainDiv[0] << " x " << domainDiv[1] << " x " << domainDiv[2]) {
+        // Run simulation
+        OMP_SET_NUM_THREADS(numDomains);
+
+        auto packing = std::make_unique<Packing>(
+            lattice.getLatticeBox(), lattice.generateMolecules(), std::make_unique<PeriodicBoundaryConditions>(),
+            sphereTraits.getInteraction(), numDomains, numDomains
+        );
+        packing->toggleWall(2, true);
+        Simulation simulation(std::move(packing), 1234, domainDiv);
+
+        simulation.integrate(std::move(environment), integrationParameters, sphereTraits, collector, {}, logger);
+
+        // Validate the sampled curve
+        const auto histogram = densityHistogram->dumpValues();
+        REQUIRE(histogram.size() == NUM_BINS_Z);
+
+        for (const auto binIdx : BIN_INDICES) {
+            const double relativeZ = histogram[binIdx].binMiddle[2];
+            const double measured = histogram[binIdx].value;
+            const double expected = amplitude * std::exp(-decayRate * relativeZ);
+            const double relativeError = (measured - expected) / expected;
+            INFO("z = " << relativeZ << ", expected = " << expected << ", measured = " << measured
+                        << ", relative error = " << relativeError);
+            CHECK(std::abs(relativeError) < MAX_RELATIVE_ERROR);
+        }
+    }
+}
+
+TEST_CASE("Simulation: external-energy cache stays coherent and rebuilds on schedule", "[medium]") {
+    static constexpr std::size_t CACHE_REBUILD_EVERY = 10000;
+    // Compare serial moves with four balanced concurrent domains.
+    const auto domainDiv = GENERATE(std::array<std::size_t, 3>{1, 1, 1}, std::array<std::size_t, 3>{2, 2, 1});
+
+    DYNAMIC_SECTION("domain divisions: " << domainDiv[0] << " x " << domainDiv[1] << " x " << domainDiv[2]) {
+        std::ostringstream loggerStream;
+        Logger logger(loggerStream);
+        Simulation::IntegrationParameters integrationParams;
+        integrationParams.thermalisationCycles = 2000;
+        integrationParams.averagingEvery = 1000;
+        integrationParams.snapshotEvery = 1000;
+        integrationParams.inlineInfoEvery = 1000;
+        integrationParams.rotationMatrixFixEvery = CACHE_REBUILD_EVERY + 1;
+        integrationParams.externalEnergyFixEvery = CACHE_REBUILD_EVERY;
+
+        SECTION("manual rebuild corrects only accumulated numerical drift") {
+            integrationParams.averagingCycles = (CACHE_REBUILD_EVERY - 1) - integrationParams.thermalisationCycles;
+            ExternalEnergyCacheFixture fixture(logger, integrationParams, domainDiv);
+
+            fixture.run();
+
+            auto result = fixture.rebuildAndMeasure();
+            auto drift = ExternalEnergyCacheFixture::processDrift(result);
+            INFO(ExternalEnergyCacheFixture::formatRebuildResult(result, drift));
+            ExternalEnergyCacheFixture::checkCommonCoherence(result);
+            CHECK(drift.epsilonUnits > 0);
+            CHECK(drift.epsilonUnits < 1000);
+        }
+
+        SECTION("scheduled rebuild restores cache coherence") {
+            integrationParams.averagingCycles = CACHE_REBUILD_EVERY - integrationParams.thermalisationCycles;
+            ExternalEnergyCacheFixture fixture(logger, integrationParams, domainDiv);
+
+            fixture.run();
+
+            auto result = fixture.rebuildAndMeasure();
+            auto drift = ExternalEnergyCacheFixture::processDrift(result);
+            INFO(ExternalEnergyCacheFixture::formatRebuildResult(result, drift));
+            ExternalEnergyCacheFixture::checkCommonCoherence(result);
+            CHECK(drift.epsilonUnits <= 1);
         }
     }
 }

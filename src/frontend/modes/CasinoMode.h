@@ -12,6 +12,8 @@
 #include "frontend/PackingLoader.h"
 
 
+class ExternalField;
+
 class CasinoMode : public ModeBase {
 private:
     // Helper class for managing and validating on-the-fly output channels
@@ -41,6 +43,9 @@ private:
     [[nodiscard]] Simulation::Environment recreateEnvironment(const RampackParameters &params, const PackingLoader &loader) const;
     void verifyDynamicParameter(const DynamicParameter &dynamicParameter, const std::string &parameterName,
                                 const IntegrationRun &run, std::size_t cycleOffset) const;
+    void validateMoveSelections(const Simulation::Environment &environment, std::size_t numParticles) const;
+    void validateExternalFields(const Simulation::Environment &environment, const Packing &packing) const;
+    static void validateExternalFieldContinuity(const ExternalField &externalField, const Packing &packing);
     void performIntegration(Simulation &simulation, Simulation::Environment &env, const IntegrationRun &run,
                             const ShapeTraits &shapeTraits, std::size_t cycleOffset, bool isContinuation);
     void performOverlapRelaxation(Simulation &simulation, Simulation::Environment &env, const OverlapRelaxationRun &run,

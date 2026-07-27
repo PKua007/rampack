@@ -102,10 +102,10 @@ public:
     };
 
     /**
-     * @brief Environment of the simulation, which may be inherited from a previous run and partially of fully
-     * overriden.
-     * @details <p> It includes temperature, pressure, MoveSampler -s and TriclinicBoxScaler. The inheritability of the
-     * last facilitates remembering step sizes from the previous run.
+     * @brief Environment of the simulation, which may be inherited from a previous run and partially or fully
+     * overridden.
+     * @details <p> It includes temperature, pressure, move samplers, external fields, and a TriclinicBoxScaler. The
+     * inheritability of move samplers and the box scaler facilitates remembering step sizes from the previous run.
      *
      * <p> Each field is optional and may or may not have a value. By default all values are not set. When combining
      * with another environment (see combine() method), only the values which are set override old values.
@@ -122,6 +122,8 @@ public:
         Parameter pressure;
         std::vector<std::shared_ptr<MoveSampler>> moveSamplers;
         std::vector<std::shared_ptr<const MoveSampler>> constMoveSamplers;
+        std::optional<std::vector<std::shared_ptr<ExternalField>>> externalFields;
+        std::vector<std::shared_ptr<const ExternalField>> constExternalFields;
         std::shared_ptr<TriclinicBoxScaler> boxScaler;
         BoxScalerStatus boxScalerStatus = BoxScalerStatus::UNSET;
 
@@ -140,6 +142,11 @@ public:
         [[nodiscard]] const std::vector<std::shared_ptr<const MoveSampler>> &getMoveSamplers() const;
         const std::vector<std::shared_ptr<MoveSampler>> &getMoveSamplers();
         void setMoveSamplers(std::vector<std::shared_ptr<MoveSampler>> moveSamplers_);
+
+        [[nodiscard]] bool hasExternalFields() const { return this->externalFields.has_value(); }
+        [[nodiscard]] const std::vector<std::shared_ptr<const ExternalField>> &getExternalFields() const;
+        const std::vector<std::shared_ptr<ExternalField>> &getExternalFields();
+        void setExternalFields(std::vector<std::shared_ptr<ExternalField>> externalFields_);
 
         [[nodiscard]] bool hasBoxScaler() const { return this->boxScalerStatus != BoxScalerStatus::UNSET; }
         [[nodiscard]] bool isBoxScalingEnabled() const {
@@ -171,6 +178,7 @@ public:
         std::size_t snapshotEvery = 100;
         std::size_t inlineInfoEvery = 100;
         std::size_t rotationMatrixFixEvery = 10000;
+        std::size_t externalEnergyFixEvery = 10000;
         std::size_t cycleOffset{};
     };
 
@@ -178,6 +186,7 @@ public:
         std::size_t snapshotEvery = 100;
         std::size_t inlineInfoEvery = 100;
         std::size_t rotationMatrixFixEvery = 10000;
+        std::size_t externalEnergyFixEvery = 10000;
         std::size_t cycleOffset{};
     };
 
@@ -274,6 +283,7 @@ private:
     void evaluateMoleculeMoveCounter(Logger &logger);
     void evaluateScalingMoveCounter(Logger &logger);
     void reset();
+    void setupForExternalFields(const ShapeTraits &shapeTraits);
     void checkPreparedMoveSelectionPreconditions() const;
     void printInlineInfo(std::size_t cycleNumber, const ShapeTraits &traits, Logger &logger, bool displayOverlaps);
     [[nodiscard]] std::size_t getMoveScratchMemoryUsage() const;
@@ -425,6 +435,7 @@ public:
      */
     [[nodiscard]] double getTotalMicroseconds() const { return this->totalMicroseconds; }
 
+    [[nodiscard]] Packing &getPacking() { return *this->packing; }
     [[nodiscard]] const Packing &getPacking() const { return *this->packing; }
 
 

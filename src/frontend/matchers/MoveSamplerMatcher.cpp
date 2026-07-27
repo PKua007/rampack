@@ -11,18 +11,12 @@
 #include "core/move_samplers/FlipSampler.h"
 #include "core/move_samplers/ReflectionSampler.h"
 #include "core/geometry/FlipAxis.h"
-#include "frontend/matchers/generic/RangeMatcher.h"
-
-#include <vector>
+#include "ParticleSelectionMatcher.h"
 
 using namespace pyon::matcher;
 
 
 namespace {
-    bool hasParticleMask(const Any &mask);
-    std::shared_ptr<MoveSampler> applyParticleSelection(std::shared_ptr<MoveSampler> sampler,
-                                                        const DataclassData &moveSamplerData);
-    bool hasAtMostOneParticleMask(const DataclassData &moveSamplerData);
     MatcherDataclass create_rototranslation();
     MatcherDataclass create_translation();
     MatcherDataclass create_rotation();
@@ -97,32 +91,6 @@ namespace {
             else                                        AssertThrow(axis);
         });
 
-    const auto particleMaskMatcher = RangeMatcher::create() | MatcherNone{};
-
-
-    bool hasParticleMask(const Any &mask) {
-        return mask.is<std::vector<std::size_t>>();
-    }
-
-    std::shared_ptr<MoveSampler> applyParticleSelection(std::shared_ptr<MoveSampler> sampler,
-                                                        const DataclassData &moveSamplerData)
-    {
-        const auto &whitelist = moveSamplerData["whitelist_shapes"];
-        const auto &blacklist = moveSamplerData["blacklist_shapes"];
-
-        if (hasParticleMask(whitelist))
-            sampler->setParticleSelection(ParticleSelection::whitelist(whitelist.as<std::vector<std::size_t>>()));
-        else if (hasParticleMask(blacklist))
-            sampler->setParticleSelection(ParticleSelection::blacklist(blacklist.as<std::vector<std::size_t>>()));
-
-        return sampler;
-    }
-
-    bool hasAtMostOneParticleMask(const DataclassData &moveSamplerData) {
-        return !hasParticleMask(moveSamplerData["whitelist_shapes"])
-               || !hasParticleMask(moveSamplerData["blacklist_shapes"]);
-    }
-
     MatcherDataclass create_rototranslation() {
         auto rotStepFloat = MatcherFloat{}.positive().mapTo([](double step) -> std::optional<double> { return step; });
         auto rotStepAuto = MatcherString("auto")
@@ -137,8 +105,8 @@ namespace {
             .arguments({{"trans_step", MatcherFloat{}.positive()},
                         {"rot_step", rotStep, R"("auto")"},
                         {"max_trans_step", maxTransStep, "None"},
-                        {"whitelist_shapes", particleMaskMatcher, "None"},
-                        {"blacklist_shapes", particleMaskMatcher, "None"}})
+                        {"whitelist_shapes", ParticleSelectionMatcher::particleMaskMatcher, "None"},
+                        {"blacklist_shapes", ParticleSelectionMatcher::particleMaskMatcher, "None"}})
             .filter([](const DataclassData &rototranslation) {
                 auto transStep = rototranslation["trans_step"].as<double>();
                 auto maxTransStep = rototranslation["max_trans_step"].as<double>();
@@ -147,14 +115,14 @@ namespace {
                 return transStep <= maxTransStep;
             })
             .describe("if max_trans_step is specified, it has to be >= trans_step")
-            .filter(hasAtMostOneParticleMask)
-            .describe("whitelist_shapes and blacklist_shapes cannot be specified together")
+            .filter(ParticleSelectionMatcher::hasAtMostOneParticleMask)
+            .describe(ParticleSelectionMatcher::mutualExclusionDescription)
             .mapTo([](const DataclassData &rototranslation) -> std::shared_ptr<MoveSampler> {
                 auto transStep = rototranslation["trans_step"].as<double>();
                 auto rotStep = rototranslation["rot_step"].as<std::optional<double>>();
                 auto maxTransStep = rototranslation["max_trans_step"].as<double>();
                 auto sampler = std::make_shared<RototranslationSampler>(transStep, rotStep, maxTransStep);
-                return applyParticleSelection(std::move(sampler), rototranslation);
+                return ParticleSelectionMatcher::apply(std::move(sampler), rototranslation);
             });
     }
 
@@ -166,8 +134,8 @@ namespace {
         return MatcherDataclass("translation")
             .arguments({{"step", MatcherFloat{}.positive()},
                         {"max_step", maxTransStep, "None"},
-                        {"whitelist_shapes", particleMaskMatcher, "None"},
-                        {"blacklist_shapes", particleMaskMatcher, "None"}})
+                        {"whitelist_shapes", ParticleSelectionMatcher::particleMaskMatcher, "None"},
+                        {"blacklist_shapes", ParticleSelectionMatcher::particleMaskMatcher, "None"}})
             .filter([](const DataclassData &rototranslation) {
                 auto transStep = rototranslation["step"].as<double>();
                 auto maxTransStep = rototranslation["max_step"].as<double>();
@@ -176,27 +144,27 @@ namespace {
                 return transStep <= maxTransStep;
             })
             .describe("if max_trans_step is specified, it has to be >= trans_step")
-            .filter(hasAtMostOneParticleMask)
-            .describe("whitelist_shapes and blacklist_shapes cannot be specified together")
+            .filter(ParticleSelectionMatcher::hasAtMostOneParticleMask)
+            .describe(ParticleSelectionMatcher::mutualExclusionDescription)
             .mapTo([](const DataclassData &translation) -> std::shared_ptr<MoveSampler> {
                 auto transStep = translation["step"].as<double>();
                 auto maxTransStep = translation["max_step"].as<double>();
                 auto sampler = std::make_shared<TranslationSampler>(transStep, maxTransStep);
-                return applyParticleSelection(std::move(sampler), translation);
+                return ParticleSelectionMatcher::apply(std::move(sampler), translation);
             });
     }
 
     MatcherDataclass create_rotation() {
         return MatcherDataclass("rotation")
             .arguments({{"step", MatcherFloat{}.positive()},
-                        {"whitelist_shapes", particleMaskMatcher, "None"},
-                        {"blacklist_shapes", particleMaskMatcher, "None"}})
-            .filter(hasAtMostOneParticleMask)
-            .describe("whitelist_shapes and blacklist_shapes cannot be specified together")
+                        {"whitelist_shapes", ParticleSelectionMatcher::particleMaskMatcher, "None"},
+                        {"blacklist_shapes", ParticleSelectionMatcher::particleMaskMatcher, "None"}})
+            .filter(ParticleSelectionMatcher::hasAtMostOneParticleMask)
+            .describe(ParticleSelectionMatcher::mutualExclusionDescription)
             .mapTo([](const DataclassData &rotation) -> std::shared_ptr<MoveSampler> {
                 auto step = rotation["step"].as<double>();
                 auto sampler = std::make_shared<RotationSampler>(step);
-                return applyParticleSelection(std::move(sampler), rotation);
+                return ParticleSelectionMatcher::apply(std::move(sampler), rotation);
             });
     }
 
@@ -204,10 +172,10 @@ namespace {
         return MatcherDataclass("axial_rotation")
             .arguments({{"step", MatcherFloat{}.positive()},
                         {"axis", labAxisMatcher | generalShapeAxisMatcher},
-                        {"whitelist_shapes", particleMaskMatcher, "None"},
-                        {"blacklist_shapes", particleMaskMatcher, "None"}})
-            .filter(hasAtMostOneParticleMask)
-            .describe("whitelist_shapes and blacklist_shapes cannot be specified together")
+                        {"whitelist_shapes", ParticleSelectionMatcher::particleMaskMatcher, "None"},
+                        {"blacklist_shapes", ParticleSelectionMatcher::particleMaskMatcher, "None"}})
+            .filter(ParticleSelectionMatcher::hasAtMostOneParticleMask)
+            .describe(ParticleSelectionMatcher::mutualExclusionDescription)
             .mapTo([](const DataclassData &rotationAroundAxis) -> std::shared_ptr<MoveSampler> {
                 auto step = rotationAroundAxis["step"].as<double>();
                 const auto &axis = rotationAroundAxis["axis"];
@@ -218,21 +186,21 @@ namespace {
                     sampler = std::make_shared<AxialRotationSampler>(step, axis.as<GeneralShapeAxis>());
                 else
                     AssertThrow("axis should be Vector<3> or GeneralShapeAxis");
-                return applyParticleSelection(std::move(sampler), rotationAroundAxis);
+                return ParticleSelectionMatcher::apply(std::move(sampler), rotationAroundAxis);
             });
     }
 
     MatcherDataclass create_flip() {
         return MatcherDataclass("flip")
             .arguments({{"every", MatcherInt{}.positive().mapTo<std::size_t>(), "10"},
-                        {"whitelist_shapes", particleMaskMatcher, "None"},
-                        {"blacklist_shapes", particleMaskMatcher, "None"}})
-            .filter(hasAtMostOneParticleMask)
-            .describe("whitelist_shapes and blacklist_shapes cannot be specified together")
+                        {"whitelist_shapes", ParticleSelectionMatcher::particleMaskMatcher, "None"},
+                        {"blacklist_shapes", ParticleSelectionMatcher::particleMaskMatcher, "None"}})
+            .filter(ParticleSelectionMatcher::hasAtMostOneParticleMask)
+            .describe(ParticleSelectionMatcher::mutualExclusionDescription)
             .mapTo([](const DataclassData &flip) -> std::shared_ptr<MoveSampler> {
                 auto every = flip["every"].as<std::size_t>();
                 auto sampler = std::make_shared<FlipSampler>(every);
-                return applyParticleSelection(std::move(sampler), flip);
+                return ParticleSelectionMatcher::apply(std::move(sampler), flip);
             });
     }
 
@@ -241,10 +209,10 @@ namespace {
             .arguments({{"reflection_axis", labAxisMatcher | generalShapeAxisMatcher},
                 {"shape_symmetry_axis", generalShapeAxisMatcher},
                 {"every", MatcherInt{}.positive().mapTo<std::size_t>(), "10"},
-                {"whitelist_shapes", particleMaskMatcher, "None"},
-                {"blacklist_shapes", particleMaskMatcher, "None"}})
-            .filter(hasAtMostOneParticleMask)
-            .describe("whitelist_shapes and blacklist_shapes cannot be specified together")
+                {"whitelist_shapes", ParticleSelectionMatcher::particleMaskMatcher, "None"},
+                {"blacklist_shapes", ParticleSelectionMatcher::particleMaskMatcher, "None"}})
+            .filter(ParticleSelectionMatcher::hasAtMostOneParticleMask)
+            .describe(ParticleSelectionMatcher::mutualExclusionDescription)
             .mapTo([](const DataclassData &reflection) -> std::shared_ptr<MoveSampler> {
                 const auto &reflectionAxis = reflection["reflection_axis"];
                 const auto reflectionSymmetryAxis = reflection["shape_symmetry_axis"].as<GeneralShapeAxis>();
@@ -259,7 +227,7 @@ namespace {
                 } else {
                     AssertThrow("reflection_axis should be Vector<3> or GeneralShapeAxis");
                 }
-                return applyParticleSelection(std::move(sampler), reflection);
+                return ParticleSelectionMatcher::apply(std::move(sampler), reflection);
             });
     }
 }

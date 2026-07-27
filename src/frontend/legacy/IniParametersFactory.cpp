@@ -220,6 +220,7 @@ namespace {
         run.averagingEvery = integrationParams.averagingEvery;
         run.inlineInfoEvery = integrationParams.inlineInfoEvery;
         run.orientationFixEvery = integrationParams.orientationFixEvery;
+        run.externalEnergyFixEvery = 10000;
         run.lastSnapshotWriters = parse_last_snapshot_writers(integrationParams);
 
         if (!integrationParams.packingFilename.empty())
@@ -257,6 +258,7 @@ namespace {
         run.snapshotEvery = overlapRelaxationParams.snapshotEvery;
         run.inlineInfoEvery = overlapRelaxationParams.inlineInfoEvery;
         run.orientationFixEvery = overlapRelaxationParams.orientationFixEvery;
+        run.externalEnergyFixEvery = 10000;
         run.helperShapeTraits = legacy::ShapeFactory::shapeTraitsFor(shapeName, shapeAttributes,
                                                                      overlapRelaxationParams.helperInteraction,
                                                                      baseParams.version);

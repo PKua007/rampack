@@ -179,7 +179,8 @@ energy_per_particle( )
 
 * **Primary name**: `Energy per particle`
 * **Interval values**:
-  * `E` - average interaction energy of a single particle with the rest of the system
+  * `E` - total potential energy divided by the number of particles. It includes pair-interaction energy and one-body
+    external-field energy.
 * **Nominal values**: None
 
 
@@ -191,7 +192,14 @@ energy_fluctuations_per_particle( )
 
 * **Primary name**: `Energy fluctuation per particle`
 * **Interval values**:
-  * `varE` - variance of the interaction of a single particle with the rest of the system
+  * `varE` - sample standard deviation across particle energies in the current snapshot. The energy assigned to
+    particle *i* is
+
+    *E*<sub>*i*</sub>
+    = 1/2 &sum;<sub>*j* &ne; *i*</sub> *U*<sub>*ij*</sub> + &sum;<sub>*f*</sub> *U*<sub>*f*</sub>(*i*),
+
+    where the second sum runs over external fields active for particle *i*. The factor 1/2 applies only to pair
+    interactions, whose energy is shared by two particles; one-body external-field energy is not halved.
 * **Nominal values**: None
 
 

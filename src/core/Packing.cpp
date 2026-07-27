@@ -43,6 +43,21 @@ namespace {
     };
 }
 
+void Packing::ExternalFieldCache::clear(const std::size_t moveThreads) {
+    this->activeFieldIndicesByParticle.clear();
+    this->energyByParticle.clear();
+    this->lastEnergyByParticle.clear();
+    this->lastMoveEnergy.assign(moveThreads, 0);
+    this->lastMoveEnergyNeedsRecalculation.assign(moveThreads, false);
+    this->totalEnergy = 0;
+    this->lastTotalEnergy = 0;
+}
+
+void Packing::clearExternalFields() {
+    this->externalFields.clear();
+    this->externalFieldCache.clear(this->moveThreads);
+}
+
 Packing::Packing(const TriclinicBox &box, std::vector<Shape> shapes, std::unique_ptr<BoundaryConditions> bc,
                  const Interaction &interaction, std::size_t moveThreads, std::size_t scalingThreads)
         : bc{std::move(bc)}
@@ -79,6 +94,7 @@ void Packing::reset(std::vector<Shape> newShapes, const TriclinicBox &newBox, co
     this->lastMoveOverlapDeltas.resize(this->moveThreads, 0);
     this->bc->setBox(this->box);
     this->setupForInteraction(newInteraction);
+    this->clearExternalFields();
 }
 
 double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, const Interaction &interaction,
@@ -87,8 +103,9 @@ double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, c
     Expects(particleIdx < this->size());
     Expects(interaction.getRangeRadius() <= this->interactionRange);
 
-    std::size_t tempParticleIdx = this->size() + OMP_THREAD_ID;
-    this->lastAlteredParticleIdx[OMP_THREAD_ID] = particleIdx;
+    std::size_t threadId = OMP_THREAD_ID;
+    std::size_t tempParticleIdx = this->size() + threadId;
+    this->lastAlteredParticleIdx[threadId] = particleIdx;
     this->shapes[tempParticleIdx] = this->shapes[particleIdx];
     this->shapes[tempParticleIdx].translate(translation, *this->bc);
 
@@ -101,20 +118,25 @@ double Packing::tryTranslation(std::size_t particleIdx, Vector<3> translation, c
     }
 
     double overlapEnergy = this->calculateMoveOverlapEnergy(particleIdx, tempParticleIdx, interaction);
-    if (overlapEnergy != 0)
+    if (overlapEnergy != 0) {
+        if (this->hasExternalFields())
+            this->externalFieldCache.lastMoveEnergyNeedsRecalculation[threadId] = true;
         return overlapEnergy;
+    }
 
+    double externalEnergyDelta = this->prepareMoveExternalEnergy(particleIdx, tempParticleIdx);
     double initialEnergy = this->calculateParticleEnergy(particleIdx, particleIdx, interaction);
     double finalEnergy = this->calculateParticleEnergy(particleIdx, tempParticleIdx, interaction);
-    return finalEnergy - initialEnergy;
+    return finalEnergy - initialEnergy + externalEnergyDelta;
 }
 
 double Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotation, const Interaction &interaction) {
     Expects(particleIdx < this->size());
     Expects(interaction.getRangeRadius() <= this->interactionRange);
 
-    std::size_t tempParticleIdx = this->size() + OMP_THREAD_ID;
-    this->lastAlteredParticleIdx[OMP_THREAD_ID] = particleIdx;
+    std::size_t threadId = OMP_THREAD_ID;
+    std::size_t tempParticleIdx = this->size() + threadId;
+    this->lastAlteredParticleIdx[threadId] = particleIdx;
     this->shapes[tempParticleIdx] = this->shapes[particleIdx];
 
     this->shapes[tempParticleIdx].rotate(rotation);
@@ -125,12 +147,16 @@ double Packing::tryRotation(std::size_t particleIdx, const Matrix<3, 3> &rotatio
     }
 
     double overlapEnergy = this->calculateMoveOverlapEnergy(particleIdx, tempParticleIdx, interaction);
-    if (overlapEnergy != 0)
+    if (overlapEnergy != 0) {
+        if (this->hasExternalFields())
+            this->externalFieldCache.lastMoveEnergyNeedsRecalculation[threadId] = true;
         return overlapEnergy;
+    }
 
+    double externalEnergyDelta = this->prepareMoveExternalEnergy(particleIdx, tempParticleIdx);
     double initialEnergy = this->calculateParticleEnergy(particleIdx, particleIdx, interaction);
     double finalEnergy = this->calculateParticleEnergy(particleIdx, tempParticleIdx, interaction);
-    return finalEnergy - initialEnergy;
+    return finalEnergy - initialEnergy + externalEnergyDelta;
 }
 
 double Packing::tryMove(std::size_t particleIdx, const Vector<3> &translation, const Matrix<3, 3> &rotation,
@@ -139,8 +165,9 @@ double Packing::tryMove(std::size_t particleIdx, const Vector<3> &translation, c
     Expects(particleIdx < this->size());
     Expects(interaction.getRangeRadius() <= this->interactionRange);
 
-    std::size_t tempParticleIdx = this->size() + OMP_THREAD_ID;
-    this->lastAlteredParticleIdx[OMP_THREAD_ID] = particleIdx;
+    std::size_t threadId = OMP_THREAD_ID;
+    std::size_t tempParticleIdx = this->size() + threadId;
+    this->lastAlteredParticleIdx[threadId] = particleIdx;
     this->shapes[tempParticleIdx] = this->shapes[particleIdx];
     this->shapes[tempParticleIdx].translate(translation, *this->bc);
 
@@ -155,12 +182,16 @@ double Packing::tryMove(std::size_t particleIdx, const Vector<3> &translation, c
     }
 
     double overlapEnergy = this->calculateMoveOverlapEnergy(particleIdx, tempParticleIdx, interaction);
-    if (overlapEnergy != 0)
+    if (overlapEnergy != 0) {
+        if (this->hasExternalFields())
+            this->externalFieldCache.lastMoveEnergyNeedsRecalculation[threadId] = true;
         return overlapEnergy;
+    }
 
+    double externalEnergyDelta = this->prepareMoveExternalEnergy(particleIdx, tempParticleIdx);
     double initialEnergy = this->calculateParticleEnergy(particleIdx, particleIdx, interaction);
     double finalEnergy = this->calculateParticleEnergy(particleIdx, tempParticleIdx, interaction);
-    return finalEnergy - initialEnergy;
+    return finalEnergy - initialEnergy + externalEnergyDelta;
 }
 
 double Packing::tryScaling(const std::array<double, 3> &scaleFactor, const Interaction &interaction) {
@@ -174,18 +205,24 @@ double Packing::tryScaling(const TriclinicBox &newBox, const Interaction &intera
     Expects(interaction.getRangeRadius() <= this->interactionRange);
     this->lastBox = this->box;
     this->lastShapes = this->shapes;
+    this->externalFieldCache.lastEnergyByParticle = this->externalFieldCache.energyByParticle;
+    this->externalFieldCache.lastTotalEnergy = this->externalFieldCache.totalEnergy;
 
     double initialEnergy = this->getTotalEnergy(interaction);
     this->lastScalingNumOverlaps = this->numOverlaps;
 
     this->box = newBox;
     this->bc->setBox(this->box);
+    if (this->hasExternalFields())
+        this->setupExternalFieldsForCurrentBox();
     for (auto &shape : *this)
         shape.setPosition(this->box.relativeToAbsolute(this->lastBox.absoluteToRelative(shape.getPosition())));
     std::swap(this->neighbourGrid, this->tempNeighbourGrid);
     if (this->numInteractionCentres != 0)
         this->recalculateAbsoluteInteractionCentres();
     this->rebuildNeighbourGrid();
+    if (this->hasExternalFields())
+        this->recalculateExternalEnergyCache();
 
     static constexpr double INF = std::numeric_limits<double>::infinity();
     if (interaction.hasHardPart()) {
@@ -231,8 +268,98 @@ double Packing::getNumberDensity() const {
     return this->size() / this->getVolume();
 }
 
+void Packing::setupForExternalFields(const std::vector<std::shared_ptr<ExternalField>> &fields) {
+    Expects(std::all_of(fields.begin(), fields.end(), [](const auto &field) { return field != nullptr; }));
+
+    this->clearExternalFields();
+    this->externalFields = fields;
+
+    this->externalFieldCache.activeFieldIndicesByParticle.resize(this->size());
+    this->externalFieldCache.energyByParticle.resize(this->size(), 0);
+    this->externalFieldCache.lastEnergyByParticle.resize(this->size(), 0);
+
+    for (std::size_t fieldIdx{}; fieldIdx < this->externalFields.size(); ++fieldIdx) {
+        auto &field = this->externalFields[fieldIdx];
+
+        auto &selection = field->getParticleSelection();
+        selection.prepare(this->size());
+        for (auto particleIdx : selection.getActiveParticleIndices())
+            this->externalFieldCache.activeFieldIndicesByParticle[particleIdx].push_back(fieldIdx);
+    }
+
+    this->setupExternalFieldsForCurrentBox();
+    this->recalculateExternalEnergyCache();
+}
+
+void Packing::setupExternalFieldsForCurrentBox() const {
+    for (auto &field : this->externalFields)
+        field->setupForBox(this->box);
+}
+
+double Packing::calculateExternalEnergy(const std::size_t originalParticleIdx,
+                                        const std::size_t tempParticleIdx) const
+{
+    double energy{};
+    const auto &shape = this->shapes[tempParticleIdx];
+    for (auto fieldIdx : this->externalFieldCache.activeFieldIndicesByParticle[originalParticleIdx]) {
+        const auto &field = this->externalFields[fieldIdx];
+        energy += field->calculateEnergy(shape.getPosition(), shape.getOrientation());
+    }
+    return energy;
+}
+
+void Packing::recalculateExternalEnergyCache() {
+    double totalEnergy{};
+    #pragma omp parallel for default(none) reduction(+:totalEnergy) num_threads(this->scalingThreads)
+    for (std::size_t particleIdx = 0; particleIdx < this->size(); ++particleIdx) {
+        auto energy = this->calculateExternalEnergy(particleIdx, particleIdx);
+        this->externalFieldCache.energyByParticle[particleIdx] = energy;
+        totalEnergy += energy;
+    }
+    this->externalFieldCache.totalEnergy = totalEnergy;
+}
+
+void Packing::rebuildExternalEnergyCache() {
+    if (!this->hasExternalFields())
+        return;
+
+    this->recalculateExternalEnergyCache();
+}
+
+double Packing::prepareMoveExternalEnergy(const std::size_t originalParticleIdx,
+                                          const std::size_t tempParticleIdx)
+{
+    if (!this->hasExternalFields())
+        return 0;
+
+    std::size_t threadId = OMP_THREAD_ID;
+    auto finalEnergy = this->calculateExternalEnergy(originalParticleIdx, tempParticleIdx);
+    this->externalFieldCache.lastMoveEnergy[threadId] = finalEnergy;
+    this->externalFieldCache.lastMoveEnergyNeedsRecalculation[threadId] = false;
+    return finalEnergy - this->externalFieldCache.energyByParticle[originalParticleIdx];
+}
+
+void Packing::acceptExternalEnergyChange(const std::size_t particleIdx) {
+    if (!this->hasExternalFields())
+        return;
+
+    std::size_t threadId = OMP_THREAD_ID;
+    auto finalEnergy = this->externalFieldCache.lastMoveEnergy[threadId];
+    if (this->externalFieldCache.lastMoveEnergyNeedsRecalculation[threadId]) {
+        finalEnergy = this->calculateExternalEnergy(particleIdx, particleIdx);
+        this->externalFieldCache.lastMoveEnergy[threadId] = finalEnergy;
+        this->externalFieldCache.lastMoveEnergyNeedsRecalculation[threadId] = false;
+    }
+    double energyDelta = finalEnergy - this->externalFieldCache.energyByParticle[particleIdx];
+    this->externalFieldCache.energyByParticle[particleIdx] = finalEnergy;
+
+    #pragma omp atomic update
+    this->externalFieldCache.totalEnergy += energyDelta;
+}
+
 void Packing::acceptTranslation() {
-    std::size_t lastAlteredIdx = this->lastAlteredParticleIdx[OMP_THREAD_ID];
+    std::size_t threadId = OMP_THREAD_ID;
+    std::size_t lastAlteredIdx = this->lastAlteredParticleIdx[threadId];
     if (this->neighbourGrid.has_value()) {
         if (this->numInteractionCentres == 0)
             this->neighbourGrid->remove(lastAlteredIdx, this->shapes[lastAlteredIdx].getPosition());
@@ -240,9 +367,10 @@ void Packing::acceptTranslation() {
             this->removeInteractionCentresFromNeighbourGrid(lastAlteredIdx);
     }
 
-    this->shapes[lastAlteredIdx].setPosition(this->shapes[this->size() + OMP_THREAD_ID].getPosition());
+    this->shapes[lastAlteredIdx].setPosition(this->shapes[this->size() + threadId].getPosition());
     if (this->numInteractionCentres != 0)
         this->acceptTempInteractionCentres();
+    this->acceptExternalEnergyChange(lastAlteredIdx);
 
     if (this->neighbourGrid.has_value()) {
         if (this->numInteractionCentres == 0)
@@ -253,30 +381,33 @@ void Packing::acceptTranslation() {
 
     if (this->overlapCounting) {
         #pragma omp critical
-        this->numOverlaps += this->lastMoveOverlapDeltas[OMP_THREAD_ID];
+        this->numOverlaps += this->lastMoveOverlapDeltas[threadId];
     }
 }
 
 void Packing::acceptRotation() {
-    std::size_t lastAlteredIdx = this->lastAlteredParticleIdx[OMP_THREAD_ID];
+    std::size_t threadId = OMP_THREAD_ID;
+    std::size_t lastAlteredIdx = this->lastAlteredParticleIdx[threadId];
     if (this->neighbourGrid.has_value() && this->numInteractionCentres != 0)
         this->removeInteractionCentresFromNeighbourGrid(lastAlteredIdx);
 
-    this->shapes[lastAlteredIdx].setOrientation(this->shapes[size() + OMP_THREAD_ID].getOrientation());
+    this->shapes[lastAlteredIdx].setOrientation(this->shapes[size() + threadId].getOrientation());
     if (this->numInteractionCentres != 0)
         this->acceptTempInteractionCentres();
+    this->acceptExternalEnergyChange(lastAlteredIdx);
 
     if (this->neighbourGrid.has_value() && this->numInteractionCentres != 0)
         this->addInteractionCentresToNeighbourGrid(lastAlteredIdx);
 
     if (this->overlapCounting) {
         #pragma omp critical
-        this->numOverlaps += this->lastMoveOverlapDeltas[OMP_THREAD_ID];
+        this->numOverlaps += this->lastMoveOverlapDeltas[threadId];
     }
 }
 
 void Packing::acceptMove() {
-    std::size_t lastAlteredIdx = this->lastAlteredParticleIdx[OMP_THREAD_ID];
+    std::size_t threadId = OMP_THREAD_ID;
+    std::size_t lastAlteredIdx = this->lastAlteredParticleIdx[threadId];
     if (this->neighbourGrid.has_value()) {
         if (this->numInteractionCentres == 0)
             this->neighbourGrid->remove(lastAlteredIdx, this->shapes[lastAlteredIdx].getPosition());
@@ -284,9 +415,10 @@ void Packing::acceptMove() {
             this->removeInteractionCentresFromNeighbourGrid(lastAlteredIdx);
     }
 
-    this->shapes[lastAlteredIdx] = this->shapes[this->size() + OMP_THREAD_ID];
+    this->shapes[lastAlteredIdx] = this->shapes[this->size() + threadId];
     if (this->numInteractionCentres != 0)
         this->acceptTempInteractionCentres();
+    this->acceptExternalEnergyChange(lastAlteredIdx);
 
     if (this->neighbourGrid.has_value()) {
         if (this->numInteractionCentres == 0)
@@ -297,7 +429,7 @@ void Packing::acceptMove() {
 
     if (this->overlapCounting) {
         #pragma omp critical
-        this->numOverlaps += this->lastMoveOverlapDeltas[OMP_THREAD_ID];
+        this->numOverlaps += this->lastMoveOverlapDeltas[threadId];
     }
 }
 
@@ -337,8 +469,9 @@ void Packing::removeInteractionCentresFromNeighbourGrid(std::size_t particleIdx)
 }
 
 void Packing::acceptTempInteractionCentres() {
-    std::size_t fromOrigin = (this->size() + OMP_THREAD_ID) * this->numInteractionCentres;
-    std::size_t toOrigin = this->lastAlteredParticleIdx[OMP_THREAD_ID] * this->numInteractionCentres;
+    std::size_t threadId = OMP_THREAD_ID;
+    std::size_t fromOrigin = (this->size() + threadId) * this->numInteractionCentres;
+    std::size_t toOrigin = this->lastAlteredParticleIdx[threadId] * this->numInteractionCentres;
     for (std::size_t i{}; i < this->numInteractionCentres; i++) {
         std::size_t toCentreIdx = toOrigin + i;
         std::size_t fromCentreIdx = fromOrigin + i;
@@ -368,6 +501,10 @@ void Packing::revertScaling() {
     if (this->numInteractionCentres != 0)
         this->recalculateAbsoluteInteractionCentres();
     this->numOverlaps = this->lastScalingNumOverlaps;
+    this->externalFieldCache.energyByParticle = this->externalFieldCache.lastEnergyByParticle;
+    this->externalFieldCache.totalEnergy = this->externalFieldCache.lastTotalEnergy;
+    if (this->hasExternalFields())
+        this->setupExternalFieldsForCurrentBox();
 }
 
 std::size_t Packing::countParticleOverlaps(std::size_t originalParticleIdx, std::size_t tempParticleIdx,
@@ -688,10 +825,11 @@ double Packing::calculateParticleEnergy(std::size_t originalParticleIdx, std::si
 }
 
 double Packing::getTotalEnergy(const Interaction &interaction) const {
-    if (!interaction.hasSoftPart())
-        return 0;
+    double energy = this->externalFieldCache.totalEnergy;
 
-    double energy{};
+    if (!interaction.hasSoftPart())
+        return energy;
+
     if (this->neighbourGrid.has_value()) {
         auto cellDivisions = this->neighbourGrid->getCellDivisions();
         #pragma omp parallel for collapse(3) default(none) shared(interaction, cellDivisions) reduction(+:energy) \
@@ -839,20 +977,28 @@ double Packing::getTotalEnergyNGCellHelper(const std::array<std::size_t, 3> &coo
 }
 
 double Packing::getParticleEnergyFluctuations(const Interaction &interaction) const {
-    if (!interaction.hasSoftPart())
-        return 0;
-
     double energySum{};
     double energySum2{};
-    for (std::size_t i{}; i < this->size(); i++) {
-        double energy = this->calculateParticleEnergy(i, i, interaction);
+    bool hasExternalFields = this->hasExternalFields();
+    bool hasSoftPart = interaction.hasSoftPart();
+    if (!hasExternalFields && !hasSoftPart)
+        return 0;
+
+    #pragma omp parallel for default(none) shared(interaction) firstprivate(hasExternalFields, hasSoftPart) \
+            reduction(+:energySum, energySum2) num_threads(this->scalingThreads)
+    for (std::size_t i = 0; i < this->size(); i++) {
+        double energy{};
+        if (hasExternalFields)
+            energy += this->externalFieldCache.energyByParticle[i];
+        if (hasSoftPart)
+            energy += 0.5 * this->calculateParticleEnergy(i, i, interaction);
+
         energySum += energy;
         energySum2 += energy*energy;
     }
 
     double N = this->size();
-    double doubleEnergy = std::sqrt(energySum2/(N-1) - std::pow(energySum, 2)/N/(N - 1));
-    return doubleEnergy / 2;    // We divide by 2, because each interaction was counted twice
+    return std::sqrt(energySum2/(N-1) - std::pow(energySum, 2)/N/(N - 1));
 }
 
 void Packing::rebuildNeighbourGrid() {
@@ -1083,6 +1229,11 @@ void Packing::toggleWalls(std::array<bool, 3> axisWalls) {
     this->hasAnyWalls = std::find(this->hasWall.begin(), this->hasWall.end(), true) != this->hasWall.end();
 }
 
+bool Packing::hasWallOnAxis(const std::size_t wallAxis) const {
+    Expects(wallAxis < this->hasWall.size());
+    return this->hasWall[wallAxis];
+}
+
 std::size_t Packing::countParticleWallOverlaps(std::size_t particleIdx, const Interaction &interaction,
                                                bool earlyExit) const
 {
@@ -1176,19 +1327,6 @@ bool Packing::isBoxUpscaled(const TriclinicBox &oldBox, const TriclinicBox &newB
 }
 
 std::size_t Packing::renormalizeOrientations(const Interaction &interaction, bool allowOverlaps) {
-    if (allowOverlaps) {
-        auto newShapes = std::vector<Shape>(this->begin(), this->end());
-        #pragma omp parallel for shared(newShapes) default(none) num_threads(this->scalingThreads)
-        for (std::size_t i = 0; i < this->size(); i++) {
-            auto &shape = this->shapes[i];
-            auto rot = shape.getOrientation();
-            Packing::fixRotationMatrix(rot);
-            shape.setOrientation(rot);
-        }
-        this->reset(std::move(newShapes), this->box, interaction);
-        return 0;
-    }
-
     // For a good measure, reset NG sanitizer - it may have not been reset after last operation
     this->resetNGRaceConditionSanitizer();
 
@@ -1202,10 +1340,15 @@ std::size_t Packing::renormalizeOrientations(const Interaction &interaction, boo
 
         this->tryOrientationFix(particleIdx, centres);
 
-        if (this->calculateMoveOverlapEnergy(particleIdx, tempParticleIdx, interaction) > 0)
+        // This also prepares the cached overlap delta needed by acceptRotation() when overlaps are counted.
+        double overlapEnergy = this->calculateMoveOverlapEnergy(particleIdx, tempParticleIdx, interaction);
+        if (!allowOverlaps && overlapEnergy > 0) {
             rejectionCounter++;
-        else
+        } else {
+            // tryOrientationFix() bypasses tryRotation(), so prepare its external energy explicitly before acceptance.
+            static_cast<void>(this->prepareMoveExternalEnergy(particleIdx, tempParticleIdx));
             this->acceptRotation();
+        }
     }
 
     return rejectionCounter;
@@ -1238,4 +1381,3 @@ void Packing::tryOrientationFix(std::size_t particleIdx, const std::vector<Vecto
         this->recalculateAbsoluteInteractionCentres(tempParticleIdx);
     }
 }
-

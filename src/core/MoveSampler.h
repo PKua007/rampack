@@ -11,7 +11,7 @@
 
 #include "geometry/Matrix.h"
 #include "geometry/Vector.h"
-#include "core/ParticleSelection.h"
+#include "core/ParticleSelectable.h"
 #include "core/ShapeTraits.h"
 #include "core/Packing.h"
 
@@ -20,9 +20,10 @@
  * @details It can sample particle indices in any order and perform any combination of translational and rotational
  * moves (either of them or both). MoveSampler has its main (group) name returned by getName(), however it can consist
  * of more than one move types (for example rototranslation moves consist of rotations and translation). Each of inner
- * moves has its own step size. Step sizes can be increased, decreased, queried and set using move name.
+ * moves has its own step size. Step sizes can be increased, decreased, queried and set using move name. The inherited
+ * particle selection restricts which particles this sampler can perturb.
  */
-class MoveSampler {
+class MoveSampler : public ParticleSelectable {
 public:
     /**
      * @brief Enum class representing move type.
@@ -49,33 +50,6 @@ public:
         /** @brief Rotation to be performed (0 if MoveData::moveType is MoveType::TRANSLATION). */
         Matrix<3, 3> rotation{};
     };
-
-    virtual ~MoveSampler() = default;
-
-    /**
-     * @brief Sets the particles eligible for moves sampled by this MoveSampler.
-     * @details The default selection is ParticleSelection::Mode::ALL. The selection is prepared by Simulation for the
-     * current packing size before sampling starts.
-     */
-    void setParticleSelection(ParticleSelection selection) {
-        this->particleSelection = std::move(selection);
-    }
-
-    /**
-     * @brief Returns mutable particle eligibility selection for this MoveSampler.
-     * @details Simulation prepares this selection before a run. After preparation, the selection is used to provide
-     * eligible particle indices to sampleMove() and to calculate requested move counts.
-     */
-    [[nodiscard]] ParticleSelection &getParticleSelection() {
-        return this->particleSelection;
-    }
-
-    /**
-     * @brief Returns particle eligibility selection for this MoveSampler.
-     */
-    [[nodiscard]] const ParticleSelection &getParticleSelection() const {
-        return this->particleSelection;
-    }
 
     /**
      * @brief Returns main (group) name of the MoveSampler.
@@ -128,8 +102,6 @@ public:
         // Do nothing by default
     }
 
-private:
-    ParticleSelection particleSelection;
 };
 
 

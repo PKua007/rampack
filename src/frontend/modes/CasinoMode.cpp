@@ -5,6 +5,8 @@
 #include <iomanip>
 #include <fstream>
 #include <set>
+#include <array>
+#include <sstream>
 
 #include <cxxopts.hpp>
 
@@ -12,7 +14,7 @@
 #include "utils/Utils.h"
 #include "core/shapes/CompoundShapeTraits.h"
 #include "core/PeriodicBoundaryConditions.h"
-#include "frontend/MoveSelectionValidator.h"
+#include "frontend/SelectionValidator.h"
 #include "utils/Fold.h"
 
 
@@ -201,6 +203,41 @@ int CasinoMode::main(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
+void CasinoMode::validateMoveSelections(const Simulation::Environment &environment,
+                                        const std::size_t numParticles) const
+{
+    Expects(numParticles != 0);
+
+    for (const auto &moveSampler : environment.getMoveSamplers())
+        SelectionValidator::validate(*moveSampler, "Move sampler", moveSampler->getName(), numParticles, this->logger);
+}
+
+void CasinoMode::validateExternalFields(const Simulation::Environment &environment, const Packing &packing) const {
+    if (!environment.hasExternalFields())
+        return;
+
+    for (const auto &externalField : environment.getExternalFields()) {
+        SelectionValidator::validate(*externalField, "External field", externalField->getName(), packing.size(),
+                                     this->logger);
+        validateExternalFieldContinuity(*externalField, packing);
+    }
+}
+
+void CasinoMode::validateExternalFieldContinuity(const ExternalField &externalField, const Packing &packing) {
+    static constexpr std::array<char, 3> AXIS_NAMES{'x', 'y', 'z'};
+    const auto continuity = externalField.getContinuityAlongBoxAxes();
+
+    for (std::size_t axis{}; axis < continuity.size(); ++axis) {
+        if (continuity[axis] || packing.hasWallOnAxis(axis))
+            continue;
+
+        std::ostringstream message;
+        message << "External field '" << externalField.getName() << "' is not continuous along box axis '";
+        message << AXIS_NAMES[axis] << "', but hard walls are disabled for this axis";
+        throw ValidationException(message.str());
+    }
+}
+
 void CasinoMode::performIntegration(Simulation &simulation, Simulation::Environment &env, const IntegrationRun &run,
                                     const ShapeTraits &shapeTraits, std::size_t cycleOffset, bool isContinuation)
 {
@@ -210,7 +247,8 @@ void CasinoMode::performIntegration(Simulation &simulation, Simulation::Environm
     this->logger << "Starting integration '" << run.runName << "'" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    MoveSelectionValidator::validate(env, simulation.getPacking().size(), this->logger);
+    this->validateMoveSelections(env, simulation.getPacking().size());
+    this->validateExternalFields(env, simulation.getPacking());
 
     OnTheFlyOutput onTheFlyOutput(run, simulation.getPacking().size(), cycleOffset, isContinuation, this->logger);
 
@@ -221,6 +259,7 @@ void CasinoMode::performIntegration(Simulation &simulation, Simulation::Environm
     integrationParams.snapshotEvery = run.snapshotEvery;
     integrationParams.inlineInfoEvery = run.inlineInfoEvery;
     integrationParams.rotationMatrixFixEvery = run.orientationFixEvery;
+    integrationParams.externalEnergyFixEvery = run.externalEnergyFixEvery;
     integrationParams.cycleOffset = cycleOffset;
 
     simulation.integrate(env, integrationParams, shapeTraits, std::move(onTheFlyOutput.collector),
@@ -286,7 +325,8 @@ void CasinoMode::performOverlapRelaxation(Simulation &simulation, Simulation::En
     this->logger << "Starting overlap relaxation '" << run.runName << "'" << std::endl;
     this->logger << "--------------------------------------------------------------------" << std::endl;
 
-    MoveSelectionValidator::validate(env, simulation.getPacking().size(), this->logger);
+    this->validateMoveSelections(env, simulation.getPacking().size());
+    this->validateExternalFields(env, simulation.getPacking());
 
     OnTheFlyOutput onTheFlyOutput(run, simulation.getPacking().size(), cycleOffset, isContinuation, this->logger);
 
@@ -297,6 +337,7 @@ void CasinoMode::performOverlapRelaxation(Simulation &simulation, Simulation::En
     relaxParams.snapshotEvery = run.snapshotEvery;
     relaxParams.inlineInfoEvery = run.inlineInfoEvery;
     relaxParams.rotationMatrixFixEvery = run.orientationFixEvery;
+    relaxParams.externalEnergyFixEvery = run.externalEnergyFixEvery;
     relaxParams.cycleOffset = cycleOffset;
 
     simulation.relaxOverlaps(env, relaxParams, *shapeTraits, std::move(onTheFlyOutput.collector),

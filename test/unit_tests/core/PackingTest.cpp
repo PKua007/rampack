@@ -9,6 +9,7 @@
 #include "matchers/PackingApproxPositionsCatchMatcher.h"
 #include "matchers/VectorApproxMatcher.h"
 
+#include "mocks/MockExternalField.h"
 #include "mocks/MockShapeGeometry.h"
 
 #include "core/Packing.h"
@@ -81,6 +82,7 @@ namespace {
 
         [[nodiscard]] std::vector<Vector<3>> getInteractionCentres() const override { return {{0, 0, 0}, {1, 0, 0}}; }
     };
+
 }
 
 TEST_CASE("Packing: single interaction center operations") {
@@ -612,4 +614,148 @@ TEST_CASE("Packing: named points dumping") {
     REQUIRE(points.size() == 2);
     CHECK_THAT(points[0], IsApproxEqual({1.5, 0.5, 0.5}, 1e-12));
     CHECK_THAT(points[1], IsApproxEqual({0.5, 4.5, 0.5}, 1e-12));
+}
+
+TEST_CASE("Packing: external fields") {
+    using trompeloeil::_;
+
+    SphereHardCoreInteraction hardCore(0.25);
+    auto pbc = std::make_unique<PeriodicBoundaryConditions>();
+    std::vector<Shape> shapes;
+    shapes.emplace_back(Vector<3>{0.5, 0.5, 0.5});
+    shapes.emplace_back(Vector<3>{1.5, 0.5, 0.5});
+    shapes.emplace_back(Vector<3>{2.5, 0.5, 0.5});
+    Packing packing({5, 5, 5}, std::move(shapes), std::move(pbc), hardCore, 2);
+
+    SECTION("empty field list means no external fields") {
+        packing.setupForExternalFields({});
+
+        CHECK_FALSE(packing.hasExternalFields());
+        CHECK(packing.getExternalEnergy() == 0);
+    }
+
+    SECTION("external energy is summed over active particles") {
+        auto allParticlesField = std::make_shared<MockExternalField>();
+        auto selectedField = std::make_shared<MockExternalField>();
+        selectedField->setParticleSelection(ParticleSelection::whitelist({1}));
+        REQUIRE_CALL(*allParticlesField, setupForBox(_));
+        REQUIRE_CALL(*selectedField, setupForBox(_));
+        ALLOW_CALL(*allParticlesField, calculateEnergy(_, _)).RETURN(_1[0]);
+        ALLOW_CALL(*selectedField, calculateEnergy(_, _)).RETURN(10 * _1[0]);
+
+        packing.setupForExternalFields({allParticlesField, selectedField});
+
+        CHECK(packing.hasExternalFields());
+        CHECK(packing.getExternalEnergy() == Approx(0.5 + 1.5 + 2.5 + 15));
+    }
+
+    SECTION("energy fluctuations include one-body external energy without halving") {
+        auto field = std::make_shared<MockExternalField>();
+        REQUIRE_CALL(*field, setupForBox(_));
+        ALLOW_CALL(*field, calculateEnergy(_, _)).RETURN(_1[0]);
+        packing.setupForExternalFields({field});
+
+        CHECK(packing.getParticleEnergyFluctuations(hardCore) == Approx(1));
+    }
+
+    SECTION("energy fluctuations combine half pair energy with one-body external energy") {
+        SphereDistanceInteraction distanceInteraction;
+        packing.setupForInteraction(distanceInteraction);
+
+        auto field = std::make_shared<MockExternalField>();
+        REQUIRE_CALL(*field, setupForBox(_));
+        ALLOW_CALL(*field, calculateEnergy(_, _)).RETURN(_1[0]);
+        packing.setupForExternalFields({field});
+
+        CHECK(packing.getParticleEnergyFluctuations(distanceInteraction) == Approx(std::sqrt(13. / 12)));
+    }
+
+    SECTION("reset clears external fields") {
+        auto field = std::make_shared<MockExternalField>();
+        REQUIRE_CALL(*field, setupForBox(_));
+        ALLOW_CALL(*field, calculateEnergy(_, _)).RETURN(_1[0]);
+        packing.setupForExternalFields({field});
+        REQUIRE(packing.hasExternalFields());
+        REQUIRE(packing.getExternalEnergy() != 0);
+
+        std::vector<Shape> newShapes;
+        newShapes.emplace_back(Vector<3>{0.5, 0.5, 0.5});
+        newShapes.emplace_back(Vector<3>{3.5, 0.5, 0.5});
+        packing.reset(std::move(newShapes), TriclinicBox(std::array<double, 3>{5, 5, 5}), hardCore);
+
+        CHECK_FALSE(packing.hasExternalFields());
+        CHECK(packing.getExternalEnergy() == 0);
+    }
+
+    SECTION("particle move energy includes external energy") {
+        auto field = std::make_shared<MockExternalField>();
+        REQUIRE_CALL(*field, setupForBox(_));
+        ALLOW_CALL(*field, calculateEnergy(_, _)).RETURN(_1[0]);
+        packing.setupForExternalFields({field});
+
+        CHECK(packing.getTotalEnergy(hardCore) == Approx(4.5));
+        CHECK(packing.tryTranslation(1, {0.4, 0, 0}, hardCore) == Approx(0.4));
+        CHECK(packing.getExternalEnergy() == Approx(4.5));
+
+        packing.acceptTranslation();
+
+        CHECK(packing.getExternalEnergy() == Approx(4.9));
+        CHECK(packing.getTotalEnergy(hardCore) == Approx(4.9));
+    }
+
+    SECTION("rejected particle move leaves external energy cache unchanged") {
+        auto field = std::make_shared<MockExternalField>();
+        REQUIRE_CALL(*field, setupForBox(_));
+        ALLOW_CALL(*field, calculateEnergy(_, _)).RETURN(_1[0]);
+        packing.setupForExternalFields({field});
+
+        CHECK(packing.tryTranslation(0, {0.4, 0, 0}, hardCore) == Approx(0.4));
+
+        CHECK(packing.getExternalEnergy() == Approx(4.5));
+        CHECK(packing.getTotalEnergy(hardCore) == Approx(4.5));
+    }
+
+    SECTION("particle selection controls move external energy") {
+        auto field = std::make_shared<MockExternalField>();
+        field->setParticleSelection(ParticleSelection::whitelist({2}));
+        REQUIRE_CALL(*field, setupForBox(_));
+        ALLOW_CALL(*field, calculateEnergy(_, _)).RETURN(10 * _1[0]);
+        packing.setupForExternalFields({field});
+
+        CHECK(packing.tryTranslation(0, {0.4, 0, 0}, hardCore) == Approx(0));
+        CHECK(packing.tryTranslation(2, {0.5, 0, 0}, hardCore) == Approx(5));
+    }
+
+    SECTION("accepted overlap-counting move updates external energy cache") {
+        auto field = std::make_shared<MockExternalField>();
+        REQUIRE_CALL(*field, setupForBox(_));
+        ALLOW_CALL(*field, calculateEnergy(_, _)).RETURN(_1[0]);
+        packing.setupForExternalFields({field});
+        packing.toggleOverlapCounting(true, hardCore);
+
+        FORBID_CALL(*field, calculateEnergy(_, _));
+        CHECK(packing.tryTranslation(0, {0.8, 0, 0}, hardCore) == std::numeric_limits<double>::infinity());
+
+        REQUIRE_CALL(*field, calculateEnergy(_, _)).RETURN(_1[0]);
+        packing.acceptTranslation();
+
+        CHECK(packing.getExternalEnergy() == Approx(5.3));
+    }
+
+    SECTION("scaling includes external energy and revert restores cache and field box setup") {
+        auto field = std::make_shared<MockExternalField>();
+        REQUIRE_CALL(*field, setupForBox(_));
+        ALLOW_CALL(*field, calculateEnergy(_, _)).RETURN(_1[0]);
+        packing.setupForExternalFields({field});
+
+        REQUIRE_CALL(*field, setupForBox(_)).WITH(_1.getHeights()[0] == Approx(10));
+        CHECK(packing.tryScaling(2, hardCore) == Approx(4.5));
+        CHECK(packing.getExternalEnergy() == Approx(9));
+
+        REQUIRE_CALL(*field, setupForBox(_)).WITH(_1.getHeights()[0] == Approx(5));
+        packing.revertScaling();
+
+        CHECK(packing.getExternalEnergy() == Approx(4.5));
+        CHECK(packing.getTotalEnergy(hardCore) == Approx(4.5));
+    }
 }
