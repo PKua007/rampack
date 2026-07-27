@@ -421,6 +421,7 @@ integration(
     averaging_every = 0,
     inline_info_every = 100,
     orientation_fix_every = 10000,
+    external_energy_fix_every = 10000,
     output_last_snapshot = [],
     record_trajectory = [],
     averages_out = None,
@@ -507,6 +508,14 @@ Arguments:
   numerous matrix multiplications during the simulation. Unless you have a good reason to change it, the default value
   of `10000` should be left as it is.
 
+* ***external_energy_fix_every*** (*= 10000*) <a id="integration_externalenergyfixevery"></a>
+
+  A positive Integer specifying how often cached external-field energies should be recalculated from the current
+  particle and box state. Accepted moves update the cache incrementally, while a full recalculation limits accumulated
+  floating-point roundoff. The cadence uses the total cycle count, analogously to `orientation_fix_every`. Unless you
+  have a good reason to change it, the default value of `10000` should be left as it is. With no external fields, the
+  recalculation has no effect.
+
 * ***output_last_snapshot*** (*= []*) <a id="integration_outputlastsnapshot"></a>
 
   The array of formats in which the last snapshot should be stored after the simulation. For example
@@ -586,6 +595,7 @@ overlap_relaxation(
     external_fields = None,
     inline_info_every = 100,
     orientation_fix_every = 10000,
+    external_energy_fix_every = 10000,
     helper_shape = None,
     output_last_snapshot = [],
     record_trajectory = [],
@@ -638,6 +648,10 @@ Arguments:
 * ***orientation_fix_every*** (*= 10000*)
 
   See [`integration.orientation_fix_every`](#integration_orientationfixevery).
+
+* ***external_energy_fix_every*** (*= 10000*)
+
+  See [`integration.external_energy_fix_every`](#integration_externalenergyfixevery).
 
 * ***helper_shape*** (*= None*) <a id="overlaprelaxation_helpershape"></a>
 
