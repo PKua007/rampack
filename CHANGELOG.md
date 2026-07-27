@@ -32,6 +32,8 @@ library (later, with Python bindings as well).
   [class `layer_rotate`](docs/initial-arrangement.md#class-layer_rotate).
 * Added [particle selection masks](docs/input-file.md#particle-selection-masks) for move samplers via `whitelist_shapes`
   and `blacklist_shapes`.
+* Added support for [external fields](docs/input-file.md#external-fields), including box-attached
+  [class `gravity`](docs/input-file.md#class-gravity).
 
 ### Changed
 
